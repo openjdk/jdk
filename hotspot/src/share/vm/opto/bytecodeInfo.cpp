@@ -97,6 +97,11 @@ static bool is_init_with_ea(ciMethod* callee_method,
          );
 }
 
+static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
+  // Force inlining unboxing accessor.
+  return C->eliminate_boxing() && callee_method->is_unboxing_method();
+}
+
 // positive filter: should callee be inlined?
 bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
                                int caller_bci, ciCallProfile& profile,
@@ -144,6 +149,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   // bump the max size if the call is frequent
   if ((freq >= InlineFrequencyRatio) ||
       (call_site_count >= InlineFrequencyCount) ||
+      is_unboxing_method(callee_method, C) ||
       is_init_with_ea(callee_method, caller_method, C)) {
 
     max_inline_size = C->freq_inline_size();
@@ -237,7 +243,24 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     return false;
   }
 
+  if (callee_method->should_not_inline()) {
+    set_msg("disallowed by CompilerOracle");
+    return true;
+  }
+
+#ifndef PRODUCT
+  if (ciReplay::should_not_inline(callee_method)) {
+    set_msg("disallowed by ciReplay");
+    return true;
+  }
+#endif
+
   // Now perform checks which are heuristic
+
+  if (is_unboxing_method(callee_method, C)) {
+    // Inline unboxing methods.
+    return false;
+  }
 
   if (!callee_method->force_inline()) {
     if (callee_method->has_compiled_code() &&
@@ -259,18 +282,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
       return true;
     }
   }
-
-  if (callee_method->should_not_inline()) {
-    set_msg("disallowed by CompilerOracle");
-    return true;
-  }
-
-#ifndef PRODUCT
-  if (ciReplay::should_not_inline(callee_method)) {
-    set_msg("disallowed by ciReplay");
-    return true;
-  }
-#endif
 
   if (UseStringCache) {
     // Do not inline StringCache::profile() method used only at the beginning.
@@ -296,9 +307,8 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     }
 
     if (is_init_with_ea(callee_method, caller_method, C)) {
-
       // Escape Analysis: inline all executed constructors
-
+      return false;
     } else if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold,
                                                            CompileThreshold >> 1))) {
       set_msg("executed < MinInliningThreshold times");

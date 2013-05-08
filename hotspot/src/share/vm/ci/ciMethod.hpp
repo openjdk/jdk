@@ -298,6 +298,8 @@ class ciMethod : public ciMetadata {
   bool is_initializer () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
   void dump_replay_data(outputStream* st);
+  bool is_boxing_method() const;
+  bool is_unboxing_method() const;
 
   // Print the bytecodes of this method.
   void print_codes_on(outputStream* st);

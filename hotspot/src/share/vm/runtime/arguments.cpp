@@ -1089,6 +1089,10 @@ void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
     FLAG_SET_DEFAULT(ReservedCodeCacheSize, ReservedCodeCacheSize * 5);
   }
+  if (!UseInterpreter) { // -Xcomp
+    Tier3InvokeNotifyFreqLog = 0;
+    Tier4InvocationThreshold = 0;
+  }
 }
 
 #if INCLUDE_ALL_GCS
@@ -1661,6 +1665,20 @@ void Arguments::set_bytecode_flags() {
 // Aggressive optimization flags  -XX:+AggressiveOpts
 void Arguments::set_aggressive_opts_flags() {
 #ifdef COMPILER2
+  if (AggressiveUnboxing) {
+    if (FLAG_IS_DEFAULT(EliminateAutoBox)) {
+      FLAG_SET_DEFAULT(EliminateAutoBox, true);
+    } else if (!EliminateAutoBox) {
+      // warning("AggressiveUnboxing is disabled because EliminateAutoBox is disabled");
+      AggressiveUnboxing = false;
+    }
+    if (FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
+      FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
+    } else if (!DoEscapeAnalysis) {
+      // warning("AggressiveUnboxing is disabled because DoEscapeAnalysis is disabled");
+      AggressiveUnboxing = false;
+    }
+  }
   if (AggressiveOpts || !FLAG_IS_DEFAULT(AutoBoxCacheMax)) {
     if (FLAG_IS_DEFAULT(EliminateAutoBox)) {
       FLAG_SET_DEFAULT(EliminateAutoBox, true);
