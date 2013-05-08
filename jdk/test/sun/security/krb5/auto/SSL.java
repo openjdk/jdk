@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 6894643 6913636
+ * @bug 6894643 6913636 8005523
  * @summary Test JSSE Kerberos ciphersuite
+
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA
- * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_MD5
+ * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound
  * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
  * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
  * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_SHA
@@ -38,14 +39,17 @@
  */
 import java.io.*;
 import java.net.InetAddress;
+import java.security.AccessControlException;
+import java.security.Permission;
 import javax.net.ssl.*;
 import java.security.Principal;
 import java.util.Date;
+import javax.security.auth.kerberos.ServicePermission;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.internal.ktab.KeyTab;
 
-public class SSL {
+public class SSL extends SecurityManager {
 
     private static String krb5Cipher;
     private static final int LOOP_LIMIT = 3;
@@ -53,12 +57,31 @@ public class SSL {
     private static volatile String server;
     private static volatile int port;
 
+    private static String permChecks = "";
+
     // 0-Not started, 1-Start OK, 2-Failure
     private static volatile int serverState = 0;
+
+    @Override
+    public void checkPermission(Permission perm, Object context) {
+        checkPermission(perm);
+    }
+
+    public void checkPermission(Permission perm) {
+        if (!(perm instanceof ServicePermission)) {
+            return;
+        }
+        ServicePermission p = (ServicePermission)perm;
+        permChecks = permChecks + p.getActions().toUpperCase().charAt(0);
+    }
 
     public static void main(String[] args) throws Exception {
 
         krb5Cipher = args[0];
+
+        boolean unbound = args.length > 1;
+
+        System.setSecurityManager(new SSL());
 
         KDC kdc = KDC.create(OneKDC.REALM);
         // Run this after KDC, so our own DNS service can be started
@@ -85,6 +108,7 @@ public class SSL {
         // and use the middle one as the real key
         kdc.addPrincipal("host/" + server, "pass2".toCharArray());
 
+
         // JAAS config entry name ssl
         System.setProperty("java.security.auth.login.config", OneKDC.JAAS_CONF);
         File f = new File(OneKDC.JAAS_CONF);
@@ -92,7 +116,9 @@ public class SSL {
         fos.write((
                 "ssl {\n" +
                 "    com.sun.security.auth.module.Krb5LoginModule required\n" +
-                "    principal=\"host/" + server + "\"\n" +
+                (unbound ?
+                    "    principal=*\n" :
+                    "    principal=\"host/" + server + "\"\n") +
                 "    useKeyTab=true\n" +
                 "    keyTab=" + OneKDC.KTAB + "\n" +
                 "    isInitiator=false\n" +
@@ -103,7 +129,6 @@ public class SSL {
         Context c;
         final Context s = Context.fromJAAS("ssl");
 
-        // There's no keytab file when server starts.
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
         Thread server = new Thread(new Runnable() {
@@ -127,21 +152,6 @@ public class SSL {
             throw new Exception("Server already failed");
         }
 
-        // Now create the keytab
-
-        /*
-        // Add 3 versions of keys into keytab
-        KeyTab ktab = KeyTab.create(OneKDC.KTAB);
-        PrincipalName service = new PrincipalName(
-                "host/" + server, PrincipalName.KRB_NT_SRV_HST);
-        ktab.addEntry(service, "pass1".toCharArray(), 1);
-        ktab.addEntry(service, "pass2".toCharArray(), 2);
-        ktab.addEntry(service, "pass3".toCharArray(), 3);
-        ktab.save();
-
-        // and use the middle one as the  real key
-        kdc.addPrincipal("host/" + server, "pass2".toCharArray());
-         */
         c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
         c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
         c.doAs(new JsseClientAction(), null);
@@ -157,20 +167,22 @@ public class SSL {
         c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
         c.doAs(new JsseClientAction(), null);
 
-        // Revoke the old key
-        /*Thread.sleep(2000);
-        ktab = KeyTab.create(OneKDC.KTAB);
-        ktab.addEntry(service, "pass5".toCharArray(), 5, false);
-        ktab.save();
-
-        c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
-        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
-        try {
-            c.doAs(new JsseClientAction(), null);
-            throw new Exception("Should fail this time.");
-        } catch (SSLException e) {
-            // Correct behavior.
-        }*/
+        // Permission checking check. Please note this is highly
+        // implementation related.
+        if (unbound) {
+            // For unbound, server does not know what name to check.
+            // Client checks "initiate", then server gets the name
+            // and checks "accept". Second connection resume.
+            if (!permChecks.equals("IA")) {
+                throw new Exception();
+            }
+        } else {
+            // For bound, JAAS checks "accept" once. Server checks again,
+            // client then checks "initiate". Second connection resume.
+            if (!permChecks.equals("AAI")) {
+                throw new Exception();
+            }
+        }
     }
 
     // Following codes copied from

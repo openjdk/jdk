@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug     6911258 6962571 6963622 6991528 7005628
+ * @bug     6911258 6962571 6963622 6991528 7005628 8012044
  * @summary Basic tests of suppressed exceptions
  * @author  Joseph D. Darcy
  */
@@ -40,6 +40,7 @@ public class SuppressedExceptions {
         serializationTest();
         selfReference();
         noModification();
+        initCausePlumbing();
     }
 
     private static void noSelfSuppression() {
@@ -48,7 +49,9 @@ public class SuppressedExceptions {
             throwable.addSuppressed(throwable);
             throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
         } catch (IllegalArgumentException iae) {
-            ; // Expected
+            // Expected to be here
+            if (iae.getCause() != throwable)
+                throw new RuntimeException("Bad cause after self-suppresion.");
         }
     }
 
@@ -206,6 +209,38 @@ public class SuppressedExceptions {
     private static class NoSuppression extends Throwable {
         public NoSuppression(boolean enableSuppression) {
             super("The medium.", null, enableSuppression, true);
+        }
+    }
+
+    private static void initCausePlumbing() {
+        Throwable t1 = new Throwable();
+        Throwable t2 = new Throwable("message", t1);
+        Throwable t3 = new Throwable();
+
+        try {
+            t2.initCause(t3);
+            throw new RuntimeException("Shouldn't reach.");
+        } catch (IllegalStateException ise) {
+            if (ise.getCause() != t2)
+                throw new RuntimeException("Unexpected cause in ISE", ise);
+            Throwable[] suppressed = ise.getSuppressed();
+            if (suppressed.length !=  0)
+                throw new RuntimeException("Bad suppression in ISE", ise);
+        }
+
+        try {
+            t2.initCause(null);
+            throw new RuntimeException("Shouldn't reach.");
+        } catch (IllegalStateException ise) {
+            ; // Expected; don't want an NPE.
+        }
+
+        try {
+            t3.initCause(t3);
+            throw new RuntimeException("Shouldn't reach.");
+        } catch (IllegalArgumentException iae) {
+            if (iae.getCause() != t3)
+                throw new RuntimeException("Unexpected cause in ISE", iae);
         }
     }
 }

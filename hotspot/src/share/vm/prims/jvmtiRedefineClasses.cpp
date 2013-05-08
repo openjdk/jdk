@@ -3284,6 +3284,16 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // that reference methods of the evolved class.
   SystemDictionary::classes_do(adjust_cpool_cache_and_vtable, THREAD);
 
+  // JSR-292 support
+  MemberNameTable* mnt = the_class->member_names();
+  if (mnt != NULL) {
+    bool trace_name_printed = false;
+    mnt->adjust_method_entries(_matching_old_methods,
+                               _matching_new_methods,
+                               _matching_methods_length,
+                               &trace_name_printed);
+  }
+
   // Fix Resolution Error table also to remove old constant pools
   SystemDictionary::delete_resolution_error(old_constants);
 

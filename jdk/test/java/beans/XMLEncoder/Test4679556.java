@@ -103,7 +103,6 @@ public class Test4679556 extends AbstractTest {
     }
 
     protected void initialize(XMLEncoder encoder) {
-        encoder.setExceptionListener(this);
         encoder.setPersistenceDelegate(C.class, new DefaultPersistenceDelegate() {
             protected Expression instantiate(Object oldInstance, Encoder out) {
                 C c = (C) oldInstance;
