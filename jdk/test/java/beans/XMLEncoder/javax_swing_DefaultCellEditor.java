@@ -28,6 +28,7 @@
  * @author Sergey Malenkov
  */
 
+import java.beans.XMLEncoder;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
@@ -44,6 +45,11 @@ public final class javax_swing_DefaultCellEditor extends AbstractTest<DefaultCel
     protected DefaultCellEditor getAnotherObject() {
         return null; // TODO: could not update property
         // return new DefaultCellEditor(new JTextField("Second"));
+    }
+
+    @Override
+    protected void initialize(XMLEncoder encoder) {
+        encoder.setExceptionListener(null); // TODO: ignore non-public listener because of 4808251
     }
 
     protected void validate(DefaultCellEditor before, DefaultCellEditor after) {

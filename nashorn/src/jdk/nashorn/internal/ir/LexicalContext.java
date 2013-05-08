@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 import java.io.File;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.Source;
@@ -171,6 +170,7 @@ public class LexicalContext {
     public <T extends LexicalContextNode> T pop(final T node) {
         --sp;
         final LexicalContextNode popped = stack[sp];
+        stack[sp] = null;
         if (popped instanceof Flags) {
             return (T)((Flags<?>)popped).setFlag(this, flags[sp]);
         }
@@ -417,14 +417,6 @@ public class LexicalContext {
         }
         assert false;
         return null;
-    }
-
-    /**
-     * Check if lexical context is currently inside a with block
-     * @return true if in a with block
-     */
-    public boolean inWith() {
-        return getScopeNestingLevelTo(null) > 0;
     }
 
     /**

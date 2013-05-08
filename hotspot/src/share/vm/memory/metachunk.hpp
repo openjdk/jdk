@@ -41,10 +41,13 @@
 //            |              |              |        |
 //            +--------------+ <- bottom ---+     ---+
 
+class VirtualSpaceNode;
+
 class Metachunk VALUE_OBJ_CLASS_SPEC {
   // link to support lists of chunks
   Metachunk* _next;
   Metachunk* _prev;
+  VirtualSpaceNode* _container;
 
   MetaWord* _bottom;
   MetaWord* _end;
@@ -61,29 +64,20 @@ class Metachunk VALUE_OBJ_CLASS_SPEC {
   // the space.
   static size_t _overhead;
 
-  void set_bottom(MetaWord* v) { _bottom = v; }
-  void set_end(MetaWord* v) { _end = v; }
-  void set_top(MetaWord* v) { _top = v; }
-  void set_word_size(size_t v) { _word_size = v; }
  public:
-#ifdef ASSERT
-  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL), _is_free(false),
-    _next(NULL), _prev(NULL) {}
-#else
-  Metachunk() : _bottom(NULL), _end(NULL), _top(NULL),
-    _next(NULL), _prev(NULL) {}
-#endif
+  Metachunk(size_t word_size , VirtualSpaceNode* container);
 
   // Used to add a Metachunk to a list of Metachunks
   void set_next(Metachunk* v) { _next = v; assert(v != this, "Boom");}
   void set_prev(Metachunk* v) { _prev = v; assert(v != this, "Boom");}
+  void set_container(VirtualSpaceNode* v) { _container = v; }
 
   MetaWord* allocate(size_t word_size);
-  static Metachunk* initialize(MetaWord* ptr, size_t word_size);
 
   // Accessors
   Metachunk* next() const { return _next; }
   Metachunk* prev() const { return _prev; }
+  VirtualSpaceNode* container() const { return _container; }
   MetaWord* bottom() const { return _bottom; }
   MetaWord* end() const { return _end; }
   MetaWord* top() const { return _top; }

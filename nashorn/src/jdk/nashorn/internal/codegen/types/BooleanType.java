@@ -93,12 +93,6 @@ public final class BooleanType extends Type {
     }
 
     @Override
-    public Type loadEmpty(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
-    }
-
-    @Override
     public void _return(final MethodVisitor method) {
         method.visitInsn(IRETURN);
     }

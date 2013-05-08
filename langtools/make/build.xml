@@ -717,6 +717,29 @@
     <target name="sjavac" depends="build-sjavac,jtreg-sjavac,findbugs-sjavac"/>
 
     <!--
+    **** crules targets.
+    -->
+
+    <target name="build-crules" depends="-def-compilecrules,-def-build-jar-with-services">
+        <compilecrules/>
+        <build-jar-with-services
+                    name="crules"
+                    includes="crules/* crules/resources/*"
+                    classes.dir="${build.toolclasses.dir}"
+                    lib.dir="${build.toolclasses.dir}"
+                    jarmainclass=""
+                    jarclasspath="crules.jar"
+                    service.type="com.sun.source.util.Plugin"
+                    service.provider="crules.MutableFieldsAnalyzer"/>
+        <build-tool name="crules"/>
+    </target>
+
+    <target name="check-coding-rules" depends="build-bootstrap-javac,-create-import-jdk-stubs,build-crules">
+        <build-classes includes="${javac.includes}"
+            plugin.options="-J-Xbootclasspath/a:${build.toolclasses.dir}/crules.jar -Xplugin:mutable_fields_analyzer" />
+    </target>
+
+    <!--
     **** Create import JDK stubs.
     -->
 
@@ -811,6 +834,31 @@
         </macrodef>
     </target>
 
+    <target name="-def-build-jar-with-services">
+        <macrodef name="build-jar-with-services">
+            <attribute name="name"/>
+            <attribute name="includes"/>
+            <attribute name="classes.dir" default="${build.classes.dir}"/>
+            <attribute name="lib.dir" default="${dist.lib.dir}"/>
+            <attribute name="jarmainclass" default="com.sun.tools.@{name}.Main"/>
+            <attribute name="jarclasspath" default=""/>
+            <attribute name="service.type" default=""/>
+            <attribute name="service.provider" default=""/>
+            <sequential>
+                <mkdir dir="${build.toolclasses.dir}"/>
+                <jar destfile="@{lib.dir}/@{name}.jar"
+                     basedir="@{classes.dir}"
+                     includes="@{includes}">
+                    <service type="@{service.type}" provider="@{service.provider}"/>
+                    <manifest>
+                        <attribute name="Main-Class" value="@{jarmainclass}"/>
+                        <attribute name="Class-Path" value="@{jarclasspath}"/>
+                    </manifest>
+                </jar>
+            </sequential>
+        </macrodef>
+    </target>
+
     <target name="-def-build-classes" depends="-def-pcompile">
         <macrodef name="build-classes">
             <attribute name="includes"/>
@@ -826,6 +874,7 @@
             <attribute name="target" default="${javac.target}"/>
             <attribute name="release" default="${release}"/>
             <attribute name="full.version" default="${full.version}"/>
+            <attribute name="plugin.options" default=""/>
             <sequential>
                 <echo level="verbose" message="build-classes: excludes=@{excludes}"/>
                 <echo level="verbose" message="build-classes: bootclasspath.opt=@{bootclasspath.opt}"/>
@@ -868,6 +917,7 @@
                     <compilerarg line="${javac.no.jdk.warnings}"/>
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
+                    <compilerarg line="@{plugin.options}"/>
                 </javac>
                 <copy todir="@{classes.dir}" includeemptydirs="false">
                     <fileset dir="${src.classes.dir}" includes="@{includes}" excludes="@{excludes}">
@@ -933,6 +983,32 @@
         <taskdef name="pcompile"
                  classname="anttasks.CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
+    </target>
+
+    <target name="-def-compilecrules">
+        <macrodef name="compilecrules">
+            <sequential>
+                <mkdir dir="${build.toolclasses.dir}"/>
+                <javac fork="true"
+                       source="${boot.javac.source}"
+                       target="${boot.javac.target}"
+                       executable="${boot.java.home}/bin/javac"
+                       srcdir="${make.tools.dir}"
+                       includes="crules/*"
+                       destdir="${build.toolclasses.dir}/"
+                       classpath="${ant.core.lib}"
+                       bootclasspath="${boot.java.home}/jre/lib/rt.jar"
+                       includeantruntime="false">
+                    <compilerarg value="-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+                    <compilerarg line="${javac.lint.opts}"/>
+                </javac>
+                <copy todir="${build.toolclasses.dir}/" includeemptydirs="false">
+                    <fileset dir="${make.tools.dir}">
+                        <include name="**/*.properties"/>
+                    </fileset>
+                </copy>
+            </sequential>
+        </macrodef>
     </target>
 
     <target name="-def-genstubs" depends="build-bootstrap-javac" if="require.import.jdk.stubs">

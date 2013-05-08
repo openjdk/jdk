@@ -54,7 +54,6 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
-import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -415,6 +414,28 @@ public final class Context {
         return ScriptRuntime.apply(func, evalThis);
     }
 
+    private Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {
+        if (srcStr.startsWith(prefix)) {
+            final String resource = resourcePath + srcStr.substring(prefix.length());
+            // NOTE: even sandbox scripts should be able to load scripts in nashorn: scheme
+            // These scripts are always available and are loaded from nashorn.jar's resources.
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<Source>() {
+                        @Override
+                        public Source run() {
+                            try {
+                                final URL resURL = Context.class.getResource(resource);
+                                return (resURL != null)? new Source(srcStr, resURL) : null;
+                            } catch (final IOException exp) {
+                                return null;
+                            }
+                        }
+                    });
+        }
+
+        return null;
+    }
+
     /**
      * Implementation of {@code load} Nashorn extension. Load a script file from a source
      * expression
@@ -427,33 +448,18 @@ public final class Context {
      * @throws IOException if source cannot be found or loaded
      */
     public Object load(final ScriptObject scope, final Object from) throws IOException {
-        Object src = (from instanceof ConsString)?  from.toString() : from;
+        final Object src = (from instanceof ConsString)?  from.toString() : from;
         Source source = null;
 
         // load accepts a String (which could be a URL or a file name), a File, a URL
         // or a ScriptObject that has "name" and "source" (string valued) properties.
         if (src instanceof String) {
             final String srcStr = (String)src;
-            final File   file   = new File(srcStr);
+            final File file = new File(srcStr);
             if (srcStr.indexOf(':') != -1) {
-                if (srcStr.startsWith("nashorn:")) {
-                    final String resource = "resources/" + srcStr.substring("nashorn:".length());
-                    // NOTE: even sandbox scripts should be able to load scripts in nashorn: scheme
-                    // These scripts are always available and are loaded from nashorn.jar's resources.
-                    source = AccessController.doPrivileged(
-                            new PrivilegedAction<Source>() {
-                                @Override
-                                public Source run() {
-                                    try {
-                                        final URL resURL = Context.class.getResource(resource);
-                                        return (resURL != null)? new Source(srcStr, resURL) : null;
-                                    } catch (final IOException exp) {
-                                        return null;
-                                    }
-                                }
-                            });
-                } else {
-                    URL url = null;
+                if ((source = loadInternal(srcStr, "nashorn:", "resources/")) == null &&
+                    (source = loadInternal(srcStr, "fx:", "resources/fx/")) == null) {
+                    URL url;
                     try {
                         //check for malformed url. if malformed, it may still be a valid file
                         url = new URL(srcStr);

@@ -49,7 +49,7 @@ public class StrongSeedReader {
 
         File file = null;
         try {
-            file = new File(System.getProperty("java.io.tmpdir") +
+            file = new File(System.getProperty("java.io.tmpdir"),
                     "StrongSeedReader.tmpdata");
 
             // write a bunch of 0's to the file.
