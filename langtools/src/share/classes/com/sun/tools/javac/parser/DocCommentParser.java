@@ -41,6 +41,7 @@ import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCEndElement;
+import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCReference;
@@ -336,12 +337,12 @@ public class DocCommentParser {
                     DCTree text = inlineText();
                     if (text != null) {
                         nextChar();
-                        return m.at(p).UnknownInlineTag(name, List.of(text));
+                        return m.at(p).UnknownInlineTag(name, List.of(text)).setEndPos(bp);
                     }
                 } else if (tp.getKind() == TagParser.Kind.INLINE) {
-                    DCTree tree =  tp.parse(p);
+                    DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p);
                     if (tree != null) {
-                        return tree;
+                        return tree.setEndPos(bp);
                     }
                 } else {
                     inlineText(); // skip content
@@ -509,7 +510,7 @@ public class DocCommentParser {
             fac.log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
 
-        return m.at(pos).Reference(sig, qualExpr, member, paramTypes);
+        return m.at(pos).Reference(sig, qualExpr, member, paramTypes).setEndPos(bp);
     }
 
     JCTree parseType(String s) throws ParseException {
@@ -741,7 +742,7 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
-                    return m.at(p).StartElement(name, attrs, selfClosing);
+                    return m.at(p).StartElement(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
         } else if (ch == '/') {

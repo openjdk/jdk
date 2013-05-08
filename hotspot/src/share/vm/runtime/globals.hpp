@@ -2123,6 +2123,9 @@ class CommandLineFlags {
   product(intx, PrefetchFieldsAhead, -1,                                    \
           "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
                                                                             \
+  diagnostic(bool, VerifySilently, false,                                   \
+          "Don't print print the verification progress")                    \
+                                                                            \
   diagnostic(bool, VerifyDuringStartup, false,                              \
           "Verify memory system before executing any Java code "            \
           "during VM initialization")                                       \
@@ -3179,6 +3182,9 @@ class CommandLineFlags {
   product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
           "When less than X space left, start code cache cleaning")         \
                                                                             \
+  product(uintx, CodeCacheFlushingFraction, 2,                              \
+          "Fraction of the code cache that is flushed when full")           \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -3223,8 +3229,9 @@ class CommandLineFlags {
   develop(bool, ReplayCompiles, false,                                      \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
-  develop(ccstr, ReplayDataFile, "replay.txt",                              \
-          "file containing compilation replay information")                 \
+  product(ccstr, ReplayDataFile, NULL,                                      \
+          "File containing compilation replay information"                  \
+          "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
   develop(intx, ReplaySuppressInitializers, 2,                              \
           "Controls handling of class initialization during replay"         \
@@ -3237,8 +3244,8 @@ class CommandLineFlags {
   develop(bool, ReplayIgnoreInitErrors, false,                              \
           "Ignore exceptions thrown during initialization for replay")      \
                                                                             \
-  develop(bool, DumpReplayDataOnError, true,                                \
-          "record replay data for crashing compiler threads")               \
+  product(bool, DumpReplayDataOnError, true,                                \
+          "Record replay data for crashing compiler threads")               \
                                                                             \
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
@@ -3247,7 +3254,9 @@ class CommandLineFlags {
           "Fire OutOfMemoryErrors throughout CI for testing the compiler "  \
           "(non-negative value throws OOM after this many CI accesses "     \
           "in each compile)")                                               \
-                                                                            \
+  notproduct(intx, CICrashAt, -1,                                           \
+          "id of compilation to trigger assert in compiler thread for "     \
+          "the purpose of testing, e.g. generation of replay data")         \
   notproduct(bool, CIObjectFactoryVerify, false,                            \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \

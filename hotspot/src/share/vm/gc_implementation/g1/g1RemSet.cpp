@@ -169,14 +169,13 @@ public:
     //   _try_claimed || r->claim_iter()
     // is true: either we're supposed to work on claimed-but-not-complete
     // regions, or we successfully claimed the region.
-    HeapRegionRemSetIterator* iter = _g1h->rem_set_iterator(_worker_i);
-    hrrs->init_iterator(iter);
+    HeapRegionRemSetIterator iter(hrrs);
     size_t card_index;
 
     // We claim cards in block so as to recude the contention. The block size is determined by
     // the G1RSetScanBlockSize parameter.
     size_t jump_to_card = hrrs->iter_claimed_next(_block_size);
-    for (size_t current_card = 0; iter->has_next(card_index); current_card++) {
+    for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
       if (current_card >= jump_to_card + _block_size) {
         jump_to_card = hrrs->iter_claimed_next(_block_size);
       }

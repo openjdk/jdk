@@ -241,12 +241,6 @@ class IntType extends BitwiseType {
     }
 
     @Override
-    public Type loadEmpty(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
-    }
-
-    @Override
     public Type cmp(final MethodVisitor method, final boolean isCmpG) {
         assert false : "unsupported operation";
         return null;
