@@ -3024,9 +3024,9 @@ public class Check {
         // collect an inventory of the annotation elements
         Set<MethodSymbol> members = new LinkedHashSet<MethodSymbol>();
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
-             e != null;
-             e = e.sibling)
-            if (e.sym.kind == MTH)
+                e != null;
+                e = e.sibling)
+            if (e.sym.kind == MTH && e.sym.name != names.clinit)
                 members.add((MethodSymbol) e.sym);
 
         // remove the ones that are assigned values
