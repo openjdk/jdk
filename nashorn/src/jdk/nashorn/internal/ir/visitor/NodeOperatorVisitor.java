@@ -25,9 +25,8 @@
 
 package jdk.nashorn.internal.ir.visitor;
 
-import jdk.nashorn.internal.codegen.CompileUnit;
-import jdk.nashorn.internal.codegen.MethodEmitter;
 import jdk.nashorn.internal.ir.BinaryNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.UnaryNode;
 
@@ -45,15 +44,14 @@ public class NodeOperatorVisitor extends NodeVisitor {
     /**
      * Constructor
      *
-     * @param compileUnit compile unit
-     * @param method      method emitter
+     * @param lc a custom lexical context
      */
-    public NodeOperatorVisitor(final CompileUnit compileUnit, final MethodEmitter method) {
-        super(compileUnit, method);
+    public NodeOperatorVisitor(final LexicalContext lc) {
+        super(lc);
     }
 
     @Override
-    public final Node enterUnaryNode(final UnaryNode unaryNode) {
+    public final boolean enterUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
         case ADD:
             return enterADD(unaryNode);
@@ -119,7 +117,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     @Override
-    public final Node enterBinaryNode(final BinaryNode binaryNode) {
+    public final boolean enterBinaryNode(final BinaryNode binaryNode) {
         switch (binaryNode.tokenType()) {
         case ADD:
             return enterADD(binaryNode);
@@ -287,17 +285,6 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     /*
-    @Override
-    public Node enter(final TernaryNode ternaryNode) {
-        return enterDefault(ternaryNode);
-    }
-
-    @Override
-    public Node leave(final TernaryNode ternaryNode) {
-        return leaveDefault(ternaryNode);
-    }*/
-
-    /*
      * Unary entries and exists.
      */
 
@@ -305,9 +292,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a unary +
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterADD(final UnaryNode unaryNode) {
+    public boolean enterADD(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -325,9 +312,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a ~ operator
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBIT_NOT(final UnaryNode unaryNode) {
+    public boolean enterBIT_NOT(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -345,9 +332,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a conversion
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCONVERT(final UnaryNode unaryNode) {
+    public boolean enterCONVERT(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -365,9 +352,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a ++ or -- operator
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterDECINC(final UnaryNode unaryNode) {
+    public boolean enterDECINC(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -387,7 +374,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * @param  unaryNode the node
      * @return processed node
      */
-    public Node enterDELETE(final UnaryNode unaryNode) {
+    public boolean enterDELETE(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -405,9 +392,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a discard operator
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterDISCARD(final UnaryNode unaryNode) {
+    public boolean enterDISCARD(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -425,9 +412,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a new operator
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterNEW(final UnaryNode unaryNode) {
+    public boolean enterNEW(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -445,9 +432,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a ! operator
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterNOT(final UnaryNode unaryNode) {
+    public boolean enterNOT(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -465,9 +452,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a unary -
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSUB(final UnaryNode unaryNode) {
+    public boolean enterSUB(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -485,9 +472,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a typeof
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterTYPEOF(final UnaryNode unaryNode) {
+    public boolean enterTYPEOF(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -505,9 +492,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Unary enter - callback for entering a void
      *
      * @param  unaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterVOID(final UnaryNode unaryNode) {
+    public boolean enterVOID(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -525,9 +512,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering + operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterADD(final BinaryNode binaryNode) {
+    public boolean enterADD(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -545,9 +532,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal &&} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterAND(final BinaryNode binaryNode) {
+    public boolean enterAND(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -565,9 +552,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering an assignment
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN(final BinaryNode binaryNode) {
+    public boolean enterASSIGN(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -585,9 +572,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering += operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_ADD(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_ADD(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -605,9 +592,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal &=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_BIT_AND(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_BIT_AND(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -625,9 +612,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering |= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_BIT_OR(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_BIT_OR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -645,9 +632,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering ^= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_BIT_XOR(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_BIT_XOR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -665,9 +652,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering /= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_DIV(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_DIV(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -685,9 +672,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering %= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_MOD(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_MOD(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -705,9 +692,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering *= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_MUL(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_MUL(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -725,9 +712,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >>=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_SAR(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_SAR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -745,9 +732,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering a {@literal <<=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_SHL(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_SHL(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -765,9 +752,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >>>=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_SHR(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_SHR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -785,9 +772,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering -= operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterASSIGN_SUB(final BinaryNode binaryNode) {
+    public boolean enterASSIGN_SUB(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -805,9 +792,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering a bind operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBIND(final BinaryNode binaryNode) {
+    public boolean enterBIND(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -825,9 +812,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal &} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBIT_AND(final BinaryNode binaryNode) {
+    public boolean enterBIT_AND(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -845,9 +832,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering | operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBIT_OR(final BinaryNode binaryNode) {
+    public boolean enterBIT_OR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -865,9 +852,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering ^ operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterBIT_XOR(final BinaryNode binaryNode) {
+    public boolean enterBIT_XOR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -886,9 +873,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * (a, b) where the result is a
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCOMMALEFT(final BinaryNode binaryNode) {
+    public boolean enterCOMMALEFT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -908,9 +895,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * (a, b) where the result is b
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterCOMMARIGHT(final BinaryNode binaryNode) {
+    public boolean enterCOMMARIGHT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -929,9 +916,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering a division
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterDIV(final BinaryNode binaryNode) {
+    public boolean enterDIV(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -949,9 +936,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering == operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterEQ(final BinaryNode binaryNode) {
+    public boolean enterEQ(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -969,9 +956,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering === operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterEQ_STRICT(final BinaryNode binaryNode) {
+    public boolean enterEQ_STRICT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -989,9 +976,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterGE(final BinaryNode binaryNode) {
+    public boolean enterGE(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1009,9 +996,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterGT(final BinaryNode binaryNode) {
+    public boolean enterGT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1029,9 +1016,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering in operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterIN(final BinaryNode binaryNode) {
+    public boolean enterIN(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1049,9 +1036,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering instanceof operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterINSTANCEOF(final BinaryNode binaryNode) {
+    public boolean enterINSTANCEOF(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1069,9 +1056,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal <=} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterLE(final BinaryNode binaryNode) {
+    public boolean enterLE(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1089,9 +1076,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal <} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterLT(final BinaryNode binaryNode) {
+    public boolean enterLT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1108,9 +1095,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering % operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterMOD(final BinaryNode binaryNode) {
+    public boolean enterMOD(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1128,9 +1115,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering * operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterMUL(final BinaryNode binaryNode) {
+    public boolean enterMUL(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1148,9 +1135,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering != operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterNE(final BinaryNode binaryNode) {
+    public boolean enterNE(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1168,9 +1155,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering a !== operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterNE_STRICT(final BinaryNode binaryNode) {
+    public boolean enterNE_STRICT(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1188,9 +1175,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering || operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterOR(final BinaryNode binaryNode) {
+    public boolean enterOR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1208,9 +1195,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >>} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSAR(final BinaryNode binaryNode) {
+    public boolean enterSAR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1228,9 +1215,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal <<} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSHL(final BinaryNode binaryNode) {
+    public boolean enterSHL(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1247,9 +1234,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering {@literal >>>} operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSHR(final BinaryNode binaryNode) {
+    public boolean enterSHR(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
@@ -1267,9 +1254,9 @@ public class NodeOperatorVisitor extends NodeVisitor {
      * Binary enter - callback for entering - operator
      *
      * @param  binaryNode the node
-     * @return processed node
+     * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public Node enterSUB(final BinaryNode binaryNode) {
+    public boolean enterSUB(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 

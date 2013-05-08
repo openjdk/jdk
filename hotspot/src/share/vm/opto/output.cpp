@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileBroker.hpp"
@@ -41,8 +42,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
-extern uint size_java_to_interp();
-extern uint reloc_java_to_interp();
 extern uint size_exception_handler();
 extern uint size_deopt_handler();
 
@@ -389,15 +388,15 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         MachNode *mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        if( mach->is_MachCall() ) {
+        if (mach->is_MachCall()) {
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
           mcall->method_set((intptr_t)mcall->entry_point());
 
-          if( mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method ) {
-            stub_size  += size_java_to_interp();
-            reloc_size += reloc_java_to_interp();
+          if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
+            stub_size  += CompiledStaticCall::to_interp_stub_size();
+            reloc_size += CompiledStaticCall::reloc_to_interp_stub();
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible

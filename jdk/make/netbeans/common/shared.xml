@@ -276,7 +276,7 @@
         <!-- You can override this target in the ../build.xml file. -->
     </target>
     <target name="-jtreg" depends="-init,-pre-jtreg,-taskdef-jtreg,-check-tests-defined,-jtreg-setup,-jtreg-make,-jtreg-ant,-post-jtreg">
-        <property name="jtreg.report" location="${jtreg.dir}/JTreport/report.html"/>
+        <property name="jtreg.report" location="${jtreg.dir}/JTreport/html/report.html"/>
         <condition property="jtreg.passed">
             <equals arg1="${jtreg.result}" arg2="0"/>
         </condition>
@@ -338,7 +338,7 @@
         <!-- Note: even with this default value, includes/excludes
          from share.src.dir get javadoc'd; see packageset below -->
         <property name="javadoc.packagenames" value="none"/> <!-- default, can be overridden per user or per project -->
-        <javadoc destdir="${javadoc.dir}" source="1.5"
+        <javadoc destdir="${javadoc.dir}" source="1.8"
             windowtitle="UNOFFICIAL" failonerror="true" use="true"
             author="false" version="false"
             packagenames="${javadoc.packagenames}">

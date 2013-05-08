@@ -29,8 +29,10 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -63,18 +65,14 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int IS_LET           = 1 << 8;
     /** Is this an internal symbol, never represented explicitly in source code */
     public static final int IS_INTERNAL      = 1 << 9;
+    /** Is this a function self-reference symbol */
+    public static final int IS_FUNCTION_SELF = 1 << 10;
 
     /** Null or name identifying symbol. */
     private final String name;
 
     /** Symbol flags. */
     private int flags;
-
-    /** Defining node. */
-    private Node node;
-
-    /** Definition block. */
-    private final Block block;
 
     /** Type of symbol. */
     private Type type;
@@ -121,16 +119,12 @@ public final class Symbol implements Comparable<Symbol> {
      *
      * @param name  name of symbol
      * @param flags symbol flags
-     * @param node  node this symbol is in
-     * @param block block this symbol is in
      * @param type  type of this symbol
      * @param slot  bytecode slot for this symbol
      */
-    protected Symbol(final String name, final int flags, final Node node, final Block block, final Type type, final int slot) {
+    protected Symbol(final String name, final int flags, final Type type, final int slot) {
         this.name       = name;
         this.flags      = flags;
-        this.node       = node;
-        this.block      = block;
         this.type       = type;
         this.slot       = slot;
         this.fieldIndex = -1;
@@ -142,11 +136,9 @@ public final class Symbol implements Comparable<Symbol> {
      *
      * @param name  name of symbol
      * @param flags symbol flags
-     * @param node  node this symbol is in
-     * @param block block this symbol is in
      */
-    public Symbol(final String name, final int flags, final Node node, final Block block) {
-        this(name, flags, node, block, Type.UNKNOWN, -1);
+    public Symbol(final String name, final int flags) {
+        this(name, flags, Type.UNKNOWN, -1);
     }
 
     /**
@@ -157,7 +149,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @param type  type of this symbol
      */
     public Symbol(final String name, final int flags, final Type type) {
-        this(name, flags, null, null, type, -1);
+        this(name, flags, type, -1);
     }
 
     private static String align(final String string, final int max) {
@@ -269,20 +261,6 @@ public final class Symbol implements Comparable<Symbol> {
         return type.isCategory2() ? 2 : 1;
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        if (!(other instanceof Symbol)) {
-            return false;
-        }
-        final Symbol symbol = (Symbol) other;
-        return name.equals(symbol.name) && block.equals(symbol.block);
-    }
-
-    @Override
-    public int hashCode() {
-        return name.hashCode() ^ block.hashCode();
-    }
-
     private static String type(final String desc) {
         switch (desc.charAt(desc.length() - 1)) {
         case ';':
@@ -371,14 +349,14 @@ public final class Symbol implements Comparable<Symbol> {
     /**
      * Flag this symbol as scope as described in {@link Symbol#isScope()}
      */
-    public void setIsScope() {
+    /**
+     * Flag this symbol as scope as described in {@link Symbol#isScope()}
+     */
+     public void setIsScope() {
         if (!isScope()) {
             trace("SET IS SCOPE");
         }
         flags |= IS_SCOPE;
-        if(!isGlobal()) {
-            getBlock().setNeedsScope();
-        }
     }
 
     /**
@@ -478,11 +456,11 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Get the block in which the symbol is defined
-     * @return a block
+     * Flag this symbol as a function's self-referencing symbol.
+     * @return true if this symbol as a function's self-referencing symbol.
      */
-    public Block getBlock() {
-        return block;
+    public boolean isFunctionSelf() {
+        return (flags & IS_FUNCTION_SELF) == IS_FUNCTION_SELF;
     }
 
     /**
@@ -492,7 +470,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @return field index
      */
     public int getFieldIndex() {
-        assert fieldIndex != -1 : "fieldIndex must be initialized";
+        assert fieldIndex != -1 : "fieldIndex must be initialized " + fieldIndex;
         return fieldIndex;
     }
 
@@ -503,7 +481,6 @@ public final class Symbol implements Comparable<Symbol> {
      * @param fieldIndex field index - a positive integer
      */
     public void setFieldIndex(final int fieldIndex) {
-        assert this.fieldIndex == -1 : "fieldIndex must be initialized only once";
         this.fieldIndex = fieldIndex;
     }
 
@@ -521,22 +498,6 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setFlags(final int flags) {
         this.flags = flags;
-    }
-
-    /**
-     * Get the node this symbol stores the result for
-     * @return node
-     */
-    public Node getNode() {
-        return node;
-    }
-
-    /**
-     * Set the node this symbol stores the result for
-     * @param node node
-     */
-    public void setNode(final Node node) {
-        this.node = node;
     }
 
     /**
@@ -616,18 +577,25 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Check if this symbol is in the global scope, i.e. it is on the outermost level
-     * in the script
-     * @return true if this this is a global scope symbol
+     * From a lexical context, set this symbol as needing scope, which
+     * will set flags for the defining block that will be written when
+     * block is popped from the lexical context stack, used by codegen
+     * when flags need to be tagged, but block is in the
+     * middle of evaluation and cannot be modified.
+     *
+     * @param lc     lexical context
+     * @param symbol symbol
      */
-    public boolean isTopLevel() {
-        return block instanceof FunctionNode && ((FunctionNode) block).isProgram();
+    public static void setSymbolIsScope(final LexicalContext lc, final Symbol symbol) {
+        symbol.setIsScope();
+        if (!symbol.isGlobal()) {
+            lc.setFlag(lc.getDefiningBlock(symbol), Block.NEEDS_SCOPE);
+        }
     }
-
 
     private void trace(final String desc) {
         if (TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name))) {
-            Context.err("SYMBOL: '" + name + "' " + desc);
+            Context.err(Debug.id(this) + " SYMBOL: '" + name + "' " + desc);
             if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
                 new Throwable().printStackTrace(Context.getCurrentErr());
             }

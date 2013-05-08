@@ -270,7 +270,6 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             } else if ((selectedQop&INTEGRITY_ONLY_PROTECTION) != 0) {
                 integrity = true;
             }
-            msgProp = new MessageProp(JGSS_QOP, privacy);
 
             // 2nd-4th octets specifies maximum buffer size expected by
             // client (in network byte order). This is the server's send
