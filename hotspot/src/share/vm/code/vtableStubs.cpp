@@ -60,7 +60,7 @@ void* VtableStub::operator new(size_t size, int code_size) {
     const int bytes = chunk_factor * real_size + pd_code_alignment();
     BufferBlob* blob = BufferBlob::create("vtable chunks", bytes);
     if (blob == NULL) {
-      vm_exit_out_of_memory(bytes, "CodeCache: no room for vtable chunks");
+      vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "CodeCache: no room for vtable chunks");
     }
     _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;

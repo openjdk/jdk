@@ -238,8 +238,8 @@ void FileMapInfo::write_header() {
 
 void FileMapInfo::write_space(int i, Metaspace* space, bool read_only) {
   align_file_position();
-  size_t used = space->used_words(Metaspace::NonClassType) * BytesPerWord;
-  size_t capacity = space->capacity_words(Metaspace::NonClassType) * BytesPerWord;
+  size_t used = space->used_bytes_slow(Metaspace::NonClassType);
+  size_t capacity = space->capacity_bytes_slow(Metaspace::NonClassType);
   struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
   write_region(i, (char*)space->bottom(), used, capacity, read_only, false);
 }

@@ -25,29 +25,20 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a labeled statement.
- *
  */
-
-public class LabelNode extends Node {
+@Immutable
+public final class LabelNode extends LexicalContextNode {
     /** Label ident. */
-    private IdentNode label;
+    private final IdentNode label;
 
     /** Statements. */
-    private Block body;
-
-    /** Node to break from. */
-    @Ignore
-    private Node breakNode;
-
-    /** Node to continue. */
-    @Ignore
-    private Node continueNode;
+    private final Block body;
 
     /**
      * Constructor
@@ -65,26 +56,23 @@ public class LabelNode extends Node {
         this.body  = body;
     }
 
-    private LabelNode(final LabelNode labelNode, final CopyState cs) {
+    private LabelNode(final LabelNode labelNode, final IdentNode label, final Block body) {
         super(labelNode);
-
-        this.label        = (IdentNode)cs.existingOrCopy(labelNode.label);
-        this.body         = (Block)cs.existingOrCopy(labelNode.body);
-        this.breakNode    = cs.existingOrSame(labelNode.breakNode);
-        this.continueNode = cs.existingOrSame(labelNode.continueNode);
+        this.label = label;
+        this.body  = body;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new LabelNode(this, cs);
+    public boolean isTerminal() {
+        return body.isTerminal();
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterLabelNode(this) != null) {
-            label = (IdentNode)label.accept(visitor);
-            body  = (Block)body.accept(visitor);
-            return visitor.leaveLabelNode(this);
+    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+        if (visitor.enterLabelNode(this)) {
+            return visitor.leaveLabelNode(
+                setLabel(visitor.getLexicalContext(), (IdentNode)label.accept(visitor)).
+                setBody(visitor.getLexicalContext(), (Block)body.accept(visitor)));
         }
 
         return this;
@@ -106,44 +94,15 @@ public class LabelNode extends Node {
 
     /**
      * Reset the body of the node
+     * @param lc lexical context
      * @param body new body
+     * @return new for node if changed or existing if not
      */
-    public void setBody(final Block body) {
-        this.body = body;
-    }
-
-    /**
-     * Get the break node for this node
-     * @return the break node
-     */
-    public Node getBreakNode() {
-        return breakNode;
-    }
-
-    /**
-     * Reset the break node for this node
-     * @param breakNode the break node
-     */
-    public void setBreakNode(final Node breakNode) {
-        assert breakNode instanceof BreakableNode || breakNode instanceof Block : "Invalid break node: " + breakNode;
-        this.breakNode = breakNode;
-    }
-
-    /**
-     * Get the continue node for this node
-     * @return the continue node
-     */
-    public Node getContinueNode() {
-        return continueNode;
-    }
-
-    /**
-     * Reset the continue node for this node
-     * @param continueNode the continue node
-     */
-    public void setContinueNode(final Node continueNode) {
-        assert continueNode instanceof WhileNode : "invalid continue node: " + continueNode;
-        this.continueNode = continueNode;
+    public LabelNode setBody(final LexicalContext lc, final Block body) {
+        if (this.body == body) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, label, body));
     }
 
     /**
@@ -152,6 +111,13 @@ public class LabelNode extends Node {
      */
     public IdentNode getLabel() {
         return label;
+    }
+
+    private LabelNode setLabel(final LexicalContext lc, final IdentNode label) {
+        if (this.label == label) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, label, body));
     }
 
 }

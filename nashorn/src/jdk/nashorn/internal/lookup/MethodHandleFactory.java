@@ -137,7 +137,7 @@ public final class MethodHandleFactory {
      */
     static Object traceReturn(final DebugLogger logger, final Object value) {
         final String str = "\treturn: " + stripName(value) + " [type=" + (value == null ? "null" : stripName(value.getClass()) + ']');
-        logger.log(str, TRACE_LEVEL);
+        logger.log(TRACE_LEVEL, str);
         return value;
     }
 
@@ -173,7 +173,7 @@ public final class MethodHandleFactory {
         }
 
         assert logger != null;
-        logger.log(sb.toString(), TRACE_LEVEL);
+        logger.log(TRACE_LEVEL, sb);
         stacktrace(logger);
     }
 
@@ -184,7 +184,7 @@ public final class MethodHandleFactory {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final PrintStream ps = new PrintStream(baos);
         new Throwable().printStackTrace(ps);
-        logger.log(baos.toString(), TRACE_LEVEL);
+        logger.log(TRACE_LEVEL, baos.toString());
     }
 
     private static String argString(final Object arg) {
@@ -614,7 +614,7 @@ public final class MethodHandleFactory {
         @Override
         public SwitchPoint createSwitchPoint() {
             final SwitchPoint sp = super.createSwitchPoint();
-            LOG.log("createSwitchPoint " + sp, TRACE_LEVEL);
+            LOG.log(TRACE_LEVEL, "createSwitchPoint ", sp);
             return sp;
         }
 
@@ -627,7 +627,7 @@ public final class MethodHandleFactory {
         @Override
         public MethodType type(final Class<?> returnType, final Class<?>... paramTypes) {
             final MethodType mt = super.type(returnType, paramTypes);
-            LOG.log("methodType " + returnType + ' ' + Arrays.toString(paramTypes) + ' ' + mt, TRACE_LEVEL);
+            LOG.log(TRACE_LEVEL, "methodType ", returnType, " ", Arrays.toString(paramTypes), " ", mt);
             return mt;
         }
     }
@@ -638,7 +638,7 @@ public final class MethodHandleFactory {
     private static class TraceCreateMethodHandleFunctionality extends TraceMethodHandleFunctionality {
         @Override
         public MethodHandle debug(final MethodHandle master, final String str, final Object... args) {
-            LOG.log(str + ' ' + describe(args), TRACE_LEVEL);
+            LOG.log(TRACE_LEVEL, str, " ", describe(args));
             stacktrace(LOG);
             return master;
         }

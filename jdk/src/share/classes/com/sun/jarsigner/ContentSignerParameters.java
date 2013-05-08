@@ -60,6 +60,13 @@ public interface ContentSignerParameters {
     public X509Certificate getTimestampingAuthorityCertificate();
 
     /**
+     * Retrieves the TSAPolicyID for a Timestamping Authority (TSA).
+     *
+     * @return The TSAPolicyID. May be null.
+     */
+    public String getTSAPolicyID();
+
+    /**
      * Retrieves the JAR file's signature.
      *
      * @return The non-null array of signature bytes.

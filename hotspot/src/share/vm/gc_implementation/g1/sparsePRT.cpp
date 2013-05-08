@@ -35,10 +35,6 @@
 
 #define UNROLL_CARD_LOOPS  1
 
-void SparsePRT::init_iterator(SparsePRTIter* sprt_iter) {
-    sprt_iter->init(this);
-}
-
 void SparsePRTEntry::init(RegionIdx_t region_ind) {
   _region_ind = region_ind;
   _next_index = NullEntry;

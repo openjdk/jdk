@@ -74,7 +74,7 @@ static int bufsize = 1024;
 
 /*
  * return an array of IP_ADAPTER_ADDRESSES containing one element
- * for each apdapter on the system. Returned in *adapters.
+ * for each adapter on the system. Returned in *adapters.
  * Buffer is malloc'd and must be freed (unless error returned)
  */
 static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
@@ -82,22 +82,32 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     IP_ADAPTER_ADDRESSES *adapterInfo;
     ULONG len;
     adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
-    if (adapterInfo == 0) {
+
+    if (adapterInfo == NULL) {
+        JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
         return -1;
     }
+
     len = bufsize;
     flags = GAA_FLAG_SKIP_DNS_SERVER;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
+
     if (ret == ERROR_BUFFER_OVERFLOW) {
-        adapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
-        if (adapterInfo == 0) {
+        IP_ADAPTER_ADDRESSES * newAdapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
+        if (newAdapterInfo == NULL) {
+            free(adapterInfo);
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
             return -1;
         }
+
+        adapterInfo = newAdapterInfo;
+
         bufsize = len;
         ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
+
     if (ret != ERROR_SUCCESS) {
         free (adapterInfo);
         JNU_ThrowByName(env, "java/lang/Error",
@@ -110,7 +120,7 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
 
 /*
  * return an array of IP_ADAPTER_ADDRESSES containing one element
- * for each apdapter on the system. Returned in *adapters.
+ * for each adapter on the system. Returned in *adapters.
  * Buffer is malloc'd and must be freed (unless error returned)
  */
 IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
@@ -118,8 +128,8 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     IP_ADAPTER_ADDRESSES *adapterInfo, *ptr, *ret;
     ULONG len;
     adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
-    if (adapterInfo == 0) {
-        JNU_ThrowByName(env, "java/lang/OutOfMemoryError", 0);
+    if (adapterInfo == NULL) {
+        JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
         return NULL;
     }
     len = bufsize;
@@ -128,14 +138,19 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     if (val == ERROR_BUFFER_OVERFLOW) {
-        adapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
-        if (adapterInfo == 0) {
-            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", 0);
+        IP_ADAPTER_ADDRESSES * newAdapterInfo = (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
+        if (newAdapterInfo == NULL) {
+            free(adapterInfo);
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
             return NULL;
         }
+
+        adapterInfo = newAdapterInfo;
+
         bufsize = len;
         val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
+
     if (val != ERROR_SUCCESS) {
         free (adapterInfo);
         JNU_ThrowByName(env, "java/lang/Error",
@@ -148,7 +163,15 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
       // IPv4 interface
       if (ptr->Ipv6IfIndex == index) {
         ret = (IP_ADAPTER_ADDRESSES *) malloc(sizeof(IP_ADAPTER_ADDRESSES));
+        if (ret == NULL) {
+            free(adapterInfo);
+            JNU_ThrowByName(env, "java/lang/OutOfMemoryError", "Native heap allocation failure");
+            return NULL;
+        }
+
+        //copy the memory and break out of the while loop.
         memcpy(ret, ptr, sizeof(IP_ADAPTER_ADDRESSES));
+        break;
       }
       ptr=ptr->Next;
     }
@@ -163,12 +186,12 @@ static int ipinflen = 2048;
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
 {
     DWORD ret;
-    IP_ADAPTER_ADDRESSES *ptr, *adapters=0;
+    IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
     ULONG len=ipinflen, count=0;
-    netif *nif=0, *dup_nif, *last=0, *loopif=0, *curr;
+    netif *nif=NULL, *dup_nif, *last=NULL, *loopif=NULL, *curr;
     int tun=0, net=0;
 
-    *netifPP = 0;
+    *netifPP = NULL;
 
    /*
     * Get the IPv4 interfaces. This information is the same
@@ -183,7 +206,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     }
 
     /* locate the loopback (and the last) interface */
-    for (nif=*netifPP, last=nif; nif!=0; nif=nif->next) {
+    for (nif=*netifPP, last=nif; nif!=NULL; nif=nif->next) {
         if (nif->ifType == MIB_IF_TYPE_LOOPBACK) {
             loopif = nif;
         }
@@ -235,7 +258,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
             int index = ptr->IfIndex;
             if (index != 0) {
                 /* This entry is associated with an IPv4 interface */
-                for (nif=*netifPP; nif!=0; nif=nif->next) {
+                for (nif=*netifPP; nif!=NULL; nif=nif->next) {
                     if (nif->index == index) {
                         /* found the interface entry
                          * set the index to the IPv6 index and add the
@@ -258,7 +281,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                  * if this is a duplicate (ipv6Index is the same)
                  */
                 dup_nif = 0;
-                for (nif0=*netifPP; nif0!=0; nif0=nif0->next) {
+                for (nif0=*netifPP; nif0!=NULL; nif0=nif0->next) {
                     if (nif0->hasIpv6Address &&
                                 ptr->Ipv6IfIndex == nif0->ipv6Index) {
                         dup_nif = nif0;
@@ -267,46 +290,46 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                 }
                 if (dup_nif == 0) {
                     /* new interface */
-                    nif = (netif *) calloc (1, sizeof(netif));
-                    if (nif == 0) {
-                        goto err;
-                    }
-                    if (ptr->IfType == IF_TYPE_TUNNEL) {
-                        sprintf (newname, "tun%d", tun);
-                        tun ++;
-                    } else {
-                        sprintf (newname, "net%d", net);
-                        net ++;
-                    }
-                    nif->name = malloc (strlen(newname)+1);
-                    nif->displayName = malloc (wcslen(ptr->FriendlyName)*2+2);
-                    if (nif->name == 0 || nif->displayName == 0) {
-                        goto err;
-                    }
-                    strcpy (nif->name, newname);
-                    wcscpy ((PWCHAR)nif->displayName, ptr->FriendlyName);
-                    nif->dNameIsUnicode = TRUE;
-                    nif->index = ptr->Ipv6IfIndex;
-                    nif->ipv6Index = ptr->Ipv6IfIndex;
-                    nif->hasIpv6Address = TRUE;
+                        nif = (netif *) calloc (1, sizeof(netif));
+                        if (nif == 0) {
+                            goto err;
+                        }
+                        if (ptr->IfType == IF_TYPE_TUNNEL) {
+                                sprintf (newname, "tun%d", tun);
+                                tun ++;
+                        } else {
+                                sprintf (newname, "net%d", net);
+                                net ++;
+                        }
+                        nif->name = malloc (strlen(newname)+1);
+                        nif->displayName = malloc (wcslen(ptr->FriendlyName)*2+2);
+                        if (nif->name == 0 || nif->displayName == 0) {
+                                goto err;
+                        }
+                        strcpy (nif->name, newname);
+                        wcscpy ((PWCHAR)nif->displayName, ptr->FriendlyName);
+                        nif->dNameIsUnicode = TRUE;
+                        nif->index = ptr->Ipv6IfIndex;
+                        nif->ipv6Index = ptr->Ipv6IfIndex;
+                        nif->hasIpv6Address = TRUE;
 
-                    last->next = nif;
-                    last = nif;
-                    count++;
-                    c = getAddrsFromAdapter(ptr, &nif->addrs);
-                    if (c == -1) {
-                        goto err;
-                    }
-                    nif->naddrs += c;
-                } else {
-                    /* add the addresses from this adapter to the
-                     * original (dup_nif)
-                     */
-                    c = getAddrsFromAdapter(ptr, &dup_nif->addrs);
-                    if (c == -1) {
-                        goto err;
-                    }
-                    dup_nif->naddrs += c;
+                        last->next = nif;
+                        last = nif;
+                        count++;
+                        c = getAddrsFromAdapter(ptr, &nif->addrs);
+                        if (c == -1) {
+                                goto err;
+                        }
+                        nif->naddrs += c;
+                 } else {
+                        /* add the addresses from this adapter to the
+                         * original (dup_nif)
+                         */
+                        c = getAddrsFromAdapter(ptr, &dup_nif->addrs);
+                        if (c == -1) {
+                                goto err;
+                        }
+                        dup_nif->naddrs += c;
                 }
             }
         }
@@ -335,45 +358,47 @@ err:
  */
 
 static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
-    LPSOCKADDR                   sock;
-    int                          count = 0;
-    netaddr                     *curr, *start=0, *prev=0;
-    PIP_ADAPTER_UNICAST_ADDRESS uni_addr;
-    PIP_ADAPTER_ANYCAST_ADDRESS any_addr;
-    PIP_ADAPTER_PREFIX prefix;
+        LPSOCKADDR sock;
+        int        count = 0;
+        netaddr    *curr, *start = NULL, *prev = NULL;
+        PIP_ADAPTER_UNICAST_ADDRESS uni_addr;
+        PIP_ADAPTER_ANYCAST_ADDRESS any_addr;
+        PIP_ADAPTER_PREFIX prefix;
 
-    /* If chain passed in, find end */
-    if (*netaddrPP != NULL) {
-        for (start=*netaddrPP; start->next!=NULL; start=start->next) {
+        /* If chain passed in, find end */
+        if (*netaddrPP != NULL) {
+            for (start=*netaddrPP; start->next!=NULL; start=start->next)
+                ;
+
+            prev=start;
         }
-        prev=start;
-    }
 
-    prefix = ptr->FirstPrefix;
-    /* Unicast */
-    uni_addr = ptr->FirstUnicastAddress;
-    while (uni_addr != NULL) {
+        prefix = ptr->FirstPrefix;
+        /* Unicast */
+        uni_addr = ptr->FirstUnicastAddress;
+        while (uni_addr != NULL) {
         /* address is only usable if dad state is preferred or deprecated */
-        if (uni_addr->DadState == IpDadStateDeprecated ||
-                uni_addr->DadState == IpDadStatePreferred) {
-            sock = uni_addr->Address.lpSockaddr;
+                if (uni_addr->DadState == IpDadStateDeprecated ||
+                                uni_addr->DadState == IpDadStatePreferred) {
+                        sock = uni_addr->Address.lpSockaddr;
 
-            // IPv4 addresses already retrieved with enumAddresses_win
-            if (sock->sa_family == AF_INET) {
-                uni_addr = uni_addr->Next;
-                continue;
-            }
+                        // IPv4 addresses already retrieved with enumAddresses_win
+                        if (sock->sa_family == AF_INET) {
+                                uni_addr = uni_addr->Next;
+                                continue;
+                        }
 
             curr = (netaddr *)calloc (1, sizeof (netaddr));
-            if (curr == 0) {
-                return -1;
-            }
-            if (start == NULL) {
+
+            if (curr == NULL)
+                goto freeAllocatedMemory;
+
+            if (start == NULL)
                 start = curr;
-            }
-            if (prev != NULL) {
-                prev->next = curr;
-            }
+
+            if (prev != NULL)
+               prev->next = curr;
+
             prev = curr;
             SOCKETADDRESS_COPY (&curr->addr, sock);
             if (prefix != NULL) {
@@ -388,15 +413,16 @@ static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
     any_addr = ptr->FirstAnycastAddress;
     while (any_addr != NULL) {
         curr = (netaddr *)calloc (1, sizeof (netaddr));
-        if (curr == 0) {
-            return -1;
-        }
-        if (start == NULL) {
+
+        if (curr == NULL)
+            goto freeAllocatedMemory;
+
+        if (start == NULL)
             start = curr;
-        }
-        if (prev != NULL) {
+
+        if (prev != NULL)
             prev->next = curr;
-        }
+
         prev = curr;
         sock = any_addr->Address.lpSockaddr;
         SOCKETADDRESS_COPY (&curr->addr, sock);
@@ -407,6 +433,25 @@ static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
         *netaddrPP = start;
     }
     return count;
+
+freeAllocatedMemory:
+
+    if (*netaddrPP != NULL) {
+        //N.B. the variable "start" cannot be NULL at this point because we started with an
+        //existing list.
+        curr=start->next;
+        start->next = NULL;
+        start = curr;
+    }
+    // otherwise, "start" points to the beginning of an incomplete list that we must deallocate.
+
+    while (start != NULL) {
+        curr = start->next;
+        free(start);
+        start = curr;
+    }
+
+    return -1;
 }
 
 /*
@@ -773,10 +818,12 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0_XP
       ptr = getAdapter(env, index);
       if (ptr != NULL) {
         len = ptr->PhysicalAddressLength;
-        ret = (*env)->NewByteArray(env, len);
-        if (!IS_NULL(ret)) {
-          (*env)->SetByteArrayRegion(env, ret, 0, len,
-                                     (jbyte*) ptr->PhysicalAddress);
+        if (len > 0) {
+          ret = (*env)->NewByteArray(env, len);
+          if (!IS_NULL(ret)) {
+            (*env)->SetByteArrayRegion(env, ret, 0, len,
+                                       (jbyte*) ptr->PhysicalAddress);
+          }
         }
         free(ptr);
       }
