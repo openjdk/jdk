@@ -61,7 +61,7 @@ public final class IdentNode extends Node implements PropertyKey, TypeOverride<I
      */
     public IdentNode(final long token, final int finish, final String name) {
         super(token, finish);
-        this.name = name;
+        this.name = name.intern();
         this.callSiteType = null;
         this.flags = 0;
     }
@@ -101,7 +101,7 @@ public final class IdentNode extends Node implements PropertyKey, TypeOverride<I
     }
 
     @Override
-    public IdentNode setType(final Type type) {
+    public IdentNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         // do NOT, repeat NOT touch the symbol here. it might be a local variable or whatever. This is the override if it isn't
         if (this.callSiteType == type) {
             return this;

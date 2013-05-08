@@ -36,6 +36,8 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 
+import jdk.nashorn.internal.ir.TemporarySymbols;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.security.AccessController;
@@ -53,7 +55,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -99,6 +100,8 @@ public final class Compiler {
     private boolean strict;
 
     private CodeInstaller<ScriptEnvironment> installer;
+
+    private final TemporarySymbols temporarySymbols = new TemporarySymbols();
 
     /** logger for compiler, trampolines, splits and related code generation events
      *  that affect classes */
@@ -394,7 +397,7 @@ public final class Compiler {
         return newFunctionNode;
     }
 
-    private Class<?> install(final FunctionNode functionNode, final String className, final byte[] code) {
+    private Class<?> install(final String className, final byte[] code) {
         LOG.fine("Installing class ", className);
 
         final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
@@ -436,7 +439,7 @@ public final class Compiler {
 
         final String   rootClassName = firstCompileUnitName();
         final byte[]   rootByteCode  = bytecode.get(rootClassName);
-        final Class<?> rootClass     = install(functionNode, rootClassName, rootByteCode);
+        final Class<?> rootClass     = install(rootClassName, rootByteCode);
 
         int length = rootByteCode.length;
 
@@ -450,7 +453,7 @@ public final class Compiler {
             final byte[] code = entry.getValue();
             length += code.length;
 
-            installedClasses.put(className, install(functionNode, className, code));
+            installedClasses.put(className, install(className, code));
         }
 
         for (final CompileUnit unit : compileUnits) {
@@ -506,6 +509,10 @@ public final class Compiler {
 
     CodeInstaller<ScriptEnvironment> getCodeInstaller() {
         return installer;
+    }
+
+    TemporarySymbols getTemporarySymbols() {
+        return temporarySymbols;
     }
 
     void addClass(final String name, final byte[] code) {

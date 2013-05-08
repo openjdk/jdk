@@ -106,6 +106,18 @@ public final class IndexNode extends BaseNode {
         return index;
     }
 
+    /**
+     * Set the index expression for this node
+     * @param index new index expression
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public IndexNode setIndex(Node index) {
+        if(this.index == index) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), hasCallSiteType());
+    }
+
     @Override
     public BaseNode setIsFunction() {
         if (isFunction()) {
@@ -115,10 +127,10 @@ public final class IndexNode extends BaseNode {
     }
 
     @Override
-    public IndexNode setType(final Type type) {
+    public IndexNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         logTypeChange(type);
-        getSymbol().setTypeOverride(type); //always a temp so this is fine.
-        return new IndexNode(this, base, index, isFunction(), true);
+        final IndexNode newIndexNode = (IndexNode)setSymbol(lc, getSymbol().setTypeOverrideShared(type, ts));
+        return new IndexNode(newIndexNode, base, index, isFunction(), true);
     }
 
 }

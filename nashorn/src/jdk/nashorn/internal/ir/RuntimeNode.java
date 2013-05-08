@@ -390,7 +390,7 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     }
 
     @Override
-    public RuntimeNode setType(final Type type) {
+    public RuntimeNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         if (this.callSiteType == type) {
             return this;
         }

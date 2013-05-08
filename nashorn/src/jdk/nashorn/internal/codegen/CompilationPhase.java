@@ -21,6 +21,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
@@ -171,7 +172,12 @@ enum CompilationPhase {
     ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)enterAttr(fn).accept(new Attr());
+            final TemporarySymbols ts = compiler.getTemporarySymbols();
+            final FunctionNode newFunctionNode = (FunctionNode)enterAttr(fn, ts).accept(new Attr(ts));
+            if(compiler.getEnv()._print_mem_usage) {
+                Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
+            }
+            return newFunctionNode;
         }
 
         /**
@@ -179,14 +185,14 @@ enum CompilationPhase {
          * and the function symbols to object
          * @param functionNode node where to start iterating
          */
-        private FunctionNode enterAttr(final FunctionNode functionNode) {
+        private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
             return (FunctionNode)functionNode.accept(new NodeVisitor() {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode node) {
                     final LexicalContext lc = getLexicalContext();
                     if (node.isLazy()) {
                         FunctionNode newNode = node.setReturnType(getLexicalContext(), Type.OBJECT);
-                        return Attr.ensureSymbol(lc, lc.getCurrentBlock(), Type.OBJECT, newNode);
+                        return ts.ensureSymbol(lc, Type.OBJECT, newNode);
                     }
                     //node may have a reference here that needs to be nulled if it was referred to by
                     //its outer context, if it is lazy and not attributed
@@ -249,7 +255,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();
 
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes());
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes(compiler.getTemporarySymbols()));
 
             if (env._print_lower_ast) {
                 env.getErr().println(new ASTWriter(newFunctionNode));

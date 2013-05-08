@@ -55,6 +55,7 @@ import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TypeOverride;
@@ -87,7 +88,10 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     private static final DebugLogger LOG = new DebugLogger("finalize");
 
-    FinalizeTypes() {
+    private final TemporarySymbols temporarySymbols;
+
+    FinalizeTypes(final TemporarySymbols temporarySymbols) {
+        this.temporarySymbols = temporarySymbols;
     }
 
     @Override
@@ -227,21 +231,27 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         return leaveASSIGN(binaryNode);
     }
 
+    private boolean symbolIsInteger(Node node) {
+        final Symbol symbol = node.getSymbol();
+        assert symbol != null && symbol.getSymbolType().isInteger() : "int coercion expected: " + Debug.id(symbol) + " " + symbol + " " + getLexicalContext().getCurrentFunction().getSource();
+        return true;
+    }
+
     @Override
     public Node leaveBIT_AND(final BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
+        assert symbolIsInteger(binaryNode);
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_OR(final BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
+        assert symbolIsInteger(binaryNode);
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
     @Override
     public Node leaveBIT_XOR(final BinaryNode binaryNode) {
-        assert binaryNode.getSymbol() != null && binaryNode.getSymbol().getSymbolType().isInteger() : "int coercion expected: " + binaryNode.getSymbol();
+        assert symbolIsInteger(binaryNode);
         return leaveBinary(binaryNode, Type.INT, Type.INT);
     }
 
@@ -251,8 +261,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         final BinaryNode newBinaryNode = binaryNode.setRHS(discard(binaryNode.rhs()));
         // AccessSpecializer - the type of lhs, which is the remaining value of this node may have changed
         // in that case, update the node type as well
-        propagateType(newBinaryNode, newBinaryNode.lhs().getType());
-        return newBinaryNode;
+        return propagateType(newBinaryNode, newBinaryNode.lhs().getType());
     }
 
     @Override
@@ -261,8 +270,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         final BinaryNode newBinaryNode = binaryNode.setLHS(discard(binaryNode.lhs()));
         // AccessSpecializer - the type of rhs, which is the remaining value of this node may have changed
         // in that case, update the node type as well
-        propagateType(newBinaryNode, newBinaryNode.rhs().getType());
-        return newBinaryNode;
+        return propagateType(newBinaryNode, newBinaryNode.rhs().getType());
     }
 
     @Override
@@ -364,6 +372,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveExecuteNode(final ExecuteNode executeNode) {
+        temporarySymbols.reuse();
         return executeNode.setExpression(discard(executeNode.getExpression()));
     }
 
@@ -489,8 +498,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveVarNode(final VarNode varNode) {
-        final Node rhs = varNode.getInit();
-        if (rhs != null) {
+        final Node init = varNode.getInit();
+        if (init != null) {
             final SpecializedNode specialized = specialize(varNode);
             final VarNode specVarNode = (VarNode)specialized.node;
             Type destType = specialized.type;
@@ -498,8 +507,11 @@ final class FinalizeTypes extends NodeOperatorVisitor {
                 destType = specVarNode.getType();
             }
             assert specVarNode.hasType() : specVarNode + " doesn't have a type";
-            return specVarNode.setInit(convert(rhs, destType));
+            final Node convertedInit = convert(init, destType);
+            temporarySymbols.reuse();
+            return specVarNode.setInit(convertedInit);
         }
+        temporarySymbols.reuse();
         return varNode;
     }
 
@@ -678,7 +690,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         }
     }
 
-    private static <T extends Node> SpecializedNode specialize(final Assignment<T> assignment) {
+    <T extends Node> SpecializedNode specialize(final Assignment<T> assignment) {
         final Node node = ((Node)assignment);
         final T lhs = assignment.getAssignmentDest();
         final Node rhs = assignment.getAssignmentSource();
@@ -700,9 +712,9 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         }
 
         final Node newNode = assignment.setAssignmentDest(setTypeOverride(lhs, to));
-        propagateType(newNode, to);
+        final Node typePropagatedNode = propagateType(newNode, to);
 
-        return new SpecializedNode(newNode, to);
+        return new SpecializedNode(typePropagatedNode, to);
     }
 
 
@@ -741,7 +753,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * @param to      new type
      */
     @SuppressWarnings("unchecked")
-    private static <T extends Node> T setTypeOverride(final T node, final Type to) {
+    <T extends Node> T setTypeOverride(final T node, final Type to) {
         final Type from = node.getType();
         if (!node.getType().equals(to)) {
             LOG.info("Changing call override type for '", node, "' from ", node.getType(), " to ", to);
@@ -750,7 +762,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
         }
         LOG.info("Type override for lhs in '", node, "' => ", to);
-        return ((TypeOverride<T>)node).setType(to);
+        return ((TypeOverride<T>)node).setType(temporarySymbols, getLexicalContext(), to);
     }
 
     /**
@@ -808,7 +820,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         final LexicalContext lc = getLexicalContext();
         //This is the only place in this file that can create new temporaries
         //FinalizeTypes may not introduce ANY node that is not a conversion.
-        return Attr.ensureSymbol(lc, lc.getCurrentBlock(), to, resultNode);
+        return temporarySymbols.ensureSymbol(lc, to, resultNode);
     }
 
     private static Node discard(final Node node) {
@@ -836,12 +848,13 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * @param node
      * @param to
      */
-    private static void propagateType(final Node node, final Type to) {
-        final Symbol symbol = node.getSymbol();
-        if (symbol.isTemp()) {
-            symbol.setTypeOverride(to);
+    private Node propagateType(final Node node, final Type to) {
+        Symbol symbol = node.getSymbol();
+        if (symbol.isTemp() && symbol.getSymbolType() != to) {
+            symbol = symbol.setTypeOverrideShared(to, temporarySymbols);
             LOG.info("Type override for temporary in '", node, "' => ", to);
         }
+        return node.setSymbol(getLexicalContext(), symbol);
     }
 
     /**
@@ -866,7 +879,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
      * Whenever an explicit conversion is needed and the convertee is a literal, we can
      * just change the literal
      */
-    static class LiteralNodeConstantEvaluator extends FoldConstants.ConstantEvaluator<LiteralNode<?>> {
+    class LiteralNodeConstantEvaluator extends FoldConstants.ConstantEvaluator<LiteralNode<?>> {
         private final Type type;
 
         LiteralNodeConstantEvaluator(final LiteralNode<?> parent, final Type type) {
@@ -894,7 +907,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
             if (literalNode != null) {
                 //inherit literal symbol for attr.
-                literalNode = (LiteralNode<?>)literalNode.setSymbol(null, parent.getSymbol());
+                literalNode = (LiteralNode<?>)literalNode.setSymbol(getLexicalContext(), parent.getSymbol());
             }
 
             return literalNode;
