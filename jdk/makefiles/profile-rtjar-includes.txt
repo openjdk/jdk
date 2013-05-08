@@ -57,6 +57,7 @@ PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     java/time \
     java/util \
     javax/net \
+    javax/script \
     javax/security \
     jdk \
     sun/invoke \
@@ -125,7 +126,6 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
     javax/lang/model \
     javax/management \
     javax/naming \
-    javax/script \
     javax/security/auth/kerberos \
     javax/security/sasl \
     javax/smartcardio \
