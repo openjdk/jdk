@@ -3104,36 +3104,27 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
 }
 
 void Arguments::set_shared_spaces_flags() {
-  const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
-  const bool might_share = must_share || UseSharedSpaces;
+#ifdef _LP64
+    const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
 
-  // CompressedOops cannot be used with CDS.  The offsets of oopmaps and
-  // static fields are incorrect in the archive.  With some more clever
-  // initialization, this restriction can probably be lifted.
-  // ??? UseLargePages might be okay now
-  const bool cannot_share = UseCompressedOops ||
-                            (UseLargePages && FLAG_IS_CMDLINE(UseLargePages));
-  if (cannot_share) {
-    if (must_share) {
-        warning("disabling large pages %s"
-                "because of %s", "" LP64_ONLY("and compressed oops "),
-                DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
-        FLAG_SET_CMDLINE(bool, UseLargePages, false);
-        LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedOops, false));
-        LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedKlassPointers, false));
-    } else {
-      // Prefer compressed oops and large pages to class data sharing
-      if (UseSharedSpaces && Verbose) {
-        warning("turning off use of shared archive because of large pages%s",
-                 "" LP64_ONLY(" and/or compressed oops"));
+    // CompressedOops cannot be used with CDS.  The offsets of oopmaps and
+    // static fields are incorrect in the archive.  With some more clever
+    // initialization, this restriction can probably be lifted.
+    if (UseCompressedOops) {
+      if (must_share) {
+          warning("disabling compressed oops because of %s",
+                  DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
+          FLAG_SET_CMDLINE(bool, UseCompressedOops, false);
+          FLAG_SET_CMDLINE(bool, UseCompressedKlassPointers, false);
+      } else {
+        // Prefer compressed oops to class data sharing
+        if (UseSharedSpaces && Verbose) {
+          warning("turning off use of shared archive because of compressed oops");
+        }
+        no_shared_spaces();
       }
-      no_shared_spaces();
     }
-  } else if (UseLargePages && might_share) {
-    // Disable large pages to allow shared spaces.  This is sub-optimal, since
-    // there may not even be a shared archive to use.
-    FLAG_SET_DEFAULT(UseLargePages, false);
-  }
+#endif
 
   if (DumpSharedSpaces) {
     if (RequireSharedSpaces) {

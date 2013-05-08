@@ -3366,6 +3366,10 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   }
 #endif
 
+  // NULL out in scratch class to not delete twice.  The class to be redefined
+  // always owns these bytes.
+  scratch_class->set_cached_class_file(NULL, 0);
+
   // Replace inner_classes
   Array<u2>* old_inner_classes = the_class->inner_classes();
   the_class->set_inner_classes(scratch_class->inner_classes());
