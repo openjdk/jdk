@@ -410,6 +410,7 @@ protected:
   // Find first occurrence of n among my edges:
   int find_edge(Node* n);
   int replace_edge(Node* old, Node* neww);
+  int replace_edges_in_range(Node* old, Node* neww, int start, int end);
   // NULL out all inputs to eliminate incoming Def-Use edges.
   // Return the number of edges between 'n' and 'this'
   int  disconnect_inputs(Node *n, Compile *c);

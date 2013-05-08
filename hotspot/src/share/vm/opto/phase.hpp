@@ -100,6 +100,7 @@ protected:
 // Subtimers for _t_optimizer
   static elapsedTimer   _t_iterGVN;
   static elapsedTimer   _t_iterGVN2;
+  static elapsedTimer   _t_incrInline;
 
 // Subtimers for _t_registerAllocation
   static elapsedTimer   _t_ctorChaitin;

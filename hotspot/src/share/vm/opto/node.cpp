@@ -67,7 +67,8 @@ void Node::verify_construction() {
   }
   Compile::set_debug_idx(new_debug_idx);
   set_debug_idx( new_debug_idx );
-  assert(Compile::current()->unique() < (UINT_MAX - 1), "Node limit exceeded UINT_MAX");
+  assert(Compile::current()->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
+  assert(Compile::current()->live_nodes() < (uint)MaxNodeLimit, "Live Node limit exceeded limit");
   if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (int)_idx == BreakAtNode)) {
     tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d", _idx, _debug_idx);
     BREAKPOINT;
@@ -471,9 +472,9 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 //------------------------------clone------------------------------------------
 // Clone a Node.
 Node *Node::clone() const {
-  Compile *compile = Compile::current();
+  Compile* C = Compile::current();
   uint s = size_of();           // Size of inherited Node
-  Node *n = (Node*)compile->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
+  Node *n = (Node*)C->node_arena()->Amalloc_D(size_of() + _max*sizeof(Node*));
   Copy::conjoint_words_to_lower((HeapWord*)this, (HeapWord*)n, s);
   // Set the new input pointer array
   n->_in = (Node**)(((char*)n)+s);
@@ -492,18 +493,18 @@ Node *Node::clone() const {
     if (x != NULL) x->add_out(n);
   }
   if (is_macro())
-    compile->add_macro_node(n);
+    C->add_macro_node(n);
   if (is_expensive())
-    compile->add_expensive_node(n);
+    C->add_expensive_node(n);
 
-  n->set_idx(compile->next_unique()); // Get new unique index as well
+  n->set_idx(C->next_unique()); // Get new unique index as well
   debug_only( n->verify_construction() );
   NOT_PRODUCT(nodes_created++);
   // Do not patch over the debug_idx of a clone, because it makes it
   // impossible to break on the clone's moment of creation.
   //debug_only( n->set_debug_idx( debug_idx() ) );
 
-  compile->copy_node_notes_to(n, (Node*) this);
+  C->copy_node_notes_to(n, (Node*) this);
 
   // MachNode clone
   uint nopnds;
@@ -518,13 +519,12 @@ Node *Node::clone() const {
                                   (const void*)(&mthis->_opnds), 1));
     mach->_opnds = to;
     for ( uint i = 0; i < nopnds; ++i ) {
-      to[i] = from[i]->clone(compile);
+      to[i] = from[i]->clone(C);
     }
   }
   // cloning CallNode may need to clone JVMState
   if (n->is_Call()) {
-    CallNode *call = n->as_Call();
-    call->clone_jvms();
+    n->as_Call()->clone_jvms(C);
   }
   return n;                     // Return the clone
 }
@@ -805,6 +805,21 @@ int Node::replace_edge(Node* old, Node* neww) {
         set_req(i, neww);
       else
         set_prec(i, neww);
+      nrep++;
+    }
+  }
+  return nrep;
+}
+
+/**
+ * Replace input edges in the range pointing to 'old' node.
+ */
+int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
+  if (old == neww)  return 0;  // nothing to do
+  uint nrep = 0;
+  for (int i = start; i < end; i++) {
+    if (in(i) == old) {
+      set_req(i, neww);
       nrep++;
     }
   }
