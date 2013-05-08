@@ -917,18 +917,14 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
     return;
   }
 
-  // Compute some numbers about the state of the heap.
-  const size_t used_after_gc = used();
-  const size_t capacity_after_gc = capacity();
+  // The heap has been compacted but not reset yet.
+  // Any metric such as free() or used() will be incorrect.
 
   CardGeneration::compute_new_size();
 
   // Reset again after a possible resizing
   cmsSpace()->reset_after_compaction();
 
-  assert(used() == used_after_gc && used_after_gc <= capacity(),
-         err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
 }
 
 void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
