@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,10 +237,10 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
 WB_END
 
 
-WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  mh->set_not_compilable();
+  mh->set_not_compilable(comp_level, true /* report */, "WhiteBox");
 WB_END
 
 WB_ENTRY(jboolean, WB_TestSetDontInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
@@ -278,6 +278,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   MutexLockerEx mu(Compile_lock);
   MethodData* mdo = mh->method_data();
+  MethodCounters* mcs = mh->method_counters();
 
   if (mdo != NULL) {
     mdo->init();
@@ -288,37 +289,40 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     }
   }
 
-  mh->backedge_counter()->init();
-  mh->invocation_counter()->init();
-  mh->set_interpreter_invocation_count(0);
-  mh->set_interpreter_throwout_count(0);
   mh->clear_not_c1_compilable();
   mh->clear_not_c2_compilable();
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
+  if (mcs != NULL) {
+    mcs->backedge_counter()->init();
+    mcs->invocation_counter()->init();
+    mcs->set_interpreter_invocation_count(0);
+    mcs->set_interpreter_throwout_count(0);
 
 #ifdef TIERED
-  mh->set_rate(0.0F);
-  mh->set_prev_event_count(0);
-  mh->set_prev_time(0);
+    mcs->set_rate(0.0F);
+    mh->set_prev_event_count(0, THREAD);
+    mh->set_prev_time(0, THREAD);
 #endif
+  }
 WB_END
 
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
-  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len);
-  oop found_string = StringTable::the_table()->lookup(name, len);
-  if (found_string == NULL) {
-        return false;
-  }
-  return true;
+  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
+  return (StringTable::lookup(name, len) != NULL);
 WB_END
 
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_last_ditch_collection);
+WB_END
+
+
+WB_ENTRY(jlong, WB_ReserveMemory(JNIEnv* env, jobject o, jlong size))
+  return (jlong)os::reserve_memory(size, NULL, 0);
 WB_END
 
 //Some convenience methods to deal with objects from java
@@ -398,30 +402,32 @@ static JNINativeMethod methods[] = {
   {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
-  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Method;)I",
+  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;)I",
                                                       (void*)&WB_DeoptimizeMethod  },
-  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Method;)Z",
+  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Executable;)Z",
                                                       (void*)&WB_IsMethodCompiled  },
-  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Method;I)Z",
+  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Executable;I)Z",
                                                       (void*)&WB_IsMethodCompilable},
   {CC"isMethodQueuedForCompilation",
-      CC"(Ljava/lang/reflect/Method;)Z",              (void*)&WB_IsMethodQueuedForCompilation},
+      CC"(Ljava/lang/reflect/Executable;)Z",          (void*)&WB_IsMethodQueuedForCompilation},
   {CC"makeMethodNotCompilable",
-      CC"(Ljava/lang/reflect/Method;)V",              (void*)&WB_MakeMethodNotCompilable},
+      CC"(Ljava/lang/reflect/Executable;I)V",         (void*)&WB_MakeMethodNotCompilable},
   {CC"testSetDontInlineMethod",
-      CC"(Ljava/lang/reflect/Method;Z)Z",             (void*)&WB_TestSetDontInlineMethod},
+      CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetDontInlineMethod},
   {CC"getMethodCompilationLevel",
-      CC"(Ljava/lang/reflect/Method;)I",              (void*)&WB_GetMethodCompilationLevel},
+      CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodCompilationLevel},
   {CC"getCompileQueuesSize",
       CC"()I",                                        (void*)&WB_GetCompileQueuesSize},
   {CC"testSetForceInlineMethod",
-      CC"(Ljava/lang/reflect/Method;Z)Z",             (void*)&WB_TestSetForceInlineMethod},
+      CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetForceInlineMethod},
   {CC"enqueueMethodForCompilation",
-      CC"(Ljava/lang/reflect/Method;I)Z",             (void*)&WB_EnqueueMethodForCompilation},
+      CC"(Ljava/lang/reflect/Executable;I)Z",         (void*)&WB_EnqueueMethodForCompilation},
   {CC"clearMethodState",
-      CC"(Ljava/lang/reflect/Method;)V",              (void*)&WB_ClearMethodState},
+      CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
+
+  {CC"reserveMemory", CC"(J)J", (void*)&WB_ReserveMemory },
 };
 
 #undef CC
@@ -433,9 +439,29 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
       instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
       Handle loader(ikh->class_loader());
       if (loader.is_null()) {
+        ResourceMark rm;
         ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
-        jint result = env->RegisterNatives(wbclass, methods, sizeof(methods)/sizeof(methods[0]));
-        if (result == 0) {
+        bool result = true;
+        //  one by one registration natives for exception catching
+        jclass exceptionKlass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
+        for (int i = 0, n = sizeof(methods) / sizeof(methods[0]); i < n; ++i) {
+          if (env->RegisterNatives(wbclass, methods + i, 1) != 0) {
+            result = false;
+            if (env->ExceptionCheck() && env->IsInstanceOf(env->ExceptionOccurred(), exceptionKlass)) {
+              // j.l.NoSuchMethodError is thrown when a method can't be found or a method is not native
+              // ignoring the exception
+              tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s", methods[i].name, methods[i].signature);
+              env->ExceptionClear();
+            } else {
+              // register is failed w/o exception or w/ unexpected exception
+              tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered", methods[i].name, methods[i].signature);
+              env->UnregisterNatives(wbclass);
+              break;
+            }
+          }
+        }
+
+        if (result) {
           WhiteBox::set_used();
         }
       }

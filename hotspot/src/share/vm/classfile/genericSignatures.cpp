@@ -268,8 +268,15 @@ ClassDescriptor* ClassDescriptor::parse_generic_signature(
     Klass* outer = SystemDictionary::find(
         outer_name, class_loader, protection_domain, CHECK_NULL);
     if (outer == NULL && !THREAD->is_Compiler_thread()) {
-      outer = SystemDictionary::resolve_super_or_fail(original_name,
-          outer_name, class_loader, protection_domain, false, CHECK_NULL);
+      if (outer_name == ik->super()->name()) {
+        outer = SystemDictionary::resolve_super_or_fail(original_name, outer_name,
+                                                        class_loader, protection_domain,
+                                                        false, CHECK_NULL);
+      }
+      else {
+        outer = SystemDictionary::resolve_or_fail(outer_name, class_loader,
+                                                  protection_domain, false, CHECK_NULL);
+      }
     }
 
     InstanceKlass* outer_ik;

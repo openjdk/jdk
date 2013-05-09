@@ -25,7 +25,9 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.IdentityHashMap;
+import java.util.ArrayList;
+import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -33,29 +35,16 @@ import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Nodes are used to compose Abstract Syntax Trees.
- *
  */
 public abstract class Node extends Location {
     /** Node symbol. */
     private Symbol symbol;
 
     /** Start of source range. */
-    protected int start;
+    protected final int start;
 
     /** End of source range. */
     protected int finish;
-
-    /** Has this node been resolved - i.e. emitted code already */
-    private boolean isResolved;
-
-    /** Is this node terminal */
-    private boolean isTerminal;
-
-    /** Is this a goto node */
-    private boolean hasGoto;
-
-    /** Is this a discard */
-    private boolean shouldDiscard;
 
     /**
      * Constructor
@@ -72,6 +61,21 @@ public abstract class Node extends Location {
     }
 
     /**
+     * Constructor
+     *
+     * @param source  source
+     * @param token   token
+     * @param start   start
+     * @param finish  finish
+     */
+    protected Node(final Source source, final long token, final int start, final int finish) {
+        super(source, token);
+
+        this.start = start;
+        this.finish = finish;
+    }
+
+    /**
      * Copy constructor
      *
      * @param node source node
@@ -79,13 +83,9 @@ public abstract class Node extends Location {
     protected Node(final Node node) {
         super(node);
 
-        this.symbol        = node.symbol;
-        this.isResolved    = node.isResolved;
-        this.isTerminal    = node.isTerminal;
-        this.hasGoto       = node.hasGoto;
-        this.shouldDiscard = node.shouldDiscard;
-        this.start         = node.start;
-        this.finish        = node.finish;
+        this.symbol = node.symbol;
+        this.start  = node.start;
+        this.finish = node.finish;
     }
 
     /**
@@ -156,28 +156,6 @@ public abstract class Node extends Location {
     }
 
     /**
-     * Test to see if code been generated for this node. Set isResolved if not.
-     *
-     * @return True if node has already been resolved.
-     */
-    public boolean testResolved() {
-        if (isResolved()) {
-            return true;
-        }
-
-        setIsResolved(true);
-
-        return false;
-    }
-
-    /**
-     * Reset the resolved flag.
-     */
-    public void resetResolved() {
-        setIsResolved(false);
-    }
-
-    /**
      * Is this a debug info node like LineNumberNode etc?
      *
      * @return true if this is a debug node
@@ -187,72 +165,13 @@ public abstract class Node extends Location {
     }
 
     /**
-     * Helper class used for node cloning
+     * For reference copies - ensure that labels in the copy node are unique
+     * using an appropriate copy constructor
+     * @param lc lexical context
+     * @return new node or same of no labels
      */
-    public static final class CopyState {
-        private final IdentityHashMap<Node, Node> cloneMap = new IdentityHashMap<>();
-
-        /**
-         * Find existing or create new copy of the node.
-         *
-         * @param node Node to copy.
-         *
-         * @return New object.
-         */
-        public Node existingOrCopy(final Node node) {
-            if (node != null) {
-                Node copy = cloneMap.get(node);
-
-                if (copy == null) {
-                    copy = node.copy(this);
-                    cloneMap.put(node, copy);
-                }
-
-                return copy;
-            }
-
-            return node;
-        }
-
-        /**
-         * Find existing or use old copy of the node.
-         *
-         * @param node Node to copy.
-         *
-         * @return new object.
-         */
-        public Node existingOrSame(final Node node) {
-            if (node != null) {
-                Node copy = cloneMap.get(node);
-
-                if (copy == null) {
-                    copy = node;
-                }
-
-                return copy;
-            }
-
-            return node;
-        }
-    }
-
-    /**
-     * Deep copy the node.
-     *
-     * @return Deep copy of the  Node.
-     */
-    public final Node copy() {
-        return copy(new CopyState());
-    }
-
-    /**
-     * Deep copy the node.
-     *
-     * @param cs CopyState passed around to re-use certain nodes.
-     * @return Deep copy of the  Node.
-     */
-    protected Node copy(final CopyState cs) {
-        return cs.existingOrCopy(this);
+    public Node ensureUniqueLabels(final LexicalContext lc) {
+        return this;
     }
 
     /**
@@ -283,35 +202,7 @@ public abstract class Node extends Location {
      * @return true if terminal
      */
     public boolean hasTerminalFlags() {
-        return isTerminal || hasGoto;
-    }
-
-    /**
-     * Copy the terminal flags state of a node to another node
-     *
-     * @param other source node
-     */
-    public void copyTerminalFlags(final Node other) {
-        isTerminal = other.isTerminal;
-        hasGoto    = other.hasGoto;
-    }
-
-    /**
-     * Check if the return value of this expression should be discarded
-     * @return true if return value is discarded
-     */
-    public boolean shouldDiscard() {
-        return shouldDiscard;
-    }
-
-    /**
-     * Setter that determines whether this node's return value should be discarded
-     * or not
-     *
-     * @param shouldDiscard true if return value is discarded, false otherwise
-     */
-    public void setDiscard(final boolean shouldDiscard) {
-        this.shouldDiscard = shouldDiscard;
+        return isTerminal() || hasGoto();
     }
 
     /**
@@ -336,29 +227,7 @@ public abstract class Node extends Location {
      * @return true if node has goto semantics
      */
     public boolean hasGoto() {
-        return hasGoto;
-    }
-
-    /**
-     * Flag this node as having goto semantics as described in {@link Node#hasGoto()}
-     */
-    public void setHasGoto() {
-        this.hasGoto = true;
-    }
-
-    /**
-     * Check whether this node is resolved, i.e. code has been generated for it
-     * @return true if node is resolved
-     */
-    public boolean isResolved() {
-        return isResolved;
-    }
-
-    /**
-     * Flag this node as resolved or not, i.e. code has been generated for it
-     */
-    private void setIsResolved(boolean isResolved) {
-        this.isResolved = isResolved;
+        return false;
     }
 
     /**
@@ -367,14 +236,6 @@ public abstract class Node extends Location {
      */
     public int getStart() {
         return start;
-    }
-
-    /**
-     * Set start position for node
-     * @param start start position
-     */
-    public void setStart(final int start) {
-        this.start = start;
     }
 
     /**
@@ -404,17 +265,29 @@ public abstract class Node extends Location {
      * @return true if this node is terminal
      */
     public boolean isTerminal() {
-        return isTerminal;
+        return false;
     }
 
-    /**
-     * Set this to be a terminal node, i.e. it terminates control flow as described
-     * in {@link Node#isTerminal()}
-     *
-     * @param isTerminal true if this is a terminal node, false otherwise
-     */
-    public void setIsTerminal(final boolean isTerminal) {
-        this.isTerminal = isTerminal;
+    //on change, we have to replace the entire list, that's we can't simple do ListIterator.set
+    static <T extends Node> List<T> accept(final NodeVisitor visitor, final Class<T> clazz, final List<T> list) {
+        boolean changed = false;
+        final List<T> newList = new ArrayList<>();
+
+        for (final Node node : list) {
+            final T newNode = clazz.cast(node.accept(visitor));
+            if (newNode != node) {
+                changed = true;
+            }
+            newList.add(newNode);
+        }
+
+        return changed ? newList : list;
     }
 
+    static <T extends LexicalContextNode> T replaceInLexicalContext(final LexicalContext lc, final T oldNode, final T newNode) {
+        if (lc != null) {
+            lc.replace(oldNode, newNode);
+        }
+        return newNode;
+    }
 }

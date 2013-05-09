@@ -206,7 +206,7 @@ public class TypeAnnotations {
                     sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 // Make sure all type annotations from the symbol are also
                 // on the owner.
-                sym.owner.annotations.appendUniqueTypes(sym.getTypeAnnotationMirrors());
+                sym.owner.annotations.appendUniqueTypes(sym.getRawTypeAttributes());
             }
         }
 
