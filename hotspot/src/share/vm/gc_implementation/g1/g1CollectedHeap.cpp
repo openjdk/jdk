@@ -1843,33 +1843,32 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     ReservedSpace::page_align_size_down(shrink_bytes);
   aligned_shrink_bytes = align_size_down(aligned_shrink_bytes,
                                          HeapRegion::GrainBytes);
-  uint num_regions_deleted = 0;
-  MemRegion mr = _hrs.shrink_by(aligned_shrink_bytes, &num_regions_deleted);
+  uint num_regions_to_remove = (uint)(shrink_bytes / HeapRegion::GrainBytes);
+
+  uint num_regions_removed = _hrs.shrink_by(num_regions_to_remove);
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
-  assert(mr.end() == old_end, "post-condition");
+  size_t shrunk_bytes = num_regions_removed * HeapRegion::GrainBytes;
 
   ergo_verbose3(ErgoHeapSizing,
                 "shrink the heap",
                 ergo_format_byte("requested shrinking amount")
                 ergo_format_byte("aligned shrinking amount")
                 ergo_format_byte("attempted shrinking amount"),
-                shrink_bytes, aligned_shrink_bytes, mr.byte_size());
-  if (mr.byte_size() > 0) {
+                shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
+  if (num_regions_removed > 0) {
+    _g1_storage.shrink_by(shrunk_bytes);
+    HeapWord* new_end = (HeapWord*) _g1_storage.high();
+
     if (_hr_printer.is_active()) {
-      HeapWord* curr = mr.end();
-      while (curr > mr.start()) {
+      HeapWord* curr = old_end;
+      while (curr > new_end) {
         HeapWord* curr_end = curr;
         curr -= HeapRegion::GrainWords;
         _hr_printer.uncommit(curr, curr_end);
       }
-      assert(curr == mr.start(), "post-condition");
     }
 
-    _g1_storage.shrink_by(mr.byte_size());
-    HeapWord* new_end = (HeapWord*) _g1_storage.high();
-    assert(mr.start() == new_end, "post-condition");
-
-    _expansion_regions += num_regions_deleted;
+    _expansion_regions += num_regions_removed;
     update_committed_space(old_end, new_end);
     HeapRegionRemSet::shrink_heap(n_regions());
     g1_policy()->record_new_heap_size(n_regions());
