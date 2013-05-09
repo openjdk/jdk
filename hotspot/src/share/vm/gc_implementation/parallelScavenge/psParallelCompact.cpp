@@ -787,12 +787,11 @@ bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap(
 void PSParallelCompact::KeepAliveClosure::do_oop(oop* p)       { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
 void PSParallelCompact::KeepAliveClosure::do_oop(narrowOop* p) { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
 
-PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_root_pointer_closure(true);
-PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure(false);
+PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closure;
 PSParallelCompact::AdjustKlassClosure PSParallelCompact::_adjust_klass_closure;
 
-void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p, _is_root); }
-void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p, _is_root); }
+void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p); }
+void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p); }
 
 void PSParallelCompact::FollowStackClosure::do_void() { _compaction_manager->follow_marking_stacks(); }
 
@@ -805,7 +804,7 @@ void PSParallelCompact::FollowKlassClosure::do_klass(Klass* klass) {
   klass->oops_do(_mark_and_push_closure);
 }
 void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
-  klass->oops_do(&PSParallelCompact::_adjust_root_pointer_closure);
+  klass->oops_do(&PSParallelCompact::_adjust_pointer_closure);
 }
 
 void PSParallelCompact::post_initialize() {
@@ -892,7 +891,7 @@ public:
     _heap_used      = heap->used();
     _young_gen_used = heap->young_gen()->used_in_bytes();
     _old_gen_used   = heap->old_gen()->used_in_bytes();
-    _metadata_used  = MetaspaceAux::used_in_bytes();
+    _metadata_used  = MetaspaceAux::allocated_used_bytes();
   };
 
   size_t heap_used() const      { return _heap_used; }
@@ -967,8 +966,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    gclog_or_tty->print(" VerifyBeforeGC:");
-    Universe::verify();
+    Universe::verify(" VerifyBeforeGC:");
   }
 
   // Verify object start arrays
@@ -1027,6 +1025,7 @@ void PSParallelCompact::post_compact()
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge();
+  MetaspaceAux::verify_metrics();
 
   Threads::gc_epilogue();
   CodeCache::gc_epilogue();
@@ -2168,8 +2167,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    gclog_or_tty->print(" VerifyAfterGC:");
-    Universe::verify();
+    Universe::verify(" VerifyAfterGC:");
   }
 
   // Re-verify object start arrays
@@ -2356,22 +2354,24 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   }
 
   TraceTime tm_c("class unloading", print_phases(), true, gclog_or_tty);
+
+  // This is the point where the entire marking should have completed.
+  assert(cm->marking_stacks_empty(), "Marking should have completed");
+
   // Follow system dictionary roots and unload classes.
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Follow code cache roots.
+  // Unload nmethods.
   CodeCache::do_unloading(is_alive_closure(), purged_class);
-  cm->follow_marking_stacks(); // Flush marking stack.
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(is_alive_closure());
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(is_alive_closure());
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(cm->marking_stacks_empty(), "marking stacks should be empty");
 }
 
 void PSParallelCompact::follow_klass(ParCompactionManager* cm, Klass* klass) {
@@ -2398,7 +2398,7 @@ void PSParallelCompact::follow_class_loader(ParCompactionManager* cm,
 
 void PSParallelCompact::adjust_class_loader(ParCompactionManager* cm,
                                             ClassLoaderData* cld) {
-  cld->oops_do(PSParallelCompact::adjust_root_pointer_closure(),
+  cld->oops_do(PSParallelCompact::adjust_pointer_closure(),
                PSParallelCompact::adjust_klass_closure(),
                true);
 }
@@ -2419,32 +2419,31 @@ void PSParallelCompact::adjust_roots() {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // General strong roots.
-  Universe::oops_do(adjust_root_pointer_closure());
-  JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
-  CLDToOopClosure adjust_from_cld(adjust_root_pointer_closure());
-  Threads::oops_do(adjust_root_pointer_closure(), &adjust_from_cld, NULL);
-  ObjectSynchronizer::oops_do(adjust_root_pointer_closure());
-  FlatProfiler::oops_do(adjust_root_pointer_closure());
-  Management::oops_do(adjust_root_pointer_closure());
-  JvmtiExport::oops_do(adjust_root_pointer_closure());
+  Universe::oops_do(adjust_pointer_closure());
+  JNIHandles::oops_do(adjust_pointer_closure());   // Global (strong) JNI handles
+  CLDToOopClosure adjust_from_cld(adjust_pointer_closure());
+  Threads::oops_do(adjust_pointer_closure(), &adjust_from_cld, NULL);
+  ObjectSynchronizer::oops_do(adjust_pointer_closure());
+  FlatProfiler::oops_do(adjust_pointer_closure());
+  Management::oops_do(adjust_pointer_closure());
+  JvmtiExport::oops_do(adjust_pointer_closure());
   // SO_AllClasses
-  SystemDictionary::oops_do(adjust_root_pointer_closure());
-  ClassLoaderDataGraph::oops_do(adjust_root_pointer_closure(), adjust_klass_closure(), true);
+  SystemDictionary::oops_do(adjust_pointer_closure());
+  ClassLoaderDataGraph::oops_do(adjust_pointer_closure(), adjust_klass_closure(), true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, adjust_root_pointer_closure());
+  JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
 
   CodeCache::oops_do(adjust_pointer_closure());
-  StringTable::oops_do(adjust_root_pointer_closure());
-  ref_processor()->weak_oops_do(adjust_root_pointer_closure());
+  StringTable::oops_do(adjust_pointer_closure());
+  ref_processor()->weak_oops_do(adjust_pointer_closure());
   // Roots were visited so references into the young gen in roots
   // may have been scanned.  Process them also.
   // Should the reference processor have a span that excludes
   // young gen objects?
-  PSScavenge::reference_processor()->weak_oops_do(
-                                              adjust_root_pointer_closure());
+  PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());
 }
 
 void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,

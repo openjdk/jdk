@@ -33,10 +33,13 @@ import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.TypeVariableSymbol;
+import com.sun.tools.javac.code.TargetType;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.AnnotatedType;
 import com.sun.tools.javac.util.ListBuffer;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import com.sun.tools.javac.util.List;
 
 /**
  * Utility methods for operating on annotated constructs.
@@ -61,8 +64,12 @@ public class JavacAnnoConstructs {
             throw new IllegalArgumentException("Not an annotation type: "
                                                + annoType);
         Attribute.Compound c;
-        if (annotated.kind == Kinds.TYP && annotated instanceof ClassSymbol) {
+        if (annotated.kind == Kinds.TYP &&
+                annotated instanceof ClassSymbol) {
             c = getAttributeOnClass((ClassSymbol)annotated, annoType);
+        } else if (annotated.kind == Kinds.TYP &&
+                   annotated instanceof TypeVariableSymbol) {
+            c = getAttributeOnTypeVariable((TypeVariableSymbol)annotated, annoType);
         } else {
             c = getAttribute(annotated, annoType);
         }
@@ -78,6 +85,24 @@ public class JavacAnnoConstructs {
             if (name.equals(anno.type.tsym.flatName().toString()))
                 return anno;
         }
+
+        return null;
+    }
+
+    // Helper to getAnnotation[s]
+    private static <A extends Annotation> Attribute.Compound
+            getAttributeOnTypeVariable(TypeVariableSymbol annotated, Class<A> annoType) {
+        String name = annoType.getName();
+
+        // Declaration annotations on type variables are stored in type attributes
+        // on the owner of the TypeVariableSymbol
+        List<Attribute.Compound> res = List.nil();
+        List<Attribute.TypeCompound> candidates = annotated.owner.getRawTypeAttributes();
+        for (Attribute.TypeCompound anno : candidates)
+            if (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
+                    anno.position.type == TargetType.METHOD_TYPE_PARAMETER)
+                if (name.equals(anno.type.tsym.flatName().toString()))
+                    return anno;
 
         return null;
     }

@@ -94,7 +94,7 @@ public class AuthResources_zh_TW extends java.util.ListResourceBundle {
         {"Kerberos.username.defUsername.",
                 "Kerberos \u4F7F\u7528\u8005\u540D\u7A31 [{0}]: "},
         {"Kerberos.password.for.username.",
-                "Kerberos \u5BC6\u78BC [{0}]: "},
+                "Kerberos \u5BC6\u78BC {0}: "},
 
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 

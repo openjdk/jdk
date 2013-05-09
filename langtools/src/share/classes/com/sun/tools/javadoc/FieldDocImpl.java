@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,12 +252,22 @@ public class FieldDocImpl extends MemberDocImpl implements FieldDoc {
     }
 
     public String name() {
-        return sym.name.toString();
+        if (name == null) {
+            name = sym.name.toString();
+        }
+        return name;
     }
 
+    private String name;
+
     public String qualifiedName() {
-        return sym.enclClass().getQualifiedName() + "." + name();
+        if (qualifiedName == null) {
+            qualifiedName = sym.enclClass().getQualifiedName() + "." + name();
+        }
+        return qualifiedName;
     }
+
+    private String qualifiedName;
 
     /**
      * Return the source position of the entity, or null if

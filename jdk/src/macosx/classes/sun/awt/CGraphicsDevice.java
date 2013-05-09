@@ -35,10 +35,18 @@ import java.util.Objects;
 
 import sun.java2d.opengl.CGLGraphicsConfig;
 
-public final class CGraphicsDevice extends GraphicsDevice {
+public final class CGraphicsDevice extends GraphicsDevice
+        implements DisplayChangedListener {
 
-    // CoreGraphics display ID
-    private final int displayID;
+    /**
+     * CoreGraphics display ID. This identifier can become non-valid at any time
+     * therefore methods, which is using this id should be ready to it.
+     */
+    private volatile int displayID;
+    private volatile Insets screenInsets;
+    private volatile double xResolution;
+    private volatile double yResolution;
+    private volatile int scale;
 
     // Array of all GraphicsConfig instances for this device
     private final GraphicsConfiguration[] configs;
@@ -51,7 +59,7 @@ public final class CGraphicsDevice extends GraphicsDevice {
     // Save/restore DisplayMode for the Full Screen mode
     private DisplayMode originalMode;
 
-    public CGraphicsDevice(int displayID) {
+    public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
         configs = new GraphicsConfiguration[] {
             CGLGraphicsConfig.getConfig(this, 0)
@@ -89,7 +97,7 @@ public final class CGraphicsDevice extends GraphicsDevice {
      */
     @Override
     public String getIDstring() {
-        return "Display " + this.displayID;
+        return "Display " + displayID;
     }
 
     /**
@@ -104,15 +112,37 @@ public final class CGraphicsDevice extends GraphicsDevice {
     }
 
     public double getXResolution() {
-        return nativeGetXResolution(displayID);
+        return xResolution;
     }
 
     public double getYResolution() {
-        return nativeGetYResolution(displayID);
+        return yResolution;
     }
 
     public Insets getScreenInsets() {
-        return nativeGetScreenInsets(displayID);
+        return screenInsets;
+    }
+
+    public int getScaleFactor() {
+        return scale;
+    }
+
+    public void invalidate(final int defaultDisplayID) {
+        displayID = defaultDisplayID;
+    }
+
+    @Override
+    public void displayChanged() {
+        xResolution = nativeGetXResolution(displayID);
+        yResolution = nativeGetYResolution(displayID);
+        screenInsets = nativeGetScreenInsets(displayID);
+        scale = (int) nativeGetScaleFactor(displayID);
+        //TODO configs/fullscreenWindow/modes?
+    }
+
+    @Override
+    public void paletteChanged() {
+        // devices do not need to react to this event.
     }
 
     /**
@@ -217,10 +247,6 @@ public final class CGraphicsDevice extends GraphicsDevice {
     @Override
     public DisplayMode[] getDisplayModes() {
         return nativeGetDisplayModes(displayID);
-    }
-
-    public int getScaleFactor() {
-        return (int) nativeGetScaleFactor(displayID);
     }
 
     private static native double nativeGetScaleFactor(int displayID);

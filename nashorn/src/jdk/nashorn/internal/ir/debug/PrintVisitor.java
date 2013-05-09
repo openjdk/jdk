@@ -26,30 +26,22 @@
 package jdk.nashorn.internal.ir.debug;
 
 import java.util.List;
-import jdk.nashorn.internal.ir.AccessNode;
+
+import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
-import jdk.nashorn.internal.ir.BreakNode;
-import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
-import jdk.nashorn.internal.ir.ContinueNode;
-import jdk.nashorn.internal.ir.DoWhileNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IfNode;
-import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReturnNode;
-import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TryNode;
-import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
@@ -136,20 +128,19 @@ public final class PrintVisitor extends NodeVisitor {
     /*
      * Visits.
      */
+
     @Override
-    public Node enterAccessNode(final AccessNode accessNode) {
-        accessNode.toString(sb);
-        return null;
+    public boolean enterDefault(final Node node) {
+        node.toString(sb);
+        return false;
     }
 
     @Override
-    public Node enterBlock(final Block block) {
+    public boolean enterBlock(final Block block) {
         sb.append(' ');
         sb.append('{');
 
         indent += TABWIDTH;
-
-        final boolean isFunction = block instanceof FunctionNode;
 
         final List<Node> statements = block.getStatements();
 
@@ -161,13 +152,13 @@ public final class PrintVisitor extends NodeVisitor {
                 indent();
             }
 
-            if (statement instanceof UnaryNode) {
-                statement.toString(sb);
-            } else {
-                statement.accept(this);
-            }
+            statement.accept(this);
 
             lastLineNumber = statement instanceof LineNumberNode;
+
+            if (statement instanceof FunctionNode) {
+                continue;
+            }
 
             final Symbol symbol = statement.getSymbol();
 
@@ -200,72 +191,42 @@ public final class PrintVisitor extends NodeVisitor {
         indent();
         sb.append("}");
 
-        if (isFunction) {
-            sb.append(EOLN);
-        }
-
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterBreakNode(final BreakNode breakNode) {
-        breakNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enterCallNode(final CallNode callNode) {
-        callNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enterContinueNode(final ContinueNode continueNode) {
-        continueNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
-        sb.append("do");
-        doWhileNode.getBody().accept(this);
+    public boolean enterBinaryNode(final BinaryNode binaryNode) {
+        binaryNode.lhs().accept(this);
         sb.append(' ');
-        doWhileNode.toString(sb);
-
-        return null;
+        sb.append(binaryNode.tokenType());
+        sb.append(' ');
+        binaryNode.rhs().accept(this);
+        return false;
     }
 
     @Override
-    public Node enterExecuteNode(final ExecuteNode executeNode) {
-        final Node expression = executeNode.getExpression();
-
-        if (expression instanceof UnaryNode) {
-            expression.toString(sb);
-        } else {
-            expression.accept(this);
-        }
-
-        return null;
+    public boolean enterExecuteNode(final ExecuteNode executeNode) {
+        executeNode.getExpression().accept(this);
+        return false;
     }
 
     @Override
-    public Node enterForNode(final ForNode forNode) {
+    public boolean enterForNode(final ForNode forNode) {
         forNode.toString(sb);
         forNode.getBody().accept(this);
-
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterFunctionNode(final FunctionNode functionNode) {
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
         functionNode.toString(sb);
-        enterBlock(functionNode);
-
-        return null;
+        enterBlock(functionNode.getBody());
+        sb.append(EOLN);
+        return false;
     }
 
     @Override
-    public Node enterIfNode(final IfNode ifNode) {
+    public boolean enterIfNode(final IfNode ifNode) {
         ifNode.toString(sb);
         ifNode.getPass().accept(this);
 
@@ -276,55 +237,36 @@ public final class PrintVisitor extends NodeVisitor {
             fail.accept(this);
         }
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterIndexNode(final IndexNode indexNode) {
-        indexNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enterLabelNode(final LabelNode labeledNode) {
+    public boolean enterLabelNode(final LabelNode labeledNode) {
         indent -= TABWIDTH;
         indent();
         indent += TABWIDTH;
         labeledNode.toString(sb);
         labeledNode.getBody().accept(this);
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
+    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
         if (printLineNumbers) {
             lineNumberNode.toString(sb);
         }
 
-        return null;
-    }
-
-
-    @Override
-    public Node enterReturnNode(final ReturnNode returnNode) {
-        returnNode.toString(sb);
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
-        runtimeNode.toString(sb);
-        return null;
-    }
-
-    @Override
-    public Node enterSplitNode(final SplitNode splitNode) {
+    public boolean enterSplitNode(final SplitNode splitNode) {
         splitNode.toString(sb);
         sb.append(EOLN);
         indent += TABWIDTH;
         indent();
-        return splitNode;
+        return true;
     }
 
     @Override
@@ -337,7 +279,7 @@ public final class PrintVisitor extends NodeVisitor {
     }
 
     @Override
-    public Node enterSwitchNode(final SwitchNode switchNode) {
+    public boolean enterSwitchNode(final SwitchNode switchNode) {
         switchNode.toString(sb);
         sb.append(" {");
 
@@ -357,24 +299,18 @@ public final class PrintVisitor extends NodeVisitor {
         indent();
         sb.append("}");
 
-        return null;
-   }
-
-    @Override
-    public Node enterThrowNode(final ThrowNode throwNode) {
-        throwNode.toString(sb);
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterTryNode(final TryNode tryNode) {
+    public boolean enterTryNode(final TryNode tryNode) {
         tryNode.toString(sb);
         tryNode.getBody().accept(this);
 
         final List<Block> catchBlocks = tryNode.getCatchBlocks();
 
         for (final Block catchBlock : catchBlocks) {
-            final CatchNode catchNode = (CatchNode) catchBlock.getStatements().get(0);
+            final CatchNode catchNode = (CatchNode)catchBlock.getStatements().get(0);
             catchNode.toString(sb);
             catchNode.getBody().accept(this);
         }
@@ -386,35 +322,42 @@ public final class PrintVisitor extends NodeVisitor {
             finallyBody.accept(this);
         }
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterVarNode(final VarNode varNode) {
+    public boolean enterVarNode(final VarNode varNode) {
         sb.append("var ");
         varNode.getName().toString(sb);
         final Node init = varNode.getInit();
-        if(init != null) {
+        if (init != null) {
             sb.append(" = ");
             init.accept(this);
         }
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterWhileNode(final WhileNode whileNode) {
-        whileNode.toString(sb);
-        whileNode.getBody().accept(this);
+    public boolean enterWhileNode(final WhileNode whileNode) {
+        if (whileNode.isDoWhile()) {
+            sb.append("do");
+            whileNode.getBody().accept(this);
+            sb.append(' ');
+            whileNode.toString(sb);
+        } else {
+            whileNode.toString(sb);
+            whileNode.getBody().accept(this);
+        }
 
-        return null;
+        return false;
     }
 
     @Override
-    public Node enterWithNode(final WithNode withNode) {
+    public boolean enterWithNode(final WithNode withNode) {
         withNode.toString(sb);
         withNode.getBody().accept(this);
 
-        return null;
+        return false;
     }
 
 }

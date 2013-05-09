@@ -84,7 +84,9 @@ public final class ArrayIndex {
      * @return valid array index, or negative value if not valid
      */
     public static int getArrayIndexNoThrow(final Object key) {
-        if (key instanceof Number) {
+        if (key instanceof Integer) {
+            return getArrayIndexNoThrow(((Integer)key).intValue());
+        } else if (key instanceof Number) {
             return getArrayIndexNoThrow(((Number)key).doubleValue());
         } else if (key instanceof String) {
             return (int)fromString((String)key);
