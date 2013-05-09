@@ -21,6 +21,22 @@
 package com.sun.org.apache.xerces.internal.impl;
 
 
+import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDDescription;
+import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
+import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
+import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.xni.Augmentations;
+import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
+import com.sun.org.apache.xerces.internal.xni.XMLString;
+import com.sun.org.apache.xerces.internal.xni.XNIException;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.xml.internal.stream.Entity;
 import com.sun.xml.internal.stream.StaxXMLInputSource;
 import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
@@ -28,23 +44,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
-
-import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
-import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
-import com.sun.org.apache.xerces.internal.util.XMLChar;
-import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
-import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
-import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
-import com.sun.org.apache.xerces.internal.xni.XMLString;
-import com.sun.org.apache.xerces.internal.xni.XNIException;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
-import com.sun.org.apache.xerces.internal.xni.Augmentations;
-import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDDescription;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
 
 
 /**
@@ -148,7 +147,7 @@ public class XMLDocumentScannerImpl
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS = {
-        null,
+            null,
                 null
     };
 
@@ -920,7 +919,6 @@ public class XMLDocumentScannerImpl
                             reportFatalError("DoctypeNotAllowed", null);
                         }
 
-
                         if (fSeenDoctypeDecl) {
                             reportFatalError("AlreadySeenDoctype", null);
                         }
@@ -952,15 +950,18 @@ public class XMLDocumentScannerImpl
                         if (fDoctypeSystemId != null) {
                             if (((fValidation || fLoadExternalDTD)
                                 && (fValidationManager == null || !fValidationManager.isCachedDTD()))) {
-                            if (fSupportDTD)
-                                setScannerState(SCANNER_STATE_DTD_EXTERNAL);
-                            else
-                                setScannerState(SCANNER_STATE_PROLOG);
-                            setDriver(fContentDriver);
-                            if(fDTDDriver == null)
-                                fDTDDriver = new DTDDriver();
-                            return fDTDDriver.next();
+                                if (fSupportDTD) {
+                                    setScannerState(SCANNER_STATE_DTD_EXTERNAL);
+                                } else {
+                                    setScannerState(SCANNER_STATE_PROLOG);
+                                }
 
+                                setDriver(fContentDriver);
+                                if(fDTDDriver == null) {
+                                    fDTDDriver = new DTDDriver();
+                                }
+
+                                return fDTDDriver.next();
                             }
                         }
                         else if (fExternalSubsetSource != null) {
@@ -1149,9 +1150,21 @@ public class XMLDocumentScannerImpl
                             resourceIdentifier.setValues(fDoctypePublicId, fDoctypeSystemId, null, null);
                             XMLInputSource xmlInputSource = null ;
                             StaxXMLInputSource staxInputSource =  fEntityManager.resolveEntityAsPerStax(resourceIdentifier);
+
+                            // Check access permission. If the source is resolved by a resolver, the check is skipped.
+                            if (!staxInputSource.hasResolver()) {
+                                String accessError = checkAccess(fDoctypeSystemId, fAccessExternalDTD);
+                                if (accessError != null) {
+                                    reportFatalError("AccessExternalDTD", new Object[]{ SecuritySupport.sanitizePath(fDoctypeSystemId), accessError });
+                                }
+                            }
                             xmlInputSource = staxInputSource.getXMLInputSource();
                             fDTDScanner.setInputSource(xmlInputSource);
-                            setScannerState(SCANNER_STATE_DTD_EXTERNAL_DECLS);
+                            if (fEntityScanner.fCurrentEntity != null) {
+                                setScannerState(SCANNER_STATE_DTD_EXTERNAL_DECLS);
+                            } else {
+                                setScannerState(SCANNER_STATE_PROLOG);
+                            }
                             again = true;
                             break;
                         }
