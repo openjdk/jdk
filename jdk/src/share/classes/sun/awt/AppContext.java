@@ -814,16 +814,24 @@ public final class AppContext {
     static {
         sun.misc.SharedSecrets.setJavaAWTAccess(new sun.misc.JavaAWTAccess() {
             public Object get(Object key) {
-                return getAppContext().get(key);
+                AppContext ac = getAppContext();
+                return (ac == null) ? null : ac.get(key);
             }
             public void put(Object key, Object value) {
-                getAppContext().put(key, value);
+                AppContext ac = getAppContext();
+                if (ac != null) {
+                    ac.put(key, value);
+                }
             }
             public void remove(Object key) {
-                getAppContext().remove(key);
+                AppContext ac = getAppContext();
+                if (ac != null) {
+                    ac.remove(key);
+                }
             }
             public boolean isDisposed() {
-                return getAppContext().isDisposed();
+                AppContext ac = getAppContext();
+                return (ac == null) ? true : ac.isDisposed();
             }
             public boolean isMainAppContext() {
                 return (numAppContexts.get() == 1 && mainAppContext != null);
