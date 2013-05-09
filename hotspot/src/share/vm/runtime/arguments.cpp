@@ -747,16 +747,16 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
     return;
   }
 
-  int index = *count;
+  int new_count = *count + 1;
 
   // expand the array and add arg to the last element
-  (*count)++;
   if (*bldarray == NULL) {
-    *bldarray = NEW_C_HEAP_ARRAY(char*, *count, mtInternal);
+    *bldarray = NEW_C_HEAP_ARRAY(char*, new_count, mtInternal);
   } else {
-    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, *count, mtInternal);
+    *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtInternal);
   }
-  (*bldarray)[index] = strdup(arg);
+  (*bldarray)[*count] = strdup(arg);
+  *count = new_count;
 }
 
 void Arguments::build_jvm_args(const char* arg) {
@@ -1617,30 +1617,38 @@ void Arguments::set_heap_size() {
     FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx)reasonable_max);
   }
 
-  // If the initial_heap_size has not been set with InitialHeapSize
-  // or -Xms, then set it as fraction of the size of physical memory,
-  // respecting the maximum and minimum sizes of the heap.
-  if (FLAG_IS_DEFAULT(InitialHeapSize)) {
+  // If the minimum or initial heap_size have not been set or requested to be set
+  // ergonomically, set them accordingly.
+  if (InitialHeapSize == 0 || min_heap_size() == 0) {
     julong reasonable_minimum = (julong)(OldSize + NewSize);
 
     reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
 
     reasonable_minimum = limit_by_allocatable_memory(reasonable_minimum);
 
-    julong reasonable_initial = phys_mem / InitialRAMFraction;
+    if (InitialHeapSize == 0) {
+      julong reasonable_initial = phys_mem / InitialRAMFraction;
 
-    reasonable_initial = MAX2(reasonable_initial, reasonable_minimum);
-    reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
+      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)min_heap_size());
+      reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
-    reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
+      reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
-    if (PrintGCDetails && Verbose) {
-      // Cannot use gclog_or_tty yet.
-      tty->print_cr("  Initial heap size " SIZE_FORMAT, (uintx)reasonable_initial);
-      tty->print_cr("  Minimum heap size " SIZE_FORMAT, (uintx)reasonable_minimum);
+      if (PrintGCDetails && Verbose) {
+        // Cannot use gclog_or_tty yet.
+        tty->print_cr("  Initial heap size " SIZE_FORMAT, (uintx)reasonable_initial);
+      }
+      FLAG_SET_ERGO(uintx, InitialHeapSize, (uintx)reasonable_initial);
     }
-    FLAG_SET_ERGO(uintx, InitialHeapSize, (uintx)reasonable_initial);
-    set_min_heap_size((uintx)reasonable_minimum);
+    // If the minimum heap size has not been set (via -Xms),
+    // synchronize with InitialHeapSize to avoid errors with the default value.
+    if (min_heap_size() == 0) {
+      set_min_heap_size(MIN2((uintx)reasonable_minimum, InitialHeapSize));
+      if (PrintGCDetails && Verbose) {
+        // Cannot use gclog_or_tty yet.
+        tty->print_cr("  Minimum heap size " SIZE_FORMAT, min_heap_size());
+      }
+    }
   }
 }
 
@@ -2426,7 +2434,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_heap_size, 1);
+      // an initial heap size of 0 means automatically determine
+      ArgsRange errcode = parse_memory_size(tail, &long_initial_heap_size, 0);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
                     "Invalid initial heap size: %s\n", option->optionString);
@@ -2437,7 +2446,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // Currently the minimum size and the initial heap sizes are the same.
       set_min_heap_size(InitialHeapSize);
     // -Xmx
-    } else if (match_option(option, "-Xmx", &tail)) {
+    } else if (match_option(option, "-Xmx", &tail) || match_option(option, "-XX:MaxHeapSize=", &tail)) {
       julong long_max_heap_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_max_heap_size, 1);
       if (errcode != arg_in_range) {

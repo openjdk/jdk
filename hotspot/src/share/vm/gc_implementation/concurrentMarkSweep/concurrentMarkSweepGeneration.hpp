@@ -604,6 +604,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   ConcurrentMarkSweepPolicy* _collector_policy;
   ConcurrentMarkSweepPolicy* collector_policy() { return _collector_policy; }
 
+  void set_did_compact(bool v);
+
   // XXX Move these to CMSStats ??? FIX ME !!!
   elapsedTimer _inter_sweep_timer;   // time between sweeps
   elapsedTimer _intra_sweep_timer;   // time _in_ sweeps
@@ -1081,6 +1083,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   CollectionTypes _debug_collection_type;
 
+  // True if a compactiing collection was done.
+  bool _did_compact;
+  bool did_compact() { return _did_compact; }
+
   // Fraction of current occupancy at which to start a CMS collection which
   // will collect this generation (at least).
   double _initiating_occupancy;
@@ -1120,6 +1126,8 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Adaptive size policy
   CMSAdaptiveSizePolicy* size_policy();
+
+  void set_did_compact(bool v) { _did_compact = v; }
 
   bool refs_discovery_is_atomic() const { return false; }
   bool refs_discovery_is_mt()     const {
