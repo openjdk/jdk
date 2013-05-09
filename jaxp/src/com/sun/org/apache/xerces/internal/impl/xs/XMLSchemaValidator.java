@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.ArrayList;
-
+import javax.xml.XMLConstants;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.RevalidationHandler;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
@@ -233,6 +233,12 @@ public class XMLSchemaValidator
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
+    /** property identifier: access external dtd. */
+    private static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema */
+    private static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+
     protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
 
     // recognized features and properties
@@ -291,11 +297,13 @@ public class XMLSchemaValidator
             JAXP_SCHEMA_SOURCE,
             JAXP_SCHEMA_LANGUAGE,
             SCHEMA_DV_FACTORY,
+            ACCESS_EXTERNAL_DTD,
+            ACCESS_EXTERNAL_SCHEMA
             };
 
     /** Property defaults. */
     private static final Object[] PROPERTY_DEFAULTS =
-        { null, null, null, null, null, null, null, null, null, null, null};
+        { null, null, null, null, null, null, null, null, null, null, null, null, null};
 
     // this is the number of valuestores of each kind
     // we expect an element to have.  It's almost
