@@ -96,7 +96,7 @@ public:
     _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
   {}
   bool do_card_ptr(jbyte* card_ptr, int worker_i) {
-    bool oops_into_cset = _g1rs->concurrentRefineOneCard(card_ptr, worker_i, false);
+    bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
     // that point into the collection set.
@@ -1452,9 +1452,10 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         _hr_printer.end_gc(true /* full */, (size_t) total_collections());
       }
 
-      if (_cg1r->use_cache()) {
-        _cg1r->clear_and_record_card_counts();
-        _cg1r->clear_hot_cache();
+      G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
+      if (hot_card_cache->use_cache()) {
+        hot_card_cache->reset_card_counts();
+        hot_card_cache->reset_hot_cache();
       }
 
       // Rebuild remembered sets of all regions.
@@ -1767,6 +1768,8 @@ void G1CollectedHeap::update_committed_space(HeapWord* old_end,
   Universe::heap()->barrier_set()->resize_covered_region(_g1_committed);
   // Tell the BOT about the update.
   _bot_shared->resize(_g1_committed.word_size());
+  // Tell the hot card cache about the update
+  _cg1r->hot_card_cache()->resize_card_counts(capacity());
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes) {
@@ -1999,7 +2002,7 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
 
-  _cg1r = new ConcurrentG1Refine();
+  _cg1r = new ConcurrentG1Refine(this);
 
   // Reserve the maximum.
 
@@ -2060,6 +2063,9 @@ jint G1CollectedHeap::initialize() {
                   (HeapWord*) _g1_reserved.end(),
                   _expansion_regions);
 
+  // Do later initialization work for concurrent refinement.
+  _cg1r->init();
+
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
@@ -2077,20 +2083,20 @@ jint G1CollectedHeap::initialize() {
 
   _g1h = this;
 
-   _in_cset_fast_test_length = max_regions();
-   _in_cset_fast_test_base =
+  _in_cset_fast_test_length = max_regions();
+  _in_cset_fast_test_base =
                    NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length, mtGC);
 
-   // We're biasing _in_cset_fast_test to avoid subtracting the
-   // beginning of the heap every time we want to index; basically
-   // it's the same with what we do with the card table.
-   _in_cset_fast_test = _in_cset_fast_test_base -
+  // We're biasing _in_cset_fast_test to avoid subtracting the
+  // beginning of the heap every time we want to index; basically
+  // it's the same with what we do with the card table.
+  _in_cset_fast_test = _in_cset_fast_test_base -
                ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
 
-   // Clear the _cset_fast_test bitmap in anticipation of adding
-   // regions to the incremental collection set for the first
-   // evacuation pause.
-   clear_cset_fast_test();
+  // Clear the _cset_fast_test bitmap in anticipation of adding
+  // regions to the incremental collection set for the first
+  // evacuation pause.
+  clear_cset_fast_test();
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2151,9 +2157,6 @@ jint G1CollectedHeap::initialize() {
   // In case we're keeping closure specialization stats, initialize those
   // counts and that mechanism.
   SpecializationStats::clear();
-
-  // Do later initialization work for concurrent refinement.
-  _cg1r->init();
 
   // Here we allocate the dummy full region that is required by the
   // G1AllocRegion class. If we don't pass an address in the reserved
@@ -2313,7 +2316,8 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                                  bool concurrent,
                                                  int worker_i) {
   // Clean cards in the hot card cache
-  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set(), into_cset_dcq);
+  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
+  hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
 
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   int n_completed_buffers = 0;
@@ -5603,8 +5607,11 @@ void G1CollectedHeap::evacuate_collection_set() {
   NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
-  concurrent_g1_refine()->set_use_cache(false);
-  concurrent_g1_refine()->clear_hot_cache_claimed_index();
+
+  // Disable the hot card cache.
+  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
+  hot_card_cache->reset_hot_cache_claimed_index();
+  hot_card_cache->set_use_cache(false);
 
   uint n_workers;
   if (G1CollectedHeap::use_parallel_gc_threads()) {
@@ -5686,8 +5693,11 @@ void G1CollectedHeap::evacuate_collection_set() {
   release_gc_alloc_regions(n_workers);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
-  concurrent_g1_refine()->clear_hot_cache();
-  concurrent_g1_refine()->set_use_cache(true);
+  // Reset and re-enable the hot card cache.
+  // Note the counts for the cards in the regions in the
+  // collection set are reset when the collection set is freed.
+  hot_card_cache->reset_hot_cache();
+  hot_card_cache->set_use_cache(true);
 
   finalize_for_evac_failure();
 
@@ -5749,6 +5759,12 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   assert(!hr->is_empty(), "the region should not be empty");
   assert(free_list != NULL, "pre-condition");
 
+  // Clear the card counts for this region.
+  // Note: we only need to do this if the region is not young
+  // (since we don't refine cards in young regions).
+  if (!hr->is_young()) {
+    _cg1r->hot_card_cache()->reset_card_counts(hr);
+  }
   *pre_used += hr->used();
   hr->hr_clear(par, true /* clear_space */);
   free_list->add_as_head(hr);
