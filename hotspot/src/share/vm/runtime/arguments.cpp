@@ -2051,6 +2051,10 @@ bool Arguments::check_vm_args_consistency() {
                                         "G1RefProcDrainInterval");
     status = status && verify_min_value((intx)G1ConcMarkStepDurationMillis, 1,
                                         "G1ConcMarkStepDurationMillis");
+    status = status && verify_interval(G1ConcRSHotCardLimit, 0, max_jubyte,
+                                       "G1ConcRSHotCardLimit");
+    status = status && verify_interval(G1ConcRSLogCacheSize, 0, 31,
+                                       "G1ConcRSLogCacheSize");
   }
 #endif // INCLUDE_ALL_GCS
 
