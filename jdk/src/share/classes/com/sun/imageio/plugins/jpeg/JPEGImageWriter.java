@@ -495,8 +495,8 @@ public class JPEGImageWriter extends ImageWriter {
             // handle <= 8-bit samples.  We now check the band sizes and throw
             // an exception for images, such as USHORT_GRAY, with > 8 bits
             // per sample.
-            if (bandSizes[i] > 8) {
-                throw new IIOException("Sample size must be <= 8");
+            if (bandSizes[i] <= 0 || bandSizes[i] > 8) {
+                throw new IIOException("Illegal band size: should be 0 < size <= 8");
             }
             // 4450894 part 2: We expand IndexColorModel images to full 24-
             // or 32-bit in grabPixels() for each scanline.  For indexed
