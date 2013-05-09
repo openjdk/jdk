@@ -34,10 +34,6 @@ class VMError : public StackObj {
   friend class VM_ReportJavaOutOfMemory;
   friend class Decoder;
 
-  enum ErrorType {
-    internal_error = 0xe0000000,
-    oom_error      = 0xe0000001
-  };
   int          _id;          // Solaris/Linux signals: 0 - SIGRTMAX
                              // Windows exceptions: 0xCxxxxxxx system errors
                              //                     0x8xxxxxxx system warnings
@@ -96,9 +92,12 @@ class VMError : public StackObj {
   // accessor
   const char* message() const    { return _message; }
   const char* detail_msg() const { return _detail_msg; }
-  bool should_report_bug(unsigned int id) { return id != oom_error; }
+  bool should_report_bug(unsigned int id) {
+    return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
+  }
 
 public:
+
   // Constructor for crashes
   VMError(Thread* thread, unsigned int sig, address pc, void* siginfo,
           void* context);
@@ -108,7 +107,7 @@ public:
 
   // Constructor for VM OOM errors
   VMError(Thread* thread, const char* filename, int lineno, size_t size,
-          const char* message);
+          VMErrorType vm_err_type, const char* message);
   // Constructor for non-fatal errors
   VMError(const char* message);
 

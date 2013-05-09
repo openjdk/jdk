@@ -124,10 +124,11 @@ static void displaycb_handle
 
         jobject graphicsEnv = [wrapper jObjectWithEnv:env];
         if (graphicsEnv == NULL) return; // ref already GC'd
-
         static JNF_CLASS_CACHE(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
-        static JNF_MEMBER_CACHE(jm_displayReconfiguration, jc_CGraphicsEnvironment, "_displayReconfiguration", "(J)V");
-        JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration);
+        static JNF_MEMBER_CACHE(jm_displayReconfiguration, jc_CGraphicsEnvironment, "_displayReconfiguration", "(IZ)V");
+        JNFCallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
+                            (jint) display, 
+                            (jboolean) flags & kCGDisplayRemoveFlag);
     });
 }
 

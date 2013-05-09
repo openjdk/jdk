@@ -280,6 +280,11 @@ public enum TokenType {
        return values;
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
+
     static {
         // Avoid cloning of enumeration.
         values = TokenType.values();

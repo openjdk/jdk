@@ -50,14 +50,14 @@ public interface Krb5Proxy {
 
 
     /**
-     * Returns the KerberosKeys for the default server-side principal.
+     * Returns the Kerberos ServiceCreds for the default server-side principal.
      */
-    SecretKey[] getServerKeys(AccessControlContext acc) throws LoginException;
+    Object getServiceCreds(AccessControlContext acc) throws LoginException;
 
     /**
      * Returns the server-side principal name associated with the KerberosKey.
      */
-    String getServerPrincipalName(SecretKey kerberosKey);
+    String getServerPrincipalName(Object serviceCreds);
 
     /**
      * Returns the hostname embedded in the principal name.
@@ -68,4 +68,9 @@ public interface Krb5Proxy {
      * Returns a ServicePermission for the principal name and action.
      */
     Permission getServicePermission(String principalName, String action);
+
+    /**
+     * Determines if the Subject might contain creds for princ.
+     */
+    boolean isRelated(Subject subject, Principal princ);
 }

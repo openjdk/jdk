@@ -80,7 +80,7 @@ void BlockOffsetSharedArray::resize(size_t new_word_size) {
     assert(delta > 0, "just checking");
     if (!_vs.expand_by(delta)) {
       // Do better than this for Merlin
-      vm_exit_out_of_memory(delta, "offset table expansion");
+      vm_exit_out_of_memory(delta, OOM_MMAP_ERROR, "offset table expansion");
     }
     assert(_vs.high() == high + delta, "invalid expansion");
   } else {

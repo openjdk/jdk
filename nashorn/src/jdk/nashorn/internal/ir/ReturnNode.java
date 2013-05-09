@@ -27,22 +27,17 @@ package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.parser.TokenType.RETURN;
 import static jdk.nashorn.internal.parser.TokenType.YIELD;
-
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for RETURN or YIELD statements.
- *
  */
+@Immutable
 public class ReturnNode extends Node {
     /** Optional expression. */
-    private Node expression;
-
-    /** Try chain. */
-    @Ignore
-    private final TryNode tryChain;
+    private final Node expression;
 
     /**
      * Constructor
@@ -51,27 +46,20 @@ public class ReturnNode extends Node {
      * @param token      token
      * @param finish     finish
      * @param expression expression to return
-     * @param tryChain   surrounding try chain.
      */
-    public ReturnNode(final Source source, final long token, final int finish, final Node expression, final TryNode tryChain) {
+    public ReturnNode(final Source source, final long token, final int finish, final Node expression) {
         super(source, token, finish);
-
         this.expression = expression;
-        this.tryChain   = tryChain;
-
-        setIsTerminal(true);
     }
 
-    private ReturnNode(final ReturnNode returnNode, final CopyState cs) {
+    private ReturnNode(final ReturnNode returnNode, final Node expression) {
         super(returnNode);
-
-        this.expression = cs.existingOrCopy(returnNode.expression);
-        this.tryChain   = (TryNode)cs.existingOrSame(returnNode.tryChain);
+        this.expression = expression;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new ReturnNode(this, cs);
+    public boolean isTerminal() {
+        return true;
     }
 
     /**
@@ -100,11 +88,10 @@ public class ReturnNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterReturnNode(this) != null) {
+        if (visitor.enterReturnNode(this)) {
             if (expression != null) {
-                expression = expression.accept(visitor);
+                return visitor.leaveReturnNode(setExpression(expression.accept(visitor)));
             }
-
             return visitor.leaveReturnNode(this);
         }
 
@@ -121,25 +108,6 @@ public class ReturnNode extends Node {
         }
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        if (other instanceof ReturnNode) {
-            final ReturnNode otherReturn = (ReturnNode)other;
-            if (hasExpression() != otherReturn.hasExpression()) {
-                return false;
-            } else if (hasExpression()) {
-                return otherReturn.getExpression().equals(getExpression());
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return 0x4711_17 ^ (expression == null ? 0 : expression.hashCode());
-    }
-
     /**
      * Get the expression this node returns
      * @return return expression, or null if void return
@@ -151,16 +119,13 @@ public class ReturnNode extends Node {
     /**
      * Reset the expression this node returns
      * @param expression new expression, or null if void return
+     * @return new or same return node
      */
-    public void setExpression(final Node expression) {
-        this.expression = expression;
+    public ReturnNode setExpression(final Node expression) {
+        if (this.expression == expression) {
+            return this;
+        }
+        return new ReturnNode(this, expression);
     }
 
-    /**
-     * Get the surrounding try chain for this return node
-     * @return try chain
-     */
-    public TryNode getTryChain() {
-        return tryChain;
-    }
 }
