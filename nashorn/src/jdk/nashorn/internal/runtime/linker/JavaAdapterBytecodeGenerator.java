@@ -127,9 +127,9 @@ final class JavaAdapterBytecodeGenerator extends JavaAdapterGeneratorBase {
     private static final Type METHOD_TYPE_TYPE = Type.getType(MethodType.class);
     private static final Type METHOD_HANDLE_TYPE = Type.getType(MethodHandle.class);
     private static final String GET_HANDLE_OBJECT_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE,
-            OBJECT_TYPE, STRING_TYPE, METHOD_TYPE_TYPE, Type.BOOLEAN_TYPE);
+            OBJECT_TYPE, STRING_TYPE, METHOD_TYPE_TYPE);
     private static final String GET_HANDLE_FUNCTION_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE,
-            SCRIPT_FUNCTION_TYPE, METHOD_TYPE_TYPE, Type.BOOLEAN_TYPE);
+            SCRIPT_FUNCTION_TYPE, METHOD_TYPE_TYPE);
     private static final String GET_CLASS_INITIALIZER_DESCRIPTOR = Type.getMethodDescriptor(SCRIPT_OBJECT_TYPE);
     private static final Type RUNTIME_EXCEPTION_TYPE = Type.getType(RuntimeException.class);
     private static final Type THROWABLE_TYPE = Type.getType(Throwable.class);
@@ -315,7 +315,6 @@ final class JavaAdapterBytecodeGenerator extends JavaAdapterGeneratorBase {
             mv.dup();
             mv.aconst(mi.getName());
             mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
-            mv.iconst(mi.method.isVarArgs() ? 1 : 0);
             mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_OBJECT_DESCRIPTOR);
             mv.putstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
@@ -459,7 +458,6 @@ final class JavaAdapterBytecodeGenerator extends JavaAdapterGeneratorBase {
                     mv.aconst(mi.getName());
                 }
                 mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
-                mv.iconst(mi.method.isVarArgs() ? 1 : 0);
                 mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", getHandleDescriptor);
             }
             mv.putfield(generatedClassName, mi.methodHandleInstanceFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);

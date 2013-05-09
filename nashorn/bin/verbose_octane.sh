@@ -26,7 +26,7 @@ if [ -z $ITERS ]; then
     ITERS=7
 fi
 NASHORN_JAR=dist/nashorn.jar
-JVM_FLAGS="-XX:+UnlockDiagnosticVMOptions -Dnashorn.unstable.relink.threshold=8 -Xms2G -Xmx2G -XX:+TieredCompilation -server -jar ${NASHORN_JAR}"
+JVM_FLAGS="-Djava.ext.dirs=`dirname $0`/../dist:$JAVA_HOME/jre/lib/ext -XX:+UnlockDiagnosticVMOptions -Dnashorn.unstable.relink.threshold=8 -Xms2G -Xmx2G -XX:+TieredCompilation -server -jar ${NASHORN_JAR}"
 JVM_FLAGS7="-Xbootclasspath/p:${NASHORN_JAR} ${JVM_FLAGS}"
 OCTANE_ARGS="--verbose --iterations ${ITERS}"
 

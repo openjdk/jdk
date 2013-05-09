@@ -119,6 +119,7 @@ int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
 Mutex* os::Linux::_createThread_lock = NULL;
 pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
+const int os::Linux::_vm_default_page_size = (8 * K);
 bool os::Linux::_is_floating_stack = false;
 bool os::Linux::_is_NPTL = false;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
@@ -1662,10 +1663,6 @@ bool os::dll_build_name(char* buffer, size_t buflen,
   return retval;
 }
 
-const char* os::get_current_directory(char *buf, int buflen) {
-  return getcwd(buf, buflen);
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -2906,9 +2903,10 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
     flags |= MAP_FIXED;
   }
 
-  // Map uncommitted pages PROT_READ and PROT_WRITE, change access
-  // to PROT_EXEC if executable when we commit the page.
-  addr = (char*)::mmap(requested_addr, bytes, PROT_READ|PROT_WRITE,
+  // Map reserved/uncommitted pages PROT_NONE so we fail early if we
+  // touch an uncommitted page. Otherwise, the read/write might
+  // succeed if we have enough swap space to back the physical page.
+  addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
@@ -4249,6 +4247,15 @@ void os::init(void) {
   Linux::clock_init();
   initial_time_count = os::elapsed_counter();
   pthread_mutex_init(&dl_mutex, NULL);
+
+  // If the pagesize of the VM is greater than 8K determine the appropriate
+  // number of initial guard pages.  The user can change this with the
+  // command line arguments, if needed.
+  if (vm_page_size() > (int)Linux::vm_default_page_size()) {
+    StackYellowPages = 1;
+    StackRedPages = 1;
+    StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
+  }
 }
 
 // To install functions for atexit system call
@@ -4302,8 +4309,8 @@ jint os::init_2(void)
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
-                    2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::page_size());
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                    (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&

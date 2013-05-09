@@ -51,6 +51,7 @@ public final class NativeRegExpExecResult extends ScriptObject {
 
     NativeRegExpExecResult(final RegExpResult result) {
         setProto(Global.instance().getArrayPrototype());
+        setIsArray();
         this.setArray(ArrayData.allocate(result.getGroups().clone()));
         this.index = result.getIndex();
         this.input = result.getInput();
