@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,60 +21,85 @@
  * questions.
  */
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.nio.file.spi.FileSystemProvider;
-import java.nio.channels.SeekableByteChannel;
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
-import java.io.*;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.AccessMode;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
- * A "pass through" file system implementation that passes through, or delegates,
- * everything to the default file system.
+ * A {@code FileSystem} that helps testing by trigger exception throwing based on filenames.
  */
+class FaultyFileSystem extends FileSystem {
+    final Path root;
+    final boolean removeRootAfterClose;
+    final FileSystem delegate;
+    boolean isOpen;
 
-class PassThroughFileSystem extends FileSystem {
-    private final FileSystemProvider provider;
-    private final FileSystem delegate;
-
-    PassThroughFileSystem(FileSystemProvider provider, FileSystem delegate) {
-        this.provider = provider;
-        this.delegate = delegate;
+    FaultyFileSystem(Path root) throws IOException {
+        if (root == null) {
+            root = Files.createTempDirectory("faultyFS");
+            removeRootAfterClose = true;
+        } else {
+            if (! Files.isDirectory(root)) {
+                throw new IllegalArgumentException("must be a directory.");
+            }
+            removeRootAfterClose = false;
+        }
+        this.root = root;
+        delegate = root.getFileSystem();
+        isOpen = true;
     }
 
-    /**
-     * Creates a new "pass through" file system. Useful for test environments
-     * where the provider might not be deployed.
-     */
-    static FileSystem create() throws IOException {
-        FileSystemProvider provider = new PassThroughProvider();
-        Map<String,?> env = Collections.emptyMap();
-        URI uri = URI.create("pass:///");
-        return provider.newFileSystem(uri, env);
+    private static Path unwrap(Path p) {
+        return PassThroughFileSystem.unwrap(p);
     }
 
-    static Path unwrap(Path wrapper) {
-        if (wrapper == null)
-            throw new NullPointerException();
-        if (!(wrapper instanceof PassThroughPath))
-            throw new ProviderMismatchException();
-        return ((PassThroughPath)wrapper).delegate;
-    }
-
-    @Override
-    public FileSystemProvider provider() {
-        return provider;
+    Path getRoot() {
+        return new PassThroughFileSystem.PassThroughPath(this, root);
     }
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        if (isOpen) {
+            if (removeRootAfterClose) {
+                TestUtil.removeAll(root);
+            }
+            isOpen = false;
+        }
+    }
+
+    @Override
+    public FileSystemProvider provider() {
+        return FaultyFSProvider.getInstance();
     }
 
     @Override
     public boolean isOpen() {
-        return delegate.isOpen();
+        return isOpen;
     }
 
     @Override
@@ -87,25 +112,25 @@ class PassThroughFileSystem extends FileSystem {
         return delegate.getSeparator();
     }
 
-    @Override
-    public Iterable<Path> getRootDirectories() {
-        final Iterable<Path> roots = delegate.getRootDirectories();
-        return new Iterable<Path>() {
+    private <T> Iterable<T> SoleIterable(final T element) {
+        return new Iterable<T>() {
             @Override
-            public Iterator<Path> iterator() {
-                final Iterator<Path> itr = roots.iterator();
-                return new Iterator<Path>() {
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    private T soleElement = element;
+
                     @Override
                     public boolean hasNext() {
-                        return itr.hasNext();
+                        return soleElement != null;
                     }
+
                     @Override
-                    public Path next() {
-                        return new PassThroughPath(delegate, itr.next());
-                    }
-                    @Override
-                    public void remove() {
-                        itr.remove();
+                    public T next() {
+                        try {
+                            return soleElement;
+                        } finally {
+                            soleElement = null;
+                        }
                     }
                 };
             }
@@ -113,9 +138,19 @@ class PassThroughFileSystem extends FileSystem {
     }
 
     @Override
+    public Iterable<Path> getRootDirectories() {
+        return SoleIterable(getRoot());
+    }
+
+    @Override
     public Iterable<FileStore> getFileStores() {
-        // assume that unwrapped objects aren't exposed
-        return delegate.getFileStores();
+        FileStore store;
+        try {
+            store = Files.getFileStore(root);
+        } catch (IOException ioe) {
+            store = null;
+        }
+        return SoleIterable(store);
     }
 
     @Override
@@ -126,7 +161,7 @@ class PassThroughFileSystem extends FileSystem {
 
     @Override
     public Path getPath(String first, String... more) {
-        return new PassThroughPath(this, delegate.getPath(first, more));
+        return new PassThroughFileSystem.PassThroughPath(this, delegate.getPath(first, more));
     }
 
     @Override
@@ -152,11 +187,51 @@ class PassThroughFileSystem extends FileSystem {
         throw new UnsupportedOperationException();
     }
 
-    static class PassThroughProvider extends FileSystemProvider {
-        private static final String SCHEME = "pass";
-        private static volatile PassThroughFileSystem delegate;
+    static class FaultyException extends IOException {
+        FaultyException() {
+            super("fault triggered.");
+        }
+    }
 
-        public PassThroughProvider() { }
+    static class FaultyFSProvider extends FileSystemProvider {
+        private static final String SCHEME = "faulty";
+        private static volatile FaultyFileSystem delegate;
+        private static FaultyFSProvider INSTANCE = new FaultyFSProvider();
+        private boolean enabled;
+
+        private FaultyFSProvider() {}
+
+        public static FaultyFSProvider getInstance() {
+            return INSTANCE;
+        }
+
+        public void setFaultyMode(boolean enable) {
+            enabled = enable;
+        }
+
+        private void triggerEx(String filename, String... names) throws IOException {
+            if (! enabled) {
+                return;
+            }
+
+            if (filename.equals("SecurityException")) {
+                throw new SecurityException("FaultyFS", new FaultyException());
+            }
+
+            if (filename.equals("IOException")) {
+                throw new FaultyException();
+            }
+
+            for (String name: names) {
+                if (name.equals(filename)) {
+                    throw new FaultyException();
+                }
+            }
+        }
+
+        private void triggerEx(Path path, String... names) throws IOException {
+            triggerEx(path.getFileName().toString(), names);
+        }
 
         @Override
         public String getScheme() {
@@ -175,15 +250,35 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
+        public FileSystem newFileSystem(Path fakeRoot, Map<String,?> env)
+            throws IOException
+        {
+            if (env != null && env.keySet().contains("IOException")) {
+                triggerEx("IOException");
+            }
+
+            synchronized (FaultyFSProvider.class) {
+                if (delegate != null && delegate.isOpen())
+                    throw new FileSystemAlreadyExistsException();
+                FaultyFileSystem result = new FaultyFileSystem(fakeRoot);
+                delegate = result;
+                return result;
+            }
+        }
+
+        @Override
         public FileSystem newFileSystem(URI uri, Map<String,?> env)
             throws IOException
         {
+            if (env != null && env.keySet().contains("IOException")) {
+                triggerEx("IOException");
+            }
+
             checkUri(uri);
-            synchronized (PassThroughProvider.class) {
-                if (delegate != null)
+            synchronized (FaultyFSProvider.class) {
+                if (delegate != null && delegate.isOpen())
                     throw new FileSystemAlreadyExistsException();
-                PassThroughFileSystem result =
-                    new PassThroughFileSystem(this, FileSystems.getDefault());
+                FaultyFileSystem result = new FaultyFileSystem(null);
                 delegate = result;
                 return result;
             }
@@ -203,15 +298,20 @@ class PassThroughFileSystem extends FileSystem {
             checkScheme(uri);
             if (delegate == null)
                 throw new FileSystemNotFoundException();
-            uri = URI.create(delegate.provider().getScheme() + ":" +
-                             uri.getSchemeSpecificPart());
-            return new PassThroughPath(delegate, delegate.provider().getPath(uri));
+
+            // only allow absolute path
+            String path = uri.getSchemeSpecificPart();
+            if (! path.startsWith("///")) {
+                throw new IllegalArgumentException();
+            }
+            return new PassThroughFileSystem.PassThroughPath(delegate, delegate.root.resolve(path.substring(3)));
         }
 
         @Override
         public void setAttribute(Path file, String attribute, Object value, LinkOption... options)
             throws IOException
         {
+            triggerEx(file, "setAttribute");
             Files.setAttribute(unwrap(file), attribute, value, options);
         }
 
@@ -219,6 +319,7 @@ class PassThroughFileSystem extends FileSystem {
         public Map<String,Object> readAttributes(Path file, String attributes, LinkOption... options)
             throws IOException
         {
+            triggerEx(file, "readAttributes");
             return Files.readAttributes(unwrap(file), attributes, options);
         }
 
@@ -236,11 +337,13 @@ class PassThroughFileSystem extends FileSystem {
                                                                 LinkOption... options)
             throws IOException
         {
+            triggerEx(file, "readAttributes");
             return Files.readAttributes(unwrap(file), type, options);
         }
 
         @Override
         public void delete(Path file) throws IOException {
+            triggerEx(file, "delete");
             Files.delete(unwrap(file));
         }
 
@@ -248,28 +351,33 @@ class PassThroughFileSystem extends FileSystem {
         public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
             throws IOException
         {
+            triggerEx(target, "createSymbolicLink");
             Files.createSymbolicLink(unwrap(link), unwrap(target), attrs);
         }
 
         @Override
         public void createLink(Path link, Path existing) throws IOException {
+            triggerEx(existing, "createLink");
             Files.createLink(unwrap(link), unwrap(existing));
         }
 
         @Override
         public Path readSymbolicLink(Path link) throws IOException {
             Path target = Files.readSymbolicLink(unwrap(link));
-            return new PassThroughPath(delegate, target);
+            triggerEx(target, "readSymbolicLink");
+            return new PassThroughFileSystem.PassThroughPath(delegate, target);
         }
 
 
         @Override
         public void copy(Path source, Path target, CopyOption... options) throws IOException {
+            triggerEx(source, "copy");
             Files.copy(unwrap(source), unwrap(target), options);
         }
 
         @Override
         public void move(Path source, Path target, CopyOption... options) throws IOException {
+            triggerEx(source, "move");
             Files.move(unwrap(source), unwrap(target), options);
         }
 
@@ -279,14 +387,42 @@ class PassThroughFileSystem extends FileSystem {
                 public Iterator<Path> iterator() {
                     final Iterator<Path> itr = stream.iterator();
                     return new Iterator<Path>() {
+                        private Path next = null;
                         @Override
                         public boolean hasNext() {
-                            return itr.hasNext();
+                            if (next == null) {
+                                if (itr.hasNext()) {
+                                    next = itr.next();
+                                } else {
+                                    return false;
+                                }
+                            }
+                            if (next != null) {
+                                try {
+                                    triggerEx(next, "DirectoryIteratorException");
+                                } catch (IOException ioe) {
+                                    throw new DirectoryIteratorException(ioe);
+                                } catch (SecurityException se) {
+                                    // ??? Does DS throw SecurityException during iteration?
+                                    next = null;
+                                    return hasNext();
+                                }
+                            }
+                            return (next != null);
                         }
                         @Override
                         public Path next() {
-                            return new PassThroughPath(delegate, itr.next());
+                            try {
+                                if (next != null || hasNext()) {
+                                    return new PassThroughFileSystem.PassThroughPath(delegate, next);
+                                } else {
+                                    throw new NoSuchElementException();
+                                }
+                            } finally {
+                                next = null;
+                            }
                         }
+
                         @Override
                         public void remove() {
                             itr.remove();
@@ -304,6 +440,7 @@ class PassThroughFileSystem extends FileSystem {
         public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter)
             throws IOException
         {
+            triggerEx(dir, "newDirectoryStream");
             return wrap(Files.newDirectoryStream(unwrap(dir), filter));
         }
 
@@ -311,6 +448,7 @@ class PassThroughFileSystem extends FileSystem {
         public void createDirectory(Path dir, FileAttribute<?>... attrs)
             throws IOException
         {
+            triggerEx(dir, "createDirectory");
             Files.createDirectory(unwrap(dir), attrs);
         }
 
@@ -320,22 +458,26 @@ class PassThroughFileSystem extends FileSystem {
                                                   FileAttribute<?>... attrs)
             throws IOException
         {
+            triggerEx(file, "newByteChannel");
             return Files.newByteChannel(unwrap(file), options, attrs);
         }
 
 
         @Override
         public boolean isHidden(Path file) throws IOException {
+            triggerEx(file, "isHidden");
             return Files.isHidden(unwrap(file));
         }
 
         @Override
         public FileStore getFileStore(Path file) throws IOException {
+            triggerEx(file, "getFileStore");
             return Files.getFileStore(unwrap(file));
         }
 
         @Override
         public boolean isSameFile(Path file, Path other) throws IOException {
+            triggerEx(file, "isSameFile");
             return Files.isSameFile(unwrap(file), unwrap(other));
         }
 
@@ -343,6 +485,7 @@ class PassThroughFileSystem extends FileSystem {
         public void checkAccess(Path file, AccessMode... modes)
             throws IOException
         {
+            triggerEx(file, "checkAccess");
             // hack
             if (modes.length == 0) {
                 if (Files.exists(unwrap(file)))
@@ -351,187 +494,6 @@ class PassThroughFileSystem extends FileSystem {
                     throw new NoSuchFileException(file.toString());
             }
             throw new RuntimeException("not implemented yet");
-        }
-    }
-
-    static class PassThroughPath implements Path {
-        private final FileSystem fs;
-        private final Path delegate;
-
-        PassThroughPath(FileSystem fs, Path delegate) {
-            this.fs = fs;
-            this.delegate = delegate;
-        }
-
-        private Path wrap(Path path) {
-            return (path != null) ? new PassThroughPath(fs, path) : null;
-        }
-
-        @Override
-        public FileSystem getFileSystem() {
-            return fs;
-        }
-
-        @Override
-        public boolean isAbsolute() {
-            return delegate.isAbsolute();
-        }
-
-        @Override
-        public Path getRoot() {
-            return wrap(delegate.getRoot());
-        }
-
-        @Override
-        public Path getParent() {
-            return wrap(delegate.getParent());
-        }
-
-        @Override
-        public int getNameCount() {
-            return delegate.getNameCount();
-        }
-
-        @Override
-        public Path getFileName() {
-            return wrap(delegate.getFileName());
-        }
-
-        @Override
-        public Path getName(int index) {
-            return wrap(delegate.getName(index));
-        }
-
-        @Override
-        public Path subpath(int beginIndex, int endIndex) {
-            return wrap(delegate.subpath(beginIndex, endIndex));
-        }
-
-        @Override
-        public boolean startsWith(Path other) {
-            return delegate.startsWith(unwrap(other));
-        }
-
-        @Override
-        public boolean startsWith(String other) {
-            return delegate.startsWith(other);
-        }
-
-        @Override
-        public boolean endsWith(Path other) {
-            return delegate.endsWith(unwrap(other));
-        }
-
-        @Override
-        public boolean endsWith(String other) {
-            return delegate.endsWith(other);
-        }
-
-        @Override
-        public Path normalize() {
-            return wrap(delegate.normalize());
-        }
-
-        @Override
-        public Path resolve(Path other) {
-            return wrap(delegate.resolve(unwrap(other)));
-        }
-
-        @Override
-        public Path resolve(String other) {
-            return wrap(delegate.resolve(other));
-        }
-
-        @Override
-        public Path resolveSibling(Path other) {
-            return wrap(delegate.resolveSibling(unwrap(other)));
-        }
-
-        @Override
-        public Path resolveSibling(String other) {
-            return wrap(delegate.resolveSibling(other));
-        }
-
-        @Override
-        public Path relativize(Path other) {
-            return wrap(delegate.relativize(unwrap(other)));
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof PassThroughPath))
-                return false;
-            return delegate.equals(unwrap((PassThroughPath)other));
-        }
-
-        @Override
-        public int hashCode() {
-            return delegate.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return delegate.toString();
-        }
-
-        @Override
-        public URI toUri() {
-            String ssp = delegate.toUri().getSchemeSpecificPart();
-            return URI.create(fs.provider().getScheme() + ":" + ssp);
-        }
-
-        @Override
-        public Path toAbsolutePath() {
-            return wrap(delegate.toAbsolutePath());
-        }
-
-        @Override
-        public Path toRealPath(LinkOption... options) throws IOException {
-            return wrap(delegate.toRealPath(options));
-        }
-
-        @Override
-        public File toFile() {
-            return delegate.toFile();
-        }
-
-        @Override
-        public Iterator<Path> iterator() {
-            final Iterator<Path> itr = delegate.iterator();
-            return new Iterator<Path>() {
-                @Override
-                public boolean hasNext() {
-                    return itr.hasNext();
-                }
-                @Override
-                public Path next() {
-                    return wrap(itr.next());
-                }
-                @Override
-                public void remove() {
-                    itr.remove();
-                }
-            };
-        }
-
-        @Override
-        public int compareTo(Path other) {
-            return delegate.compareTo(unwrap(other));
-        }
-
-        @Override
-        public WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>[] events,
-                                      WatchEvent.Modifier... modifiers)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public  WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>... events)
-        {
-            throw new UnsupportedOperationException();
         }
     }
 }
