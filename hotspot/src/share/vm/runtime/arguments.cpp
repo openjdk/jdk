@@ -2088,6 +2088,26 @@ bool Arguments::check_vm_args_consistency() {
 #endif
   }
 
+  // Need to limit the extent of the padding to reasonable size.
+  // 8K is well beyond the reasonable HW cache line size, even with the
+  // aggressive prefetching, while still leaving the room for segregating
+  // among the distinct pages.
+  if (ContendedPaddingWidth < 0 || ContendedPaddingWidth > 8192) {
+    jio_fprintf(defaultStream::error_stream(),
+                "ContendedPaddingWidth=" INTX_FORMAT " must be the between %d and %d\n",
+                ContendedPaddingWidth, 0, 8192);
+    status = false;
+  }
+
+  // Need to enforce the padding not to break the existing field alignments.
+  // It is sufficient to check against the largest type size.
+  if ((ContendedPaddingWidth % BytesPerLong) != 0) {
+    jio_fprintf(defaultStream::error_stream(),
+                "ContendedPaddingWidth=" INTX_FORMAT " must be the multiple of %d\n",
+                ContendedPaddingWidth, BytesPerLong);
+    status = false;
+  }
+
   return status;
 }
 
