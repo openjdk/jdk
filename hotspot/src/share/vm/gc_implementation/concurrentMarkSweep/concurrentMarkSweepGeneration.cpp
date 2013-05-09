@@ -193,7 +193,8 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
      FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
   CardGeneration(rs, initial_byte_size, level, ct),
   _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
-  _debug_collection_type(Concurrent_collection_type)
+  _debug_collection_type(Concurrent_collection_type),
+  _did_compact(false)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
@@ -923,8 +924,9 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
   CardGeneration::compute_new_size();
 
   // Reset again after a possible resizing
-  cmsSpace()->reset_after_compaction();
-
+  if (did_compact()) {
+    cmsSpace()->reset_after_compaction();
+  }
 }
 
 void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
@@ -1574,6 +1576,8 @@ bool CMSCollector::shouldConcurrentCollect() {
   return false;
 }
 
+void CMSCollector::set_did_compact(bool v) { _cmsGen->set_did_compact(v); }
+
 // Clear _expansion_cause fields of constituent generations
 void CMSCollector::clear_expansion_cause() {
   _cmsGen->clear_expansion_cause();
@@ -1671,7 +1675,6 @@ void CMSCollector::collect(bool   full,
   }
   acquire_control_and_collect(full, clear_all_soft_refs);
   _full_gcs_since_conc_gc++;
-
 }
 
 void CMSCollector::request_full_gc(unsigned int full_gc_count) {
@@ -1853,6 +1856,7 @@ NOT_PRODUCT(
     }
   }
 
+  set_did_compact(should_compact);
   if (should_compact) {
     // If the collection is being acquired from the background
     // collector, there may be references on the discovered
@@ -2714,6 +2718,7 @@ void CMSCollector::gc_epilogue(bool full) {
     Chunk::clean_chunk_pool();
   }
 
+  set_did_compact(false);
   _between_prologue_and_epilogue = false;  // ready for next cycle
 }
 
