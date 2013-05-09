@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1257,43 +1257,6 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 }
 
 //=============================================================================
-
-// emit call stub, compiled java to interpreter
-void emit_java_to_interp(CodeBuffer &cbuf ) {
-  // Stub is fixed up when the corresponding call is converted from calling
-  // compiled code to calling interpreted code.
-  // mov rbx,0
-  // jmp -1
-
-  address mark = cbuf.insts_mark();  // get mark within main instrs section
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
-
-  address base =
-  __ start_a_stub(Compile::MAX_stubs_size);
-  if (base == NULL)  return;  // CodeBuffer::expand failed
-  // static stub relocation stores the instruction address of the call
-  __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM32);
-  // static stub relocation also tags the Method* in the code-stream.
-  __ mov_metadata(rbx, (Metadata*)NULL);  // method is zapped till fixup time
-  // This is recognized as unresolved by relocs/nativeInst/ic code
-  __ jump(RuntimeAddress(__ pc()));
-
-  __ end_a_stub();
-  // Update current stubs pointer and restore insts_end.
-}
-// size of call stub, compiled java to interpretor
-uint size_java_to_interp() {
-  return 10;  // movl; jmp
-}
-// relocation entries for call stub, compiled java to interpretor
-uint reloc_java_to_interp() {
-  return 4;  // 3 in emit_java_to_interp + 1 in Java_Static_Call
-}
-
-//=============================================================================
 #ifndef PRODUCT
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   st->print_cr(  "CMP    EAX,[ECX+4]\t# Inline cache check");
@@ -1909,8 +1872,8 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      static_call_Relocation::spec(), RELOC_IMM32 );
     }
-    if (_method) {  // Emit stub for static call
-      emit_java_to_interp(cbuf);
+    if (_method) {  // Emit stub for static call.
+      CompiledStaticCall::emit_to_interp_stub(cbuf);
     }
   %}
 
@@ -2312,30 +2275,6 @@ encode %{
     // AND $tmp,$y
     emit_opcode(cbuf,0x23);
     emit_rm(cbuf, 0x3, tmpReg, $y$$reg);
-    // ADD $p,$tmp
-    emit_opcode(cbuf,0x03);
-    emit_rm(cbuf, 0x3, $p$$reg, tmpReg);
-  %}
-
-  enc_class enc_cmpLTP_mem(rRegI p, rRegI q, memory mem, eCXRegI tmp) %{    // cadd_cmpLT
-    int tmpReg = $tmp$$reg;
-
-    // SUB $p,$q
-    emit_opcode(cbuf,0x2B);
-    emit_rm(cbuf, 0x3, $p$$reg, $q$$reg);
-    // SBB $tmp,$tmp
-    emit_opcode(cbuf,0x1B);
-    emit_rm(cbuf, 0x3, tmpReg, tmpReg);
-    // AND $tmp,$y
-    cbuf.set_insts_mark();       // Mark start of opcode for reloc info in mem operand
-    emit_opcode(cbuf,0x23);
-    int reg_encoding = tmpReg;
-    int base  = $mem$$base;
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int displace = $mem$$disp;
-    relocInfo::relocType disp_reloc = $mem->disp_reloc();
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
     // ADD $p,$tmp
     emit_opcode(cbuf,0x03);
     emit_rm(cbuf, 0x3, $p$$reg, tmpReg);
@@ -8922,9 +8861,9 @@ instruct convP2B( rRegI dst, eRegP src, eFlagsReg cr ) %{
   %}
 %}
 
-instruct cmpLTMask( eCXRegI dst, ncxRegI p, ncxRegI q, eFlagsReg cr ) %{
+instruct cmpLTMask(eCXRegI dst, ncxRegI p, ncxRegI q, eFlagsReg cr) %{
   match(Set dst (CmpLTMask p q));
-  effect( KILL cr );
+  effect(KILL cr);
   ins_cost(400);
 
   // SETlt can only use low byte of EAX,EBX, ECX, or EDX as destination
@@ -8932,50 +8871,83 @@ instruct cmpLTMask( eCXRegI dst, ncxRegI p, ncxRegI q, eFlagsReg cr ) %{
             "CMP    $p,$q\n\t"
             "SETlt  $dst\n\t"
             "NEG    $dst" %}
-  ins_encode( OpcRegReg(0x33,dst,dst),
-              OpcRegReg(0x3B,p,q),
-              setLT_reg(dst), neg_reg(dst) );
-  ins_pipe( pipe_slow );
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Rd = $dst$$Register;
+    Label done;
+    __ xorl(Rd, Rd);
+    __ cmpl(Rp, Rq);
+    __ setb(Assembler::less, Rd);
+    __ negl(Rd);
+  %}
+
+  ins_pipe(pipe_slow);
 %}
 
-instruct cmpLTMask0( rRegI dst, immI0 zero, eFlagsReg cr ) %{
+instruct cmpLTMask0(rRegI dst, immI0 zero, eFlagsReg cr) %{
   match(Set dst (CmpLTMask dst zero));
-  effect( DEF dst, KILL cr );
+  effect(DEF dst, KILL cr);
   ins_cost(100);
 
-  format %{ "SAR    $dst,31" %}
-  opcode(0xC1, 0x7);  /* C1 /7 ib */
-  ins_encode( RegOpcImm( dst, 0x1F ) );
-  ins_pipe( ialu_reg );
+  format %{ "SAR    $dst,31\t# cmpLTMask0" %}
+  ins_encode %{
+  __ sarl($dst$$Register, 31);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
-
-instruct cadd_cmpLTMask( ncxRegI p, ncxRegI q, ncxRegI y, eCXRegI tmp, eFlagsReg cr ) %{
+/* better to save a register than avoid a branch */
+instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, eFlagsReg cr) %{
   match(Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)));
-  effect( KILL tmp, KILL cr );
+  effect(KILL cr);
   ins_cost(400);
-  // annoyingly, $tmp has no edges so you cant ask for it in
-  // any format or encoding
-  format %{ "SUB    $p,$q\n\t"
-            "SBB    ECX,ECX\n\t"
-            "AND    ECX,$y\n\t"
-            "ADD    $p,ECX" %}
-  ins_encode( enc_cmpLTP(p,q,y,tmp) );
-  ins_pipe( pipe_cmplt );
+  format %{ "SUB    $p,$q\t# cadd_cmpLTMask\n\t"
+            "JGE    done\n\t"
+            "ADD    $p,$y\n"
+            "done:  " %}
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Ry = $y$$Register;
+    Label done;
+    __ subl(Rp, Rq);
+    __ jccb(Assembler::greaterEqual, done);
+    __ addl(Rp, Ry);
+    __ bind(done);
+  %}
+
+  ins_pipe(pipe_cmplt);
+%}
+
+/* better to save a register than avoid a branch */
+instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, eFlagsReg cr) %{
+  match(Set y (AndI (CmpLTMask p q) y));
+  effect(KILL cr);
+
+  ins_cost(300);
+
+  format %{ "CMPL     $p, $q\t# and_cmpLTMask\n\t"
+            "JLT      done\n\t"
+            "XORL     $y, $y\n"
+            "done:  " %}
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Ry = $y$$Register;
+    Label done;
+    __ cmpl(Rp, Rq);
+    __ jccb(Assembler::less, done);
+    __ xorl(Ry, Ry);
+    __ bind(done);
+  %}
+
+  ins_pipe(pipe_cmplt);
 %}
 
 /* If I enable this, I encourage spilling in the inner loop of compress.
-instruct cadd_cmpLTMask_mem( ncxRegI p, ncxRegI q, memory y, eCXRegI tmp, eFlagsReg cr ) %{
+instruct cadd_cmpLTMask_mem(ncxRegI p, ncxRegI q, memory y, eCXRegI tmp, eFlagsReg cr) %{
   match(Set p (AddI (AndI (CmpLTMask p q) (LoadI y)) (SubI p q)));
-  effect( USE_KILL tmp, KILL cr );
-  ins_cost(400);
-
-  format %{ "SUB    $p,$q\n\t"
-            "SBB    ECX,ECX\n\t"
-            "AND    ECX,$y\n\t"
-            "ADD    $p,ECX" %}
-  ins_encode( enc_cmpLTP_mem(p,q,y,tmp) );
-%}
 */
 
 //----------Long Instructions------------------------------------------------

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1656,53 +1656,6 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 }
 
 //=============================================================================
-
-// emit call stub, compiled java to interpretor
-void emit_java_to_interp(CodeBuffer &cbuf ) {
-
-  // Stub is fixed up when the corresponding call is converted from calling
-  // compiled code to calling interpreted code.
-  // set (empty), G5
-  // jmp -1
-
-  address mark = cbuf.insts_mark();  // get mark within main instrs section
-
-  MacroAssembler _masm(&cbuf);
-
-  address base =
-  __ start_a_stub(Compile::MAX_stubs_size);
-  if (base == NULL)  return;  // CodeBuffer::expand failed
-
-  // static stub relocation stores the instruction address of the call
-  __ relocate(static_stub_Relocation::spec(mark));
-
-  __ set_metadata(NULL, reg_to_register_object(Matcher::inline_cache_reg_encode()));
-
-  __ set_inst_mark();
-  AddressLiteral addrlit(-1);
-  __ JUMP(addrlit, G3, 0);
-
-  __ delayed()->nop();
-
-  // Update current stubs pointer and restore code_end.
-  __ end_a_stub();
-}
-
-// size of call stub, compiled java to interpretor
-uint size_java_to_interp() {
-  // This doesn't need to be accurate but it must be larger or equal to
-  // the real size of the stub.
-  return (NativeMovConstReg::instruction_size +  // sethi/setlo;
-          NativeJump::instruction_size + // sethi; jmp; nop
-          (TraceJumps ? 20 * BytesPerInstWord : 0) );
-}
-// relocation entries for call stub, compiled java to interpretor
-uint reloc_java_to_interp() {
-  return 10;  // 4 in emit_java_to_interp + 1 in Java_Static_Call
-}
-
-
-//=============================================================================
 #ifndef PRODUCT
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
@@ -2576,15 +2529,15 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    if ( !_method ) {
+    if (!_method) {
       emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type);
     } else if (_optimized_virtual) {
       emit_call_reloc(cbuf, $meth$$method, relocInfo::opt_virtual_call_type);
     } else {
       emit_call_reloc(cbuf, $meth$$method, relocInfo::static_call_type);
     }
-    if( _method ) {  // Emit stub for static call
-      emit_java_to_interp(cbuf);
+    if (_method) {  // Emit stub for static call.
+      CompiledStaticCall::emit_to_interp_stub(cbuf);
     }
   %}
 
@@ -8223,10 +8176,25 @@ instruct cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
   format %{ "SUBcc  $p,$q,$p\t! p' = p-q\n\t"
             "ADD    $p,$y,$tmp\t! g3=p-q+y\n\t"
             "MOVlt  $tmp,$p\t! p' < 0 ? p'+y : p'" %}
-  ins_encode( enc_cadd_cmpLTMask(p, q, y, tmp) );
-  ins_pipe( cadd_cmpltmask );
+  ins_encode(enc_cadd_cmpLTMask(p, q, y, tmp));
+  ins_pipe(cadd_cmpltmask);
 %}
 
+instruct and_cmpLTMask(iRegI p, iRegI q, iRegI y, flagsReg ccr) %{
+  match(Set p (AndI (CmpLTMask p q) y));
+  effect(KILL ccr);
+  ins_cost(DEFAULT_COST*3);
+
+  format %{ "CMP  $p,$q\n\t"
+            "MOV  $y,$p\n\t"
+            "MOVge G0,$p" %}
+  ins_encode %{
+    __ cmp($p$$Register, $q$$Register);
+    __ mov($y$$Register, $p$$Register);
+    __ movcc(Assembler::greaterEqual, false, Assembler::icc, G0, $p$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_ialu);
+%}
 
 //-----------------------------------------------------------------
 // Direct raw moves between float and general registers using VIS3.

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileBroker.hpp"
@@ -41,8 +42,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
-extern uint size_java_to_interp();
-extern uint reloc_java_to_interp();
 extern uint size_exception_handler();
 extern uint size_deopt_handler();
 
@@ -389,15 +388,15 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
         MachNode *mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        if( mach->is_MachCall() ) {
+        if (mach->is_MachCall()) {
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
           mcall->method_set((intptr_t)mcall->entry_point());
 
-          if( mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method ) {
-            stub_size  += size_java_to_interp();
-            reloc_size += reloc_java_to_interp();
+          if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
+            stub_size  += CompiledStaticCall::to_interp_stub_size();
+            reloc_size += CompiledStaticCall::reloc_to_interp_stub();
           }
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible
@@ -1044,21 +1043,6 @@ void NonSafepointEmitter::emit_non_safepoint() {
   debug_info->end_non_safepoint(pc_offset);
 }
 
-
-
-// helper for fill_buffer bailout logic
-static void turn_off_compiler(Compile* C) {
-  if (CodeCache::largest_free_block() >= CodeCacheMinimumFreeSpace*10) {
-    // Do not turn off compilation if a single giant method has
-    // blown the code cache size.
-    C->record_failure("excessive request to CodeCache");
-  } else {
-    // Let CompilerBroker disable further compilations.
-    C->record_failure("CodeCache is full");
-  }
-}
-
-
 //------------------------------init_buffer------------------------------------
 CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
@@ -1158,7 +1142,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
   // Have we run out of code space?
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-    turn_off_compiler(this);
+    C->record_failure("CodeCache is full");
     return NULL;
   }
   // Configure the code buffer.
@@ -1476,7 +1460,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       // Verify that there is sufficient space remaining
       cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
       if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-        turn_off_compiler(this);
+        C->record_failure("CodeCache is full");
         return;
       }
 
@@ -1633,7 +1617,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // One last check for failed CodeBuffer::expand:
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
-    turn_off_compiler(this);
+    C->record_failure("CodeCache is full");
     return;
   }
 

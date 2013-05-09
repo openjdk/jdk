@@ -25,26 +25,23 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a catch clause.
- *
  */
-public class CatchNode extends Node {
+@Immutable
+public final class CatchNode extends Node {
     /** Exception identifier. */
-    private IdentNode exception;
+    private final IdentNode exception;
 
     /** Exception condition. */
-    private Node exceptionCondition;
+    private final Node exceptionCondition;
 
     /** Catch body. */
-    private Block body;
-
-    /** Is rethrow - e.g. synthetic catch block for e.g. finallies, the parser case where
-     * there has to be at least on catch for syntactic validity */
-    private boolean isSyntheticRethrow;
+    private final Block body;
 
     /**
      * Constructors
@@ -64,18 +61,12 @@ public class CatchNode extends Node {
         this.body               = body;
     }
 
-    private CatchNode(final CatchNode catchNode, final CopyState cs) {
+    private CatchNode(final CatchNode catchNode, final IdentNode exception, final Node exceptionCondition, final Block body) {
         super(catchNode);
 
-        this.exception          = (IdentNode)cs.existingOrCopy(catchNode.exception);
-        this.exceptionCondition = cs.existingOrCopy(catchNode.exceptionCondition);
-        this.body               = (Block)cs.existingOrCopy(catchNode.body);
-        this.isSyntheticRethrow = catchNode.isSyntheticRethrow;
-     }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new CatchNode(this, cs);
+        this.exception          = exception;
+        this.exceptionCondition = exceptionCondition;
+        this.body               = body;
     }
 
     /**
@@ -84,18 +75,19 @@ public class CatchNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterCatchNode(this) != null) {
-            exception = (IdentNode)exception.accept(visitor);
-
-            if (exceptionCondition != null) {
-                exceptionCondition = exceptionCondition.accept(visitor);
-            }
-
-            body = (Block)body.accept(visitor);
-            return visitor.leaveCatchNode(this);
+        if (visitor.enterCatchNode(this)) {
+            return visitor.leaveCatchNode(
+                setException((IdentNode)exception.accept(visitor)).
+                setExceptionCondition(exceptionCondition == null ? null : exceptionCondition.accept(visitor)).
+                setBody((Block)body.accept(visitor)));
         }
 
         return this;
+    }
+
+    @Override
+    public boolean isTerminal() {
+        return body.isTerminal();
     }
 
     @Override
@@ -108,23 +100,6 @@ public class CatchNode extends Node {
             exceptionCondition.toString(sb);
         }
         sb.append(')');
-    }
-
-    /**
-     * Check if this catch is a synthetic rethrow
-     * @return true if this is a synthetic rethrow
-     */
-    public boolean isSyntheticRethrow() {
-        return isSyntheticRethrow;
-    }
-
-    /**
-     * Flag this as deliberatly generated catch all that rethrows the
-     * caught exception. This is used for example for generating finally
-     * expressions
-     */
-    public void setIsSyntheticRethrow() {
-        this.isSyntheticRethrow = true;
     }
 
     /**
@@ -146,9 +121,13 @@ public class CatchNode extends Node {
     /**
      * Reset the exception condition for this catch block
      * @param exceptionCondition the new exception condition
+     * @return new or same CatchNode
      */
-    public void setExceptionCondition(final Node exceptionCondition) {
-        this.exceptionCondition = exceptionCondition;
+    public CatchNode setExceptionCondition(final Node exceptionCondition) {
+        if (this.exceptionCondition == exceptionCondition) {
+            return this;
+        }
+        return new CatchNode(this, exception, exceptionCondition, body);
     }
 
     /**
@@ -157,5 +136,19 @@ public class CatchNode extends Node {
      */
     public Block getBody() {
         return body;
+    }
+
+    private CatchNode setException(final IdentNode exception) {
+        if (this.exception == exception) {
+            return this;
+        }
+        return new CatchNode(this, exception, exceptionCondition, body);
+    }
+
+    private CatchNode setBody(final Block body) {
+        if (this.body == body) {
+            return this;
+        }
+        return new CatchNode(this, exception, exceptionCondition, body);
     }
 }

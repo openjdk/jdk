@@ -25,16 +25,13 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.Objects;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Used to locate an entity back to it's source file.
- *
  */
-
 public class Location implements Cloneable {
     /** Source of entity. */
     private final Source source;
@@ -73,22 +70,13 @@ public class Location implements Cloneable {
     }
 
     @Override
-    public boolean equals(final Object other) {
-        if (other == null) {
-            return false;
-        }
-
-        if (other.getClass() != this.getClass()) {
-            return false;
-        }
-
-        final Location loc = (Location)other;
-        return token == loc.token && Objects.equals(source, loc.source);
+    public final boolean equals(final Object other) {
+        return super.equals(other);
     }
 
     @Override
-    public int hashCode() {
-        return Token.hashCode(token) ^ Objects.hashCode(source);
+    public final int hashCode() {
+        return super.hashCode();
     }
 
     /**

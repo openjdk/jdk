@@ -78,6 +78,8 @@ public class NMethod extends CodeBlob {
       current sweep traversal index. */
   private static CIntegerField stackTraversalMarkField;
 
+  private static CIntegerField compLevelField;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -113,7 +115,7 @@ public class NMethod extends CodeBlob {
     osrEntryPointField          = type.getAddressField("_osr_entry_point");
     lockCountField              = type.getJIntField("_lock_count");
     stackTraversalMarkField     = type.getCIntegerField("_stack_traversal_mark");
-
+    compLevelField              = type.getCIntegerField("_comp_level");
     pcDescSize = db.lookupType("PcDesc").getSize();
   }
 
@@ -530,7 +532,7 @@ public class NMethod extends CodeBlob {
     out.println("compile " + holder.getName().asString() + " " +
                 OopUtilities.escapeString(method.getName().asString()) + " " +
                 method.getSignature().asString() + " " +
-                getEntryBCI());
+                getEntryBCI() + " " + getCompLevel());
 
   }
 
@@ -551,4 +553,5 @@ public class NMethod extends CodeBlob {
   private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }
   private int getNulChkTableOffset()  { return (int) nulChkTableOffsetField .getValue(addr); }
   private int getNMethodEndOffset()   { return (int) nmethodEndOffsetField  .getValue(addr); }
+  private int getCompLevel()          { return (int) compLevelField         .getValue(addr); }
 }

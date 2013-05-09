@@ -71,9 +71,6 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle IS_NONSTRICT_FUNCTION = findOwnMH("isNonStrictFunction", boolean.class, Object.class, Object.class, ScriptFunctionData.class);
 
-    /** Reference to constructor prototype. */
-    protected Object prototype;
-
     /** The parent scope. */
     private final ScriptObject scope;
 
@@ -221,6 +218,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final ScriptObject object = data.allocate();
 
         if (object != null) {
+            Object prototype = getPrototype();
             if (prototype instanceof ScriptObject) {
                 object.setProto((ScriptObject)prototype);
             }
@@ -282,24 +280,18 @@ public abstract class ScriptFunction extends ScriptObject {
      * Get the prototype object for this function
      * @return prototype
      */
-    public final Object getPrototype() {
-        return prototype;
-    }
+    public abstract Object getPrototype();
 
     /**
      * Set the prototype object for this function
      * @param prototype new prototype object
-     * @return the prototype parameter
      */
-    public final Object setPrototype(final Object prototype) {
-        this.prototype = prototype;
-        return prototype;
-    }
+    public abstract void setPrototype(Object prototype);
 
     /**
      * Return the most appropriate invoke handle if there are specializations
      * @param type most specific method type to look for invocation with
-     * @param callsite args for trampoline invocation
+     * @param args args for trampoline invocation
      * @return invoke method handle
      */
     private MethodHandle getBestInvoker(final MethodType type, final Object[] args) {
