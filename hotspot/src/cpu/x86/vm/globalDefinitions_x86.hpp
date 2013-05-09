@@ -27,4 +27,6 @@
 
 const int StackAlignmentInBytes  = 16;
 
+#define SUPPORTS_NATIVE_CX8
+
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP
