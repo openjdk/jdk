@@ -44,7 +44,7 @@ AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   CodeSection* cs = code->insts();
   cs->clear_mark();   // new assembler kills old mark
   if (cs->start() == NULL)  {
-    vm_exit_out_of_memory(0, err_msg("CodeCache: no room for %s",
+    vm_exit_out_of_memory(0, OOM_MMAP_ERROR, err_msg("CodeCache: no room for %s",
                                      code->name()));
   }
   _code_section = cs;

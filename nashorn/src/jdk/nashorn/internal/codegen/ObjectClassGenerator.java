@@ -28,10 +28,10 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.Compiler.SCRIPTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ALLOCATE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_ARGUMENTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.INIT_SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JAVA_THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
-import static jdk.nashorn.internal.codegen.CompilerConstants.MAP;
 import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
@@ -204,8 +204,8 @@ public final class ObjectClassGenerator {
      * @return The class name.
      */
     public static String getClassName(final int fieldCount) {
-        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag() + fieldCount :
-                                 SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag();
+        return fieldCount != 0 ? SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount :
+                                 SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName();
     }
 
     /**
@@ -218,7 +218,23 @@ public final class ObjectClassGenerator {
      * @return The class name.
      */
     public static String getClassName(final int fieldCount, final int paramCount) {
-        return SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.tag() + fieldCount + SCOPE_MARKER + paramCount;
+        return SCRIPTS_PACKAGE + '/' + JS_OBJECT_PREFIX.symbolName() + fieldCount + SCOPE_MARKER + paramCount;
+    }
+
+    /**
+     * Returns the number of fields in the JavaScript scope class. Its name had to be generated using either
+     * {@link #getClassName(int)} or {@link #getClassName(int, int)}.
+     * @param clazz the JavaScript scope class.
+     * @return the number of fields in the scope class.
+     */
+    public static int getFieldCount(Class<?> clazz) {
+        final String name = clazz.getSimpleName();
+        final String prefix = JS_OBJECT_PREFIX.symbolName();
+        if(prefix.equals(name)) {
+            return 0;
+        }
+        final int scopeMarker = name.indexOf(SCOPE_MARKER);
+        return Integer.parseInt(scopeMarker == -1 ? name.substring(prefix.length()) : name.substring(prefix.length(), scopeMarker));
     }
 
     /**
@@ -387,7 +403,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.invoke(constructorNoLookup(ScriptObject.class, PropertyMap.class));
 
         return init;
@@ -402,7 +418,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class));
 
@@ -418,7 +434,7 @@ public final class ObjectClassGenerator {
         final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, Object.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
-        init.load(Type.OBJECT, MAP.slot());
+        init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.load(Type.OBJECT, INIT_ARGUMENTS.slot());
         init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, Object.class));
@@ -449,7 +465,7 @@ public final class ObjectClassGenerator {
      * @param className    Name of JavaScript class.
      */
     private static void newAllocate(final ClassEmitter classEmitter, final String className) {
-        final MethodEmitter allocate = classEmitter.method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), ALLOCATE.tag(), ScriptObject.class, PropertyMap.class);
+        final MethodEmitter allocate = classEmitter.method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), ALLOCATE.symbolName(), ScriptObject.class, PropertyMap.class);
         allocate.begin();
         allocate._new(className);
         allocate.dup();

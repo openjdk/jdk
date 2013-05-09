@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package javax.xml.stream;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
- * <p>Implements pluggable Datatypes.</p>
+ * <p>Implements pluggable streams.</p>
  *
  * <p>This class is duplicated for each JAXP subpackage so keep it in
  * sync.  It is package private for secure class loading.</p>
@@ -52,19 +53,19 @@ class FactoryFinder {
     /**
      * Cache for properties in java.home/lib/jaxp.properties
      */
-    static Properties cacheProps = new Properties();
+    final private static Properties cacheProps = new Properties();
 
     /**
      * Flag indicating if properties from java.home/lib/jaxp.properties
      * have been cached.
      */
-    static volatile boolean firstTime = true;
+    private static volatile boolean firstTime = true;
 
     /**
      * Security support class use to check access control before
      * getting certain system resources.
      */
-    static SecuritySupport ss = new SecuritySupport();
+    final private static SecuritySupport ss = new SecuritySupport();
 
     // Define system property "jaxp.debug" to get output
     static {
@@ -103,25 +104,25 @@ class FactoryFinder {
         try {
             if (cl == null) {
                 if (useBSClsLoader) {
-                    return Class.forName(className, true, FactoryFinder.class.getClassLoader());
+                    return Class.forName(className, false, FactoryFinder.class.getClassLoader());
                 } else {
                     cl = ss.getContextClassLoader();
                     if (cl == null) {
                         throw new ClassNotFoundException();
                     }
                     else {
-                        return cl.loadClass(className);
+                        return Class.forName(className, false, cl);
                     }
                 }
             }
             else {
-                return cl.loadClass(className);
+                return Class.forName(className, false, cl);
             }
         }
         catch (ClassNotFoundException e1) {
             if (doFallback) {
                 // Use current class loader - should always be bootstrap CL
-                return Class.forName(className, true, FactoryFinder.class.getClassLoader());
+                return Class.forName(className, false, FactoryFinder.class.getClassLoader());
             }
             else {
                 throw e1;
@@ -133,6 +134,9 @@ class FactoryFinder {
      * Create an instance of a class. Delegates to method
      * <code>getProviderClass()</code> in order to load the class.
      *
+     * @param type Base class / Service interface  of the factory to
+     *             instantiate.
+     *
      * @param className Name of the concrete class corresponding to the
      * service provider
      *
@@ -142,15 +146,18 @@ class FactoryFinder {
      * @param doFallback True if the current ClassLoader should be tried as
      * a fallback if the class is not found using cl
      */
-    static Object newInstance(String className, ClassLoader cl, boolean doFallback)
-        throws ConfigurationError
+    static <T> T newInstance(Class<T> type, String className, ClassLoader cl, boolean doFallback)
+        throws FactoryConfigurationError
     {
-        return newInstance(className, cl, doFallback, false);
+        return newInstance(type, className, cl, doFallback, false);
     }
 
     /**
      * Create an instance of a class. Delegates to method
      * <code>getProviderClass()</code> in order to load the class.
+     *
+     * @param type Base class / Service interface  of the factory to
+     *             instantiate.
      *
      * @param className Name of the concrete class corresponding to the
      * service provider
@@ -164,9 +171,12 @@ class FactoryFinder {
      * @param useBSClsLoader True if cl=null actually meant bootstrap classLoader. This parameter
      * is needed since DocumentBuilderFactory/SAXParserFactory defined null as context classLoader.
      */
-    static Object newInstance(String className, ClassLoader cl, boolean doFallback, boolean useBSClsLoader)
-        throws ConfigurationError
+    static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
+                              boolean doFallback, boolean useBSClsLoader)
+        throws FactoryConfigurationError
     {
+        assert type != null;
+
         // make sure we have access to restricted packages
         if (System.getSecurityManager() != null) {
             if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
@@ -176,20 +186,23 @@ class FactoryFinder {
         }
 
         try {
-            Class providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
+            Class<?> providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
+            if (!type.isAssignableFrom(providerClass)) {
+                throw new ClassCastException(className + " cannot be cast to " + type.getName());
+            }
             Object instance = providerClass.newInstance();
             if (debug) {    // Extra check to avoid computing cl strings
                 dPrint("created new instance of " + providerClass +
                        " using ClassLoader: " + cl);
             }
-            return instance;
+            return type.cast(instance);
         }
         catch (ClassNotFoundException x) {
-            throw new ConfigurationError(
+            throw new FactoryConfigurationError(
                 "Provider " + className + " not found", x);
         }
         catch (Exception x) {
-            throw new ConfigurationError(
+            throw new FactoryConfigurationError(
                 "Provider " + className + " could not be instantiated: " + x,
                 x);
         }
@@ -200,23 +213,27 @@ class FactoryFinder {
      *
      * @return Class object of factory, never null
      *
-     * @param factoryId             Name of the factory to find, same as
-     *                              a property name
+     * @param type                  Base class / Service interface  of the
+     *                              factory to find.
+     *
      * @param fallbackClassName     Implementation class name, if nothing else
      *                              is found.  Use null to mean no fallback.
      *
      * Package private so this code can be shared.
      */
-    static Object find(String factoryId, String fallbackClassName)
-        throws ConfigurationError
+    static <T> T find(Class<T> type, String fallbackClassName)
+        throws FactoryConfigurationError
     {
-        return find(factoryId, null, fallbackClassName);
+        return find(type, type.getName(), null, fallbackClassName);
     }
 
     /**
      * Finds the implementation Class object in the specified order.  Main
      * entry point.
      * @return Class object of factory, never null
+     *
+     * @param type                  Base class / Service interface  of the
+     *                              factory to find.
      *
      * @param factoryId             Name of the factory to find, same as
      *                              a property name
@@ -229,8 +246,8 @@ class FactoryFinder {
      *
      * Package private so this code can be shared.
      */
-    static Object find(String factoryId, ClassLoader cl, String fallbackClassName)
-        throws ConfigurationError
+    static <T> T find(Class<T> type, String factoryId, ClassLoader cl, String fallbackClassName)
+        throws FactoryConfigurationError
     {
         dPrint("find factoryId =" + factoryId);
 
@@ -239,7 +256,9 @@ class FactoryFinder {
             String systemProp = ss.getSystemProperty(factoryId);
             if (systemProp != null) {
                 dPrint("found system property, value=" + systemProp);
-                return newInstance(systemProp, null, true);
+                // There's a bug here - because 'cl' is ignored.
+                // This will be handled separately.
+                return newInstance(type, systemProp, null, true);
             }
         }
         catch (SecurityException se) {
@@ -250,7 +269,6 @@ class FactoryFinder {
         // $java.home/lib/jaxp.properties if former not present
         String configFile = null;
         try {
-            String factoryClassName = null;
             if (firstTime) {
                 synchronized (cacheProps) {
                     if (firstTime) {
@@ -269,130 +287,80 @@ class FactoryFinder {
                             if (ss.doesFileExist(f)) {
                                 dPrint("Read properties file "+f);
                                 cacheProps.load(ss.getFileInputStream(f));
+                            }
+                        }
                     }
                 }
             }
-                }
-            }
-            factoryClassName = cacheProps.getProperty(factoryId);
+            final String factoryClassName = cacheProps.getProperty(factoryId);
 
             if (factoryClassName != null) {
                 dPrint("found in " + configFile + " value=" + factoryClassName);
-                return newInstance(factoryClassName, null, true);
+                // There's a bug here - because 'cl' is ignored.
+                // This will be handled separately.
+                return newInstance(type, factoryClassName, null, true);
             }
         }
         catch (Exception ex) {
             if (debug) ex.printStackTrace();
         }
 
-        // Try Jar Service Provider Mechanism
-        Object provider = findJarServiceProvider(factoryId);
-        if (provider != null) {
-            return provider;
+        if (type.getName().equals(factoryId)) {
+            // Try Jar Service Provider Mechanism
+            final T provider = findServiceProvider(type);
+            if (provider != null) {
+                return provider;
+            }
+        } else {
+            // We're in the case where a 'custom' factoryId was provided,
+            // and in every case where that happens, we expect that
+            // fallbackClassName will be null.
+            assert fallbackClassName == null;
         }
         if (fallbackClassName == null) {
-            throw new ConfigurationError(
+            throw new FactoryConfigurationError(
                 "Provider for " + factoryId + " cannot be found", null);
         }
 
         dPrint("loaded from fallback value: " + fallbackClassName);
-        return newInstance(fallbackClassName, cl, true);
+        return newInstance(type, fallbackClassName, cl, true);
     }
 
     /*
-     * Try to find provider using Jar Service Provider Mechanism
+     * Try to find provider using the ServiceLoader API
+     *
+     * @param type Base class / Service interface  of the factory to find.
      *
      * @return instance of provider class if found or null
      */
-    private static Object findJarServiceProvider(String factoryId)
-        throws ConfigurationError
-    {
-        String serviceId = "META-INF/services/" + factoryId;
-        InputStream is = null;
-
-        // First try the Context ClassLoader
-        ClassLoader cl = ss.getContextClassLoader();
-        boolean useBSClsLoader = false;
-        if (cl != null) {
-            is = ss.getResourceAsStream(cl, serviceId);
-
-            // If no provider found then try the current ClassLoader
-            if (is == null) {
-                cl = FactoryFinder.class.getClassLoader();
-                is = ss.getResourceAsStream(cl, serviceId);
-                useBSClsLoader = true;
-            }
-        } else {
-            // No Context ClassLoader, try the current ClassLoader
-            cl = FactoryFinder.class.getClassLoader();
-            is = ss.getResourceAsStream(cl, serviceId);
-            useBSClsLoader = true;
-        }
-
-        if (is == null) {
-            // No provider found
-            return null;
-        }
-
-        if (debug) {    // Extra check to avoid computing cl strings
-            dPrint("found jar resource=" + serviceId + " using ClassLoader: " + cl);
-        }
-
-        BufferedReader rd;
+    private static <T> T findServiceProvider(final Class<T> type) {
         try {
-            rd = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-        }
-        catch (java.io.UnsupportedEncodingException e) {
-            rd = new BufferedReader(new InputStreamReader(is));
-        }
-
-        String factoryClassName = null;
-        try {
-            // XXX Does not handle all possible input as specified by the
-            // Jar Service Provider specification
-            factoryClassName = rd.readLine();
-            rd.close();
-        } catch (IOException x) {
-            // No provider found
-            return null;
-        }
-
-        if (factoryClassName != null && !"".equals(factoryClassName)) {
-            dPrint("found in resource, value=" + factoryClassName);
-
-            // Note: here we do not want to fall back to the current
-            // ClassLoader because we want to avoid the case where the
-            // resource file was found using one ClassLoader and the
-            // provider class was instantiated using a different one.
-            return newInstance(factoryClassName, cl, false, useBSClsLoader);
-        }
-
-        // No provider found
-        return null;
-    }
-
-    static class ConfigurationError extends Error {
-        private Exception exception;
-
-        /**
-         * Construct a new instance with the specified detail string and
-         * exception.
-         */
-        ConfigurationError(String msg, Exception x) {
-            super(msg);
-            this.exception = x;
-        }
-
-        Exception getException() {
-            return exception;
-        }
-        /**
-        * use the exception chaining mechanism of JDK1.4
-        */
-        @Override
-        public Throwable getCause() {
-            return exception;
-        }
-    }
+            return AccessController.doPrivileged(new PrivilegedAction<T>() {
+                @Override
+                public T run() {
+                    final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
+                    final Iterator<T> iterator = serviceLoader.iterator();
+                    if (iterator.hasNext()) {
+                        return iterator.next();
+                    } else {
+                        return null;
+                    }
+                }
+            });
+        } catch(ServiceConfigurationError e) {
+            // It is not possible to wrap an error directly in
+            // FactoryConfigurationError - so we need to wrap the
+            // ServiceConfigurationError in a RuntimeException.
+            // The alternative would be to modify the logic in
+            // FactoryConfigurationError to allow setting a
+            // Throwable as the cause, but that could cause
+            // compatibility issues down the road.
+            final RuntimeException x = new RuntimeException(
+                    "Provider for " + type + " cannot be created", e);
+            final FactoryConfigurationError error =
+                    new FactoryConfigurationError(x, x.getMessage());
+            throw error;
+          }
+      }
 
 }

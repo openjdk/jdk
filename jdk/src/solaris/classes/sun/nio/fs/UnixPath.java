@@ -769,7 +769,7 @@ class UnixPath
     int openForAttributeAccess(boolean followLinks) throws IOException {
         int flags = O_RDONLY;
         if (!followLinks) {
-            if (!supportsNoFollowLinks())
+            if (O_NOFOLLOW == 0)
                 throw new IOException("NOFOLLOW_LINKS is not supported on this platform");
             flags |= O_NOFOLLOW;
         }

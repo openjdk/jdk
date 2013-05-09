@@ -35,26 +35,29 @@ class NMethodSweeper : public AllStatic {
   static nmethod*  _current;      // Current nmethod
   static int       _seen;         // Nof. nmethod we have currently processed in current pass of CodeCache
 
-  static volatile int      _invocations;   // No. of invocations left until we are completed with this pass
-  static volatile int      _sweep_started; // Flag to control conc sweeper
+  static volatile int  _invocations;   // No. of invocations left until we are completed with this pass
+  static volatile int  _sweep_started; // Flag to control conc sweeper
 
-  static bool      _rescan;          // Indicates that we should do a full rescan of the
-                                     // of the code cache looking for work to do.
-  static bool      _do_sweep;        // Flag to skip the conc sweep if no stack scan happened
-  static int       _locked_seen;     // Number of locked nmethods encountered during the scan
+  //The following are reset in scan_stacks and synchronized by the safepoint
+  static bool      _resweep;           // Indicates that a change has happend and we want another sweep,
+                                       // always checked and reset at a safepoint so memory will be in sync.
+  static int       _locked_seen;       // Number of locked nmethods encountered during the scan
   static int       _not_entrant_seen_on_stack; // Number of not entrant nmethod were are still on stack
+  static jint      _flush_token;       // token that guards method flushing, making sure it is executed only once.
 
-  static bool      _was_full;        // remember if we did emergency unloading
-  static jint      _advise_to_sweep; // flag to indicate code cache getting full
-  static jlong     _last_was_full;   // timestamp of last emergency unloading
-  static uint      _highest_marked;   // highest compile id dumped at last emergency unloading
-  static long      _was_full_traversal;   // trav number at last emergency unloading
+  // These are set during a flush, a VM-operation
+  static long      _last_flush_traversal_id; // trav number at last flush unloading
+  static jlong     _last_full_flush_time;    // timestamp of last emergency unloading
+
+  // These are synchronized by the _sweep_started token
+  static int       _highest_marked;   // highest compile id dumped at last emergency unloading
+  static int       _dead_compile_ids; // number of compile ids that where not in the cache last flush
 
   static void process_nmethod(nmethod *nm);
-
   static void release_nmethod(nmethod* nm);
 
   static void log_sweep(const char* msg, const char* format = NULL, ...);
+  static bool sweep_in_progress();
 
  public:
   static long traversal_count() { return _traversals; }
@@ -71,17 +74,14 @@ class NMethodSweeper : public AllStatic {
   static void possibly_sweep();   // Compiler threads call this to sweep
 
   static void notify(nmethod* nm) {
-    // Perform a full scan of the code cache from the beginning.  No
+    // Request a new sweep of the code cache from the beginning. No
     // need to synchronize the setting of this flag since it only
     // changes to false at safepoint so we can never overwrite it with false.
-     _rescan = true;
+     _resweep = true;
   }
 
   static void handle_full_code_cache(bool is_full); // Called by compilers who fail to allocate
   static void speculative_disconnect_nmethods(bool was_full);   // Called by vm op to deal with alloc failure
-
-  static void set_was_full(bool state) { _was_full = state; }
-  static bool was_full() { return _was_full; }
 };
 
 #endif // SHARE_VM_RUNTIME_SWEEPER_HPP

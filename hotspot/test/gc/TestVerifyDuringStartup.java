@@ -23,22 +23,43 @@
 
 /* @test TestVerifyDuringStartup.java
  * @key gc
- * @bug 8010463
+ * @bug 8010463 8011343 8011898
  * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
  * @library /testlibrary
  */
 
+import com.oracle.java.testlibrary.JDKToolFinder;
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.ProcessTools;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class TestVerifyDuringStartup {
   public static void main(String args[]) throws Exception {
+    ArrayList<String> vmOpts = new ArrayList();
+
+    String testVmOptsStr = System.getProperty("test.java.opts");
+    if (!testVmOptsStr.isEmpty()) {
+      String[] testVmOpts = testVmOptsStr.split(" ");
+      Collections.addAll(vmOpts, testVmOpts);
+    }
+    Collections.addAll(vmOpts, new String[] {"-XX:-UseTLAB",
+                                             "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+VerifyDuringStartup",
+                                             "-version"});
+
+    System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
+    for (int i = 0; i < vmOpts.size(); i += 1) {
+      System.out.print(" " + vmOpts.get(i));
+    }
+    System.out.println();
+
     ProcessBuilder pb =
-      ProcessTools.createJavaProcessBuilder(System.getProperty("test.vm.opts"),
-                                            "-XX:-UseTLAB",
-                                            "-XX:+UnlockDiagnosticVMOptions",
-                                            "-XX:+VerifyDuringStartup", "-version");
+      ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+    System.out.println("Output:\n" + output.getOutput());
+
     output.shouldContain("[Verifying");
     output.shouldHaveExitValue(0);
   }

@@ -1052,7 +1052,7 @@ void SignatureHandlerLibrary::initialize() {
     return;
   }
   if (set_handler_blob() == NULL) {
-    vm_exit_out_of_memory(blob_size, "native signature handlers");
+    vm_exit_out_of_memory(blob_size, OOM_MALLOC_ERROR, "native signature handlers");
   }
 
   BufferBlob* bb = BufferBlob::create("Signature Handler Temp Buffer",
