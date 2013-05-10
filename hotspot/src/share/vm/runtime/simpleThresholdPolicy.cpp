@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,8 +153,11 @@ void SimpleThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
 
 // Set carry flags on the counters if necessary
 void SimpleThresholdPolicy::handle_counter_overflow(Method* method) {
-  set_carry_if_necessary(method->invocation_counter());
-  set_carry_if_necessary(method->backedge_counter());
+  MethodCounters *mcs = method->method_counters();
+  if (mcs != NULL) {
+    set_carry_if_necessary(mcs->invocation_counter());
+    set_carry_if_necessary(mcs->backedge_counter());
+  }
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     set_carry_if_necessary(mdo->invocation_counter());

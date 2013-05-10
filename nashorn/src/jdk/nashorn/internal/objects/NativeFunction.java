@@ -81,23 +81,13 @@ public final class NativeFunction {
 
         Object[] args = null;
 
-        if (ScriptObject.isArray(array)) {
-            args = ((NativeArray)array).asObjectArray();
-        } else if (array instanceof ScriptObject) {
+        if (array instanceof ScriptObject) {
             // look for array-like object
             final ScriptObject sobj = (ScriptObject)array;
             final Object       len  = sobj.getLength();
-
-            if (len == UNDEFINED || len == null) {
-                throw typeError("function.apply.expects.array");
-            }
-
             final int n = (int)JSType.toUint32(len);
-            if (n != JSType.toNumber(len)) {
-                throw typeError("function.apply.expects.array");
-            }
 
-            args = new Object[(int)JSType.toUint32(len)];
+            args = new Object[n];
             for (int i = 0; i < args.length; i++) {
                 args[i] = sobj.get(i);
             }

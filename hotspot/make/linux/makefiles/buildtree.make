@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Usage:
@@ -46,11 +46,11 @@
 # Makefile	- for "make foo"
 # flags.make	- with macro settings
 # vm.make	- to support making "$(MAKE) -v vm.make" in makefiles
-# adlc.make	- 
+# adlc.make	-
 # jvmti.make	- generate JVMTI bindings from the spec (JSR-163)
 # sa.make	- generate SA jar file and natives
 # env.[ck]sh	- environment settings
-# 
+#
 # The makefiles are split this way so that "make foo" will run faster by not
 # having to read the dependency files for the vm.
 
@@ -117,7 +117,7 @@ SIMPLE_DIRS	= \
 	$(PLATFORM_DIR)/generated/adfiles \
 	$(PLATFORM_DIR)/generated/jvmtifiles
 
-TARGETS      = debug fastdebug jvmg optimized product profiled
+TARGETS      = debug fastdebug optimized product
 SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 
 # For dependencies and recursive makes.
@@ -179,8 +179,8 @@ $(SIMPLE_DIRS):
 	$(QUIETLY) mkdir -p $@
 
 # Convenience macro which takes a source relative path, applies $(1) to the
-# absolute path, and then replaces $(GAMMADIR) in the result with a 
-# literal "$(GAMMADIR)/" suitable for inclusion in a Makefile.  
+# absolute path, and then replaces $(GAMMADIR) in the result with a
+# literal "$(GAMMADIR)/" suitable for inclusion in a Makefile.
 gamma-path=$(subst $(GAMMADIR),\$$(GAMMADIR),$(call $(1),$(HS_COMMON_SRC)/$(2)))
 
 # This bit is needed to enable local rebuilds.
@@ -284,8 +284,6 @@ flags_vm.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
-	[ "$(TARGET)" = profiled ] && \
-	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/optimized.make"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(TARGET).make"; \
 	) > $@
 
@@ -376,7 +374,7 @@ jdkpath.sh: $(BUILDTREE_MAKE)
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo "JDK=${JAVA_HOME}"; \
-	) > $@	   
+	) > $@
 
 FORCE:
 

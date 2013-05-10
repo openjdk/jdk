@@ -50,12 +50,11 @@ public class JavaAdapterServices {
      * handles for their abstract method implementations.
      * @param fn the script function
      * @param type the method type it has to conform to
-     * @param varArg if the Java method for which the function is being adapted is a variable arity method
      * @return the appropriately adapted method handle for invoking the script function.
      */
-    public static MethodHandle getHandle(final ScriptFunction fn, final MethodType type, final boolean varArg) {
+    public static MethodHandle getHandle(final ScriptFunction fn, final MethodType type) {
         // JS "this" will be null for SAMs
-        return adaptHandle(fn.getBoundInvokeHandle(null), type, varArg);
+        return adaptHandle(fn.getBoundInvokeHandle(null), type);
     }
 
     /**
@@ -66,12 +65,11 @@ public class JavaAdapterServices {
      * @param obj the script obj
      * @param name the name of the property that contains the function
      * @param type the method type it has to conform to
-     * @param varArg if the Java method for which the function is being adapted is a variable arity method
      * @return the appropriately adapted method handle for invoking the script function, or null if the value of the
      * property is either null or undefined, or "toString" was requested as the name, but the object doesn't directly
      * define it but just inherits it through prototype.
      */
-    public static MethodHandle getHandle(final Object obj, final String name, final MethodType type, final boolean varArg) {
+    public static MethodHandle getHandle(final Object obj, final String name, final MethodType type) {
         if (! (obj instanceof ScriptObject)) {
             throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
         }
@@ -84,7 +82,7 @@ public class JavaAdapterServices {
 
         final Object fnObj = sobj.get(name);
         if (fnObj instanceof ScriptFunction) {
-            return adaptHandle(((ScriptFunction)fnObj).getBoundInvokeHandle(sobj), type, varArg);
+            return adaptHandle(((ScriptFunction)fnObj).getBoundInvokeHandle(sobj), type);
         } else if(fnObj == null || fnObj instanceof Undefined) {
             return null;
         } else {
@@ -108,7 +106,7 @@ public class JavaAdapterServices {
         classOverrides.set(overrides);
     }
 
-    private static MethodHandle adaptHandle(final MethodHandle handle, final MethodType type, final boolean varArg) {
-        return Bootstrap.getLinkerServices().asType(ScriptObject.pairArguments(handle, type, varArg), type);
+    private static MethodHandle adaptHandle(final MethodHandle handle, final MethodType type) {
+        return Bootstrap.getLinkerServices().asType(ScriptObject.pairArguments(handle, type, false), type);
     }
 }

@@ -32,7 +32,7 @@
 // Maximum MAX_GENERATIONS generation data can be tracked.
 #define MAX_GENERATIONS  512
 
-class GenerationData : public _ValueObj {
+class GenerationData VALUE_OBJ_CLASS_SPEC {
  private:
   int           _number_of_classes;
   MemRecorder*  _recorder_list;
@@ -85,8 +85,10 @@ class MemTrackWorker : public NamedThread {
 
   bool            _has_error;
 
+  MemSnapshot*    _snapshot;
+
  public:
-  MemTrackWorker();
+  MemTrackWorker(MemSnapshot* snapshot);
   ~MemTrackWorker();
   _NOINLINE_ void* operator new(size_t size);
   _NOINLINE_ void* operator new(size_t size, const std::nothrow_t& nothrow_constant);
