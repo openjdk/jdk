@@ -123,7 +123,7 @@ VM_Operation* VMOperationQueue::queue_drain(int prio) {
   _queue[prio]->set_next(_queue[prio]);
   _queue[prio]->set_prev(_queue[prio]);
   assert(queue_empty(prio), "drain corrupted queue");
-#ifdef DEBUG
+#ifdef ASSERT
   int len = 0;
   VM_Operation* cur;
   for(cur = r; cur != NULL; cur=cur->next()) len++;
@@ -293,7 +293,7 @@ void VMThread::run() {
     os::check_heap();
     // Silent verification so as not to pollute normal output,
     // unless we really asked for it.
-    Universe::verify(!(PrintGCDetails || Verbose));
+    Universe::verify(!(PrintGCDetails || Verbose) || VerifySilently);
   }
 
   CompileBroker::set_should_block();

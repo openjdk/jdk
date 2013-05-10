@@ -28,6 +28,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
+class VirtualSpaceNode;
 //
 // Future modification
 //
@@ -45,26 +46,29 @@ size_t Metachunk::_overhead =
 
 // Metachunk methods
 
-Metachunk* Metachunk::initialize(MetaWord* ptr, size_t word_size) {
-  // Set bottom, top, and end.  Allow space for the Metachunk itself
-  Metachunk* chunk = (Metachunk*) ptr;
-
-  MetaWord* chunk_bottom = ptr + _overhead;
-  chunk->set_bottom(ptr);
-  chunk->set_top(chunk_bottom);
-  MetaWord* chunk_end = ptr + word_size;
-  assert(chunk_end > chunk_bottom, "Chunk must be too small");
-  chunk->set_end(chunk_end);
-  chunk->set_next(NULL);
-  chunk->set_prev(NULL);
-  chunk->set_word_size(word_size);
+Metachunk::Metachunk(size_t word_size,
+                     VirtualSpaceNode* container) :
+    _word_size(word_size),
+    _bottom(NULL),
+    _end(NULL),
+    _top(NULL),
+    _next(NULL),
+    _prev(NULL),
+    _container(container)
+{
+  _bottom = (MetaWord*)this;
+  _top = (MetaWord*)this + _overhead;
+  _end = (MetaWord*)this + word_size;
 #ifdef ASSERT
-  size_t data_word_size = pointer_delta(chunk_end, chunk_bottom, sizeof(MetaWord));
-  Copy::fill_to_words((HeapWord*) chunk_bottom, data_word_size, metadata_chunk_initialize);
+  set_is_free(false);
+  size_t data_word_size = pointer_delta(end(),
+                                        top(),
+                                        sizeof(MetaWord));
+  Copy::fill_to_words((HeapWord*) top(),
+                      data_word_size,
+                      metadata_chunk_initialize);
 #endif
-  return chunk;
 }
-
 
 MetaWord* Metachunk::allocate(size_t word_size) {
   MetaWord* result = NULL;

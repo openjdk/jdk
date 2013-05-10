@@ -153,7 +153,7 @@ class java_lang_String : AllStatic {
   static char*  as_utf8_string(oop java_string, char* buf, int buflen);
   static char*  as_utf8_string(oop java_string, int start, int len);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
-  static jchar* as_unicode_string(oop java_string, int& length);
+  static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
   // produce an ascii string with all other values quoted using \u####
   static char*  as_quoted_ascii(oop java_string);
 
@@ -1036,6 +1036,9 @@ class java_lang_invoke_MemberName: AllStatic {
 
   static Metadata*      vmtarget(oop mname);
   static void       set_vmtarget(oop mname, Metadata* target);
+#if INCLUDE_JVMTI
+  static void       adjust_vmtarget(oop mname, Metadata* target);
+#endif // INCLUDE_JVMTI
 
   static intptr_t       vmindex(oop mname);
   static void       set_vmindex(oop mname, intptr_t index);

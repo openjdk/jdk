@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,8 +263,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void compute_stack_base( Register Rdest );
 
 #endif /* CC_INTERP */
-  void increment_invocation_counter( Register Rtmp, Register Rtmp2 );
-  void increment_backedge_counter( Register Rtmp, Register Rtmp2 );
+  void get_method_counters(Register method, Register Rcounters, Label& skip);
+  void increment_invocation_counter( Register Rcounters, Register Rtmp, Register Rtmp2 );
+  void increment_backedge_counter( Register Rcounters, Register Rtmp, Register Rtmp2 );
 #ifndef CC_INTERP
   void test_backedge_count_for_osr( Register backedge_count, Register branch_bcp, Register Rtmp );
 

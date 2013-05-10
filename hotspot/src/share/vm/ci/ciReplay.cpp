@@ -89,7 +89,7 @@ class CompileReplay : public StackObj {
     loader = Handle(thread, SystemDictionary::java_system_loader());
     stream = fopen(filename, "rt");
     if (stream == NULL) {
-      fprintf(stderr, "Can't open replay file %s\n", filename);
+      fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
     buffer_length = 32;
     buffer = NEW_RESOURCE_ARRAY(char, buffer_length);
@@ -327,7 +327,6 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
           tty->print_cr("%s", buffer);
-          assert(false, "error");
           return;
         }
         pos = 0;
@@ -370,11 +369,47 @@ class CompileReplay : public StackObj {
     }
   }
 
-  // compile <klass> <name> <signature> <entry_bci>
+  // validation of comp_level
+  bool is_valid_comp_level(int comp_level) {
+    const int msg_len = 256;
+    char* msg = NULL;
+    if (!is_compile(comp_level)) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      jio_snprintf(msg, msg_len, "%d isn't compilation level", comp_level);
+    } else if (!TieredCompilation && (comp_level != CompLevel_highest_tier)) {
+      msg = NEW_RESOURCE_ARRAY(char, msg_len);
+      switch (comp_level) {
+        case CompLevel_simple:
+          jio_snprintf(msg, msg_len, "compilation level %d requires Client VM or TieredCompilation", comp_level);
+          break;
+        case CompLevel_full_optimization:
+          jio_snprintf(msg, msg_len, "compilation level %d requires Server VM", comp_level);
+          break;
+        default:
+          jio_snprintf(msg, msg_len, "compilation level %d requires TieredCompilation", comp_level);
+      }
+    }
+    if (msg != NULL) {
+      report_error(msg);
+      return false;
+    }
+    return true;
+  }
+
+  // compile <klass> <name> <signature> <entry_bci> <comp_level>
   void process_compile(TRAPS) {
     // methodHandle method;
     Method* method = parse_method(CHECK);
     int entry_bci = parse_int("entry_bci");
+    const char* comp_level_label = "comp_level";
+    int comp_level = parse_int(comp_level_label);
+    // old version w/o comp_level
+    if (had_error() && (error_message() == comp_level_label)) {
+      comp_level = CompLevel_full_optimization;
+    }
+    if (!is_valid_comp_level(comp_level)) {
+      return;
+    }
     Klass* k = method->method_holder();
     ((InstanceKlass*)k)->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -389,12 +424,12 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, CompLevel_full_optimization, true) : method->code();
+    nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != NULL) {
       nm->make_not_entrant();
     }
     replay_state = this;
-    CompileBroker::compile_method(method, entry_bci, CompLevel_full_optimization,
+    CompileBroker::compile_method(method, entry_bci, comp_level,
                                   methodHandle(), 0, "replay", THREAD);
     replay_state = NULL;
     reset();
@@ -551,7 +586,7 @@ class CompileReplay : public StackObj {
           if (parsed_two_word == i) continue;
 
         default:
-          ShouldNotReachHere();
+          fatal(err_msg_res("Unexpected tag: %d", cp->tag_at(i).value()));
           break;
       }
 
@@ -819,6 +854,11 @@ int ciReplay::replay_impl(TRAPS) {
     ReplaySuppressInitializers = 1;
   }
 
+  if (FLAG_IS_DEFAULT(ReplayDataFile)) {
+    tty->print_cr("ERROR: no compiler replay data file specified (use -XX:ReplayDataFile=replay_pid12345.txt).");
+    return 1;
+  }
+
   // Load and parse the replay data
   CompileReplay rp(ReplayDataFile, THREAD);
   int exit_code = 0;
@@ -920,12 +960,17 @@ void ciReplay::initialize(ciMethod* m) {
     method->print_name(tty);
     tty->cr();
   } else {
+    EXCEPTION_CONTEXT;
+    MethodCounters* mcs = method->method_counters();
     // m->_instructions_size = rec->instructions_size;
     m->_instructions_size = -1;
     m->_interpreter_invocation_count = rec->interpreter_invocation_count;
     m->_interpreter_throwout_count = rec->interpreter_throwout_count;
-    method->invocation_counter()->_counter = rec->invocation_counter;
-    method->backedge_counter()->_counter = rec->backedge_counter;
+    if (mcs == NULL) {
+      mcs = Method::build_method_counters(method, CHECK_AND_CLEAR);
+    }
+    mcs->invocation_counter()->_counter = rec->invocation_counter;
+    mcs->backedge_counter()->_counter = rec->backedge_counter;
   }
 }
 

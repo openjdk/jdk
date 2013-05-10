@@ -249,8 +249,7 @@ public:
   // JNI weak roots, the code cache, system dictionary, symbol table,
   // string table.
   void process_weak_roots(OopClosure* root_closure,
-                          CodeBlobClosure* code_roots,
-                          OopClosure* non_root_closure);
+                          CodeBlobClosure* code_roots);
 
   // The functions below are helper functions that a subclass of
   // "SharedHeap" can use in the implementation of its virtual

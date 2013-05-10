@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,6 @@ void G1CollectorPolicy::init() {
   }
   _free_regions_at_end_of_collection = _g1->free_regions();
   update_young_list_target_length();
-  _prev_eden_capacity = _young_list_target_length * HeapRegion::GrainBytes;
 
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
@@ -746,6 +745,7 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
 
 void G1CollectorPolicy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
+  record_heap_size_info_at_start();
   // Release the future to-space so that it is available for compaction into.
   _g1->set_full_collection();
 }
@@ -788,8 +788,7 @@ void G1CollectorPolicy::record_stop_world_start() {
   _stop_world_start = os::elapsedTime();
 }
 
-void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
-                                                      size_t start_used) {
+void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -803,18 +802,13 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _trace_gen0_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
 
+  record_heap_size_info_at_start();
+
   phase_times()->record_cur_collection_start_sec(start_time_sec);
-  _cur_collection_pause_used_at_start_bytes = start_used;
-  _cur_collection_pause_used_regions_at_start = _g1->used_regions();
   _pending_cards = _g1->pending_card_num();
 
   _collection_set_bytes_used_before = 0;
   _bytes_copied_during_gc = 0;
-
-  YoungList* young_list = _g1->young_list();
-  _eden_bytes_before_gc = young_list->eden_used_bytes();
-  _survivor_bytes_before_gc = young_list->survivor_used_bytes();
-  _capacity_before_gc = _g1->capacity();
 
   _last_gc_was_young = false;
 
@@ -1153,6 +1147,21 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms) {
   byte_size_in_proper_unit((double)(bytes)),                    \
   proper_unit_for_byte_size((bytes))
 
+void G1CollectorPolicy::record_heap_size_info_at_start() {
+  YoungList* young_list = _g1->young_list();
+  _eden_bytes_before_gc = young_list->eden_used_bytes();
+  _survivor_bytes_before_gc = young_list->survivor_used_bytes();
+  _capacity_before_gc = _g1->capacity();
+
+  _cur_collection_pause_used_at_start_bytes = _g1->used();
+  _cur_collection_pause_used_regions_at_start = _g1->used_regions();
+
+  size_t eden_capacity_before_gc =
+         (_young_list_target_length * HeapRegion::GrainBytes) - _survivor_bytes_before_gc;
+
+  _prev_eden_capacity = eden_capacity_before_gc;
+}
+
 void G1CollectorPolicy::print_heap_transition() {
   _g1->print_size_transition(gclog_or_tty,
     _cur_collection_pause_used_at_start_bytes, _g1->used(), _g1->capacity());
@@ -1183,8 +1192,6 @@ void G1CollectorPolicy::print_detailed_heap_transition() {
       EXT_SIZE_PARAMS(_capacity_before_gc),
       EXT_SIZE_PARAMS(used),
       EXT_SIZE_PARAMS(capacity));
-
-    _prev_eden_capacity = eden_capacity;
 }
 
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,

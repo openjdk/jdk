@@ -247,7 +247,6 @@ public final class NativeDebug extends ScriptObject {
         out.println("Scope count " + ScriptObject.getScopeCount());
         out.println("ScriptObject listeners added " + PropertyListenerManager.getListenersAdded());
         out.println("ScriptObject listeners removed " + PropertyListenerManager.getListenersRemoved());
-        out.println("ScriptObject listeners dead " + PropertyListenerManager.getListenersDead());
         out.println("ScriptFunction count " + ScriptObject.getCount());
         out.println("ScriptFunction invokes " + ScriptFunction.getInvokes());
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());

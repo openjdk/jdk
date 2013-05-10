@@ -436,14 +436,19 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
             break;
           case JVM_REF_invokeVirtual:
-          case JVM_REF_invokeStatic:
-          case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial:
             check_property(
               tag.is_method(),
               "Invalid constant pool index %u in class file %s (not a method)",
               ref_index, CHECK_(nullHandle));
             break;
+          case JVM_REF_invokeStatic:
+          case JVM_REF_invokeSpecial:
+            check_property(
+               tag.is_method() || tag.is_interface_method(),
+               "Invalid constant pool index %u in class file %s (not a method)",
+               ref_index, CHECK_(nullHandle));
+             break;
           case JVM_REF_invokeInterface:
             check_property(
               tag.is_interface_method(),
@@ -2022,7 +2027,6 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   u2 method_parameters_length = 0;
   u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
-  bool method_parameters_four_byte_flags;
   bool parsed_code_attribute = false;
   bool parsed_checked_exceptions_attribute = false;
   bool parsed_stackmap_attribute = false;
@@ -2236,26 +2240,14 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
       }
       method_parameters_seen = true;
       method_parameters_length = cfs->get_u1_fast();
-      // Track the actual size (note: this is written for clarity; a
-      // decent compiler will CSE and constant-fold this into a single
-      // expression)
-      // Use the attribute length to figure out the size of flags
-      if (method_attribute_length == (method_parameters_length * 6u) + 1u) {
-        method_parameters_four_byte_flags = true;
-      } else if (method_attribute_length == (method_parameters_length * 4u) + 1u) {
-        method_parameters_four_byte_flags = false;
-      } else {
+      if (method_attribute_length != (method_parameters_length * 4u) + 1u) {
         classfile_parse_error(
           "Invalid MethodParameters method attribute length %u in class file",
           method_attribute_length, CHECK_(nullHandle));
       }
       method_parameters_data = cfs->get_u1_buffer();
       cfs->skip_u2_fast(method_parameters_length);
-      if (method_parameters_four_byte_flags) {
-        cfs->skip_u4_fast(method_parameters_length);
-      } else {
-        cfs->skip_u2_fast(method_parameters_length);
-      }
+      cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
       if (!SystemDictionary::Parameter_klass_loaded())
         method_parameters_length = 0;
@@ -2418,13 +2410,8 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
     for (int i = 0; i < method_parameters_length; i++) {
       elem[i].name_cp_index = Bytes::get_Java_u2(method_parameters_data);
       method_parameters_data += 2;
-      if (method_parameters_four_byte_flags) {
-        elem[i].flags = Bytes::get_Java_u4(method_parameters_data);
-        method_parameters_data += 4;
-      } else {
-        elem[i].flags = Bytes::get_Java_u2(method_parameters_data);
-        method_parameters_data += 2;
-      }
+      elem[i].flags = Bytes::get_Java_u2(method_parameters_data);
+      method_parameters_data += 2;
     }
   }
 
@@ -3837,7 +3824,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     if (TraceClassLoadingPreorder) {
-      tty->print("[Loading %s", name->as_klass_external_name());
+      tty->print("[Loading %s", (name != NULL) ? name->as_klass_external_name() : "NoName");
       if (cfs->source() != NULL) tty->print(" from %s", cfs->source());
       tty->print_cr("]");
     }
