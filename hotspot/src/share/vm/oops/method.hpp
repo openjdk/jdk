@@ -996,7 +996,7 @@ class ExceptionTable : public StackObj {
   u2  _length;
 
  public:
-  ExceptionTable(Method* m) {
+  ExceptionTable(const Method* m) {
     if (m->has_exception_handler()) {
       _table = m->exception_table_start();
       _length = m->exception_table_length();
