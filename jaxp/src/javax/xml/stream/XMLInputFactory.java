@@ -448,7 +448,8 @@ public abstract class XMLInputFactory {
    *        Access to external DTDs, external Entity References is restricted to the
    *        protocols specified by the property. If access is denied during parsing
    *        due to the restriction of this property, {@link javax.xml.stream.XMLStreamException}
-   *        will be thrown.
+   *        will be thrown by the {@link javax.xml.stream.XMLStreamReader#next()} or
+   *        {@link javax.xml.stream.XMLEventReader#nextEvent()} method.
    *        </p>
    *   </li>
    * </ul>
