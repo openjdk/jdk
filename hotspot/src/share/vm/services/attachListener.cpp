@@ -157,7 +157,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
   Thread* THREAD = Thread::current();
   // All the supplied jcmd arguments are stored as a single
   // string (op->arg(0)). This is parsed by the Dcmd framework.
-  DCmd::parse_and_execute(out, op->arg(0), ' ', THREAD);
+  DCmd::parse_and_execute(DCmd_Source_AttachAPI, out, op->arg(0), ' ', THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     out->cr();
