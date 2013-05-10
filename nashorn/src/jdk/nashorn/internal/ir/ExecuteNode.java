@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -33,9 +34,10 @@ import jdk.nashorn.internal.runtime.Source;
  * node means "this code will be executed" and evaluating it results in
  * statements being added to the IR
  */
-public class ExecuteNode extends Node {
+@Immutable
+public final class ExecuteNode extends Node {
     /** Expression to execute. */
-    private Node expression;
+    private final Node expression;
 
     /**
      * Constructor
@@ -50,6 +52,11 @@ public class ExecuteNode extends Node {
         this.expression = expression;
     }
 
+    private ExecuteNode(final ExecuteNode executeNode, final Node expression) {
+        super(executeNode);
+        this.expression = expression;
+    }
+
     /**
      * Constructor
      *
@@ -60,34 +67,15 @@ public class ExecuteNode extends Node {
         this.expression = expression;
     }
 
-    private ExecuteNode(final ExecuteNode executeNode, final CopyState cs) {
-        super(executeNode);
-        this.expression = cs.existingOrCopy(executeNode.expression);
-    }
-
     @Override
-    protected Node copy(final CopyState cs) {
-        return new ExecuteNode(this, cs);
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (!super.equals(other)) {
-            return false;
-        }
-        return expression.equals(((ExecuteNode)other).getExpression());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ expression.hashCode();
+    public boolean isTerminal() {
+        return expression.isTerminal();
     }
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterExecuteNode(this) != null) {
-            setExpression(expression.accept(visitor));
-            return visitor.leaveExecuteNode(this);
+        if (visitor.enterExecuteNode(this)) {
+            return visitor.leaveExecuteNode(setExpression(expression.accept(visitor)));
         }
 
         return this;
@@ -109,8 +97,12 @@ public class ExecuteNode extends Node {
     /**
      * Reset the expression to be executed
      * @param expression the expression
+     * @return new or same execute node
      */
-    public void setExpression(final Node expression) {
-        this.expression = expression;
+    public ExecuteNode setExpression(final Node expression) {
+        if (this.expression == expression) {
+            return this;
+        }
+        return new ExecuteNode(this, expression);
     }
 }

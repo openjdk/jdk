@@ -29,6 +29,7 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
@@ -71,17 +72,17 @@ public final class NativeUint32Array extends ArrayBufferView {
 
         @Override
         protected long getLongImpl(final int key) {
-            return getIntImpl(key) & 0xffff_ffffL;
+            return getIntImpl(key) & JSType.MAX_UINT;
         }
 
         @Override
         protected double getDoubleImpl(final int key) {
-            return getIntImpl(key) & 0xffff_ffffL;
+            return getIntImpl(key) & JSType.MAX_UINT;
         }
 
         @Override
         protected Object getObjectImpl(final int key) {
-            return getIntImpl(key) & 0xffff_ffffL;
+            return getIntImpl(key) & JSType.MAX_UINT;
         }
 
         @Override

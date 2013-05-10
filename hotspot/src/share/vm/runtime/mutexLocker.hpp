@@ -51,6 +51,7 @@ extern Mutex*   VMStatistic_lock;                // a lock used to guard statist
 extern Mutex*   JNIGlobalHandle_lock;            // a lock on creating JNI global handles
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
 extern Mutex*   JNICachedItableIndex_lock;       // a lock on caching an itable index during JNI invoke
+extern Mutex*   MemberNameTable_lock;            // a lock on the MemberNameTable updates
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
