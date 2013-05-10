@@ -166,7 +166,9 @@ public:
     void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
     void do_MemBar         (MemBar*          x) { /* nothing to do */ };
     void do_RangeCheckPredicate(RangeCheckPredicate* x) { /* nothing to do */ };
+#ifdef ASSERT
     void do_Assert         (Assert*          x) { /* nothing to do */ };
+#endif
   };
 
 #ifdef ASSERT

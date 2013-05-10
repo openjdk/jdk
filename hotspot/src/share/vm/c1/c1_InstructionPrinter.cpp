@@ -871,12 +871,14 @@ void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
   }
 }
 
+#ifdef ASSERT
 void InstructionPrinter::do_Assert(Assert* x) {
   output()->print("assert ");
   print_value(x->x());
   output()->print(" %s ", cond_name(x->cond()));
   print_value(x->y());
 }
+#endif
 
 void InstructionPrinter::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
   print_unsafe_object_op(x, "UnsafePrefetchWrite");
