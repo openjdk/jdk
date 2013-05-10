@@ -15,7 +15,7 @@ GUI tools. Command line HSDB (CLHSDB) tool is alternative to SA GUI tool HSDB.
 <p>
 There is also JavaScript based SA command line interface called <a href="jsdb.html">jsdb</a>.
 But, CLHSDB supports Unix shell-like (or dbx/gdb-like) command line interface with
-support for output redirection/appending (familiar >, >>), command history and so on.
+support for output redirection/appending (familiar &gt;, &gt;&gt;), command history and so on.
 Each CLHSDB command can have zero or more arguments and optionally end with output redirection
 (or append) to a file. Commands may be stored in a file and run using <b>source</b> command.
 <b>help</b> command prints usage message for all supported commands (or a specific command)
@@ -49,7 +49,7 @@ Available commands:
   dumpheap [ file ] <font color="red">dump heap in hprof binary format</font>
   dumpideal -a | id <font color="red">dump ideal graph like debug flag -XX:+PrintIdeal</font>
   dumpilt -a | id <font color="red">dump inline tree for C2 compilation</font>
-  dumpreplaydata <address> | -a | <thread_id> [>replay.txt] <font color="red">dump replay data into a file</font>
+  dumpreplaydata &lt;address&gt; | -a | &lt;thread_id&gt; [&gt;replay.txt] <font color="red">dump replay data into a file</font>
   echo [ true | false ] <font color="red">turn on/off command echo mode</font>
   examine [ address/count ] | [ address,address] <font color="red">show contents of memory from given address</font>
   field [ type [ name fieldtype isStatic offset address ] ] <font color="red">print info about a field of HotSpot type</font>
@@ -96,11 +96,11 @@ Available commands:
 
 <h3>JavaScript integration</h3>
 
-<p>Few CLHSDB commands are already implemented in JavaScript. It is possible to extend CLHSDB command set 
+<p>Few CLHSDB commands are already implemented in JavaScript. It is possible to extend CLHSDB command set
 by implementing more commands in a JavaScript file and by loading it by <b>jsload</b> command. <b>jseval</b>
 command may be used to evaluate arbitrary JavaScript expression from a string. Any JavaScript function
 may be exposed as a CLHSDB command by registering it using JavaScript <b><code>registerCommand</code></b>
-function. This function accepts command name, usage and name of the JavaScript implementation function 
+function. This function accepts command name, usage and name of the JavaScript implementation function
 as arguments.
 </p>
 
@@ -127,11 +127,11 @@ hsdb&gt; jsload test.js
 </code>
 </pre>
 
-<h3>C2 Compilation Replay</h3>
+<h3>Compilation Replay</h3>
 <p>
 When a java process crashes in compiled method, usually a core file is saved.
-The C2 replay function can reproduce the compiling process in the core.
-<a href="c2replay.html">c2replay.html</a>
+The replay function can reproduce the compiling process in the core.
+<a href="cireplay.html">cireplay.html</a>
 
 </body>
 </html>

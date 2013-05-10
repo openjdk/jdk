@@ -89,7 +89,7 @@ class SequenceGenerator : AllStatic {
  * the memory pointer either points to a malloc'd
  * memory block, or a mmap'd memory block
  */
-class MemPointer : public _ValueObj {
+class MemPointer VALUE_OBJ_CLASS_SPEC {
  public:
   MemPointer(): _addr(0) { }
   MemPointer(address addr): _addr(addr) { }

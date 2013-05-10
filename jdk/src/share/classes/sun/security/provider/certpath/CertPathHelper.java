@@ -64,7 +64,7 @@ public abstract class CertPathHelper {
         instance.implSetPathToNames(sel, names);
     }
 
-    static void setDateAndTime(X509CRLSelector sel, Date date, long skew) {
+    public static void setDateAndTime(X509CRLSelector sel, Date date, long skew) {
         instance.implSetDateAndTime(sel, date, skew);
     }
 }

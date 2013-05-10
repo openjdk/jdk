@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ typedef struct _memType2Name {
 
 
 // This class aggregates malloc'd records by memory type
-class MallocMem : public _ValueObj {
+class MallocMem VALUE_OBJ_CLASS_SPEC {
  private:
   MEMFLAGS       _type;
 
@@ -211,7 +211,7 @@ class ArenaMem : public MallocMem {
 };
 
 // This class aggregates virtual memory by its memory type
-class VMMem : public _ValueObj {
+class VMMem VALUE_OBJ_CLASS_SPEC {
  private:
   MEMFLAGS       _type;
 
@@ -296,7 +296,7 @@ class BaselineComparisonReporter;
  * aggregates memory usage by callsites when detail tracking
  * is on.
  */
-class MemBaseline : public _ValueObj {
+class MemBaseline VALUE_OBJ_CLASS_SPEC {
   friend class BaselineReporter;
   friend class BaselineComparisonReporter;
 
@@ -329,6 +329,9 @@ class MemBaseline : public _ValueObj {
  private:
   // should not use copy constructor
   MemBaseline(MemBaseline& copy) { ShouldNotReachHere(); }
+
+  // check and block at a safepoint
+  static inline void check_safepoint(JavaThread* thr);
 
  public:
   // create a memory baseline

@@ -178,7 +178,7 @@ const bool NMT_track_callsite = false;
 #endif // INCLUDE_NMT
 
 // debug build does not inline
-#if defined(_DEBUG_)
+#if defined(_NMT_NOINLINE_)
   #define CURRENT_PC       (NMT_track_callsite ? os::get_caller_pc(1) : 0)
   #define CALLER_PC        (NMT_track_callsite ? os::get_caller_pc(2) : 0)
   #define CALLER_CALLER_PC (NMT_track_callsite ? os::get_caller_pc(3) : 0)
@@ -538,6 +538,9 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 
 #define NEW_RESOURCE_ARRAY(type, size)\
   (type*) resource_allocate_bytes((size) * sizeof(type))
+
+#define NEW_RESOURCE_ARRAY_RETURN_NULL(type, size)\
+  (type*) resource_allocate_bytes((size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
 #define NEW_RESOURCE_ARRAY_IN_THREAD(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type))

@@ -25,7 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.Label;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -33,130 +33,126 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation for a WHILE statement. This is the superclass of all
  * loop nodes
  */
-public class WhileNode extends BreakableNode {
-    /** Test expression. */
-    protected Node test;
+@Immutable
+public final class WhileNode extends LoopNode {
 
-    /** For body. */
-    protected Block body;
-
-    /** loop continue label. */
-    protected Label continueLabel;
+    /** is this a do while node ? */
+    private final boolean isDoWhile;
 
     /**
      * Constructor
      *
-     * @param source  the source
-     * @param token   token
-     * @param finish  finish
+     * @param source    the source
+     * @param token     token
+     * @param finish    finish
+     * @param isDoWhile is this a do while loop?
      */
-    public WhileNode(final Source source, final long token, final int finish) {
-        super(source, token, finish);
-
-        this.breakLabel    = new Label("while_break");
-        this.continueLabel = new Label("while_continue");
+    public WhileNode(final Source source, final long token, final int finish, final boolean isDoWhile) {
+        super(source, token, finish, null, null, false);
+        this.isDoWhile = isDoWhile;
     }
 
     /**
-     * Copy constructor
+     * Internal copy constructor
      *
-     * @param whileNode source node
-     * @param cs        copy state
+     * @param whileNode while node
+     * @param test      test
+     * @param body      body
+     * @param controlFlowEscapes control flow escapes?
      */
-    protected WhileNode(final WhileNode whileNode, final CopyState cs) {
-        super(whileNode);
-
-        this.test          = cs.existingOrCopy(whileNode.test);
-        this.body          = (Block)cs.existingOrCopy(whileNode.body);
-        this.breakLabel    = new Label(whileNode.breakLabel);
-        this.continueLabel = new Label(whileNode.continueLabel);
+    protected WhileNode(final WhileNode whileNode, final Node test, final Block body, final boolean controlFlowEscapes) {
+        super(whileNode, test, body, controlFlowEscapes);
+        this.isDoWhile = whileNode.isDoWhile;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new WhileNode(this, cs);
+    public Node ensureUniqueLabels(final LexicalContext lc) {
+        return Node.replaceInLexicalContext(lc, this, new WhileNode(this, test, body, controlFlowEscapes));
     }
 
     @Override
-    public boolean isLoop() {
-        return true;
+    public boolean hasGoto() {
+        return test == null;
     }
 
-    /**
-     * Assist in IR navigation.
-     * @param visitor IR navigating visitor.
-     */
     @Override
-    public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterWhileNode(this) != null) {
-            test = test.accept(visitor);
-            body = (Block)body.accept(visitor);
+    protected Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+        if (visitor.enterWhileNode(this)) {
+            if (isDoWhile()) {
+                return visitor.leaveWhileNode(
+                        setTest(lc, test.accept(visitor)).
+                        setBody(lc, (Block)body.accept(visitor)));
+            }
+            return visitor.leaveWhileNode(
+                    setBody(lc, (Block)body.accept(visitor)).
+                    setTest(lc, test.accept(visitor)));
 
-            return visitor.leaveWhileNode(this);
         }
         return this;
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        sb.append("while (");
-        test.toString(sb);
-        sb.append(')');
-    }
-
-    /**
-     * Get the loop body
-     * @return body
-     */
-    public Block getBody() {
-        return body;
-    }
-
-    /**
-     * Reset the loop body
-     * @param body new body
-     */
-    public void setBody(final Block body) {
-        this.body = body;
-    }
-
-    /**
-     * Set the break label (described in {@link WhileNode#getBreakLabel()} for this while node
-     * @param breakLabel break label
-     */
-    public void setBreakLabel(final Label breakLabel) {
-        this.breakLabel = breakLabel;
-    }
-
-    /**
-     * Get the continue label for this while node, i.e. location to go to on continue
-     * @return continue label
-     */
-    public Label getContinueLabel() {
-        return continueLabel;
-    }
-
-    /**
-     * Set the continue label (described in {@link WhileNode#getContinueLabel()} for this while node
-     * @param continueLabel continue label
-     */
-    public void setContinueLabel(final Label continueLabel) {
-        this.continueLabel = continueLabel;
-    }
-
-    /**
-     * Get the test expression for this loop, that upon evaluation to true does another iteration
-     * @return test expression
-     */
     public Node getTest() {
         return test;
     }
 
+    @Override
+    public WhileNode setTest(final LexicalContext lc, final Node test) {
+        if (this.test == test) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new WhileNode(this, test, body, controlFlowEscapes));
+    }
+
+    @Override
+    public Block getBody() {
+        return body;
+    }
+
+    @Override
+    public WhileNode setBody(final LexicalContext lc, final Block body) {
+        if (this.body == body) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new WhileNode(this, test, body, controlFlowEscapes));
+    }
+
+    @Override
+    public WhileNode setControlFlowEscapes(final LexicalContext lc, final boolean controlFlowEscapes) {
+        if (this.controlFlowEscapes == controlFlowEscapes) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new WhileNode(this, test, body, controlFlowEscapes));
+    }
+
     /**
-     * Set the test expression for this loop
-     * @param test test expression, null if infinite loop
+     * Check if this is a do while loop or a normal while loop
+     * @return true if do while
      */
-    public void setTest(final Node test) {
-        this.test = test;
+    public boolean isDoWhile() {
+        return isDoWhile;
+    }
+
+    @Override
+    public void toString(final StringBuilder sb) {
+        if (isDoWhile()) {
+            sb.append("do {");
+            body.toString(sb);
+            sb.append("} while (");
+            test.toString(sb);
+            sb.append(')');
+        } else {
+            sb.append("while (");
+            test.toString(sb);
+            sb.append(')');
+        }
+    }
+
+    @Override
+    public boolean mustEnter() {
+        if (isDoWhile()) {
+            return true;
+        }
+        return test == null;
     }
 }
