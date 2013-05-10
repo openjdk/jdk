@@ -929,7 +929,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
           scval = new_loc_value( _regalloc, obj_reg, Location::oop );
         }
       } else {
-        const TypePtr *tp = obj_node->bottom_type()->make_ptr();
+        const TypePtr *tp = obj_node->get_ptr_type();
         scval = new ConstantOopWriteValue(tp->is_oopptr()->const_oop()->constant_encoding());
       }
 

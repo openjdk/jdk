@@ -834,7 +834,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         if (field_val->is_EncodeP()) {
           field_val = field_val->in(1);
         } else {
-          field_val = transform_later(new (C) DecodeNNode(field_val, field_val->bottom_type()->make_ptr()));
+          field_val = transform_later(new (C) DecodeNNode(field_val, field_val->get_ptr_type()));
         }
       }
       sfpt->add_req(field_val);

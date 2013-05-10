@@ -1398,6 +1398,21 @@ const TypeLong* Node::find_long_type() const {
   return NULL;
 }
 
+
+/**
+ * Return a ptr type for nodes which should have it.
+ */
+const TypePtr* Node::get_ptr_type() const {
+  const TypePtr* tp = this->bottom_type()->make_ptr();
+#ifdef ASSERT
+  if (tp == NULL) {
+    this->dump(1);
+    assert((tp != NULL), "unexpected node type");
+  }
+#endif
+  return tp;
+}
+
 // Get a double constant from a ConstNode.
 // Returns the constant if it is a double ConstNode
 jdouble Node::getd() const {
