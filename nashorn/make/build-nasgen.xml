@@ -37,6 +37,7 @@
                 <pathelement location="${basedir}/buildtools/nasgen/dist/nasgen.jar"/>
                 <pathelement path="${basedir}/build/classes"/>
             </classpath>
+            <jvmarg value="-Djava.ext.dirs="/>
             <arg value="${basedir}/build/classes"/>
             <arg value="jdk.nashorn.internal.objects"/>
             <arg value="${basedir}/build/classes"/>

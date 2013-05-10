@@ -25,12 +25,16 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.DEFAULT_SCRIPT_NAME;
 import static jdk.nashorn.internal.codegen.CompilerConstants.LAZY;
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -46,13 +50,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -80,8 +83,6 @@ public final class Compiler {
 
     private final ConstantData constantData;
 
-    private final FunctionNode functionNode;
-
     private final CompilationSequence sequence;
 
     private final ScriptEnvironment env;
@@ -89,6 +90,8 @@ public final class Compiler {
     private final String scriptName;
 
     private boolean strict;
+
+    private FunctionNode functionNode;
 
     private CodeInstaller<ScriptEnvironment> installer;
 
@@ -103,8 +106,12 @@ public final class Compiler {
      * during a compile.
      */
     private static String[] RESERVED_NAMES = {
-        SCOPE.tag(),
-        THIS.tag()
+        SCOPE.symbolName(),
+        THIS.symbolName(),
+        RETURN.symbolName(),
+        CALLEE.symbolName(),
+        VARARGS.symbolName(),
+        ARGUMENTS.symbolName()
     };
 
     /**
@@ -186,7 +193,7 @@ public final class Compiler {
 
     private static String lazyTag(final FunctionNode functionNode) {
         if (functionNode.isLazy()) {
-            return '$' + LAZY.tag() + '$' + functionNode.getName();
+            return '$' + LAZY.symbolName() + '$' + functionNode.getName();
         }
         return "";
     }
@@ -205,13 +212,13 @@ public final class Compiler {
         this.functionNode  = functionNode;
         this.sequence      = sequence;
         this.installer     = installer;
-        this.strict        = strict || functionNode.isStrictMode();
+        this.strict        = strict || functionNode.isStrict();
         this.constantData  = new ConstantData();
         this.compileUnits  = new HashSet<>();
         this.bytecode      = new HashMap<>();
 
         final StringBuilder sb = new StringBuilder();
-        sb.append(functionNode.uniqueName(DEFAULT_SCRIPT_NAME.tag() + lazyTag(functionNode))).
+        sb.append(functionNode.uniqueName(DEFAULT_SCRIPT_NAME.symbolName() + lazyTag(functionNode))).
                 append('$').
                 append(safeSourceName(functionNode.getSource()));
 
@@ -253,9 +260,9 @@ public final class Compiler {
      * Execute the compilation this Compiler was created with
      * @params param types if known, for specialization
      * @throws CompilationException if something goes wrong
-     * @return this compiler, for possible chaining
+     * @return function node that results from code transforms
      */
-    public Compiler compile() throws CompilationException {
+    public FunctionNode compile() throws CompilationException {
         return compile(null);
     }
 
@@ -263,9 +270,9 @@ public final class Compiler {
      * Execute the compilation this Compiler was created with
      * @param paramTypes param types if known, for specialization
      * @throws CompilationException if something goes wrong
-     * @return this compiler, for possible chaining
+     * @return function node that results from code transforms
      */
-    public Compiler compile(final Class<?> paramTypes) throws CompilationException {
+    public FunctionNode compile(final Class<?> paramTypes) throws CompilationException {
         for (final String reservedName : RESERVED_NAMES) {
             functionNode.uniqueName(reservedName);
         }
@@ -276,7 +283,7 @@ public final class Compiler {
         long time = 0L;
 
         for (final CompilationPhase phase : sequence) {
-            phase.apply(this, functionNode);
+            this.functionNode = phase.apply(this, functionNode);
 
             final long duration = Timing.isEnabled() ? (phase.getEndTime() - phase.getStartTime()) : 0L;
             time += duration;
@@ -295,7 +302,7 @@ public final class Compiler {
                         append(" ms ");
                 }
 
-                LOG.fine(sb.toString());
+                LOG.fine(sb);
             }
         }
 
@@ -311,14 +318,14 @@ public final class Compiler {
                     append(" ms");
             }
 
-            LOG.info(sb.toString());
+            LOG.info(sb);
         }
 
-        return this;
+        return functionNode;
     }
 
     private Class<?> install(final String className, final byte[] code) {
-        LOG.fine("Installing class " + className);
+        LOG.fine("Installing class ", className);
 
         final Class<?> clazz = installer.install(Compiler.binaryName(className), code);
 
@@ -330,8 +337,8 @@ public final class Compiler {
                 @Override
                 public Void run() throws Exception {
                     //use reflection to write source and constants table to installed classes
-                    final Field sourceField    = clazz.getDeclaredField(SOURCE.tag());
-                    final Field constantsField = clazz.getDeclaredField(CONSTANTS.tag());
+                    final Field sourceField    = clazz.getDeclaredField(SOURCE.symbolName());
+                    final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
                     sourceField.setAccessible(true);
                     constantsField.setAccessible(true);
                     sourceField.set(null, source);
@@ -380,17 +387,6 @@ public final class Compiler {
             unit.setCode(installedClasses.get(unit.getUnitClassName()));
         }
 
-        functionNode.accept(new NodeVisitor() {
-            @Override
-            public Node enterFunctionNode(final FunctionNode node) {
-                if (node.isLazy()) {
-                    return null;
-                }
-                node.setState(CompilationState.INSTALLED);
-                return node;
-            }
-        });
-
         final StringBuilder sb;
         if (LOG.isEnabled()) {
             sb = new StringBuilder();
@@ -416,7 +412,7 @@ public final class Compiler {
         }
 
         if (sb != null) {
-            LOG.info(sb.toString());
+            LOG.info(sb);
         }
 
         return rootClass;
@@ -495,7 +491,7 @@ public final class Compiler {
     private CompileUnit addCompileUnit(final String unitClassName, final long initialWeight) {
         final CompileUnit compileUnit = initCompileUnit(unitClassName, initialWeight);
         compileUnits.add(compileUnit);
-        LOG.fine("Added compile unit " + compileUnit);
+        LOG.fine("Added compile unit ", compileUnit);
         return compileUnit;
     }
 

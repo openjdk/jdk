@@ -66,8 +66,7 @@ class MapIterator extends ArrayLikeIterator<Object> {
             bumpIndex();
         }
 
-        // special case - balk at iterating to infinity or MAX_UINT
-        return (length != JSType.MAX_UINT) && indexInArray();
+        return indexInArray();
     }
 
     @Override

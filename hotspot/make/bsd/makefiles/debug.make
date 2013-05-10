@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Sets make macros for making debug version of VM
@@ -27,17 +27,16 @@
 # Compiler specific DEBUG_CFLAGS are passed in from gcc.make, sparcWorks.make
 DEBUG_CFLAGS/DEFAULT= $(DEBUG_CFLAGS)
 DEBUG_CFLAGS/BYFILE = $(DEBUG_CFLAGS/$@)$(DEBUG_CFLAGS/DEFAULT$(DEBUG_CFLAGS/$@))
-CFLAGS += $(DEBUG_CFLAGS/BYFILE)
+
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
+
+# Set the environment variable HOTSPARC_GENERIC to "true"
+# to inhibit the effect of the previous line on CFLAGS.
 
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-debug
 
-_JUNK_ := $(shell echo -e >&2 ""\
- "----------------------------------------------------------------------\n" \
- "WARNING: 'make debug' is deprecated. It will be removed in the future.\n" \
- "Please use 'make jvmg' to build debug JVM.                            \n" \
- "----------------------------------------------------------------------\n")
-
 VERSION = debug
-SYSDEFS += -DASSERT -DDEBUG
+SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT
