@@ -298,6 +298,8 @@ public final class Compiler {
     }
 
     private static void printMemoryUsage(final String phaseName, final FunctionNode functionNode) {
+        LOG.info(phaseName + " finished. Doing IR size calculation...");
+
         final ObjectSizeCalculator osc = new ObjectSizeCalculator(ObjectSizeCalculator.getEffectiveMemoryLayoutSpecification());
         osc.calculateObjectSize(functionNode);
 
@@ -324,7 +326,7 @@ public final class Compiler {
         for (final ClassHistogramElement e : list) {
             final String line = String.format("    %-48s %10d bytes (%8d instances)", e.getClazz(), e.getBytes(), e.getInstances());
             LOG.info(line);
-            if (e.getBytes() < totalSize / 20) {
+            if (e.getBytes() < totalSize / 200) {
                 LOG.info("    ...");
                 break; // never mind, so little memory anyway
             }
@@ -619,6 +621,4 @@ public final class Compiler {
         USE_INT_ARITH  =  Options.getBooleanProperty("nashorn.compiler.intarithmetic");
         assert !USE_INT_ARITH : "Integer arithmetic is not enabled";
     }
-
-
 }

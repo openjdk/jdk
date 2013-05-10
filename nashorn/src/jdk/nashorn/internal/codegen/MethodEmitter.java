@@ -67,9 +67,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup
 
 import java.io.PrintStream;
 import java.lang.reflect.Array;
-import java.util.ArrayDeque;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 
 import jdk.internal.dynalink.support.NameCodec;
@@ -115,7 +113,7 @@ public class MethodEmitter implements Emitter {
     private final MethodVisitor method;
 
     /** Current type stack for current evaluation */
-    private ArrayDeque<Type> stack;
+    private Label.Stack stack;
 
     /** Parent classEmitter representing the class of this method */
     private final ClassEmitter classEmitter;
@@ -207,7 +205,7 @@ public class MethodEmitter implements Emitter {
     }
 
     private void newStack() {
-        stack = new ArrayDeque<>();
+        stack = new Label.Stack();
     }
 
     @Override
@@ -293,11 +291,7 @@ public class MethodEmitter implements Emitter {
      * @return the type at position "pos" on the stack
      */
     final Type peekType(final int pos) {
-        final Iterator<Type> iter = stack.iterator();
-        for (int i = 0; i < pos; i++) {
-            iter.next();
-        }
-        return iter.next();
+        return stack.peek(pos);
     }
 
     /**
@@ -865,7 +859,7 @@ public class MethodEmitter implements Emitter {
     }
 
     private boolean isThisSlot(final int slot) {
-        if(functionNode == null) {
+        if (functionNode == null) {
             return slot == CompilerConstants.JAVA_THIS.slot();
         }
         final int thisSlot = compilerConstant(THIS).getSlot();
@@ -909,7 +903,6 @@ public class MethodEmitter implements Emitter {
             dup();
             return this;
         }
-        debug("load compiler constant ", symbol);
         return load(symbol);
     }
 
@@ -1502,24 +1495,6 @@ public class MethodEmitter implements Emitter {
      *
      * @return true if stacks are equivalent, false otherwise
      */
-    private boolean stacksEquivalent(final ArrayDeque<Type> s0, final ArrayDeque<Type> s1) {
-        if (s0.size() != s1.size()) {
-            debug("different stack sizes", s0, s1);
-            return false;
-        }
-
-        final Type[] s0a = s0.toArray(new Type[s0.size()]);
-        final Type[] s1a = s1.toArray(new Type[s1.size()]);
-        for (int i = 0; i < s0.size(); i++) {
-            if (!s0a[i].isEquivalentTo(s1a[i])) {
-                debug("different stack element", s0a[i], s1a[i]);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * A join in control flow - helper function that makes sure all entry stacks
      * discovered for the join point so far are equivalent
@@ -1539,12 +1514,12 @@ public class MethodEmitter implements Emitter {
         //ATHROW sequences instead of no code being generated at all. This should now be fixed.
         assert stack != null : label + " entered with no stack. deadcode that remains?";
 
-        final ArrayDeque<Type> labelStack = label.getStack();
+        final Label.Stack labelStack = label.getStack();
         if (labelStack == null) {
-            label.setStack(stack.clone());
+            label.setStack(stack.copy());
             return;
         }
-        assert stacksEquivalent(stack, labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point";
+        assert stack.isEquivalentTo(labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point";
     }
 
     /**
@@ -1688,11 +1663,10 @@ public class MethodEmitter implements Emitter {
      * @return array of Types
      */
     protected Type[] getTypesFromStack(final int count) {
-        final Iterator<Type> iter  = stack.iterator();
-        final Type[]         types = new Type[count];
-
+        final Type[] types = new Type[count];
+        int pos = 0;
         for (int i = count - 1; i >= 0; i--) {
-            types[i] = iter.next();
+            types[i] = stack.peek(pos++);
         }
 
         return types;
@@ -1708,11 +1682,11 @@ public class MethodEmitter implements Emitter {
      * @return function signature for stack contents
      */
     private String getDynamicSignature(final Type returnType, final int argCount) {
-        final Iterator<Type> iter       = stack.iterator();
         final Type[]         paramTypes = new Type[argCount];
 
+        int pos = 0;
         for (int i = argCount - 1; i >= 0; i--) {
-            paramTypes[i] = iter.next();
+            paramTypes[i] = stack.peek(pos++);
         }
         final String descriptor = Type.getMethodDescriptor(returnType, paramTypes);
         for (int i = 0; i < argCount; i++) {
@@ -2138,8 +2112,8 @@ public class MethodEmitter implements Emitter {
                 sb.append("{");
                 sb.append(stack.size());
                 sb.append(":");
-                for (final Iterator<Type> iter = stack.iterator(); iter.hasNext();) {
-                    final Type t = iter.next();
+                for (int pos = 0; pos < stack.size(); pos++) {
+                    final Type t = stack.peek(pos);
 
                     if (t == Type.SCOPE) {
                         sb.append("scope");
@@ -2165,7 +2139,7 @@ public class MethodEmitter implements Emitter {
                         sb.append(t.getDescriptor());
                     }
 
-                    if (iter.hasNext()) {
+                    if (pos + 1 < stack.size()) {
                         sb.append(' ');
                     }
                 }

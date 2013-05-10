@@ -539,9 +539,7 @@ final class Attr extends NodeOperatorVisitor {
         }
         addLocalUse(identNode.getName());
 
-        end(identNode);
-
-        return identNode.setSymbol(lc, symbol);
+        return end(identNode.setSymbol(lc, symbol));
     }
 
     /**
