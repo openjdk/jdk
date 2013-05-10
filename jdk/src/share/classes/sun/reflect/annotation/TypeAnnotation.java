@@ -83,12 +83,13 @@ public class TypeAnnotation {
         CLASS_TYPE_PARAMETER,
         METHOD_TYPE_PARAMETER,
         CLASS_EXTENDS,
-        CLASS_IMPLEMENTS,
-        CLASS_PARAMETER_BOUND,
-        METHOD_PARAMETER_BOUND,
-        METHOD_RETURN_TYPE,
-        METHOD_RECEIVER_TYPE,
-        FIELD_TYPE,
+        CLASS_IMPLEMENTS, // Not in the spec
+        CLASS_TYPE_PARAMETER_BOUND,
+        METHOD_TYPE_PARAMETER_BOUND,
+        FIELD,
+        METHOD_RETURN,
+        METHOD_RECEIVER,
+        METHOD_FORMAL_PARAMETER,
         THROWS;
     }
     public static class TypeAnnotationTargetInfo {
