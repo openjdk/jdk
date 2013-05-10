@@ -484,6 +484,9 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       Node* adr = n->in(MemNode::Address);
       const Type *adr_type = igvn->type(adr);
       adr_type = adr_type->make_ptr();
+      if (adr_type == NULL) {
+        break; // skip dead nodes
+      }
       if (adr_type->isa_oopptr() ||
           (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
@@ -676,14 +679,18 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_GetAndSetP:
     case Op_GetAndSetN: {
       Node* adr = n->in(MemNode::Address);
-      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
-        const Type* t = _igvn->type(n);
-        if (t->make_ptr() != NULL) {
-          add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
-        }
-      }
       const Type *adr_type = _igvn->type(adr);
       adr_type = adr_type->make_ptr();
+#ifdef ASSERT
+      if (adr_type == NULL) {
+        n->dump(1);
+        assert(adr_type != NULL, "dead node should not be on list");
+        break;
+      }
+#endif
+      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
+        add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
+      }
       if (adr_type->isa_oopptr() ||
           (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
@@ -1813,9 +1820,8 @@ Node* ConnectionGraph::optimize_ptr_compare(Node* n) {
       jobj2->ideal_node()->is_Con()) {
     // Klass or String constants compare. Need to be careful with
     // compressed pointers - compare types of ConN and ConP instead of nodes.
-    const Type* t1 = jobj1->ideal_node()->bottom_type()->make_ptr();
-    const Type* t2 = jobj2->ideal_node()->bottom_type()->make_ptr();
-    assert(t1 != NULL && t2 != NULL, "sanity");
+    const Type* t1 = jobj1->ideal_node()->get_ptr_type();
+    const Type* t2 = jobj2->ideal_node()->get_ptr_type();
     if (t1->make_ptr() == t2->make_ptr()) {
       return _pcmp_eq;
     } else {

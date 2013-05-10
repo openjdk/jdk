@@ -2783,7 +2783,7 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
 
 #ifdef _LP64
   if (type == T_OBJECT && adr->bottom_type()->is_ptr_to_narrowoop() && kind == LS_xchg) {
-    load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->bottom_type()->make_ptr()));
+    load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->get_ptr_type()));
   }
 #endif
 
