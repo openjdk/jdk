@@ -763,14 +763,40 @@ public class TreeInfo {
     }
 
     public static Symbol symbolFor(JCTree node) {
+        Symbol sym = symbolForImpl(node);
+
+        return sym != null ? sym.baseSymbol() : null;
+    }
+
+    private static Symbol symbolForImpl(JCTree node) {
         node = skipParens(node);
         switch (node.getTag()) {
+        case TOPLEVEL:
+            return ((JCCompilationUnit) node).packge;
         case CLASSDEF:
             return ((JCClassDecl) node).sym;
         case METHODDEF:
             return ((JCMethodDecl) node).sym;
         case VARDEF:
             return ((JCVariableDecl) node).sym;
+        case IDENT:
+            return ((JCIdent) node).sym;
+        case SELECT:
+            return ((JCFieldAccess) node).sym;
+        case REFERENCE:
+            return ((JCMemberReference) node).sym;
+        case NEWCLASS:
+            return ((JCNewClass) node).constructor;
+        case APPLY:
+            return symbolFor(((JCMethodInvocation) node).meth);
+        case TYPEAPPLY:
+            return symbolFor(((JCTypeApply) node).clazz);
+        case ANNOTATION:
+        case TYPE_ANNOTATION:
+        case TYPEPARAMETER:
+            if (node.type != null)
+                return node.type.tsym;
+            return null;
         default:
             return null;
         }

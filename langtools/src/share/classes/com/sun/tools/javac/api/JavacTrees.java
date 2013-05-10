@@ -333,11 +333,6 @@ public class JavacTrees extends DocTrees {
                         }
                     }
                 }
-            } else if (tree.hasTag(Tag.TOPLEVEL)) {
-                JCCompilationUnit cu = (JCCompilationUnit) tree;
-                if (cu.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE)) {
-                    sym = cu.packge;
-                }
             }
         }
         return sym;

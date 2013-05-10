@@ -1338,7 +1338,7 @@ public class Attr extends JCTree.Visitor {
                         //check that resource type cannot throw InterruptedException
                         checkAutoCloseable(resource.pos(), localEnv, resource.type);
 
-                        VarSymbol var = (VarSymbol)TreeInfo.symbolFor(resource);
+                        VarSymbol var = ((JCVariableDecl) resource).sym;
                         var.setData(ElementKind.RESOURCE_VARIABLE);
                     } else {
                         attribTree(resource, tryEnv, twrResult);
