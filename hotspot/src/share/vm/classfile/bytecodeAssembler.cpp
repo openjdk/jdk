@@ -75,8 +75,8 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
     int idx = i + _orig->length();
     switch (entry._tag) {
       case BytecodeCPEntry::UTF8:
-        cp->symbol_at_put(idx, entry._u.utf8);
         entry._u.utf8->increment_refcount();
+        cp->symbol_at_put(idx, entry._u.utf8);
         break;
       case BytecodeCPEntry::KLASS:
         cp->unresolved_klass_at_put(
