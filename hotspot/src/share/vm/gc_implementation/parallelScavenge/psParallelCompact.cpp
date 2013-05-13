@@ -948,7 +948,6 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 
   pre_gc_values->fill(heap);
 
-  NOT_PRODUCT(_mark_bitmap.reset_counters());
   DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
   DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
@@ -2041,15 +2040,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     marking_start.update();
     marking_phase(vmthread_cm, maximum_heap_compaction);
-
-#ifndef PRODUCT
-    if (TraceParallelOldGCMarkingPhase) {
-      gclog_or_tty->print_cr("marking_phase: cas_tries %d  cas_retries %d "
-        "cas_by_another %d",
-        mark_bitmap()->cas_tries(), mark_bitmap()->cas_retries(),
-        mark_bitmap()->cas_by_another());
-    }
-#endif  // #ifndef PRODUCT
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && gc_cause == GCCause::_java_lang_system_gc;
