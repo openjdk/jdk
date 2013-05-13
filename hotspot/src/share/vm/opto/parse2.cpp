@@ -987,7 +987,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
-    if (EliminateAutoBox) {
+    if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
       next_block->next_path_num();
@@ -1012,7 +1012,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
     if (stopped()) {            // Path is dead?
       explicit_null_checks_elided++;
-      if (EliminateAutoBox) {
+      if (C->eliminate_boxing()) {
         // Mark the successor block as parsed
         branch_block->next_path_num();
       }
@@ -1032,7 +1032,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   if (stopped()) {              // Path is dead?
     explicit_null_checks_elided++;
-    if (EliminateAutoBox) {
+    if (C->eliminate_boxing()) {
       // Mark the successor block as parsed
       next_block->next_path_num();
     }
@@ -1069,7 +1069,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
                   NULL, "cold");
-    if (EliminateAutoBox) {
+    if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
       next_block->next_path_num();
@@ -1135,7 +1135,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     set_control(taken_branch);
 
     if (stopped()) {
-      if (EliminateAutoBox) {
+      if (C->eliminate_boxing()) {
         // Mark the successor block as parsed
         branch_block->next_path_num();
       }
@@ -1154,7 +1154,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
 
   // Branch not taken.
   if (stopped()) {
-    if (EliminateAutoBox) {
+    if (C->eliminate_boxing()) {
       // Mark the successor block as parsed
       next_block->next_path_num();
     }

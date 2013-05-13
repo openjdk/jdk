@@ -1298,6 +1298,28 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
 }
 JVM_END
 
+/**
+ * Throws a java/lang/UnsupportedOperationException unconditionally.
+ * This is required by the specification of MethodHandle.invoke if
+ * invoked directly.
+ */
+JVM_ENTRY(jobject, MH_invoke_UOE(JNIEnv* env, jobject mh, jobjectArray args)) {
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "MethodHandle.invoke cannot be invoked reflectively");
+  return NULL;
+}
+JVM_END
+
+/**
+ * Throws a java/lang/UnsupportedOperationException unconditionally.
+ * This is required by the specification of MethodHandle.invokeExact if
+ * invoked directly.
+ */
+JVM_ENTRY(jobject, MH_invokeExact_UOE(JNIEnv* env, jobject mh, jobjectArray args)) {
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "MethodHandle.invokeExact cannot be invoked reflectively");
+  return NULL;
+}
+JVM_END
+
 /// JVM_RegisterMethodHandleMethods
 
 #undef CS  // Solaris builds complain
@@ -1317,7 +1339,7 @@ JVM_END
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 // These are the native methods on java.lang.invoke.MethodHandleNatives.
-static JNINativeMethod required_methods_JDK8[] = {
+static JNINativeMethod MHN_methods[] = {
   {CC"init",                      CC"("MEM""OBJ")V",                     FN_PTR(MHN_init_Mem)},
   {CC"expand",                    CC"("MEM")V",                          FN_PTR(MHN_expand_Mem)},
   {CC"resolve",                   CC"("MEM""CLS")"MEM,                   FN_PTR(MHN_resolve_Mem)},
@@ -1335,8 +1357,28 @@ static JNINativeMethod required_methods_JDK8[] = {
   {CC"getMemberVMInfo",           CC"("MEM")"OBJ,                        FN_PTR(MHN_getMemberVMInfo)}
 };
 
-// This one function is exported, used by NativeLookup.
+static JNINativeMethod MH_methods[] = {
+  // UnsupportedOperationException throwers
+  {CC"invoke",                    CC"(["OBJ")"OBJ,                       FN_PTR(MH_invoke_UOE)},
+  {CC"invokeExact",               CC"(["OBJ")"OBJ,                       FN_PTR(MH_invokeExact_UOE)}
+};
 
+/**
+ * Helper method to register native methods.
+ */
+static bool register_natives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
+  int status = env->RegisterNatives(clazz, methods, nMethods);
+  if (status != JNI_OK || env->ExceptionOccurred()) {
+    warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+    env->ExceptionClear();
+    return false;
+  }
+  return true;
+}
+
+/**
+ * This one function is exported, used by NativeLookup.
+ */
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   if (!EnableInvokeDynamic) {
     warning("JSR 292 is disabled in this JVM.  Use -XX:+UnlockDiagnosticVMOptions -XX:+EnableInvokeDynamic to enable.");
@@ -1354,16 +1396,14 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     MH_class = (jclass) JNIHandles::make_local(env, mirror);
   }
 
-  int status;
-
   if (enable_MH) {
     ThreadToNativeFromVM ttnfv(thread);
 
-    status = env->RegisterNatives(MHN_class, required_methods_JDK8, sizeof(required_methods_JDK8)/sizeof(JNINativeMethod));
-    if (status != JNI_OK || env->ExceptionOccurred()) {
-      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
-      enable_MH = false;
-      env->ExceptionClear();
+    if (enable_MH) {
+      enable_MH = register_natives(env, MHN_class, MHN_methods, sizeof(MHN_methods)/sizeof(JNINativeMethod));
+    }
+    if (enable_MH) {
+      enable_MH = register_natives(env, MH_class, MH_methods, sizeof(MH_methods)/sizeof(JNINativeMethod));
     }
   }
 

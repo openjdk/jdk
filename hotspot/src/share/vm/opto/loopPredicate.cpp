@@ -821,8 +821,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
         loop->dump_head();
       }
 #endif
-    } else if (cl != NULL && loop->is_range_check_if(iff, this, invar)) {
-      assert(proj->_con == predicate_proj->_con, "must match");
+    } else if ((cl != NULL) && (proj->_con == predicate_proj->_con) &&
+               loop->is_range_check_if(iff, this, invar)) {
 
       // Range check for counted loops
       const Node*    cmp    = bol->in(1)->as_Cmp();
