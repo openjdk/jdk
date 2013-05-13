@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary NullPointerException thrown when retrieving bounds for the type parameter
  * @author  Peter von der Ah\u00e9
  * @library ../lib
+ * @build ToolTester
  * @compile -Xlint:all T6421111.java
  * @run main T6421111
  */
