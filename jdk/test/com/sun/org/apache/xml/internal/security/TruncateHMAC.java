@@ -97,6 +97,7 @@ public class TruncateHMAC {
                 System.out.println("PASSED");
             } else {
                 System.out.println("FAILED");
+                atLeastOneFailed = true;
             }
         }
     }

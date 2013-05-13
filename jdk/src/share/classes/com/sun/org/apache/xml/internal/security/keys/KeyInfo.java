@@ -54,6 +54,7 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.IdResolver;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -128,8 +129,11 @@ public class KeyInfo extends SignatureElementProxy {
     */
    public KeyInfo(Element element, String BaseURI) throws XMLSecurityException {
       super(element, BaseURI);
-     // _storageResolvers.add(null);
 
+      Attr attr = element.getAttributeNodeNS(null, "Id");
+      if (attr != null) {
+          element.setIdAttributeNode(attr, true);
+      }
    }
 
    /**
@@ -139,9 +143,8 @@ public class KeyInfo extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((Id != null)) {
-         this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
-         IdResolver.registerElementById(this._constructionElement, Id);
+      if (Id != null) {
+          setLocalIdAttribute(Constants._ATT_ID, Id);
       }
    }
 
@@ -1008,7 +1011,7 @@ public class KeyInfo extends SignatureElementProxy {
    /**
     * Stores the individual (per-KeyInfo) {@link KeyResolver}s
     */
-   List<KeyResolverSpi> _internalKeyResolvers = null;
+   List<KeyResolverSpi> _internalKeyResolvers = new ArrayList<KeyResolverSpi>();
 
    /**
     * This method is used to add a custom {@link KeyResolverSpi} to a KeyInfo

@@ -107,6 +107,9 @@ public final class Utils {
     }
 
     static boolean secureValidation(XMLCryptoContext xc) {
+        if (xc == null) {
+            return false;
+        }
         return getBoolean(xc, "org.jcp.xml.dsig.secureValidation");
     }
 

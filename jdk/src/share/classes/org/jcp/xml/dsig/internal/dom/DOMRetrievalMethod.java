@@ -230,6 +230,21 @@ public final class DOMRetrievalMethod extends DOMStructure
         } catch (Exception e) {
             throw new URIReferenceException(e);
         }
+
+        // guard against RetrievalMethod loops
+        if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
+            NodeSetData nsd = (NodeSetData)data;
+            Iterator i = nsd.iterator();
+            if (i.hasNext()) {
+                Node root = (Node)i.next();
+                if ("RetrievalMethod".equals(root.getLocalName())) {
+                    throw new URIReferenceException(
+                        "It is forbidden to have one RetrievalMethod point " +
+                        "to another when secure validation is enabled");
+                }
+            }
+        }
+
         return data;
     }
 
