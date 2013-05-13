@@ -395,7 +395,7 @@ class Klass : public Metadata {
   virtual klassVtable* vtable() const        { return NULL; }
 
   // subclass check
-  bool is_subclass_of(Klass* k) const;
+  bool is_subclass_of(const Klass* k) const;
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
   bool is_subtype_of(Klass* k) const {
     juint    off = k->super_check_offset();
