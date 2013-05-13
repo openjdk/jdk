@@ -1581,7 +1581,7 @@ int Method::backedge_count() {
 }
 
 int Method::highest_comp_level() const {
-  MethodData* mdo = method_data();
+  const MethodData* mdo = method_data();
   if (mdo != NULL) {
     return mdo->highest_comp_level();
   } else {
@@ -1590,7 +1590,7 @@ int Method::highest_comp_level() const {
 }
 
 int Method::highest_osr_comp_level() const {
-  MethodData* mdo = method_data();
+  const MethodData* mdo = method_data();
   if (mdo != NULL) {
     return mdo->highest_osr_comp_level();
   } else {
