@@ -25,6 +25,7 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.IdResolver;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -61,6 +62,21 @@ public class SignatureProperties extends SignatureElementProxy {
    public SignatureProperties(Element element, String BaseURI)
            throws XMLSecurityException {
       super(element, BaseURI);
+
+      Attr attr = element.getAttributeNodeNS(null, "Id");
+      if (attr != null) {
+          element.setIdAttributeNode(attr, true);
+      }
+
+      int length = getLength();
+      for (int i = 0; i < length; i++) {
+          Element propertyElem =
+              XMLUtils.selectDsNode(getElement(), Constants._TAG_SIGNATUREPROPERTY, i);
+          Attr propertyAttr = propertyElem.getAttributeNodeNS(null, "Id");
+          if (propertyAttr != null) {
+              propertyElem.setIdAttributeNode(propertyAttr, true);
+          }
+      }
    }
 
    /**
@@ -109,9 +125,8 @@ public class SignatureProperties extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((Id != null)) {
-         this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
-         IdResolver.registerElementById(this._constructionElement, Id);
+      if (Id != null) {
+          setLocalIdAttribute(Constants._ATT_ID, Id);
       }
    }
 

@@ -515,4 +515,16 @@ public abstract class ElementProxy {
         return prefixMappings.get(namespace);
     }
 
+    protected void setLocalIdAttribute(String attrName, String value) {
+
+        if (value != null) {
+            Attr attr = getDocument().createAttributeNS(null, attrName);
+            attr.setValue(value);
+            getElement().setAttributeNodeNS(attr);
+            getElement().setIdAttributeNode(attr, true);
+        }
+        else {
+            getElement().removeAttributeNS(null, attrName);
+        }
+    }
 }
