@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Source;
@@ -33,9 +34,12 @@ import jdk.nashorn.internal.runtime.Source;
 /**
  * BinaryNode nodes represent two operand operations.
  */
-public class BinaryNode extends UnaryNode {
+@Immutable
+public final class BinaryNode extends Node implements Assignment<Node> {
     /** Left hand side argument. */
-    private Node lhs;
+    private final Node lhs;
+
+    private final Node rhs;
 
     /**
      * Constructor
@@ -46,28 +50,15 @@ public class BinaryNode extends UnaryNode {
      * @param rhs    right hand side
      */
     public BinaryNode(final Source source, final long token, final Node lhs, final Node rhs) {
-        super(source, token, rhs);
+        super(source, token, lhs.getStart(), rhs.getFinish());
+        this.lhs   = lhs;
+        this.rhs   = rhs;
+    }
 
-        start  = lhs.getStart();
-        finish = rhs.getFinish();
-
+    private BinaryNode(final BinaryNode binaryNode, final Node lhs, final Node rhs) {
+        super(binaryNode);
         this.lhs = lhs;
-    }
-
-    /**
-     * Copy constructor
-     *
-     * @param binaryNode the binary node
-     * @param cs         copy state
-     */
-    protected BinaryNode(final BinaryNode binaryNode, final CopyState cs) {
-        super(binaryNode, cs);
-        lhs = cs.existingOrCopy(binaryNode.lhs);
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new BinaryNode(this, cs);
+        this.rhs = rhs;
     }
 
     /**
@@ -149,28 +140,14 @@ public class BinaryNode extends UnaryNode {
         return rhs();
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        if (!super.equals(other)) {
-            return false;
-        }
-        return lhs.equals(((BinaryNode)other).lhs());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ lhs().hashCode();
-    }
-
     /**
      * Assist in IR navigation.
      * @param visitor IR navigating visitor.
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterBinaryNode(this) != null) {
-            // TODO: good cause for a separate visitMembers: we could delegate to UnaryNode.visitMembers
-            return visitor.leaveBinaryNode((BinaryNode)setLHS(lhs.accept(visitor)).setRHS(rhs().accept(visitor)));
+        if (visitor.enterBinaryNode(this)) {
+            return visitor.leaveBinaryNode(setLHS(lhs.accept(visitor)).setRHS(rhs.accept(visitor)));
         }
 
         return this;
@@ -231,14 +208,35 @@ public class BinaryNode extends UnaryNode {
     }
 
     /**
+     * Get the right hand side expression for this node
+     * @return the left hand side expression
+     */
+    public Node rhs() {
+        return rhs;
+    }
+
+    /**
      * Set the left hand side expression for this node
      * @param lhs new left hand side expression
      * @return a node equivalent to this one except for the requested change.
      */
     public BinaryNode setLHS(final Node lhs) {
-        if(this.lhs == lhs) return this;
-        final BinaryNode n = (BinaryNode)clone();
-        n.lhs = lhs;
-        return n;
+        if (this.lhs == lhs) {
+            return this;
+        }
+        return new BinaryNode(this, lhs, rhs);
     }
+
+    /**
+     * Set the right hand side expression for this node
+     * @param rhs new left hand side expression
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public BinaryNode setRHS(final Node rhs) {
+        if (this.rhs == rhs) {
+            return this;
+        }
+        return new BinaryNode(this, lhs, rhs);
+    }
+
 }

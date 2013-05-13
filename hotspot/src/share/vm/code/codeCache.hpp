@@ -57,7 +57,7 @@ class CodeCache : AllStatic {
   static int _number_of_nmethods_with_dependencies;
   static bool _needs_cache_clean;
   static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
-  static nmethod* _saved_nmethods;          // linked via nm->saved_nmethod_look()
+  static nmethod* _saved_nmethods;          // Linked list of speculatively disconnected nmethods.
 
   static void verify_if_often() PRODUCT_RETURN;
 
@@ -70,7 +70,7 @@ class CodeCache : AllStatic {
   static void initialize();
 
   // Allocation/administration
-  static CodeBlob* allocate(int size);              // allocates a new CodeBlob
+  static CodeBlob* allocate(int size, bool is_critical = false); // allocates a new CodeBlob
   static void commit(CodeBlob* cb);                 // called when the allocated CodeBlob has been filled
   static int alignment_unit();                      // guaranteed alignment of all CodeBlobs
   static int alignment_offset();                    // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
@@ -156,25 +156,19 @@ class CodeCache : AllStatic {
   static address  low_bound()                    { return (address) _heap->low_boundary(); }
   static address  high_bound()                   { return (address) _heap->high_boundary(); }
 
-  static bool has_space(int size) {
-    // Always leave some room in the CodeCache for I2C/C2I adapters
-    return largest_free_block() > (CodeCacheMinimumFreeSpace + size);
-  }
-
   // Profiling
   static address first_address();                // first address used for CodeBlobs
   static address last_address();                 // last  address used for CodeBlobs
   static size_t  capacity()                      { return _heap->capacity(); }
   static size_t  max_capacity()                  { return _heap->max_capacity(); }
   static size_t  unallocated_capacity()          { return _heap->unallocated_capacity(); }
-  static size_t  largest_free_block();
-  static bool    needs_flushing()                { return largest_free_block() < CodeCacheFlushingMinimumFreeSpace; }
+  static bool    needs_flushing()                { return unallocated_capacity() < CodeCacheFlushingMinimumFreeSpace; }
 
   static bool needs_cache_clean()                { return _needs_cache_clean; }
   static void set_needs_cache_clean(bool v)      { _needs_cache_clean = v;    }
   static void clear_inline_caches();             // clear all inline caches
 
-  static nmethod* find_and_remove_saved_code(Method* m);
+  static nmethod* reanimate_saved_code(Method* m);
   static void remove_saved_code(nmethod* nm);
   static void speculatively_disconnect(nmethod* nm);
 

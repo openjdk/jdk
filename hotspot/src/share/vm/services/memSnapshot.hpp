@@ -308,7 +308,7 @@ class VMRecordIterator : public MemPointerArrayIterator {
   }
 };
 
-class StagingArea : public _ValueObj {
+class StagingArea VALUE_OBJ_CLASS_SPEC {
  private:
   MemPointerArray*   _malloc_data;
   MemPointerArray*   _vm_data;
