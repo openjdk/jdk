@@ -402,9 +402,10 @@ public class JavacElements implements Elements {
      * @param e  the element being examined
      * @return all annotations of the element
      */
+    @Override
     public List<Attribute.Compound> getAllAnnotationMirrors(Element e) {
         Symbol sym = cast(Symbol.class, e);
-        List<Attribute.Compound> annos = sym.getRawAttributes();
+        List<Attribute.Compound> annos = sym.getAnnotationMirrors();
         while (sym.getKind() == ElementKind.CLASS) {
             Type sup = ((ClassSymbol) sym).getSuperclass();
             if (!sup.hasTag(CLASS) || sup.isErroneous() ||
@@ -413,7 +414,7 @@ public class JavacElements implements Elements {
             }
             sym = sup.tsym;
             List<Attribute.Compound> oldAnnos = annos;
-            List<Attribute.Compound> newAnnos = sym.getRawAttributes();
+            List<Attribute.Compound> newAnnos = sym.getAnnotationMirrors();
             for (Attribute.Compound anno : newAnnos) {
                 if (isInherited(anno.type) &&
                         !containsAnnoOfType(oldAnnos, anno.type)) {

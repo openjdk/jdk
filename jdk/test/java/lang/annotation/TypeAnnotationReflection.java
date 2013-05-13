@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004698
+ * @bug 8004698 8007073
  * @summary Unit test for type annotations
  */
 
@@ -48,6 +48,8 @@ public class TypeAnnotationReflection {
         testParameterizedType();
         testNestedParameterizedType();
         testWildcardType();
+        testParameterTypes();
+        testParameterType();
     }
 
     private static void check(boolean b) {
@@ -359,6 +361,154 @@ public class TypeAnnotationReflection {
         t = w.getAnnotatedLowerBounds();
         check(t.length == 1);
     }
+
+    private static void testParameterTypes() throws Exception {
+        // NO PARAMS
+        Method m = Params.class.getDeclaredMethod("noParams", (Class<?>[])null);
+        AnnotatedType[] t = m.getAnnotatedParameterTypes();
+        check(t.length == 0);
+
+        // ONLY ANNOTATED PARAM TYPES
+        Class[] argsArr = {String.class, String.class, String.class};
+        m = Params.class.getDeclaredMethod("onlyAnnotated", (Class<?>[])argsArr);
+        t = m.getAnnotatedParameterTypes();
+        check(t.length == 3);
+
+        check(t[0].getAnnotations().length == 1);
+        check(t[0].getAnnotation(TypeAnno.class) != null);
+        check(t[0].getAnnotationsByType(TypeAnno.class)[0].value().equals("1"));
+
+        check(t[1].getAnnotations().length == 1);
+        check(t[1].getAnnotation(TypeAnno.class) != null);
+        check(t[1].getAnnotationsByType(TypeAnno.class)[0].value().equals("2"));
+
+        check(t[2].getAnnotations().length == 2);
+        check(t[2].getAnnotations()[0].annotationType().equals(TypeAnno.class));
+        check(t[2].getAnnotation(TypeAnno.class) != null);
+        check(t[2].getAnnotation(TypeAnno2.class) != null);
+        check(t[2].getAnnotationsByType(TypeAnno.class)[0].value().equals("3a"));
+        check(t[2].getAnnotationsByType(TypeAnno2.class)[0].value().equals("3b"));
+
+        // MIXED ANNOTATED PARAM TYPES
+        m = Params.class.getDeclaredMethod("mixed", (Class<?>[])argsArr);
+        t = m.getAnnotatedParameterTypes();
+        check(t.length == 3);
+
+        check(t[0].getAnnotations().length == 1);
+        check(t[0].getAnnotation(TypeAnno.class) != null);
+        check(t[0].getAnnotationsByType(TypeAnno.class)[0].value().equals("1"));
+
+        check(t[1].getAnnotations().length == 0);
+        check(t[1].getAnnotation(TypeAnno.class) == null);
+        check(t[1].getAnnotation(TypeAnno2.class) == null);
+
+        check(t[2].getAnnotations().length == 2);
+        check(t[2].getAnnotations()[0].annotationType().equals(TypeAnno.class));
+        check(t[2].getAnnotation(TypeAnno.class) != null);
+        check(t[2].getAnnotation(TypeAnno2.class) != null);
+        check(t[2].getAnnotationsByType(TypeAnno.class)[0].value().equals("3a"));
+        check(t[2].getAnnotationsByType(TypeAnno2.class)[0].value().equals("3b"));
+
+        // NO ANNOTATED PARAM TYPES
+        m = Params.class.getDeclaredMethod("unAnnotated", (Class<?>[])argsArr);
+        t = m.getAnnotatedParameterTypes();
+        check(t.length == 3);
+
+        check(t[0].getAnnotations().length == 0);
+        check(t[0].getAnnotation(TypeAnno.class) == null);
+        check(t[0].getAnnotation(TypeAnno2.class) == null);
+
+        check(t[1].getAnnotations().length == 0);
+        check(t[1].getAnnotation(TypeAnno.class) == null);
+        check(t[1].getAnnotation(TypeAnno2.class) == null);
+
+        check(t[2].getAnnotations().length == 0);
+        check(t[2].getAnnotation(TypeAnno.class) == null);
+        check(t[2].getAnnotation(TypeAnno2.class) == null);
+    }
+
+    private static void testParameterType() throws Exception {
+        // NO PARAMS
+        Method m = Params.class.getDeclaredMethod("noParams", (Class<?>[])null);
+        Parameter[] p = m.getParameters();
+        check(p.length == 0);
+
+        // ONLY ANNOTATED PARAM TYPES
+        Class[] argsArr = {String.class, String.class, String.class};
+        m = Params.class.getDeclaredMethod("onlyAnnotated", (Class<?>[])argsArr);
+        p = m.getParameters();
+        check(p.length == 3);
+        AnnotatedType t0 = p[0].getAnnotatedType();
+        AnnotatedType t1 = p[1].getAnnotatedType();
+        AnnotatedType t2 = p[2].getAnnotatedType();
+
+        check(t0.getAnnotations().length == 1);
+        check(t0.getAnnotation(TypeAnno.class) != null);
+        check(t0.getAnnotationsByType(TypeAnno.class)[0].value().equals("1"));
+
+        check(t1.getAnnotations().length == 1);
+        check(t1.getAnnotation(TypeAnno.class) != null);
+        check(t1.getAnnotationsByType(TypeAnno.class)[0].value().equals("2"));
+
+        check(t2.getAnnotations().length == 2);
+        check(t2.getAnnotations()[0].annotationType().equals(TypeAnno.class));
+        check(t2.getAnnotation(TypeAnno.class) != null);
+        check(t2.getAnnotation(TypeAnno2.class) != null);
+        check(t2.getAnnotationsByType(TypeAnno.class)[0].value().equals("3a"));
+        check(t2.getAnnotationsByType(TypeAnno2.class)[0].value().equals("3b"));
+
+        // MIXED ANNOTATED PARAM TYPES
+        m = Params.class.getDeclaredMethod("mixed", (Class<?>[])argsArr);
+        p = m.getParameters();
+        check(p.length == 3);
+
+        t0 = p[0].getAnnotatedType();
+        t1 = p[1].getAnnotatedType();
+        t2 = p[2].getAnnotatedType();
+
+        check(t0.getAnnotations().length == 1);
+        check(t0.getAnnotation(TypeAnno.class) != null);
+        check(t0.getAnnotationsByType(TypeAnno.class)[0].value().equals("1"));
+
+        check(t1.getAnnotations().length == 0);
+        check(t1.getAnnotation(TypeAnno.class) == null);
+        check(t1.getAnnotation(TypeAnno2.class) == null);
+
+        check(t2.getAnnotations().length == 2);
+        check(t2.getAnnotations()[0].annotationType().equals(TypeAnno.class));
+        check(t2.getAnnotation(TypeAnno.class) != null);
+        check(t2.getAnnotation(TypeAnno2.class) != null);
+        check(t2.getAnnotationsByType(TypeAnno.class)[0].value().equals("3a"));
+        check(t2.getAnnotationsByType(TypeAnno2.class)[0].value().equals("3b"));
+
+        // NO ANNOTATED PARAM TYPES
+        m = Params.class.getDeclaredMethod("unAnnotated", (Class<?>[])argsArr);
+        p = m.getParameters();
+        check(p.length == 3);
+
+        t0 = p[0].getAnnotatedType();
+        t1 = p[1].getAnnotatedType();
+        t2 = p[2].getAnnotatedType();
+
+        check(t0.getAnnotations().length == 0);
+        check(t0.getAnnotation(TypeAnno.class) == null);
+        check(t0.getAnnotation(TypeAnno2.class) == null);
+
+        check(t1.getAnnotations().length == 0);
+        check(t1.getAnnotation(TypeAnno.class) == null);
+        check(t1.getAnnotation(TypeAnno2.class) == null);
+
+        check(t2.getAnnotations().length == 0);
+        check(t2.getAnnotation(TypeAnno.class) == null);
+        check(t2.getAnnotation(TypeAnno2.class) == null);
+    }
+}
+
+class Params {
+    public void noParams() {}
+    public void onlyAnnotated(@TypeAnno("1") String s1, @TypeAnno("2") String s2, @TypeAnno("3a") @TypeAnno2("3b") String s3) {}
+    public void mixed(@TypeAnno("1") String s1, String s2, @TypeAnno("3a") @TypeAnno2("3b") String s3) {}
+    public void unAnnotated(String s1, String s2, String s3) {}
 }
 
 abstract class TestWildcardType {

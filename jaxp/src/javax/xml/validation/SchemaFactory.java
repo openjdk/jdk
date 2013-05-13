@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,14 @@ package javax.xml.validation;
 
 import java.io.File;
 import java.net.URL;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
-
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
 
 /**
  * Factory that creates {@link Schema} objects&#x2E; Entry-point to
@@ -79,7 +78,7 @@ import org.xml.sax.SAXNotSupportedException;
  * and has a significant effect on the parsing process, it is impossible
  * to define the DTD validation as a process independent from parsing.
  * For this reason, this specification does not define the semantics for
- * the XML DTD. This doesn't prohibit implentors from implementing it
+ * the XML DTD. This doesn't prohibit implementors from implementing it
  * in a way they see fit, but <em>users are warned that any DTD
  * validation implemented on this interface necessarily deviate from
  * the XML DTD semantics as defined in the XML 1.0</em>.
@@ -147,14 +146,17 @@ public abstract class SchemaFactory {
      *     is looked for. If present, the value is processed just like above.
      *   </li>
      *   <li>
-     *     <p>The class loader is asked for service provider provider-configuration files matching
-     *     <code>javax.xml.validation.SchemaFactory</code> in the resource directory META-INF/services.
-     *     See the JAR File Specification for file format and parsing rules.
-     *     Each potential service provider is required to implement the method:</p>
-     *     <pre>
-     *        {@link #isSchemaLanguageSupported(String schemaLanguage)}
-     *     </pre>
-     *     The first service provider found in class loader order that supports the specified schema language is returned.
+     *   Use the service-provider loading facilities, defined by the
+     *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
+     *   implementation of the service.<br>
+     *   Each potential service provider is required to implement the method
+     *        {@link #isSchemaLanguageSupported(String schemaLanguage)}.
+     *   <br>
+     *   The first service provider found that supports the specified schema
+     *   language is returned.
+     *   <br>
+     *   In case of {@link java.util.ServiceConfigurationError} a
+     *   {@link SchemaFactoryConfigurationError} will be thrown.
      *   </li>
      *   <li>
      *     Platform default <code>SchemaFactory</code> is located
@@ -186,10 +188,12 @@ public abstract class SchemaFactory {
      *      If no implementation of the schema language is available.
      * @throws NullPointerException
      *      If the <code>schemaLanguage</code> parameter is null.
+     * @throws SchemaFactoryConfigurationError
+     *      If a configuration error is encountered.
      *
      * @see #newInstance(String schemaLanguage, String factoryClassName, ClassLoader classLoader)
      */
-    public static final SchemaFactory newInstance(String schemaLanguage) {
+    public static SchemaFactory newInstance(String schemaLanguage) {
         ClassLoader cl;
         cl = ss.getContextClassLoader();
 
@@ -275,19 +279,19 @@ public abstract class SchemaFactory {
 
     }
 
-        /**
-         * <p>Is specified schema supported by this <code>SchemaFactory</code>?</p>
-         *
-         * @param schemaLanguage Specifies the schema language which the returned <code>SchemaFactory</code> will understand.
+    /**
+     * <p>Is specified schema supported by this <code>SchemaFactory</code>?</p>
+     *
+     * @param schemaLanguage Specifies the schema language which the returned <code>SchemaFactory</code> will understand.
      *    <code>schemaLanguage</code> must specify a <a href="#schemaLanguage">valid</a> schema language.
-         *
-         * @return <code>true</code> if <code>SchemaFactory</code> supports <code>schemaLanguage</code>, else <code>false</code>.
-         *
-         * @throws NullPointerException If <code>schemaLanguage</code> is <code>null</code>.
-         * @throws IllegalArgumentException If <code>schemaLanguage.length() == 0</code>
-         *   or <code>schemaLanguage</code> does not specify a <a href="#schemaLanguage">valid</a> schema language.
-         */
-        public abstract boolean isSchemaLanguageSupported(String schemaLanguage);
+     *
+     * @return <code>true</code> if <code>SchemaFactory</code> supports <code>schemaLanguage</code>, else <code>false</code>.
+     *
+     * @throws NullPointerException If <code>schemaLanguage</code> is <code>null</code>.
+     * @throws IllegalArgumentException If <code>schemaLanguage.length() == 0</code>
+     *   or <code>schemaLanguage</code> does not specify a <a href="#schemaLanguage">valid</a> schema language.
+     */
+    public abstract boolean isSchemaLanguageSupported(String schemaLanguage);
 
     /**
      * Look up the value of a feature flag.

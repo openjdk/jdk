@@ -25,10 +25,11 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
@@ -36,8 +37,6 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
-
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 /**
  * This is a subclass that represents a script function that may be regenerated,
@@ -47,7 +46,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
  */
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
-    private final FunctionNode functionNode;
+    private FunctionNode functionNode;
     private final PropertyMap  allocatorMap;
     private final CodeInstaller<ScriptEnvironment> installer;
     private final String allocatorClassName;
@@ -70,7 +69,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
                 "" :
                 functionNode.getIdent().getName(),
               functionNode.getParameters().size(),
-              functionNode.isStrictMode(),
+              functionNode.isStrict(),
               false,
               true);
 
@@ -129,7 +128,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     private void ensureHasAllocator() throws ClassNotFoundException {
         if (allocator == null && allocatorClassName != null) {
-            this.allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName), CompilerConstants.ALLOCATE.tag(), MH.type(ScriptObject.class, PropertyMap.class));
+            this.allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName), CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
         }
     }
 
@@ -148,8 +147,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
          // therefore, currently method specialization is disabled. TODO
 
          if (functionNode.isLazy()) {
-             Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '" + functionNode.getName() + "'");
-             new Compiler(installer, functionNode).compile().install();
+             Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
+             final Compiler compiler = new Compiler(installer, functionNode);
+             functionNode = compiler.compile();
+             assert !functionNode.isLazy();
+             compiler.install();
 
              // we don't need to update any flags - varArgs and needsCallee are instrincic
              // in the function world we need to get a destination node from the compile instead
@@ -159,7 +161,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
          // we can't get here unless we have bytecode, either from eager compilation or from
          // running a lazy compile on the lines above
 
-         assert functionNode.hasState(CompilationState.INSTALLED);
+         assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
 
          // code exists - look it up and add it into the automatically sorted invoker list
          code.add(

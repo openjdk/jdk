@@ -759,9 +759,7 @@ public abstract class WComponentPeer extends WObjectPeer
     WComponentPeer(Component target) {
         this.target = target;
         this.paintArea = new RepaintArea();
-        Container parent = WToolkit.getNativeContainer(target);
-        WComponentPeer parentPeer = (WComponentPeer) WToolkit.targetToPeer(parent);
-        create(parentPeer);
+        create(getNativeParent());
         // fix for 5088782: check if window object is created successfully
         checkCreation();
 
@@ -770,6 +768,17 @@ public abstract class WComponentPeer extends WObjectPeer
         start();  // Initialize enable/disable state, turn on callbacks
     }
     abstract void create(WComponentPeer parent);
+
+    /**
+     * Gets the native parent of this peer. We use the term "parent" explicitly,
+     * because we override the method in top-level window peer implementations.
+     *
+     * @return the parent container/owner of this peer.
+     */
+    WComponentPeer getNativeParent() {
+        Container parent = SunToolkit.getNativeContainer((Component) target);
+        return (WComponentPeer) WToolkit.targetToPeer(parent);
+    }
 
     protected void checkCreation()
     {

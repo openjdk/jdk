@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640 7189363 8007395 8013252 8013254
+ * 7067045 7014640 7189363 8007395 8013252 8013254 8012646
  */
 
 import java.util.regex.*;
@@ -41,6 +41,7 @@ import java.util.Random;
 import java.io.*;
 import java.util.*;
 import java.nio.CharBuffer;
+import java.util.function.Predicate;
 
 /**
  * This is a test class created to check the operation of
@@ -145,6 +146,7 @@ public class RegExTest {
         linebreakTest();
         branchTest();
         groupCurlyNotFoundSuppTest();
+        patternAsPredicate();
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -3997,4 +3999,19 @@ public class RegExTest {
         report("GroupCurly NotFoundSupp");
     }
 
+    // This test is for 8012646
+    private static void patternAsPredicate() throws Exception {
+        Predicate<String> p = Pattern.compile("[a-z]+").asPredicate();
+
+        if (p.test("")) {
+            failCount++;
+        }
+        if (!p.test("word")) {
+            failCount++;
+        }
+        if (p.test("1234")) {
+            failCount++;
+        }
+        report("Pattern.asPredicate");
+    }
 }
