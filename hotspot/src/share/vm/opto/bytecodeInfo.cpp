@@ -85,20 +85,34 @@ InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvm
   assert(!UseOldInlining, "do not use for old stuff");
 }
 
+/**
+ *  Return true when EA is ON and a java constructor is called or
+ *  a super constructor is called from an inlined java constructor.
+ *  Also return true for boxing methods.
+ */
 static bool is_init_with_ea(ciMethod* callee_method,
                             ciMethod* caller_method, Compile* C) {
-  // True when EA is ON and a java constructor is called or
-  // a super constructor is called from an inlined java constructor.
-  return C->do_escape_analysis() && EliminateAllocations &&
-         ( callee_method->is_initializer() ||
-           (caller_method->is_initializer() &&
-            caller_method != C->method() &&
-            caller_method->holder()->is_subclass_of(callee_method->holder()))
-         );
+  if (!C->do_escape_analysis() || !EliminateAllocations) {
+    return false; // EA is off
+  }
+  if (callee_method->is_initializer()) {
+    return true; // constuctor
+  }
+  if (caller_method->is_initializer() &&
+      caller_method != C->method() &&
+      caller_method->holder()->is_subclass_of(callee_method->holder())) {
+    return true; // super constructor is called from inlined constructor
+  }
+  if (C->eliminate_boxing() && callee_method->is_boxing_method()) {
+    return true;
+  }
+  return false;
 }
 
+/**
+ *  Force inlining unboxing accessor.
+ */
 static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
-  // Force inlining unboxing accessor.
   return C->eliminate_boxing() && callee_method->is_unboxing_method();
 }
 
