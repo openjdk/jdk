@@ -393,6 +393,7 @@ class Klass : public Metadata {
 
   // vtables
   virtual klassVtable* vtable() const        { return NULL; }
+  virtual int vtable_length() const          { return 0; }
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
