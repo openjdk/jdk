@@ -264,6 +264,27 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
   // need to do this again
   MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
 
+  // adjust max heap size if necessary
+  if (NewSize + OldSize > MaxHeapSize) {
+    if (FLAG_IS_CMDLINE(MaxHeapSize)) {
+      // somebody set a maximum heap size with the intention that we should not
+      // exceed it. Adjust New/OldSize as necessary.
+      uintx calculated_size = NewSize + OldSize;
+      double shrink_factor = (double) MaxHeapSize / calculated_size;
+      // align
+      NewSize = align_size_down((uintx) (NewSize * shrink_factor), min_alignment());
+      // OldSize is already aligned because above we aligned MaxHeapSize to
+      // max_alignment(), and we just made sure that NewSize is aligned to
+      // min_alignment(). In initialize_flags() we verified that max_alignment()
+      // is a multiple of min_alignment().
+      OldSize = MaxHeapSize - NewSize;
+    } else {
+      MaxHeapSize = NewSize + OldSize;
+    }
+  }
+  // need to do this again
+  MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
+
   always_do_update_barrier = UseConcMarkSweepGC;
 
   // Check validity of heap flags
