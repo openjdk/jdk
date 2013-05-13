@@ -24,15 +24,21 @@
 
 package sun.jvm.hotspot.oops;
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.code.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.memory.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.utilities.*;
+import java.io.PrintStream;
+import java.util.Observable;
+import java.util.Observer;
+
+import sun.jvm.hotspot.code.NMethod;
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.interpreter.OopMapCacheEntry;
+import sun.jvm.hotspot.runtime.SignatureConverter;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObjectFactory;
+import sun.jvm.hotspot.types.AddressField;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.types.WrongTypeException;
+import sun.jvm.hotspot.utilities.Assert;
 
 // A Method represents a Java method
 
@@ -132,11 +138,13 @@ public class Method extends Metadata {
   public long         getAccessFlags()                { return                accessFlags.getValue(this);       }
   public long         getCodeSize()                   { return                getConstMethod().getCodeSize();   }
   public long         getVtableIndex()                { return                vtableIndex.getValue(this);       }
-  public long         getInvocationCounter()          {
-    return getMethodCounters().getInvocationCounter();
+  public long         getInvocationCount()          {
+    MethodCounters mc = getMethodCounters();
+    return mc == null ? 0 : mc.getInvocationCounter();
   }
-  public long         getBackedgeCounter()          {
-    return getMethodCounters().getBackedgeCounter();
+  public long         getBackedgeCount()          {
+    MethodCounters mc = getMethodCounters();
+    return mc == null ? 0 : mc.getBackedgeCounter();
   }
 
   // get associated compiled native method, if available, else return null.
@@ -349,8 +357,8 @@ public class Method extends Metadata {
                   holder.getName().asString() + " " +
                   OopUtilities.escapeString(getName().asString()) + " " +
                   getSignature().asString() + " " +
-                  getInvocationCounter() + " " +
-                  getBackedgeCounter() + " " +
+                  getInvocationCount() + " " +
+                  getBackedgeCount() + " " +
                   interpreterInvocationCount() + " " +
                   interpreterThrowoutCount() + " " +
                   code_size);
