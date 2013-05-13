@@ -125,9 +125,10 @@ void C2Compiler::compile_method(ciEnv* env,
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis &&
     !env->jvmti_can_access_local_variables();
+  bool eliminate_boxing = EliminateAutoBox;
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis);
+    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing);
 
 
     // Check result and retry if appropriate.
@@ -140,6 +141,12 @@ void C2Compiler::compile_method(ciEnv* env,
       if (C.failure_reason_is(retry_no_escape_analysis())) {
         assert(do_escape_analysis, "must make progress");
         do_escape_analysis = false;
+        continue;  // retry
+      }
+      if (C.has_boxed_value()) {
+        // Recompile without boxing elimination regardless failure reason.
+        assert(eliminate_boxing, "must make progress");
+        eliminate_boxing = false;
         continue;  // retry
       }
       // Pass any other failure reason up to the ciEnv.
