@@ -20,36 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.io.PrintWriter;
+import com.oracle.java.testlibrary.*;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-
-/**
- * Dump a class file for a class on the class path in the current directory
+/*
+ * Test to redefine java/lang/Object and verify that it doesn't crash on vtable
+ * call on basic array type.
+ *
+ * @test
+ * @bug 8005056
+ * @library /testlibrary
+ * @build Agent
+ * @run main ClassFileInstaller Agent
+ * @run main Test
+ * @run main/othervm -javaagent:agent.jar Agent
  */
-public class ClassFileInstaller {
-    /**
-     * @param args The names of the classes to dump
-     * @throws Exception
-     */
-    public static void main(String... args) throws Exception {
-        for (String arg : args) {
-            ClassLoader cl = ClassFileInstaller.class.getClassLoader();
+public class Test {
+    public static void main(String[] args) throws Exception  {
 
-            // Convert dotted class name to a path to a class file
-            String pathName = arg.replace('.', '/').concat(".class");
-            InputStream is = cl.getResourceAsStream(pathName);
+      PrintWriter pw = new PrintWriter("MANIFEST.MF");
+      pw.println("Premain-Class: Agent");
+      pw.println("Can-Retransform-Classes: true");
+      pw.close();
 
-            // Create the class file's package directory
-            Path p = Paths.get(pathName);
-            if (pathName.contains("/")) {
-                Files.createDirectories(p.getParent());
-            }
-            // Create the class file
-            Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
-        }
+      ProcessBuilder pb = new ProcessBuilder();
+      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "Agent.class"});
+      pb.start().waitFor();
     }
 }
