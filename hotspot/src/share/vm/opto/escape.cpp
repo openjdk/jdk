@@ -822,7 +822,16 @@ void ConnectionGraph::add_call_node(CallNode* call) {
       ptnode_adr(call_idx)->set_scalar_replaceable(false);
     } else if (meth->is_boxing_method()) {
       // Returns boxing object
-      add_java_object(call, PointsToNode::NoEscape);
+      PointsToNode::EscapeState es;
+      vmIntrinsics::ID intr = meth->intrinsic_id();
+      if (intr == vmIntrinsics::_floatValue || intr == vmIntrinsics::_doubleValue) {
+        // It does not escape if object is always allocated.
+        es = PointsToNode::NoEscape;
+      } else {
+        // It escapes globally if object could be loaded from cache.
+        es = PointsToNode::GlobalEscape;
+      }
+      add_java_object(call, es);
     } else {
       BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
       call_analyzer->copy_dependencies(_compile->dependencies());
