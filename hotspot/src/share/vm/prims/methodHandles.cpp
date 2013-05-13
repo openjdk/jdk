@@ -193,19 +193,15 @@ oop MethodHandles::init_method_MemberName(Handle mname, Method* m, bool do_dispa
     flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
   } else if (mods.is_static()) {
     flags |= IS_METHOD | (JVM_REF_invokeStatic << REFERENCE_KIND_SHIFT);
-     // Get vindex from itable if method holder is an interface.
-     if (m->method_holder()->is_interface()) {
-       vmindex = klassItable::compute_itable_index(m);
-     }
   } else if (receiver_limit != mklass &&
              !receiver_limit->is_subtype_of(mklass)) {
     return NULL;  // bad receiver limit
-  } else if (receiver_limit->is_interface() &&
+  } else if (do_dispatch && receiver_limit->is_interface() &&
              mklass->is_interface()) {
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
     receiver_limit = mklass;  // ignore passed-in limit; interfaces are interconvertible
     vmindex = klassItable::compute_itable_index(m);
-  } else if (mklass != receiver_limit && mklass->is_interface()) {
+  } else if (do_dispatch && mklass != receiver_limit && mklass->is_interface()) {
     flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
     // it is a miranda method, so m->vtable_index is not what we want
     ResourceMark rm;
@@ -250,10 +246,25 @@ Handle MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, TRAPS
   }
   methodHandle m = info.resolved_method();
   KlassHandle defc = info.resolved_klass();
-  int vmindex = -1;
+  int vmindex = Method::invalid_vtable_index;
   if (defc->is_interface() && m->method_holder()->is_interface()) {
-    // LinkResolver does not report itable indexes!  (fix this?)
-    vmindex = klassItable::compute_itable_index(m());
+    // static interface methods do not reference vtable or itable
+    if (m->is_static()) {
+      vmindex = Method::nonvirtual_vtable_index;
+    }
+    // interface methods invoked via invokespecial also
+    // do not reference vtable or itable.
+    int ref_kind = ((java_lang_invoke_MemberName::flags(mname()) >>
+                     REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK);
+    if (ref_kind == JVM_REF_invokeSpecial) {
+      vmindex = Method::nonvirtual_vtable_index;
+    }
+    // If neither m is static nor ref_kind is invokespecial,
+    // set it to itable index.
+    if (vmindex == Method::invalid_vtable_index) {
+      // LinkResolver does not report itable indexes!  (fix this?)
+      vmindex = klassItable::compute_itable_index(m());
+    }
   } else if (m->can_be_statically_bound()) {
     // LinkResolver reports vtable index even for final methods!
     vmindex = Method::nonvirtual_vtable_index;
@@ -665,11 +676,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   case IS_METHOD:
     {
       CallInfo result;
-      bool do_dispatch = true;  // default, neutral setting
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
-          //do_dispatch = false;  // no need, since statics are never dispatched
           LinkResolver::resolve_static_call(result,
                         defc, name, type, KlassHandle(), false, false, THREAD);
         } else if (ref_kind == JVM_REF_invokeInterface) {
@@ -680,7 +689,6 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
           LinkResolver::resolve_handle_call(result,
                         defc, name, type, KlassHandle(), THREAD);
         } else if (ref_kind == JVM_REF_invokeSpecial) {
-          do_dispatch = false;  // force non-virtual linkage
           LinkResolver::resolve_special_call(result,
                         defc, name, type, KlassHandle(), false, THREAD);
         } else if (ref_kind == JVM_REF_invokeVirtual) {
