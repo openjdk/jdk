@@ -303,10 +303,11 @@ public class HtmlWriter {
      *
      * @return a content for the SCRIPT tag
      */
-    protected Content getFramesetJavaScript(){
+    protected Content getFramesetJavaScript() {
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         script.addAttr(HtmlAttr.TYPE, "text/javascript");
-        String scriptCode = DocletConstants.NL + "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
+        String scriptCode = DocletConstants.NL +
+                "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
                 "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
                 "        targetPage = targetPage.substring(1);" + DocletConstants.NL +
                 "    if (targetPage.indexOf(\":\") != -1)" + DocletConstants.NL +
@@ -398,16 +399,6 @@ public class HtmlWriter {
     public HtmlTree getTitle() {
         HtmlTree title = HtmlTree.TITLE(new StringContent(winTitle));
         return title;
-    }
-
-    /**
-     * Return, text passed, with Italics &lt;i&gt; and &lt;/i&gt; tags, surrounding it.
-     * So if the text passed is "Hi", then string returned will be "&lt;i&gt;Hi&lt;/i&gt;".
-     *
-     * @param text String to be printed in between &lt;I&gt; and &lt;/I&gt; tags.
-     */
-    public String italicsText(String text) {
-        return "<i>" + text + "</i>";
     }
 
     public String codeText(String text) {

@@ -147,8 +147,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
-        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, cd, false));
+        Content classLink = writer.getPreQualifiedClassLink(
+                LinkInfoImpl.Kind.MEMBER, cd, false);
         Content label = new StringContent(cd.isInterface() ?
             configuration.getText("doclet.Nested_Classes_Interface_Inherited_From_Interface") :
             configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));

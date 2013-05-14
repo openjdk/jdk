@@ -173,10 +173,10 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                     contentTree.addContent(heading);
                     printedHeader = true;
                 }
+                Content arr_i_name = new StringContent(arr[i].name());
+                if (arr[i].isInterface()) arr_i_name = HtmlTree.I(arr_i_name);
                 Content link = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i],
-                        (arr[i].isInterface() ? italicsText(arr[i].name()) :
-                            arr[i].name()),"classFrame"));
+                        LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i], arr_i_name, "classFrame"));
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }

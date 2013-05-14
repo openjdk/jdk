@@ -112,7 +112,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
                      DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
         } else {
-            packageLabel = new RawHtml("&lt;unnamed package&gt;");
+            packageLabel = new StringContent("<unnamed package>");
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
                     packageLabel, "", "packageFrame");
         }

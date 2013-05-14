@@ -95,7 +95,9 @@ public abstract class LinkFactory {
                 if ((! linkInfo.excludeTypeParameterLinks) &&
                         owner instanceof ClassDoc) {
                     linkInfo.classDoc = (ClassDoc) owner;
-                    linkInfo.label = type.typeName();
+                    Content label = newContent();
+                    label.addContent(type.typeName());
+                    linkInfo.label = label;
                     link.addContent(getClassLink(linkInfo));
                 } else {
                     //No need to link method type parameters.

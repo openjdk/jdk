@@ -81,6 +81,13 @@ public class ContentBuilder extends Content {
         return true;
     }
 
+    public int charCount() {
+        int n = 0;
+        for (Content c : contents)
+            n += c.charCount();
+        return n;
+    }
+
     private void ensureMutableContents() {
         if (contents.isEmpty())
             contents = new ArrayList<Content>();
