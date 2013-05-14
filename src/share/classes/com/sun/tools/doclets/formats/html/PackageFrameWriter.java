@@ -94,7 +94,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
             packgen = new PackageFrameWriter(configuration, packageDoc);
             String pkgName = Util.getPackageName(packageDoc);
             Content body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
-            Content pkgNameContent = new RawHtml(pkgName);
+            Content pkgNameContent = new RawHtml(Util.escapeHtmlChars(pkgName));
             Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
                     packgen.getTargetPackageLink(packageDoc, "classFrame", pkgNameContent));
             body.addContent(heading);
@@ -182,10 +182,10 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                     contentTree.addContent(heading);
                     printedHeader = true;
                 }
-                Content link = new RawHtml (getLink(new LinkInfoImpl(configuration,
+                Content link = getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i],
                         (arr[i].isInterface() ? italicsText(arr[i].name()) :
-                            arr[i].name()),"classFrame")));
+                            arr[i].name()),"classFrame"));
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }

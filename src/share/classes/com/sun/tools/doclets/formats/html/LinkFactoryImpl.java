@@ -28,6 +28,8 @@ package com.sun.tools.doclets.formats.html;
 import java.util.List;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
+import com.sun.tools.doclets.formats.html.markup.RawHtml;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.links.*;
@@ -54,14 +56,14 @@ public class LinkFactoryImpl extends LinkFactory {
     /**
      * {@inheritDoc}
      */
-    protected LinkOutput getOutputInstance() {
-        return new LinkOutputImpl();
+    protected Content newContent() {
+        return new ContentBuilder();
     }
 
     /**
      * {@inheritDoc}
      */
-    protected LinkOutput getClassLink(LinkInfo linkInfo) {
+    protected Content getClassLink(LinkInfo linkInfo) {
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
         boolean noLabel = linkInfo.label == null || linkInfo.label.length() == 0;
         ClassDoc classDoc = classLinkInfo.classDoc;
@@ -77,21 +79,21 @@ public class LinkFactoryImpl extends LinkFactory {
             classLinkInfo.getClassLinkLabel(m_writer.configuration));
         classLinkInfo.displayLength += label.length();
         Configuration configuration = m_writer.configuration;
-        LinkOutputImpl linkOutput = new LinkOutputImpl();
+        Content link = new ContentBuilder();
         if (classDoc.isIncluded()) {
             if (configuration.isGeneratedDoc(classDoc)) {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(DocPath.forName(classDoc)).equals(m_writer.filename)) {
-                        linkOutput.append(m_writer.getHyperLinkString(
+                        link.addContent(new RawHtml(m_writer.getHyperLinkString(
                                 filename.fragment(classLinkInfo.where),
                             label.toString(),
                             classLinkInfo.isStrong, classLinkInfo.styleName,
-                            title, classLinkInfo.target));
+                            title, classLinkInfo.target)));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                            linkOutput.append(getTypeParameterLinks(linkInfo).toString());
+                            link.addContent(getTypeParameterLinks(linkInfo));
                         }
-                        return linkOutput;
+                        return link;
                 }
             }
         } else {
@@ -100,25 +102,25 @@ public class LinkFactoryImpl extends LinkFactory {
                 label.toString(), classLinkInfo.isStrong, classLinkInfo.styleName,
                 true);
             if (crossLink != null) {
-                linkOutput.append(crossLink);
+                link.addContent(new RawHtml(crossLink));
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-                    linkOutput.append(getTypeParameterLinks(linkInfo).toString());
+                    link.addContent(getTypeParameterLinks(linkInfo));
                 }
-                return linkOutput;
+                return link;
             }
         }
         // Can't link so just write label.
-        linkOutput.append(label.toString());
+        link.addContent(new RawHtml(label.toString()));
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
-            linkOutput.append(getTypeParameterLinks(linkInfo).toString());
+            link.addContent(getTypeParameterLinks(linkInfo));
         }
-        return linkOutput;
+        return link;
     }
 
     /**
      * {@inheritDoc}
      */
-    protected LinkOutput getTypeParameterLink(LinkInfo linkInfo,
+    protected Content getTypeParameterLink(LinkInfo linkInfo,
         Type typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
                 ((LinkInfoImpl) linkInfo).getContext(), typeParam);
@@ -126,29 +128,29 @@ public class LinkFactoryImpl extends LinkFactory {
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
         typeLinkInfo.isJava5DeclarationLocation = false;
-        LinkOutput output = getLinkOutput(typeLinkInfo);
+        Content output = getLink(typeLinkInfo);
         ((LinkInfoImpl) linkInfo).displayLength += typeLinkInfo.displayLength;
         return output;
     }
 
-    protected LinkOutput getTypeAnnotationLink(LinkInfo linkInfo,
+    protected Content getTypeAnnotationLink(LinkInfo linkInfo,
             AnnotationDesc annotation) {
         throw new RuntimeException("Not implemented yet!");
     }
 
-    public LinkOutput getTypeAnnotationLinks(LinkInfo linkInfo) {
-        LinkOutput output = getOutputInstance();
+    public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
+        ContentBuilder links = new ContentBuilder();
         AnnotationDesc[] annotations;
         if (linkInfo.type instanceof AnnotatedType) {
             annotations = linkInfo.type.asAnnotatedType().annotations();
         } else if (linkInfo.type instanceof TypeVariable) {
             annotations = linkInfo.type.asTypeVariable().annotations();
         } else {
-            return output;
+            return links;
         }
 
         if (annotations.length == 0)
-            return output;
+            return links;
 
         List<String> annos = m_writer.getAnnotations(0, annotations, false, linkInfo.isJava5DeclarationLocation);
 
@@ -156,17 +158,17 @@ public class LinkFactoryImpl extends LinkFactory {
         for (String anno : annos) {
             if (!isFirst) {
                 linkInfo.displayLength += 1;
-                output.append(" ");
+                links.addContent(" ");
             }
-            output.append(anno);
+            links.addContent(new RawHtml(anno));
             isFirst = false;
         }
         if (!annos.isEmpty()) {
             linkInfo.displayLength += 1;
-            output.append(" ");
+            links.addContent(" ");
         }
 
-        return output;
+        return links;
     }
 
     /**
@@ -182,16 +184,16 @@ public class LinkFactoryImpl extends LinkFactory {
                 classDoc.name());
         } else if (classDoc.isInterface()){
             return configuration.getText("doclet.Href_Interface_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
         } else if (classDoc.isAnnotationType()) {
             return configuration.getText("doclet.Href_Annotation_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
         } else if (classDoc.isEnum()) {
             return configuration.getText("doclet.Href_Enum_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
         } else {
             return configuration.getText("doclet.Href_Class_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
         }
     }
 

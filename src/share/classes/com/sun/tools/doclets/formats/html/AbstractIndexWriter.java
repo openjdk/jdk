@@ -139,9 +139,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param dlTree the content tree to which the description will be added
      */
     protected void addDescription(ClassDoc cd, Content dlTree) {
-        Content link = new RawHtml(
-                getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, cd, true)));
+        Content link = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.INDEX, cd, true));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         addClassInfo(cd, dt);
@@ -162,7 +161,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         contentTree.addContent(getResource("doclet.in",
                 Util.getTypeName(configuration, cd, false),
                 getPackageLinkString(cd.containingPackage(),
-                Util.getPackageName(cd.containingPackage()), false)));
+                Util.escapeHtmlChars(Util.getPackageName(cd.containingPackage())), false)));
     }
 
     /**

@@ -121,7 +121,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      */
     public void buildPackageDoc(XMLNode node, Content contentTree) throws Exception {
         contentTree = packageWriter.getPackageHeader(
-                Util.getPackageName(packageDoc));
+                Util.escapeHtmlChars(Util.getPackageName(packageDoc)));
         buildChildren(node, contentTree);
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);

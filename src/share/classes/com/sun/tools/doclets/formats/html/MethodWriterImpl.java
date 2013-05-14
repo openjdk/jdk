@@ -152,12 +152,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     Util.isLinkable(holderClassDoc, configuration)))) {
                 writer.addInlineComment(method, methodDocTree);
             } else {
-                Content link = new RawHtml(
+                Content link =
                         writer.getDocLink(LinkInfoImpl.Kind.METHOD_DOC_COPY,
                         holder.asClassDoc(), method,
                         holder.asClassDoc().isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
-                            false));
+                            false);
                 Content codelLink = HtmlTree.CODE(link);
                 Content strong = HtmlTree.STRONG(holder.asClassDoc().isClass()?
                     writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
@@ -311,14 +311,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             }
             Content dt = HtmlTree.DT(HtmlTree.STRONG(label));
             dl.addContent(dt);
-            Content overriddenTypeLink = new RawHtml(
-                    writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType)));
+            Content overriddenTypeLink =
+                    writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
             Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             String name = method.name();
-            Content methlink = new RawHtml(writer.getLink(
+            Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
                     overriddenType.asClassDoc(),
-                    writer.getAnchor(method), name, false)));
+                    writer.getAnchor(method), name, false));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(writer.getSpace());
@@ -361,14 +361,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         for (int i = 0; i < implementedMethods.length; i++) {
             MethodDoc implementedMeth = implementedMethods[i];
             Type intfac = implementedMethodsFinder.getMethodHolder(implementedMeth);
-            Content intfaclink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac)));
+            Content intfaclink = writer.getLink(new LinkInfoImpl(
+                    writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
             Content dt = HtmlTree.DT(HtmlTree.STRONG(writer.specifiedByLabel));
             dl.addContent(dt);
-            Content methlink = new RawHtml(writer.getDocLink(
+            Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,
-                    implementedMeth.name(), false));
+                    implementedMeth.name(), false);
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(writer.getSpace());
@@ -388,8 +388,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected void addReturnType(MethodDoc method, Content htmltree) {
         Type type = method.returnType();
         if (type != null) {
-            Content linkContent = new RawHtml(writer.getLink(
-                    new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type)));
+            Content linkContent = writer.getLink(
+                    new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
             htmltree.addContent(linkContent);
             htmltree.addContent(writer.getSpace());
         }

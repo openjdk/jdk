@@ -196,7 +196,7 @@ public class HtmlWriter {
                 configuration.getText("doclet.Type"));
         overviewLabel = getResource("doclet.Overview");
         defaultPackageLabel = new RawHtml(
-                DocletConstants.DEFAULT_PACKAGE_NAME);
+                Util.escapeHtmlChars(DocletConstants.DEFAULT_PACKAGE_NAME));
         packageLabel = getResource("doclet.Package");
         profileLabel = getResource("doclet.Profile");
         useLabel = getResource("doclet.navClassUse");

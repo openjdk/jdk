@@ -102,8 +102,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(field, pre);
         addModifiers(field, pre);
-        Content fieldlink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.MEMBER, field.type())));
+        Content fieldlink = writer.getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.MEMBER, field.type()));
         pre.addContent(fieldlink);
         pre.addContent(" ");
         if (configuration.linksource) {
@@ -132,12 +132,12 @@ public class FieldWriterImpl extends AbstractMemberWriter
                     (! (holder.isPublic() || Util.isLinkable(holder, configuration)))) {
                 writer.addInlineComment(field, fieldDocTree);
             } else {
-                Content link = new RawHtml(
+                Content link =
                         writer.getDocLink(LinkInfoImpl.Kind.FIELD_DOC_COPY,
                         holder, field,
                         holder.isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
-                            false));
+                            false);
                 Content codeLink = HtmlTree.CODE(link);
                 Content strong = HtmlTree.STRONG(holder.isClass()?
                    writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
@@ -256,8 +256,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getDocLink(context, cd , (MemberDoc) member, member.name(), false)));
+        Content strong = HtmlTree.STRONG(
+                writer.getDocLink(context, cd , (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }
@@ -267,9 +267,9 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
-        linksTree.addContent(new RawHtml(
+        linksTree.addContent(
                 writer.getDocLink(LinkInfoImpl.Kind.MEMBER, cd, (MemberDoc)member,
-                member.name(), false)));
+                member.name(), false));
     }
 
     /**
