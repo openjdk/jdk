@@ -26,6 +26,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import java.util.Map;
 import com.sun.javadoc.Tag;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * An inline Taglet used to denote literal code fragments.
@@ -64,7 +65,7 @@ public class CodeTaglet extends BaseInlineTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         return writer.codeTagOutput(tag);
     }
 }

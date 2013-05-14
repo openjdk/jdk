@@ -28,8 +28,8 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 import java.util.*;
 
 import com.sun.javadoc.*;
-import com.sun.tools.doclets.formats.html.markup.StringContent;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -161,7 +161,7 @@ public class ValueTaglet extends BaseInlineTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         FieldDoc field = getFieldDoc(
             writer.configuration(), tag, tag.text());
         if (field == null) {

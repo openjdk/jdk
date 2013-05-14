@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.DocFinder;
 
 /**
@@ -214,14 +215,14 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         return header == null || tag == null ? null : writer.simpleTagOutput(tag, header);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         if (header == null || holder.tags(getName()).length == 0) {
             return null;
         }

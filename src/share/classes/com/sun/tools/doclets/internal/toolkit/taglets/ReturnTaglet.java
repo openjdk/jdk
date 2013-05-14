@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -73,7 +74,7 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         Type returnType = ((MethodDoc) holder).returnType();
         Tag[] tags = holder.tags(name);
 

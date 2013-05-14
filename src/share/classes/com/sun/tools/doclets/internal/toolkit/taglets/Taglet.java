@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * The interface for a custom tag used by Doclets. A custom
@@ -132,14 +133,14 @@ public interface Taglet {
 
     /**
      * Given the <code>Tag</code> representation of this custom
-     * tag, return its TagletOutput representation, which is output
+     * tag, return its Content representation, which is output
      * to the generated page.
      * @param tag the <code>Tag</code> representation of this custom tag.
      * @param writer a {@link TagletWriter} Taglet writer.
      * @throws IllegalArgumentException thrown when the method is not supported by the taglet.
-     * @return the TagletOutput representation of this <code>Tag</code>.
+     * @return the Content representation of this <code>Tag</code>.
      */
-    public abstract TagletOutput getTagletOutput(Tag tag, TagletWriter writer) throws IllegalArgumentException;
+    public abstract Content getTagletOutput(Tag tag, TagletWriter writer) throws IllegalArgumentException;
 
     /**
      * Given a <code>Doc</code> object, check if it holds any tags of
@@ -150,7 +151,7 @@ public interface Taglet {
      * @throws IllegalArgumentException thrown when the method is not supported by the taglet.
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
-    public abstract TagletOutput getTagletOutput(Doc holder, TagletWriter writer) throws IllegalArgumentException;
+    public abstract Content getTagletOutput(Doc holder, TagletWriter writer) throws IllegalArgumentException;
 
     @Override
     public abstract String toString();
