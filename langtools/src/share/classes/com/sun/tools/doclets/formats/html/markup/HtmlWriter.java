@@ -27,6 +27,8 @@ package com.sun.tools.doclets.formats.html.markup;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -252,30 +254,30 @@ public class HtmlWriter {
      * @return a content tree for the text
      */
     public Content getResource(String key) {
-        return new StringContent(configuration.getText(key));
+        return configuration.getResource(key);
     }
 
     /**
      * Get the configuration string as a content.
      *
      * @param key the key to look for in the configuration file
-     * @param a1 string argument added to configuration text
+     * @param o   string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, String a1) {
-        return new RawHtml(configuration.getText(key, a1));
+    public Content getResource(String key, Object o) {
+        return configuration.getResource(key, o);
     }
 
     /**
      * Get the configuration string as a content.
      *
      * @param key the key to look for in the configuration file
-     * @param a1 string argument added to configuration text
-     * @param a2 string argument added to configuration text
+     * @param o1  string or content argument added to configuration text
+     * @param o2  string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, String a1, String a2) {
-        return new RawHtml(configuration.getText(key, a1, a2));
+    public Content getResource(String key, Object o0, Object o1) {
+        return configuration.getResource(key, o0, o1);
     }
 
     /**

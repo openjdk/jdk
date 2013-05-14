@@ -81,6 +81,7 @@ public class ContentBuilder extends Content {
         return true;
     }
 
+    @Override
     public int charCount() {
         int n = 0;
         for (Content c : contents)
