@@ -76,9 +76,22 @@ public class Annotations {
     private List<Attribute.Compound> attributes = DECL_NOT_STARTED;
 
     /*
-     * This field should never be null
+     * Type attributes for this symbol.
+     * This field should never be null.
      */
     private List<Attribute.TypeCompound> type_attributes = List.<Attribute.TypeCompound>nil();
+
+    /*
+     * Type attributes of initializers in this class.
+     * Unused if the current symbol is not a ClassSymbol.
+     */
+    private List<Attribute.TypeCompound> init_type_attributes = List.<Attribute.TypeCompound>nil();
+
+    /*
+     * Type attributes of class initializers in this class.
+     * Unused if the current symbol is not a ClassSymbol.
+     */
+    private List<Attribute.TypeCompound> clinit_type_attributes = List.<Attribute.TypeCompound>nil();
 
     /*
      * The Symbol this Annotations instance belongs to
@@ -97,6 +110,14 @@ public class Annotations {
         return type_attributes;
     }
 
+    public List<Attribute.TypeCompound> getInitTypeAttributes() {
+        return init_type_attributes;
+    }
+
+    public List<Attribute.TypeCompound> getClassInitTypeAttributes() {
+        return clinit_type_attributes;
+    }
+
     public void setDeclarationAttributes(List<Attribute.Compound> a) {
         Assert.check(pendingCompletion() || !isStarted());
         if (a == null) {
@@ -112,12 +133,28 @@ public class Annotations {
         type_attributes = a;
     }
 
+    public void setInitTypeAttributes(List<Attribute.TypeCompound> a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
+        init_type_attributes = a;
+    }
+
+    public void setClassInitTypeAttributes(List<Attribute.TypeCompound> a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
+        clinit_type_attributes = a;
+    }
+
     public void setAttributes(Annotations other) {
         if (other == null) {
             throw new NullPointerException();
         }
         setDeclarationAttributes(other.getDeclarationAttributes());
         setTypeAttributes(other.getTypeAttributes());
+        setInitTypeAttributes(other.getInitTypeAttributes());
+        setClassInitTypeAttributes(other.getClassInitTypeAttributes());
     }
 
     public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
@@ -228,6 +265,28 @@ public class Annotations {
                 if (!type_attributes.contains(tc))
                     type_attributes = type_attributes.append(tc);
             }
+        }
+        return this;
+    }
+
+    public Annotations appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.isEmpty()) {
+            ; // no-op
+        } else if (init_type_attributes.isEmpty()) {
+            init_type_attributes = l;
+        } else {
+            init_type_attributes = init_type_attributes.appendList(l);
+        }
+        return this;
+    }
+
+    public Annotations appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.isEmpty()) {
+            ; // no-op
+        } else if (clinit_type_attributes.isEmpty()) {
+            clinit_type_attributes = l;
+        } else {
+            clinit_type_attributes = clinit_type_attributes.appendList(l);
         }
         return this;
     }

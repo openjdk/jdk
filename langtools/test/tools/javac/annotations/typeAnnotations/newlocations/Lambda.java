@@ -50,6 +50,13 @@ public class Lambda {
         return LambdaImpl::<@TA Object, @TB Object>new;
     }
 
+    interface LambdaInt2 {
+        void lambda(Object p1, Object p2);
+    }
+
+    LambdaInt2 getLambda() {
+        return (@TA Object x, @TB Object y) -> { @TA Object l = null; System.out.println("We have: " + (@TB Object) x); };
+    }
 }
 
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})

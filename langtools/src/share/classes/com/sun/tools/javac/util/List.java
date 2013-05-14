@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.NoSuchElementException;
 /** A class for generic linked lists. Links are supposed to be
  *  immutable, the only exception being the incremental construction of
  *  lists via ListBuffers.  List is the main container class in
- *  GJC. Most data structures and algorthms in GJC use lists rather
+ *  GJC. Most data structures and algorithms in GJC use lists rather
  *  than arrays.
  *
  *  <p>Lists are always trailed by a sentinel element, whose head and tail
