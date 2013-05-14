@@ -91,7 +91,7 @@ public abstract class AbstractMemberWriter {
      *
      * @return a string for the table caption
      */
-    public abstract String getCaption();
+    public abstract Content getCaption();
 
     /**
      * Get the summary table header for the member.
@@ -415,7 +415,7 @@ public abstract class AbstractMemberWriter {
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                writer.getTableCaption(configuration.getText(headingKey)));
+                writer.getTableCaption(configuration.getResource(headingKey)));
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
@@ -447,7 +447,7 @@ public abstract class AbstractMemberWriter {
      * @param contentTree the content tree to which the use information will be added
      */
     protected void addUseInfo(List<? extends ProgramElementDoc> mems,
-            String heading, String tableSummary, Content contentTree) {
+            Content heading, String tableSummary, Content contentTree) {
         if (mems == null) {
             return;
         }

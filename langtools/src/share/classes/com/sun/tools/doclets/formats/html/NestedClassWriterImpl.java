@@ -100,8 +100,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Nested_Classes");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Nested_Classes");
     }
 
     /**

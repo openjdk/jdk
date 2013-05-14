@@ -184,13 +184,17 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public Content getConstantMembersHeader(ClassDoc cd) {
         //generate links backward only to public classes.
-        String classlink = (cd.isPublic() || cd.isProtected()) ?
+        Content classlink = (cd.isPublic() || cd.isProtected()) ?
             getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd)).toString() :
-            cd.qualifiedName();
+                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd)) :
+            new StringContent(cd.qualifiedName());
         String name = cd.containingPackage().name();
         if (name.length() > 0) {
-            return getClassName(name + "." + classlink);
+            Content cb = new ContentBuilder();
+            cb.addContent(name);
+            cb.addContent(".");
+            cb.addContent(classlink);
+            return getClassName(cb);
         } else {
             return getClassName(classlink);
         }
@@ -202,7 +206,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @param classStr the class name to print.
      * @return the table caption and header
      */
-    protected Content getClassName(String classStr) {
+    protected Content getClassName(Content classStr) {
         Content table = HtmlTree.TABLE(0, 3, 0, constantsTableSummary,
                 getTableCaption(classStr));
         table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));

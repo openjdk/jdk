@@ -183,8 +183,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Annotation_Type_Required_Members");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Annotation_Type_Required_Members");
     }
 
     /**

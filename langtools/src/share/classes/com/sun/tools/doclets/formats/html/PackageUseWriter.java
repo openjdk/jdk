@@ -152,9 +152,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageList(Content contentTree) throws IOException {
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
-                getTableCaption(configuration.getText(
+                getTableCaption(configuration.getResource(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)).toString())));
+                getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
@@ -197,10 +197,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             String tableSummary = configuration.getText("doclet.Use_Table_Summary",
                     configuration.getText("doclet.classes"));
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                    getTableCaption(configuration.getText(
+                    getTableCaption(configuration.getResource(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)).toString(),
-                    getPackageLink(usingPackage, Util.getPackageName(usingPackage)).toString())));
+                    getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)),
+                    getPackageLink(usingPackage, Util.getPackageName(usingPackage)))));
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =

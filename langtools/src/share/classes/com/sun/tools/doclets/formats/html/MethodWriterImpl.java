@@ -223,8 +223,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Methods");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Methods");
     }
 
     /**
