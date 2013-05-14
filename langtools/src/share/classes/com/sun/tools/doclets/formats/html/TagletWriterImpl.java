@@ -27,9 +27,7 @@ package com.sun.tools.doclets.formats.html;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
-import com.sun.tools.doclets.formats.html.markup.HtmlAttr;
 import com.sun.tools.doclets.formats.html.markup.HtmlStyle;
-import com.sun.tools.doclets.formats.html.markup.HtmlTag;
 import com.sun.tools.doclets.formats.html.markup.HtmlTree;
 import com.sun.tools.doclets.formats.html.markup.RawHtml;
 import com.sun.tools.doclets.formats.html.markup.StringContent;
@@ -65,34 +63,36 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getOutputInstance() {
-        return new TagletOutputImpl();
+    public Content getOutputInstance() {
+        return new ContentBuilder();
     }
 
     /**
      * {@inheritDoc}
      */
-    protected TagletOutput codeTagOutput(Tag tag) {
+    protected Content codeTagOutput(Tag tag) {
         Content result = HtmlTree.CODE(new StringContent(tag.text()));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getDocRootOutput() {
+    public Content getDocRootOutput() {
+        String path;
         if (configuration.docrootparent.length() > 0)
-            return new TagletOutputImpl(configuration.docrootparent);
+            path = configuration.docrootparent;
         else if (htmlWriter.pathToRoot.isEmpty())
-            return new TagletOutputImpl(".");
+            path = ".";
         else
-            return new TagletOutputImpl(htmlWriter.pathToRoot.getPath());
+            path = htmlWriter.pathToRoot.getPath();
+        return new StringContent(path);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput deprecatedTagOutput(Doc doc) {
+    public Content deprecatedTagOutput(Doc doc) {
         ContentBuilder result = new ContentBuilder();
         Tag[] deprs = doc.tags("deprecated");
         if (doc instanceof ClassDoc) {
@@ -104,7 +104,7 @@ public class TagletWriterImpl extends TagletWriter {
                     Tag[] commentTags = deprs[0].inlineTags();
                     if (commentTags.length > 0) {
                         result.addContent(commentTagsToOutput(null, doc,
-                            deprs[0].inlineTags(), false).getContent()
+                            deprs[0].inlineTags(), false)
                         );
                     }
                 }
@@ -116,9 +116,9 @@ public class TagletWriterImpl extends TagletWriter {
                         new StringContent(configuration.getText("doclet.Deprecated"))));
                 result.addContent(RawHtml.nbsp);
                 if (deprs.length > 0) {
-                    TagletOutputImpl body = commentTagsToOutput(null, doc,
+                    Content body = commentTagsToOutput(null, doc,
                         deprs[0].inlineTags(), false);
-                    result.addContent(HtmlTree.I(body.getContent()));
+                    result.addContent(HtmlTree.I(body));
                 }
             } else {
                 if (Util.isDeprecated(member.containingClass())) {
@@ -128,15 +128,15 @@ public class TagletWriterImpl extends TagletWriter {
                 }
             }
         }
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    protected TagletOutput literalTagOutput(Tag tag) {
+    protected Content literalTagOutput(Tag tag) {
         Content result = new StringContent(tag.text());
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
@@ -149,53 +149,53 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getParamHeader(String header) {
+    public Content getParamHeader(String header) {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong,
                 new StringContent(header)));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput paramTagOutput(ParamTag paramTag, String paramName) {
+    public Content paramTagOutput(ParamTag paramTag, String paramName) {
         ContentBuilder body = new ContentBuilder();
         body.addContent(HtmlTree.CODE(new RawHtml(paramName)));
         body.addContent(" - ");
         body.addContent(htmlWriter.commentTagsToContent(paramTag, null, paramTag.inlineTags(), false));
         HtmlTree result = HtmlTree.DD(body);
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput propertyTagOutput(Tag tag, String prefix) {
+    public Content propertyTagOutput(Tag tag, String prefix) {
         Content body = new ContentBuilder();
         body.addContent(new RawHtml(prefix));
         body.addContent(" ");
         body.addContent(HtmlTree.CODE(new RawHtml(tag.text())));
         body.addContent(".");
         Content result = HtmlTree.P(body);
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput returnTagOutput(Tag returnTag) {
+    public Content returnTagOutput(Tag returnTag) {
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong,
                 new StringContent(configuration.getText("doclet.Returns")))));
         result.addContent(HtmlTree.DD(htmlWriter.commentTagsToContent(
                 returnTag, null, returnTag.inlineTags(), false)));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput seeTagOutput(Doc holder, SeeTag[] seeTags) {
+    public Content seeTagOutput(Doc holder, SeeTag[] seeTags) {
         ContentBuilder body = new ContentBuilder();
         if (seeTags.length > 0) {
             for (int i = 0; i < seeTags.length; ++i) {
@@ -227,13 +227,13 @@ public class TagletWriterImpl extends TagletWriter {
             }
         }
         if (body.isEmpty())
-            return new TagletOutputImpl(body);
+            return body;
 
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong,
                 new StringContent(configuration.getText("doclet.See_Also")))));
         result.addContent(HtmlTree.DD(body));
-        return new TagletOutputImpl(result);
+        return result;
 
     }
 
@@ -247,7 +247,7 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput simpleTagOutput(Tag[] simpleTags, String header) {
+    public Content simpleTagOutput(Tag[] simpleTags, String header) {
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, new RawHtml(header))));
         ContentBuilder body = new ContentBuilder();
@@ -259,34 +259,34 @@ public class TagletWriterImpl extends TagletWriter {
                     simpleTags[i], null, simpleTags[i].inlineTags(), false));
         }
         result.addContent(HtmlTree.DD(body));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput simpleTagOutput(Tag simpleTag, String header) {
+    public Content simpleTagOutput(Tag simpleTag, String header) {
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, new RawHtml(header))));
         Content body = htmlWriter.commentTagsToContent(
                 simpleTag, null, simpleTag.inlineTags(), false);
         result.addContent(HtmlTree.DD(body));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getThrowsHeader() {
+    public Content getThrowsHeader() {
         HtmlTree result = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong,
                 new StringContent(configuration.getText("doclet.Throws"))));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput throwsTagOutput(ThrowsTag throwsTag) {
+    public Content throwsTagOutput(ThrowsTag throwsTag) {
         ContentBuilder body = new ContentBuilder();
         Content excName = (throwsTag.exceptionType() == null) ?
                 new RawHtml(throwsTag.exceptionName()) :
@@ -299,50 +299,50 @@ public class TagletWriterImpl extends TagletWriter {
             body.addContent(" - ");
             body.addContent(desc);
         }
-        HtmlTree res2 = HtmlTree.DD(body);
-        return new TagletOutputImpl(res2);
+        HtmlTree result = HtmlTree.DD(body);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput throwsTagOutput(Type throwsType) {
+    public Content throwsTagOutput(Type throwsType) {
         HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
                 new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, throwsType))));
-        return new TagletOutputImpl(result);
+        return result;
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput valueTagOutput(FieldDoc field, String constantVal,
+    public Content valueTagOutput(FieldDoc field, String constantVal,
             boolean includeLink) {
-        return new TagletOutputImpl(includeLink ?
+        return includeLink ?
             htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field,
-                constantVal, false) : new RawHtml(constantVal));
+                constantVal, false) : new RawHtml(constantVal);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutputImpl commentTagsToOutput(Tag holderTag, Tag[] tags) {
+    public Content commentTagsToOutput(Tag holderTag, Tag[] tags) {
         return commentTagsToOutput(holderTag, null, tags, false);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutputImpl commentTagsToOutput(Doc holderDoc, Tag[] tags) {
+    public Content commentTagsToOutput(Doc holderDoc, Tag[] tags) {
         return commentTagsToOutput(null, holderDoc, tags, false);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutputImpl commentTagsToOutput(Tag holderTag,
+    public Content commentTagsToOutput(Tag holderTag,
         Doc holderDoc, Tag[] tags, boolean isFirstSentence) {
-        return new TagletOutputImpl(htmlWriter.commentTagsToContent(
-            holderTag, holderDoc, tags, isFirstSentence));
+        return htmlWriter.commentTagsToContent(
+            holderTag, holderDoc, tags, isFirstSentence);
     }
 
     /**

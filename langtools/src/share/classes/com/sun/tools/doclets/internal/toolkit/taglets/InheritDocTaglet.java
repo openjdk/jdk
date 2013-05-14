@@ -27,6 +27,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -114,9 +115,9 @@ public class InheritDocTaglet extends BaseInlineTaglet {
      * (class) docs.
      * @param isFirstSentence true if we only want to inherit the first sentence.
      */
-    private TagletOutput retrieveInheritedDocumentation(TagletWriter writer,
+    private Content retrieveInheritedDocumentation(TagletWriter writer,
             ProgramElementDoc ped, Tag holderTag, boolean isFirstSentence) {
-        TagletOutput replacement = writer.getOutputInstance();
+        Content replacement = writer.getOutputInstance();
 
         Configuration configuration = writer.configuration();
         Taglet inheritableTaglet = holderTag == null ?
@@ -157,9 +158,9 @@ public class InheritDocTaglet extends BaseInlineTaglet {
      * to the generated page.
      * @param tag the <code>Tag</code> representation of this custom tag.
      * @param tagletWriter the taglet writer for output.
-     * @return the TagletOutput representation of this <code>Tag</code>.
+     * @return the Content representation of this <code>Tag</code>.
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter tagletWriter) {
+    public Content getTagletOutput(Tag tag, TagletWriter tagletWriter) {
         if (! (tag.holder() instanceof ProgramElementDoc)) {
             return tagletWriter.getOutputInstance();
         }

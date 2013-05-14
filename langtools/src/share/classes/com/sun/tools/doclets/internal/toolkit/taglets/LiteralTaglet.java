@@ -27,6 +27,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 import java.util.Map;
 
 import com.sun.javadoc.Tag;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 
 /**
@@ -63,7 +64,7 @@ public class LiteralTaglet extends BaseInlineTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         return writer.literalTagOutput(tag);
     }
 }

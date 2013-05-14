@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.Tag;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * An abstract class that implements the {@link Taglet} interface and
@@ -59,7 +60,7 @@ public abstract class BasePropertyTaglet extends BaseTaglet {
      * @param tagletWriter the taglet writer for output.
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter tagletWriter) {
+    public Content getTagletOutput(Tag tag, TagletWriter tagletWriter) {
         return tagletWriter.propertyTagOutput(tag, getText(tagletWriter));
     }
 
