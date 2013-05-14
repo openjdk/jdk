@@ -450,7 +450,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content bodyTree = getBody(true, getWindowTitle(title));
         addTop(bodyTree);
         addNavLinks(true, bodyTree);
-        Content headContent = getResource("doclet.ClassUse_Title", cltype, clname);
+        ContentBuilder headContent = new ContentBuilder();
+        headContent.addContent(getResource("doclet.ClassUse_Title", cltype));
+        headContent.addContent(new HtmlTree(HtmlTag.BR));
+        headContent.addContent(clname);
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING,
                 true, HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
