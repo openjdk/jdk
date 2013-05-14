@@ -82,6 +82,10 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         return getHyperLinkString(link, label, false, "", "", "");
     }
 
+    public Content getHyperLink(DocPath link, String label) {
+        return getHyperLink(link, new StringContent(label), false, "", "", "");
+    }
+
     public String getHyperLinkString(DocLink link, String label) {
         return getHyperLinkString(link, label, false, "", "", "");
     }
@@ -184,6 +188,13 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         return retlink.toString();
     }
 
+    public Content getHyperLink(DocPath link,
+                               Content label, boolean strong,
+                               String stylename, String title, String target) {
+        return getHyperLink(new DocLink(link), label, strong,
+                stylename, title, target);
+    }
+
     public Content getHyperLink(DocLink link,
                                Content label, boolean strong,
                                String stylename, String title, String target) {
@@ -280,20 +291,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
         write(htmlDocument);
-    }
-
-    /**
-     * Print the appropriate spaces to format the class tree in the class page.
-     *
-     * @param len   Number of spaces.
-     */
-    public String spaces(int len) {
-        String space = "";
-
-        for (int i = 0; i < len; i++) {
-            space += " ";
-        }
-        return space;
     }
 
     protected String getGeneratedByString() {

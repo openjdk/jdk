@@ -160,8 +160,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addClassInfo(ClassDoc cd, Content contentTree) {
         contentTree.addContent(getResource("doclet.in",
                 Util.getTypeName(configuration, cd, false),
-                getPackageLinkString(cd.containingPackage(),
-                Util.escapeHtmlChars(Util.getPackageName(cd.containingPackage())), false)));
+                getPackageLink(cd.containingPackage(),
+                    Util.getPackageName(cd.containingPackage()))
+                ));
     }
 
     /**
