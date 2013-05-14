@@ -71,23 +71,8 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      */
     public abstract Configuration configuration();
 
-    /**
-     * Return Html hyperlink string.
-     *
-     * @param link       String name of the file.
-     * @param label      Tag for the link.
-     * @return String    Hyper Link.
-     */
-    public String getHyperLinkString(DocPath link, String label) {
-        return getHyperLinkString(link, label, false, "", "", "");
-    }
-
     public Content getHyperLink(DocPath link, String label) {
         return getHyperLink(link, new StringContent(label), false, "", "", "");
-    }
-
-    public String getHyperLinkString(DocLink link, String label) {
-        return getHyperLinkString(link, label, false, "", "", "");
     }
 
     /**

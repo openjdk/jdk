@@ -179,16 +179,16 @@ public class LinkFactoryImpl extends LinkFactory {
                 classDoc.name());
         } else if (classDoc.isInterface()){
             return configuration.getText("doclet.Href_Interface_Title",
-                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
+                Util.getPackageName(classDoc.containingPackage()));
         } else if (classDoc.isAnnotationType()) {
             return configuration.getText("doclet.Href_Annotation_Title",
-                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
+                Util.getPackageName(classDoc.containingPackage()));
         } else if (classDoc.isEnum()) {
             return configuration.getText("doclet.Href_Enum_Title",
-                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
+                Util.getPackageName(classDoc.containingPackage()));
         } else {
             return configuration.getText("doclet.Href_Class_Title",
-                Util.escapeHtmlChars(Util.getPackageName(classDoc.containingPackage())));
+                Util.getPackageName(classDoc.containingPackage()));
         }
     }
 
