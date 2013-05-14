@@ -331,11 +331,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         for (Iterator<PackageDoc> it = pkgSet.iterator(); it.hasNext();) {
             PackageDoc pkg = it.next();
             Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(pkg.name()));
-            Content link = new RawHtml(
-                    configuration.getText("doclet.ClassUse_Uses.of.0.in.1",
+            Content link = getResource("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
-                    classdoc)).toString(),
-                    getPackageLinkString(pkg, Util.escapeHtmlChars(Util.getPackageName(pkg)), false)));
+                    classdoc)),
+                    getPackageLink(pkg, Util.getPackageName(pkg)));
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
             li.addContent(heading);
             addClassUse(pkg, li);

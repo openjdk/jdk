@@ -1049,6 +1049,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param label the label for the link.
      * @return a content tree for the package link.
      */
+    public Content getPackageLink(PackageDoc pkg, String label) {
+        return getPackageLink(pkg, new StringContent(label));
+    }
+
+    /**
+     * Return the link to the given package.
+     *
+     * @param pkg the package to link to.
+     * @param label the label for the link.
+     * @return a content tree for the package link.
+     */
     public Content getPackageLink(PackageDoc pkg, Content label) {
         boolean included = pkg != null && pkg.isIncluded();
         if (! included) {
