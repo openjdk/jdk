@@ -744,12 +744,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @return New {@link PropertyMap} with prototype changed.
      */
     PropertyMap changeProto(final ScriptObject oldProto, final ScriptObject newProto) {
-        if ((oldProto == newProto) ||
-            (size() == 0 &&
-             oldProto == null &&
-             protoGetSwitches == null &&
-             history == null &&
-             protoHistory == null)) {
+        if (oldProto == newProto) {
             return this;
         }
 

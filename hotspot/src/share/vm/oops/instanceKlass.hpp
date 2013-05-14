@@ -90,6 +90,7 @@ class DepChange;
 class nmethodBucket;
 class PreviousVersionNode;
 class JvmtiCachedClassFieldMap;
+class MemberNameTable;
 
 // This is used in iterators below.
 class FieldClosure: public StackObj {
@@ -183,8 +184,9 @@ class InstanceKlass: public Klass {
   oop             _protection_domain;
   // Class signers.
   objArrayOop     _signers;
-  // Initialization lock.  Must be one per class and it has to be a VM internal
-  // object so java code cannot lock it (like the mirror)
+  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
+  // Must be one per class and it has to be a VM internal object so java code
+  // cannot lock it (like the mirror).
   // It has to be an object not a Mutex because it's held through java calls.
   volatile oop    _init_lock;
 
@@ -235,7 +237,7 @@ class InstanceKlass: public Klass {
     _misc_rewritten            = 1 << 0, // methods rewritten.
     _misc_has_nonstatic_fields = 1 << 1, // for sizing with UseCompressedOops
     _misc_should_verify_class  = 1 << 2, // allow caching of preverification
-    _misc_is_anonymous         = 1 << 3, // has embedded _inner_classes field
+    _misc_is_anonymous         = 1 << 3, // has embedded _host_klass field
     _misc_is_contended         = 1 << 4, // marked with contended annotation
     _misc_has_default_methods  = 1 << 5  // class/superclass/implemented interfaces has default methods
   };
@@ -246,6 +248,7 @@ class InstanceKlass: public Klass {
   int             _vtable_len;           // length of Java vtable (in words)
   int             _itable_len;           // length of Java itable (in words)
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
+  MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
   int*            _methods_cached_itable_indices;  // itable_index cache for JNI invoke corresponding to methods idnum, or NULL
@@ -932,7 +935,9 @@ class InstanceKlass: public Klass {
   // referenced by handles.
   bool on_stack() const { return _constants->on_stack(); }
 
-  void release_C_heap_structures();
+  // callbacks for actions during class unloading
+  static void notify_unload_class(InstanceKlass* ik);
+  static void release_C_heap_structures(InstanceKlass* ik);
 
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS
@@ -966,6 +971,7 @@ class InstanceKlass: public Klass {
 #endif // INCLUDE_ALL_GCS
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
+
 private:
   // initialization state
 #ifdef ASSERT
@@ -992,9 +998,10 @@ private:
          { OrderAccess::release_store_ptr(&_methods_cached_itable_indices, indices); }
 
   // Lock during initialization
-  volatile oop init_lock() const;
-  void set_init_lock(oop value)      { klass_oop_store(&_init_lock, value); }
-  void fence_and_clear_init_lock();  // after fully_initialized
+public:
+  volatile oop init_lock() const     {return _init_lock; }
+private:
+  void set_init_lock(oop value) { klass_oop_store(&_init_lock, value); }
 
   // Offsets for memory management
   oop* adr_protection_domain() const { return (oop*)&this->_protection_domain;}
@@ -1020,6 +1027,8 @@ private:
   // Returns the array class with this class as element type
   Klass* array_klass_impl(bool or_null, TRAPS);
 
+  // Free CHeap allocated fields.
+  void release_C_heap_structures();
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
@@ -1027,6 +1036,11 @@ public:
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;
+
+  // JSR-292 support
+  MemberNameTable* member_names() { return _member_names; }
+  void set_member_names(MemberNameTable* member_names) { _member_names = member_names; }
+  void add_member_name(Handle member_name);
 
 public:
   // JVMTI support

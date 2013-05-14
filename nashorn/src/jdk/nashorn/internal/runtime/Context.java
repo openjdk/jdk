@@ -411,7 +411,7 @@ public final class Context {
         return ScriptRuntime.apply(func, evalThis);
     }
 
-    private Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {
+    private static Source loadInternal(final String srcStr, final String prefix, final String resourcePath) {
         if (srcStr.startsWith(prefix)) {
             final String resource = resourcePath + srcStr.substring(prefix.length());
             // NOTE: even sandbox scripts should be able to load scripts in nashorn: scheme
@@ -510,7 +510,7 @@ public final class Context {
 
     /**
      * Lookup a Java class. This is used for JSR-223 stuff linking in from
-     * {@link jdk.nashorn.internal.objects.NativeJava} and {@link jdk.nashorn.internal.runtime.NativeJavaPackage}
+     * {@code jdk.nashorn.internal.objects.NativeJava} and {@code jdk.nashorn.internal.runtime.NativeJavaPackage}
      *
      * @param fullName full name of class to load
      *
@@ -759,10 +759,10 @@ public final class Context {
         final CodeSource   cs     = url == null ? null : new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        final Compiler compiler = new Compiler(installer, functionNode, strict);
+        final Compiler compiler = new Compiler(installer, strict);
 
-        compiler.compile();
-        script = compiler.install();
+        final FunctionNode newFunctionNode = compiler.compile(functionNode);
+        script = compiler.install(newFunctionNode);
 
         if (global != null) {
             global.cacheClass(source, script);

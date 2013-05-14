@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1306,10 +1306,11 @@ static Node* is_cond_add(PhaseGVN *phase, PhiNode *phi, int true_path) {
     return NULL;
 
   Node *x = n2;
-  Node *y = n1->in(1);
-  if( n2 == n1->in(1) ) {
+  Node *y = NULL;
+  if( x == n1->in(1) ) {
     y = n1->in(2);
-  } else if( n2 == n1->in(1) ) {
+  } else if( x == n1->in(2) ) {
+    y = n1->in(1);
   } else return NULL;
 
   // Not so profitable if compare and add are constants

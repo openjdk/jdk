@@ -2589,7 +2589,60 @@ public final class Files {
     {
         if (maxDepth < 0)
             throw new IllegalArgumentException("'maxDepth' is negative");
-        new FileTreeWalker(options, visitor, maxDepth).walk(start);
+
+        /**
+         * Create a FileTreeWalker to walk the file tree, invoking the visitor
+         * for each event.
+         */
+        try (FileTreeWalker walker = new FileTreeWalker(options, maxDepth)) {
+            FileTreeWalker.Event ev = walker.walk(start);
+            do {
+                FileVisitResult result;
+                switch (ev.type()) {
+                    case ENTRY :
+                        IOException ioe = ev.ioeException();
+                        if (ioe == null) {
+                            assert ev.attributes() != null;
+                            result = visitor.visitFile(ev.file(), ev.attributes());
+                        } else {
+                            result = visitor.visitFileFailed(ev.file(), ioe);
+                        }
+                        break;
+
+                    case START_DIRECTORY :
+                        result = visitor.preVisitDirectory(ev.file(), ev.attributes());
+
+                        // if SKIP_SIBLINGS and SKIP_SUBTREE is returned then
+                        // there shouldn't be any more events for the current
+                        // directory.
+                        if (result == FileVisitResult.SKIP_SUBTREE ||
+                            result == FileVisitResult.SKIP_SIBLINGS)
+                            walker.pop();
+                        break;
+
+                    case END_DIRECTORY :
+                        result = visitor.postVisitDirectory(ev.file(), ev.ioeException());
+
+                        // SKIP_SIBLINGS is a no-op for postVisitDirectory
+                        if (result == FileVisitResult.SKIP_SIBLINGS)
+                            result = FileVisitResult.CONTINUE;
+                        break;
+
+                    default :
+                        throw new AssertionError("Should not get here");
+                }
+
+                if (Objects.requireNonNull(result) != FileVisitResult.CONTINUE) {
+                    if (result == FileVisitResult.TERMINATE) {
+                        break;
+                    } else if (result == FileVisitResult.SKIP_SIBLINGS) {
+                        walker.skipRemainingSiblings();
+                    }
+                }
+                ev = walker.next();
+            } while (ev != null);
+        }
+
         return start;
     }
 

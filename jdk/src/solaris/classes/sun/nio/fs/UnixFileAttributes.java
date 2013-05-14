@@ -51,6 +51,7 @@ class UnixFileAttributes
     private long    st_mtime_nsec;
     private long    st_ctime_sec;
     private long    st_ctime_nsec;
+    private long    st_birthtime_sec;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -139,7 +140,12 @@ class UnixFileAttributes
 
     @Override
     public FileTime creationTime() {
-        return lastModifiedTime();
+        if (UnixNativeDispatcher.birthtimeSupported()) {
+            return FileTime.from(st_birthtime_sec, TimeUnit.SECONDS);
+        } else {
+            // return last modified when birth time not supported
+            return lastModifiedTime();
+        }
     }
 
     @Override

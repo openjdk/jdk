@@ -149,7 +149,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
             return enterASSIGN_SUB(binaryNode);
         case BIND:
             return enterBIND(binaryNode);
-         case BIT_AND:
+        case BIT_AND:
             return enterBIT_AND(binaryNode);
         case BIT_OR:
             return enterBIT_OR(binaryNode);

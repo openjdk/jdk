@@ -54,23 +54,23 @@ class MethodHandles: AllStatic {
   static Handle resolve_MemberName(Handle mname, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
-  static oop init_MemberName(oop mname_oop, oop target_oop); // compute vmtarget/vmindex from target
-  static oop init_method_MemberName(oop mname_oop, Method* m, bool do_dispatch,
-                                    Klass* receiver_limit);
-  static oop init_field_MemberName(oop mname_oop, Klass* field_holder,
+  static oop init_MemberName(Handle mname_h, Handle target_h); // compute vmtarget/vmindex from target
+  static oop init_method_MemberName(Handle mname_h, Method* m, bool do_dispatch,
+                                    KlassHandle receiver_limit_h);
+  static oop init_field_MemberName(Handle mname_h, KlassHandle field_holder_h,
                                    AccessFlags mods, oop type, oop name,
                                    intptr_t offset, bool is_setter = false);
-  static Handle init_method_MemberName(oop mname_oop, CallInfo& info, TRAPS);
-  static Handle init_field_MemberName(oop mname_oop, FieldAccessInfo& info, TRAPS);
+  static Handle init_method_MemberName(Handle mname_h, CallInfo& info, TRAPS);
+  static Handle init_field_MemberName(Handle mname_h, FieldAccessInfo& info, TRAPS);
   static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
-  static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
-                              int mflags, Klass* caller,
-                              int skip, objArrayOop results);
+  static int find_MemberNames(KlassHandle k, Symbol* name, Symbol* sig,
+                              int mflags, KlassHandle caller,
+                              int skip, objArrayHandle results);
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
   // Generate MethodHandles adapters.
-  static void generate_adapters();
+                              static void generate_adapters();
 
   // Called from MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid);
@@ -228,6 +228,29 @@ public:
   MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code, PrintMethodHandleStubs) {}
 
   void generate();
+};
+
+//------------------------------------------------------------------------------
+// MemberNameTable
+//
+class MemberNameTable : public GrowableArray<jweak> {
+ public:
+  MemberNameTable();
+  ~MemberNameTable();
+  void add_member_name(jweak mem_name_ref);
+ private:
+  int find_member_name(oop mem_name);
+
+#if INCLUDE_JVMTI
+ public:
+  // RedefineClasses() API support:
+  // If a MemberName refers to old_method then update it
+  // to refer to new_method.
+  void adjust_method_entries(Method** old_methods, Method** new_methods,
+                             int methods_length, bool *trace_name_printed);
+ private:
+  oop find_member_name_by_method(Method* old_method);
+#endif // INCLUDE_JVMTI
 };
 
 #endif // SHARE_VM_PRIMS_METHODHANDLES_HPP
