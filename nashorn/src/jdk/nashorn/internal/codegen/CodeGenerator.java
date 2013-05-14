@@ -2028,6 +2028,13 @@ final class CodeGenerator extends NodeOperatorVisitor {
     public boolean enterThrowNode(final ThrowNode throwNode) {
         lineNumber(throwNode);
 
+        if (throwNode.isSyntheticRethrow()) {
+            //do not wrap whatever this is in an ecma exception, just rethrow it
+            load(throwNode.getExpression());
+            method.athrow();
+            return false;
+        }
+
         method._new(ECMAException.class).dup();
 
         final Source source     = getLexicalContext().getCurrentFunction().getSource();
@@ -2096,13 +2103,16 @@ final class CodeGenerator extends NodeOperatorVisitor {
                 }
                 @Override
                 protected void evaluate() {
+                    if (catchNode.isSyntheticRethrow()) {
+                        method.load(symbol);
+                        return;
+                    }
                     /*
                      * If caught object is an instance of ECMAException, then
                      * bind obj.thrown to the script catch var. Or else bind the
                      * caught object itself to the script catch var.
                      */
                     final Label notEcmaException = new Label("no_ecma_exception");
-
                     method.load(symbol).dup()._instanceof(ECMAException.class).ifeq(notEcmaException);
                     method.checkcast(ECMAException.class); //TODO is this necessary?
                     method.getField(ECMAException.THROWN);
