@@ -88,7 +88,7 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
 
         int weight = Type.typeFor(type.returnType()).getWeight();
         for (final Class<?> paramType : type.parameterArray()) {
-            final int pweight = Type.typeFor(paramType).getWeight();
+            final int pweight = Type.typeFor(paramType).getWeight() * 2; //params are more important than call types as return values are always specialized
             weight += pweight;
         }
         return weight;
