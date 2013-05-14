@@ -127,9 +127,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the class header
      */
     public Content getClassHeader(ClassDoc classDoc) {
-        String classLink = (classDoc.isPublic() || classDoc.isProtected())?
+        String classLink = (classDoc.isPublic() || classDoc.isProtected()) ?
             getLink(new LinkInfoImpl(configuration, classDoc,
-            configuration.getClassName(classDoc))):
+            configuration.getClassName(classDoc))).toString() :
             classDoc.qualifiedName();
         Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
                 classDoc.qualifiedName()));
@@ -137,7 +137,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             classDoc.superclassType() != null ?
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.SERIALIZED_FORM,
-                        classDoc.superclassType())) :
+                        classDoc.superclassType())).toString() :
                 null;
 
         //Print the heading.

@@ -159,11 +159,11 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             String label = italicsClassName(cd, false);
             Content linkContent;
             if(wantFrames){
-                linkContent = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd, label, "classFrame")));
+                linkContent = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd, label, "classFrame"));
             } else {
-                linkContent = new RawHtml(getLink(new LinkInfoImpl(
-                        configuration, cd, label)));
+                linkContent = getLink(new LinkInfoImpl(
+                        configuration, cd, label));
             }
             Content li = HtmlTree.LI(linkContent);
             content.addContent(li);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree A(String ref, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.A, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.HREF, nullCheck(ref));
+        htmltree.addAttr(HtmlAttr.HREF, Util.escapeHtmlChars(nullCheck(ref)));
         return htmltree;
     }
 

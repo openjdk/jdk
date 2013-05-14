@@ -26,7 +26,6 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -165,8 +164,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member, false))));
+        Content strong = HtmlTree.STRONG(
+                writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member, false)));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }
@@ -176,9 +175,9 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
-        linksTree.addContent(new RawHtml(
+        linksTree.addContent(
                 writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
-                (ClassDoc)member, false))));
+                (ClassDoc)member, false)));
     }
 
     /**

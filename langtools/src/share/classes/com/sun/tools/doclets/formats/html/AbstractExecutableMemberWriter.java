@@ -63,9 +63,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected int addTypeParameters(ExecutableMemberDoc member, Content htmltree) {
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
             LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS, member, false);
-        String typeParameters = writer.getTypeParameterLinks(linkInfo);
+        Content typeParameters = writer.getTypeParameterLinks(linkInfo);
         if (linkInfo.displayLength > 0) {
-            Content linkContent = new RawHtml(typeParameters);
+            Content linkContent = typeParameters;
             htmltree.addContent(linkContent);
             htmltree.addContent(writer.getSpace());
             writer.displayLength += linkInfo.displayLength + 1;
@@ -94,9 +94,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             Content tdSummary) {
         ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
         String name = emd.name();
-        Content strong = HtmlTree.STRONG(new RawHtml(
+        Content strong = HtmlTree.STRONG(
                 writer.getDocLink(context, cd, (MemberDoc) emd,
-                name, false)));
+                name, false));
         Content code = HtmlTree.CODE(strong);
         writer.displayLength = name.length();
         addParameters(emd, false, code);
@@ -112,9 +112,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
-        linksTree.addContent(new RawHtml(
+        linksTree.addContent(
                 writer.getDocLink(LinkInfoImpl.Kind.MEMBER, cd, (MemberDoc) member,
-                member.name(), false)));
+                member.name(), false));
     }
 
     /**
@@ -128,9 +128,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addParam(ExecutableMemberDoc member, Parameter param,
         boolean isVarArg, Content tree) {
         if (param.type() != null) {
-            Content link = new RawHtml(writer.getLink(new LinkInfoImpl(
+            Content link = writer.getLink(new LinkInfoImpl(
                     configuration, LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM,
-                    param.type(), isVarArg)));
+                    param.type(), isVarArg));
             tree.addContent(link);
         }
         if(param.name().length() > 0) {
@@ -154,7 +154,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         tree.addContent(rcvrType.typeName());
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, rcvrType);
-        tree.addContent(new RawHtml(writer.getTypeParameterLinks(linkInfo)));
+        tree.addContent(writer.getTypeParameterLinks(linkInfo));
         tree.addContent(writer.getSpace());
         tree.addContent("this");
     }
@@ -255,15 +255,15 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
             htmltree.addContent(indent);
             htmltree.addContent("throws ");
             indent += "       ";
-            Content link = new RawHtml(writer.getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.MEMBER, exceptions[0])));
+            Content link = writer.getLink(new LinkInfoImpl(configuration,
+                    LinkInfoImpl.Kind.MEMBER, exceptions[0]));
             htmltree.addContent(link);
             for(int i = 1; i < exceptions.length; i++) {
                 htmltree.addContent(",");
                 htmltree.addContent(DocletConstants.NL);
                 htmltree.addContent(indent);
-                Content exceptionLink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.MEMBER, exceptions[i])));
+                Content exceptionLink = writer.getLink(new LinkInfoImpl(
+                        configuration, LinkInfoImpl.Kind.MEMBER, exceptions[i]));
                 htmltree.addContent(exceptionLink);
             }
         }

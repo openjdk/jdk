@@ -98,9 +98,9 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(property, pre);
         addModifiers(property, pre);
-        Content propertylink = new RawHtml(writer.getLink(new LinkInfoImpl(
+        Content propertylink = writer.getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.MEMBER,
-                property.returnType())));
+                property.returnType()));
         pre.addContent(propertylink);
         pre.addContent(" ");
         if (configuration.linksource) {
@@ -128,12 +128,12 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                     (! (holder.isPublic() || Util.isLinkable(holder, configuration)))) {
                 writer.addInlineComment(property, propertyDocTree);
             } else {
-                Content link = new RawHtml(
+                Content link =
                         writer.getDocLink(LinkInfoImpl.Kind.PROPERTY_DOC_COPY,
                         holder, property,
                         holder.isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
-                            false));
+                            false);
                 Content codeLink = HtmlTree.CODE(link);
                 Content strong = HtmlTree.STRONG(holder.isClass()?
                    writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
@@ -252,13 +252,13 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
+        Content strong = HtmlTree.STRONG(
                 writer.getDocLink(context,
                         cd,
                         (MemberDoc) member,
                         member.name().substring(0, member.name().lastIndexOf("Property")),
                         false,
-                        true)));
+                        true));
 
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
@@ -269,12 +269,12 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
-        linksTree.addContent(new RawHtml(
+        linksTree.addContent(
                 writer.getDocLink(LinkInfoImpl.Kind.MEMBER, cd, (MemberDoc)member,
                 ((member.name().lastIndexOf("Property") != -1) && configuration.javafx)
                         ? member.name().substring(0, member.name().length() - "Property".length())
                         : member.name(),
-                false, true)));
+                false, true));
     }
 
     /**

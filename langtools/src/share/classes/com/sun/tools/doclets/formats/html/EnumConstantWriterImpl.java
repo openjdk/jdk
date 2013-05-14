@@ -101,8 +101,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(enumConstant, pre);
         addModifiers(enumConstant, pre);
-        Content enumConstantLink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.MEMBER, enumConstant.type())));
+        Content enumConstantLink = writer.getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.MEMBER, enumConstant.type()));
         pre.addContent(enumConstantLink);
         pre.addContent(" ");
         if (configuration.linksource) {
@@ -222,8 +222,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getDocLink(context, (MemberDoc) member, member.name(), false)));
+        Content strong = HtmlTree.STRONG(
+                writer.getDocLink(context, (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }

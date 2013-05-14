@@ -116,9 +116,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkPrevious() {
         Content li;
         if (prev != null) {
-            Content prevLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
+            Content prevLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, prev.asClassDoc(), "",
-                    configuration.getText("doclet.Prev_Class"), true)));
+                    configuration.getText("doclet.Prev_Class"), true));
             li = HtmlTree.LI(prevLink);
         }
         else
@@ -134,9 +134,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkNext() {
         Content li;
         if (next != null) {
-            Content nextLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
+            Content nextLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, next.asClassDoc(), "",
-                    configuration.getText("doclet.Next_Class"), true)));
+                    configuration.getText("doclet.Next_Class"), true));
             li = HtmlTree.LI(nextLink);
         }
         else
@@ -167,7 +167,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content headerContent = new StringContent(header);
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
                 HtmlStyle.title, headerContent);
-        heading.addContent(new RawHtml(getTypeParameterLinks(linkInfo)));
+        heading.addContent(getTypeParameterLinks(linkInfo));
         div.addContent(heading);
         bodyTree.addContent(div);
         return bodyTree;
@@ -222,7 +222,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CLASS_SIGNATURE, annotationType, false);
         Content annotationName = new StringContent(annotationType.name());
-        Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
+        Content parameterLinks = getTypeParameterLinks(linkInfo);
         if (configuration.linksource) {
             addSrcLink(annotationType, annotationName, pre);
             pre.addContent(parameterLinks);

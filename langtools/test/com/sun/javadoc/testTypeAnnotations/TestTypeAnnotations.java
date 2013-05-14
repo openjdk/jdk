@@ -103,17 +103,17 @@ public class TestTypeAnnotations extends JavadocTester {
         {BUG_ID + FS + "typeannos" + FS + "Complex1.html",
             "class <span class=\"strong\">Complex1&lt;K extends <a href=\"../" +
             "typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
-            "@ClassParamA</a> java.lang.String & java.lang.Runnable&gt;</span>"
+            "@ClassParamA</a> java.lang.String &amp; java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "Complex2.html",
             "class <span class=\"strong\">Complex2&lt;K extends java.lang." +
-            "String & <a href=\"../typeannos/ClassParamB.html\" title=\"" +
+            "String &amp; <a href=\"../typeannos/ClassParamB.html\" title=\"" +
             "annotation in typeannos\">@ClassParamB</a> java.lang.Runnable&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ComplexBoth.html",
             "class <span class=\"strong\">ComplexBoth&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\"" +
-            ">@ClassParamA</a> java.lang.String & <a href=\"../typeannos/" +
+            ">@ClassParamA</a> java.lang.String &amp; <a href=\"../typeannos/" +
             "ClassParamA.html\" title=\"annotation in typeannos\">@ClassParamA" +
             "</a> java.lang.Runnable&gt;</span>"
         },

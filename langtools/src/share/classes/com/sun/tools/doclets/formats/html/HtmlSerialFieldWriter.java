@@ -129,8 +129,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (fieldType == null) {
             pre.addContent(fieldTypeStr);
         } else {
-            Content fieldContent = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType)));
+            Content fieldContent = writer.getLink(new LinkInfoImpl(
+                    configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
             pre.addContent(fieldContent);
         }
         pre.addContent(fieldDimensions + " ");

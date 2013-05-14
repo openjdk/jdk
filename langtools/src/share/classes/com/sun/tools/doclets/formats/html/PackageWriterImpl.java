@@ -178,9 +178,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     !configuration.isGeneratedDoc(classes[i])) {
                     continue;
                 }
-                Content classContent = new RawHtml(getLink(new LinkInfoImpl(
+                Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, classes[i],
-                        false)));
+                        false));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 if (i%2 == 0)

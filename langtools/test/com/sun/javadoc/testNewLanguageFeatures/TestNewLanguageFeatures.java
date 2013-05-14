@@ -306,7 +306,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // Handle multiple bounds.
             //==============================================================
             {BUG_ID + FS + "pkg" + FS + "MultiTypeParameters.html",
-                "public&nbsp;&lt;T extends java.lang.Number & java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)"},
+                "public&nbsp;&lt;T extends java.lang.Number &amp; java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)"},
 
             //==============================================================
             // Test Class-Use Documenation for Type Parameters.
@@ -323,7 +323,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "<td class=\"colLast\"><code><strong><a href=\"../../pkg2/ClassUseTest1.html\" " +
                      "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
                      "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> & <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
+                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
                      "Foo2</a>&gt;</strong></code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
@@ -375,7 +375,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     "<td class=\"colLast\"><code><strong><a href=\"../../pkg2/ClassUseTest1.html\" " +
                      "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
                      "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> & <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
+                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
                      "Foo2</a>&gt;</strong></code>&nbsp;</td>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
