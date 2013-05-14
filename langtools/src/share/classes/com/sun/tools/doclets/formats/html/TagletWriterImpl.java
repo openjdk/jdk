@@ -171,7 +171,7 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder body = new ContentBuilder();
         body.addContent(HtmlTree.CODE(new RawHtml(paramName)));
         body.addContent(" - ");
-        body.addContent(new RawHtml(htmlWriter.commentTagsToString(paramTag, null, paramTag.inlineTags(), false)));
+        body.addContent(htmlWriter.commentTagsToContent(paramTag, null, paramTag.inlineTags(), false));
         HtmlTree result = HtmlTree.DD(body);
         return new TagletOutputImpl(result);
     }
@@ -183,8 +183,8 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong,
                 new StringContent(configuration.getText("doclet.Returns")))));
-        result.addContent(HtmlTree.DD(new RawHtml(htmlWriter.commentTagsToString(
-                returnTag, null, returnTag.inlineTags(), false))));
+        result.addContent(HtmlTree.DD(htmlWriter.commentTagsToContent(
+                returnTag, null, returnTag.inlineTags(), false)));
         return new TagletOutputImpl(result);
     }
 
@@ -196,7 +196,7 @@ public class TagletWriterImpl extends TagletWriter {
         if (seeTags.length > 0) {
             for (int i = 0; i < seeTags.length; ++i) {
                 appendSeparatorIfNotEmpty(body);
-                body.addContent(new RawHtml(htmlWriter.seeTagToString(seeTags[i])));
+                body.addContent(htmlWriter.seeTagToContent(seeTags[i]));
             }
         }
         if (holder.isField() && ((FieldDoc)holder).constantValue() != null &&
@@ -251,8 +251,8 @@ public class TagletWriterImpl extends TagletWriter {
             if (i > 0) {
                 body.addContent(", ");
             }
-            body.addContent(new RawHtml(htmlWriter.commentTagsToString(
-                    simpleTags[i], null, simpleTags[i].inlineTags(), false)));
+            body.addContent(htmlWriter.commentTagsToContent(
+                    simpleTags[i], null, simpleTags[i].inlineTags(), false));
         }
         result.addContent(HtmlTree.DD(body));
         return new TagletOutputImpl(result);
@@ -264,8 +264,8 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput simpleTagOutput(Tag simpleTag, String header) {
         ContentBuilder result = new ContentBuilder();
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, new RawHtml(header))));
-        Content body = new RawHtml(htmlWriter.commentTagsToString(
-                simpleTag, null, simpleTag.inlineTags(), false));
+        Content body = htmlWriter.commentTagsToContent(
+                simpleTag, null, simpleTag.inlineTags(), false);
         result.addContent(HtmlTree.DD(body));
         return new TagletOutputImpl(result);
     }
@@ -289,11 +289,11 @@ public class TagletWriterImpl extends TagletWriter {
                 htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
                 throwsTag.exceptionType()));
         body.addContent(HtmlTree.CODE(excName));
-        String desc = htmlWriter.commentTagsToString(throwsTag, null,
+        Content desc = htmlWriter.commentTagsToContent(throwsTag, null,
             throwsTag.inlineTags(), false);
         if (desc != null && !desc.isEmpty()) {
             body.addContent(" - ");
-            body.addContent(new RawHtml(desc));
+            body.addContent(desc);
         }
         HtmlTree res2 = HtmlTree.DD(body);
         return new TagletOutputImpl(res2);
@@ -337,8 +337,8 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public TagletOutputImpl commentTagsToOutput(Tag holderTag,
         Doc holderDoc, Tag[] tags, boolean isFirstSentence) {
-        return new TagletOutputImpl(new RawHtml(htmlWriter.commentTagsToString(
-            holderTag, holderDoc, tags, isFirstSentence)));
+        return new TagletOutputImpl(htmlWriter.commentTagsToContent(
+            holderTag, holderDoc, tags, isFirstSentence));
     }
 
     /**
