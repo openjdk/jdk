@@ -369,7 +369,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassUse(PackageDoc pkg, Content contentTree) throws IOException {
         String classLink = getLink(new LinkInfoImpl(configuration,
             LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc)).toString();
-        String pkgLink = getPackageLinkString(pkg, Util.escapeHtmlChars(Util.getPackageName(pkg)), false);
+        String pkgLink = getPackageLink(pkg, Util.getPackageName(pkg)).toString();
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg.name()),
                 configuration.getText("doclet.ClassUse_Annotation", classLink,
                 pkgLink), classUseTableSummary, contentTree);

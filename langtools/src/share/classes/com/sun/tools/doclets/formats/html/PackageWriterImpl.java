@@ -102,7 +102,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, packageLabel);
         tHeading.addContent(getSpace());
-        Content packageHead = new RawHtml(heading);
+        Content packageHead = new StringContent(heading);
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
         addDeprecationInfo(div);
