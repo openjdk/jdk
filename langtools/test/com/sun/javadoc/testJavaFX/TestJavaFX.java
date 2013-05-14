@@ -51,14 +51,13 @@ public class TestJavaFX extends JavadocTester {
             {"./" + BUG_ID + "/C.html",
                 "<td class=\"colLast\"><code><strong><a href=\"C.html#rateProperty\">rate</a></strong></code>" + NL +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
-            {"./" + BUG_ID + "/C.html",
-                "<sub id=\"expert\">Expert tag text</sub>"},
+
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Default value:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<P>Sets the value of the property <CODE>Property</CODE>"},
+                "<p>Sets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
-                "<P>Gets the value of the property <CODE>Property</CODE>"},
+                "<p>Gets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Property description:</span>"},
             {"./" + BUG_ID + "/C.html",

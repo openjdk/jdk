@@ -60,14 +60,7 @@ public abstract class BasePropertyTaglet extends BaseTaglet {
      * @return the TagletOutput representation of this <code>Tag</code>.
      */
     public TagletOutput getTagletOutput(Tag tag, TagletWriter tagletWriter) {
-        TagletOutput tagletOutput = tagletWriter.getOutputInstance();
-        StringBuilder output = new StringBuilder("<P>");
-        output.append(getText(tagletWriter));
-        output.append(" <CODE>");
-        output.append(tag.text());
-        output.append("</CODE>.</P>");
-        tagletOutput.setOutput(output.toString());
-        return tagletOutput;
+        return tagletWriter.propertyTagOutput(tag, getText(tagletWriter));
     }
 
     /**
