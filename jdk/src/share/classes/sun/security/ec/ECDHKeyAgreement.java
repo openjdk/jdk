@@ -32,6 +32,8 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import sun.security.util.ECUtil;
+
 /**
  * KeyAgreement implementation for ECDH.
  *
@@ -104,7 +106,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             publicValue = ((ECPublicKeyImpl)ecKey).getEncodedPublicValue();
         } else { // instanceof ECPublicKey
             publicValue =
-                ECParameters.encodePoint(ecKey.getW(), params.getCurve());
+                ECUtil.encodePoint(ecKey.getW(), params.getCurve());
         }
         int keyLenBits = params.getCurve().getField().getFieldSize();
         secretLen = (keyLenBits + 7) >> 3;
@@ -120,8 +122,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         }
 
         byte[] s = privateKey.getS().toByteArray();
-        byte[] encodedParams =
-            ECParameters.encodeParameters(privateKey.getParams()); // DER OID
+        byte[] encodedParams =                   // DER OID
+            ECUtil.encodeECParameterSpec(null, privateKey.getParams());
 
         try {
 
