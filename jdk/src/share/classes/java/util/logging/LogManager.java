@@ -533,7 +533,7 @@ public class LogManager {
         }
 
         synchronized void ensureRootLogger(Logger logger) {
-            if (logger == manager.rootLogger)
+            if (logger.getName().isEmpty())
                 return;
 
             // during initialization, rootLogger is null when
