@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ public class TagletWriterImpl extends TagletWriter {
         result += throwsTag.exceptionType() == null ?
             htmlWriter.codeText(throwsTag.exceptionName()) :
             htmlWriter.codeText(
-                htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER,
+                htmlWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
                 throwsTag.exceptionType())));
         TagletOutput text = new TagletOutputImpl(
             htmlWriter.commentTagsToString(throwsTag, null,
@@ -265,7 +265,7 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput throwsTagOutput(Type throwsType) {
         return new TagletOutputImpl(DocletConstants.NL + "<dd>" +
             htmlWriter.codeText(htmlWriter.getLink(
-                new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER, throwsType))) + "</dd>");
+                new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, throwsType))) + "</dd>");
     }
 
     /**
@@ -274,7 +274,7 @@ public class TagletWriterImpl extends TagletWriter {
     public TagletOutput valueTagOutput(FieldDoc field, String constantVal,
             boolean includeLink) {
         return new TagletOutputImpl(includeLink ?
-            htmlWriter.getDocLink(LinkInfoImpl.CONTEXT_VALUE_TAG, field,
+            htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field,
                 constantVal, false) : constantVal);
     }
 

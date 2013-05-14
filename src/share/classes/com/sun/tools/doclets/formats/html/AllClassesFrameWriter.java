@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             Content linkContent;
             if(wantFrames){
                 linkContent = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.ALL_CLASSES_FRAME, cd, label, "classFrame")));
+                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd, label, "classFrame")));
             } else {
                 linkContent = new RawHtml(getLink(new LinkInfoImpl(
                         configuration, cd, label)));

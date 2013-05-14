@@ -153,7 +153,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 writer.addInlineComment(method, methodDocTree);
             } else {
                 Content link = new RawHtml(
-                        writer.getDocLink(LinkInfoImpl.CONTEXT_METHOD_DOC_COPY,
+                        writer.getDocLink(LinkInfoImpl.Kind.METHOD_DOC_COPY,
                         holder.asClassDoc(), method,
                         holder.asClassDoc().isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
@@ -261,7 +261,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
         Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+                LinkInfoImpl.Kind.MEMBER, cd, false));
         Content label = new StringContent(cd.isClass() ?
             configuration.getText("doclet.Methods_Inherited_From_Class") :
             configuration.getText("doclet.Methods_Inherited_From_Interface"));
@@ -300,14 +300,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             return;
         }
         Content label = writer.overridesLabel;
-        int context = LinkInfoImpl.CONTEXT_METHOD_OVERRIDES;
+        LinkInfoImpl.Kind context = LinkInfoImpl.Kind.METHOD_OVERRIDES;
 
         if (method != null) {
             if (overriddenType.asClassDoc().isAbstract() && method.isAbstract()){
                 //Abstract method is implemented from abstract class,
                 //not overridden
                 label = writer.specifiedByLabel;
-                context = LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY;
+                context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
             }
             Content dt = HtmlTree.DT(HtmlTree.STRONG(label));
             dl.addContent(dt);
@@ -316,7 +316,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             String name = method.name();
             Content methlink = new RawHtml(writer.getLink(
-                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.CONTEXT_MEMBER,
+                    new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
                     overriddenType.asClassDoc(),
                     writer.getAnchor(method), name, false)));
             Content codeMethLink = HtmlTree.CODE(methlink);
@@ -362,12 +362,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             MethodDoc implementedMeth = implementedMethods[i];
             Type intfac = implementedMethodsFinder.getMethodHolder(implementedMeth);
             Content intfaclink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    writer.configuration, LinkInfoImpl.CONTEXT_METHOD_SPECIFIED_BY, intfac)));
+                    writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac)));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
             Content dt = HtmlTree.DT(HtmlTree.STRONG(writer.specifiedByLabel));
             dl.addContent(dt);
             Content methlink = new RawHtml(writer.getDocLink(
-                    LinkInfoImpl.CONTEXT_MEMBER, implementedMeth,
+                    LinkInfoImpl.Kind.MEMBER, implementedMeth,
                     implementedMeth.name(), false));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
@@ -389,7 +389,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Type type = method.returnType();
         if (type != null) {
             Content linkContent = new RawHtml(writer.getLink(
-                    new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_RETURN_TYPE, type)));
+                    new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type)));
             htmltree.addContent(linkContent);
             htmltree.addContent(writer.getSpace());
         }

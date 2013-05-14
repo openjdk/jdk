@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     continue;
                 }
                 Content classContent = new RawHtml(getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.CONTEXT_PACKAGE, classes[i],
+                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i],
                         false)));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         //generate links backward only to public classes.
         String classlink = (cd.isPublic() || cd.isProtected()) ?
             getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, cd, false)) :
+                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd, false)) :
             cd.qualifiedName();
         String name = cd.containingPackage().name();
         if (name.length() > 0) {
@@ -261,7 +261,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
             code.addContent(getSpace());
         }
         Content type = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member.type())));
+                LinkInfoImpl.Kind.CONSTANT_SUMMARY, member.type())));
         code.addContent(type);
         tdType.addContent(code);
         return tdType;
@@ -275,7 +275,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     private Content getNameColumn(FieldDoc member) {
         Content nameContent = new RawHtml(getDocLink(
-                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member, member.name(), false));
+                LinkInfoImpl.Kind.CONSTANT_SUMMARY, member, member.name(), false));
         Content code = HtmlTree.CODE(nameContent);
         return HtmlTree.TD(code);
     }

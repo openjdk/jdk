@@ -125,7 +125,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content li;
         if (prev != null) {
             Content prevLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS, prev, "",
+                    LinkInfoImpl.Kind.CLASS, prev, "",
                     configuration.getText("doclet.Prev_Class"), true)));
             li = HtmlTree.LI(prevLink);
         }
@@ -143,7 +143,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content li;
         if (next != null) {
             Content nextLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS, next, "",
+                    LinkInfoImpl.Kind.CLASS, next, "",
                     configuration.getText("doclet.Next_Class"), true)));
             li = HtmlTree.LI(nextLink);
         }
@@ -185,7 +185,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CLASS_HEADER, classDoc, false);
+                LinkInfoImpl.Kind.CLASS_HEADER, classDoc, false);
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
         Content headerContent = new StringContent(header);
@@ -245,7 +245,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         addAnnotationInfo(classDoc, pre);
         pre.addContent(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, classDoc, false);
+                LinkInfoImpl.Kind.CLASS_SIGNATURE, classDoc, false);
         //Let's not link to ourselves in the signature.
         linkInfo.linkToSelf = false;
         Content className = new StringContent(classDoc.name());
@@ -265,7 +265,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 pre.addContent(DocletConstants.NL);
                 pre.addContent("extends ");
                 Content link = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_CLASS_SIGNATURE_PARENT_NAME,
+                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
                         superclass)));
                 pre.addContent(link);
             }
@@ -286,7 +286,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     pre.addContent(", ");
                 }
                 Content link = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_CLASS_SIGNATURE_PARENT_NAME,
+                        LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
                         implIntfacs[i])));
                 pre.addContent(link);
                 counter++;
@@ -361,7 +361,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content li = new HtmlTree(HtmlTag.LI);
         if (type.equals(classDoc)) {
             String typeParameters = getTypeParameterLinks(
-                    new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_TREE,
+                    new LinkInfoImpl(configuration, LinkInfoImpl.Kind.TREE,
                     classDoc, false));
             if (configuration.shouldExcludeQualifier(
                     classDoc.containingPackage().name())) {
@@ -373,7 +373,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             }
         } else {
             Content link = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS_TREE_PARENT,
+                    LinkInfoImpl.Kind.CLASS_TREE_PARENT,
                     type instanceof ClassDoc ? (ClassDoc) type : type,
                     configuration.getClassName(type.asClassDoc()), false)));
             li.addContent(link);
@@ -419,7 +419,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                         "doclet.Subclasses");
                 Content dt = HtmlTree.DT(label);
                 Content dl = HtmlTree.DL(dt);
-                dl.addContent(getClassLinks(LinkInfoImpl.CONTEXT_SUBCLASSES,
+                dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUBCLASSES,
                         subclasses));
                 classInfoTree.addContent(dl);
             }
@@ -437,7 +437,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                         "doclet.Subinterfaces");
                 Content dt = HtmlTree.DT(label);
                 Content dl = HtmlTree.DL(dt);
-                dl.addContent(getClassLinks(LinkInfoImpl.CONTEXT_SUBINTERFACES,
+                dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUBINTERFACES,
                         subInterfaces));
                 classInfoTree.addContent(dl);
             }
@@ -461,7 +461,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     "doclet.Implementing_Classes");
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
-            dl.addContent(getClassLinks(LinkInfoImpl.CONTEXT_IMPLEMENTED_CLASSES,
+            dl.addContent(getClassLinks(LinkInfoImpl.Kind.IMPLEMENTED_CLASSES,
                     implcl));
             classInfoTree.addContent(dl);
         }
@@ -479,7 +479,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     "doclet.All_Implemented_Interfaces");
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
-            dl.addContent(getClassLinks(LinkInfoImpl.CONTEXT_IMPLEMENTED_INTERFACES,
+            dl.addContent(getClassLinks(LinkInfoImpl.Kind.IMPLEMENTED_INTERFACES,
                     interfaceArray));
             classInfoTree.addContent(dl);
         }
@@ -497,7 +497,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     "doclet.All_Superinterfaces");
             Content dt = HtmlTree.DT(label);
             Content dl = HtmlTree.DL(dt);
-            dl.addContent(getClassLinks(LinkInfoImpl.CONTEXT_SUPER_INTERFACES,
+            dl.addContent(getClassLinks(LinkInfoImpl.Kind.SUPER_INTERFACES,
                     interfaceArray));
             classInfoTree.addContent(dl);
         }
@@ -521,7 +521,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             Content dl = HtmlTree.DL(dt);
             Content dd = new HtmlTree(HtmlTag.DD);
             dd.addContent(new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS, outerClass, false))));
+                    LinkInfoImpl.Kind.CLASS, outerClass, false))));
             dl.addContent(dd);
             classInfoTree.addContent(dl);
         }
@@ -569,7 +569,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @param list the list of classes
      * @return a content tree for the class list
      */
-    private Content getClassLinks(int context, List<?> list) {
+    private Content getClassLinks(LinkInfoImpl.Kind context, List<?> list) {
         Object[] typeList = list.toArray();
         Content dd = new HtmlTree(HtmlTag.DD);
         for (int i = 0; i < list.size(); i++) {
