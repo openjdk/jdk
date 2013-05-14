@@ -43,11 +43,11 @@ public class TestJavaFX extends JavadocTester {
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>" + NL +
                 "<div class=\"block\">Sets the value of the property rate.</div>" + NL +
-                "<dl><dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;double&nbsp;getRate()</pre>" + NL +
                 "<div class=\"block\">Gets the value of the property rate.</div>" + NL +
-                "<dl><dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
                 "<td class=\"colLast\"><code><strong><a href=\"C.html#rateProperty\">rate</a></strong></code>" + NL +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},

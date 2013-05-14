@@ -186,17 +186,14 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param contentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(FieldDoc field, Content contentTree) {
-        TagletOutput output = new TagletOutputImpl();
+        TagletOutputImpl output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
                 configuration.tagletManager.getCustomTags(field),
                 writer.getTagletWriterInstance(false), output);
-        String outputString = output.toString().trim();
+        Content tagContent = output.getContent();
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        if (!outputString.isEmpty()) {
-            Content tagContent = new RawHtml(outputString);
-            dlTags.addContent(tagContent);
-        }
-        contentTree.addContent(dlTags);
+        dlTags.addContent(tagContent);
+        contentTree.addContent(dlTags);  // TODO: what if empty?
     }
 
     /**

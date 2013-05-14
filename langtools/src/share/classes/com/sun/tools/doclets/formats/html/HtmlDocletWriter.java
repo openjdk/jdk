@@ -246,15 +246,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (doc instanceof MethodDoc) {
             addMethodInfo((MethodDoc) doc, dl);
         }
-        TagletOutput output = new TagletOutputImpl();
+        TagletOutputImpl output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, doc,
             configuration.tagletManager.getCustomTags(doc),
                 getTagletWriterInstance(false), output);
-        String outputString = output.toString().trim();
-        if (!outputString.isEmpty()) {
-            Content resultString = new RawHtml(outputString);
-            dl.addContent(resultString);
-        }
+        dl.addContent(output.getContent());
         htmltree.addContent(dl);
     }
 
@@ -266,11 +262,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return true if there are tags to be printed else return false.
      */
     protected boolean hasSerializationOverviewTags(FieldDoc field) {
-        TagletOutput output = new TagletOutputImpl();
+        TagletOutputImpl output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
             configuration.tagletManager.getCustomTags(field),
                 getTagletWriterInstance(false), output);
-        return (!output.toString().trim().isEmpty());
+        return !output.getContent().isEmpty();
     }
 
     /**

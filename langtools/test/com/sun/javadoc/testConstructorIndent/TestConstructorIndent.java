@@ -47,8 +47,8 @@ public class TestConstructorIndent extends JavadocTester {
     private static final String[][] TEST = {
         {BUG_ID + FS + "C.html", "<div class=\"block\">" +
                  "This is just a simple constructor.</div>" + NL +
-                 "<dl><dt><span class=\"strong\">Parameters:</span></dt>" + NL +
-                 "<dd><code>i</code> - a param.</dd></dl>"
+                 "<dl>" + NL + "<dt><span class=\"strong\">Parameters:</span></dt>" + NL +
+                 "<dd><code>i</code> - a param.</dd>" + NL +"</dl>"
         }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

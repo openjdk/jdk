@@ -104,7 +104,7 @@ public class TagletWriterImpl extends TagletWriter {
                     Tag[] commentTags = deprs[0].inlineTags();
                     if (commentTags.length > 0) {
                         result.addContent(commentTagsToOutput(null, doc,
-                            deprs[0].inlineTags(), false).toString()
+                            deprs[0].inlineTags(), false).getContent()
                         );
                     }
                 }
@@ -116,9 +116,9 @@ public class TagletWriterImpl extends TagletWriter {
                         new StringContent(configuration.getText("doclet.Deprecated"))));
                 result.addContent(RawHtml.nbsp);
                 if (deprs.length > 0) {
-                    TagletOutput body = commentTagsToOutput(null, doc,
+                    TagletOutputImpl body = commentTagsToOutput(null, doc,
                         deprs[0].inlineTags(), false);
-                    result.addContent(HtmlTree.I(new RawHtml(body.toString())));
+                    result.addContent(HtmlTree.I(body.getContent()));
                 }
             } else {
                 if (Util.isDeprecated(member.containingClass())) {
@@ -321,21 +321,21 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput commentTagsToOutput(Tag holderTag, Tag[] tags) {
+    public TagletOutputImpl commentTagsToOutput(Tag holderTag, Tag[] tags) {
         return commentTagsToOutput(holderTag, null, tags, false);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput commentTagsToOutput(Doc holderDoc, Tag[] tags) {
+    public TagletOutputImpl commentTagsToOutput(Doc holderDoc, Tag[] tags) {
         return commentTagsToOutput(null, holderDoc, tags, false);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput commentTagsToOutput(Tag holderTag,
+    public TagletOutputImpl commentTagsToOutput(Tag holderTag,
         Doc holderDoc, Tag[] tags, boolean isFirstSentence) {
         return new TagletOutputImpl(new RawHtml(htmlWriter.commentTagsToString(
             holderTag, holderDoc, tags, isFirstSentence)));

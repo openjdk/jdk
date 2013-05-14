@@ -146,19 +146,16 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param methodsContentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(MethodDoc member, Content methodsContentTree) {
-        TagletOutput output = new TagletOutputImpl();
+        TagletOutputImpl output = new TagletOutputImpl();
         TagletManager tagletManager =
             configuration.tagletManager;
         TagletWriter.genTagOuput(tagletManager, member,
             tagletManager.getSerializedFormTags(),
             writer.getTagletWriterInstance(false), output);
-        String outputString = output.toString().trim();
+        Content tagContent = output.getContent();
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        if (!outputString.isEmpty()) {
-            Content tagContent = new RawHtml(outputString);
-            dlTags.addContent(tagContent);
-        }
-        methodsContentTree.addContent(dlTags);
+        dlTags.addContent(tagContent);
+        methodsContentTree.addContent(dlTags);  // TODO: what if empty?
         MethodDoc method = member;
         if (method.name().compareTo("writeExternal") == 0
                 && method.tags("serialData").length == 0) {
