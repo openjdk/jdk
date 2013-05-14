@@ -1390,17 +1390,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return emd.name() + signatureParsed.toString();
     }
 
-    public String seeTagToString(SeeTag see) {
+    public Content seeTagToContent(SeeTag see) {
         String tagName = see.name();
         if (! (tagName.startsWith("@link") || tagName.equals("@see"))) {
-            return "";
+            return new ContentBuilder();
         }
 
         String seetext = replaceDocRootDir(see.text());
 
         //Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
-            return seetext;
+            return new RawHtml(seetext);
         }
 
         boolean plain = tagName.equalsIgnoreCase("@linkplain");
@@ -1421,7 +1421,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 //@see is referencing an included package
                 if (label.isEmpty())
                     label = plainOrCode(plain, new StringContent(refPackage.name()));
-                return getPackageLink(refPackage, label).toString();
+                return getPackageLink(refPackage, label);
             } else {
                 //@see is not referencing an included class or package.  Check for cross links.
                 Content classCrossLink;
@@ -1429,16 +1429,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (packageCrossLink != null) {
                     //Package cross link found
                     return getHyperLink(packageCrossLink,
-                        (label.isEmpty() ? text : label)).toString();
+                        (label.isEmpty() ? text : label));
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
                         refMemName, label, false, "", !plain)) != null) {
                     //Class cross link found (possibly to a member in the class)
-                    return classCrossLink.toString();
+                    return classCrossLink;
                 } else {
                     //No cross link found so print warning
                     configuration.getDocletSpecificMsg().warning(see.position(), "doclet.see.class_or_package_not_found",
                             tagName, seetext);
-                    return (label.isEmpty() ? text: label).toString();
+                    return (label.isEmpty() ? text: label);
                 }
             }
         } else if (refMemName == null) {
@@ -1447,11 +1447,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 label = plainOrCode(plain, new StringContent(refClass.name()));
             }
             return getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, refClass)
-                    .label(label)).toString();
+                    .label(label));
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
-            return (label.isEmpty() ? text: label).toString();
+            return (label.isEmpty() ? text: label);
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // refMem is not null, so this @see tag must be referencing a valid member.
@@ -1487,12 +1487,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             text = plainOrCode(plain, new StringContent(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                refMem, (label.isEmpty() ? text: label).toString(), false).toString();
+                refMem, (label.isEmpty() ? text: label).toString(), false);
         }
-    }
-
-    private String plainOrCodeText(boolean plain, String text) {
-        return (plain || text.isEmpty()) ? text : codeText(text);
     }
 
     private Content plainOrCode(boolean plain, Content body) {
@@ -1586,7 +1582,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return;
         }
         Content div;
-        Content result = new RawHtml(commentTagsToString(holderTag, doc, tags, first));
+        Content result = commentTagsToContent(null, doc, tags, first);
         if (depr) {
             Content italic = HtmlTree.I(result);
             div = HtmlTree.DIV(HtmlStyle.block, italic);
@@ -1613,9 +1609,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *               present in the text of interest for this doc
      * @param isFirstSentence  true if text is first sentence
      */
-    public String commentTagsToString(Tag holderTag, Doc doc, Tag[] tags,
+    public Content commentTagsToContent(Tag holderTag, Doc doc, Tag[] tags,
             boolean isFirstSentence) {
-        StringBuilder result = new StringBuilder();
+        ContentBuilder result = new ContentBuilder();
         boolean textTagChange = false;
         // Array of all possible inline tags for this javadoc run
         configuration.tagletManager.checkTags(doc, tags, true);
@@ -1623,14 +1619,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             Tag tagelem = tags[i];
             String tagName = tagelem.name();
             if (tagelem instanceof SeeTag) {
-                result.append(seeTagToString((SeeTag)tagelem));
+                result.addContent(seeTagToContent((SeeTag) tagelem));
             } else if (! tagName.equals("Text")) {
-                int originalLength = result.length();
+                boolean wasEmpty = result.isEmpty();
                 TagletOutput output = TagletWriter.getInlineTagOuput(
                     configuration.tagletManager, holderTag,
                     tagelem, getTagletWriterInstance(isFirstSentence));
-                result.append(output == null ? "" : output.toString());
-                if (originalLength == 0 && isFirstSentence && tagelem.name().equals("@inheritDoc") && result.length() > 0) {
+                if (output != null)
+                    result.addContent(((TagletOutputImpl) output).getContent());
+                if (wasEmpty && isFirstSentence && tagelem.name().equals("@inheritDoc") && !result.isEmpty()) {
                     break;
                 } else if (configuration.docrootparent.length() > 0 &&
                         tagelem.name().equals("@docRoot") &&
@@ -1669,10 +1666,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     Util.replaceTabs(configuration, line);
                     textBuff.append(line.toString());
                 }
-                result.append(textBuff);
+                result.addContent(new RawHtml(textBuff.toString()));
             }
         }
-        return result.toString();
+        return result;
     }
 
     /**
