@@ -139,6 +139,20 @@
       <arg value="${cc.merged.xml}"/>
       <arg value="-exclude"/>
       <arg value="com\.oracle\.nashorn\.runtime\.ScriptRuntime*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.javaadapters*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.objects\.annotations*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.scripts*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.lookup\.MethodHandleFactory*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.test\.framework*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.test\.models*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.ir\.debug*"/>
       <arg line="${cc.all.xmls}"/>
       <classpath>
         <pathelement location="${jcov.jar}"/>
