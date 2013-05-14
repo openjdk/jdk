@@ -269,9 +269,7 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            StringBuilder lineBuffer = new StringBuilder(line);
-            Util.replaceTabs(configuration, lineBuffer);
-            pre.addContent(lineBuffer.toString());
+            pre.addContent(Util.replaceTabs(configuration, line));
             Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
             pre.addContent(anchor);
             pre.addContent(NEW_LINE);

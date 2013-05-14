@@ -593,20 +593,42 @@ public class Util {
     }
 
     /**
-     * Replace all tabs with the appropriate number of spaces.
+     * Replace all tabs in a string with the appropriate number of spaces.
+     * The string may be a multi-line string.
      * @param configuration the doclet configuration defining the setting for the
      *                      tab length.
-     * @param sb the StringBuilder in which to replace the tabs
+     * @param text the text for which the tabs should be expanded
+     * @return the text with all tabs expanded
      */
-    public static void replaceTabs(Configuration configuration, StringBuilder sb) {
-        int tabLength = configuration.sourcetab;
-        String whitespace = configuration.tabSpaces;
-        int index = 0;
-        while ((index = sb.indexOf("\t", index)) != -1) {
-            int spaceCount = tabLength - index % tabLength;
-            sb.replace(index, index+1, whitespace.substring(0, spaceCount));
-            index += spaceCount;
+    public static String replaceTabs(Configuration configuration, String text) {
+        if (text.indexOf("\t") == -1)
+            return text;
+
+        final int tabLength = configuration.sourcetab;
+        final String whitespace = configuration.tabSpaces;
+        final int textLength = text.length();
+        StringBuilder result = new StringBuilder(textLength);
+        int pos = 0;
+        int lineLength = 0;
+        for (int i = 0; i < textLength; i++) {
+            char ch = text.charAt(i);
+            switch (ch) {
+                case '\n': case '\r':
+                    lineLength = 0;
+                    break;
+                case '\t':
+                    result.append(text, pos, i);
+                    int spaceCount = tabLength - lineLength % tabLength;
+                    result.append(whitespace, 0, spaceCount);
+                    lineLength += spaceCount;
+                    pos = i + 1;
+                    break;
+                default:
+                    lineLength++;
+            }
         }
+        result.append(text, pos, textLength);
+        return result.toString();
     }
 
     /**
