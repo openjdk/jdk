@@ -292,13 +292,13 @@ public abstract class AbstractMemberWriter {
                 if (displayLength > 10) {
                     code.addContent(new HtmlTree(HtmlTag.BR));
                 }
-                code.addContent(new RawHtml(
+                code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             } else {
-                code.addContent(new RawHtml(
+                code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             }
 
         }

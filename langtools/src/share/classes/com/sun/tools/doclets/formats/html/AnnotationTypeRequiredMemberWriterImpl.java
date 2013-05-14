@@ -105,9 +105,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(member, pre);
         addModifiers(member, pre);
-        Content link = new RawHtml(
+        Content link =
                 writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.MEMBER, getType(member))));
+                        LinkInfoImpl.Kind.MEMBER, getType(member)));
         pre.addContent(link);
         pre.addContent(writer.getSpace());
         if (configuration.linksource) {
@@ -225,8 +225,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getDocLink(context, (MemberDoc) member, member.name(), false)));
+        Content strong = HtmlTree.STRONG(
+                writer.getDocLink(context, (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }

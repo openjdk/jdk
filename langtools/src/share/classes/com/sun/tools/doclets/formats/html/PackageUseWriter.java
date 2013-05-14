@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
                 getTableCaption(configuration.getText(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLinkString(pkgdoc, Util.getPackageName(pkgdoc), false))));
+                getPackageLinkString(pkgdoc, Util.escapeHtmlChars(Util.getPackageName(pkgdoc)), false))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
@@ -199,8 +199,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
                     getTableCaption(configuration.getText(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLinkString(pkgdoc, Util.getPackageName(pkgdoc), false),
-                    getPackageLinkString(usingPackage,Util.getPackageName(usingPackage), false))));
+                    getPackageLinkString(pkgdoc, Util.escapeHtmlChars(Util.getPackageName(pkgdoc)), false),
+                    getPackageLinkString(usingPackage, Util.escapeHtmlChars(Util.getPackageName(usingPackage)), false))));
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =
@@ -247,7 +247,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
                 getHyperLink(Util.getPackageName(pkg),
-                new RawHtml(Util.getPackageName(pkg))));
+                new StringContent(Util.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);

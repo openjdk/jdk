@@ -372,9 +372,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     !configuration.isGeneratedDoc(classes[i])) {
                     continue;
                 }
-                Content classContent = new RawHtml(getLink(new LinkInfoImpl(
+                Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, classes[i],
-                        false)));
+                        false));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 if (i%2 == 0)
@@ -1109,9 +1109,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @return the link for the given class.
      */
-    public String getLink(LinkInfoImpl linkInfo) {
+    public Content getLink(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        String link = factory.getLinkOutput(linkInfo).toString();
+        Content link = factory.getLink(linkInfo);
         displayLength += linkInfo.displayLength;
         return link;
     }
@@ -1122,9 +1122,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param linkInfo the information about the link.
      * @return the type for the given class.
      */
-    public String getTypeParameterLinks(LinkInfoImpl linkInfo) {
+    public Content getTypeParameterLinks(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        return factory.getTypeParameterLinks(linkInfo, false).toString();
+        return factory.getTypeParameterLinks(linkInfo, false);
     }
 
     /*************************************************************
@@ -1192,8 +1192,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     public Content getQualifiedClassLink(LinkInfoImpl.Kind context, ClassDoc cd) {
-        return new RawHtml(getLink(new LinkInfoImpl(configuration, context, cd,
-                configuration.getClassName(cd), "")));
+        return getLink(new LinkInfoImpl(configuration, context, cd,
+                configuration.getClassName(cd), ""));
     }
 
     /**
@@ -1244,8 +1244,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
             contentTree.addContent(getPkgName(cd));
         }
-        contentTree.addContent(new RawHtml(getLink(new LinkInfoImpl(configuration,
-                context, cd, cd.name(), isStrong))));
+        contentTree.addContent(getLink(new LinkInfoImpl(configuration,
+                context, cd, cd.name(), isStrong)));
     }
 
     /**
@@ -1281,8 +1281,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
-    public String getDocLink(LinkInfoImpl.Kind context, MemberDoc doc, String label,
-                boolean strong) {
+    public Content getDocLink(LinkInfoImpl.Kind context, MemberDoc doc, String label,
+            boolean strong) {
         return getDocLink(context, doc.containingClass(), doc, label, strong);
     }
 
@@ -1298,8 +1298,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
-    public String getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
-        String label, boolean strong) {
+    public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
+            String label, boolean strong) {
         return getDocLink(context, classDoc, doc, label, strong, false);
     }
 
@@ -1316,11 +1316,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param isProperty true if the doc parameter is a JavaFX property.
      * @return the link for the given member.
      */
-    public String getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
+    public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
         String label, boolean strong, boolean isProperty) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
-            return label;
+            return new RawHtml(label);
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
@@ -1329,7 +1329,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, strong));
         } else {
-            return label;
+            return new RawHtml(label);
         }
     }
 
@@ -1351,11 +1351,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return new StringContent(label);
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
-            return new RawHtml(getLink(new LinkInfoImpl(configuration, context, classDoc,
-                getAnchor(emd), label, false)));
+            return getLink(new LinkInfoImpl(configuration, context, classDoc,
+                getAnchor(emd), label, false));
         } else if (doc instanceof MemberDoc) {
-            return new RawHtml(getLink(new LinkInfoImpl(configuration, context, classDoc,
-                doc.name(), label, false)));
+            return getLink(new LinkInfoImpl(configuration, context, classDoc,
+                doc.name(), label, false));
         } else {
             return new StringContent(label);
         }
@@ -1441,7 +1441,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (label.isEmpty()) {
                 label = plainOrCodeText(plain, refClass.name());
             }
-            return getLink(new LinkInfoImpl(configuration, refClass, label));
+            return getLink(new LinkInfoImpl(configuration, refClass, label)).toString();
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
@@ -1481,7 +1481,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             text = plainOrCodeText(plain, Util.escapeHtmlChars(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                refMem, (label.isEmpty() ? text: label), false);
+                refMem, (label.isEmpty() ? text: label), false).toString();
         }
     }
 
@@ -2147,7 +2147,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     linkInfo.label = (type.asClassDoc().isIncluded() ?
                         type.typeName() :
                         type.qualifiedTypeName()) + type.dimension() + ".class";
-                return getLink(linkInfo);
+                return getLink(linkInfo).toString();
             } else {
                 return type.typeName() + type.dimension() + ".class";
             }
@@ -2163,7 +2163,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         } else if (annotationValue.value() instanceof MemberDoc) {
             return getDocLink(LinkInfoImpl.Kind.ANNOTATION,
                 (MemberDoc) annotationValue.value(),
-                ((MemberDoc) annotationValue.value()).name(), false);
+                ((MemberDoc) annotationValue.value()).name(), false).toString();
          } else {
             return annotationValue.toString();
          }
