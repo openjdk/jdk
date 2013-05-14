@@ -29,7 +29,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestG1HeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm TestG1
+ * @run main/othervm TestG1HeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 

@@ -30,7 +30,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestParallelHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm TestParallel
+ * @run main/othervm TestParallelHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 
