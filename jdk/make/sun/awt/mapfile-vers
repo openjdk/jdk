@@ -87,6 +87,7 @@ SUNWprivate_1.1 {
                 Java_sun_java2d_pipe_ShapeSpanIterator_skipDownTo;
 
 		Java_java_awt_Dimension_initIDs;
+		Java_java_awt_Choice_initIDs;
 		Java_java_awt_event_MouseEvent_initIDs;
 		Java_java_awt_image_DataBufferInt_initIDs;
 		Java_java_awt_image_SinglePixelPackedSampleModel_initIDs;
