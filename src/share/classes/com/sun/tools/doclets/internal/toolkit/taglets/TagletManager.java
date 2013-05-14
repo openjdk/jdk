@@ -659,10 +659,8 @@ public class TagletManager {
         customTags.put((temp = new DocRootTaglet()).getName(), temp);
         customTags.put((temp = new InheritDocTaglet()).getName(), temp);
         customTags.put((temp = new ValueTaglet()).getName(), temp);
-        customTags.put((temp = new LegacyTaglet(new LiteralTaglet())).getName(),
-            temp);
-        customTags.put((temp = new LegacyTaglet(new CodeTaglet())).getName(),
-            temp);
+        customTags.put((temp = new LiteralTaglet()).getName(), temp);
+        customTags.put((temp = new CodeTaglet()).getName(), temp);
 
         //Keep track of the names of standard tags for error
         //checking purposes.
@@ -705,7 +703,7 @@ public class TagletManager {
             SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
         customTags.put((temp = new SimpleTaglet("treatAsPrivate", null,
                 SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE)).getName(), temp);
-        customTags.put((temp = new LegacyTaglet(new ExpertTaglet())).getName(), temp);
+        customTags.put((temp = new ExpertTaglet()).getName(), temp);
 
         standardTags.add("propertyGetter");
         standardTags.add("propertySetter");

@@ -26,6 +26,10 @@
 package com.sun.tools.doclets.formats.html;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.HtmlAttr;
+import com.sun.tools.doclets.formats.html.markup.HtmlTag;
+import com.sun.tools.doclets.formats.html.markup.HtmlTree;
+import com.sun.tools.doclets.formats.html.markup.StringContent;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.builders.SerializedFormBuilder;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
@@ -60,6 +64,14 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public TagletOutput getOutputInstance() {
         return new TagletOutputImpl("");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected TagletOutput codeTagOutput(Tag tag) {
+        Content result = HtmlTree.CODE(new StringContent(tag.text()));
+        return new TagletOutputImpl(result.toString());
     }
 
     /**
@@ -116,6 +128,23 @@ public class TagletWriterImpl extends TagletWriter {
             }
         }
         return new TagletOutputImpl(output.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected TagletOutput expertTagOutput(Tag tag) {
+        HtmlTree result = new HtmlTree(HtmlTag.SUB, new StringContent(tag.text()));
+        result.addAttr(HtmlAttr.ID, "expert");
+        return new TagletOutputImpl(result.toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected TagletOutput literalTagOutput(Tag tag) {
+        Content result = new StringContent(tag.text());
+        return new TagletOutputImpl(result.toString());
     }
 
     /**
