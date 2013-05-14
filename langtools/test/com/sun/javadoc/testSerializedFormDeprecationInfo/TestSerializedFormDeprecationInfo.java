@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     private static final String[][] TEST_CMNT_DEPR = {
         {BUG_ID + FS + "serialized-form.html", "<dl>" +
                  "<dt><span class=\"strong\">Throws:</span></dt>" + NL + "<dd><code>" +
-                 "java.io.IOException</code></dd><dt><span class=\"strong\">See Also:</span>" +
-                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "java.io.IOException</code></dd>"+ NL + "<dt><span class=\"strong\">See Also:</span>" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
@@ -53,8 +53,8 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "<div class=\"block\">This field indicates whether the C1 " +
                  "is undecorated.</div>" + NL + "&nbsp;" + NL +
                  "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
-                 "  <dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
-                 "</dt><dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
+                 "<dd>1.4</dd>" + NL + "<dt><span class=\"strong\">See Also:</span>" +
+                 "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd></dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
                  "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +

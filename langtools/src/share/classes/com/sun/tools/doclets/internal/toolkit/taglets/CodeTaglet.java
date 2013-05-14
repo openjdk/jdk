@@ -53,12 +53,12 @@ public class CodeTaglet extends BaseInlineTaglet {
     private static final String NAME = "code";
 
     public static void register(Map<String, Taglet> map) {
-            map.remove(NAME);
-            map.put(NAME, new CodeTaglet());
+        map.remove(NAME);
+        map.put(NAME, new CodeTaglet());
     }
 
     public String getName() {
-            return NAME;
+        return NAME;
     }
 
     /**

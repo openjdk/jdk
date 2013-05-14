@@ -80,11 +80,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Class TypeParameters&lt;E&gt;</h2>"},
             //Check class type parameters section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dt><span class=\"strong\">Type Parameters:</span></dt><dd><code>E</code> - " +
+                "<dt><span class=\"strong\">Type Parameters:</span></dt>" + NL + "<dd><code>E</code> - " +
                 "the type parameter for this class."},
             //Type parameters in @see/@link
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dl><dt><span class=\"strong\">See Also:</span></dt><dd>" +
+                "<dl><dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
                 "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
                 "<code>TypeParameters</code></a></dd></dl>"},
             //Method that uses class type parameter.
@@ -93,8 +93,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     "parameter in TypeParameters\">E</a>&nbsp;param)"},
             //Method type parameter section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<span class=\"strong\">Type Parameters:</span></dt><dd><code>T</code> - This is the first " +
-                    "type parameter.</dd><dd><code>V</code> - This is the second type " +
+                "<span class=\"strong\">Type Parameters:</span></dt>" + NL + "<dd><code>T</code> - This is the first " +
+                    "type parameter.</dd>" + NL + "<dd><code>V</code> - This is the second type " +
                     "parameter."},
             //Signature of method with type parameters
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",

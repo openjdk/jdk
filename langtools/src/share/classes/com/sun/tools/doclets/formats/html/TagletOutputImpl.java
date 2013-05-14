@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
+import com.sun.tools.doclets.formats.html.markup.RawHtml;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
@@ -37,45 +40,54 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  *
  * @since 1.5
  * @author Jamie Ho
+ * @author Jonathan Gibbons (rewrite)
  */
 
 public class TagletOutputImpl implements TagletOutput {
 
-    private StringBuilder output;
+    private ContentBuilder content;
+
+    public TagletOutputImpl() {
+        content = new ContentBuilder();
+    }
 
     public TagletOutputImpl(String o) {
         setOutput(o);
+    }
+
+    public TagletOutputImpl(Content c) {
+        setOutput(c);
     }
 
     /**
      * {@inheritDoc}
      */
     public void setOutput (Object o) {
-        output = new StringBuilder(o == null ? "" : (String) o);
+        content = new ContentBuilder();
+        if (o != null) {
+            if (o instanceof String)
+                content.addContent(new RawHtml((String) o));
+            else if (o instanceof Content)
+                content.addContent((Content) o);
+            else if (o instanceof TagletOutputImpl)
+                content.addContent(((TagletOutputImpl) o).content);
+            else
+                throw new IllegalArgumentException(o.getClass().getName());
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void appendOutput(TagletOutput o) {
-        output.append(o.toString());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasInheritDocTag() {
-        return output.indexOf(InheritDocTaglet.INHERIT_DOC_INLINE_TAG) != -1;
+        if (o instanceof TagletOutputImpl)
+            content.addContent(((TagletOutputImpl) o).content);
+        else
+            throw new IllegalArgumentException(o.getClass().getName());
     }
 
     public String toString() {
-        return output.toString();
+        return content.toString();
     }
 
-    /**
-     * Check whether the taglet output is empty.
-     */
-    public boolean isEmpty() {
-        return (toString().trim().isEmpty());
-    }
 }

@@ -38,7 +38,7 @@ public class TestJavaFX extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<dt><span class=\"strong\">See Also:</span></dt><dd><a href=\"C.html#getRate()\"><code>getRate()</code></a>, " + NL +
+                "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"C.html#getRate()\"><code>getRate()</code></a>, " + NL +
                 "<a href=\"C.html#setRate(double)\"><code>setRate(double)</code></a></dd>"},
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>" + NL +

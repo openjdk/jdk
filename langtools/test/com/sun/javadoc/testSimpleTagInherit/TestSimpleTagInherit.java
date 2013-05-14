@@ -47,10 +47,10 @@ public class TestSimpleTagInherit extends JavadocTester {
     private static final String[][] TEST = {
         { BUG_ID + FS + "p" + FS + "TestClass.html",
           "<dt><span class=\"strong\"><em>Custom:</em></span></dt>" + NL +
-          "  <dd>doc for BaseClass class</dd>" },
+          "<dd>doc for BaseClass class</dd>" },
         { BUG_ID + FS + "p" + FS + "TestClass.html",
           "<dt><span class=\"strong\"><em>Custom:</em></span></dt>" + NL +
-          "  <dd>doc for BaseClass method</dd>" }
+          "<dd>doc for BaseClass method</dd>" }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 
