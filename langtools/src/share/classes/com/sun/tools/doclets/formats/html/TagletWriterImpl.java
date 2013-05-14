@@ -180,8 +180,7 @@ public class TagletWriterImpl extends TagletWriter {
                     ((ClassWriterImpl) htmlWriter).getClassDoc().qualifiedName() + "." + ((FieldDoc) holder).name();
             DocLink link = constantsPath.fragment(whichConstant);
             result += htmlWriter.getHyperLinkString(link,
-                    configuration.getText("doclet.Constants_Summary"),
-                    false);
+                    configuration.getText("doclet.Constants_Summary"));
         }
         if (holder.isClass() && ((ClassDoc)holder).isSerializable()) {
             //Automatically add link to serialized form page for serializable classes.
@@ -191,7 +190,7 @@ public class TagletWriterImpl extends TagletWriter {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(((ClassDoc)holder).qualifiedName());
                 result += htmlWriter.getHyperLinkString(link,
-                        configuration.getText("doclet.Serialized_Form"), false);
+                        configuration.getText("doclet.Serialized_Form"));
             }
         }
         return result.equals("") ? null : new TagletOutputImpl(result + "</dd>");

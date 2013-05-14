@@ -30,6 +30,7 @@ import java.util.List;
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
 import com.sun.tools.doclets.formats.html.markup.RawHtml;
+import com.sun.tools.doclets.formats.html.markup.StringContent;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.links.*;
@@ -65,7 +66,7 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     protected Content getClassLink(LinkInfo linkInfo) {
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
-        boolean noLabel = linkInfo.label == null || linkInfo.label.length() == 0;
+        boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
         ClassDoc classDoc = classLinkInfo.classDoc;
         //Create a tool tip if we are linking to a class or interface.  Don't
         //create one if we are linking to a member.
@@ -75,9 +76,8 @@ public class LinkFactoryImpl extends LinkFactory {
                     classLinkInfo.type != null &&
                     !classDoc.qualifiedTypeName().equals(classLinkInfo.type.qualifiedTypeName())) :
             "";
-        StringBuilder label = new StringBuilder(
-            classLinkInfo.getClassLinkLabel(m_writer.configuration));
-        classLinkInfo.displayLength += label.length();
+        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration);
+        classLinkInfo.displayLength += label.charCount();
         Configuration configuration = m_writer.configuration;
         Content link = new ContentBuilder();
         if (classDoc.isIncluded()) {
@@ -85,11 +85,11 @@ public class LinkFactoryImpl extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(DocPath.forName(classDoc)).equals(m_writer.filename)) {
-                        link.addContent(new RawHtml(m_writer.getHyperLinkString(
+                        link.addContent(m_writer.getHyperLink(
                                 filename.fragment(classLinkInfo.where),
-                            label.toString(),
+                            label,
                             classLinkInfo.isStrong, classLinkInfo.styleName,
-                            title, classLinkInfo.target)));
+                            title, classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             link.addContent(getTypeParameterLinks(linkInfo));
                         }
@@ -97,12 +97,12 @@ public class LinkFactoryImpl extends LinkFactory {
                 }
             }
         } else {
-            String crossLink = m_writer.getCrossClassLink(
+            Content crossLink = m_writer.getCrossClassLink(
                 classDoc.qualifiedName(), classLinkInfo.where,
-                label.toString(), classLinkInfo.isStrong, classLinkInfo.styleName,
+                label, classLinkInfo.isStrong, classLinkInfo.styleName,
                 true);
             if (crossLink != null) {
-                link.addContent(new RawHtml(crossLink));
+                link.addContent(crossLink);
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                     link.addContent(getTypeParameterLinks(linkInfo));
                 }
@@ -110,7 +110,7 @@ public class LinkFactoryImpl extends LinkFactory {
             }
         }
         // Can't link so just write label.
-        link.addContent(new RawHtml(label.toString()));
+        link.addContent(label.toString());
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.addContent(getTypeParameterLinks(linkInfo));
         }

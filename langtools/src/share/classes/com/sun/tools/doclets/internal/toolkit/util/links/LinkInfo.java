@@ -27,6 +27,7 @@ package com.sun.tools.doclets.internal.toolkit.util.links;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * Encapsulates information about a link.
@@ -77,7 +78,7 @@ public abstract class LinkInfo {
     /**
      * The label for the link.
      */
-    public String label;
+    public Content label;
 
     /**
      * True if the link should be strong.
@@ -121,6 +122,13 @@ public abstract class LinkInfo {
     public int displayLength = 0;
 
     /**
+     * Return an empty instance of a content object.
+     *
+     * @return an empty instance of a content object.
+     */
+    protected abstract Content newContent();
+
+    /**
      * Return true if this link is linkable and false if we can't link to the
      * desired place.
      *
@@ -135,13 +143,17 @@ public abstract class LinkInfo {
      * @param configuration the current configuration of the doclet.
      * @return the label for this class link.
      */
-    public String getClassLinkLabel(Configuration configuration) {
-        if (label != null && label.length() > 0) {
+    public Content getClassLinkLabel(Configuration configuration) {
+        if (label != null && !label.isEmpty()) {
             return label;
         } else if (isLinkable()) {
-            return classDoc.name();
+            Content label = newContent();
+            label.addContent(classDoc.name());
+            return label;
         } else {
-            return configuration.getClassName(classDoc);
+            Content label = newContent();
+            label.addContent(configuration.getClassName(classDoc));
+            return label;
         }
     }
 }
