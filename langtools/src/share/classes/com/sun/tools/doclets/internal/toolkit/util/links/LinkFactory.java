@@ -60,7 +60,6 @@ public abstract class LinkFactory {
             Content link = newContent();
             if (type.isPrimitive()) {
                 //Just a primitive.
-                linkInfo.displayLength += type.typeName().length();
                 link.addContent(type.typeName());
             } else if (type.asAnnotatedType() != null && type.dimension().length() == 0) {
                 link.addContent(getTypeAnnotationLinks(linkInfo));
@@ -70,19 +69,16 @@ public abstract class LinkFactory {
             } else if (type.asWildcardType() != null) {
                 //Wildcard type.
                 linkInfo.isTypeBound = true;
-                linkInfo.displayLength += 1;
                 link.addContent("?");
                 WildcardType wildcardType = type.asWildcardType();
                 Type[] extendsBounds = wildcardType.extendsBounds();
                 for (int i = 0; i < extendsBounds.length; i++) {
-                    linkInfo.displayLength += i > 0 ? 2 : 9;
                     link.addContent(i > 0 ? ", " : " extends ");
                     setBoundsLinkInfo(linkInfo, extendsBounds[i]);
                     link.addContent(getLink(linkInfo));
                 }
                 Type[] superBounds = wildcardType.superBounds();
                 for (int i = 0; i < superBounds.length; i++) {
-                    linkInfo.displayLength += i > 0 ? 2 : 7;
                     link.addContent(i > 0 ? ", " : " super ");
                     setBoundsLinkInfo(linkInfo, superBounds[i]);
                     link.addContent(getLink(linkInfo));
@@ -101,7 +97,6 @@ public abstract class LinkFactory {
                     link.addContent(getClassLink(linkInfo));
                 } else {
                     //No need to link method type parameters.
-                    linkInfo.displayLength += type.typeName().length();
                     link.addContent(type.typeName());
                 }
 
@@ -109,7 +104,6 @@ public abstract class LinkFactory {
                 if (! linkInfo.excludeTypeBounds) {
                     linkInfo.excludeTypeBounds = true;
                     for (int i = 0; i < bounds.length; i++) {
-                        linkInfo.displayLength += i > 0 ? 2 : 9;
                         link.addContent(i > 0 ? " & " : " extends ");
                         setBoundsLinkInfo(linkInfo, bounds[i]);
                         link.addContent(getLink(linkInfo));
@@ -121,7 +115,6 @@ public abstract class LinkFactory {
                         linkInfo.excludeTypeBoundsLinks) {
                     //Since we are excluding type parameter links, we should not
                     //be linking to the type bound.
-                    linkInfo.displayLength += type.typeName().length();
                     link.addContent(type.typeName());
                     link.addContent(getTypeParameterLinks(linkInfo));
                     return link;
@@ -139,14 +132,11 @@ public abstract class LinkFactory {
                 if (type.dimension().length() > 2) {
                     //Javadoc returns var args as array.
                     //Strip out the first [] from the var arg.
-                    linkInfo.displayLength += type.dimension().length()-2;
                     link.addContent(type.dimension().substring(2));
                 }
-                linkInfo.displayLength += 3;
                 link.addContent("...");
             } else {
                 while (type != null && type.dimension().length() > 0) {
-                    linkInfo.displayLength += type.dimension().length();
                     if (type.asAnnotatedType() != null) {
                         linkInfo.type = type;
                         link.addContent(" ");
@@ -241,16 +231,13 @@ public abstract class LinkFactory {
              (linkInfo.includeTypeAsSepLink && ! isClassLabel)
               )
             && vars.length > 0) {
-            linkInfo.displayLength += 1;
             links.addContent("<");
             for (int i = 0; i < vars.length; i++) {
                 if (i > 0) {
-                    linkInfo.displayLength += 1;
                     links.addContent(",");
                 }
                 links.addContent(getTypeParameterLink(linkInfo, vars[i]));
             }
-            linkInfo.displayLength += 1;
             links.addContent(">");
         }
         return links;
@@ -263,13 +250,11 @@ public abstract class LinkFactory {
         AnnotationDesc[] annotations = linkInfo.type.asAnnotatedType().annotations();
         for (int i = 0; i < annotations.length; i++) {
             if (i > 0) {
-                linkInfo.displayLength += 1;
                 links.addContent(" ");
             }
             links.addContent(getTypeAnnotationLink(linkInfo, annotations[i]));
         }
 
-        linkInfo.displayLength += 1;
         links.addContent(" ");
         return links;
     }

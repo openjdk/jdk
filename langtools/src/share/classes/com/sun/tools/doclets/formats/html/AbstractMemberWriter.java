@@ -193,14 +193,13 @@ public abstract class AbstractMemberWriter {
     protected abstract void addNavDetailLink(boolean link, Content liNav);
 
     /**
-     * Add the member name to the content tree and modifies the display length.
+     * Add the member name to the content tree.
      *
      * @param name the member name to be added to the content tree.
      * @param htmltree the content tree to which the name will be added.
      */
     protected void addName(String name, Content htmltree) {
         htmltree.addContent(name);
-        writer.displayLength += name.length();
     }
 
     /**
@@ -259,7 +258,7 @@ public abstract class AbstractMemberWriter {
             return "";
         }
         StringBuilder sb = new StringBuilder(len);
-        for(int i = 0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             sb.append(' ');
     }
         return sb.toString();
@@ -286,11 +285,14 @@ public abstract class AbstractMemberWriter {
         } else {
             if (member instanceof ExecutableMemberDoc &&
                     ((ExecutableMemberDoc) member).typeParameters().length > 0) {
+                Content typeParameters = ((AbstractExecutableMemberWriter) this).getTypeParameters(
+                        (ExecutableMemberDoc) member);
+                    code.addContent(typeParameters);
                 //Code to avoid ugly wrapping in member summary table.
-                int displayLength = ((AbstractExecutableMemberWriter) this).addTypeParameters(
-                        (ExecutableMemberDoc) member, code);
-                if (displayLength > 10) {
+                if (typeParameters.charCount() > 10) {
                     code.addContent(new HtmlTree(HtmlTag.BR));
+                } else {
+                    code.addContent(writer.getSpace());
                 }
                 code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,

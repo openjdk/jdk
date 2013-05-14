@@ -91,7 +91,7 @@ public abstract class LinkInfo {
     public boolean includeTypeInClassLinkLabel = true;
 
     /**
-     * True if we should include the type as seperate link.  False otherwise.
+     * True if we should include the type as separate link.  False otherwise.
      */
     public boolean includeTypeAsSepLink = false;
 
@@ -115,11 +115,6 @@ public abstract class LinkInfo {
      * there are cases where we don't want this (e.g. heading of class page).
      */
     public boolean linkToSelf = true;
-
-    /**
-     * The display length for the link.
-     */
-    public int displayLength = 0;
 
     /**
      * Return an empty instance of a content object.

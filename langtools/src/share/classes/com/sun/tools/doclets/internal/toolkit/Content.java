@@ -96,8 +96,13 @@ public abstract class Content {
         return !isEmpty();
     }
 
+    /**
+     * Return the number of characters of plain text content in this object
+     * (optional operation.)
+     * @return the number of characters of plain text content in this
+     */
     public int charCount() {
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
     /**
