@@ -1771,7 +1771,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return result.toString();
     }
 
-    private static boolean isHtmlTagLetterOrDigit(char ch) {
+    private static final boolean isHtmlTagLetterOrDigit(char ch) {
         return ('a' <= ch && ch <= 'z') ||
                 ('A' <= ch && ch <= 'Z') ||
                 ('1' <= ch && ch <= '6');
