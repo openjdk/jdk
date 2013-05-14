@@ -991,53 +991,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param pkg the package to link to.
      * @param label the label for the link.
-     * @param isStrong true if the label should be strong.
-     * @return the link to the given package.
-     */
-    public String getPackageLinkString(PackageDoc pkg, String label,
-                                 boolean isStrong) {
-        return getPackageLinkString(pkg, label, isStrong, "");
-    }
-
-    /**
-     * Return the link to the given package.
-     *
-     * @param pkg the package to link to.
-     * @param label the label for the link.
-     * @param isStrong true if the label should be strong.
-     * @param style  the font of the package link label.
-     * @return the link to the given package.
-     */
-    public String getPackageLinkString(PackageDoc pkg, String label, boolean isStrong,
-            String style) {
-        boolean included = pkg != null && pkg.isIncluded();
-        if (! included) {
-            PackageDoc[] packages = configuration.packages;
-            for (int i = 0; i < packages.length; i++) {
-                if (packages[i].equals(pkg)) {
-                    included = true;
-                    break;
-                }
-            }
-        }
-        if (included || pkg == null) {
-            return getHyperLinkString(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                                label, isStrong, style);
-        } else {
-            DocLink crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
-            if (crossPkgLink != null) {
-                return getHyperLinkString(crossPkgLink, label, isStrong, style);
-            } else {
-                return label;
-            }
-        }
-    }
-
-    /**
-     * Return the link to the given package.
-     *
-     * @param pkg the package to link to.
-     * @param label the label for the link.
      * @return a content tree for the package link.
      */
     public Content getPackageLink(PackageDoc pkg, String label) {
@@ -1302,6 +1255,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             String label, boolean strong) {
         return getDocLink(context, classDoc, doc, label, strong, false);
     }
+    public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
+            Content label, boolean strong) {
+        return getDocLink(context, classDoc, doc, label, strong, false);
+    }
 
    /**
      * Return the link for the given member.
@@ -1318,7 +1275,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
             String label, boolean strong, boolean isProperty) {
-        return getDocLink(context, classDoc, doc, new RawHtml(label), strong, isProperty);
+        return getDocLink(context, classDoc, doc, new StringContent(check(label)), strong, isProperty);
+    }
+
+    String check(String s) {
+        if (s.matches(".*[&<>].*"))throw new IllegalArgumentException(s);
+        return s;
     }
 
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
@@ -1487,7 +1449,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             text = plainOrCode(plain, new StringContent(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                refMem, (label.isEmpty() ? text: label).toString(), false);
+                refMem, (label.isEmpty() ? text: label), false);
         }
     }
 

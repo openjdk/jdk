@@ -154,7 +154,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
                 getTableCaption(configuration.getText(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLinkString(pkgdoc, Util.escapeHtmlChars(Util.getPackageName(pkgdoc)), false))));
+                getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)).toString())));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
@@ -199,8 +199,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
                     getTableCaption(configuration.getText(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
-                    getPackageLinkString(pkgdoc, Util.escapeHtmlChars(Util.getPackageName(pkgdoc)), false),
-                    getPackageLinkString(usingPackage, Util.escapeHtmlChars(Util.getPackageName(usingPackage)), false))));
+                    getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)).toString(),
+                    getPackageLink(usingPackage, Util.getPackageName(usingPackage)).toString())));
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =
