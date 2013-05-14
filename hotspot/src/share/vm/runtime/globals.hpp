@@ -1159,9 +1159,6 @@ class CommandLineFlags {
   product(bool, CompactFields, true,                                        \
           "Allocate nonstatic fields in gaps between previous fields")      \
                                                                             \
-  notproduct(bool, PrintCompactFieldsSavings, false,                        \
-          "Print how many words were saved with CompactFields")             \
-                                                                            \
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
                                                                             \

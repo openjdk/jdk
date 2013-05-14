@@ -3114,9 +3114,6 @@ void ClassFileParser::layout_fields(Handle class_loader,
 
   // Field size and offset computation
   int nonstatic_field_size = _super_klass() == NULL ? 0 : _super_klass()->nonstatic_field_size();
-#ifndef PRODUCT
-  int orig_nonstatic_field_size = 0;
-#endif
   int next_static_oop_offset;
   int next_static_double_offset;
   int next_static_word_offset;
@@ -3201,25 +3198,6 @@ void ClassFileParser::layout_fields(Handle class_loader,
 
   first_nonstatic_oop_offset = 0; // will be set for first oop field
 
-#ifndef PRODUCT
-  if( PrintCompactFieldsSavings ) {
-    next_nonstatic_double_offset = next_nonstatic_field_offset +
-                                   (nonstatic_oop_count * heapOopSize);
-    if ( nonstatic_double_count > 0 ) {
-      next_nonstatic_double_offset = align_size_up(next_nonstatic_double_offset, BytesPerLong);
-    }
-    next_nonstatic_word_offset  = next_nonstatic_double_offset +
-                                  (nonstatic_double_count * BytesPerLong);
-    next_nonstatic_short_offset = next_nonstatic_word_offset +
-                                  (nonstatic_word_count * BytesPerInt);
-    next_nonstatic_byte_offset  = next_nonstatic_short_offset +
-                                  (nonstatic_short_count * BytesPerShort);
-    next_nonstatic_type_offset  = align_size_up((next_nonstatic_byte_offset +
-                                  nonstatic_byte_count ), heapOopSize );
-    orig_nonstatic_field_size   = nonstatic_field_size +
-    ((next_nonstatic_type_offset - first_nonstatic_field_offset)/heapOopSize);
-  }
-#endif
   bool compact_fields   = CompactFields;
   int  allocation_style = FieldsAllocationStyle;
   if( allocation_style < 0 || allocation_style > 2 ) { // Out of range?
@@ -3593,21 +3571,6 @@ void ClassFileParser::layout_fields(Handle class_loader,
                           first_nonstatic_oop_offset);
 
 #ifndef PRODUCT
-  if( PrintCompactFieldsSavings ) {
-    ResourceMark rm;
-    if( nonstatic_field_size < orig_nonstatic_field_size ) {
-      tty->print("[Saved %d of %d bytes in %s]\n",
-               (orig_nonstatic_field_size - nonstatic_field_size)*heapOopSize,
-               orig_nonstatic_field_size*heapOopSize,
-               _class_name);
-    } else if( nonstatic_field_size > orig_nonstatic_field_size ) {
-      tty->print("[Wasted %d over %d bytes in %s]\n",
-               (nonstatic_field_size - orig_nonstatic_field_size)*heapOopSize,
-               orig_nonstatic_field_size*heapOopSize,
-               _class_name);
-    }
-  }
-
   if (PrintFieldLayout) {
     print_field_layout(_class_name,
           _fields,
