@@ -144,6 +144,9 @@ JVM    = jvm
 ifeq ($(OS_VENDOR), Darwin)
   LIBJVM   = lib$(JVM).dylib
   CFLAGS  += -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE
+  ifeq (${VERSION}, $(filter ${VERSION}, debug fastdebug))
+    CFLAGS += -DALLOW_OPERATOR_NEW_USAGE
+  endif
 else
   LIBJVM   = lib$(JVM).so
 endif
