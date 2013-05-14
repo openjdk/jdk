@@ -59,6 +59,10 @@ public class TagletOutputImpl implements TagletOutput {
         setOutput(c);
     }
 
+    Content getContent() {
+        return content;
+    }
+
     /**
      * {@inheritDoc}
      */
