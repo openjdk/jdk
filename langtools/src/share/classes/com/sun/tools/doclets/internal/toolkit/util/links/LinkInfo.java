@@ -121,21 +121,6 @@ public abstract class LinkInfo {
     public int displayLength = 0;
 
     /**
-     * Return the id indicating where the link appears in the documentation.
-     * This is used for special processing of different types of links.
-     *
-     * @return the id indicating where the link appears in the documentation.
-     */
-    public abstract int getContext();
-
-    /**
-     * Set the context.
-     *
-     * @param c the context id to set.
-     */
-    public abstract void setContext(int c);
-
-    /**
      * Return true if this link is linkable and false if we can't link to the
      * desired place.
      *

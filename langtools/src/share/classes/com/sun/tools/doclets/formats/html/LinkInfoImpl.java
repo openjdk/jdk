@@ -38,177 +38,181 @@ import com.sun.tools.doclets.internal.toolkit.util.links.*;
  */
 public class LinkInfoImpl extends LinkInfo {
 
-    /**
-     * Indicate that the link appears in a class list.
-     */
-    public static final int ALL_CLASSES_FRAME = 1;
+    public enum Kind {
+        DEFAULT,
 
-    /**
-     * Indicate that the link appears in a class documentation.
-     */
-    public static final int CONTEXT_CLASS = 2;
+        /**
+         * Indicate that the link appears in a class list.
+         */
+        ALL_CLASSES_FRAME,
 
-    /**
-     * Indicate that the link appears in member documentation.
-     */
-    public static final int CONTEXT_MEMBER = 3;
+        /**
+         * Indicate that the link appears in a class documentation.
+         */
+        CLASS,
 
-    /**
-     * Indicate that the link appears in class use documentation.
-     */
-    public static final int CONTEXT_CLASS_USE = 4;
+        /**
+         * Indicate that the link appears in member documentation.
+         */
+        MEMBER,
 
-    /**
-     * Indicate that the link appears in index documentation.
-     */
-    public static final int CONTEXT_INDEX = 5;
+        /**
+         * Indicate that the link appears in class use documentation.
+         */
+        CLASS_USE,
 
-    /**
-     * Indicate that the link appears in constant value summary.
-     */
-    public static final int CONTEXT_CONSTANT_SUMMARY = 6;
+        /**
+         * Indicate that the link appears in index documentation.
+         */
+        INDEX,
 
-    /**
-     * Indicate that the link appears in serialized form documentation.
-     */
-    public static final int CONTEXT_SERIALIZED_FORM = 7;
+        /**
+         * Indicate that the link appears in constant value summary.
+         */
+        CONSTANT_SUMMARY,
 
-    /**
-     * Indicate that the link appears in serial member documentation.
-     */
-    public static final int CONTEXT_SERIAL_MEMBER = 8;
+        /**
+         * Indicate that the link appears in serialized form documentation.
+         */
+        SERIALIZED_FORM,
 
-    /**
-     * Indicate that the link appears in package documentation.
-     */
-    public static final int CONTEXT_PACKAGE = 9;
+        /**
+         * Indicate that the link appears in serial member documentation.
+         */
+        SERIAL_MEMBER,
 
-    /**
-     * Indicate that the link appears in see tag documentation.
-     */
-    public static final int CONTEXT_SEE_TAG = 10;
+        /**
+         * Indicate that the link appears in package documentation.
+         */
+        PACKAGE,
 
-    /**
-     * Indicate that the link appears in value tag documentation.
-     */
-    public static final int CONTEXT_VALUE_TAG = 11;
+        /**
+         * Indicate that the link appears in see tag documentation.
+         */
+        SEE_TAG,
 
-    /**
-     * Indicate that the link appears in tree documentation.
-     */
-    public static final int CONTEXT_TREE = 12;
+        /**
+         * Indicate that the link appears in value tag documentation.
+         */
+        VALUE_TAG,
 
-    /**
-     * Indicate that the link appears in a class list.
-     */
-    public static final int PACKAGE_FRAME = 13;
+        /**
+         * Indicate that the link appears in tree documentation.
+         */
+        TREE,
 
-    /**
-     * The header in the class documentation.
-     */
-    public static final int CONTEXT_CLASS_HEADER = 14;
+        /**
+         * Indicate that the link appears in a class list.
+         */
+        PACKAGE_FRAME,
 
-    /**
-     * The signature in the class documentation.
-     */
-    public static final int CONTEXT_CLASS_SIGNATURE = 15;
+        /**
+         * The header in the class documentation.
+         */
+        CLASS_HEADER,
 
-    /**
-     * The return type of a method.
-     */
-    public static final int CONTEXT_RETURN_TYPE = 16;
+        /**
+         * The signature in the class documentation.
+         */
+        CLASS_SIGNATURE,
 
-    /**
-     * The return type of a method in a member summary.
-     */
-    public static final int CONTEXT_SUMMARY_RETURN_TYPE = 17;
+        /**
+         * The return type of a method.
+         */
+        RETURN_TYPE,
 
-    /**
-     * The type of a method/constructor parameter.
-     */
-    public static final int CONTEXT_EXECUTABLE_MEMBER_PARAM = 18;
+        /**
+         * The return type of a method in a member summary.
+         */
+        SUMMARY_RETURN_TYPE,
 
-    /**
-     * Super interface links.
-     */
-    public static final int CONTEXT_SUPER_INTERFACES = 19;
+        /**
+         * The type of a method/constructor parameter.
+         */
+        EXECUTABLE_MEMBER_PARAM,
 
-    /**
-     * Implemented interface links.
-     */
-    public static final int CONTEXT_IMPLEMENTED_INTERFACES = 20;
+        /**
+         * Super interface links.
+         */
+        SUPER_INTERFACES,
 
-    /**
-     * Implemented class links.
-     */
-    public static final int CONTEXT_IMPLEMENTED_CLASSES = 21;
+        /**
+         * Implemented interface links.
+         */
+        IMPLEMENTED_INTERFACES,
 
-    /**
-     * Subinterface links.
-     */
-    public static final int CONTEXT_SUBINTERFACES = 22;
+        /**
+         * Implemented class links.
+         */
+        IMPLEMENTED_CLASSES,
 
-    /**
-     * Subclasses links.
-     */
-    public static final int CONTEXT_SUBCLASSES = 23;
+        /**
+         * Subinterface links.
+         */
+        SUBINTERFACES,
 
-    /**
-     * The signature in the class documentation (implements/extends portion).
-     */
-    public static final int CONTEXT_CLASS_SIGNATURE_PARENT_NAME = 24;
+        /**
+         * Subclasses links.
+         */
+        SUBCLASSES,
 
-    /**
-     * The header for method documentation copied from parent.
-     */
-    public static final int CONTEXT_METHOD_DOC_COPY = 26;
+        /**
+         * The signature in the class documentation (implements/extends portion).
+         */
+        CLASS_SIGNATURE_PARENT_NAME,
 
-    /**
-     * Method "specified by" link.
-     */
-    public static final int CONTEXT_METHOD_SPECIFIED_BY = 27;
+        /**
+         * The header for method documentation copied from parent.
+         */
+        METHOD_DOC_COPY,
 
-    /**
-     * Method "overrides" link.
-     */
-    public static final int CONTEXT_METHOD_OVERRIDES = 28;
+        /**
+         * Method "specified by" link.
+         */
+        METHOD_SPECIFIED_BY,
 
-    /**
-     * Annotation link.
-     */
-    public static final int CONTEXT_ANNOTATION = 29;
+        /**
+         * Method "overrides" link.
+         */
+        METHOD_OVERRIDES,
 
-    /**
-     * The header for field documentation copied from parent.
-     */
-    public static final int CONTEXT_FIELD_DOC_COPY = 30;
+        /**
+         * Annotation link.
+         */
+        ANNOTATION,
 
-    /**
-     * The parent nodes int the class tree.
-     */
-    public static final int CONTEXT_CLASS_TREE_PARENT = 31;
+        /**
+         * The header for field documentation copied from parent.
+         */
+        FIELD_DOC_COPY,
 
-    /**
-     * The type parameters of a method or constructor.
-     */
-    public static final int CONTEXT_MEMBER_TYPE_PARAMS = 32;
+        /**
+         * The parent nodes in the class tree.
+         */
+        CLASS_TREE_PARENT,
 
-    /**
-     * Indicate that the link appears in class use documentation.
-     */
-    public static final int CONTEXT_CLASS_USE_HEADER = 33;
+        /**
+         * The type parameters of a method or constructor.
+         */
+        MEMBER_TYPE_PARAMS,
 
-    /**
-     * The header for property documentation copied from parent.
-     */
-    public static final int CONTEXT_PROPERTY_DOC_COPY = 34;
+        /**
+         * Indicate that the link appears in class use documentation.
+         */
+        CLASS_USE_HEADER,
+
+        /**
+         * The header for property documentation copied from parent.
+         */
+        PROPERTY_DOC_COPY
+    }
 
     public final ConfigurationImpl configuration;
 
     /**
-     * The integer indicating the location of the link.
+     * The location of the link.
      */
-    public int context;
+    public Kind context = Kind.DEFAULT;
 
     /**
      * The value of the marker #.
@@ -235,7 +239,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param target     the value of the target attribute.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ClassDoc classDoc, String label, String target) {
+            Kind context, ClassDoc classDoc, String label, String target) {
         this.configuration = configuration;
         this.classDoc = classDoc;
         this.label = label;
@@ -255,7 +259,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param styleName  String style of text defined in style sheet.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ClassDoc classDoc, String where, String label,
+            Kind context, ClassDoc classDoc, String where, String label,
             boolean isStrong, String styleName) {
         this.configuration = configuration;
         this.classDoc = classDoc;
@@ -277,7 +281,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isStrong       true if the link should be strong.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ClassDoc classDoc, String where, String label,
+            Kind context, ClassDoc classDoc, String where, String label,
             boolean isStrong) {
         this.configuration = configuration;
         this.classDoc = classDoc;
@@ -311,7 +315,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isStrong                true if the link should be strong.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ExecutableMemberDoc executableMemberDoc,
+            Kind context, ExecutableMemberDoc executableMemberDoc,
             boolean isStrong) {
         this.configuration = configuration;
         this.executableMemberDoc = executableMemberDoc;
@@ -328,7 +332,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isStrong       true if the link should be strong.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ClassDoc classDoc,  boolean isStrong) {
+            Kind context, ClassDoc classDoc,  boolean isStrong) {
         this.configuration = configuration;
         this.classDoc = classDoc;
         this.isStrong = isStrong;
@@ -343,7 +347,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param type       the class to link to.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, Type type) {
+            Kind context, Type type) {
         this.configuration = configuration;
         this.type = type;
         setContext(context);
@@ -358,7 +362,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isVarArg   true if this is a link to a var arg.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, Type type, boolean isVarArg) {
+            Kind context, Type type, boolean isVarArg) {
         this.configuration = configuration;
         this.type = type;
         this.isVarArg = isVarArg;
@@ -375,7 +379,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isStrong     true if the link should be strong.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, Type type, String label,
+            Kind context, Type type, String label,
             boolean isStrong) {
         this.configuration = configuration;
         this.type = type;
@@ -394,7 +398,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param isStrong       true if the link should be strong.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            int context, ClassDoc classDoc, String label,
+            Kind context, ClassDoc classDoc, String label,
             boolean isStrong) {
         this.configuration = configuration;
         this.classDoc = classDoc;
@@ -406,7 +410,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * {@inheritDoc}
      */
-    public int getContext() {
+    public Kind getContext() {
         return context;
     }
 
@@ -418,56 +422,56 @@ public class LinkInfoImpl extends LinkInfo {
      *
      * @param c the context id to set.
      */
-    public void setContext(int c) {
+    public final void setContext(Kind c) {
         //NOTE:  Put context specific link code here.
         switch (c) {
             case ALL_CLASSES_FRAME:
             case PACKAGE_FRAME:
-            case CONTEXT_IMPLEMENTED_CLASSES:
-            case CONTEXT_SUBCLASSES:
-            case CONTEXT_METHOD_DOC_COPY:
-            case CONTEXT_FIELD_DOC_COPY:
-            case CONTEXT_PROPERTY_DOC_COPY:
-            case CONTEXT_CLASS_USE_HEADER:
+            case IMPLEMENTED_CLASSES:
+            case SUBCLASSES:
+            case METHOD_DOC_COPY:
+            case FIELD_DOC_COPY:
+            case PROPERTY_DOC_COPY:
+            case CLASS_USE_HEADER:
                 includeTypeInClassLinkLabel = false;
                 break;
 
-            case CONTEXT_ANNOTATION:
+            case ANNOTATION:
                 excludeTypeParameterLinks = true;
                 excludeTypeBounds = true;
                 break;
 
-            case CONTEXT_IMPLEMENTED_INTERFACES:
-            case CONTEXT_SUPER_INTERFACES:
-            case CONTEXT_SUBINTERFACES:
-            case CONTEXT_CLASS_TREE_PARENT:
-            case CONTEXT_TREE:
-            case CONTEXT_CLASS_SIGNATURE_PARENT_NAME:
+            case IMPLEMENTED_INTERFACES:
+            case SUPER_INTERFACES:
+            case SUBINTERFACES:
+            case CLASS_TREE_PARENT:
+            case TREE:
+            case CLASS_SIGNATURE_PARENT_NAME:
                 excludeTypeParameterLinks = true;
                 excludeTypeBounds = true;
                 includeTypeInClassLinkLabel = false;
                 includeTypeAsSepLink = true;
                 break;
 
-            case CONTEXT_PACKAGE:
-            case CONTEXT_CLASS_USE:
-            case CONTEXT_CLASS_HEADER:
-            case CONTEXT_CLASS_SIGNATURE:
+            case PACKAGE:
+            case CLASS_USE:
+            case CLASS_HEADER:
+            case CLASS_SIGNATURE:
                 excludeTypeParameterLinks = true;
                 includeTypeAsSepLink = true;
                 includeTypeInClassLinkLabel = false;
                 break;
 
-            case CONTEXT_MEMBER_TYPE_PARAMS:
+            case MEMBER_TYPE_PARAMS:
                 includeTypeAsSepLink = true;
                 includeTypeInClassLinkLabel = false;
                 break;
 
-            case CONTEXT_RETURN_TYPE:
-            case CONTEXT_SUMMARY_RETURN_TYPE:
+            case RETURN_TYPE:
+            case SUMMARY_RETURN_TYPE:
                 excludeTypeBounds = true;
                 break;
-            case CONTEXT_EXECUTABLE_MEMBER_PARAM:
+            case EXECUTABLE_MEMBER_PARAM:
                 excludeTypeBounds = true;
                 break;
         }

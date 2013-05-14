@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public abstract class AbstractMemberWriter {
      */
     protected void addSummaryLink(ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        addSummaryLink(LinkInfoImpl.CONTEXT_MEMBER, cd, member, tdSummary);
+        addSummaryLink(LinkInfoImpl.Kind.MEMBER, cd, member, tdSummary);
     }
 
     /**
@@ -154,7 +154,7 @@ public abstract class AbstractMemberWriter {
      * @param member the member to be documented
      * @param tdSummary the content tree to which the summary link will be added
      */
-    protected abstract void addSummaryLink(int context,
+    protected abstract void addSummaryLink(LinkInfoImpl.Kind context,
             ClassDoc cd, ProgramElementDoc member, Content tdSummary);
 
     /**
@@ -294,11 +294,11 @@ public abstract class AbstractMemberWriter {
                 }
                 code.addContent(new RawHtml(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type))));
             } else {
                 code.addContent(new RawHtml(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type))));
             }
 
         }
@@ -483,7 +483,7 @@ public abstract class AbstractMemberWriter {
                     tdLast.addContent(name);
                 }
                 addSummaryLink(pgmdoc instanceof ClassDoc ?
-                    LinkInfoImpl.CONTEXT_CLASS_USE : LinkInfoImpl.CONTEXT_MEMBER,
+                    LinkInfoImpl.Kind.CLASS_USE : LinkInfoImpl.Kind.MEMBER,
                     cd, pgmdoc, tdLast);
                 writer.addSummaryLinkComment(this, pgmdoc, tdLast);
                 tr.addContent(tdLast);

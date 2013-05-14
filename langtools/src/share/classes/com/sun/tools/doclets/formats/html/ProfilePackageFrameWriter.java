@@ -174,7 +174,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                     printedHeader = true;
                 }
                 Content link = new RawHtml (getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.PACKAGE_FRAME, arr[i],
+                        LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i],
                         (arr[i].isInterface() ? italicsText(arr[i].name()) :
                             arr[i].name()),"classFrame")));
                 Content li = HtmlTree.LI(link);

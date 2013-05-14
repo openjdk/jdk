@@ -99,7 +99,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         writer.addAnnotationInfo(property, pre);
         addModifiers(property, pre);
         Content propertylink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.CONTEXT_MEMBER,
+                configuration, LinkInfoImpl.Kind.MEMBER,
                 property.returnType())));
         pre.addContent(propertylink);
         pre.addContent(" ");
@@ -129,7 +129,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 writer.addInlineComment(property, propertyDocTree);
             } else {
                 Content link = new RawHtml(
-                        writer.getDocLink(LinkInfoImpl.CONTEXT_PROPERTY_DOC_COPY,
+                        writer.getDocLink(LinkInfoImpl.Kind.PROPERTY_DOC_COPY,
                         holder, property,
                         holder.isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
@@ -236,7 +236,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
         Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+                LinkInfoImpl.Kind.MEMBER, cd, false));
         Content label = new StringContent(cd.isClass() ?
             configuration.getText("doclet.Properties_Inherited_From_Class") :
             configuration.getText("doclet.Properties_Inherited_From_Interface"));
@@ -250,7 +250,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+    protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
         Content strong = HtmlTree.STRONG(new RawHtml(
                 writer.getDocLink(context,
@@ -270,7 +270,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
         linksTree.addContent(new RawHtml(
-                writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc)member,
+                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, cd, (MemberDoc)member,
                 ((member.name().lastIndexOf("Property") != -1) && configuration.javafx)
                         ? member.name().substring(0, member.name().length() - "Property".length())
                         : member.name(),
@@ -289,7 +289,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected Content getDeprecatedLink(ProgramElementDoc member) {
-        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER,
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER,
                 (MemberDoc) member, ((MethodDoc)member).qualifiedName());
     }
 
