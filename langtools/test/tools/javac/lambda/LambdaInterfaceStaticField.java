@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +25,14 @@
 
 /*
  * @test
- * @bug 8009299
- * @ignore 8013875: Incorrect vtable index being set during methodHandle creation for static
- * @summary Javac crashes when compiling method reference to static interface method
- * @run main/othervm -Xverify:none MethodReference66
+ * @bug 8006140
+ * @summary Javac NPE compiling Lambda expression on initialization expression of static field in interface
+ * @compile LambdaInterfaceStaticField.java
  */
-public class MethodReference66 {
 
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
-
-    interface SAM {
-        void m(int i);
-    }
-
-    interface I {
-        static void f(int i) { assertTrue(i == 42); }
-    }
-    public static void main(String[] args) {
-        SAM s = I::f;
-        s.m(42);
-        assertTrue(assertionCount == 1);
-    }
+interface LambdaInterfaceStaticField {
+  interface I {
+     int m();
+  }
+  public static final I fld = () -> 5;
 }
