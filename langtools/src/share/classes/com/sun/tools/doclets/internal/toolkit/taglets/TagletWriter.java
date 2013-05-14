@@ -53,9 +53,17 @@ public abstract class TagletWriter {
     }
 
     /**
-     * @return an instance of the output object.
+     * @return an instance of an output object.
      */
     public abstract TagletOutput getOutputInstance();
+
+    /**
+     * Return the output for a {@code...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    protected abstract TagletOutput codeTagOutput(Tag tag);
 
     /**
      * Returns the output for the DocRoot inline tag.
@@ -70,6 +78,23 @@ public abstract class TagletWriter {
      * @return the output of the deprecated tag.
      */
     protected abstract TagletOutput deprecatedTagOutput(Doc doc);
+
+    /**
+     * Return the output for a {@expert...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    // TODO: remove this taglet
+    protected abstract TagletOutput expertTagOutput(Tag tag);
+
+    /**
+     * Return the output for a {@literal...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    protected abstract TagletOutput literalTagOutput(Tag tag);
 
     /**
      * Returns {@link MessageRetriever} for output purposes.
