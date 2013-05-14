@@ -26,7 +26,6 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import java.util.Map;
 
-import com.sun.javadoc.Doc;
 import com.sun.javadoc.Tag;
 
 

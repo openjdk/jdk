@@ -246,7 +246,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (doc instanceof MethodDoc) {
             addMethodInfo((MethodDoc) doc, dl);
         }
-        TagletOutputImpl output = new TagletOutputImpl("");
+        TagletOutput output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, doc,
             configuration.tagletManager.getCustomTags(doc),
                 getTagletWriterInstance(false), output);
@@ -266,7 +266,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return true if there are tags to be printed else return false.
      */
     protected boolean hasSerializationOverviewTags(FieldDoc field) {
-        TagletOutputImpl output = new TagletOutputImpl("");
+        TagletOutput output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
             configuration.tagletManager.getCustomTags(field),
                 getTagletWriterInstance(false), output);
