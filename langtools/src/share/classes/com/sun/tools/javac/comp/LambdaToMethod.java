@@ -1764,12 +1764,13 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 boolean inInterface = translatedSym.owner.isInterface();
                 boolean thisReferenced = !getSymbolMap(CAPTURED_THIS).isEmpty();
-                boolean needInstance = thisReferenced || inInterface;
 
-                // If instance access isn't needed, make it static
-                // Interface methods much be public default methods, otherwise make it private
-                translatedSym.flags_field = SYNTHETIC | (needInstance? 0 : STATIC) |
-                        (inInterface? PUBLIC | DEFAULT : PRIVATE);
+                // If instance access isn't needed, make it static.
+                // Interface instance methods must be default methods.
+                // Awaiting VM channges, default methods are public
+                translatedSym.flags_field = SYNTHETIC |
+                        ((inInterface && thisReferenced)? PUBLIC : PRIVATE) |
+                        (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 
                 //compute synthetic params
                 ListBuffer<JCVariableDecl> params = ListBuffer.lb();
