@@ -272,7 +272,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content bodyTree = getBody(true, getWindowTitle(title));
         addTop(bodyTree);
         addNavLinks(true, bodyTree);
-        Content headContent = getResource("doclet.ClassUse_Title", packageText, name);
+        ContentBuilder headContent = new ContentBuilder();
+        headContent.addContent(getResource("doclet.ClassUse_Title", packageText));
+        headContent.addContent(new HtmlTree(HtmlTag.BR));
+        headContent.addContent(name);
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);

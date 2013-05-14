@@ -40,7 +40,7 @@ public class ContentBuilder extends Content {
 
     @Override
     public void addContent(Content content) {
-        if (content.isEmpty())
+        if ((content instanceof ContentBuilder) && content.isEmpty())
             return;
         ensureMutableContents();
         if (content instanceof ContentBuilder) {
