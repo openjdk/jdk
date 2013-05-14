@@ -46,7 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Bhavesh Patel (Modified)
  */
 public class HtmlSerialFieldWriter extends FieldWriterImpl
-    implements SerializedFormWriter.SerialFieldWriter {
+        implements SerializedFormWriter.SerialFieldWriter {
     ProgramElementDoc[] members = null;
 
     private boolean printedOverallAnchor = false;
@@ -186,7 +186,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param contentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(FieldDoc field, Content contentTree) {
-        TagletOutputImpl output = new TagletOutputImpl("");
+        TagletOutput output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
                 configuration.tagletManager.getCustomTags(field),
                 writer.getTagletWriterInstance(false), output);

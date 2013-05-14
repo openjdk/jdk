@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param methodsContentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(MethodDoc member, Content methodsContentTree) {
-        TagletOutputImpl output = new TagletOutputImpl("");
+        TagletOutput output = new TagletOutputImpl();
         TagletManager tagletManager =
             configuration.tagletManager;
         TagletWriter.genTagOuput(tagletManager, member,

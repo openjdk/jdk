@@ -116,7 +116,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
      */
     private TagletOutput retrieveInheritedDocumentation(TagletWriter writer,
             ProgramElementDoc ped, Tag holderTag, boolean isFirstSentence) {
-        TagletOutput replacement = writer.getTagletOutputInstance();
+        TagletOutput replacement = writer.getOutputInstance();
 
         Configuration configuration = writer.configuration();
         Taglet inheritableTaglet = holderTag == null ?

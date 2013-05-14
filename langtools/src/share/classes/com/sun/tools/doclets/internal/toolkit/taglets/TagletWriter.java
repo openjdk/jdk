@@ -307,9 +307,4 @@ public abstract class TagletWriter {
      * @return an instance of the configuration used for this doclet.
      */
     public abstract Configuration configuration();
-
-    /**
-     * @return an instance of the taglet output object.
-     */
-    public abstract TagletOutput getTagletOutputInstance();
 }
