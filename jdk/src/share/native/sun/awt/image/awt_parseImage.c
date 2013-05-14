@@ -873,363 +873,204 @@ setHints(JNIEnv *env, BufImageS_t *imageP) {
     return 1;
 }
 
-/*
- * This routine will fill in a buffer of data for either 1 band or all
- * bands (if band == -1).
- */
 #define MAX_TO_GRAB (10240)
 
-int awt_getPixelByte(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned char *bufferP) {
-    int w = rasterP->width;
-    int h = rasterP->height;
-    int numBands = rasterP->numBands;
+typedef union {
+    void *pv;
+    unsigned char *pb;
+    unsigned short *ps;
+} PixelData_t;
+
+
+int awt_getPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
+    const int w = rasterP->width;
+    const int h = rasterP->height;
+    const int numBands = rasterP->numBands;
     int y;
     int i;
-    int maxLines = (h < MAX_TO_GRAB/w ? h : MAX_TO_GRAB/w);
+    int maxLines;
     jobject jsm;
-    int off;
+    int off = 0;
     jarray jdata = NULL;
     jobject jdatabuffer;
     int *dataP;
-    int maxBytes = w;
+    int maxSamples;
+    PixelData_t p;
+
+    if (bufferP == NULL) {
+        return -1;
+    }
+
+    if (rasterP->dataType != BYTE_DATA_TYPE &&
+        rasterP->dataType != SHORT_DATA_TYPE)
+    {
+        return -1;
+    }
+
+    p.pv = bufferP;
+
+    if (!SAFE_TO_MULT(w, numBands)) {
+        return -1;
+    }
+    maxSamples = w * numBands;
+
+    maxLines = maxSamples > MAX_TO_GRAB ? 1 : (MAX_TO_GRAB / maxSamples);
+    if (maxLines > h) {
+        maxLines = h;
+    }
+
+    if (!SAFE_TO_MULT(maxSamples, maxLines)) {
+        return -1;
+    }
+
+    maxSamples *= maxLines;
 
     jsm = (*env)->GetObjectField(env, rasterP->jraster, g_RasterSampleModelID);
     jdatabuffer = (*env)->GetObjectField(env, rasterP->jraster,
                                          g_RasterDataBufferID);
-    jdata = (*env)->NewIntArray(env, maxBytes*rasterP->numBands*maxLines);
+
+    jdata = (*env)->NewIntArray(env, maxSamples);
     if (JNU_IsNull(env, jdata)) {
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }
 
-    /* Here is the generic code */
-    if (band >= 0) {
-        int dOff;
-        if (band >= numBands) {
+    for (y = 0; y < h; y += maxLines) {
+        if (y + maxLines > h) {
+            maxLines = h - y;
+            maxSamples = w * numBands * maxLines;
+        }
+
+        (*env)->CallObjectMethod(env, jsm, g_SMGetPixelsMID,
+                                 0, y, w,
+                                 maxLines, jdata, jdatabuffer);
+
+        if ((*env)->ExceptionOccurred(env)) {
             (*env)->DeleteLocalRef(env, jdata);
-            JNU_ThrowInternalError(env, "Band out of range.");
             return -1;
         }
-        off = 0;
-        for (y=0; y < h; ) {
-            (*env)->CallObjectMethod(env, jsm, g_SMGetPixelsMID,
-                                     0, y, w,
-                                     maxLines, jdata, jdatabuffer);
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            dOff = band;
-            for (i=0; i < maxBytes; i++, dOff += numBands) {
-                bufferP[off++] = (unsigned char) dataP[dOff];
-            }
 
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            if (y+maxLines < h) {
-                y += maxLines;
-            }
-            else {
-                y++;
-                maxBytes = w;
-            }
-        }
-    }
-    else {
-        off = 0;
-        maxBytes *= numBands;
-        for (y=0; y < h; ) {
-            (*env)->CallObjectMethod(env, jsm, g_SMGetPixelsMID,
-                                     0, y, w,
-                                     maxLines, jdata, jdatabuffer);
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            for (i=0; i < maxBytes; i++) {
-                bufferP[off++] = (unsigned char) dataP[i];
-            }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            if (y+maxLines < h) {
-                y += maxLines;
-            }
-            else {
-                y++;
-                maxBytes = w*numBands;
-            }
-        }
-
-    }
-    (*env)->DeleteLocalRef(env, jdata);
-
-    return 0;
-}
-int awt_setPixelByte(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned char *bufferP) {
-    int w = rasterP->width;
-    int h = rasterP->height;
-    int numBands = rasterP->numBands;
-    int y;
-    int i;
-    int maxLines = (h < MAX_TO_GRAB/w ? h : MAX_TO_GRAB/w);
-    jobject jsm;
-    int off;
-    jarray jdata = NULL;
-    jobject jdatabuffer;
-    int *dataP;
-    int maxBytes = w;
-
-    jsm = (*env)->GetObjectField(env, rasterP->jraster, g_RasterSampleModelID);
-    jdatabuffer = (*env)->GetObjectField(env, rasterP->jraster,
-                                         g_RasterDataBufferID);
-    /* Here is the generic code */
-    jdata = (*env)->NewIntArray(env, maxBytes*rasterP->numBands*maxLines);
-    if (JNU_IsNull(env, jdata)) {
-        JNU_ThrowOutOfMemoryError(env, "Out of Memory");
-        return -1;
-    }
-    if (band >= 0) {
-        int dOff;
-        if (band >= numBands) {
+        dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
+                                                          NULL);
+        if (dataP == NULL) {
             (*env)->DeleteLocalRef(env, jdata);
-            JNU_ThrowInternalError(env, "Band out of range.");
             return -1;
         }
-        off = 0;
-        for (y=0; y < h; y+=maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
-            }
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            dOff = band;
-            for (i=0; i < maxBytes; i++, dOff += numBands) {
-                dataP[dOff] = bufferP[off++];
-            }
 
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            (*env)->CallVoidMethod(env, jsm, g_SMSetPixelsMID,
-                                   0, y, w,
-                                   maxLines, jdata, jdatabuffer);
-        }
-    }
-    else {
-        off = 0;
-        maxBytes *= numBands;
-        for (y=0; y < h; y+=maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
+        switch (rasterP->dataType) {
+        case BYTE_DATA_TYPE:
+            for (i = 0; i < maxSamples; i ++) {
+                p.pb[off++] = (unsigned char) dataP[i];
             }
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
+            break;
+        case SHORT_DATA_TYPE:
+            for (i = 0; i < maxSamples; i ++) {
+                p.ps[off++] = (unsigned short) dataP[i];
             }
-            for (i=0; i < maxBytes; i++) {
-                dataP[i] = bufferP[off++];
-            }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            (*env)->CallVoidMethod(env, jsm, g_SMSetPixelsMID,
-                                     0, y, w,
-                                     maxLines, jdata, jdatabuffer);
+            break;
         }
 
+        (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
+                                              JNI_ABORT);
     }
-
     (*env)->DeleteLocalRef(env, jdata);
 
-    return 0;
+    return 1;
 }
-int awt_getPixelShort(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned short *bufferP) {
-    int w = rasterP->width;
-    int h = rasterP->height;
-    int numBands = rasterP->numBands;
+
+int awt_setPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
+    const int w = rasterP->width;
+    const int h = rasterP->height;
+    const int numBands = rasterP->numBands;
+
     int y;
     int i;
-    int maxLines = (h < MAX_TO_GRAB/w ? h : MAX_TO_GRAB/w);
+    int maxLines;
     jobject jsm;
-    int off;
+    int off = 0;
     jarray jdata = NULL;
     jobject jdatabuffer;
     int *dataP;
-    int maxBytes = w*maxLines;
+    int maxSamples;
+    PixelData_t p;
+
+    if (bufferP == NULL) {
+        return -1;
+    }
+
+    if (rasterP->dataType != BYTE_DATA_TYPE &&
+        rasterP->dataType != SHORT_DATA_TYPE)
+    {
+        return -1;
+    }
+
+    p.pv = bufferP;
+
+    if (!SAFE_TO_MULT(w, numBands)) {
+        return -1;
+    }
+    maxSamples = w * numBands;
+
+    maxLines = maxSamples > MAX_TO_GRAB ? 1 : (MAX_TO_GRAB / maxSamples);
+    if (maxLines > h) {
+        maxLines = h;
+    }
+
+    if (!SAFE_TO_MULT(maxSamples, maxLines)) {
+        return -1;
+    }
+
+    maxSamples *= maxLines;
 
     jsm = (*env)->GetObjectField(env, rasterP->jraster, g_RasterSampleModelID);
     jdatabuffer = (*env)->GetObjectField(env, rasterP->jraster,
                                          g_RasterDataBufferID);
-    jdata = (*env)->NewIntArray(env, maxBytes*rasterP->numBands*maxLines);
+
+    jdata = (*env)->NewIntArray(env, maxSamples);
     if (JNU_IsNull(env, jdata)) {
         JNU_ThrowOutOfMemoryError(env, "Out of Memory");
         return -1;
     }
-    /* Here is the generic code */
-    if (band >= 0) {
-        int dOff;
-        if (band >= numBands) {
+
+    for (y = 0; y < h; y += maxLines) {
+        if (y + maxLines > h) {
+            maxLines = h - y;
+            maxSamples = w * numBands * maxLines;
+        }
+        dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
+                                                          NULL);
+        if (dataP == NULL) {
             (*env)->DeleteLocalRef(env, jdata);
-            JNU_ThrowInternalError(env, "Band out of range.");
             return -1;
         }
-        off = 0;
-        for (y=0; y < h; y += maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
-            }
-            (*env)->CallObjectMethod(env, jsm, g_SMGetPixelsMID,
-                                     0, y, w,
-                                     maxLines, jdata, jdatabuffer);
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
 
-            dOff = band;
-            for (i=0; i < maxBytes; i++, dOff += numBands) {
-                bufferP[off++] = (unsigned short) dataP[dOff];
+        switch (rasterP->dataType) {
+        case BYTE_DATA_TYPE:
+            for (i = 0; i < maxSamples; i ++) {
+                dataP[i] = p.pb[off++];
             }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-        }
-    }
-    else {
-        off = 0;
-        maxBytes *= numBands;
-        for (y=0; y < h; y+=maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
+            break;
+        case SHORT_DATA_TYPE:
+            for (i = 0; i < maxSamples; i ++) {
+                dataP[i] = p.ps[off++];
             }
-            (*env)->CallObjectMethod(env, jsm, g_SMGetPixelsMID,
-                                     0, y, w,
-                                     maxLines, jdata, jdatabuffer);
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            for (i=0; i < maxBytes; i++) {
-                bufferP[off++] = (unsigned short) dataP[i];
-            }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
+            break;
         }
 
+        (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
+                                              JNI_ABORT);
+
+        (*env)->CallVoidMethod(env, jsm, g_SMSetPixelsMID,
+                               0, y, w,
+                               maxLines, jdata, jdatabuffer);
+
+        if ((*env)->ExceptionOccurred(env)) {
+            (*env)->DeleteLocalRef(env, jdata);
+            return -1;
+        }
     }
 
     (*env)->DeleteLocalRef(env, jdata);
-    return 0;
-}
-int awt_setPixelShort(JNIEnv *env, int band, RasterS_t *rasterP,
-                      unsigned short *bufferP) {
-    int w = rasterP->width;
-    int h = rasterP->height;
-    int numBands = rasterP->numBands;
-    int y;
-    int i;
-    int maxLines = (h < MAX_TO_GRAB/w ? h : MAX_TO_GRAB/w);
-    jobject jsm;
-    int off;
-    jarray jdata = NULL;
-    jobject jdatabuffer;
-    int *dataP;
-    int maxBytes = w;
 
-    jsm = (*env)->GetObjectField(env, rasterP->jraster, g_RasterSampleModelID);
-    jdatabuffer = (*env)->GetObjectField(env, rasterP->jraster,
-                                         g_RasterDataBufferID);
-    if (band >= numBands) {
-        JNU_ThrowInternalError(env, "Band out of range.");
-        return -1;
-    }
-    /* Here is the generic code */
-    jdata = (*env)->NewIntArray(env, maxBytes*rasterP->numBands*maxLines);
-    if (JNU_IsNull(env, jdata)) {
-        JNU_ThrowOutOfMemoryError(env, "Out of Memory");
-        return -1;
-    }
-    if (band >= 0) {
-        int dOff;
-        off = 0;
-        for (y=0; y < h; y+=maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
-            }
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            dOff = band;
-            for (i=0; i < maxBytes; i++, dOff += numBands) {
-                dataP[dOff] = bufferP[off++];
-            }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            (*env)->CallVoidMethod(env, jsm, g_SMSetPixelsMID,
-                                   0, y, w,
-                                   maxLines, jdata, jdatabuffer);
-        }
-    }
-    else {
-        off = 0;
-        maxBytes *= numBands;
-        for (y=0; y < h; y+=maxLines) {
-            if (y+maxLines > h) {
-                maxBytes = w*numBands;
-                maxLines = h - y;
-            }
-            dataP = (int *) (*env)->GetPrimitiveArrayCritical(env, jdata,
-                                                              NULL);
-            if (dataP == NULL) {
-                (*env)->DeleteLocalRef(env, jdata);
-                return -1;
-            }
-            for (i=0; i < maxBytes; i++) {
-                dataP[i] = bufferP[off++];
-            }
-
-            (*env)->ReleasePrimitiveArrayCritical(env, jdata, dataP,
-                                                  JNI_ABORT);
-
-            (*env)->CallVoidMethod(env, jsm, g_SMSetPixelsMID,
-                                   0, y, w,
-                                   maxLines, jdata, jdatabuffer);
-        }
-
-    }
-
-    (*env)->DeleteLocalRef(env, jdata);
-    return 0;
+    return 1;
 }
