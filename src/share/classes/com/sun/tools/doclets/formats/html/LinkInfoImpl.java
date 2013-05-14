@@ -237,16 +237,13 @@ public class LinkInfoImpl extends LinkInfo {
      *
      * @param configuration the configuration data for the doclet
      * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param label      the label for the link.
-     * @param target     the value of the target attribute.
+     * @param context               the context of the link.
+     * @param executableMemberDoc   the member to link to.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, Content label, String target) {
+            Kind context, ExecutableMemberDoc executableMemberDoc) {
         this.configuration = configuration;
-        this.classDoc = classDoc;
-        this.label = label;
-        this.target = target;
+        this.executableMemberDoc = executableMemberDoc;
         setContext(context);
     }
 
@@ -263,117 +260,11 @@ public class LinkInfoImpl extends LinkInfo {
      * @param configuration the configuration data for the doclet
      * @param context    the context of the link.
      * @param classDoc   the class to link to.
-     * @param where      the value of the marker #.
-     * @param label      the label for the link.
-     * @param isStrong       true if the link should be strong.
-     * @param styleName  String style of text defined in style sheet.
      */
     public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, String where, Content label,
-            boolean isStrong, String styleName) {
+            Kind context, ClassDoc classDoc) {
         this.configuration = configuration;
         this.classDoc = classDoc;
-        this.where = where;
-        this.label = label;
-        this.isStrong = isStrong;
-        this.styleName = styleName;
-        setContext(context);
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param where      the value of the marker #.
-     * @param label      the plain-text label for the link.
-     * @param isStrong       true if the link should be strong.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, String where, String label,
-            boolean isStrong) {
-        this(configuration, context, classDoc, where, new StringContent(label),
-                isStrong, "");
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param where      the value of the marker #.
-     * @param label      the label for the link.
-     * @param isStrong       true if the link should be strong.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, String where, Content label,
-            boolean isStrong) {
-        this(configuration, context, classDoc, where, label,
-                isStrong, "");
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param classDoc   the class to link to.
-     * @param label      the label for the link.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            ClassDoc classDoc, Content label) {
-        this.configuration = configuration;
-        this.classDoc = classDoc;
-        this.label = label;
-        setContext(context);
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param classDoc   the class to link to.
-     * @param label      the label for the link.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            ClassDoc classDoc, String label) {
-        this.configuration = configuration;
-        this.classDoc = classDoc;
-        this.label = new StringContent(label);
-        setContext(context);
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context               the context of the link.
-     * @param executableMemberDoc   the member to link to.
-     * @param isStrong                true if the link should be strong.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ExecutableMemberDoc executableMemberDoc,
-            boolean isStrong) {
-        this.configuration = configuration;
-        this.executableMemberDoc = executableMemberDoc;
-        this.isStrong = isStrong;
-        setContext(context);
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param isStrong       true if the link should be strong.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc,  boolean isStrong) {
-        this.configuration = configuration;
-        this.classDoc = classDoc;
-        this.isStrong = isStrong;
         setContext(context);
     }
 
@@ -391,89 +282,65 @@ public class LinkInfoImpl extends LinkInfo {
         setContext(context);
     }
 
+
     /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param type       the class to link to.
-     * @param isVarArg   true if this is a link to a var arg.
+     * Set the label for the link.
+     * @param label plain-text label for the link
      */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, Type type, boolean isVarArg) {
-        this.configuration = configuration;
-        this.type = type;
-        this.isVarArg = isVarArg;
-        setContext(context);
+    public LinkInfoImpl label(String label) {
+        this.label = new StringContent(label);
+        return this;
     }
 
     /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param type       the class to link to.
-     * @param label      plain-text label for the link.
-     * @param isStrong     true if the link should be strong.
+     * Set the label for the link.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, Type type, String label,
-            boolean isStrong) {
-        this(configuration, context, type, new StringContent(label), isStrong);
-    }
-
-    /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param type       the class to link to.
-     * @param label      the label for the link.
-     * @param isStrong     true if the link should be strong.
-     */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, Type type, Content label,
-            boolean isStrong) {
-        this.configuration = configuration;
-        this.type = type;
+    public LinkInfoImpl label(Content label) {
         this.label = label;
-        this.isStrong = isStrong;
-        setContext(context);
+        return this;
     }
 
     /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param label      plain-text label for the link.
-     * @param isStrong       true if the link should be strong.
+     * Set whether or not the link should be strong.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, String label,
-            boolean isStrong) {
-        this(configuration, context, classDoc, new StringContent(label), isStrong);
+    public LinkInfoImpl strong(boolean strong) {
+        this.isStrong = strong;
+        return this;
     }
 
     /**
-     * Construct a LinkInfo object.
-     *
-     * @param configuration the configuration data for the doclet
-     * @param context    the context of the link.
-     * @param classDoc   the class to link to.
-     * @param label      the label for the link.
-     * @param isStrong       true if the link should be strong.
+     * Set the style to be used for the link.
+     * @param styleName  String style of text defined in style sheet.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration,
-            Kind context, ClassDoc classDoc, Content label,
-            boolean isStrong) {
-        this.configuration = configuration;
-        this.classDoc = classDoc;
-        this.label = label;
-        this.isStrong = isStrong;
-        setContext(context);
+    public LinkInfoImpl styleName(String styleName) {
+        this.styleName = styleName;
+        return this;
     }
+
+    /**
+     * Set the target to be used for the link.
+     * @param styleName  String style of text defined in style sheet.
+     */
+    public LinkInfoImpl target(String target) {
+        this.target = target;
+        return this;
+    }
+
+    /**
+     * Set whether or not this is a link to a varargs parameter.
+     */
+    public LinkInfoImpl varargs(boolean varargs) {
+        this.isVarArg = varargs;
+        return this;
+    }
+
+    /**
+     * Set the fragment specifier for the link.
+     */
+    public LinkInfoImpl where(String where) {
+        this.where = where;
+        return this;
+     }
 
     /**
      * {@inheritDoc}
@@ -546,7 +413,7 @@ public class LinkInfoImpl extends LinkInfo {
         context = c;
         if (type != null &&
             type.asTypeVariable()!= null &&
-            type.asTypeVariable().owner() instanceof ExecutableMemberDoc){
+            type.asTypeVariable().owner() instanceof ExecutableMemberDoc) {
             excludeTypeParameterLinks = true;
         }
     }

@@ -186,7 +186,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
         //generate links backward only to public classes.
         String classlink = (cd.isPublic() || cd.isProtected()) ?
             getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd, false)).toString() :
+                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd)).toString() :
             cd.qualifiedName();
         String name = cd.containingPackage().name();
         if (name.length() > 0) {

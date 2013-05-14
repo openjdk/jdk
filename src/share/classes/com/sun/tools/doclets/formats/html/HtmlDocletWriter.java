@@ -373,8 +373,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     continue;
                 }
                 Content classContent = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i],
-                        false));
+                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i]));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 if (i%2 == 0)
@@ -1192,8 +1191,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     public Content getQualifiedClassLink(LinkInfoImpl.Kind context, ClassDoc cd) {
-        return getLink(new LinkInfoImpl(configuration, context, cd,
-                new StringContent(configuration.getClassName(cd)), ""));
+        return getLink(new LinkInfoImpl(configuration, context, cd)
+                .label(configuration.getClassName(cd)));
     }
 
     /**
@@ -1224,7 +1223,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             classlink.addContent(getPkgName(cd));
         }
         classlink.addContent(getLink(new LinkInfoImpl(configuration,
-                context, cd, cd.name(), isStrong)));
+                context, cd).label(cd.name()).strong(isStrong)));
         return classlink;
     }
 
@@ -1245,7 +1244,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             contentTree.addContent(getPkgName(cd));
         }
         contentTree.addContent(getLink(new LinkInfoImpl(configuration,
-                context, cd, cd.name(), isStrong)));
+                context, cd).label(cd.name()).strong(isStrong)));
     }
 
     /**
@@ -1329,11 +1328,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
-            return getLink(new LinkInfoImpl(configuration, context, classDoc,
-                getAnchor(emd, isProperty), label, strong));
+            return getLink(new LinkInfoImpl(configuration, context, classDoc)
+                .label(label).where(getAnchor(emd, isProperty)).strong(strong));
         } else if (doc instanceof MemberDoc) {
-            return getLink(new LinkInfoImpl(configuration, context, classDoc,
-                doc.name(), label, strong));
+            return getLink(new LinkInfoImpl(configuration, context, classDoc)
+                .label(label).where(doc.name()).strong(strong));
         } else {
             return label;
         }
@@ -1356,12 +1355,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             Util.isLinkable(classDoc, configuration))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
-            ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
-            return getLink(new LinkInfoImpl(configuration, context, classDoc,
-                getAnchor(emd), label, false));
+            ExecutableMemberDoc emd = (ExecutableMemberDoc) doc;
+            return getLink(new LinkInfoImpl(configuration, context, classDoc)
+                .label(label).where(getAnchor(emd)));
         } else if (doc instanceof MemberDoc) {
-            return getLink(new LinkInfoImpl(configuration, context, classDoc,
-                doc.name(), label, false));
+            return getLink(new LinkInfoImpl(configuration, context, classDoc)
+                .label(label).where(doc.name()));
         } else {
             return label;
         }
@@ -1447,7 +1446,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (label.isEmpty()) {
                 label = plainOrCode(plain, new StringContent(refClass.name()));
             }
-            return getLink(new LinkInfoImpl(configuration, refClass, label)).toString();
+            return getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, refClass)
+                    .label(label)).toString();
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
