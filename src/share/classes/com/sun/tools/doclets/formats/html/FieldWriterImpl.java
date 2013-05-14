@@ -203,8 +203,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Fields");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Fields");
     }
 
     /**

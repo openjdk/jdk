@@ -199,8 +199,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Properties");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Properties");
     }
 
     /**

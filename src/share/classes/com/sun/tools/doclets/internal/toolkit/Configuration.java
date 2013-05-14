@@ -827,7 +827,7 @@ public abstract class Configuration {
         }
     }
 
-    public abstract Content getContentForResource();
+    public abstract Content newContent();
 
     /**
      * Get the configuration string as a content.
@@ -836,7 +836,7 @@ public abstract class Configuration {
      * @return a content tree for the text
      */
     public Content getResource(String key) {
-        Content c = getContentForResource();
+        Content c = newContent();
         c.addContent(getText(key));
         return c;
     }
@@ -872,7 +872,7 @@ public abstract class Configuration {
      * @return a content tree for the text
      */
     public Content getResource(String key, Object o0, Object o1, Object o2) {
-        Content c = getContentForResource();
+        Content c = newContent();
         Pattern p = Pattern.compile("\\{([012])\\}");
         String text = getText(key);
         Matcher m = p.matcher(text);

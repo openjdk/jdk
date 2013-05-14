@@ -149,14 +149,14 @@ public class LinkFactoryImpl extends LinkFactory {
         if (annotations.length == 0)
             return links;
 
-        List<String> annos = m_writer.getAnnotations(0, annotations, false, linkInfo.isJava5DeclarationLocation);
+        List<Content> annos = m_writer.getAnnotations(0, annotations, false, linkInfo.isJava5DeclarationLocation);
 
         boolean isFirst = true;
-        for (String anno : annos) {
+        for (Content anno : annos) {
             if (!isFirst) {
                 links.addContent(" ");
             }
-            links.addContent(new RawHtml(anno));
+            links.addContent(anno);
             isFirst = false;
         }
         if (!annos.isEmpty()) {

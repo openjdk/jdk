@@ -166,7 +166,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
             Arrays.sort(arr);
             boolean printedHeader = false;
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
-            ul.addAttr(HtmlAttr.TITLE, labelContent.toString());
+            ul.setTitle(labelContent);
             for (int i = 0; i < arr.length; i++) {
                 if (documentedClasses != null &&
                         !documentedClasses.contains(arr[i])) {
