@@ -348,10 +348,11 @@ public abstract class AbstractMemberWriter {
      * @param contentTree the content tree to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(ProgramElementDoc member, Content contentTree) {
-        String output = (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false)).toString().trim();
-        if (!output.isEmpty()) {
-            Content deprecatedContent = new RawHtml(output);
+        TagletOutput output = (new DeprecatedTaglet()).getTagletOutput(member,
+            writer.getTagletWriterInstance(false));
+        Content body = ((TagletOutputImpl) output).getContent();
+        if (!body.isEmpty()) {
+            Content deprecatedContent = body;
             Content div = HtmlTree.DIV(HtmlStyle.block, deprecatedContent);
             contentTree.addContent(div);
         }

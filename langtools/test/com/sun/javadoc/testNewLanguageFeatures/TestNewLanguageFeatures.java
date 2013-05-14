@@ -84,9 +84,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "the type parameter for this class."},
             //Type parameters in @see/@link
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dl><dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
+                "<dl>" + NL + "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
                 "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "<code>TypeParameters</code></a></dd></dl>"},
+                "<code>TypeParameters</code></a></dd>" + NL + "</dl>"},
             //Method that uses class type parameter.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
                 "(<a href=\"../pkg/TypeParameters.html\" title=\"type " +

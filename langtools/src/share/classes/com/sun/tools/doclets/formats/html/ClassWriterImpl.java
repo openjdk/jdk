@@ -397,7 +397,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (classDoc.typeParamTags().length > 0) {
             TagletOutput output = (new ParamTaglet()).getTagletOutput(classDoc,
                     getTagletWriterInstance(false));
-            Content typeParam = new RawHtml(output.toString());
+            Content typeParam = ((TagletOutputImpl) output).getContent();
             Content dl = HtmlTree.DL(typeParam);
             classInfoTree.addContent(dl);
         }
