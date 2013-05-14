@@ -44,6 +44,7 @@ public enum HtmlTag {
     CENTER,
     CODE(BlockType.INLINE, EndTag.END),
     DD,
+    DIR,
     DIV,
     DL,
     DT,
@@ -63,6 +64,7 @@ public enum HtmlTag {
     I(BlockType.INLINE, EndTag.END),
     IMG(BlockType.INLINE, EndTag.NOEND),
     LI,
+    LISTING,
     LINK(BlockType.OTHER, EndTag.NOEND),
     MENU,
     META(BlockType.OTHER, EndTag.NOEND),
@@ -85,14 +87,14 @@ public enum HtmlTag {
     TT(BlockType.INLINE, EndTag.END),
     UL;
 
-    protected final BlockType blockType;
-    protected final EndTag endTag;
-    private final String value;
+    public final BlockType blockType;
+    public final EndTag endTag;
+    public final String value;
 
     /**
      * Enum representing the type of HTML element.
      */
-    protected static enum BlockType {
+    public static enum BlockType {
         BLOCK,
         INLINE,
         OTHER;
@@ -101,7 +103,7 @@ public enum HtmlTag {
     /**
      * Enum representing HTML end tag requirement.
      */
-    protected static enum EndTag {
+    public static enum EndTag {
         END,
         NOEND;
     }

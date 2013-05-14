@@ -1620,14 +1620,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (isFirstSentence) {
                     text = removeNonInlineHtmlTags(text);
                 }
-                StringTokenizer lines = new StringTokenizer(text, "\r\n", true);
-                StringBuilder textBuff = new StringBuilder();
-                while (lines.hasMoreTokens()) {
-                    StringBuilder line = new StringBuilder(lines.nextToken());
-                    Util.replaceTabs(configuration, line);
-                    textBuff.append(line.toString());
-                }
-                result.addContent(new RawHtml(textBuff.toString()));
+                text = Util.replaceTabs(configuration, text);
+                result.addContent(new RawHtml(text));
             }
         }
         return result;
@@ -1732,60 +1726,55 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    public String removeNonInlineHtmlTags(String text) {
-        if (text.indexOf('<') < 0) {
-            return text;
+    static Set<String> blockTags = new HashSet<>();
+    static {
+        for (HtmlTag t: HtmlTag.values()) {
+            if (t.blockType == HtmlTag.BlockType.BLOCK)
+                blockTags.add(t.value);
         }
-        String noninlinetags[] = { "<ul>", "</ul>", "<ol>", "</ol>",
-                "<dl>", "</dl>", "<table>", "</table>",
-                "<tr>", "</tr>", "<td>", "</td>",
-                "<th>", "</th>", "<p>", "</p>",
-                "<li>", "</li>", "<dd>", "</dd>",
-                "<dir>", "</dir>", "<dt>", "</dt>",
-                "<h1>", "</h1>", "<h2>", "</h2>",
-                "<h3>", "</h3>", "<h4>", "</h4>",
-                "<h5>", "</h5>", "<h6>", "</h6>",
-                "<pre>", "</pre>", "<menu>", "</menu>",
-                "<listing>", "</listing>", "<hr>",
-                "<blockquote>", "</blockquote>",
-                "<center>", "</center>",
-                "<UL>", "</UL>", "<OL>", "</OL>",
-                "<DL>", "</DL>", "<TABLE>", "</TABLE>",
-                "<TR>", "</TR>", "<TD>", "</TD>",
-                "<TH>", "</TH>", "<P>", "</P>",
-                "<LI>", "</LI>", "<DD>", "</DD>",
-                "<DIR>", "</DIR>", "<DT>", "</DT>",
-                "<H1>", "</H1>", "<H2>", "</H2>",
-                "<H3>", "</H3>", "<H4>", "</H4>",
-                "<H5>", "</H5>", "<H6>", "</H6>",
-                "<PRE>", "</PRE>", "<MENU>", "</MENU>",
-                "<LISTING>", "</LISTING>", "<HR>",
-                "<BLOCKQUOTE>", "</BLOCKQUOTE>",
-                "<CENTER>", "</CENTER>"
-        };
-        for (int i = 0; i < noninlinetags.length; i++) {
-            text = replace(text, noninlinetags[i], "");
-        }
-        return text;
     }
 
-    public String replace(String text, String tobe, String by) {
-        while (true) {
-            int startindex = text.indexOf(tobe);
-            if (startindex < 0) {
-                return text;
-            }
-            int endindex = startindex + tobe.length();
-            StringBuilder replaced = new StringBuilder();
-            if (startindex > 0) {
-                replaced.append(text.substring(0, startindex));
-            }
-            replaced.append(by);
-            if (text.length() > endindex) {
-                replaced.append(text.substring(endindex));
-            }
-            text = replaced.toString();
+    public static String removeNonInlineHtmlTags(String text) {
+        final int len = text.length();
+
+        int startPos = 0;                     // start of text to copy
+        int lessThanPos = text.indexOf('<');  // position of latest '<'
+        if (lessThanPos < 0) {
+            return text;
         }
+
+        StringBuilder result = new StringBuilder();
+    main: while (lessThanPos != -1) {
+            int currPos = lessThanPos + 1;
+            if (currPos == len)
+                break;
+            char ch = text.charAt(currPos);
+            if (ch == '/') {
+                if (++currPos == len)
+                    break;
+                ch = text.charAt(currPos);
+            }
+            int tagPos = currPos;
+            while (isHtmlTagLetterOrDigit(ch)) {
+                if (++currPos == len)
+                    break main;
+                ch = text.charAt(currPos);
+            }
+            if (ch == '>' && blockTags.contains(text.substring(tagPos, currPos).toLowerCase())) {
+                result.append(text, startPos, lessThanPos);
+                startPos = currPos + 1;
+            }
+            lessThanPos = text.indexOf('<', currPos);
+        }
+        result.append(text.substring(startPos));
+
+        return result.toString();
+    }
+
+    private static boolean isHtmlTagLetterOrDigit(char ch) {
+        return ('a' <= ch && ch <= 'z') ||
+                ('A' <= ch && ch <= 'Z') ||
+                ('1' <= ch && ch <= '6');
     }
 
     /**
