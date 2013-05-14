@@ -125,8 +125,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content li;
         if (prev != null) {
             Content prevLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, prev, "",
-                    configuration.getText("doclet.Prev_Class"), true));
+                    LinkInfoImpl.Kind.CLASS, prev)
+                    .label(configuration.getText("doclet.Prev_Class")).strong(true));
             li = HtmlTree.LI(prevLink);
         }
         else
@@ -143,8 +143,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content li;
         if (next != null) {
             Content nextLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, next, "",
-                    configuration.getText("doclet.Next_Class"), true));
+                    LinkInfoImpl.Kind.CLASS, next)
+                    .label(configuration.getText("doclet.Next_Class")).strong(true));
             li = HtmlTree.LI(nextLink);
         }
         else
@@ -185,7 +185,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_HEADER, classDoc, false);
+                LinkInfoImpl.Kind.CLASS_HEADER, classDoc);
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
         Content headerContent = new StringContent(header);
@@ -245,7 +245,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         addAnnotationInfo(classDoc, pre);
         pre.addContent(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_SIGNATURE, classDoc, false);
+                LinkInfoImpl.Kind.CLASS_SIGNATURE, classDoc);
         //Let's not link to ourselves in the signature.
         linkInfo.linkToSelf = false;
         Content className = new StringContent(classDoc.name());
@@ -362,7 +362,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         if (type.equals(classDoc)) {
             Content typeParameters = getTypeParameterLinks(
                     new LinkInfoImpl(configuration, LinkInfoImpl.Kind.TREE,
-                    classDoc, false));
+                    classDoc));
             if (configuration.shouldExcludeQualifier(
                     classDoc.containingPackage().name())) {
                 li.addContent(type.asClassDoc().name());
@@ -373,9 +373,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             }
         } else {
             Content link = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS_TREE_PARENT,
-                    type instanceof ClassDoc ? (ClassDoc) type : type,
-                    configuration.getClassName(type.asClassDoc()), false));
+                    LinkInfoImpl.Kind.CLASS_TREE_PARENT, type)
+                    .label(configuration.getClassName(type.asClassDoc())));
             li.addContent(link);
         }
         return li;
@@ -521,7 +520,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             Content dl = HtmlTree.DL(dt);
             Content dd = new HtmlTree(HtmlTag.DD);
             dd.addContent(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, outerClass, false)));
+                    LinkInfoImpl.Kind.CLASS, outerClass)));
             dl.addContent(dd);
             classInfoTree.addContent(dl);
         }

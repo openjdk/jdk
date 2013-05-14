@@ -128,8 +128,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getClassHeader(ClassDoc classDoc) {
         Content classLink = (classDoc.isPublic() || classDoc.isProtected()) ?
-            getLink(new LinkInfoImpl(configuration, classDoc,
-            configuration.getClassName(classDoc))) :
+            getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, classDoc)
+            .label(configuration.getClassName(classDoc))) :
             new StringContent(classDoc.qualifiedName());
         Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
                 classDoc.qualifiedName()));
