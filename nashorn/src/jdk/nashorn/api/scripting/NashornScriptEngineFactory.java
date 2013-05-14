@@ -31,7 +31,6 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import jdk.nashorn.internal.runtime.Version;
-import sun.reflect.Reflection;
 
 /**
  * JSR-223 compliant script engine factory for Nashorn. The engine answers for:

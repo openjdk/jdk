@@ -25,67 +25,56 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Immutable;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.parser.Token;
-import jdk.nashorn.internal.runtime.Source;
-
 /**
- * IR Node representing a line number
+ * Statement is something that becomes code and can be stepped past. A block is
+ * made up of statements. The only node subclass that needs to keep token and
+ * location information is the Statement
  */
-@Immutable
-public final class LineNumberNode extends Node {
-    /** Line number */
+public abstract class Statement extends Node {
+
     private final int lineNumber;
 
     /**
      * Constructor
      *
-     * @param source     the source
+     * @param lineNumber line number
      * @param token      token
-     * @param lineNumber the line number
+     * @param finish     finish
      */
-    public LineNumberNode(final Source source, final long token, final int lineNumber) {
-        super(source, token, Token.descPosition(token));
+    public Statement(final int lineNumber, final long token, final int finish) {
+        super(token, finish);
         this.lineNumber = lineNumber;
     }
 
-    private LineNumberNode(final LineNumberNode lineNumberNode) {
-        super(lineNumberNode);
-        this.lineNumber = lineNumberNode.getLineNumber();
-    }
-
-    @Override
-    public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterLineNumberNode(this)) {
-            return visitor.leaveLineNumberNode(this);
-        }
-
-        return this;
-    }
-
-    @Override
-    public void toString(final StringBuilder sb) {
-        sb.append("[|");
-        sb.append(lineNumber);
-        sb.append("|]");
-    }
-
-    @Override
-    public boolean isAtom() {
-        return true;
+    /**
+     * Constructor
+     *
+     * @param lineNumber line number
+     * @param token      token
+     * @param start      start
+     * @param finish     finish
+     */
+    protected Statement(final int lineNumber, final long token, final int start, final int finish) {
+        super(token, start, finish);
+        this.lineNumber = lineNumber;
     }
 
     /**
-     * Get the line number
+     * Copy constructor
+     *
+     * @param node source node
+     */
+    protected Statement(final Statement node) {
+        super(node);
+        this.lineNumber = node.lineNumber;
+    }
+
+    /**
+     * Return the line number
      * @return line number
      */
     public int getLineNumber() {
         return lineNumber;
     }
 
-    @Override
-    public boolean isDebug() {
-        return true;
-    }
 }
