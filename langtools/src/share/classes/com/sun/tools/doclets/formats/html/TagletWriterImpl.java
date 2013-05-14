@@ -134,15 +134,6 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    protected TagletOutput expertTagOutput(Tag tag) {
-        HtmlTree result = new HtmlTree(HtmlTag.SUB, new StringContent(tag.text()));
-        result.addAttr(HtmlAttr.ID, "expert");
-        return new TagletOutputImpl(result);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     protected TagletOutput literalTagOutput(Tag tag) {
         Content result = new StringContent(tag.text());
         return new TagletOutputImpl(result);
@@ -173,6 +164,19 @@ public class TagletWriterImpl extends TagletWriter {
         body.addContent(" - ");
         body.addContent(htmlWriter.commentTagsToContent(paramTag, null, paramTag.inlineTags(), false));
         HtmlTree result = HtmlTree.DD(body);
+        return new TagletOutputImpl(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public TagletOutput propertyTagOutput(Tag tag, String prefix) {
+        Content body = new ContentBuilder();
+        body.addContent(new RawHtml(prefix));
+        body.addContent(" ");
+        body.addContent(HtmlTree.CODE(new RawHtml(tag.text())));
+        body.addContent(".");
+        Content result = HtmlTree.P(body);
         return new TagletOutputImpl(result);
     }
 
