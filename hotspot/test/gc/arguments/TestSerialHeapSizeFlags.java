@@ -29,7 +29,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestSerialHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm TestSerial
+ * @run main/othervm TestSerialHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 

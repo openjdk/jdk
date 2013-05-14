@@ -27,9 +27,9 @@
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the CMS collector
  * @library /testlibrary /testlibrary/whitebox
- * @build TestCMS TestMaxHeapSizeTools
+ * @build TestCMSHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm TestCMS
+ * @run main/othervm TestCMSHeapSizeFlags
  * @author thomas.schatzl@oracle.com
  */
 
