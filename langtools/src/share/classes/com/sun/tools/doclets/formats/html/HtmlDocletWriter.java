@@ -1074,9 +1074,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
     }
 
-    public String italicsClassName(ClassDoc cd, boolean qual) {
-        String name = (qual)? cd.qualifiedName(): cd.name();
-        return (cd.isInterface())?  italicsText(name): name;
+    public Content italicsClassName(ClassDoc cd, boolean qual) {
+        Content name = new StringContent((qual)? cd.qualifiedName(): cd.name());
+        return (cd.isInterface())?  HtmlTree.I(name): name;
     }
 
     /**
@@ -1141,8 +1141,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param style the style of the link.
      * @param code true if the label should be code font.
      */
-    public String getCrossClassLink(String qualifiedClassName, String refMemName,
-                                    String label, boolean strong, String style,
+    public Content getCrossClassLink(String qualifiedClassName, String refMemName,
+                                    Content label, boolean strong, String style,
                                     boolean code) {
         String className = "";
         String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
@@ -1150,7 +1150,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         while ((periodIndex = packageName.lastIndexOf('.')) != -1) {
             className = packageName.substring(periodIndex + 1, packageName.length()) +
                 (className.length() > 0 ? "." + className : "");
-            String defaultLabel = code ? codeText(className) : className;
+            Content defaultLabel = new StringContent(className);
+            if (code)
+                defaultLabel = HtmlTree.CODE(defaultLabel);
             packageName = packageName.substring(0, periodIndex);
             if (getCrossPackageLink(packageName) != null) {
                 //The package exists in external documentation, so link to the external
@@ -1160,10 +1162,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 //have to assume that it does.
                 DocLink link = configuration.extern.getExternalLink(packageName, pathToRoot,
                                 className + ".html", refMemName);
-                return getHyperLinkString(link,
-                    (label == null) || label.length() == 0 ? defaultLabel : label,
-
-
+                return getHyperLink(link,
+                    (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong, style,
                     configuration.getText("doclet.Href_Class_Or_Interface_Title", packageName),
                     "");
@@ -1193,7 +1193,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getQualifiedClassLink(LinkInfoImpl.Kind context, ClassDoc cd) {
         return getLink(new LinkInfoImpl(configuration, context, cd,
-                configuration.getClassName(cd), ""));
+                new StringContent(configuration.getClassName(cd)), ""));
     }
 
     /**
@@ -1216,15 +1216,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param isStrong true if the link should be strong.
      * @return the link with the package portion of the label in plain text.
      */
-    public String getPreQualifiedClassLink(LinkInfoImpl.Kind context,
+    public Content getPreQualifiedClassLink(LinkInfoImpl.Kind context,
             ClassDoc cd, boolean isStrong) {
-        String classlink = "";
+        ContentBuilder classlink = new ContentBuilder();
         PackageDoc pd = cd.containingPackage();
-        if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
-            classlink = getPkgName(cd);
+        if (pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
+            classlink.addContent(getPkgName(cd));
         }
-        classlink += getLink(new LinkInfoImpl(configuration,
-                context, cd, cd.name(), isStrong));
+        classlink.addContent(getLink(new LinkInfoImpl(configuration,
+                context, cd, cd.name(), isStrong)));
         return classlink;
     }
 
@@ -1269,7 +1269,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the doc link
      */
     public Content getDocLink(LinkInfoImpl.Kind context, MemberDoc doc, String label) {
-        return getDocLink(context, doc.containingClass(), doc, label);
+        return getDocLink(context, doc.containingClass(), doc,
+                new StringContent(label));
     }
 
     /**
@@ -1317,10 +1318,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return the link for the given member.
      */
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
-        String label, boolean strong, boolean isProperty) {
+            String label, boolean strong, boolean isProperty) {
+        return getDocLink(context, classDoc, doc, new RawHtml(label), strong, isProperty);
+    }
+
+    public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
+            Content label, boolean strong, boolean isProperty) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
-            return new RawHtml(label);
+            return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
@@ -1329,7 +1335,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, strong));
         } else {
-            return new RawHtml(label);
+            return label;
         }
     }
 
@@ -1345,10 +1351,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return the link for the given member
      */
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
-        String label) {
+            Content label) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
-            return new StringContent(label);
+            return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
@@ -1357,7 +1363,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return getLink(new LinkInfoImpl(configuration, context, classDoc,
                 doc.name(), label, false));
         } else {
-            return new StringContent(label);
+            return label;
         }
     }
 
@@ -1399,10 +1405,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
 
         boolean plain = tagName.equalsIgnoreCase("@linkplain");
-        String label = plainOrCodeText(plain, see.label());
+        Content label = plainOrCode(plain, new RawHtml(see.label()));
 
         //The text from the @see tag.  We will output this text when a label is not specified.
-        String text = plainOrCodeText(plain, seetext);
+        Content text = plainOrCode(plain, new RawHtml(seetext));
 
         ClassDoc refClass = see.referencedClass();
         String refClassName = see.referencedClassName();
@@ -1415,37 +1421,37 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (refPackage != null && refPackage.isIncluded()) {
                 //@see is referencing an included package
                 if (label.isEmpty())
-                    label = plainOrCodeText(plain, refPackage.name());
-                return getPackageLinkString(refPackage, label, false);
+                    label = plainOrCode(plain, new StringContent(refPackage.name()));
+                return getPackageLink(refPackage, label).toString();
             } else {
                 //@see is not referencing an included class or package.  Check for cross links.
-                String classCrossLink;
+                Content classCrossLink;
                 DocLink packageCrossLink = getCrossPackageLink(refClassName);
                 if (packageCrossLink != null) {
                     //Package cross link found
-                    return getHyperLinkString(packageCrossLink,
-                        (label.isEmpty() ? text : label), false);
+                    return getHyperLink(packageCrossLink,
+                        (label.isEmpty() ? text : label)).toString();
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
                         refMemName, label, false, "", !plain)) != null) {
                     //Class cross link found (possibly to a member in the class)
-                    return classCrossLink;
+                    return classCrossLink.toString();
                 } else {
                     //No cross link found so print warning
                     configuration.getDocletSpecificMsg().warning(see.position(), "doclet.see.class_or_package_not_found",
                             tagName, seetext);
-                    return (label.isEmpty() ? text: label);
+                    return (label.isEmpty() ? text: label).toString();
                 }
             }
         } else if (refMemName == null) {
             // Must be a class reference since refClass is not null and refMemName is null.
             if (label.isEmpty()) {
-                label = plainOrCodeText(plain, refClass.name());
+                label = plainOrCode(plain, new StringContent(refClass.name()));
             }
             return getLink(new LinkInfoImpl(configuration, refClass, label)).toString();
         } else if (refMem == null) {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // However, refMem is null, so this referenced member does not exist.
-            return (label.isEmpty() ? text: label);
+            return (label.isEmpty() ? text: label).toString();
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // refMem is not null, so this @see tag must be referencing a valid member.
@@ -1478,15 +1484,19 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
             }
 
-            text = plainOrCodeText(plain, Util.escapeHtmlChars(refMemName));
+            text = plainOrCode(plain, new StringContent(refMemName));
 
             return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
-                refMem, (label.isEmpty() ? text: label), false).toString();
+                refMem, (label.isEmpty() ? text: label).toString(), false).toString();
         }
     }
 
     private String plainOrCodeText(boolean plain, String text) {
         return (plain || text.isEmpty()) ? text : codeText(text);
+    }
+
+    private Content plainOrCode(boolean plain, Content body) {
+        return (plain || body.isEmpty()) ? body : HtmlTree.CODE(body);
     }
 
     /**
@@ -2066,7 +2076,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     private void addAnnotations(AnnotationTypeDoc annotationDoc, LinkInfoImpl linkInfo,
             StringBuilder annotation, AnnotationDesc.ElementValuePair[] pairs,
             int indent, boolean linkBreak) {
-        linkInfo.label = "@" + annotationDoc.name();
+        linkInfo.label = new StringContent("@" + annotationDoc.name());
         annotation.append(getLink(linkInfo));
         if (pairs.length > 0) {
             annotation.append('(');
@@ -2144,9 +2154,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             if (type.asClassDoc() != null) {
                 LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.ANNOTATION, type);
-                    linkInfo.label = (type.asClassDoc().isIncluded() ?
-                        type.typeName() :
-                        type.qualifiedTypeName()) + type.dimension() + ".class";
+                linkInfo.label = new StringContent((type.asClassDoc().isIncluded() ?
+                    type.typeName() :
+                    type.qualifiedTypeName()) + type.dimension() + ".class");
                 return getLink(linkInfo).toString();
             } else {
                 return type.typeName() + type.dimension() + ".class";

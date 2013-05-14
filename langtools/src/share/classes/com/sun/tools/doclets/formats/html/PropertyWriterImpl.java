@@ -235,8 +235,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
-        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.Kind.MEMBER, cd, false));
+        Content classLink = writer.getPreQualifiedClassLink(
+                LinkInfoImpl.Kind.MEMBER, cd, false);
         Content label = new StringContent(cd.isClass() ?
             configuration.getText("doclet.Properties_Inherited_From_Class") :
             configuration.getText("doclet.Properties_Inherited_From_Interface"));

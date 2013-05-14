@@ -378,7 +378,7 @@ public abstract class AbstractMemberWriter {
      * @return a header content for the section.
      */
     protected Content getHead(MemberDoc member) {
-        Content memberContent = new RawHtml(member.name());
+        Content memberContent = new StringContent(member.name());
         Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, memberContent);
         return heading;
     }

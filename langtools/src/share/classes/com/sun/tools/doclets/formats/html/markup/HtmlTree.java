@@ -123,6 +123,13 @@ public class HtmlTree extends Content {
             addContent(new StringContent(stringContent));
     }
 
+    public int charCount() {
+        int n = 0;
+        for (Content c : content)
+            n += c.charCount();
+        return n;
+    }
+
     /**
      * Generates an HTML anchor tag.
      *

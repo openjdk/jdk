@@ -174,9 +174,6 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
-        if (name.indexOf("<") != -1 || name.indexOf(">") != -1) {
-                name = Util.escapeHtmlChars(name);
-        }
         Content span = HtmlTree.SPAN(HtmlStyle.strong,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);

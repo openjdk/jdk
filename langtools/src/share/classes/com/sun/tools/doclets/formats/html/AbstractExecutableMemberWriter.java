@@ -126,7 +126,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @param tree the content tree to which the parameter information will be added.
      */
     protected void addParam(ExecutableMemberDoc member, Parameter param,
-        boolean isVarArg, Content tree) {
+            boolean isVarArg, Content tree) {
         if (param.type() != null) {
             Content link = writer.getLink(new LinkInfoImpl(
                     configuration, LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM,

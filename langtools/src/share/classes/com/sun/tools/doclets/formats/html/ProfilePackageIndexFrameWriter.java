@@ -118,7 +118,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
                      DocPaths.profilePackageFrame(profileName)), pkgLabel, "",
                     "packageFrame");
         } else {
-            pkgLabel = new RawHtml("&lt;unnamed package&gt;");
+            pkgLabel = new StringContent("<unnamed package>");
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
                     pkgLabel, "", "packageFrame");
         }

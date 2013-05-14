@@ -96,6 +96,10 @@ public abstract class Content {
         return !isEmpty();
     }
 
+    public int charCount() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Checks for null values.
      *
