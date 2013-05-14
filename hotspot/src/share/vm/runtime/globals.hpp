@@ -3677,6 +3677,9 @@ class CommandLineFlags {
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
                                                                             \
+  diagnostic(ccstr, SharedArchiveFile, NULL,                                \
+          "Override the default location of the CDS archive file")          \
+                                                                            \
   experimental(uintx, ArrayAllocatorMallocLimit,                            \
           SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
           "Allocation less than this value will be allocated "              \
