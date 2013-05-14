@@ -77,7 +77,6 @@ public class LinkFactoryImpl extends LinkFactory {
                     !classDoc.qualifiedTypeName().equals(classLinkInfo.type.qualifiedTypeName())) :
             "";
         Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration);
-        classLinkInfo.displayLength += label.charCount();
         Configuration configuration = m_writer.configuration;
         Content link = new ContentBuilder();
         if (classDoc.isIncluded()) {
@@ -128,9 +127,7 @@ public class LinkFactoryImpl extends LinkFactory {
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
         typeLinkInfo.isJava5DeclarationLocation = false;
-        Content output = getLink(typeLinkInfo);
-        ((LinkInfoImpl) linkInfo).displayLength += typeLinkInfo.displayLength;
-        return output;
+        return getLink(typeLinkInfo);
     }
 
     protected Content getTypeAnnotationLink(LinkInfo linkInfo,
@@ -157,14 +154,12 @@ public class LinkFactoryImpl extends LinkFactory {
         boolean isFirst = true;
         for (String anno : annos) {
             if (!isFirst) {
-                linkInfo.displayLength += 1;
                 links.addContent(" ");
             }
             links.addContent(new RawHtml(anno));
             isFirst = false;
         }
         if (!annos.isEmpty()) {
-            linkInfo.displayLength += 1;
             links.addContent(" ");
         }
 

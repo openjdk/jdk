@@ -75,11 +75,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public final DocPath filename;
 
     /**
-     * The display length used for indentation while generating the class page.
-     */
-    public int displayLength = 0;
-
-    /**
      * The global configuration information for this run.
      */
     public final ConfigurationImpl configuration;
@@ -1121,9 +1116,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getLink(LinkInfoImpl linkInfo) {
         LinkFactoryImpl factory = new LinkFactoryImpl(this);
-        Content link = factory.getLink(linkInfo);
-        displayLength += linkInfo.displayLength;
-        return link;
+        return factory.getLink(linkInfo);
     }
 
     /**
