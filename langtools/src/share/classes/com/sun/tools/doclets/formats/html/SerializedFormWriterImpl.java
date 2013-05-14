@@ -133,23 +133,22 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             new StringContent(classDoc.qualifiedName());
         Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
                 classDoc.qualifiedName()));
-        String superClassLink =
+        Content superClassLink =
             classDoc.superclassType() != null ?
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.SERIALIZED_FORM,
-                        classDoc.superclassType())).toString() :
+                        classDoc.superclassType())) :
                 null;
 
         //Print the heading.
-        String className = superClassLink == null ?
-            configuration.getText(
-            "doclet.Class_0_implements_serializable", classLink.toString()) :
-            configuration.getText(
-            "doclet.Class_0_extends_implements_serializable", classLink.toString(),
+        Content className = superClassLink == null ?
+            configuration.getResource(
+            "doclet.Class_0_implements_serializable", classLink) :
+            configuration.getResource(
+            "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
-        Content classNameContent = new RawHtml(className);
         li.addContent(HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
-                classNameContent));
+                className));
         return li;
     }
 

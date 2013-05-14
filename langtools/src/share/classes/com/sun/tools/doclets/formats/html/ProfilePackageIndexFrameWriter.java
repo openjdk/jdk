@@ -91,7 +91,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
         heading.addContent(packagesLabel);
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addAttr(HtmlAttr.TITLE, packagesLabel.toString());
+        ul.setTitle(packagesLabel);
         PackageDoc[] packages = configuration.profilePackages.get(profileName);
         for (int i = 0; i < packages.length; i++) {
             if ((!(configuration.nodeprecated && Util.isDeprecated(packages[i])))) {

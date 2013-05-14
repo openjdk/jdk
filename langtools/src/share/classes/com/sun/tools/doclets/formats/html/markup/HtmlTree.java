@@ -82,6 +82,10 @@ public class HtmlTree extends Content {
         attrs.put(nullCheck(attrName), escapeHtmlChars(attrValue));
     }
 
+    public void setTitle(Content body) {
+        addAttr(HtmlAttr.TITLE, stripHtml(body));
+    }
+
     /**
      * Adds a style for the HTML tag.
      *
@@ -353,7 +357,7 @@ public class HtmlTree extends Content {
             HtmlStyle styleClass, Content body) {
         HtmlTree htmltree = new HtmlTree(headingTag, nullCheck(body));
         if (printTitle)
-            htmltree.addAttr(HtmlAttr.TITLE, stripHtml(body));
+            htmltree.setTitle(body);
         if (styleClass != null)
             htmltree.addStyle(styleClass);
         return htmltree;
@@ -838,7 +842,7 @@ public class HtmlTree extends Content {
         out.write(tagString);
         Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
         HtmlAttr key;
-        String value = "";
+        String value;
         while (iterator.hasNext()) {
             key = iterator.next();
             value = attrs.get(key);

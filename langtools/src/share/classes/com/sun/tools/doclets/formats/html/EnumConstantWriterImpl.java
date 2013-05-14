@@ -182,8 +182,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Enum_Constants");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Enum_Constants");
     }
 
     /**

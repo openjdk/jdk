@@ -225,8 +225,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Constructors");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Constructors");
     }
 
     /**

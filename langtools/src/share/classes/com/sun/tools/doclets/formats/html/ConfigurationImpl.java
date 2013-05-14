@@ -565,7 +565,7 @@ public class ConfigurationImpl extends Configuration {
     }
 
     @Override
-    public Content getContentForResource() {
+    public Content newContent() {
         return new ContentBuilder();
     }
 }
