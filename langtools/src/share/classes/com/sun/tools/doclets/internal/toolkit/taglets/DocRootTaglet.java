@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * An inline Taglet representing {&#064;docRoot}.  This taglet is
@@ -60,7 +61,7 @@ public class DocRootTaglet extends BaseInlineTaglet {
      * @param writer a {@link TagletWriter} Taglet writer.
      * @return the string representation of this <code>Tag</code>.
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         return writer.getDocRootOutput();
     }
 }

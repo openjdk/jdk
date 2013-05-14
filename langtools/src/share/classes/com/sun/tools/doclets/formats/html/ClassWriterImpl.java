@@ -395,9 +395,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public void addTypeParamInfo(Content classInfoTree) {
         if (classDoc.typeParamTags().length > 0) {
-            TagletOutput output = (new ParamTaglet()).getTagletOutput(classDoc,
+            Content typeParam = (new ParamTaglet()).getTagletOutput(classDoc,
                     getTagletWriterInstance(false));
-            Content typeParam = ((TagletOutputImpl) output).getContent();
             Content dl = HtmlTree.DL(typeParam);
             classInfoTree.addContent(dl);
         }

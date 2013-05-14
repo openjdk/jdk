@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -61,7 +62,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         SeeTag[] tags = holder.seeTags();
         if (tags.length == 0 && holder instanceof MethodDoc) {
             DocFinder.Output inheritedDoc =

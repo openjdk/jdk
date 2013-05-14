@@ -246,11 +246,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (doc instanceof MethodDoc) {
             addMethodInfo((MethodDoc) doc, dl);
         }
-        TagletOutputImpl output = new TagletOutputImpl();
+        Content output = new ContentBuilder();
         TagletWriter.genTagOuput(configuration.tagletManager, doc,
             configuration.tagletManager.getCustomTaglets(doc),
                 getTagletWriterInstance(false), output);
-        dl.addContent(output.getContent());
+        dl.addContent(output);
         htmltree.addContent(dl);
     }
 
@@ -262,11 +262,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return true if there are tags to be printed else return false.
      */
     protected boolean hasSerializationOverviewTags(FieldDoc field) {
-        TagletOutputImpl output = new TagletOutputImpl();
+        Content output = new ContentBuilder();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
             configuration.tagletManager.getCustomTaglets(field),
                 getTagletWriterInstance(false), output);
-        return !output.getContent().isEmpty();
+        return !output.isEmpty();
     }
 
     /**
@@ -1583,11 +1583,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 result.addContent(seeTagToContent((SeeTag) tagelem));
             } else if (! tagName.equals("Text")) {
                 boolean wasEmpty = result.isEmpty();
-                TagletOutput output = TagletWriter.getInlineTagOuput(
+                Content output = TagletWriter.getInlineTagOuput(
                     configuration.tagletManager, holderTag,
                     tagelem, getTagletWriterInstance(isFirstSentence));
                 if (output != null)
-                    result.addContent(((TagletOutputImpl) output).getContent());
+                    result.addContent(output);
                 if (wasEmpty && isFirstSentence && tagelem.name().equals("@inheritDoc") && !result.isEmpty()) {
                     break;
                 } else if (configuration.docrootparent.length() > 0 &&
@@ -1726,7 +1726,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    static Set<String> blockTags = new HashSet<>();
+    static Set<String> blockTags = new HashSet<String>();
     static {
         for (HtmlTag t: HtmlTag.values()) {
             if (t.blockType == HtmlTag.BlockType.BLOCK)
