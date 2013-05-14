@@ -27,7 +27,6 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import java.util.Map;
 
-import com.sun.tools.doclets.Taglet;
 import com.sun.javadoc.Tag;
 
 /**
@@ -39,11 +38,9 @@ import com.sun.javadoc.Tag;
  *  deletion without notice.</b>
  *
  */
-public class ExpertTaglet implements Taglet {
+public class ExpertTaglet extends BaseTaglet {
 
     private static final String NAME = "expert";
-    private static final String START_TAG = "<sub id=\"expert\">";
-    private static final String END_TAG = "</sub>";
 
     /**
      * {@inheritDoc}
@@ -85,22 +82,10 @@ public class ExpertTaglet implements Taglet {
         map.put(NAME, new ExpertTaglet());
     }
 
-    public String toString(Tag tag) {
-        return (tag.text() == null || tag.text().length() == 0) ? null :
-            START_TAG + LiteralTaglet.textToString(tag.text()) + END_TAG;
+    /**
+     * {@inheritDoc}
+     */
+    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+        return writer.expertTagOutput(tag);
     }
-
-
-    public String toString(Tag[] tags) {
-        if (tags == null || tags.length == 0) return null;
-
-        StringBuffer sb = new StringBuffer(START_TAG);
-
-        for(Tag t:tags) {
-            sb.append(LiteralTaglet.textToString(t.text()));
-        }
-        sb.append(END_TAG);
-        return sb.toString();
-    }
-
 }
