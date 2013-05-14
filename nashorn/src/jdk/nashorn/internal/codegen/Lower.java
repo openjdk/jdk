@@ -288,10 +288,10 @@ final class Lower extends NodeOperatorVisitor {
 
         final IdentNode exception = new IdentNode(token, finish, getLexicalContext().getCurrentFunction().uniqueName("catch_all"));
 
-        final Block catchBody = new Block(lineNumber, token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception))).
+        final Block catchBody = new Block(lineNumber, token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW)).
                 setIsTerminal(getLexicalContext(), true); //ends with throw, so terminal
 
-        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody);
+        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody, CatchNode.IS_SYNTHETIC_RETHROW);
         final Block     catchAllBlock = new Block(lineNumber, token, finish, catchAllNode);
 
         //catchallblock -> catchallnode (catchnode) -> exception -> throw
