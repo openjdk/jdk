@@ -150,7 +150,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         TagletManager tagletManager =
             configuration.tagletManager;
         TagletWriter.genTagOuput(tagletManager, member,
-            tagletManager.getSerializedFormTags(),
+            tagletManager.getSerializedFormTaglets(),
             writer.getTagletWriterInstance(false), output);
         Content tagContent = output.getContent();
         Content dlTags = new HtmlTree(HtmlTag.DL);

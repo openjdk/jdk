@@ -244,7 +244,7 @@ public abstract class TagletWriter {
      */
     public static TagletOutput getInlineTagOuput(TagletManager tagletManager,
             Tag holderTag, Tag inlineTag, TagletWriter tagletWriter) {
-        Taglet[] definedTags = tagletManager.getInlineCustomTags();
+        Taglet[] definedTags = tagletManager.getInlineCustomTaglets();
         //This is a custom inline tag.
         for (int j = 0; j < definedTags.length; j++) {
             if (("@"+definedTags[j].getName()).equals(inlineTag.name())) {
