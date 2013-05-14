@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content table = HtmlTree.TABLE(0, 3, 0, useTableSummary,
                 getTableCaption(configuration.getText(
                 "doclet.ClassUse_Packages.that.use.0",
-                getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
+                getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc,
                 false)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
@@ -294,7 +294,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getTableCaption(configuration.getText(
                 "doclet.ClassUse_PackageAnnotation",
                 getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc, false)))));
+                        LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc, false)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<PackageDoc> it = pkgToPackageAnnotations.iterator();
@@ -333,7 +333,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(pkg.name()));
             Content link = new RawHtml(
                     configuration.getText("doclet.ClassUse_Uses.of.0.in.1",
-                    getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER,
+                    getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                     classdoc, false)),
                     getPackageLinkString(pkg, Util.getPackageName(pkg), false)));
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
@@ -369,7 +369,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassUse(PackageDoc pkg, Content contentTree) throws IOException {
         String classLink = getLink(new LinkInfoImpl(configuration,
-            LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc, false));
+            LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc, false));
         String pkgLink = getPackageLinkString(pkg, Util.getPackageName(pkg), false);
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg.name()),
                 configuration.getText("doclet.ClassUse_Annotation", classLink,
@@ -477,7 +477,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkClass() {
         Content linkContent = new RawHtml(getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.CONTEXT_CLASS_USE_HEADER, classdoc,
+                configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc,
                 "", configuration.getText("doclet.Class"), false)));
         Content li = HtmlTree.LI(linkContent);
         return li;

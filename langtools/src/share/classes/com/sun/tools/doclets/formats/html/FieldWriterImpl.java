@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         writer.addAnnotationInfo(field, pre);
         addModifiers(field, pre);
         Content fieldlink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.CONTEXT_MEMBER, field.type())));
+                configuration, LinkInfoImpl.Kind.MEMBER, field.type())));
         pre.addContent(fieldlink);
         pre.addContent(" ");
         if (configuration.linksource) {
@@ -133,7 +133,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 writer.addInlineComment(field, fieldDocTree);
             } else {
                 Content link = new RawHtml(
-                        writer.getDocLink(LinkInfoImpl.CONTEXT_FIELD_DOC_COPY,
+                        writer.getDocLink(LinkInfoImpl.Kind.FIELD_DOC_COPY,
                         holder, field,
                         holder.isIncluded() ?
                             holder.typeName() : holder.qualifiedTypeName(),
@@ -240,7 +240,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
         Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+                LinkInfoImpl.Kind.MEMBER, cd, false));
         Content label = new StringContent(cd.isClass() ?
             configuration.getText("doclet.Fields_Inherited_From_Class") :
             configuration.getText("doclet.Fields_Inherited_From_Interface"));
@@ -254,7 +254,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+    protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
         Content strong = HtmlTree.STRONG(new RawHtml(
                 writer.getDocLink(context, cd , (MemberDoc) member, member.name(), false)));
@@ -268,7 +268,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
         linksTree.addContent(new RawHtml(
-                writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER, cd, (MemberDoc)member,
+                writer.getDocLink(LinkInfoImpl.Kind.MEMBER, cd, (MemberDoc)member,
                 member.name(), false)));
     }
 
@@ -284,7 +284,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected Content getDeprecatedLink(ProgramElementDoc member) {
-        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER,
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER,
                 (MemberDoc) member, ((FieldDoc)member).qualifiedName());
     }
 

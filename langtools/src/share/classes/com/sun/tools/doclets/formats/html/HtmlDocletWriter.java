@@ -373,7 +373,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     continue;
                 }
                 Content classContent = new RawHtml(getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.CONTEXT_PACKAGE, classes[i],
+                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i],
                         false)));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
@@ -1191,7 +1191,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param cd the class doc to link to
      * @return a content tree for the link
      */
-    public Content getQualifiedClassLink(int context, ClassDoc cd) {
+    public Content getQualifiedClassLink(LinkInfoImpl.Kind context, ClassDoc cd) {
         return new RawHtml(getLink(new LinkInfoImpl(configuration, context, cd,
                 configuration.getClassName(cd), "")));
     }
@@ -1203,7 +1203,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param cd the class doc to link to
      * @param contentTree the content tree to which the link will be added
      */
-    public void addPreQualifiedClassLink(int context, ClassDoc cd, Content contentTree) {
+    public void addPreQualifiedClassLink(LinkInfoImpl.Kind context, ClassDoc cd, Content contentTree) {
         addPreQualifiedClassLink(context, cd, false, contentTree);
     }
 
@@ -1216,7 +1216,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param isStrong true if the link should be strong.
      * @return the link with the package portion of the label in plain text.
      */
-    public String getPreQualifiedClassLink(int context,
+    public String getPreQualifiedClassLink(LinkInfoImpl.Kind context,
             ClassDoc cd, boolean isStrong) {
         String classlink = "";
         PackageDoc pd = cd.containingPackage();
@@ -1238,7 +1238,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param isStrong true if the link should be strong
      * @param contentTree the content tree to which the link with be added
      */
-    public void addPreQualifiedClassLink(int context,
+    public void addPreQualifiedClassLink(LinkInfoImpl.Kind context,
             ClassDoc cd, boolean isStrong, Content contentTree) {
         PackageDoc pd = cd.containingPackage();
         if(pd != null && ! configuration.shouldExcludeQualifier(pd.name())) {
@@ -1256,7 +1256,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param cd the class to link to
      * @param contentTree the content tree to which the link with be added
      */
-    public void addPreQualifiedStrongClassLink(int context, ClassDoc cd, Content contentTree) {
+    public void addPreQualifiedStrongClassLink(LinkInfoImpl.Kind context, ClassDoc cd, Content contentTree) {
         addPreQualifiedClassLink(context, cd, true, contentTree);
     }
 
@@ -1268,7 +1268,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param label the label for the link
      * @return a content tree for the doc link
      */
-    public Content getDocLink(int context, MemberDoc doc, String label) {
+    public Content getDocLink(LinkInfoImpl.Kind context, MemberDoc doc, String label) {
         return getDocLink(context, doc.containingClass(), doc, label);
     }
 
@@ -1281,7 +1281,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
-    public String getDocLink(int context, MemberDoc doc, String label,
+    public String getDocLink(LinkInfoImpl.Kind context, MemberDoc doc, String label,
                 boolean strong) {
         return getDocLink(context, doc.containingClass(), doc, label, strong);
     }
@@ -1298,7 +1298,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param strong true if the link should be strong.
      * @return the link for the given member.
      */
-    public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
+    public String getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
         String label, boolean strong) {
         return getDocLink(context, classDoc, doc, label, strong, false);
     }
@@ -1316,7 +1316,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param isProperty true if the doc parameter is a JavaFX property.
      * @return the link for the given member.
      */
-    public String getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
+    public String getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
         String label, boolean strong, boolean isProperty) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
@@ -1344,7 +1344,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param label the label for the link
      * @return the link for the given member
      */
-    public Content getDocLink(int context, ClassDoc classDoc, MemberDoc doc,
+    public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
         String label) {
         if (! (doc.isIncluded() ||
             Util.isLinkable(classDoc, configuration))) {
@@ -1480,7 +1480,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
             text = plainOrCodeText(plain, Util.escapeHtmlChars(refMemName));
 
-            return getDocLink(LinkInfoImpl.CONTEXT_SEE_TAG, containing,
+            return getDocLink(LinkInfoImpl.Kind.SEE_TAG, containing,
                 refMem, (label.isEmpty() ? text: label), false);
         }
     }
@@ -1998,7 +1998,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             annotation = new StringBuilder();
             isAnnotationDocumented = false;
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_ANNOTATION, annotationDoc);
+                LinkInfoImpl.Kind.ANNOTATION, annotationDoc);
             AnnotationDesc.ElementValuePair[] pairs = descList[i].elementValues();
             // If the annotation is synthesized, do not print the container.
             if (descList[i].isSynthesized()) {
@@ -2081,7 +2081,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         }
                     }
                 }
-                annotation.append(getDocLink(LinkInfoImpl.CONTEXT_ANNOTATION,
+                annotation.append(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
                         pairs[j].element(), pairs[j].element().name(), false));
                 annotation.append('=');
                 AnnotationValue annotationValue = pairs[j].value();
@@ -2143,7 +2143,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             Type type = (Type) annotationValue.value();
             if (type.asClassDoc() != null) {
                 LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_ANNOTATION, type);
+                    LinkInfoImpl.Kind.ANNOTATION, type);
                     linkInfo.label = (type.asClassDoc().isIncluded() ?
                         type.typeName() :
                         type.qualifiedTypeName()) + type.dimension() + ".class";
@@ -2161,7 +2161,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
             return buf.toString();
         } else if (annotationValue.value() instanceof MemberDoc) {
-            return getDocLink(LinkInfoImpl.CONTEXT_ANNOTATION,
+            return getDocLink(LinkInfoImpl.Kind.ANNOTATION,
                 (MemberDoc) annotationValue.value(),
                 ((MemberDoc) annotationValue.value()).name(), false);
          } else {

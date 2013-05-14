@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
         Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+                LinkInfoImpl.Kind.MEMBER, cd, false));
         Content label = new StringContent(cd.isInterface() ?
             configuration.getText("doclet.Nested_Classes_Interface_Inherited_From_Interface") :
             configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
@@ -163,7 +163,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+    protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
         Content strong = HtmlTree.STRONG(new RawHtml(
                 writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member, false))));
@@ -177,7 +177,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
         linksTree.addContent(new RawHtml(
-                writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER,
+                writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
                 (ClassDoc)member, false))));
     }
 
@@ -194,7 +194,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected Content getDeprecatedLink(ProgramElementDoc member) {
-        return writer.getQualifiedClassLink(LinkInfoImpl.CONTEXT_MEMBER,
+        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER,
                 (ClassDoc)member);
     }
 

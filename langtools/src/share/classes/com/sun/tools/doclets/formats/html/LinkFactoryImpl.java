@@ -121,7 +121,7 @@ public class LinkFactoryImpl extends LinkFactory {
     protected LinkOutput getTypeParameterLink(LinkInfo linkInfo,
         Type typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
-                linkInfo.getContext(), typeParam);
+                ((LinkInfoImpl) linkInfo).getContext(), typeParam);
         typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
         typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
@@ -204,7 +204,7 @@ public class LinkFactoryImpl extends LinkFactory {
      * @param linkInfo the information about the link.
      */
     private DocPath getPath(LinkInfoImpl linkInfo) {
-        if (linkInfo.context == LinkInfoImpl.PACKAGE_FRAME) {
+        if (linkInfo.context == LinkInfoImpl.Kind.PACKAGE_FRAME) {
             //Not really necessary to do this but we want to be consistent
             //with 1.4.2 output.
             return DocPath.forName(linkInfo.classDoc);
