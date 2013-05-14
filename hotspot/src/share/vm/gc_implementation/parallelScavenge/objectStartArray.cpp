@@ -99,7 +99,7 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
     // Expand
     size_t expand_by = requested_blocks_size_in_bytes - current_blocks_size_in_bytes;
     if (!_virtual_space.expand_by(expand_by)) {
-      vm_exit_out_of_memory(expand_by, "object start array expansion");
+      vm_exit_out_of_memory(expand_by, OOM_MMAP_ERROR, "object start array expansion");
     }
     // Clear *only* the newly allocated region
     memset(_blocks_region.end(), clean_block, expand_by);

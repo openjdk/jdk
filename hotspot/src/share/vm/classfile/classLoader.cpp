@@ -1274,13 +1274,16 @@ void ClassLoader::compile_the_world() {
   Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
   // Iterate over all bootstrap class path entries
   ClassPathEntry* e = _first_entry;
+  jlong start = os::javaTimeMillis();
   while (e != NULL) {
     // We stop at rt.jar, unless it is the first bootstrap path entry
     if (e->is_rt_jar() && e != _first_entry) break;
     e->compile_the_world(system_class_loader, CATCH);
     e = e->next();
   }
-  tty->print_cr("CompileTheWorld : Done");
+  jlong end = os::javaTimeMillis();
+  tty->print_cr("CompileTheWorld : Done (%d classes, %d methods, %d ms)",
+                _compile_the_world_class_counter, _compile_the_world_method_counter, (end - start));
   {
     // Print statistics as if before normal exit:
     extern void print_statistics();
@@ -1289,7 +1292,8 @@ void ClassLoader::compile_the_world() {
   vm_exit(0);
 }
 
-int ClassLoader::_compile_the_world_counter = 0;
+int ClassLoader::_compile_the_world_class_counter = 0;
+int ClassLoader::_compile_the_world_method_counter = 0;
 static int _codecache_sweep_counter = 0;
 
 // Filter out all exceptions except OOMs
@@ -1311,8 +1315,8 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
     // If the file has a period after removing .class, it's not really a
     // valid class file.  The class loader will check everything else.
     if (strchr(buffer, '.') == NULL) {
-      _compile_the_world_counter++;
-      if (_compile_the_world_counter > CompileTheWorldStopAt) return;
+      _compile_the_world_class_counter++;
+      if (_compile_the_world_class_counter > CompileTheWorldStopAt) return;
 
       // Construct name without extension
       TempNewSymbol sym = SymbolTable::new_symbol(buffer, CHECK);
@@ -1329,21 +1333,22 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
         if (HAS_PENDING_EXCEPTION) {
           // If something went wrong in preloading we just ignore it
           clear_pending_exception_if_not_oom(CHECK);
-          tty->print_cr("Preloading failed for (%d) %s", _compile_the_world_counter, buffer);
+          tty->print_cr("Preloading failed for (%d) %s", _compile_the_world_class_counter, buffer);
         }
       }
 
-      if (_compile_the_world_counter >= CompileTheWorldStartAt) {
+      if (_compile_the_world_class_counter >= CompileTheWorldStartAt) {
         if (k.is_null() || exception_occurred) {
           // If something went wrong (e.g. ExceptionInInitializerError) we skip this class
-          tty->print_cr("CompileTheWorld (%d) : Skipping %s", _compile_the_world_counter, buffer);
+          tty->print_cr("CompileTheWorld (%d) : Skipping %s", _compile_the_world_class_counter, buffer);
         } else {
-          tty->print_cr("CompileTheWorld (%d) : %s", _compile_the_world_counter, buffer);
+          tty->print_cr("CompileTheWorld (%d) : %s", _compile_the_world_class_counter, buffer);
           // Preload all classes to get around uncommon traps
           // Iterate over all methods in class
+          int comp_level = CompilationPolicy::policy()->initial_compile_level();
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, k->methods()->at(n));
-            if (CompilationPolicy::can_be_compiled(m)) {
+            if (CompilationPolicy::can_be_compiled(m, comp_level)) {
 
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
@@ -1352,11 +1357,13 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 _codecache_sweep_counter = 0;
               }
               // Force compilation
-              CompileBroker::compile_method(m, InvocationEntryBci, CompilationPolicy::policy()->initial_compile_level(),
+              CompileBroker::compile_method(m, InvocationEntryBci, comp_level,
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
-                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
+                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+              } else {
+                _compile_the_world_method_counter++;
               }
               if (TieredCompilation && TieredStopAtLevel >= CompLevel_full_optimization) {
                 // Clobber the first compile and force second tier compilation
@@ -1370,7 +1377,9 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                                               methodHandle(), 0, "CTW", THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   clear_pending_exception_if_not_oom(CHECK);
-                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
+                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+                } else {
+                  _compile_the_world_method_counter++;
                 }
               }
             }

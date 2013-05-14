@@ -173,9 +173,9 @@ public class Shell {
 
         if (env._fx) {
             return runFXScripts(context, global, files);
-        } else {
-            return runScripts(context, global, files);
         }
+
+        return runScripts(context, global, files);
     }
 
     /**
@@ -270,7 +270,7 @@ public class Shell {
                 }
 
                 //null - pass no code installer - this is compile only
-                new Compiler(env, functionNode).compile();
+                new Compiler(env).compile(functionNode);
             }
         } finally {
             env.getOut().flush();

@@ -72,4 +72,7 @@ public interface TestConfig {
 
     // shared context mode or not
     static final String TEST_JS_SHARED_CONTEXT              = "test.js.shared.context";
+
+    // file for storing last run's failed tests
+    static final String TEST_FAILED_LIST_FILE = "test.failed.list.file";
 }

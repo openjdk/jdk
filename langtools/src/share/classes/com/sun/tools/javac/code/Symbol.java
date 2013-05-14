@@ -465,16 +465,9 @@ public abstract class Symbol implements Element {
      * This is the implementation for {@code
      * javax.lang.model.element.Element.getAnnotationMirrors()}.
      */
-    public final List<? extends AnnotationMirror> getAnnotationMirrors() {
+    @Override
+    public List<Attribute.Compound> getAnnotationMirrors() {
         return getRawAttributes();
-    }
-
-    /**
-     * TODO: Should there be a {@code
-     * javax.lang.model.element.Element.getTypeAnnotationMirrors()}.
-     */
-    public final List<Attribute.TypeCompound> getTypeAnnotationMirrors() {
-        return getRawTypeAttributes();
     }
 
     /**
@@ -654,6 +647,24 @@ public abstract class Symbol implements Element {
                 // In this case, supertype is Object, erasure is first interface.
                 return ct.interfaces_field;
             }
+        }
+
+        @Override
+        public List<Attribute.Compound> getAnnotationMirrors() {
+            return onlyTypeVariableAnnotations(owner.getRawTypeAttributes());
+        }
+
+        private List<Attribute.Compound> onlyTypeVariableAnnotations(
+                List<Attribute.TypeCompound> candidates) {
+            // Declaration annotations on TypeParameters are stored in type attributes
+            List<Attribute.Compound> res = List.nil();
+            for (Attribute.TypeCompound a : candidates) {
+                if (a.position.type == TargetType.CLASS_TYPE_PARAMETER ||
+                    a.position.type == TargetType.METHOD_TYPE_PARAMETER)
+                    res = res.prepend(a);
+            }
+
+            return res = res.reverse();
         }
 
         @Override

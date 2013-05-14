@@ -315,14 +315,18 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
   return string;
 }
 
-jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
+jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
                length = java_lang_String::length(java_string);
 
-  jchar* result = NEW_RESOURCE_ARRAY(jchar, length);
-  for (int index = 0; index < length; index++) {
-    result[index] = value->char_at(index + offset);
+  jchar* result = NEW_RESOURCE_ARRAY_RETURN_NULL(jchar, length);
+  if (result != NULL) {
+    for (int index = 0; index < length; index++) {
+      result[index] = value->char_at(index + offset);
+    }
+  } else {
+    THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
   }
   return result;
 }
@@ -2624,6 +2628,15 @@ Metadata* java_lang_invoke_MemberName::vmtarget(oop mname) {
   assert(is_instance(mname), "wrong type");
   return (Metadata*)mname->address_field(_vmtarget_offset);
 }
+
+#if INCLUDE_JVMTI
+// Can be executed on VM thread only
+void java_lang_invoke_MemberName::adjust_vmtarget(oop mname, Metadata* ref) {
+  assert((is_instance(mname) && (flags(mname) & (MN_IS_METHOD | MN_IS_CONSTRUCTOR)) > 0), "wrong type");
+  assert(Thread::current()->is_VM_thread(), "not VM thread");
+  mname->address_field_put(_vmtarget_offset, (address)ref);
+}
+#endif // INCLUDE_JVMTI
 
 void java_lang_invoke_MemberName::set_vmtarget(oop mname, Metadata* ref) {
   assert(is_instance(mname), "wrong type");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import sun.security.action.GetIntegerAction;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.GeneralNameInterface;
 import sun.security.x509.URIName;
@@ -120,6 +121,33 @@ class URICertStore extends CertStoreSpi {
     private CertStoreHelper ldapHelper;
     private CertStore ldapCertStore;
     private String ldapPath;
+
+    // Default maximum connect timeout in milliseconds (15 seconds)
+    // allowed when downloading CRLs
+    private static final int DEFAULT_CRL_CONNECT_TIMEOUT = 15000;
+
+    /**
+     * Integer value indicating the connect timeout, in seconds, to be
+     * used for the CRL download. A timeout of zero is interpreted as
+     * an infinite timeout.
+     */
+    private static final int CRL_CONNECT_TIMEOUT = initializeTimeout();
+
+    /**
+     * Initialize the timeout length by getting the CRL timeout
+     * system property. If the property has not been set, or if its
+     * value is negative, set the timeout length to the default.
+     */
+    private static int initializeTimeout() {
+        Integer tmp = java.security.AccessController.doPrivileged(
+                new GetIntegerAction("com.sun.security.crl.timeout"));
+        if (tmp == null || tmp < 0) {
+            return DEFAULT_CRL_CONNECT_TIMEOUT;
+        }
+        // Convert to milliseconds, as the system property will be
+        // specified in seconds
+        return tmp * 1000;
+    }
 
     /**
      * Creates a URICertStore.
@@ -364,6 +392,7 @@ class URICertStore extends CertStoreSpi {
                 connection.setIfModifiedSince(lastModified);
             }
             long oldLastModified = lastModified;
+            connection.setConnectTimeout(CRL_CONNECT_TIMEOUT);
             try (InputStream in = connection.getInputStream()) {
                 lastModified = connection.getLastModified();
                 if (oldLastModified != 0) {
