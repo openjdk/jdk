@@ -117,8 +117,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content li;
         if (prev != null) {
             Content prevLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, prev.asClassDoc(), "",
-                    configuration.getText("doclet.Prev_Class"), true));
+                    LinkInfoImpl.Kind.CLASS, prev.asClassDoc())
+                    .label(configuration.getText("doclet.Prev_Class")).strong(true));
             li = HtmlTree.LI(prevLink);
         }
         else
@@ -135,8 +135,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content li;
         if (next != null) {
             Content nextLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, next.asClassDoc(), "",
-                    configuration.getText("doclet.Next_Class"), true));
+                    LinkInfoImpl.Kind.CLASS, next.asClassDoc())
+                    .label(configuration.getText("doclet.Next_Class")).strong(true));
             li = HtmlTree.LI(nextLink);
         }
         else
@@ -163,7 +163,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_HEADER, annotationType, false);
+                LinkInfoImpl.Kind.CLASS_HEADER, annotationType);
         Content headerContent = new StringContent(header);
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
                 HtmlStyle.title, headerContent);
@@ -220,7 +220,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         addAnnotationInfo(annotationType, pre);
         pre.addContent(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.Kind.CLASS_SIGNATURE, annotationType, false);
+                LinkInfoImpl.Kind.CLASS_SIGNATURE, annotationType);
         Content annotationName = new StringContent(annotationType.name());
         Content parameterLinks = getTypeParameterLinks(linkInfo);
         if (configuration.linksource) {

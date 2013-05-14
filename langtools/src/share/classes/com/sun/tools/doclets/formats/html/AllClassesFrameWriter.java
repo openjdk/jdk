@@ -160,9 +160,9 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             Content linkContent;
             if (wantFrames) {
                 linkContent = getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd, label, "classFrame"));
+                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd).label(label).target("classFrame"));
             } else {
-                linkContent = getLink(new LinkInfoImpl(configuration, cd, label));
+                linkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, cd).label(label));
             }
             Content li = HtmlTree.LI(linkContent);
             content.addContent(li);

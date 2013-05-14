@@ -62,7 +62,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected int addTypeParameters(ExecutableMemberDoc member, Content htmltree) {
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-            LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS, member, false);
+            LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS, member);
         Content typeParameters = writer.getTypeParameterLinks(linkInfo);
         if (linkInfo.displayLength > 0) {
             Content linkContent = typeParameters;
@@ -130,7 +130,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         if (param.type() != null) {
             Content link = writer.getLink(new LinkInfoImpl(
                     configuration, LinkInfoImpl.Kind.EXECUTABLE_MEMBER_PARAM,
-                    param.type(), isVarArg));
+                    param.type()).varargs(isVarArg));
             tree.addContent(link);
         }
         if(param.name().length() > 0) {
@@ -244,7 +244,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Type[] exceptions = member.thrownExceptionTypes();
         if(exceptions.length > 0) {
             LinkInfoImpl memberTypeParam = new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.MEMBER, member, false);
+                    LinkInfoImpl.Kind.MEMBER, member);
             int retlen = getReturnTypeLength(member);
             writer.getTypeParameterLinks(memberTypeParam);
             retlen += memberTypeParam.displayLength == 0 ?

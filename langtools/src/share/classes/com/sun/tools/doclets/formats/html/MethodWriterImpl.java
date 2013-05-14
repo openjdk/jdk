@@ -317,8 +317,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             String name = method.name();
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
-                    overriddenType.asClassDoc(),
-                    writer.getAnchor(method), name, false));
+                    overriddenType.asClassDoc())
+                    .where(writer.getAnchor(method)).label(name));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(writer.getSpace());
