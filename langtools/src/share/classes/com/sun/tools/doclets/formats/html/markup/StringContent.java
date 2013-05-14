@@ -41,7 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
-public class StringContent extends Content{
+public class StringContent extends Content {
 
     private StringBuilder stringContent;
 
@@ -92,7 +92,7 @@ public class StringContent extends Content{
     }
 
     public int charCount() {
-        return stringContent.length();
+        return RawHtml.charCount(stringContent.toString());
     }
 
     /**

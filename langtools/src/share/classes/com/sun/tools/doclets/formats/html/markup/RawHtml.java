@@ -99,10 +99,14 @@ public class RawHtml extends Content {
 
     @Override
     public int charCount() {
+        return charCount(rawHtmlContent);
+    }
+
+    static int charCount(String htmlText) {
         State state = State.TEXT;
         int count = 0;
-        for (int i = 0; i < rawHtmlContent.length(); i++) {
-            char c = rawHtmlContent.charAt(i);
+        for (int i = 0; i < htmlText.length(); i++) {
+            char c = htmlText.charAt(i);
             switch (state) {
                 case TEXT:
                     switch (c) {

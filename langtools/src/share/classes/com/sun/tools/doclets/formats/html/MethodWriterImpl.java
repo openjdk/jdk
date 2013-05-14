@@ -117,7 +117,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * @return a content object for the signature
      */
     public Content getSignature(MethodDoc method) {
-        writer.displayLength = 0;
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(method, pre);
         addModifiers(method, pre);
@@ -129,8 +128,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         } else {
             addName(method.name(), pre);
         }
-        addParameters(method, pre);
-        addExceptions(method, pre);
+        int indent = pre.charCount();
+        addParameters(method, pre, indent);
+        addExceptions(method, pre, indent);
         return pre;
     }
 
