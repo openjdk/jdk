@@ -158,8 +158,7 @@ public class TagletManager {
 
     /**
      * True if we want to use JavaFX-related tags (@propertyGetter,
-     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate,
-     * @expert).
+     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate).
      */
     private boolean javafx;
 
@@ -703,14 +702,12 @@ public class TagletManager {
             SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
         customTags.put((temp = new SimpleTaglet("treatAsPrivate", null,
                 SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE)).getName(), temp);
-        customTags.put((temp = new ExpertTaglet()).getName(), temp);
 
         standardTags.add("propertyGetter");
         standardTags.add("propertySetter");
         standardTags.add("propertyDescription");
         standardTags.add("defaultValue");
         standardTags.add("treatAsPrivate");
-        standardTags.add("expert");
     }
 
     /**

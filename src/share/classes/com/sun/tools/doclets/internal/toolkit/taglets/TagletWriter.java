@@ -80,15 +80,6 @@ public abstract class TagletWriter {
     protected abstract TagletOutput deprecatedTagOutput(Doc doc);
 
     /**
-     * Return the output for a {@expert...} tag.
-     *
-     * @param tag the tag.
-     * @return the output of the taglet.
-     */
-    // TODO: remove this taglet
-    protected abstract TagletOutput expertTagOutput(Tag tag);
-
-    /**
      * Return the output for a {@literal...} tag.
      *
      * @param tag the tag.
@@ -120,6 +111,15 @@ public abstract class TagletWriter {
      */
     protected abstract TagletOutput paramTagOutput(ParamTag paramTag,
         String paramName);
+
+    /**
+     * Return the output for property tags.
+     *
+     * @param propertyTag the parameter to document.
+     * @param prefix the text with which to prefix the property name.
+     * @return the output of the param tag.
+     */
+    protected abstract TagletOutput propertyTagOutput(Tag propertyTag, String prefix);
 
     /**
      * Return the return tag output.
