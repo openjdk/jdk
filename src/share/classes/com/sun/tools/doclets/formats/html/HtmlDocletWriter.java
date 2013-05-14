@@ -1726,7 +1726,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    static Set<String> blockTags = new HashSet<String>();
+    static final Set<String> blockTags = new HashSet<String>();
     static {
         for (HtmlTag t: HtmlTag.values()) {
             if (t.blockType == HtmlTag.BlockType.BLOCK)
@@ -1771,7 +1771,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return result.toString();
     }
 
-    private static final boolean isHtmlTagLetterOrDigit(char ch) {
+    private static boolean isHtmlTagLetterOrDigit(char ch) {
         return ('a' <= ch && ch <= 'z') ||
                 ('A' <= ch && ch <= 'Z') ||
                 ('1' <= ch && ch <= '6');

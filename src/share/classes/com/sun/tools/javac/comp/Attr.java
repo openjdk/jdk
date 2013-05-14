@@ -768,7 +768,12 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
 
         try {
-            memberEnter.typeAnnotate(initializer, env, env.info.enclVar);
+            // Use null as symbol to not attach the type annotation to any symbol.
+            // The initializer will later also be visited and then we'll attach
+            // to the symbol.
+            // This prevents having multiple type annotations, just because of
+            // lazy constant value evaluation.
+            memberEnter.typeAnnotate(initializer, env, null);
             annotate.flush();
             Type itype = attribExpr(initializer, env, type);
             if (itype.constValue() != null)
@@ -935,11 +940,6 @@ public class Attr extends JCTree.Visitor {
                 Env<AttrContext> newEnv = memberEnter.methodEnv(tree, env);
                 attribType(tree.recvparam, newEnv);
                 chk.validate(tree.recvparam, newEnv);
-                if (!(tree.recvparam.type == m.owner.type || types.isSameType(tree.recvparam.type, m.owner.type))) {
-                    // The == covers the common non-generic case, but for generic classes we need isSameType;
-                    // note that equals didn't work.
-                    log.error(tree.recvparam.pos(), "incorrect.receiver.type");
-                }
             }
 
             // annotation method checks
@@ -1111,6 +1111,18 @@ public class Attr extends JCTree.Visitor {
             // Attribute all type annotations in the block
             memberEnter.typeAnnotate(tree, localEnv, localEnv.info.scope.owner);
             annotate.flush();
+
+            {
+                // Store init and clinit type annotations with the ClassSymbol
+                // to allow output in Gen.normalizeDefs.
+                ClassSymbol cs = (ClassSymbol)env.info.scope.owner;
+                List<Attribute.TypeCompound> tas = localEnv.info.scope.owner.getRawTypeAttributes();
+                if ((tree.flags & STATIC) != 0) {
+                    cs.annotations.appendClassInitTypeAttributes(tas);
+                } else {
+                    cs.annotations.appendInitTypeAttributes(tas);
+                }
+            }
 
             attribStats(tree.stats, localEnv);
         } else {
@@ -2131,6 +2143,11 @@ public class Attr extends JCTree.Visitor {
                     tree.constructor,
                     localEnv,
                     new ResultInfo(VAL, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
+            } else {
+                if (tree.clazz.hasTag(ANNOTATED_TYPE)) {
+                    checkForDeclarationAnnotations(((JCAnnotatedType) tree.clazz).annotations,
+                            tree.clazz.type.tsym);
+                }
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
@@ -2195,6 +2212,20 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
+    private void checkForDeclarationAnnotations(List<? extends JCAnnotation> annotations,
+            Symbol sym) {
+        // Ensure that no declaration annotations are present.
+        // Note that a tree type might be an AnnotatedType with
+        // empty annotations, if only declaration annotations were given.
+        // This method will raise an error for such a type.
+        for (JCAnnotation ai : annotations) {
+            if (TypeAnnotations.annotationType(syms, names, ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
+                log.error(ai.pos(), "annotation.type.not.applicable");
+            }
+        }
+    }
+
+
     /** Make an attributed null check tree.
      */
     public JCExpression makeNullCheck(JCExpression arg) {
@@ -2220,6 +2251,10 @@ public class Attr extends JCTree.Visitor {
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, localEnv, syms.intType);
                 owntype = new ArrayType(owntype, syms.arrayClass);
+            }
+            if (tree.elemtype.hasTag(ANNOTATED_TYPE)) {
+                checkForDeclarationAnnotations(((JCAnnotatedType) tree.elemtype).annotations,
+                        tree.elemtype.type.tsym);
             }
         } else {
             // we are seeing an untyped aggregate { ... }
@@ -3763,6 +3798,12 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
                 owntype = new ClassType(clazzOuter, actuals, clazztype.tsym);
+                if (clazztype.isAnnotated()) {
+                    // Use the same AnnotatedType, because it will have
+                    // its annotations set later.
+                    ((AnnotatedType)clazztype).underlyingType = owntype;
+                    owntype = clazztype;
+                }
             } else {
                 if (formals.length() != 0) {
                     log.error(tree.pos(), "wrong.number.type.args",
@@ -3961,7 +4002,14 @@ public class Attr extends JCTree.Visitor {
 
         ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
         for (JCAnnotation anno : annotations) {
-            buf.append((Attribute.TypeCompound) anno.attribute);
+            if (anno.attribute != null) {
+                // TODO: this null-check is only needed for an obscure
+                // ordering issue, where annotate.flush is called when
+                // the attribute is not set yet. For an example failure
+                // try the referenceinfos/NestedTypes.java test.
+                // Any better solutions?
+                buf.append((Attribute.TypeCompound) anno.attribute);
+            }
         }
         return buf.toList();
     }
@@ -4266,15 +4314,12 @@ public class Attr extends JCTree.Visitor {
         tree.accept(typeAnnotationsValidator);
     }
     //where
-    private final JCTree.Visitor typeAnnotationsValidator =
-        new TreeScanner() {
+    private final JCTree.Visitor typeAnnotationsValidator = new TreeScanner() {
+
+        private boolean checkAllAnnotations = false;
+
         public void visitAnnotation(JCAnnotation tree) {
-            if (tree.hasTag(TYPE_ANNOTATION)) {
-                // TODO: It seems to WMD as if the annotation in
-                // parameters, in particular also the recvparam, are never
-                // of type JCTypeAnnotation and therefore never checked!
-                // Luckily this check doesn't really do anything that isn't
-                // also done elsewhere.
+            if (tree.hasTag(TYPE_ANNOTATION) || checkAllAnnotations) {
                 chk.validateTypeAnnotation(tree, false);
             }
             super.visitAnnotation(tree);
@@ -4288,15 +4333,10 @@ public class Attr extends JCTree.Visitor {
             // super.visitTypeParameter(tree);
         }
         public void visitMethodDef(JCMethodDecl tree) {
-            // Static methods cannot have receiver type annotations.
-            // In test case FailOver15.java, the nested method getString has
-            // a null sym, because an unknown class is instantiated.
-            // I would say it's safe to skip.
-            if (tree.sym != null && (tree.sym.flags() & Flags.STATIC) != 0) {
-                if (tree.recvparam != null) {
-                    // TODO: better error message. Is the pos good?
-                    log.error(tree.recvparam.pos(), "annotation.type.not.applicable");
-                }
+            if (tree.recvparam != null &&
+                    tree.recvparam.vartype.type.getKind() != TypeKind.ERROR) {
+                checkForDeclarationAnnotations(tree.recvparam.mods.annotations,
+                        tree.recvparam.vartype.type.tsym);
             }
             if (tree.restype != null && tree.restype.type != null) {
                 validateAnnotatedType(tree.restype, tree.restype.type);
@@ -4318,9 +4358,30 @@ public class Attr extends JCTree.Visitor {
                 validateAnnotatedType(tree.clazz, tree.clazz.type);
             super.visitTypeTest(tree);
         }
-        // TODO: what else do we need?
-        // public void visitNewClass(JCNewClass tree) {
-        // public void visitNewArray(JCNewArray tree) {
+        public void visitNewClass(JCNewClass tree) {
+            if (tree.clazz.hasTag(ANNOTATED_TYPE)) {
+                boolean prevCheck = this.checkAllAnnotations;
+                try {
+                    this.checkAllAnnotations = true;
+                    scan(((JCAnnotatedType)tree.clazz).annotations);
+                } finally {
+                    this.checkAllAnnotations = prevCheck;
+                }
+            }
+            super.visitNewClass(tree);
+        }
+        public void visitNewArray(JCNewArray tree) {
+            if (tree.elemtype != null && tree.elemtype.hasTag(ANNOTATED_TYPE)) {
+                boolean prevCheck = this.checkAllAnnotations;
+                try {
+                    this.checkAllAnnotations = true;
+                    scan(((JCAnnotatedType)tree.elemtype).annotations);
+                } finally {
+                    this.checkAllAnnotations = prevCheck;
+                }
+            }
+            super.visitNewArray(tree);
+        }
 
         /* I would want to model this after
          * com.sun.tools.javac.comp.Check.Validator.visitSelectInternal(JCFieldAccess)

@@ -66,12 +66,12 @@ public class ClassfileTestHelper {
     }
 
     ClassFile getClassFile(URL url) throws IOException, ConstantPoolException {
-            InputStream in = url.openStream();
-            try {
-                return ClassFile.read(in);
-            } finally {
-                in.close();
-            }
+        InputStream in = url.openStream();
+        try {
+            return ClassFile.read(in);
+        } finally {
+            in.close();
+        }
     }
 
     /************ Helper annotations counting methods ******************/
@@ -83,20 +83,43 @@ public class ClassfileTestHelper {
         test("CLASS",cf, null, null, Attribute.RuntimeInvisibleAnnotations, false);
     }
 
-    void test(ClassFile cf, Method m) {
-        test("METHOD",cf, null, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test("METHOD",cf, null, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-        test("METHOD",cf, null, m, Attribute.RuntimeVisibleAnnotations, true);
-        test("METHOD",cf, null, m, Attribute.RuntimeInvisibleAnnotations, false);
+    void test(ClassFile cf, Field f, Boolean local) {
+        if (!local) {
+            test("FIELD",cf, f, null, Attribute.RuntimeVisibleTypeAnnotations, true);
+            test("FIELD",cf, f, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
+            test("FIELD",cf, f, null, Attribute.RuntimeVisibleAnnotations, true);
+            test("FIELD",cf, f, null, Attribute.RuntimeInvisibleAnnotations, false);
+        } else {
+            test("CODE",cf, f, null, Attribute.RuntimeVisibleTypeAnnotations, true);
+            test("CODE",cf, f, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
+            test("CODE",cf, f, null, Attribute.RuntimeVisibleAnnotations, true);
+            test("CODE",cf, f, null, Attribute.RuntimeInvisibleAnnotations, false);
+        }
     }
 
     void test(ClassFile cf, Field f) {
-        test("FIELD",cf, f, null, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test("FIELD",cf, f, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
-        test("FIELD",cf, f, null, Attribute.RuntimeVisibleAnnotations, true);
-        test("FIELD",cf, f, null, Attribute.RuntimeInvisibleAnnotations, false);
+        test(cf, f, false);
     }
 
+    // 'local' determines whether to look for annotations in code attribute or not.
+    void test(ClassFile cf, Method m, Boolean local) {
+        if (!local) {
+            test("METHOD",cf, null, m, Attribute.RuntimeVisibleTypeAnnotations, true);
+            test("METHOD",cf, null, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+            test("METHOD",cf, null, m, Attribute.RuntimeVisibleAnnotations, true);
+            test("METHOD",cf, null, m, Attribute.RuntimeInvisibleAnnotations, false);
+        } else  {
+            test("MCODE",cf, null, m, Attribute.RuntimeVisibleTypeAnnotations, true);
+            test("MCODE",cf, null, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+            test("MCODE",cf, null, m, Attribute.RuntimeVisibleAnnotations, true);
+            test("MCODE",cf, null, m, Attribute.RuntimeInvisibleAnnotations, false);
+        }
+    }
+
+    // default to not looking in code attribute
+    void test(ClassFile cf, Method m ) {
+        test(cf, m, false);
+    }
 
     // Test the result of Attributes.getIndex according to expectations
     // encoded in the class/field/method name; increment annotations counts.
@@ -105,18 +128,47 @@ public class ClassfileTestHelper {
         String name = null;
         int index = -1;
         Attribute attr = null;
+        Code_attribute cAttr = null;
         boolean isTAattr = annName.contains("TypeAnnotations");
         try {
             switch(testtype) {
                 case "FIELD":
                     name = f.getName(cf.constant_pool);
                     index = f.attributes.getIndex(cf.constant_pool, annName);
-                    if(index!= -1) attr = f.attributes.get(index);
+                    if(index!= -1)
+                        attr = f.attributes.get(index);
+                    break;
+                case "CODE":
+                    name = f.getName(cf.constant_pool);
+                    //fetch index of and code attribute and annotations from code attribute.
+                    index = cf.attributes.getIndex(cf.constant_pool, Attribute.Code);
+                    if(index!= -1) {
+                        attr = cf.attributes.get(index);
+                        assert attr instanceof Code_attribute;
+                        cAttr = (Code_attribute)attr;
+                        index = cAttr.attributes.getIndex(cf.constant_pool, annName);
+                        if(index!= -1)
+                            attr = cAttr.attributes.get(index);
+                    }
                     break;
                 case "METHOD":
                     name = m.getName(cf.constant_pool);
                     index = m.attributes.getIndex(cf.constant_pool, annName);
-                    if(index!= -1) attr = m.attributes.get(index);
+                    if(index!= -1)
+                        attr = m.attributes.get(index);
+                    break;
+                case "MCODE":
+                    name = m.getName(cf.constant_pool);
+                    //fetch index of and code attribute and annotations from code attribute.
+                    index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
+                    if(index!= -1) {
+                        attr = m.attributes.get(index);
+                        assert attr instanceof Code_attribute;
+                        cAttr = (Code_attribute)attr;
+                        index = cAttr.attributes.getIndex(cf.constant_pool, annName);
+                        if(index!= -1)
+                            attr = cAttr.attributes.get(index);
+                    }
                     break;
                 default:
                     name = cf.getName();
@@ -126,7 +178,6 @@ public class ClassfileTestHelper {
         } catch(ConstantPoolException cpe) { cpe.printStackTrace(); }
 
         if (index != -1) {
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
             if(isTAattr) { //count RuntimeTypeAnnotations
                 RuntimeTypeAnnotations_attribute tAttr =
                         (RuntimeTypeAnnotations_attribute)attr;
