@@ -3182,24 +3182,36 @@ static void force_serial_gc() {
 }
 #endif // INCLUDE_ALL_GCS
 
+// Sharing support
+// Construct the path to the archive
+static char* get_shared_archive_path() {
+  char *shared_archive_path;
+  if (SharedArchiveFile == NULL) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != NULL) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    shared_archive_path = NEW_C_HEAP_ARRAY(char, jvm_path_len +
+        file_sep_len + 20, mtInternal);
+    if (shared_archive_path != NULL) {
+      strncpy(shared_archive_path, jvm_path, jvm_path_len + 1);
+      strncat(shared_archive_path, os::file_separator(), file_sep_len);
+      strncat(shared_archive_path, "classes.jsa", 11);
+    }
+  } else {
+    shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(SharedArchiveFile) + 1, mtInternal);
+    if (shared_archive_path != NULL) {
+      strncpy(shared_archive_path, SharedArchiveFile, strlen(SharedArchiveFile) + 1);
+    }
+  }
+  return shared_archive_path;
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
-
-  // Sharing support
-  // Construct the path to the archive
-  char jvm_path[JVM_MAXPATHLEN];
-  os::jvm_path(jvm_path, sizeof(jvm_path));
-  char *end = strrchr(jvm_path, *os::file_separator());
-  if (end != NULL) *end = '\0';
-  char *shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(jvm_path) +
-      strlen(os::file_separator()) + 20, mtInternal);
-  if (shared_archive_path == NULL) return JNI_ENOMEM;
-  strcpy(shared_archive_path, jvm_path);
-  strcat(shared_archive_path, os::file_separator());
-  strcat(shared_archive_path, "classes");
-  strcat(shared_archive_path, ".jsa");
-  SharedArchivePath = shared_archive_path;
 
   // Remaining part of option string
   const char* tail;
@@ -3289,6 +3301,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   jint result = parse_vm_init_args(args);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Call get_shared_archive_path() here, after possible SharedArchiveFile option got parsed.
+  SharedArchivePath = get_shared_archive_path();
+  if (SharedArchivePath == NULL) {
+    return JNI_ENOMEM;
   }
 
   // Delay warning until here so that we've had a chance to process
