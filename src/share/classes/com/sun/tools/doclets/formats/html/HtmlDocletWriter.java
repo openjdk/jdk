@@ -248,7 +248,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
         TagletOutputImpl output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, doc,
-            configuration.tagletManager.getCustomTags(doc),
+            configuration.tagletManager.getCustomTaglets(doc),
                 getTagletWriterInstance(false), output);
         dl.addContent(output.getContent());
         htmltree.addContent(dl);
@@ -264,7 +264,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     protected boolean hasSerializationOverviewTags(FieldDoc field) {
         TagletOutputImpl output = new TagletOutputImpl();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
-            configuration.tagletManager.getCustomTags(field),
+            configuration.tagletManager.getCustomTaglets(field),
                 getTagletWriterInstance(false), output);
         return !output.getContent().isEmpty();
     }

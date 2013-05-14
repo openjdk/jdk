@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427
+ * @bug 7112427 8012295
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib/
