@@ -36,7 +36,6 @@
 /*
  * @test
  * @bug 6923080
- * @ignore 8014323: Add VariableTree.getNameExpression
  * @summary TreeScanner.visitNewClass should scan tree.typeargs
  * @build AbstractTreeScannerTest SourceTreeScannerTest
  * @run main SourceTreeScannerTest -q -r .
