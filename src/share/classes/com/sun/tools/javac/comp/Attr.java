@@ -2642,10 +2642,11 @@ public class Attr extends JCTree.Visitor {
                 return;
             }
 
-            if (TreeInfo.isStaticSelector(that.expr, names) &&
-                    (that.getMode() != ReferenceMode.NEW || !that.expr.type.isRaw())) {
-                //if the qualifier is a type, validate it
-                chk.validate(that.expr, env);
+            if (TreeInfo.isStaticSelector(that.expr, names)) {
+                //if the qualifier is a type, validate it; raw warning check is
+                //omitted as we don't know at this stage as to whether this is a
+                //raw selector (because of inference)
+                chk.validate(that.expr, env, false);
             }
 
             //attrib type-arguments
@@ -2730,6 +2731,13 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+
+                if (that.getMode() == ReferenceMode.INVOKE &&
+                        TreeInfo.isStaticSelector(that.expr, names) &&
+                        that.kind.isUnbound() &&
+                        !desc.getParameterTypes().head.isParameterized()) {
+                    chk.checkRaw(that.expr, localEnv);
+                }
 
                 if (!that.kind.isUnbound() &&
                         that.getMode() == ReferenceMode.INVOKE &&
