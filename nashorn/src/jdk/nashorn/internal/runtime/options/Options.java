@@ -501,8 +501,6 @@ public final class Options {
             return new Option<>(TimeZone.getTimeZone(value));
         case "keyvalues":
             return new KeyValueOption(value);
-        case "values":
-            return new ValueOption(value);
         case "log":
             final KeyValueOption kv = new KeyValueOption(value);
             Logging.initialize(kv.getValues());
