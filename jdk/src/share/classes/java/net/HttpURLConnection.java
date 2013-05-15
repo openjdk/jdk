@@ -50,6 +50,18 @@ import java.util.Date;
  * <a href="doc-files/net-properties.html#Proxies">Proxy settings</a> as well as
  * <a href="doc-files/net-properties.html#MiscHTTP"> various other settings</a>.
  * </P>
+ * <p>
+ * <b>Security permissions</b>
+ * <p>
+ * If a security manager is installed, and if a method is called which results in an
+ * attempt to open a connection, the caller must possess either:-
+ * <ul><li>a "connect" {@link SocketPermission} to the host/port combination of the
+ * destination URL or</li>
+ * <li>a {@link HttpURLPermission} that permits this request.</li>
+ * </ul><p>
+ * If automatic redirection is enabled, and this request is redirected to another
+ * destination, then the caller must also have permission to connect to the
+ * redirected host/URL.
  *
  * @see     java.net.HttpURLConnection#disconnect()
  * @since JDK1.1
