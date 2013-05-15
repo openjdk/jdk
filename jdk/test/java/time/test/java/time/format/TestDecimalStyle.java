@@ -61,29 +61,29 @@ package test.java.time.format;
 
 import static org.testng.Assert.assertSame;
 
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.util.Locale;
 
 import org.testng.annotations.Test;
 
 /**
- * Test DateTimeFormatSymbols.
+ * Test DecimalStyle.
  */
 @Test
-public class TestDateTimeFormatSymbols {
+public class TestDecimalStyle {
 
     @Test
     public void test_of_Locale_cached() {
-        DateTimeFormatSymbols loc1 = DateTimeFormatSymbols.of(Locale.CANADA);
-        DateTimeFormatSymbols loc2 = DateTimeFormatSymbols.of(Locale.CANADA);
+        DecimalStyle loc1 = DecimalStyle.of(Locale.CANADA);
+        DecimalStyle loc2 = DecimalStyle.of(Locale.CANADA);
         assertSame(loc1, loc2);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_ofDefaultLocale_cached() {
-        DateTimeFormatSymbols loc1 = DateTimeFormatSymbols.ofDefaultLocale();
-        DateTimeFormatSymbols loc2 = DateTimeFormatSymbols.ofDefaultLocale();
+        DecimalStyle loc1 = DecimalStyle.ofDefaultLocale();
+        DecimalStyle loc2 = DecimalStyle.ofDefaultLocale();
         assertSame(loc1, loc2);
     }
 
