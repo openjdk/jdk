@@ -269,7 +269,7 @@ public final class Objects {
      * Checks that the specified object reference is not {@code null} and
      * throws a customized {@link NullPointerException} if it is.
      *
-     * <p>Unlike the method {@link requireNonNull(Object, String},
+     * <p>Unlike the method {@link #requireNonNull(Object, String)},
      * this method allows creation of the message to be deferred until
      * after the null check is made. While this may confer a
      * performance advantage in the non-null case, when deciding to
