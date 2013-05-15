@@ -157,7 +157,7 @@ import java.util.TimeZone;
  * This approach is designed to allow a {@link ZonedDateTime} to be loaded and
  * queried, but not modified, on a Java Runtime with incomplete time-zone information.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This abstract class has two implementations, both of which are immutable and thread-safe.
  * One implementation models region-based IDs, the other is {@code ZoneOffset} modelling
  * offset-based IDs. This difference is visible in serialization.

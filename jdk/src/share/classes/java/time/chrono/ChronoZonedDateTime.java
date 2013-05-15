@@ -107,7 +107,7 @@ import java.util.Objects;
  * Ensure that the discussion in {@code ChronoLocalDate} has been read and understood
  * before using this interface.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * Subclasses should be Serializable wherever possible.
@@ -127,6 +127,8 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      * This allows dates in different calendar systems to be compared based
      * on the position of the date-time on the instant time-line.
      * The underlying comparison is equivalent to comparing the epoch-second and nano-of-second.
+     *
+     * @return a comparator that compares in time-line order ignoring the chronology
      *
      * @see #isAfter
      * @see #isBefore

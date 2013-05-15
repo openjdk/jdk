@@ -61,29 +61,30 @@ package tck.java.time.format;
 
 import static org.testng.Assert.assertEquals;
 
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Set;
 
 import org.testng.annotations.Test;
 
 /**
- * Test DateTimeFormatSymbols.
+ * Test DecimalStyle.
  */
 @Test
-public class TCKDateTimeFormatSymbols {
+public class TCKDecimalStyle {
 
     @Test
     public void test_getAvailableLocales() {
-        Locale[] locales = DateTimeFormatSymbols.getAvailableLocales();
-        assertEquals(locales.length > 0, true);
-        assertEquals(Arrays.asList(locales).contains(Locale.US), true);
+        Set<Locale> locales = DecimalStyle.getAvailableLocales();
+        assertEquals(locales.size() > 0, true, "locales: " + locales);
+        assertEquals(locales.contains(Locale.US), true, "Locale.US not found in available Locales");
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_of_Locale() {
-        DateTimeFormatSymbols loc1 = DateTimeFormatSymbols.of(Locale.CANADA);
+        DecimalStyle loc1 = DecimalStyle.of(Locale.CANADA);
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
         assertEquals(loc1.getNegativeSign(), '-');
@@ -93,7 +94,7 @@ public class TCKDateTimeFormatSymbols {
     //-----------------------------------------------------------------------
     @Test
     public void test_STANDARD() {
-        DateTimeFormatSymbols loc1 = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle loc1 = DecimalStyle.STANDARD;
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
         assertEquals(loc1.getNegativeSign(), '-');
@@ -103,25 +104,25 @@ public class TCKDateTimeFormatSymbols {
     //-----------------------------------------------------------------------
     @Test
     public void test_zeroDigit() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.withZeroDigit('A').getZeroDigit(), 'A');
     }
 
     @Test
     public void test_positiveSign() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.withPositiveSign('A').getPositiveSign(), 'A');
     }
 
     @Test
     public void test_negativeSign() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.withNegativeSign('A').getNegativeSign(), 'A');
     }
 
     @Test
     public void test_decimalSeparator() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.withDecimalSeparator('A').getDecimalSeparator(), 'A');
     }
 
@@ -129,7 +130,7 @@ public class TCKDateTimeFormatSymbols {
     /* TBD: convertToDigit and convertNumberToI18N are package-private methods
     @Test
     public void test_convertToDigit_base() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.convertToDigit('0'), 0);
         assertEquals(base.convertToDigit('1'), 1);
         assertEquals(base.convertToDigit('9'), 9);
@@ -139,7 +140,7 @@ public class TCKDateTimeFormatSymbols {
 
     @Test
     public void test_convertToDigit_altered() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD.withZeroDigit('A');
+        DecimalStyle base = DecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertToDigit('A'), 0);
         assertEquals(base.convertToDigit('B'), 1);
         assertEquals(base.convertToDigit('J'), 9);
@@ -150,21 +151,21 @@ public class TCKDateTimeFormatSymbols {
     //-----------------------------------------------------------------------
     @Test
     public void test_convertNumberToI18N_base() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle base = DecimalStyle.STANDARD;
         assertEquals(base.convertNumberToI18N("134"), "134");
     }
 
     @Test
     public void test_convertNumberToI18N_altered() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD.withZeroDigit('A');
+        DecimalStyle base = DecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertNumberToI18N("134"), "BDE");
     }
     */
     //-----------------------------------------------------------------------
     @Test
     public void test_equalsHashCode1() {
-        DateTimeFormatSymbols a = DateTimeFormatSymbols.STANDARD;
-        DateTimeFormatSymbols b = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle a = DecimalStyle.STANDARD;
+        DecimalStyle b = DecimalStyle.STANDARD;
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(a.hashCode(), b.hashCode());
@@ -172,8 +173,8 @@ public class TCKDateTimeFormatSymbols {
 
     @Test
     public void test_equalsHashCode2() {
-        DateTimeFormatSymbols a = DateTimeFormatSymbols.STANDARD.withZeroDigit('A');
-        DateTimeFormatSymbols b = DateTimeFormatSymbols.STANDARD.withZeroDigit('A');
+        DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
+        DecimalStyle b = DecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(a.hashCode(), b.hashCode());
@@ -181,15 +182,15 @@ public class TCKDateTimeFormatSymbols {
 
     @Test
     public void test_equalsHashCode3() {
-        DateTimeFormatSymbols a = DateTimeFormatSymbols.STANDARD.withZeroDigit('A');
-        DateTimeFormatSymbols b = DateTimeFormatSymbols.STANDARD.withDecimalSeparator('A');
+        DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
+        DecimalStyle b = DecimalStyle.STANDARD.withDecimalSeparator('A');
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
     }
 
     @Test
     public void test_equalsHashCode_bad() {
-        DateTimeFormatSymbols a = DateTimeFormatSymbols.STANDARD;
+        DecimalStyle a = DecimalStyle.STANDARD;
         assertEquals(a.equals(""), false);
         assertEquals(a.equals(null), false);
     }
@@ -197,14 +198,14 @@ public class TCKDateTimeFormatSymbols {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString_base() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.STANDARD;
-        assertEquals(base.toString(), "Symbols[0+-.]");
+        DecimalStyle base = DecimalStyle.STANDARD;
+        assertEquals(base.toString(), "DecimalStyle[0+-.]");
     }
 
     @Test
     public void test_toString_altered() {
-        DateTimeFormatSymbols base = DateTimeFormatSymbols.of(Locale.US).withZeroDigit('A').withDecimalSeparator('@');
-        assertEquals(base.toString(), "Symbols[A+-@]");
+        DecimalStyle base = DecimalStyle.of(Locale.US).withZeroDigit('A').withDecimalSeparator('@');
+        assertEquals(base.toString(), "DecimalStyle[A+-@]");
     }
 
 }
