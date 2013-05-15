@@ -1056,7 +1056,10 @@ public class Attr extends JCTree.Visitor {
         Lint prevLint = chk.setLint(lint);
 
         // Check that the variable's declared type is well-formed.
-        chk.validate(tree.vartype, env);
+        boolean isImplicitLambdaParameter = env.tree.hasTag(LAMBDA) &&
+                ((JCLambda)env.tree).paramKind == JCLambda.ParameterKind.IMPLICIT &&
+                (tree.sym.flags() & PARAMETER) != 0;
+        chk.validate(tree.vartype, env, !isImplicitLambdaParameter);
         deferredLintHandler.flush(tree.pos());
 
         try {
@@ -2344,7 +2347,7 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    params.head.vartype = make.Type(argType);
+                    params.head.vartype = make.at(params.head).Type(argType);
                     params.head.sym = null;
                     actuals = actuals.isEmpty() ?
                             actuals :
