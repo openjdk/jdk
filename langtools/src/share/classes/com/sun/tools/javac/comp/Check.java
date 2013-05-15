@@ -1361,23 +1361,23 @@ public class Check {
             for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
                 validateTree(l.head, checkRaw, isOuter);
         }
+    }
 
-        void checkRaw(JCTree tree, Env<AttrContext> env) {
-            if (lint.isEnabled(LintCategory.RAW) &&
-                tree.type.hasTag(CLASS) &&
-                !TreeInfo.isDiamond(tree) &&
-                !withinAnonConstr(env) &&
-                tree.type.isRaw()) {
-                log.warning(LintCategory.RAW,
-                        tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
-            }
+    void checkRaw(JCTree tree, Env<AttrContext> env) {
+        if (lint.isEnabled(LintCategory.RAW) &&
+            tree.type.hasTag(CLASS) &&
+            !TreeInfo.isDiamond(tree) &&
+            !withinAnonConstr(env) &&
+            tree.type.isRaw()) {
+            log.warning(LintCategory.RAW,
+                    tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
         }
-
-        boolean withinAnonConstr(Env<AttrContext> env) {
+    }
+    //where
+        private boolean withinAnonConstr(Env<AttrContext> env) {
             return env.enclClass.name.isEmpty() &&
                     env.enclMethod != null && env.enclMethod.name == names.init;
         }
-    }
 
 /* *************************************************************************
  * Exception checking
