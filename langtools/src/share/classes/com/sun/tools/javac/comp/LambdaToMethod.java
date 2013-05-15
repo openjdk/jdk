@@ -28,7 +28,6 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Kinds;
@@ -165,7 +164,7 @@ public class LambdaToMethod extends TreeTranslator {
         return translate(tree, newContext != null ? newContext : context);
     }
 
-    public <T extends JCTree> T translate(T tree, TranslationContext<?> newContext) {
+    <T extends JCTree> T translate(T tree, TranslationContext<?> newContext) {
         TranslationContext<?> prevContext = context;
         try {
             context = newContext;
@@ -176,7 +175,7 @@ public class LambdaToMethod extends TreeTranslator {
         }
     }
 
-    public <T extends JCTree> List<T> translate(List<T> trees, TranslationContext<?> newContext) {
+    <T extends JCTree> List<T> translate(List<T> trees, TranslationContext<?> newContext) {
         ListBuffer<T> buf = ListBuffer.lb();
         for (T tree : trees) {
             buf.append(translate(tree, newContext));
@@ -1303,7 +1302,11 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitSelect(JCFieldAccess tree) {
-            if (context() != null && lambdaSelectSymbolFilter(tree.sym)) {
+            if (context() != null && tree.sym.kind == VAR &&
+                        (tree.sym.name == names._this ||
+                         tree.sym.name == names._super)) {
+                // A select of this or super means, if we are in a lambda,
+                // we much have an instance context
                 TranslationContext<?> localContext = context();
                 while (localContext != null) {
                     if (localContext.tree.hasTag(LAMBDA)) {
@@ -1552,13 +1555,6 @@ public class LambdaToMethod extends TreeTranslator {
             return (sym.kind == VAR || sym.kind == MTH)
                     && !sym.isStatic()
                     && sym.name != names.init;
-        }
-
-        private boolean lambdaSelectSymbolFilter(Symbol sym) {
-            return (sym.kind == VAR || sym.kind == MTH) &&
-                        !sym.isStatic() &&
-                        (sym.name == names._this ||
-                        sym.name == names._super);
         }
 
         /**
