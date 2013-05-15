@@ -153,6 +153,18 @@
       <arg value="jdk\.nashorn\.test\.models*"/>
       <arg value="-exclude"/>
       <arg value="jdk\.nashorn\.internal\.ir\.debug*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.runtime\.regexp\.joni\.bench*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.runtime\.DebugLogger*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.runtime\.Timing*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.runtime\.Logging*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.runtime\.Debug*"/>
+      <arg value="-exclude"/>
+      <arg value="jdk\.nashorn\.internal\.objects\.NativeDebug*"/>
       <arg line="${cc.all.xmls}"/>
       <classpath>
         <pathelement location="${jcov.jar}"/>
