@@ -286,12 +286,12 @@ class CounterSetting {
 };
 
 
-class IntFlagSetting {
-  intx val;
-  intx* flag;
+class UIntFlagSetting {
+  uintx val;
+  uintx* flag;
  public:
-  IntFlagSetting(intx& fl, intx newValue) { flag = &fl; val = fl; fl = newValue; }
-  ~IntFlagSetting()                       { *flag = val; }
+  UIntFlagSetting(uintx& fl, uintx newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~UIntFlagSetting()                         { *flag = val; }
 };
 
 
@@ -513,12 +513,12 @@ class CommandLineFlags {
   product(bool, ForceNUMA, false,                                           \
           "Force NUMA optimizations on single-node/UMA systems")            \
                                                                             \
-  product(intx, NUMAChunkResizeWeight, 20,                                  \
-          "Percentage (0-100) used to weight the current sample when "      \
+  product(uintx, NUMAChunkResizeWeight, 20,                                 \
+          "Percentage (0-100) used to weigh the current sample when "      \
           "computing exponentially decaying average for "                   \
           "AdaptiveNUMAChunkSizing")                                        \
                                                                             \
-  product(intx, NUMASpaceResizeRate, 1*G,                                   \
+  product(uintx, NUMASpaceResizeRate, 1*G,                                  \
           "Do not reallocate more that this amount per collection")         \
                                                                             \
   product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
@@ -527,7 +527,7 @@ class CommandLineFlags {
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
-  product(intx, NUMAPageScanRate, 256,                                      \
+  product(uintx, NUMAPageScanRate, 256,                                     \
           "Maximum number of pages to include in the page scan procedure")  \
                                                                             \
   product_pd(bool, NeedsDeoptSuspend,                                       \
@@ -715,7 +715,7 @@ class CommandLineFlags {
   diagnostic(bool, LogEvents, true,                                         \
              "Enable the various ring buffer event logs")                   \
                                                                             \
-  diagnostic(intx, LogEventsBufferEntries, 10,                              \
+  diagnostic(uintx, LogEventsBufferEntries, 10,                             \
              "Enable the various ring buffer event logs")                   \
                                                                             \
   product(bool, BytecodeVerificationRemote, true,                           \
@@ -1432,16 +1432,17 @@ class CommandLineFlags {
   product(bool, ParallelGCVerbose, false,                                   \
           "Verbose output for parallel GC.")                                \
                                                                             \
-  product(intx, ParallelGCBufferWastePct, 10,                               \
-          "wasted fraction of parallel allocation buffer.")                 \
+  product(uintx, ParallelGCBufferWastePct, 10,                              \
+          "Wasted fraction of parallel allocation buffer.")                 \
                                                                             \
   diagnostic(bool, ParallelGCRetainPLAB, false,                             \
              "Retain parallel allocation buffers across scavenges; "        \
              " -- disabled because this currently conflicts with "          \
              " parallel card scanning under certain conditions ")           \
                                                                             \
-  product(intx, TargetPLABWastePct, 10,                                     \
-          "target wasted space in last buffer as pct of overall allocation")\
+  product(uintx, TargetPLABWastePct, 10,                                    \
+          "Target wasted space in last buffer as percent of overall "       \
+          "allocation")                                                     \
                                                                             \
   product(uintx, PLABWeight, 75,                                            \
           "Percentage (0-100) used to weight the current sample when"       \
@@ -1519,7 +1520,7 @@ class CommandLineFlags {
   product(bool, AlwaysPreTouch, false,                                      \
           "It forces all freshly committed pages to be pre-touched.")       \
                                                                             \
-  product_pd(intx, CMSYoungGenPerWorker,                                    \
+  product_pd(uintx, CMSYoungGenPerWorker,                                   \
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
                                                                             \
@@ -1837,7 +1838,7 @@ class CommandLineFlags {
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a crierion for starting a CMS collection") \
                                                                             \
-  product(intx, CMSIsTooFullPercentage, 98,                                 \
+  product(uintx, CMSIsTooFullPercentage, 98,                                \
           "An absolute ceiling above which CMS will always consider the "   \
           "unloading of classes when class unloading is enabled")           \
                                                                             \
@@ -1876,7 +1877,7 @@ class CommandLineFlags {
   develop(uintx, PromotionFailureALotInterval, 5,                           \
           "Total collections between promotion failures alot")              \
                                                                             \
-  experimental(intx, WorkStealingSleepMillis, 1,                            \
+  experimental(uintx, WorkStealingSleepMillis, 1,                           \
           "Sleep time when sleep is used for yields")                       \
                                                                             \
   experimental(uintx, WorkStealingYieldsBeforeSleep, 5000,                  \
@@ -2020,7 +2021,7 @@ class CommandLineFlags {
           "Number of collections before the adaptive sizing is started")    \
                                                                             \
   product(uintx, AdaptiveSizePolicyOutputInterval, 0,                       \
-          "Collecton interval for printing information; zero => never")     \
+          "Collection interval for printing information; zero means never") \
                                                                             \
   product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
           "Use adaptive minimum footprint as a goal")                       \
@@ -3049,7 +3050,7 @@ class CommandLineFlags {
   product(uintx, MaxMetaspaceExpansion, ScaleForWordSize(4*M),              \
           "Max expansion of Metaspace without full GC (in bytes)")          \
                                                                             \
-  product(intx, QueuedAllocationWarningCount, 0,                            \
+  product(uintx, QueuedAllocationWarningCount, 0,                           \
           "Number of times an allocation that queues behind a GC "          \
           "will retry before printing a warning")                           \
                                                                             \
@@ -3077,7 +3078,7 @@ class CommandLineFlags {
           "either completely full or completely empty.  Par compact also"   \
           "has a smaller default value; see arguments.cpp.")                \
                                                                             \
-  product(intx, MarkSweepAlwaysCompactCount,     4,                         \
+  product(uintx, MarkSweepAlwaysCompactCount,     4,                        \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
                                                                             \

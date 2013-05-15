@@ -1901,7 +1901,7 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  status = status && verify_percentage(AdaptiveSizePolicyWeight,
+  status = status && verify_interval(AdaptiveSizePolicyWeight, 0, 100,
                               "AdaptiveSizePolicyWeight");
   status = status && verify_percentage(ThresholdTolerance, "ThresholdTolerance");
   status = status && verify_percentage(MinHeapFreeRatio, "MinHeapFreeRatio");
@@ -1960,8 +1960,6 @@ bool Arguments::check_vm_args_consistency() {
     // Turn off gc-overhead-limit-exceeded checks
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
-
-  status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
   status = status && check_gc_consistency();
   status = status && check_stack_pages();
@@ -2056,6 +2054,52 @@ bool Arguments::check_vm_args_consistency() {
     status = status && verify_interval(G1ConcRSLogCacheSize, 0, 31,
                                        "G1ConcRSLogCacheSize");
   }
+  if (UseConcMarkSweepGC) {
+    status = status && verify_min_value(CMSOldPLABNumRefills, 1, "CMSOldPLABNumRefills");
+    status = status && verify_min_value(CMSOldPLABToleranceFactor, 1, "CMSOldPLABToleranceFactor");
+    status = status && verify_min_value(CMSOldPLABMax, 1, "CMSOldPLABMax");
+    status = status && verify_interval(CMSOldPLABMin, 1, CMSOldPLABMax, "CMSOldPLABMin");
+
+    status = status && verify_min_value(CMSYoungGenPerWorker, 1, "CMSYoungGenPerWorker");
+
+    status = status && verify_min_value(CMSSamplingGrain, 1, "CMSSamplingGrain");
+    status = status && verify_interval(CMS_SweepWeight, 0, 100, "CMS_SweepWeight");
+    status = status && verify_interval(CMS_FLSWeight, 0, 100, "CMS_FLSWeight");
+
+    status = status && verify_interval(FLSCoalescePolicy, 0, 4, "FLSCoalescePolicy");
+
+    status = status && verify_min_value(CMSRescanMultiple, 1, "CMSRescanMultiple");
+    status = status && verify_min_value(CMSConcMarkMultiple, 1, "CMSConcMarkMultiple");
+
+    status = status && verify_interval(CMSPrecleanIter, 0, 9, "CMSPrecleanIter");
+    status = status && verify_min_value(CMSPrecleanDenominator, 1, "CMSPrecleanDenominator");
+    status = status && verify_interval(CMSPrecleanNumerator, 0, CMSPrecleanDenominator - 1, "CMSPrecleanNumerator");
+
+    status = status && verify_percentage(CMSBootstrapOccupancy, "CMSBootstrapOccupancy");
+
+    status = status && verify_min_value(CMSPrecleanThreshold, 100, "CMSPrecleanThreshold");
+
+    status = status && verify_percentage(CMSScheduleRemarkEdenPenetration, "CMSScheduleRemarkEdenPenetration");
+    status = status && verify_min_value(CMSScheduleRemarkSamplingRatio, 1, "CMSScheduleRemarkSamplingRatio");
+    status = status && verify_min_value(CMSBitMapYieldQuantum, 1, "CMSBitMapYieldQuantum");
+    status = status && verify_percentage(CMSTriggerRatio, "CMSTriggerRatio");
+    status = status && verify_percentage(CMSIsTooFullPercentage, "CMSIsTooFullPercentage");
+  }
+
+  if (UseParallelGC || UseParallelOldGC) {
+    status = status && verify_interval(ParallelOldDeadWoodLimiterMean, 0, 100, "ParallelOldDeadWoodLimiterMean");
+    status = status && verify_interval(ParallelOldDeadWoodLimiterStdDev, 0, 100, "ParallelOldDeadWoodLimiterStdDev");
+
+    status = status && verify_percentage(YoungGenerationSizeIncrement, "YoungGenerationSizeIncrement");
+    status = status && verify_percentage(TenuredGenerationSizeIncrement, "TenuredGenerationSizeIncrement");
+
+    status = status && verify_min_value(YoungGenerationSizeSupplementDecay, 1, "YoungGenerationSizeSupplementDecay");
+    status = status && verify_min_value(TenuredGenerationSizeSupplementDecay, 1, "TenuredGenerationSizeSupplementDecay");
+
+    status = status && verify_min_value(ParGCCardsPerStrideChunk, 1, "ParGCCardsPerStrideChunk");
+
+    status = status && verify_min_value(ParallelOldGCSplitInterval, 0, "ParallelOldGCSplitInterval");
+  }
 #endif // INCLUDE_ALL_GCS
 
   status = status && verify_interval(RefDiscoveryPolicy,
@@ -2075,7 +2119,42 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_interval(MarkStackSizeMax,
                                   1, (max_jint - 1), "MarkStackSizeMax");
+  status = status && verify_interval(NUMAChunkResizeWeight, 0, 100, "NUMAChunkResizeWeight");
 
+  status = status && verify_min_value(LogEventsBufferEntries, 1, "LogEventsBufferEntries");
+
+  status = status && verify_min_value(HeapSizePerGCThread, (uintx) os::vm_page_size(), "HeapSizePerGCThread");
+
+  status = status && verify_min_value(GCTaskTimeStampEntries, 1, "GCTaskTimeStampEntries");
+
+  status = status && verify_percentage(ParallelGCBufferWastePct, "ParallelGCBufferWastePct");
+  status = status && verify_interval(TargetPLABWastePct, 1, 100, "TargetPLABWastePct");
+
+  status = status && verify_min_value(ParGCStridesPerThread, 1, "ParGCStridesPerThread");
+
+  status = status && verify_min_value(MinRAMFraction, 1, "MinRAMFraction");
+  status = status && verify_min_value(InitialRAMFraction, 1, "InitialRAMFraction");
+  status = status && verify_min_value(MaxRAMFraction, 1, "MaxRAMFraction");
+  status = status && verify_min_value(DefaultMaxRAMFraction, 1, "DefaultMaxRAMFraction");
+
+  status = status && verify_interval(AdaptiveTimeWeight, 0, 100, "AdaptiveTimeWeight");
+  status = status && verify_min_value(AdaptiveSizeDecrementScaleFactor, 1, "AdaptiveSizeDecrementScaleFactor");
+
+  status = status && verify_interval(TLABAllocationWeight, 0, 100, "TLABAllocationWeight");
+  status = status && verify_min_value(MinTLABSize, 1, "MinTLABSize");
+  status = status && verify_min_value(TLABRefillWasteFraction, 1, "TLABRefillWasteFraction");
+
+  status = status && verify_percentage(YoungGenerationSizeSupplement, "YoungGenerationSizeSupplement");
+  status = status && verify_percentage(TenuredGenerationSizeSupplement, "TenuredGenerationSizeSupplement");
+
+  // the "age" field in the oop header is 4 bits; do not want to pull in markOop.hpp
+  // just for that, so hardcode here.
+  status = status && verify_interval(MaxTenuringThreshold, 0, 15, "MaxTenuringThreshold");
+  status = status && verify_interval(InitialTenuringThreshold, 0, MaxTenuringThreshold, "MaxTenuringThreshold");
+  status = status && verify_percentage(TargetSurvivorRatio, "TargetSurvivorRatio");
+  status = status && verify_percentage(MarkSweepDeadRatio, "MarkSweepDeadRatio");
+
+  status = status && verify_min_value(MarkSweepAlwaysCompactCount, 1, "MarkSweepAlwaysCompactCount");
 #ifdef SPARC
   if (UseConcMarkSweepGC || UseG1GC) {
     // Issue a stern warning if the user has explicitly set
