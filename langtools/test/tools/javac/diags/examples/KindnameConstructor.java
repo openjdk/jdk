@@ -28,6 +28,7 @@
 // key: compiler.misc.inconvertible.types
 // key: compiler.misc.count.error
 // key: compiler.err.error
+// options: -Xdiags:verbose
 // run: backdoor
 
 class KindnameConstructor {

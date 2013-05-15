@@ -21,21 +21,19 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol
-// key: compiler.misc.no.conforming.assignment.exists
-// key: compiler.misc.bad.arg.types.in.lambda
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
-// options: -Xdiags:verbose
+// key: compiler.note.compressed.diags
+// key: compiler.note.note
+// key: compiler.misc.count.error
+// key: compiler.err.error
+// run: backdoor
 
-class BadArgTypesInLambda {
-    interface SAM {
-        void m(Integer i);
-    }
+class CompressedDiags {
 
-    void g(SAM s) { }
+    void m(String s) { }
 
     void test() {
-        g(x->{ String s = x; });
+        m(1);
     }
 }
