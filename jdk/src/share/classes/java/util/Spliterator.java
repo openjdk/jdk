@@ -567,13 +567,28 @@ public interface Spliterator<T> {
     public static final int SUBSIZED = 0x00004000;
 
     /**
-     * A Spliterator specialized for {@code int} values.
+     * A Spliterator specialized for primitive values.
+     *
+     * @param <T> the type of elements returned by this Spliterator.  The
+     * type must be a wrapper type for a primitive type, such as {@code Integer}
+     * for the primitive {@code int} type.
+     * @param <T_CONS> the type of primitive consumer.  The type must be a
+     * primitive specialization of {@link java.util.function.Consumer} for
+     * {@code T}, such as {@link java.util.function.IntConsumer} for
+     * {@code Integer}.
+     * @param <T_SPLITR> the type of primitive Spliterator.  The type must be
+     * a primitive specialization of Spliterator for {@code T}, such as
+     * {@link Spliterator.OfInt} for {@code Integer}.
+     *
+     * @see Spliterator.OfInt
+     * @see Spliterator.OfLong
+     * @see Spliterator.OfDouble
      * @since 1.8
      */
-    public interface OfInt extends Spliterator<Integer> {
-
+    public interface OfPrimitive<T, T_CONS, T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>>
+            extends Spliterator<T> {
         @Override
-        OfInt trySplit();
+        T_SPLITR trySplit();
 
         /**
          * If a remaining element exists, performs the given action on it,
@@ -587,7 +602,7 @@ public interface Spliterator<T> {
          * upon entry to this method, else {@code true}.
          * @throws NullPointerException if the specified action is null
          */
-        boolean tryAdvance(IntConsumer action);
+        boolean tryAdvance(T_CONS action);
 
         /**
          * Performs the given action for each remaining element, sequentially in
@@ -604,6 +619,24 @@ public interface Spliterator<T> {
          * @param action The action
          * @throws NullPointerException if the specified action is null
          */
+        default void forEachRemaining(T_CONS action) {
+            do { } while (tryAdvance(action));
+        }
+    }
+
+    /**
+     * A Spliterator specialized for {@code int} values.
+     * @since 1.8
+     */
+    public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
+
+        @Override
+        OfInt trySplit();
+
+        @Override
+        boolean tryAdvance(IntConsumer action);
+
+        @Override
         default void forEachRemaining(IntConsumer action) {
             do { } while (tryAdvance(action));
         }
@@ -659,40 +692,15 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code long} values.
      * @since 1.8
      */
-    public interface OfLong extends Spliterator<Long> {
+    public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
 
         @Override
         OfLong trySplit();
 
-        /**
-         * If a remaining element exists, performs the given action on it,
-         * returning {@code true}; else returns {@code false}.  If this
-         * Spliterator is {@link #ORDERED} the action is performed on the
-         * next element in encounter order.  Exceptions thrown by the
-         * action are relayed to the caller.
-         *
-         * @param action The action
-         * @return {@code false} if no remaining elements existed
-         * upon entry to this method, else {@code true}.
-         * @throws NullPointerException if the specified action is null
-         */
+        @Override
         boolean tryAdvance(LongConsumer action);
 
-        /**
-         * Performs the given action for each remaining element, sequentially in
-         * the current thread, until all elements have been processed or the
-         * action throws an exception.  If this Spliterator is {@link #ORDERED},
-         * actions are performed in encounter order.  Exceptions thrown by the
-         * action are relayed to the caller.
-         *
-         * @implSpec
-         * The default implementation repeatedly invokes {@link #tryAdvance}
-         * until it returns {@code false}.  It should be overridden whenever
-         * possible.
-         *
-         * @param action The action
-         * @throws NullPointerException if the specified action is null
-         */
+        @Override
         default void forEachRemaining(LongConsumer action) {
             do { } while (tryAdvance(action));
         }
@@ -748,40 +756,15 @@ public interface Spliterator<T> {
      * A Spliterator specialized for {@code double} values.
      * @since 1.8
      */
-    public interface OfDouble extends Spliterator<Double> {
+    public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
 
         @Override
         OfDouble trySplit();
 
-        /**
-         * If a remaining element exists, performs the given action on it,
-         * returning {@code true}; else returns {@code false}.  If this
-         * Spliterator is {@link #ORDERED} the action is performed on the
-         * next element in encounter order.  Exceptions thrown by the
-         * action are relayed to the caller.
-         *
-         * @param action The action
-         * @return {@code false} if no remaining elements existed
-         * upon entry to this method, else {@code true}.
-         * @throws NullPointerException if the specified action is null
-         */
+        @Override
         boolean tryAdvance(DoubleConsumer action);
 
-        /**
-         * Performs the given action for each remaining element, sequentially in
-         * the current thread, until all elements have been processed or the
-         * action throws an exception.  If this Spliterator is {@link #ORDERED},
-         * actions are performed in encounter order.  Exceptions thrown by the
-         * action are relayed to the caller.
-         *
-         * @implSpec
-         * The default implementation repeatedly invokes {@link #tryAdvance}
-         * until it returns {@code false}.  It should be overridden whenever
-         * possible.
-         *
-         * @param action The action
-         * @throws NullPointerException if the specified action is null
-         */
+        @Override
         default void forEachRemaining(DoubleConsumer action) {
             do { } while (tryAdvance(action));
         }
