@@ -2391,7 +2391,8 @@ public class Attr extends JCTree.Visitor {
                     for (JCDiagnostic deferredDiag : lambdaDeferredHandler.getDiagnostics()) {
                         if (deferredDiag.getKind() == JCDiagnostic.Kind.ERROR) {
                             resultInfo.checkContext
-                                    .report(that, diags.fragment("bad.arg.types.in.lambda", TreeInfo.types(that.params)));
+                                    .report(that, diags.fragment("bad.arg.types.in.lambda", TreeInfo.types(that.params),
+                                    deferredDiag)); //hidden diag parameter
                             //we mark the lambda as erroneous - this is crucial in the recovery step
                             //as parameter-dependent type error won't be reported in that stage,
                             //meaning that a lambda will be deemed erroeneous only if there is

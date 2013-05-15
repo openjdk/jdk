@@ -21,21 +21,24 @@
  * questions.
  */
 
-// key: compiler.err.cant.apply.symbol
-// key: compiler.misc.no.conforming.assignment.exists
-// key: compiler.misc.bad.arg.types.in.lambda
 // key: compiler.err.prob.found.req
+// key: compiler.misc.prob.found.req
 // key: compiler.misc.inconvertible.types
-// options: -Xdiags:verbose
+// key: compiler.misc.invalid.mref
+// key: compiler.misc.kindname.method
+// key: compiler.misc.count.error
+// key: compiler.err.error
+// run: backdoor
 
-class BadArgTypesInLambda {
-    interface SAM {
-        void m(Integer i);
+class ProbFoundReqFragment {
+
+    interface I {
+        void g(int i);
     }
 
-    void g(SAM s) { }
+    void m(String s) { }
 
     void test() {
-        g(x->{ String s = x; });
+        I i = this::m;
     }
 }
