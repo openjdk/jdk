@@ -24,15 +24,15 @@ import java.util.MissingResourceException;
 import java.util.logging.Logger;
 
 /*
- * This class is loaded onto the call stack when the test method is called
- * and then its classloader can be used to find a property bundle in the same
- * directory as the class.  However, Logger is not allowed
- * to find the bundle by looking up the stack for this classloader.
- * We verify that this cannot happen.
+ * This class is loaded onto the call stack by LoadItUp2Invoker from a separate
+ * classloader.  LoadItUp2Invoker was loaded by a class loader that does have
+ * access to the bundle, but the class loader used to load this class does not.
+ * Thus the logging code should not be able to see the resource bundle unless
+ * it has more than a single level stack crawl, which is not allowed.
  *
  * @author Jim Gish
  */
-public class LoadItUp {
+public class LoadItUp2 {
 
     private final static boolean DEBUG = false;
 
@@ -46,16 +46,16 @@ public class LoadItUp {
     private boolean lookupBundle(String rbName) {
         // See if Logger.getLogger can find the resource in this directory
         try {
-            Logger aLogger = Logger.getLogger("NestedLogger", rbName);
+            Logger aLogger = Logger.getLogger("NestedLogger2", rbName);
         } catch (MissingResourceException re) {
             if (DEBUG) {
                 System.out.println(
-                    "As expected, LoadItUp.lookupBundle() did not find the bundle "
+                    "As expected, LoadItUp2.lookupBundle() did not find the bundle "
                     + rbName);
             }
             return false;
         }
-        System.out.println("FAILED: LoadItUp.lookupBundle() found the bundle "
+        System.out.println("FAILED: LoadItUp2.lookupBundle() found the bundle "
                 + rbName + " using a stack search.");
         return true;
     }
