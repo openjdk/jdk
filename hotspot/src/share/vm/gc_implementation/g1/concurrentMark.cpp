@@ -4515,7 +4515,8 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
     _total_used_bytes(0), _total_capacity_bytes(0),
     _total_prev_live_bytes(0), _total_next_live_bytes(0),
     _hum_used_bytes(0), _hum_capacity_bytes(0),
-    _hum_prev_live_bytes(0), _hum_next_live_bytes(0) {
+    _hum_prev_live_bytes(0), _hum_next_live_bytes(0),
+    _total_remset_bytes(0) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion g1_committed = g1h->g1_committed();
   MemRegion g1_reserved = g1h->g1_reserved();
@@ -4533,23 +4534,25 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
                  HeapRegion::GrainBytes);
   _out->print_cr(G1PPRL_LINE_PREFIX);
   _out->print_cr(G1PPRL_LINE_PREFIX
-                 G1PPRL_TYPE_H_FORMAT
-                 G1PPRL_ADDR_BASE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_DOUBLE_H_FORMAT,
-                 "type", "address-range",
-                 "used", "prev-live", "next-live", "gc-eff");
+                G1PPRL_TYPE_H_FORMAT
+                G1PPRL_ADDR_BASE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_DOUBLE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT,
+                "type", "address-range",
+                "used", "prev-live", "next-live", "gc-eff", "remset");
   _out->print_cr(G1PPRL_LINE_PREFIX
-                 G1PPRL_TYPE_H_FORMAT
-                 G1PPRL_ADDR_BASE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_BYTE_H_FORMAT
-                 G1PPRL_DOUBLE_H_FORMAT,
-                 "", "",
-                 "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)");
+                G1PPRL_TYPE_H_FORMAT
+                G1PPRL_ADDR_BASE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT
+                G1PPRL_DOUBLE_H_FORMAT
+                G1PPRL_BYTE_H_FORMAT,
+                "", "",
+                "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)", "(bytes)");
 }
 
 // It takes as a parameter a reference to one of the _hum_* fields, it
@@ -4591,6 +4594,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   size_t prev_live_bytes = r->live_bytes();
   size_t next_live_bytes = r->next_live_bytes();
   double gc_eff          = r->gc_efficiency();
+  size_t remset_bytes    = r->rem_set()->mem_size();
   if (r->used() == 0) {
     type = "FREE";
   } else if (r->is_survivor()) {
@@ -4624,6 +4628,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   _total_capacity_bytes  += capacity_bytes;
   _total_prev_live_bytes += prev_live_bytes;
   _total_next_live_bytes += next_live_bytes;
+  _total_remset_bytes    += remset_bytes;
 
   // Print a line for this particular region.
   _out->print_cr(G1PPRL_LINE_PREFIX
@@ -4632,14 +4637,17 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
                  G1PPRL_BYTE_FORMAT
                  G1PPRL_BYTE_FORMAT
                  G1PPRL_BYTE_FORMAT
-                 G1PPRL_DOUBLE_FORMAT,
+                 G1PPRL_DOUBLE_FORMAT
+                 G1PPRL_BYTE_FORMAT,
                  type, bottom, end,
-                 used_bytes, prev_live_bytes, next_live_bytes, gc_eff);
+                 used_bytes, prev_live_bytes, next_live_bytes, gc_eff , remset_bytes);
 
   return false;
 }
 
 G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
+  // add static memory usages to remembered set sizes
+  _total_remset_bytes += HeapRegionRemSet::fl_mem_size() + HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   _out->print_cr(G1PPRL_LINE_PREFIX);
   _out->print_cr(G1PPRL_LINE_PREFIX
@@ -4647,13 +4655,15 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                  G1PPRL_SUM_MB_FORMAT("capacity")
                  G1PPRL_SUM_MB_PERC_FORMAT("used")
                  G1PPRL_SUM_MB_PERC_FORMAT("prev-live")
-                 G1PPRL_SUM_MB_PERC_FORMAT("next-live"),
+                 G1PPRL_SUM_MB_PERC_FORMAT("next-live")
+                 G1PPRL_SUM_MB_FORMAT("remset"),
                  bytes_to_mb(_total_capacity_bytes),
                  bytes_to_mb(_total_used_bytes),
                  perc(_total_used_bytes, _total_capacity_bytes),
                  bytes_to_mb(_total_prev_live_bytes),
                  perc(_total_prev_live_bytes, _total_capacity_bytes),
                  bytes_to_mb(_total_next_live_bytes),
-                 perc(_total_next_live_bytes, _total_capacity_bytes));
+                 perc(_total_next_live_bytes, _total_capacity_bytes),
+                 bytes_to_mb(_total_remset_bytes));
   _out->cr();
 }
