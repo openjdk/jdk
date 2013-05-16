@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,36 +37,37 @@
  * this sample code.
  */
 
-
 // this checker function runs asynchronously
 function memoryChecker(memoryBean, threshold, interval) {
     while (true) {
         var memUsage = memoryBean.HeapMemoryUsage;
         var usage = memUsage.get("used") / (1024 * 1024);
-        println(usage);
+
+        println("usage: " + usage);
+
         if (usage > threshold) {
             alert("Hey! heap usage threshold exceeded!");
             // after first alert just return.
             return;
         }
-        java.lang.Thread.currentThread().sleep(interval);
+
+        java.lang.Thread.sleep(interval);
     }
 }
 
-
 // add "Tools->Memory Monitor" menu item
 if (this.application != undefined) {
-    this.application.addTool("Memory Monitor", 
+    this.application.addTool("Memory Monitor",
         function () {
             // show threshold box with default of 50 MB
             var threshold = prompt("Threshold (mb)", 50);
+
             // show interval box with default of 1000 millisec.
             var interval = prompt("Sample Interval (ms):", 1000);
             var memoryBean = mbean("java.lang:type=Memory");
 
-            // ".future" makes the function to be called 
+            // ".future" makes the function to be called
             // asynchronously in a separate thread.
             memoryChecker.future(memoryBean, threshold, interval);
         });
 }
-

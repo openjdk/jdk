@@ -75,7 +75,13 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.HALF_DAYS;
 import static java.time.temporal.ChronoUnit.NANOS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.testng.Assert.assertEquals;
@@ -110,6 +116,7 @@ import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1028,6 +1035,56 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
         OffsetTime base = OffsetTime.of(11, 30, 59, 0, OFFSET_PONE);
         OffsetTime test = base.minusNanos(0);
         assertEquals(test, base);
+    }
+
+    //-----------------------------------------------------------------------
+    // periodUntil(Temporal, TemporalUnit)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntilUnit")
+    Object[][] data_periodUntilUnit() {
+        return new Object[][] {
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(13, 1, 1), ZoneOffset.ofHours(1)), HALF_DAYS, 1},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), HOURS, 1},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MINUTES, 60},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), SECONDS, 3600},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MILLIS, 3600*1000},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MICROS, 3600*1000*1000L},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), NANOS, 3600*1000*1000L*1000},
+
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(14, 1, 1), ZoneOffset.ofHours(2)), HALF_DAYS, 1},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), HOURS, 1},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MINUTES, 60},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), SECONDS, 3600},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MILLIS, 3600*1000},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MICROS, 3600*1000*1000L},
+            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), NANOS, 3600*1000*1000L*1000},
+        };
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
+        long amount = offsetTime1.periodUntil(offsetTime2, unit);
+        assertEquals(amount, expected);
+    }
+
+    @Test(dataProvider="periodUntilUnit")
+    public void test_periodUntil_TemporalUnit_negated(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
+        long amount = offsetTime2.periodUntil(offsetTime1, unit);
+        assertEquals(amount, -expected);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_periodUntil_InvalidType() {
+        OffsetTime offsetTime = OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1));
+        OffsetDateTime offsetDateTime = offsetTime.atDate(LocalDate.of(1980, 2, 10));
+        offsetTime.periodUntil(offsetDateTime, SECONDS);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_periodUntil_InvalidTemporalUnit() {
+        OffsetTime offsetTime1 = OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1));
+        OffsetTime offsetTime2 = OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1));
+        offsetTime1.periodUntil(offsetTime2, MONTHS);
     }
 
     //-----------------------------------------------------------------------
