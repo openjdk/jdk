@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,7 +37,6 @@
  * this sample code.
  */
 
-
 /*
  * This script can be loaded in jrunscript to start scriptpad.
  *
@@ -48,4 +47,3 @@ load("conc.js");
 load("gui.js");
 load("scriptpad.js");
 load("mm.js");
-
