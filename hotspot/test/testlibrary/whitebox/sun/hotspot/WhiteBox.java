@@ -61,6 +61,9 @@ public class WhiteBox {
     registerNatives();
   }
 
+  // Arguments
+  public native void printHeapSizes();
+
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
