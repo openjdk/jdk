@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,13 +262,28 @@ bool VMMemPointerIterator::remove_released_region(MemPointerRecord* rec) {
   assert(cur->is_reserved_region() && cur->contains_region(rec),
     "Sanity check");
   if (rec->is_same_region(cur)) {
-    // release whole reserved region
+
+    // In snapshot, the virtual memory records are sorted in following orders:
+    // 1. virtual memory's base address
+    // 2. virtual memory reservation record, followed by commit records within this reservation.
+    //    The commit records are also in base address order.
+    // When a reserved region is released, we want to remove the reservation record and all
+    // commit records following it.
 #ifdef ASSERT
-    VMMemRegion* next_region = (VMMemRegion*)peek_next();
-    // should not have any committed memory in this reserved region
-    assert(next_region == NULL || !next_region->is_committed_region(), "Sanity check");
+    address low_addr = cur->addr();
+    address high_addr = low_addr + cur->size();
 #endif
+    // remove virtual memory reservation record
     remove();
+    // remove committed regions within above reservation
+    VMMemRegion* next_region = (VMMemRegion*)current();
+    while (next_region != NULL && next_region->is_committed_region()) {
+      assert(next_region->addr() >= low_addr &&
+             next_region->addr() + next_region->size() <= high_addr,
+            "Range check");
+      remove();
+      next_region = (VMMemRegion*)current();
+    }
   } else if (rec->addr() == cur->addr() ||
     rec->addr() + rec->size() == cur->addr() + cur->size()) {
     // released region is at either end of this region
