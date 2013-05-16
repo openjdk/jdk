@@ -3044,6 +3044,11 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     set_mode_flags(_int);
   }
 
+  // eventually fix up InitialTenuringThreshold if only MaxTenuringThreshold is set
+  if (FLAG_IS_DEFAULT(InitialTenuringThreshold) && (InitialTenuringThreshold > MaxTenuringThreshold)) {
+    FLAG_SET_ERGO(uintx, InitialTenuringThreshold, MaxTenuringThreshold);
+  }
+
 #ifndef COMPILER2
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
