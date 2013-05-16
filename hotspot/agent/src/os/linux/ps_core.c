@@ -195,10 +195,10 @@ static map_info* core_lookup(struct ps_prochandle *ph, uintptr_t addr)
 //---------------------------------------------------------------
 // Part of the class sharing workaround:
 //
-// With class sharing, pages are mapped from classes[_g].jsa file.
+// With class sharing, pages are mapped from classes.jsa file.
 // The read-only class sharing pages are mapped as MAP_SHARED,
 // PROT_READ pages. These pages are not dumped into core dump.
-// With this workaround, these pages are read from classes[_g].jsa.
+// With this workaround, these pages are read from classes.jsa.
 
 // FIXME: !HACK ALERT!
 // The format of sharing achive file header is needed to read shared heap
@@ -284,10 +284,9 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
    lib_info* lib = ph->libs;
    while (lib != NULL) {
       // we are iterating over shared objects from the core dump. look for
-      // libjvm[_g].so.
+      // libjvm.so.
       const char *jvm_name = 0;
-      if ((jvm_name = strstr(lib->name, "/libjvm.so")) != 0 ||
-          (jvm_name = strstr(lib->name, "/libjvm_g.so")) != 0) {
+      if ((jvm_name = strstr(lib->name, "/libjvm.so")) != 0) {
          char classes_jsa[PATH_MAX];
          struct FileMapHeader header;
          size_t n = 0;
@@ -371,7 +370,7 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
          }
 
          ph->core->classes_jsa_fd = fd;
-         // add read-only maps from classes[_g].jsa to the list of maps
+         // add read-only maps from classes.jsa to the list of maps
          for (m = 0; m < NUM_SHARED_MAPS; m++) {
             if (header._space[m]._read_only) {
                base = (uintptr_t) header._space[m]._base;

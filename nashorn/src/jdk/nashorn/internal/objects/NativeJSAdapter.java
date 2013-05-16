@@ -148,11 +148,7 @@ public final class NativeJSAdapter extends ScriptObject {
         if (overrides instanceof ScriptObject) {
             this.overrides = true;
             final ScriptObject sobj = (ScriptObject)overrides;
-            final Iterator<String> iter = sobj.propertyIterator();
-            while (iter.hasNext()) {
-                final String prop = iter.next();
-                super.set(prop, sobj.get(prop), false);
-            }
+            this.addBoundProperties(sobj);
         } else {
             this.overrides = false;
         }

@@ -24,17 +24,28 @@
 
 package sun.jvm.hotspot.debugger.bsd;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.Threads;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.DebuggerBase;
+import sun.jvm.hotspot.debugger.DebuggerException;
+import sun.jvm.hotspot.debugger.DebuggerUtilities;
+import sun.jvm.hotspot.debugger.MachineDescription;
+import sun.jvm.hotspot.debugger.NotInHeapException;
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.debugger.ReadResult;
+import sun.jvm.hotspot.debugger.ThreadProxy;
+import sun.jvm.hotspot.debugger.UnalignedAddressException;
+import sun.jvm.hotspot.debugger.UnmappedAddressException;
+import sun.jvm.hotspot.debugger.cdbg.CDebugger;
+import sun.jvm.hotspot.debugger.cdbg.ClosestSymbol;
+import sun.jvm.hotspot.debugger.cdbg.LoadObject;
 import sun.jvm.hotspot.runtime.JavaThread;
-import java.lang.reflect.*;
+import sun.jvm.hotspot.runtime.Threads;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.utilities.PlatformInfo;
 
 /** <P> An implementation of the JVMDebugger interface. The basic debug
     facilities are implemented through ptrace interface in the JNI code
@@ -246,10 +257,8 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     /* called from attach methods */
     private void findABIVersion() throws DebuggerException {
         String libjvmName = isDarwin ? "libjvm.dylib" : "libjvm.so";
-        String libjvm_gName = isDarwin? "libjvm_g.dylib" : "libjvm_g.so";
         String javaThreadVt = isDarwin ? "_vt_10JavaThread" : "__vt_10JavaThread";
-        if (lookupByName0(libjvmName, javaThreadVt) != 0 ||
-            lookupByName0(libjvm_gName, javaThreadVt) != 0) {
+        if (lookupByName0(libjvmName, javaThreadVt) != 0) {
             // old C++ ABI
             useGCC32ABI = false;
         } else {
