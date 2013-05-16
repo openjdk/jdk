@@ -1057,6 +1057,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   c2_nonstatic_field(Compile,            _save_argument_registers, const bool)                                                       \
   c2_nonstatic_field(Compile,            _subsume_loads,           const bool)                                                       \
   c2_nonstatic_field(Compile,            _do_escape_analysis,      const bool)                                                       \
+  c2_nonstatic_field(Compile,            _eliminate_boxing,        const bool)                                                       \
   c2_nonstatic_field(Compile,            _ilt,                     InlineTree*)                                                      \
                                                                                                                                      \
   c2_nonstatic_field(InlineTree,         _caller_jvms,             JVMState*)                                                        \

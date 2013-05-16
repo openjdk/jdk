@@ -72,6 +72,7 @@ EMACS=emacs
 REL_MYDIR=`dirname $0`
 MYDIR=`cd $REL_MYDIR && pwd`
 
+#
 # Look whether the user wants to run inside gdb
 case "$1" in
     -gdb)
@@ -95,16 +96,14 @@ case "$1" in
         ;;
 esac
 
-JDK=
-if [ "${ALT_JAVA_HOME}" = "" ]; then
-    . ${MYDIR}/jdkpath.sh
+if [ "${ALT_JAVA_HOME}" != "" ]; then
+    JDK=${ALT_JAVA_HOME%%/jre}
 else
-    JDK=${ALT_JAVA_HOME%%/jre};
+    JDK=@@JDK_IMPORT_PATH@@
 fi
 
 if [ "${JDK}" = "" ]; then
-    echo Failed to find JDK. ALT_JAVA_HOME is not set or ./jdkpath.sh is empty or not found.
-    exit 1
+    echo "Failed to find JDK.  Either ALT_JAVA_HOME is not set or JDK_IMPORT_PATH is empty."
 fi
 
 # We will set the LD_LIBRARY_PATH as follows:
@@ -142,12 +141,12 @@ else
     export LD_LIBRARY_PATH
 fi
 
-JPARMS="$@ $JAVA_ARGS";
+JPARMS="-Dsun.java.launcher=gamma -XXaltjvm=$MYDIR $@ $JAVA_ARGS";
 
-# Locate the gamma development launcher
-LAUNCHER=${MYDIR}/gamma
+# Locate the java launcher
+LAUNCHER=$JDK/bin/java
 if [ ! -x $LAUNCHER ] ; then
-    echo Error: Cannot find the gamma development launcher \"$LAUNCHER\"
+    echo Error: Cannot find the java launcher \"$LAUNCHER\"
     exit 1
 fi
 
@@ -166,9 +165,10 @@ set args $JPARMS
 file $LAUNCHER
 directory $GDBSRCDIR
 # Get us to a point where we can set breakpoints in libjvm.so
-break InitializeJVM
+set breakpoint pending on
+break JNI_CreateJavaVM
 run
-# Stop in InitializeJVM
+# Stop in JNI_CreateJavaVM
 delete 1
 # We can now set breakpoints wherever we like
 EOF
@@ -199,7 +199,7 @@ case "$MODE" in
 	rm -f $GDBSCR
         ;;
     dbx)
-        $DBX -s $HOME/.dbxrc $LAUNCHER $JPARMS
+        $DBX -s $HOME/.dbxrc -c "loadobject -load libjvm.so; stop in JNI_CreateJavaVM; run $JPARMS; delete all" $LAUNCHER
         ;;
     valgrind)
         echo Warning: Defaulting to 16Mb heap to make Valgrind run faster, use -Xmx for larger heap

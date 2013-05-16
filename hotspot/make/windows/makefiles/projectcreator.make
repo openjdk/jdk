@@ -59,7 +59,6 @@ ProjectCreatorIncludesPRIVATE=\
         -relativeSrcInclude src \
         -absoluteSrcInclude $(HOTSPOTBUILDSPACE) \
         -ignorePath $(HOTSPOTBUILDSPACE) \
-        -ignorePath launcher \
         -ignorePath share\vm\adlc \
         -ignorePath share\vm\shark \
         -ignorePath share\tools \
@@ -105,7 +104,6 @@ ProjectCreatorIDEOptions=\
         -define ALIGN_STACK_FRAMES \
         -define VM_LITTLE_ENDIAN \
         -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	set JAVA_HOME=$(HOTSPOTJDKDIST)	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh $(LD_VER)" \
-        -postbuild "" "Building hotspot.exe..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	nmake -f $(HOTSPOTWORKSPACE)\make\windows\projectfiles\common\Makefile LOCAL_MAKE=$(HOTSPOTBUILDSPACE)\%f\local.make JAVA_HOME=$(HOTSPOTJDKDIST) launcher" \
         -ignoreFile jsig.c \
         -ignoreFile jvmtiEnvRecommended.cpp \
         -ignoreFile jvmtiEnvStub.cpp \
