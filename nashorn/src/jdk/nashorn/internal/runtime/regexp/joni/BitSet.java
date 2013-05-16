@@ -51,10 +51,6 @@ public final class BitSet {
         bits[pos >>> ROOM_SHIFT] &= ~bit(pos);
     }
 
-    public void invert(int pos) {
-        bits[pos >>> ROOM_SHIFT] ^= bit(pos);
-    }
-
     public void clear() {
         for (int i=0; i<BITSET_SIZE; i++) bits[i]=0;
     }
@@ -68,10 +64,6 @@ public final class BitSet {
 
     public void setRange(int from, int to) {
         for (int i=from; i<=to && i < SINGLE_BYTE_SIZE; i++) set(i);
-    }
-
-    public void setAll() {
-        for (int i=0; i<BITSET_SIZE; i++) bits[i] = ~0;
     }
 
     public void invert() {
