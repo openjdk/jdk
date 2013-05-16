@@ -2968,7 +2968,7 @@ class CommandLineFlags {
                                                                             \
   /* gc parameters */                                                       \
   product(uintx, InitialHeapSize, 0,                                        \
-          "Initial heap size (in bytes); zero means OldSize + NewSize")     \
+          "Initial heap size (in bytes); zero means use ergonomics")        \
                                                                             \
   product(uintx, MaxHeapSize, ScaleForWordSize(96*M),                       \
           "Maximum heap size (in bytes)")                                   \
