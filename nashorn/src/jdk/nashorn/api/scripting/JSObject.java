@@ -23,26 +23,12 @@
  * questions.
  */
 
-package netscape.javascript;
-
-import java.applet.Applet;
+package jdk.nashorn.api.scripting;
 
 /**
- * Stub for JSObject to get compilation going.
+ * netscape.javascript.JSObject-like interface for nashorn script objects.
  */
 public abstract class JSObject {
-
-    /**
-     * Get the window for an {@link Applet}. Not supported
-     * by Nashorn
-     *
-     * @param a applet
-     * @return the window instance
-     */
-    public static JSObject getWindow(final Applet a) {
-        throw new UnsupportedOperationException("getWindow");
-    }
-
     /**
      * Call a JavaScript method
      *
