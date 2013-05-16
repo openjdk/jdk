@@ -61,6 +61,9 @@ public class WhiteBox {
     registerNatives();
   }
 
+  // Arguments
+  public native void printHeapSizes();
+
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
@@ -110,6 +113,9 @@ public class WhiteBox {
 
   // Intered strings
   public native boolean isInStringTable(String str);
+
+  // Memory
+  public native long reserveMemory(long size);
 
   // force Full GC
   public native void fullGC();

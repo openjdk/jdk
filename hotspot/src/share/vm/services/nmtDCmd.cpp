@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _dcmdparser.add_dcmd_option(&_scale);
 }
 
-void NMTDCmd::execute(TRAPS) {
+void NMTDCmd::execute(DCmdSource source, TRAPS) {
   const char* scale_value = _scale.value();
   size_t scale_unit;
   if (strcmp(scale_value, "KB") == 0 || strcmp(scale_value, "kb") == 0) {

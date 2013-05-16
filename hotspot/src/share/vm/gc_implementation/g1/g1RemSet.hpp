@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,26 +53,18 @@ protected:
     NumSeqTasks          = 1
   };
 
-  CardTableModRefBS*             _ct_bs;
-  SubTasksDone*                  _seq_task;
-  G1CollectorPolicy* _g1p;
+  CardTableModRefBS*     _ct_bs;
+  SubTasksDone*          _seq_task;
+  G1CollectorPolicy*     _g1p;
 
-  ConcurrentG1Refine* _cg1r;
+  ConcurrentG1Refine*    _cg1r;
 
-  size_t*             _cards_scanned;
-  size_t              _total_cards_scanned;
+  size_t*                _cards_scanned;
+  size_t                 _total_cards_scanned;
 
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.
   OopsInHeapRegionClosure** _cset_rs_update_cl;
-
-  // The routine that performs the actual work of refining a dirty
-  // card.
-  // If check_for_refs_into_refs is true then a true result is returned
-  // if the card contains oops that have references into the current
-  // collection set.
-  bool concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
-                                    bool check_for_refs_into_cset);
 
 public:
   // This is called to reset dual hash tables after the gc pause
@@ -90,8 +82,7 @@ public:
   // function can be helpful in partitioning the work to be done. It
   // should be the same as the "i" passed to the calling thread's
   // work(i) function. In the sequential case this param will be ingored.
-  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
-                                   int worker_i);
+  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk, int worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
   // call.  Must call each of these once before and after (in sequential
@@ -124,14 +115,13 @@ public:
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
                  uint worker_num, int claim_val);
 
-  // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
-  // join and leave around parts that must be atomic wrt GC.  (NULL means
-  // being done at a safepoint.)
+  // Refine the card corresponding to "card_ptr".
   // If check_for_refs_into_cset is true, a true result is returned
   // if the given card contains oops that have references into the
   // current collection set.
-  virtual bool concurrentRefineOneCard(jbyte* card_ptr, int worker_i,
-                                       bool check_for_refs_into_cset);
+  virtual bool refine_card(jbyte* card_ptr,
+                           int worker_i,
+                           bool check_for_refs_into_cset);
 
   // Print any relevant summary info.
   virtual void print_summary_info();

@@ -463,8 +463,10 @@ void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
 }
 #endif //PRODUCT
 
-
-nmethod* CodeCache::find_and_remove_saved_code(Method* m) {
+/**
+ * Remove and return nmethod from the saved code list in order to reanimate it.
+ */
+nmethod* CodeCache::reanimate_saved_code(Method* m) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   nmethod* saved = _saved_nmethods;
   nmethod* prev = NULL;
@@ -479,7 +481,7 @@ nmethod* CodeCache::find_and_remove_saved_code(Method* m) {
       saved->set_speculatively_disconnected(false);
       saved->set_saved_nmethod_link(NULL);
       if (PrintMethodFlushing) {
-        saved->print_on(tty, " ### nmethod is reconnected\n");
+        saved->print_on(tty, " ### nmethod is reconnected");
       }
       if (LogCompilation && (xtty != NULL)) {
         ttyLocker ttyl;
@@ -496,6 +498,9 @@ nmethod* CodeCache::find_and_remove_saved_code(Method* m) {
   return NULL;
 }
 
+/**
+ * Remove nmethod from the saved code list in order to discard it permanently
+ */
 void CodeCache::remove_saved_code(nmethod* nm) {
   // For conc swpr this will be called with CodeCache_lock taken by caller
   assert_locked_or_safepoint(CodeCache_lock);
@@ -529,7 +534,7 @@ void CodeCache::speculatively_disconnect(nmethod* nm) {
   nm->set_saved_nmethod_link(_saved_nmethods);
   _saved_nmethods = nm;
   if (PrintMethodFlushing) {
-    nm->print_on(tty, " ### nmethod is speculatively disconnected\n");
+    nm->print_on(tty, " ### nmethod is speculatively disconnected");
   }
   if (LogCompilation && (xtty != NULL)) {
     ttyLocker ttyl;
