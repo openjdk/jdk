@@ -205,10 +205,6 @@ java/net/MulticastSocket/Test.java                               macosx-all
 #7143960
 java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
-# 7150552
-sun/net/www/protocol/http/B6299712.java                         macosx-all
-java/net/CookieHandler/CookieManagerTest.java                   macosx-all
-
 ############################################################################
 
 # jdk_io
