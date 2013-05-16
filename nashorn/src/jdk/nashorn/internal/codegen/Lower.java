@@ -261,19 +261,25 @@ final class Lower extends NodeOperatorVisitor {
         return throwNode;
     }
 
-    private static Node ensureUniqueLabelsIn(final Node node) {
+    private static Node ensureUniqueNamesIn(final LexicalContext lc, final Node node) {
         return node.accept(new NodeVisitor() {
-           @Override
-           public Node leaveDefault(final Node labelledNode) {
-               return labelledNode.ensureUniqueLabels(getLexicalContext());
-           }
+            @Override
+            public Node leaveFunctionNode(final FunctionNode functionNode) {
+                final String name = functionNode.getName();
+                return functionNode.setName(getLexicalContext(), lc.getCurrentFunction().uniqueName(name));
+            }
+
+            @Override
+            public Node leaveDefault(final Node labelledNode) {
+                return labelledNode.ensureUniqueLabels(getLexicalContext());
+            }
         });
     }
 
-    private static List<Statement> copyFinally(final Block finallyBody) {
+    private static List<Statement> copyFinally(final LexicalContext lc, final Block finallyBody) {
         final List<Statement> newStatements = new ArrayList<>();
         for (final Statement statement : finallyBody.getStatements()) {
-            newStatements.add((Statement)ensureUniqueLabelsIn(statement));
+            newStatements.add((Statement)ensureUniqueNamesIn(lc, statement));
             if (statement.hasTerminalFlags()) {
                 return newStatements;
             }
@@ -316,9 +322,9 @@ final class Lower extends NodeOperatorVisitor {
      * @return new try node after splicing finally code (same if nop)
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
-        final int finish = tryNode.getFinish();
-
         assert tryNode.getFinallyBody() == null;
+        final int            finish = tryNode.getFinish();
+        final LexicalContext lc     = getLexicalContext();
 
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor() {
             final List<Node> insideTry = new ArrayList<>();
@@ -338,7 +344,7 @@ final class Lower extends NodeOperatorVisitor {
             @Override
             public Node leaveThrowNode(final ThrowNode throwNode) {
                 if (rethrows.contains(throwNode)) {
-                    final List<Statement> newStatements = copyFinally(finallyBody);
+                    final List<Statement> newStatements = copyFinally(lc, finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(throwNode);
                     }
@@ -372,7 +378,7 @@ final class Lower extends NodeOperatorVisitor {
                     resultNode = null;
                 }
 
-                newStatements.addAll(copyFinally(finallyBody));
+                newStatements.addAll(copyFinally(lc, finallyBody));
                 if (!isTerminal(newStatements)) {
                     newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
                 }
@@ -382,7 +388,7 @@ final class Lower extends NodeOperatorVisitor {
 
             private Node copy(final Statement endpoint, final Node targetNode) {
                 if (!insideTry.contains(targetNode)) {
-                    final List<Statement> newStatements = copyFinally(finallyBody);
+                    final List<Statement> newStatements = copyFinally(lc, finallyBody);
                     if (!isTerminal(newStatements)) {
                         newStatements.add(endpoint);
                     }
@@ -548,7 +554,7 @@ final class Lower extends NodeOperatorVisitor {
                 final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
                 return callNode.setEvalArgs(
                     new CallNode.EvalArgs(
-                        ensureUniqueLabelsIn(args.get(0)).accept(this),
+                        ensureUniqueNamesIn(getLexicalContext(), args.get(0)).accept(this),
                         compilerConstant(THIS),
                         evalLocation(callee),
                         currentFunction.isStrict()));
