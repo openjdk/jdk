@@ -37,6 +37,8 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
     private final int end;              // pattern end position for reset() support
     protected int _p;                   // used by mark()/restore() to mark positions
 
+    private final static int INT_SIGN_BIT = 1 << 31;
+
     protected ScannerSupport(char[] chars, int p, int end) {
         this.chars = chars;
         this.begin = p;
@@ -52,8 +54,6 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
     protected int getEnd() {
         return end;
     }
-
-    private final int INT_SIGN_BIT = 1 << 31;
 
     protected final int scanUnsignedNumber() {
         int last = c;

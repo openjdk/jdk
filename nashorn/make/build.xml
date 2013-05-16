@@ -305,6 +305,8 @@
       <include name="**/codegen/*Test.class"/>
       <include name="**/parser/*Test.class"/>
       <include name="**/runtime/*Test.class"/>
+      <include name="**/runtime/regexp/*Test.class"/>
+      <include name="**/runtime/regexp/joni/*Test.class"/>
       <include name="**/framework/*Test.class"/>
     </fileset>
 
