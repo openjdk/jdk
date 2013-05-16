@@ -118,27 +118,67 @@ public class LocaleProviders {
         if (System.getProperty("os.name").startsWith("Windows")) {
             NumberFormat nf = NumberFormat.getInstance(Locale.US);
             try {
-                double ver = nf.parse(System.getProperty("os.version")).doubleValue();
+                double ver = nf.parse(System.getProperty("os.version"))
+                               .doubleValue();
                 System.out.printf("Windows version: %.1f\n", ver);
                 if (ver >= 6.0) {
-                    LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(LocaleNameProvider.class, Locale.ENGLISH);
+                    LocaleProviderAdapter lda =
+                        LocaleProviderAdapter.getAdapter(
+                            LocaleNameProvider.class, Locale.ENGLISH);
                     LocaleProviderAdapter.Type type = lda.getAdapterType();
                     if (type == LocaleProviderAdapter.Type.HOST) {
+                        LocaleNameProvider lnp = lda.getLocaleNameProvider();
                         Locale mkmk = Locale.forLanguageTag("mk-MK");
                         String result = mkmk.getDisplayLanguage(Locale.ENGLISH);
-                        if (!"Macedonian (FYROM)".equals(result)) {
-                            throw new RuntimeException("Windows locale name provider did not return expected localized language name for \"mk\". Returned name was \"" + result + "\"");
+                        String hostResult =
+                            lnp.getDisplayLanguage(mkmk.getLanguage(),
+                                                   Locale.ENGLISH);
+                        System.out.printf("  Display language name for" +
+                            " (mk_MK): result(HOST): \"%s\", returned: \"%s\"\n",
+                            hostResult, result);
+                        if (result == null ||
+                            hostResult != null &&
+                            !result.equals(hostResult)) {
+                            throw new RuntimeException("Display language name" +
+                                " mismatch for \"mk\". Returned name was" +
+                                " \"" + result + "\", result(HOST): \"" +
+                                hostResult + "\"");
                         }
                         result = Locale.US.getDisplayLanguage(Locale.ENGLISH);
-                        if (!"English".equals(result)) {
-                            throw new RuntimeException("Windows locale name provider did not return expected localized language name for \"en\". Returned name was \"" + result + "\"");
+                        hostResult =
+                            lnp.getDisplayLanguage(Locale.US.getLanguage(),
+                                                   Locale.ENGLISH);
+                        System.out.printf("  Display language name for" +
+                            " (en_US): result(HOST): \"%s\", returned: \"%s\"\n",
+                            hostResult, result);
+                        if (result == null ||
+                            hostResult != null &&
+                            !result.equals(hostResult)) {
+                            throw new RuntimeException("Display language name" +
+                                " mismatch for \"en\". Returned name was" +
+                                " \"" + result + "\", result(HOST): \"" +
+                                hostResult + "\"");
                         }
-                        result = Locale.US.getDisplayCountry(Locale.ENGLISH);
-                        if (ver >= 6.1 && !"United States".equals(result)) {
-                            throw new RuntimeException("Windows locale name provider did not return expected localized country name for \"US\". Returned name was \"" + result + "\"");
+                        if (ver >= 6.1) {
+                            result = Locale.US.getDisplayCountry(Locale.ENGLISH);
+                            hostResult = lnp.getDisplayCountry(
+                                Locale.US.getCountry(), Locale.ENGLISH);
+                            System.out.printf("  Display country name for" +
+                                " (en_US): result(HOST): \"%s\", returned: \"%s\"\n",
+                                hostResult, result);
+                            if (result == null ||
+                                hostResult != null &&
+                                !result.equals(hostResult)) {
+                                throw new RuntimeException("Display country name" +
+                                    " mismatch for \"US\". Returned name was" +
+                                    " \"" + result + "\", result(HOST): \"" +
+                                    hostResult + "\"");
+                            }
                         }
                     } else {
-                        throw new RuntimeException("Windows Host LocaleProviderAdapter was not selected for English locale.");
+                        throw new RuntimeException("Windows Host" +
+                            " LocaleProviderAdapter was not selected for" +
+                            " English locale.");
                     }
                 }
             } catch (ParseException pe) {
