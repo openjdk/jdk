@@ -94,7 +94,7 @@ import java.util.Objects;
  * of this interface may be in calendar systems other than ISO.
  * See {@link java.time.chrono.ChronoLocalDate} for a fuller discussion of the issues.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface places no restrictions on the mutability of implementations,
  * however immutability is strongly recommended.
  *
@@ -109,7 +109,7 @@ public interface TemporalAccessor {
      * If false, then calling the {@link #range(TemporalField) range} and {@link #get(TemporalField) get}
      * methods will throw an exception.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then true is returned, otherwise false
      * <p>
@@ -137,7 +137,7 @@ public interface TemporalAccessor {
      * and it is important not to read too much into them. For example, there
      * could be values within the range that are invalid for the field.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the range of the field must be returned.
      * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
@@ -183,7 +183,7 @@ public interface TemporalAccessor {
      * If the date-time cannot return the value, because the field is unsupported or for
      * some other reason, an exception will be thrown.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported and has an {@code int} range, then the value of
      * the field must be returned.
@@ -231,7 +231,7 @@ public interface TemporalAccessor {
      * If the date-time cannot return the value, because the field is unsupported or for
      * some other reason, an exception will be thrown.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the value of the field must be returned.
      * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
@@ -265,7 +265,7 @@ public interface TemporalAccessor {
      * {@code LocalDate::from} and {@code ZoneId::from}.
      * Additional implementations are provided as static methods on {@link TemporalQuery}.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The default implementation must behave equivalent to this code:
      * <pre>
      *  if (query == TemporalQuery.zoneId() ||
