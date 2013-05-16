@@ -333,6 +333,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
   assert(ex_jvms->stkoff() == phi_map->_jvms->stkoff(), "matching locals");
   assert(ex_jvms->sp() == phi_map->_jvms->sp(), "matching stack sizes");
   assert(ex_jvms->monoff() == phi_map->_jvms->monoff(), "matching JVMS");
+  assert(ex_jvms->scloff() == phi_map->_jvms->scloff(), "matching scalar replaced objects");
   assert(ex_map->req() == phi_map->req(), "matching maps");
   uint tos = ex_jvms->stkoff() + ex_jvms->sp();
   Node*         hidden_merge_mark = root();
@@ -409,7 +410,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
         while (dst->req() > orig_width)  dst->del_req(dst->req()-1);
       } else {
         assert(dst->is_Phi(), "nobody else uses a hidden region");
-        phi = (PhiNode*)dst;
+        phi = dst->as_Phi();
       }
       if (add_multiple && src->in(0) == ex_control) {
         // Both are phis.
@@ -1438,7 +1439,12 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   } else {
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt);
   }
-  return _gvn.transform(ld);
+  ld = _gvn.transform(ld);
+  if ((bt == T_OBJECT) && C->do_escape_analysis() || C->eliminate_boxing()) {
+    // Improve graph before escape analysis and boxing elimination.
+    record_for_igvn(ld);
+  }
+  return ld;
 }
 
 Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
@@ -3144,7 +3150,7 @@ Node* GraphKit::new_instance(Node* klass_node,
   set_all_memory(mem); // Create new memory state
 
   AllocateNode* alloc
-    = new (C) AllocateNode(C, AllocateNode::alloc_type(),
+    = new (C) AllocateNode(C, AllocateNode::alloc_type(Type::TOP),
                            control(), mem, i_o(),
                            size, klass_node,
                            initial_slow_test);
@@ -3285,7 +3291,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
-    = new (C) AllocateArrayNode(C, AllocateArrayNode::alloc_type(),
+    = new (C) AllocateArrayNode(C, AllocateArrayNode::alloc_type(TypeInt::INT),
                                 control(), mem, i_o(),
                                 size, klass_node,
                                 initial_slow_test,
@@ -3326,10 +3332,9 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
   if (ptr == NULL) {     // reduce dumb test in callers
     return NULL;
   }
-  if (ptr->is_CheckCastPP()) {  // strip a raw-to-oop cast
-    ptr = ptr->in(1);
-    if (ptr == NULL)  return NULL;
-  }
+  ptr = ptr->uncast();  // strip a raw-to-oop cast
+  if (ptr == NULL)  return NULL;
+
   if (ptr->is_Proj()) {
     Node* allo = ptr->in(0);
     if (allo != NULL && allo->is_Allocate()) {
@@ -3369,19 +3374,6 @@ InitializeNode* AllocateNode::initialization() {
     if (init->is_Initialize()) {
       assert(init->as_Initialize()->allocation() == this, "2-way link");
       return init->as_Initialize();
-    }
-  }
-  return NULL;
-}
-
-// Trace Allocate -> Proj[Parm] -> MemBarStoreStore
-MemBarStoreStoreNode* AllocateNode::storestore() {
-  ProjNode* rawoop = proj_out(AllocateNode::RawAddress);
-  if (rawoop == NULL)  return NULL;
-  for (DUIterator_Fast imax, i = rawoop->fast_outs(imax); i < imax; i++) {
-    Node* storestore = rawoop->fast_out(i);
-    if (storestore->is_MemBarStoreStore()) {
-      return storestore->as_MemBarStoreStore();
     }
   }
   return NULL;
