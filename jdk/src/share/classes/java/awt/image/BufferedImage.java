@@ -35,6 +35,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -643,6 +645,7 @@ public class BufferedImage extends java.awt.Image
         this.properties = properties;
         int numBands = raster.getNumBands();
         boolean isAlphaPre = cm.isAlphaPremultiplied();
+        final boolean isStandard = isStandard(cm, raster);
         ColorSpace cs;
 
         // Force the raster data alpha state to match the premultiplied
@@ -653,20 +656,19 @@ public class BufferedImage extends java.awt.Image
         cs = cm.getColorSpace();
         int csType = cs.getType();
         if (csType != ColorSpace.TYPE_RGB) {
-            if (csType == ColorSpace.TYPE_GRAY
-                && ComponentColorModel.class.equals(cm.getClass())) {
+            if (csType == ColorSpace.TYPE_GRAY &&
+                isStandard &&
+                cm instanceof ComponentColorModel) {
                 // Check if this might be a child raster (fix for bug 4240596)
                 if (sm instanceof ComponentSampleModel &&
                     ((ComponentSampleModel)sm).getPixelStride() != numBands) {
                     imageType = TYPE_CUSTOM;
                 } else if (raster instanceof ByteComponentRaster &&
-                       PixelInterleavedSampleModel.class.equals(sm.getClass()) &&
                        raster.getNumBands() == 1 &&
                        cm.getComponentSize(0) == 8 &&
                        ((ByteComponentRaster)raster).getPixelStride() == 1) {
                     imageType = TYPE_BYTE_GRAY;
                 } else if (raster instanceof ShortComponentRaster &&
-                       PixelInterleavedSampleModel.class.equals(sm.getClass()) &&
                        raster.getNumBands() == 1 &&
                        cm.getComponentSize(0) == 16 &&
                        ((ShortComponentRaster)raster).getPixelStride() == 1) {
@@ -686,8 +688,8 @@ public class BufferedImage extends java.awt.Image
             // are correct
             int pixSize = cm.getPixelSize();
             if (iraster.getPixelStride() == 1 &&
-                DirectColorModel.class.equals(cm.getClass())  &&
-                SinglePixelPackedSampleModel.class.equals(sm.getClass()) &&
+                isStandard &&
+                cm instanceof DirectColorModel  &&
                 (pixSize == 32 || pixSize == 24))
             {
                 // Now check on the DirectColorModel params
@@ -718,21 +720,17 @@ public class BufferedImage extends java.awt.Image
                 }  // if (rmask == DCM_BGR_RED_MASK &&
             }   // if (iraster.getPixelStride() == 1
         }   // ((raster instanceof IntegerComponentRaster) &&
-        else if ((IndexColorModel.class.equals(cm.getClass())) &&
-                 (numBands == 1) &&
+        else if ((cm instanceof IndexColorModel) && (numBands == 1) &&
+                 isStandard &&
                  (!cm.hasAlpha() || !isAlphaPre))
         {
             IndexColorModel icm = (IndexColorModel) cm;
             int pixSize = icm.getPixelSize();
 
-            if (raster instanceof BytePackedRaster &&
-                MultiPixelPackedSampleModel.class.equals(sm.getClass()))
-            {
+            if (raster instanceof BytePackedRaster) {
                 imageType = TYPE_BYTE_BINARY;
             }   // if (raster instanceof BytePackedRaster)
-            else if (raster instanceof ByteComponentRaster &&
-                     PixelInterleavedSampleModel.class.equals(sm.getClass()))
-            {
+            else if (raster instanceof ByteComponentRaster) {
                 ByteComponentRaster braster = (ByteComponentRaster) raster;
                 if (braster.getPixelStride() == 1 && pixSize <= 8) {
                     imageType = TYPE_BYTE_INDEXED;
@@ -740,8 +738,8 @@ public class BufferedImage extends java.awt.Image
             }
         }   // else if (cm instanceof IndexColorModel) && (numBands == 1))
         else if ((raster instanceof ShortComponentRaster)
-                 && (DirectColorModel.class.equals(cm.getClass()))
-                 && (SinglePixelPackedSampleModel.class.equals(sm.getClass()))
+                 && (cm instanceof DirectColorModel)
+                 && isStandard
                  && (numBands == 3)
                  && !cm.hasAlpha())
         {
@@ -761,6 +759,7 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((cm instanceof IndexColorModel) && (numBands == 1))
         else if ((raster instanceof ByteComponentRaster)
                  && (cm instanceof ComponentColorModel)
+                 && isStandard
                  && (raster.getSampleModel() instanceof PixelInterleavedSampleModel)
                  && (numBands == 3 || numBands == 4))
         {
@@ -788,9 +787,7 @@ public class BufferedImage extends java.awt.Image
                 braster.getPixelStride() == numBands &&
                 offs[0] == numBands-1 &&
                 offs[1] == numBands-2 &&
-                offs[2] == numBands-3 &&
-                ComponentColorModel.class.equals(ccm.getClass()) &&
-                PixelInterleavedSampleModel.class.equals(csm.getClass()))
+                offs[2] == numBands-3)
             {
                 if (numBands == 3 && !ccm.hasAlpha()) {
                     imageType = TYPE_3BYTE_BGR;
@@ -802,6 +799,27 @@ public class BufferedImage extends java.awt.Image
                 }
             }
         }   // else if ((raster instanceof ByteComponentRaster) &&
+    }
+
+    private static boolean isStandard(ColorModel cm, WritableRaster wr) {
+        final Class<? extends ColorModel> cmClass = cm.getClass();
+        final Class<? extends WritableRaster> wrClass = wr.getClass();
+        final Class<? extends SampleModel> smClass = wr.getSampleModel().getClass();
+
+        final PrivilegedAction<Boolean> checkClassLoadersAction =
+                new PrivilegedAction<Boolean>()
+        {
+
+            @Override
+            public Boolean run() {
+                final ClassLoader std = System.class.getClassLoader();
+
+                return (cmClass.getClassLoader() == std) &&
+                        (smClass.getClassLoader() == std) &&
+                        (wrClass.getClassLoader() == std);
+            }
+        };
+        return AccessController.doPrivileged(checkClassLoadersAction);
     }
 
     /**
