@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,24 @@ package com.sun.tools.javac.util;
 
 /** Utility class for static conversion methods between numbers
  *  and strings in various formats.
+ *
+ *  <p>Note regarding UTF-8.
+ *  The JVMS defines its own version of the UTF-8 format so that it
+ *  contains no zero bytes (modified UTF-8). This is not actually the same
+ *  as Charset.forName("UTF-8").
+ *
+ *  <p>
+ *  See also:
+ *  <ul>
+ *  <li><a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.4.7">
+ *    JVMS 4.4.7 </a></li>
+ *  <li><a href="http://docs.oracle.com/javase/7/docs/api/java/io/DataInput.html#modified-utf-8">
+      java.io.DataInput: Modified UTF-8 </a></li>
+    <li><a href="https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8">
+      Modified UTF-8 (wikipedia) </a></li>
+ *  </ul>
+ *
+ *  The methods here support modified UTF-8.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
