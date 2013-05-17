@@ -87,7 +87,7 @@ public class ProfileIndexFrameWriter extends AbstractProfileIndexWriter {
                 profilesLabel);
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addAttr(HtmlAttr.TITLE, profilesLabel.toString());
+        ul.setTitle(profilesLabel);
         for (int i = 1; i < profiles.getProfileCount(); i++) {
             ul.addContent(getProfile(i));
         }

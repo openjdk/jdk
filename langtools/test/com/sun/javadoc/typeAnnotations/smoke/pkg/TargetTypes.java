@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,24 +36,19 @@ import java.io.*;
  * @author Yuri Gaevsky
  */
 
-@Target({TYPE_USE})
+@Target(TYPE_USE)
 @Retention(RetentionPolicy.RUNTIME)
 @interface A {}
 
-@Target({TYPE_USE})
+@Target(TYPE_USE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @interface DA {}
 
-/** wildcard bound */
-class T0x1C {
-    void m0x1C(List<? extends @A @DA String> lst) {}
-}
-
-/** wildcard bound generic/array */
-class T0x1D<T> {
-    void m0x1D(List<? extends @A @DA List<int[]>> lst) {}
-}
+@Target(TYPE_PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@interface DTPA {}
 
 /** typecast */
 class T0x00 {
@@ -76,76 +71,6 @@ class T0x02 {
     }
 }
 
-/** object creation (new) */
-class T0x04 {
-    void m0x04() {
-        new @A @DA ArrayList<String>();
-    }
-}
-
-/** local variable */
-class T0x08 {
-    void m0x08() {
-      @A @DA String s = null;
-    }
-}
-
-/** method parameter generic/array */
-class T0x0D {
-    void m0x0D(HashMap<@A @DA Object, List<@A @DA List<@A @DA Class>>> s1) {}
-}
-
-/** method receiver */
-class T0x06 {
-    void m0x06(@A @DA T0x06 this) {}
-}
-
-/** method return type generic/array */
-class T0x0B {
-    Class<@A @DA Object> m0x0B() { return null; }
-}
-
-/** field generic/array */
-class T0x0F {
-    HashMap<@A @DA Object, @A @DA Object> c1;
-}
-
-/** method type parameter */
-class T0x20<T, U> {
-    <@A @DA T, @A @DA U> void m0x20() {}
-}
-
-/** class type parameter */
-class T0x22<@A @DA T, @A @DA U> {
-}
-
-/** class type parameter bound */
-class T0x10<T extends @A @DA Cloneable> {
-}
-
-class T0x10A<T extends @A @DA Object> {
-}
-
-/** method type parameter bound */
-class T0x12<T> {
-    <T extends @A @DA Cloneable> void m0x12() {}
-}
-
-/** class type parameter bound generic/array */
-class T0x11<T extends List<@A @DA T>> {
-}
-
-/** method type parameter bound generic/array */
-class T0x13 {
-    static <T extends Comparable<@A @DA T>> T m0x13() {
-        return null;
-    }
-}
-
-/** class extends/implements generic/array */
-class T0x15<T> extends ArrayList<@A @DA T> {
-}
-
 /** type test (instanceof) generic/array */
 class T0x03<T> {
     void m0x03(T typeObj, Object obj) {
@@ -153,10 +78,29 @@ class T0x03<T> {
     }
 }
 
+/** object creation (new) */
+class T0x04 {
+    void m0x04() {
+        new @A @DA ArrayList<String>();
+    }
+}
+
 /** object creation (new) generic/array */
 class T0x05<T> {
     void m0x05() {
         new ArrayList<@A @DA T>();
+    }
+}
+
+/** method receiver */
+class T0x06 {
+    void m0x06(@A @DA T0x06 this) {}
+}
+
+/** local variable */
+class T0x08 {
+    void m0x08() {
+      @A @DA String s = null;
     }
 }
 
@@ -171,20 +115,55 @@ class T0x09<T> {
     }
 }
 
-/** type argument in constructor call generic/array */
-class T0x19 {
-    <T> T0x19() {}
+/** method return type generic/array */
+class T0x0B {
+    Class<@A @DA Object> m0x0B() { return null; }
+}
 
-    void g() {
-       new <List<@A @DA String>> T0x19();
+/** method parameter generic/array */
+class T0x0D {
+    void m0x0D(HashMap<@A @DA Object, List<@A @DA List<@A @DA Class>>> s1) {}
+}
+
+/** field generic/array */
+class T0x0F {
+    HashMap<@A @DA Object, @A @DA Object> c1;
+}
+
+/** class type parameter bound */
+class T0x10<T extends @A @DA Cloneable> {
+}
+
+class T0x10A<T extends @A @DA Object> {
+}
+
+/** class type parameter bound generic/array */
+class T0x11<T extends List<@A @DA T>> {
+}
+
+/** method type parameter bound */
+class T0x12<T> {
+    <T extends @A @DA Cloneable> void m0x12() {}
+}
+
+/** method type parameter bound generic/array */
+class T0x13 {
+    static <T extends Comparable<@A @DA T>> T m0x13() {
+        return null;
     }
 }
 
-/** type argument in method call generic/array */
-class T0x1B<T> {
-    void m0x1B() {
-        Collections.<T @A @DA []>emptyList();
-    }
+/** class extends/implements */
+class T0x14 extends @A @DA Thread implements @A @DA Serializable, @A @DA Cloneable {
+}
+
+/** class extends/implements generic/array */
+class T0x15<T> extends ArrayList<@A @DA T> {
+}
+
+/** exception type in throws */
+class T0x16 {
+    void m0x16() throws @A @DA Exception {}
 }
 
 /** type argument in constructor call */
@@ -196,6 +175,15 @@ class T0x18<T> {
     }
 }
 
+/** type argument in constructor call generic/array */
+class T0x19 {
+    <T> T0x19() {}
+
+    void g() {
+       new <List<@A @DA String>> T0x19();
+    }
+}
+
 /** type argument in method call */
 class T0x1A<T,U> {
     public static <T, U> T m() { return null; }
@@ -204,11 +192,43 @@ class T0x1A<T,U> {
     }
 }
 
-/** class extends/implements */
-class T0x14 extends @A @DA Thread implements @A @DA Serializable, @A @DA Cloneable {
+/** type argument in method call generic/array */
+class T0x1B<T> {
+    void m0x1B() {
+        Collections.<T @A @DA []>emptyList();
+    }
 }
 
-/** exception type in throws */
-class T0x16 {
-    void m0x16() throws @A @DA Exception {}
+/** wildcard bound */
+class T0x1C {
+    void m0x1C(List<? extends @A @DA String> lst) {}
+}
+
+/** wildcard bound generic/array */
+class T0x1D<T> {
+    void m0x1D(List<? extends @A @DA List<int[]>> lst) {}
+}
+
+/** method type parameter */
+class T0x20 {
+    <@A @DA T> void m0x20() {}
+}
+
+class T0x20A {
+    <@A @DTPA T> void m0x20A() {}
+}
+
+class T0x20B {
+    <T> void m0x20B(@A @DA T p) {}
+}
+
+/** class type parameter */
+class T0x22<@A @DA T> {
+}
+
+class T0x22A<@A @DTPA T> {
+}
+
+class T0x22B<T> {
+    @A @DA T f;
 }
