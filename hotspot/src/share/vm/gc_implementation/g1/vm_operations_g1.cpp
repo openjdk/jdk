@@ -230,7 +230,6 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 }
 
 void VM_CGC_Operation::doit() {
-  gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
   TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
   GCTraceTime t(_printGCMessage, G1Log::fine(), true, G1CollectedHeap::heap()->gc_timer_cm(), G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id());
   SharedHeap* sh = SharedHeap::heap();
