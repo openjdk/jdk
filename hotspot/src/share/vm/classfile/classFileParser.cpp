@@ -1719,15 +1719,28 @@ void ClassFileParser::parse_annotations(u1* buffer, int limit,
     coll->set_annotation(id);
 
     if (id == AnnotationCollector::_sun_misc_Contended) {
+      // @Contended can optionally specify the contention group.
+      //
+      // Contended group defines the equivalence class over the fields:
+      // the fields within the same contended group are not treated distinct.
+      // The only exception is default group, which does not incur the
+      // equivalence. Naturally, contention group for classes is meaningless.
+      //
+      // While the contention group is specified as String, annotation
+      // values are already interned, and we might as well use the constant
+      // pool index as the group tag.
+      //
+      u2 group_index = 0; // default contended group
       if (count == 1
           && s_size == (index - index0)  // match size
           && s_tag_val == *(abase + tag_off)
           && member == vmSymbols::value_name()) {
-        u2 group_index = Bytes::get_Java_u2(abase + s_con_off);
-        coll->set_contended_group(group_index);
-      } else {
-        coll->set_contended_group(0); // default contended group
+        group_index = Bytes::get_Java_u2(abase + s_con_off);
+        if (_cp->symbol_at(group_index)->utf8_length() == 0) {
+          group_index = 0; // default contended group
+        }
       }
+      coll->set_contended_group(group_index);
     }
   }
 }
@@ -3165,12 +3178,12 @@ void ClassFileParser::layout_fields(Handle class_loader,
   first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
                                  nonstatic_field_size * heapOopSize;
 
+  next_nonstatic_field_offset = first_nonstatic_field_offset;
+
   // class is contended, pad before all the fields
   if (parsed_annotations->is_contended()) {
-    first_nonstatic_field_offset += pad_size;
+    next_nonstatic_field_offset += pad_size;
   }
-
-  next_nonstatic_field_offset = first_nonstatic_field_offset;
 
   unsigned int nonstatic_double_count = fac->count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
   unsigned int nonstatic_word_count   = fac->count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
@@ -3562,7 +3575,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
   int instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
 
   assert(instance_size == align_object_size(align_size_up(
-         (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize + ((parsed_annotations->is_contended()) ? pad_size : 0)),
+         (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize),
           wordSize) / wordSize), "consistent layout helper value");
 
   // Number of non-static oop map blocks allocated at end of klass.
