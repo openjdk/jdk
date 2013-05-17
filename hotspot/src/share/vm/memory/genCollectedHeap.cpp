@@ -363,7 +363,6 @@ void GenCollectedHeap::do_collection(bool  full,
 
     bool complete = full && (max_level == (n_gens()-1));
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
     // so we can assume here that the next GC id is what we want.

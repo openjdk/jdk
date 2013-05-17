@@ -1222,7 +1222,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     // Timing
     assert(gc_cause() != GCCause::_java_lang_system_gc || explicit_gc, "invariant");
-    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {

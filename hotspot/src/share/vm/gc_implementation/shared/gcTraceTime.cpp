@@ -49,10 +49,8 @@ GCTraceTime::GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* t
   }
 
   if (_doit) {
-    if (PrintGCTimeStamps) {
-      gclog_or_tty->stamp();
-      gclog_or_tty->print(": ");
-    }
+    gclog_or_tty->date_stamp(PrintGCDateStamps);
+    gclog_or_tty->stamp(PrintGCTimeStamps);
     if (PrintGCID) {
       gclog_or_tty->print("#%u: ", gc_id.id());
     }
