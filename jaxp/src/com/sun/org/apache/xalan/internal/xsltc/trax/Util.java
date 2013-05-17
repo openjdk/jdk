@@ -105,6 +105,8 @@ public final class Util {
                     if (reader == null) {
                        try {
                            reader= XMLReaderFactory.createXMLReader();
+                           reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                                   xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
                        } catch (Exception e ) {
                            try {
 
