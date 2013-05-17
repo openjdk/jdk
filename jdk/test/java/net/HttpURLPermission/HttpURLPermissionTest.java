@@ -187,11 +187,12 @@ public class HttpURLPermissionTest {
         throws Exception {
 
         HttpURLPermission out = new HttpURLPermission(name, actions);
-        FileOutputStream fos = new FileOutputStream("out.ser");
-        ObjectOutputStream o = new ObjectOutputStream(fos);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(baos);
         o.writeObject(out);
-        FileInputStream fis = new FileInputStream("out.ser");
-        ObjectInputStream i = new ObjectInputStream(fis);
+        ByteArrayInputStream bain = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream i = new ObjectInputStream(bain);
         HttpURLPermission in = (HttpURLPermission)i.readObject();
         if (!in.equals(out)) {
             System.out.println ("FAIL");
