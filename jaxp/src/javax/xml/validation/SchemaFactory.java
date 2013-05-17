@@ -390,8 +390,44 @@ public abstract class SchemaFactory {
      * possible for a {@link SchemaFactory} to recognize a property name but
      * to be unable to change the current value.</p>
      *
-     * <p>{@link SchemaFactory}s are not required to recognize setting
-     * any specific property names.</p>
+     * <p>
+     * All implementations that implement JAXP 1.5 or newer are required to
+     * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} and
+     * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} properties.
+     * </p>
+     * <ul>
+     *   <li>
+     *      <p>Access to external DTDs in Schema files is restricted to the protocols
+     *      specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
+     *      If access is denied during the creation of new Schema due to the restriction
+     *      of this property, {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link #newSchema(Source)} or {@link #newSchema(File)}
+     *      or {@link #newSchema(URL)} or  or {@link #newSchema(Source[])} method.</p>
+     *
+     *      <p>Access to external DTDs in xml source files is restricted to the protocols
+     *      specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
+     *      If access is denied during validation due to the restriction
+     *      of this property, {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link javax.xml.validation.Validator#validate(Source)} or
+     *      {@link javax.xml.validation.Validator#validate(Source, Result)} method.</p>
+     *
+     *      <p>Access to external reference set by the schemaLocation attribute is
+     *      restricted to the protocols specified by the
+     *      {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property.
+     *      If access is denied during validation due to the restriction of this property,
+     *      {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link javax.xml.validation.Validator#validate(Source)} or
+     *      {@link javax.xml.validation.Validator#validate(Source, Result)} method.</p>
+     *
+     *      <p>Access to external reference set by the Import
+     *      and Include element is restricted to the protocols specified by the
+     *      {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property.
+     *      If access is denied during the creation of new Schema due to the restriction
+     *      of this property, {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link #newSchema(Source)} or {@link #newSchema(File)}
+     *      or {@link #newSchema(URL)} or {@link #newSchema(Source[])} method.</p>
+     *   </li>
+     * </ul>
      *
      * @param name The property name, which is a non-null fully-qualified URI.
      * @param object The requested value for the property.
