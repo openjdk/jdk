@@ -90,16 +90,17 @@ var methodsCalled = [
 
 function check(str, strs) {
     for each (s in strs) {
-       if (s.indexOf(str) !== -1) {
+       if (str.indexOf(s) !== -1) {
 	   continue;
        }
-       print(method + "not found");
+       print(s + " not found");
        return;
     }
     print("check ok!");
 }
 
 str = runScriptEngine([ "--log=codegen,compiler=finest,methodhandles=finest,fields=finest" ], __DIR__ + "../basic/NASHORN-19.js");
+str += runScriptEngine([ "--log=codegen,compiler=finest,methodhandles=finest,fields=finest" ], __DIR__ + "../basic/varargs.js");
 
 check(str, methodsCalled);
 check(str, ['return', 'get', 'set', '[fields]']);

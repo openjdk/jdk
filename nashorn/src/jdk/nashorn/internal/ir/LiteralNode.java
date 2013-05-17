@@ -37,7 +37,6 @@ import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Undefined;
 
 /**
@@ -50,16 +49,15 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /** Literal value */
     protected final T value;
 
-     /**
+    /**
      * Constructor
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   the value of the literal
      */
-    protected LiteralNode(final Source source, final long token, final int finish, final T value) {
-        super(source, token, finish);
+    protected LiteralNode(final long token, final int finish, final T value) {
+        super(token, finish);
         this.value = value;
     }
 
@@ -238,14 +236,13 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new null literal
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      *
      * @return the new literal node
      */
-    public static LiteralNode<Node> newInstance(final Source source, final long token, final int finish) {
-        return new NodeLiteralNode(source, token, finish);
+    public static LiteralNode<Node> newInstance(final long token, final int finish) {
+        return new NodeLiteralNode(token, finish);
     }
 
     /**
@@ -256,14 +253,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent) {
-        return new NodeLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish());
+        return new NodeLiteralNode(parent.getToken(), parent.getFinish());
     }
 
     @Immutable
     private static final class BooleanLiteralNode extends LiteralNode<Boolean> {
 
-        private BooleanLiteralNode(final Source source, final long token, final int finish, final boolean value) {
-            super(source, Token.recast(token, value ? TokenType.TRUE : TokenType.FALSE), finish, value);
+        private BooleanLiteralNode(final long token, final int finish, final boolean value) {
+            super(Token.recast(token, value ? TokenType.TRUE : TokenType.FALSE), finish, value);
         }
 
         private BooleanLiteralNode(final BooleanLiteralNode literalNode) {
@@ -289,15 +286,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new boolean literal
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   true or false
      *
      * @return the new literal node
      */
-    public static LiteralNode<Boolean> newInstance(final Source source, final long token, final int finish, final boolean value) {
-        return new BooleanLiteralNode(source, token,  finish, value);
+    public static LiteralNode<Boolean> newInstance(final long token, final int finish, final boolean value) {
+        return new BooleanLiteralNode(token, finish, value);
     }
 
     /**
@@ -309,7 +305,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final boolean value) {
-        return new BooleanLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+        return new BooleanLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     @Immutable
@@ -317,8 +313,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
         private final Type type = numberGetType(value);
 
-        private NumberLiteralNode(final Source source, final long token, final int finish, final Number value) {
-            super(source, Token.recast(token, TokenType.DECIMAL), finish, value);
+        private NumberLiteralNode(final long token, final int finish, final Number value) {
+            super(Token.recast(token, TokenType.DECIMAL), finish, value);
         }
 
         private NumberLiteralNode(final NumberLiteralNode literalNode) {
@@ -353,15 +349,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new number literal
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   literal value
      *
      * @return the new literal node
      */
-    public static LiteralNode<Number> newInstance(final Source source, final long token, final int finish, final Number value) {
-        return new NumberLiteralNode(source, token, finish, value);
+    public static LiteralNode<Number> newInstance(final long token, final int finish, final Number value) {
+        return new NumberLiteralNode(token, finish, value);
     }
 
     /**
@@ -373,12 +368,12 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final Number value) {
-        return new NumberLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+        return new NumberLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     private static class UndefinedLiteralNode extends LiteralNode<Undefined> {
-        private UndefinedLiteralNode(final Source source, final long token, final int finish) {
-            super(source, Token.recast(token, TokenType.OBJECT), finish, ScriptRuntime.UNDEFINED);
+        private UndefinedLiteralNode(final long token, final int finish) {
+            super(Token.recast(token, TokenType.OBJECT), finish, ScriptRuntime.UNDEFINED);
         }
 
         private UndefinedLiteralNode(final UndefinedLiteralNode literalNode) {
@@ -389,15 +384,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new undefined literal
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   undefined value, passed only for polymorphisism discrimination
      *
      * @return the new literal node
      */
-    public static LiteralNode<Undefined> newInstance(final Source source, final long token, final int finish, final Undefined value) {
-        return new UndefinedLiteralNode(source, token, finish);
+    public static LiteralNode<Undefined> newInstance(final long token, final int finish, final Undefined value) {
+        return new UndefinedLiteralNode(token, finish);
     }
 
     /**
@@ -409,13 +403,13 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final Undefined value) {
-        return new UndefinedLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish());
+        return new UndefinedLiteralNode(parent.getToken(), parent.getFinish());
     }
 
     @Immutable
     private static class StringLiteralNode extends LiteralNode<String> {
-        private StringLiteralNode(final Source source, final long token, final int finish, final String value) {
-            super(source, Token.recast(token, TokenType.STRING), finish, value);
+        private StringLiteralNode(final long token, final int finish, final String value) {
+            super(Token.recast(token, TokenType.STRING), finish, value);
         }
 
         private StringLiteralNode(final StringLiteralNode literalNode) {
@@ -433,15 +427,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new string literal
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   string value
      *
      * @return the new literal node
      */
-    public static LiteralNode<String> newInstance(final Source source, final long token, final int finish, final String value) {
-        return new StringLiteralNode(source, token, finish, value);
+    public static LiteralNode<String> newInstance(final long token, final int finish, final String value) {
+        return new StringLiteralNode(token, finish, value);
     }
 
     /**
@@ -453,13 +446,13 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final String value) {
-        return new StringLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+        return new StringLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     @Immutable
     private static class LexerTokenLiteralNode extends LiteralNode<LexerToken> {
-        private LexerTokenLiteralNode(final Source source, final long token, final int finish, final LexerToken value) {
-            super(source, Token.recast(token, TokenType.STRING), finish, value); //TODO is string the correct token type here?
+        private LexerTokenLiteralNode(final long token, final int finish, final LexerToken value) {
+            super(Token.recast(token, TokenType.STRING), finish, value); //TODO is string the correct token type here?
         }
 
         private LexerTokenLiteralNode(final LexerTokenLiteralNode literalNode) {
@@ -480,15 +473,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new literal node for a lexer token
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   lexer token value
      *
      * @return the new literal node
      */
-    public static LiteralNode<LexerToken> newInstance(final Source source, final long token, final int finish, final LexerToken value) {
-        return new LexerTokenLiteralNode(source, token, finish, value);
+    public static LiteralNode<LexerToken> newInstance(final long token, final int finish, final LexerToken value) {
+        return new LexerTokenLiteralNode(token, finish, value);
     }
 
     /**
@@ -500,17 +492,17 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final LexerToken value) {
-        return new LexerTokenLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+        return new LexerTokenLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     private static final class NodeLiteralNode extends LiteralNode<Node> {
 
-        private NodeLiteralNode(final Source source, final long token, final int finish) {
-            this(source, token, finish, null);
+        private NodeLiteralNode(final long token, final int finish) {
+            this(token, finish, null);
         }
 
-        private NodeLiteralNode(final Source source, final long token, final int finish, final Node value) {
-            super(source, Token.recast(token, TokenType.OBJECT), finish, value);
+        private NodeLiteralNode(final long token, final int finish, final Node value) {
+            super(Token.recast(token, TokenType.OBJECT), finish, value);
         }
 
         private NodeLiteralNode(final LiteralNode<Node> literalNode) {
@@ -550,15 +542,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new node literal for an arbitrary node
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   the literal value node
      *
      * @return the new literal node
      */
-    public static LiteralNode<Node> newInstance(final Source source, final long token, final int finish, final Node value) {
-        return new NodeLiteralNode(source, token, finish, value);
+    public static LiteralNode<Node> newInstance(final long token, final int finish, final Node value) {
+        return new NodeLiteralNode(token, finish, value);
     }
 
     /**
@@ -570,7 +561,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final Node value) {
-        return new NodeLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value);
+        return new NodeLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     /**
@@ -645,13 +636,12 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         /**
          * Constructor
          *
-         * @param source  the source
          * @param token   token
          * @param finish  finish
          * @param value   array literal value, a Node array
          */
-        protected ArrayLiteralNode(final Source source, final long token, final int finish, final Node[] value) {
-            super(source, Token.recast(token, TokenType.ARRAY), finish, value);
+        protected ArrayLiteralNode(final long token, final int finish, final Node[] value) {
+            super(Token.recast(token, TokenType.ARRAY), finish, value);
             this.elementType = Type.UNKNOWN;
         }
 
@@ -659,9 +649,12 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
          * Copy constructor
          * @param node source array literal node
          */
-        protected ArrayLiteralNode(final ArrayLiteralNode node) {
-            super(node);
+        private ArrayLiteralNode(final ArrayLiteralNode node, final Node[] value) {
+            super(node, value);
             this.elementType = node.elementType;
+            this.presets     = node.presets;
+            this.postsets    = node.postsets;
+            this.units       = node.units;
         }
 
         /**
@@ -750,9 +743,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
                     break;
                 }
 
-                final Symbol symbol = node.getSymbol();
-                assert symbol != null; //don't run this on unresolved nodes or you are in trouble
-                Type symbolType = symbol.getSymbolType();
+                assert node.getSymbol() != null; //don't run this on unresolved nodes or you are in trouble
+                Type symbolType = node.getSymbol().getSymbolType();
                 if (symbolType.isUnknown()) {
                     symbolType = Type.OBJECT;
                 }
@@ -813,7 +805,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         /**
-         * Get indices of arrays containing computed post sets
+         * Get indices of arrays containing computed post sets. post sets
+         * are things like non literals e.g. "x+y" instead of i or 17
          * @return post set indices
          */
         public int[] getPostsets() {
@@ -849,15 +842,15 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         @Override
         public Node accept(final NodeVisitor visitor) {
             if (visitor.enterLiteralNode(this)) {
-                for (int i = 0; i < value.length; i++) {
-                    final Node element = value[i];
-                    if (element != null) {
-                        value[i] = element.accept(visitor);
-                    }
-                }
-                return visitor.leaveLiteralNode(this);
+                final List<Node> oldValue = Arrays.asList(value);
+                final List<Node> newValue = Node.accept(visitor, Node.class, oldValue);
+                return visitor.leaveLiteralNode(oldValue != newValue ? setValue(newValue) : this);
             }
             return this;
+        }
+
+        private ArrayLiteralNode setValue(final List<Node> value) {
+            return new ArrayLiteralNode(this, value.toArray(new Node[value.size()]));
         }
 
         @Override
@@ -883,15 +876,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /**
      * Create a new array literal of Nodes from a list of Node values
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   literal value list
      *
      * @return the new literal node
      */
-    public static LiteralNode<Node[]> newInstance(final Source source, final long token, final int finish, final List<Node> value) {
-        return new ArrayLiteralNode(source, token, finish, value.toArray(new Node[value.size()]));
+    public static LiteralNode<Node[]> newInstance(final long token, final int finish, final List<Node> value) {
+        return new ArrayLiteralNode(token, finish, value.toArray(new Node[value.size()]));
     }
 
 
@@ -904,20 +896,19 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final List<Node> value) {
-        return new ArrayLiteralNode(parent.getSource(), parent.getToken(), parent.getFinish(), value.toArray(new Node[value.size()]));
+        return new ArrayLiteralNode(parent.getToken(), parent.getFinish(), value.toArray(new Node[value.size()]));
     }
 
     /**
      * Create a new array literal of Nodes
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param value   literal value array
      *
      * @return the new literal node
      */
-    public static LiteralNode<Node[]> newInstance(final Source source, final long token, final int finish, final Node[] value) {
-        return new ArrayLiteralNode(source, token, finish, value);
+    public static LiteralNode<Node[]> newInstance(final long token, final int finish, final Node[] value) {
+        return new ArrayLiteralNode(token, finish, value);
     }
 }
