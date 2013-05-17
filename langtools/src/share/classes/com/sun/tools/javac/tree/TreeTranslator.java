@@ -148,6 +148,7 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitVarDef(JCVariableDecl tree) {
         tree.mods = translate(tree.mods);
+        tree.nameexpr = translate(tree.nameexpr);
         tree.vartype = translate(tree.vartype);
         tree.init = translate(tree.init);
         result = tree;

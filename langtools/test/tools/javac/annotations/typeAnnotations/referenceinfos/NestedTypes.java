@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -830,5 +830,49 @@ public class NestedTypes {
                 "    Object o2 = new @TC MInner();\n" +
                 "  }\n" +
                 "}}\n";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = CLASS_EXTENDS,
+                genericLocation = {}, typeIndex = -1),
+        @TADescription(annotation = "TB", type = CLASS_EXTENDS,
+                genericLocation = {3, 0}, typeIndex = -1),
+        @TADescription(annotation = "TC", type = CLASS_EXTENDS,
+                genericLocation = {3, 1}, typeIndex = -1),
+        @TADescription(annotation = "TD", type = CLASS_EXTENDS,
+                genericLocation = {1, 0}, typeIndex = -1),
+        @TADescription(annotation = "TE", type = CLASS_EXTENDS,
+                genericLocation = {1, 0, 3, 0}, typeIndex = -1),
+        @TADescription(annotation = "TF", type = CLASS_EXTENDS,
+                genericLocation = {1, 0, 3, 1}, typeIndex = -1)
+    })
+    @TestClass("GOuter$GInner$Test")
+    public String testExtends1() {
+        return "class GOuter<A, B> {\n" +
+                "  class GInner<X, Y> {\n" +
+                "    class Test extends @TA GOuter<@TB String, @TC String>.@TD GInner<@TE String, @TF String> {}" +
+                "  }" +
+                "}";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = CLASS_TYPE_PARAMETER,
+                genericLocation = {}, paramIndex = 0),
+        @TADescription(annotation = "TB", type = CLASS_TYPE_PARAMETER_BOUND,
+                genericLocation = {}, paramIndex = 0, boundIndex = 0),
+        @TADescription(annotation = "TC", type = FIELD,
+                genericLocation = {}),
+        @TADescription(annotation = "TD", type = FIELD,
+                genericLocation = {3, 0})
+    })
+    @TestClass("Test$1Nested")
+    public String testNestedInMethod1() {
+        return "class Test {\n" +
+                "  void foobar() {\n" +
+                "    class Nested<@TA X extends @TB Object> {\n" +
+                "      @TC List<@TD Object> f;\n" +
+                "    }\n" +
+                "  }" +
+                "}";
     }
 }

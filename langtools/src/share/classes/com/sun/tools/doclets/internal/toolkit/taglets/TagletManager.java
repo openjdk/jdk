@@ -158,8 +158,7 @@ public class TagletManager {
 
     /**
      * True if we want to use JavaFX-related tags (@propertyGetter,
-     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate,
-     * @expert).
+     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate).
      */
     private boolean javafx;
 
@@ -184,7 +183,7 @@ public class TagletManager {
         this.showauthor = showauthor;
         this.javafx = javafx;
         this.message = message;
-        initStandardTags();
+        initStandardTaglets();
         initStandardTagsLowercase();
     }
 
@@ -454,9 +453,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in packages.
      */
-    public Taglet[] getPackageCustomTags() {
+    public Taglet[] getPackageCustomTaglets() {
         if (packageTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return packageTags;
     }
@@ -467,9 +466,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in classes or interfaces.
      */
-    public Taglet[] getTypeCustomTags() {
+    public Taglet[] getTypeCustomTaglets() {
         if (typeTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return typeTags;
     }
@@ -480,9 +479,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in comments.
      */
-    public Taglet[] getInlineCustomTags() {
+    public Taglet[] getInlineCustomTaglets() {
         if (inlineTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return inlineTags;
     }
@@ -493,9 +492,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in field.
      */
-    public Taglet[] getFieldCustomTags() {
+    public Taglet[] getFieldCustomTaglets() {
         if (fieldTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return fieldTags;
     }
@@ -506,9 +505,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in the serialized form.
      */
-    public Taglet[] getSerializedFormTags() {
+    public Taglet[] getSerializedFormTaglets() {
         if (serializedFormTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return serializedFormTags;
     }
@@ -517,19 +516,19 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in the given Doc.
      */
-    public Taglet[] getCustomTags(Doc doc) {
+    public Taglet[] getCustomTaglets(Doc doc) {
         if (doc instanceof ConstructorDoc) {
-            return getConstructorCustomTags();
+            return getConstructorCustomTaglets();
         } else if (doc instanceof MethodDoc) {
-            return getMethodCustomTags();
+            return getMethodCustomTaglets();
         } else if (doc instanceof FieldDoc) {
-            return getFieldCustomTags();
+            return getFieldCustomTaglets();
         } else if (doc instanceof ClassDoc) {
-            return getTypeCustomTags();
+            return getTypeCustomTaglets();
         } else if (doc instanceof PackageDoc) {
-            return getPackageCustomTags();
+            return getPackageCustomTaglets();
         } else if (doc instanceof RootDoc) {
-            return getOverviewCustomTags();
+            return getOverviewCustomTaglets();
         }
         return null;
     }
@@ -540,9 +539,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in constructors.
      */
-    public Taglet[] getConstructorCustomTags() {
+    public Taglet[] getConstructorCustomTaglets() {
         if (constructorTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return constructorTags;
     }
@@ -553,9 +552,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in methods.
      */
-    public Taglet[] getMethodCustomTags() {
+    public Taglet[] getMethodCustomTaglets() {
         if (methodTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return methodTags;
     }
@@ -566,9 +565,9 @@ public class TagletManager {
      * @return the array of <code>Taglet</code>s that can
      * appear in overview.
      */
-    public Taglet[] getOverviewCustomTags() {
+    public Taglet[] getOverviewCustomTaglets() {
         if (overviewTags == null) {
-            initCustomTagArrays();
+            initCustomTagletArrays();
         }
         return overviewTags;
     }
@@ -576,7 +575,7 @@ public class TagletManager {
     /**
      * Initialize the custom tag arrays.
      */
-    private void initCustomTagArrays() {
+    private void initCustomTagletArrays() {
         Iterator<Taglet> it = customTags.values().iterator();
         ArrayList<Taglet> pTags = new ArrayList<Taglet>(customTags.size());
         ArrayList<Taglet> tTags = new ArrayList<Taglet>(customTags.size());
@@ -631,88 +630,72 @@ public class TagletManager {
     /**
      * Initialize standard Javadoc tags for ordering purposes.
      */
-    private void initStandardTags() {
+    private void initStandardTaglets() {
         Taglet temp;
-        customTags.put((temp = new ParamTaglet()).getName(), temp);
-        customTags.put((temp = new ReturnTaglet()).getName(), temp);
-        customTags.put((temp = new ThrowsTaglet()).getName(), temp);
-        customTags.put((temp = new SimpleTaglet("exception",
-            null, SimpleTaglet.METHOD + SimpleTaglet.CONSTRUCTOR)).getName(), temp);
-        if (!nosince) {
-            customTags.put((temp = new SimpleTaglet("since", message.getText("doclet.Since"),
-               SimpleTaglet.ALL)).getName(), temp);
-        }
-        if (showversion) {
-            customTags.put((temp = new SimpleTaglet("version", message.getText("doclet.Version"),
-                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW)).getName(), temp);
-        }
-        if (showauthor) {
-            customTags.put((temp = new SimpleTaglet("author", message.getText("doclet.Author"),
-                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW)).getName(), temp);
-        }
-        customTags.put((temp = new SimpleTaglet("serialData", message.getText("doclet.SerialData"),
-            SimpleTaglet.EXCLUDED)).getName(), temp);
+        addStandardTaglet(new ParamTaglet());
+        addStandardTaglet(new ReturnTaglet());
+        addStandardTaglet(new ThrowsTaglet());
+        addStandardTaglet(new SimpleTaglet("exception", null,
+                SimpleTaglet.METHOD + SimpleTaglet.CONSTRUCTOR));
+        addStandardTaglet(!nosince, new SimpleTaglet("since", message.getText("doclet.Since"),
+               SimpleTaglet.ALL));
+        addStandardTaglet(showversion, new SimpleTaglet("version", message.getText("doclet.Version"),
+                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
+        addStandardTaglet(showauthor, new SimpleTaglet("author", message.getText("doclet.Author"),
+                SimpleTaglet.PACKAGE + SimpleTaglet.TYPE + SimpleTaglet.OVERVIEW));
+        addStandardTaglet(new SimpleTaglet("serialData", message.getText("doclet.SerialData"),
+            SimpleTaglet.EXCLUDED));
         customTags.put((temp = new SimpleTaglet("factory", message.getText("doclet.Factory"),
             SimpleTaglet.METHOD)).getName(), temp);
-        customTags.put((temp = new SeeTaglet()).getName(), temp);
+        addStandardTaglet(new SeeTaglet());
         //Standard inline tags
-        customTags.put((temp = new DocRootTaglet()).getName(), temp);
-        customTags.put((temp = new InheritDocTaglet()).getName(), temp);
-        customTags.put((temp = new ValueTaglet()).getName(), temp);
-        customTags.put((temp = new LegacyTaglet(new LiteralTaglet())).getName(),
-            temp);
-        customTags.put((temp = new LegacyTaglet(new CodeTaglet())).getName(),
-            temp);
+        addStandardTaglet(new DocRootTaglet());
+        addStandardTaglet(new InheritDocTaglet());
+        addStandardTaglet(new ValueTaglet());
+        addStandardTaglet(new LiteralTaglet());
+        addStandardTaglet(new CodeTaglet());
 
-        //Keep track of the names of standard tags for error
-        //checking purposes.
-        standardTags.add("param");
-        standardTags.add("return");
-        standardTags.add("throws");
-        standardTags.add("exception");
-        standardTags.add("since");
-        standardTags.add("version");
-        standardTags.add("author");
-        standardTags.add("see");
+        // Keep track of the names of standard tags for error
+        // checking purposes. The following are not handled above.
+        // See, for example, com.sun.tools.javadoc.Comment
         standardTags.add("deprecated");
         standardTags.add("link");
         standardTags.add("linkplain");
-        standardTags.add("inheritDoc");
-        standardTags.add("docRoot");
-        standardTags.add("value");
         standardTags.add("serial");
-        standardTags.add("serialData");
         standardTags.add("serialField");
         standardTags.add("Text");
-        standardTags.add("literal");
-        standardTags.add("code");
 
         if (javafx) {
-            initJavaFXTags();
+            initJavaFXTaglets();
         }
     }
 
     /**
      * Initialize JavaFX-related tags.
      */
-    private void initJavaFXTags() {
-        Taglet temp;
-        customTags.put((temp = new PropertyGetterTaglet()).getName(), temp);
-        customTags.put((temp = new PropertySetterTaglet()).getName(), temp);
-        customTags.put((temp = new SimpleTaglet("propertyDescription", message.getText("doclet.PropertyDescription"),
-            SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
-        customTags.put((temp = new SimpleTaglet("defaultValue", message.getText("doclet.DefaultValue"),
-            SimpleTaglet.FIELD + SimpleTaglet.METHOD)).getName(), temp);
-        customTags.put((temp = new SimpleTaglet("treatAsPrivate", null,
-                SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE)).getName(), temp);
-        customTags.put((temp = new LegacyTaglet(new ExpertTaglet())).getName(), temp);
+    private void initJavaFXTaglets() {
+        addStandardTaglet(new PropertyGetterTaglet());
+        addStandardTaglet(new PropertySetterTaglet());
+        addStandardTaglet(new SimpleTaglet("propertyDescription",
+                message.getText("doclet.PropertyDescription"),
+                SimpleTaglet.FIELD + SimpleTaglet.METHOD));
+        addStandardTaglet(new SimpleTaglet("defaultValue", message.getText("doclet.DefaultValue"),
+            SimpleTaglet.FIELD + SimpleTaglet.METHOD));
+        addStandardTaglet(new SimpleTaglet("treatAsPrivate", null,
+                SimpleTaglet.FIELD + SimpleTaglet.METHOD + SimpleTaglet.TYPE));
+    }
 
-        standardTags.add("propertyGetter");
-        standardTags.add("propertySetter");
-        standardTags.add("propertyDescription");
-        standardTags.add("defaultValue");
-        standardTags.add("treatAsPrivate");
-        standardTags.add("expert");
+    void addStandardTaglet(Taglet taglet) {
+        String name = taglet.getName();
+        customTags.put(name, taglet);
+        standardTags.add(name);
+    }
+
+    void addStandardTaglet(boolean enable, Taglet taglet) {
+        String name = taglet.getName();
+        if (enable)
+            customTags.put(name, taglet);
+        standardTags.add(name);
     }
 
     /**
