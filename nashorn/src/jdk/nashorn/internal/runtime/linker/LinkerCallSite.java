@@ -278,7 +278,7 @@ public class LinkerCallSite extends ChainedCallSite {
             @SuppressWarnings("resource")
             @Override
             public void run() {
-                PrintWriter out = null;
+                PrintWriter out    = null;
                 boolean fileOutput = false;
 
                 try {
