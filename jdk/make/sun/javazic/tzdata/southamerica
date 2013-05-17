@@ -27,12 +27,16 @@
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
 # From Paul Eggert (2006-03-22):
 # A good source for time zone historical data outside the U.S. is
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
+#
+# For data circa 1899, a common source is:
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+# <http://www.jstor.org/stable/1774359>.
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
@@ -404,21 +408,11 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # <a/>
 # is the official page for the Province Government).
 #
-# There's also a note in only one of the major national papers (La Nación) at
-# <a href="http://www.lanacion.com.ar/nota.asp?nota_id=1107912">
+# There's also a note in only one of the major national papers ...
 # http://www.lanacion.com.ar/nota.asp?nota_id=1107912
-# </a>
 #
-# The press release says:
-#  (...) anunció que el próximo domingo a las 00:00 los puntanos deberán
-# atrasar una hora sus relojes.
-#
-# A partir de entonces, San Luis establecerá el huso horario propio de
-# la Provincia. De esta manera, durante el periodo del calendario anual
-# 2009, el cambio horario quedará comprendido entre las 00:00 del tercer
-# domingo de marzo y las 24:00 del segundo sábado de octubre.
-# Quick&dirty translation
-# (...) announced that next Sunday, at 00:00, Puntanos (the San Luis
+# The press release says [quick and dirty translation]:
+# ... announced that next Sunday, at 00:00, Puntanos (the San Luis
 # inhabitants) will have to turn back one hour their clocks
 #
 # Since then, San Luis will establish its own Province timezone. Thus,
@@ -479,6 +473,9 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # UTC-03:00 "summer time", we should't just let San Luis go back to "Arg"
 # rules...San Luis is still using "Western ARgentina Time" and it got
 # stuck on Summer daylight savings time even though the summer is over.
+
+# From Paul Eggert (2013-02-21):
+# Milne says Cordoba time was -4:16:48.2.  Round to the nearest second.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
@@ -835,9 +832,9 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Guilherme Bernardes Rodrigues (2011-10-07):
 # There is news in the media, however there is still no decree about it.
-# I just send a e-mail to Zulmira Brandão at
+# I just send a e-mail to Zulmira Brandao at
 # <a href="http://pcdsh01.on.br/">http://pcdsh01.on.br/</a> the
-# oficial agency about time in Brazil, and she confirmed that the old rule is
+# official agency about time in Brazil, and she confirmed that the old rule is
 # still in force.
 
 # From Guilherme Bernardes Rodrigues (2011-10-14)
@@ -1266,9 +1263,13 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # b. Saturday, September 1, 2012, clocks should go forward 60 minutes; that is,
 # at 23:59:59, instead of passing to 0:00, the time should be adjusted to be
 # 01:00 on September 2.
-#
-# Note that...this is yet another "temporary" change that will be reevaluated
-# AGAIN in 2013.
+
+# From Steffen Thorsen (2013-02-15):
+# According to several news sources, Chile has extended DST this year,
+# they will end DST later and start DST earlier than planned.  They
+# hope to save energy.  The new end date is 2013-04-28 00:00 and new
+# start date is 2013-09-08 00:00....
+# http://www.gob.cl/informa/2013/02/15/gobierno-anuncia-fechas-de-cambio-de-hora-para-el-ano-2013.htm
 
 # NOTE: ChileAQ rules for Antarctic bases are stored separately in the
 # 'antarctica' file.
@@ -1311,10 +1312,8 @@ Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	2010	only	-	Apr	Sun>=1	3:00u	0	-
 Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
 Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	Chile	2012	only	-	Apr	Sun>=23	3:00u	0	-
-Rule	Chile	2012	only	-	Sep	Sun>=2	4:00u	1:00	S
-Rule	Chile	2013	max	-	Mar	Sun>=9	3:00u	0	-
-Rule	Chile	2013	max	-	Oct	Sun>=9	4:00u	1:00	S
+Rule	Chile	2012	max	-	Apr	Sun>=23	3:00u	0	-
+Rule	Chile	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1336,17 +1335,23 @@ Zone Pacific/Easter	-7:17:44 -	LMT	1890
 # San Felix, and Antarctic bases, are like America/Santiago.
 
 # Colombia
+
+# Milne gives 4:56:16.4 for Bogota time in 1899; round to nearest.  He writes,
+# "A variation of fifteen minutes in the public clocks of Bogota is not rare."
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	CO	1992	only	-	May	 3	0:00	1:00	S
 Rule	CO	1993	only	-	Apr	 4	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Bogota	-4:56:20 -	LMT	1884 Mar 13
-			-4:56:20 -	BMT	1914 Nov 23 # Bogota Mean Time
+Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
+			-4:56:16 -	BMT	1914 Nov 23 # Bogota Mean Time
 			-5:00	CO	CO%sT	# Colombia Time
 # Malpelo, Providencia, San Andres
 # no information; probably like America/Bogota
 
 # Curacao
+
+# Milne gives 4:35:46.9 for Curacao mean time; round to nearest.
 #
 # From Paul Eggert (2006-03-22):
 # Shanks & Pottenger say that The Bottom and Philipsburg have been at
@@ -1363,7 +1368,7 @@ Zone	America/Bogota	-4:56:20 -	LMT	1884 Mar 13
 # though, as far as we know.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Curacao	-4:35:44 -	LMT	1912 Feb 12	# Willemstad
+Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12	# Willemstad
 			-4:30	-	ANT	1965 # Netherlands Antilles Time
 			-4:00	-	AST
 
@@ -1376,6 +1381,8 @@ Link	America/Curacao	America/Lower_Princes # Sint Maarten
 Link	America/Curacao	America/Kralendijk # Bonaire, Sint Estatius and Saba
 
 # Ecuador
+#
+# Milne says the Sentral and South American Telegraph Company used -5:24:15.
 #
 # From Paul Eggert (2007-03-04):
 # Apparently Ecuador had a failed experiment with DST in 1992.
@@ -1582,7 +1589,16 @@ Rule	Para	2005	2009	-	Mar	Sun>=8	0:00	0	-
 # forward 60 minutes, in all the territory of the Paraguayan Republic.
 # ...
 Rule	Para	2010	max	-	Oct	Sun>=1	0:00	1:00	S
-Rule	Para	2010	max	-	Apr	Sun>=8	0:00	0	-
+Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
+#
+# From Steffen Thorsen (2013-03-07):
+# Paraguay will end DST on 2013-03-24 00:00....
+# http://www.ande.gov.py/interna.php?id=1075
+#
+# From Carlos Raul Perasso (2013-03-15):
+# The change in Paraguay is now final.  Decree number 10780
+# http://www.presidencia.gov.py/uploads/pdf/presidencia-3b86ff4b691c79d4f5927ca964922ec74772ce857c02ca054a52a37b49afc7fb.pdf
+Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Asuncion	-3:50:40 -	LMT	1890

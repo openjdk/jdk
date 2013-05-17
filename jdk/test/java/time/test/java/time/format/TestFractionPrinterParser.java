@@ -82,7 +82,7 @@ import test.java.time.temporal.MockFieldValue;
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
-        return builder.appendFraction(field, minWidth, maxWidth, decimalPoint).toFormatter(locale).withSymbols(symbols);
+        return builder.appendFraction(field, minWidth, maxWidth, decimalPoint).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     //-----------------------------------------------------------------------

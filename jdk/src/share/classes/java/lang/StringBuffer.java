@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.util.Arrays;
 
 /**
  * A thread-safe, mutable sequence of characters.
@@ -97,6 +98,12 @@ package java.lang;
     extends AbstractStringBuilder
     implements java.io.Serializable, CharSequence
 {
+
+    /**
+     * A cache of the last value returned by toString. Cleared
+     * whenever the StringBuffer is modified.
+     */
+    private transient char[] toStringCache;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     static final long serialVersionUID = 3388685877147921107L;
@@ -183,6 +190,7 @@ package java.lang;
      */
     @Override
     public synchronized void setLength(int newLength) {
+        toStringCache = null;
         super.setLength(newLength);
     }
 
@@ -247,17 +255,20 @@ package java.lang;
     public synchronized void setCharAt(int index, char ch) {
         if ((index < 0) || (index >= count))
             throw new StringIndexOutOfBoundsException(index);
+        toStringCache = null;
         value[index] = ch;
     }
 
     @Override
     public synchronized StringBuffer append(Object obj) {
+        toStringCache = null;
         super.append(String.valueOf(obj));
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(String str) {
+        toStringCache = null;
         super.append(str);
         return this;
     }
@@ -287,6 +298,7 @@ package java.lang;
      * @since 1.4
      */
     public synchronized StringBuffer append(StringBuffer sb) {
+        toStringCache = null;
         super.append(sb);
         return this;
     }
@@ -296,6 +308,7 @@ package java.lang;
      */
     @Override
     synchronized StringBuffer append(AbstractStringBuilder asb) {
+        toStringCache = null;
         super.append(asb);
         return this;
     }
@@ -325,6 +338,7 @@ package java.lang;
     public StringBuffer append(CharSequence s) {
         // Note, synchronization achieved via invocations of other StringBuffer methods after
         // narrowing of s to specific type
+        // Ditto for toStringCache clearing
         super.append(s);
         return this;
     }
@@ -336,12 +350,14 @@ package java.lang;
     @Override
     public synchronized StringBuffer append(CharSequence s, int start, int end)
     {
+        toStringCache = null;
         super.append(s, start, end);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(char[] str) {
+        toStringCache = null;
         super.append(str);
         return this;
     }
@@ -351,24 +367,28 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer append(char[] str, int offset, int len) {
+        toStringCache = null;
         super.append(str, offset, len);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(boolean b) {
+        toStringCache = null;
         super.append(b);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(char c) {
+        toStringCache = null;
         super.append(c);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(int i) {
+        toStringCache = null;
         super.append(i);
         return this;
     }
@@ -378,24 +398,28 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer appendCodePoint(int codePoint) {
+        toStringCache = null;
         super.appendCodePoint(codePoint);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(long lng) {
+        toStringCache = null;
         super.append(lng);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(float f) {
+        toStringCache = null;
         super.append(f);
         return this;
     }
 
     @Override
     public synchronized StringBuffer append(double d) {
+        toStringCache = null;
         super.append(d);
         return this;
     }
@@ -406,6 +430,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer delete(int start, int end) {
+        toStringCache = null;
         super.delete(start, end);
         return this;
     }
@@ -416,6 +441,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer deleteCharAt(int index) {
+        toStringCache = null;
         super.deleteCharAt(index);
         return this;
     }
@@ -426,6 +452,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer replace(int start, int end, String str) {
+        toStringCache = null;
         super.replace(start, end, str);
         return this;
     }
@@ -465,6 +492,7 @@ package java.lang;
     public synchronized StringBuffer insert(int index, char[] str, int offset,
                                             int len)
     {
+        toStringCache = null;
         super.insert(index, str, offset, len);
         return this;
     }
@@ -474,6 +502,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer insert(int offset, Object obj) {
+        toStringCache = null;
         super.insert(offset, String.valueOf(obj));
         return this;
     }
@@ -483,6 +512,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer insert(int offset, String str) {
+        toStringCache = null;
         super.insert(offset, str);
         return this;
     }
@@ -492,6 +522,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer insert(int offset, char[] str) {
+        toStringCache = null;
         super.insert(offset, str);
         return this;
     }
@@ -504,6 +535,7 @@ package java.lang;
     public StringBuffer insert(int dstOffset, CharSequence s) {
         // Note, synchronization achieved via invocations of other StringBuffer methods
         // after narrowing of s to specific type
+        // Ditto for toStringCache clearing
         super.insert(dstOffset, s);
         return this;
     }
@@ -516,6 +548,7 @@ package java.lang;
     public synchronized StringBuffer insert(int dstOffset, CharSequence s,
             int start, int end)
     {
+        toStringCache = null;
         super.insert(dstOffset, s, start, end);
         return this;
     }
@@ -527,6 +560,7 @@ package java.lang;
     public  StringBuffer insert(int offset, boolean b) {
         // Note, synchronization achieved via invocation of StringBuffer insert(int, String)
         // after conversion of b to String by super class method
+        // Ditto for toStringCache clearing
         super.insert(offset, b);
         return this;
     }
@@ -536,6 +570,7 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer insert(int offset, char c) {
+        toStringCache = null;
         super.insert(offset, c);
         return this;
     }
@@ -547,6 +582,7 @@ package java.lang;
     public StringBuffer insert(int offset, int i) {
         // Note, synchronization achieved via invocation of StringBuffer insert(int, String)
         // after conversion of i to String by super class method
+        // Ditto for toStringCache clearing
         super.insert(offset, i);
         return this;
     }
@@ -558,6 +594,7 @@ package java.lang;
     public StringBuffer insert(int offset, long l) {
         // Note, synchronization achieved via invocation of StringBuffer insert(int, String)
         // after conversion of l to String by super class method
+        // Ditto for toStringCache clearing
         super.insert(offset, l);
         return this;
     }
@@ -569,6 +606,7 @@ package java.lang;
     public StringBuffer insert(int offset, float f) {
         // Note, synchronization achieved via invocation of StringBuffer insert(int, String)
         // after conversion of f to String by super class method
+        // Ditto for toStringCache clearing
         super.insert(offset, f);
         return this;
     }
@@ -580,6 +618,7 @@ package java.lang;
     public StringBuffer insert(int offset, double d) {
         // Note, synchronization achieved via invocation of StringBuffer insert(int, String)
         // after conversion of d to String by super class method
+        // Ditto for toStringCache clearing
         super.insert(offset, d);
         return this;
     }
@@ -623,13 +662,17 @@ package java.lang;
      */
     @Override
     public synchronized StringBuffer reverse() {
+        toStringCache = null;
         super.reverse();
         return this;
     }
 
     @Override
     public synchronized String toString() {
-        return new String(value, 0, count);
+        if (toStringCache == null) {
+            toStringCache = Arrays.copyOfRange(value, 0, count);
+        }
+        return new String(toStringCache, true);
     }
 
     /**
