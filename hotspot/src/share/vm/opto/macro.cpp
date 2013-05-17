@@ -666,7 +666,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         alloc->dump();
       else
         res->dump();
-    } else {
+    } else if (alloc->_is_scalar_replaceable) {
       tty->print("NotScalar (%s)", fail_eliminate);
       if (res == NULL)
         alloc->dump();
@@ -834,7 +834,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         if (field_val->is_EncodeP()) {
           field_val = field_val->in(1);
         } else {
-          field_val = transform_later(new (C) DecodeNNode(field_val, field_val->bottom_type()->make_ptr()));
+          field_val = transform_later(new (C) DecodeNNode(field_val, field_val->get_ptr_type()));
         }
       }
       sfpt->add_req(field_val);
@@ -845,18 +845,14 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // to the allocated object with "sobj"
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
-    for (int i = start; i < end; i++) {
-      if (sfpt->in(i) == res) {
-        sfpt->set_req(i, sobj);
-      }
-    }
+    sfpt->replace_edges_in_range(res, sobj, start, end);
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
   return true;
 }
 
 // Process users of eliminated allocation.
-void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
+void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
   Node* res = alloc->result_cast();
   if (res != NULL) {
     for (DUIterator_Last jmin, j = res->last_outs(jmin); j >= jmin; ) {
@@ -899,6 +895,17 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
   // Process other users of allocation's projections
   //
   if (_resproj != NULL && _resproj->outcnt() != 0) {
+    // First disconnect stores captured by Initialize node.
+    // If Initialize node is eliminated first in the following code,
+    // it will kill such stores and DUIterator_Last will assert.
+    for (DUIterator_Fast jmax, j = _resproj->fast_outs(jmax);  j < jmax; j++) {
+      Node *use = _resproj->fast_out(j);
+      if (use->is_AddP()) {
+        // raw memory addresses used only by the initialization
+        _igvn.replace_node(use, C->top());
+        --j; --jmax;
+      }
+    }
     for (DUIterator_Last jmin, j = _resproj->last_outs(jmin); j >= jmin; ) {
       Node *use = _resproj->last_out(j);
       uint oc1 = _resproj->outcnt();
@@ -923,9 +930,6 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
 #endif
           _igvn.replace_node(mem_proj, mem);
         }
-      } else if (use->is_AddP()) {
-        // raw memory addresses used only by the initialization
-        _igvn.replace_node(use, C->top());
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
@@ -953,8 +957,18 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
 }
 
 bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
-
-  if (!EliminateAllocations || !alloc->_is_scalar_replaceable) {
+  if (!EliminateAllocations || !alloc->_is_non_escaping) {
+    return false;
+  }
+  Node* klass = alloc->in(AllocateNode::KlassNode);
+  const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
+  Node* res = alloc->result_cast();
+  // Eliminate boxing allocations which are not used
+  // regardless scalar replacable status.
+  bool boxing_alloc = C->eliminate_boxing() &&
+                      tklass->klass()->is_instance_klass()  &&
+                      tklass->klass()->as_instance_klass()->is_box_klass();
+  if (!alloc->_is_scalar_replaceable && (!boxing_alloc || (res != NULL))) {
     return false;
   }
 
@@ -965,14 +979,22 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
+  if (!alloc->_is_scalar_replaceable) {
+    assert(res == NULL, "sanity");
+    // We can only eliminate allocation if all debug info references
+    // are already replaced with SafePointScalarObject because
+    // we can't search for a fields value without instance_id.
+    if (safepoints.length() > 0) {
+      return false;
+    }
+  }
+
   if (!scalar_replacement(alloc, safepoints)) {
     return false;
   }
 
   CompileLog* log = C->log();
   if (log != NULL) {
-    Node* klass = alloc->in(AllocateNode::KlassNode);
-    const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
     log->head("eliminate_allocation type='%d'",
               log->identify(tklass->klass()));
     JVMState* p = alloc->jvms();
@@ -997,6 +1019,43 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   return true;
 }
 
+bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
+  // EA should remove all uses of non-escaping boxing node.
+  if (!C->eliminate_boxing() || boxing->proj_out(TypeFunc::Parms) != NULL) {
+    return false;
+  }
+
+  extract_call_projections(boxing);
+
+  const TypeTuple* r = boxing->tf()->range();
+  assert(r->cnt() > TypeFunc::Parms, "sanity");
+  const TypeInstPtr* t = r->field_at(TypeFunc::Parms)->isa_instptr();
+  assert(t != NULL, "sanity");
+
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    log->head("eliminate_boxing type='%d'",
+              log->identify(t->klass()));
+    JVMState* p = boxing->jvms();
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("eliminate_boxing");
+  }
+
+  process_users_of_allocation(boxing);
+
+#ifndef PRODUCT
+  if (PrintEliminateAllocations) {
+    tty->print("++++ Eliminated: %d ", boxing->_idx);
+    boxing->method()->print_short_name(tty);
+    tty->cr();
+  }
+#endif
+
+  return true;
+}
 
 //---------------------------set_eden_pointers-------------------------
 void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
@@ -2384,6 +2443,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
         break;
+      case Node::Class_CallStaticJava:
+        success = eliminate_boxing_node(n->as_CallStaticJava());
+        break;
       case Node::Class_Lock:
       case Node::Class_Unlock:
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
@@ -2420,6 +2482,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       bool success = false;
       debug_only(int old_macro_count = C->macro_count(););
       if (n->Opcode() == Op_LoopLimit) {
+        // Remove it from macro list and put on IGVN worklist to optimize.
+        C->remove_macro_node(n);
+        _igvn._worklist.push(n);
+        success = true;
+      } else if (n->Opcode() == Op_CallStaticJava) {
         // Remove it from macro list and put on IGVN worklist to optimize.
         C->remove_macro_node(n);
         _igvn._worklist.push(n);

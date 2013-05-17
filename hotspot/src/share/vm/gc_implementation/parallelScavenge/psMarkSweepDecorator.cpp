@@ -88,8 +88,7 @@ void PSMarkSweepDecorator::precompact() {
    * by the MarkSweepAlwaysCompactCount parameter. This is a significant
    * performance improvement!
    */
-  bool skip_dead = (MarkSweepAlwaysCompactCount < 1)
-    || ((PSMarkSweep::total_invocations() % MarkSweepAlwaysCompactCount) != 0);
+  bool skip_dead = ((PSMarkSweep::total_invocations() % MarkSweepAlwaysCompactCount) != 0);
 
   size_t allowed_deadspace = 0;
   if (skip_dead) {
