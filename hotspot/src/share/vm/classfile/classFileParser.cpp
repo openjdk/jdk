@@ -1719,15 +1719,28 @@ void ClassFileParser::parse_annotations(u1* buffer, int limit,
     coll->set_annotation(id);
 
     if (id == AnnotationCollector::_sun_misc_Contended) {
+      // @Contended can optionally specify the contention group.
+      //
+      // Contended group defines the equivalence class over the fields:
+      // the fields within the same contended group are not treated distinct.
+      // The only exception is default group, which does not incur the
+      // equivalence. Naturally, contention group for classes is meaningless.
+      //
+      // While the contention group is specified as String, annotation
+      // values are already interned, and we might as well use the constant
+      // pool index as the group tag.
+      //
+      u2 group_index = 0; // default contended group
       if (count == 1
           && s_size == (index - index0)  // match size
           && s_tag_val == *(abase + tag_off)
           && member == vmSymbols::value_name()) {
-        u2 group_index = Bytes::get_Java_u2(abase + s_con_off);
-        coll->set_contended_group(group_index);
-      } else {
-        coll->set_contended_group(0); // default contended group
+        group_index = Bytes::get_Java_u2(abase + s_con_off);
+        if (_cp->symbol_at(group_index)->utf8_length() == 0) {
+          group_index = 0; // default contended group
+        }
       }
+      coll->set_contended_group(group_index);
     }
   }
 }
