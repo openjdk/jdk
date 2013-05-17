@@ -68,7 +68,7 @@
   template(java_lang_Float,                           "java/lang/Float")                          \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
-  template(java_lang_Byte_Cache,                      "java/lang/Byte$ByteCache")                 \
+  template(java_lang_Byte_ByteCache,                  "java/lang/Byte$ByteCache")                 \
   template(java_lang_Short,                           "java/lang/Short")                          \
   template(java_lang_Short_ShortCache,                "java/lang/Short$ShortCache")               \
   template(java_lang_Integer,                         "java/lang/Integer")                        \
