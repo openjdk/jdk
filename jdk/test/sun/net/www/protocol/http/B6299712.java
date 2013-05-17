@@ -23,33 +23,33 @@
 
 /*
  * @test
- * @bug 6299712
- * @library ../../httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @bug 6299712 7150552
  * @run main/othervm B6299712
  * @summary  NullPointerException in sun.net.www.protocol.http.HttpURLConnection.followRedirect
  */
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import java.net.*;
 import java.io.*;
 import java.util.*;
 
 /*
  * Test Description:
- *      - main thread run as a http client
- *      - another thread runs a http server, which redirect the first call to "/redirect"
- *        and return '200 OK' for the successive call
- *      - a global ResponseCache instance is installed, which return DeployCacheResponse
- *        for url ends with "/redirect", i.e. the url redirected to by our simple http server,
- *        and null for other url.
+ *      - main thread is run as a http client
+ *      - another thread runs an http server, which redirects calls to "/" to
+ *        "/redirect" and returns '200 OK' for the successive call
+ *      - a global ResponseCache instance is installed, which returns DeployCacheResponse
+ *        for urls that end with "/redirect", i.e. the url redirected to by our simple http server,
+ *        and null for other urls.
  *      - the whole result is that the first call will be served by our simple
  *        http server and is redirected to "/redirect". The successive call will be done
  *        automatically by HttpURLConnection, which will be served by DeployCacheResponse.
  *        The NPE will be thrown on the second round if the bug is there.
  */
 public class B6299712 {
-    static SimpleHttpTransaction httpTrans;
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main(String[] args) throws Exception {
         ResponseCache.setDefault(new DeployCacheHandler());
@@ -58,123 +58,119 @@ public class B6299712 {
         makeHttpCall();
     }
 
-    public static void startHttpServer() {
-        try {
-            httpTrans = new SimpleHttpTransaction();
-            server = new TestHttpServer(httpTrans, 1, 10, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void startHttpServer() throws IOException {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new DefaultHandler());
+        server.createContext("/redirect", new RedirectHandler());
+        server.start();
     }
 
-    public static void makeHttpCall() {
+    public static void makeHttpCall() throws IOException {
         try {
-            System.out.println("http server listen on: " + server.getLocalPort());
-            URL url = new URL("http" , InetAddress.getLocalHost().getHostAddress(),
-                                server.getLocalPort(), "/");
+            System.out.println("http server listen on: "
+                    + server.getAddress().getPort());
+            URL url = new URL("http",
+                               InetAddress.getLocalHost().getHostAddress(),
+                               server.getAddress().getPort(), "/");
             HttpURLConnection uc = (HttpURLConnection)url.openConnection();
-            System.out.println(uc.getResponseCode());
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (uc.getResponseCode() != 200)
+                throw new RuntimeException("Expected Response Code was 200,"
+                        + "received: " + uc.getResponseCode());
+            uc.disconnect();
         } finally {
-            server.terminate();
+            server.stop(0);
         }
     }
-}
 
-class SimpleHttpTransaction implements HttpCallback {
-    /*
-     * Our http server which simply redirect first call
-     */
-    public void request(HttpTransaction trans) {
-        try {
-            String path = trans.getRequestURI().getPath();
-            if (path.equals("/")) {
-                // the first call, redirect it
-                String location = "/redirect";
-                trans.addResponseHeader("Location", location);
-                trans.sendResponse(302, "Moved Temporarily");
-            } else {
-                // the second call
-                trans.sendResponse(200, "OK");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    static class RedirectHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            exchange.sendResponseHeaders(200, -1);
+            exchange.close();
         }
+
     }
-}
 
-class DeployCacheHandler extends java.net.ResponseCache {
-    private boolean inCacheHandler = false;
-    private boolean _downloading = false;
+    static class DefaultHandler implements HttpHandler {
 
-    public synchronized CacheResponse get(final URI uri, String rqstMethod,
-            Map requestHeaders) throws IOException {
-        System.out.println("get!!!: " + uri);
-        try {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            exchange.getResponseHeaders().add("Location", "/redirect");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        }
+
+    }
+
+    static class DeployCacheHandler extends java.net.ResponseCache {
+
+        public synchronized CacheResponse get(final URI uri, String rqstMethod,
+                Map<String, List<String>> requestHeaders) throws IOException
+        {
+            System.out.println("get!!!: " + uri);
             if (!uri.toString().endsWith("redirect")) {
                 return null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Serving request from cache");
+            return new DeployCacheResponse(new EmptyInputStream(),
+                                           new HashMap<String, List<String>>());
         }
 
-        return new DeployCacheResponse(new EmptyInputStream(), new HashMap());
+        public synchronized CacheRequest put(URI uri, URLConnection conn)
+            throws IOException
+        {
+            URL url = uri.toURL();
+            return new DeployCacheRequest(url, conn);
+
+        }
     }
 
-    public synchronized CacheRequest put(URI uri, URLConnection conn)
-    throws IOException {
-        URL url = uri.toURL();
-        return new DeployCacheRequest(url, conn);
+    static class DeployCacheRequest extends java.net.CacheRequest {
 
-    }
-}
+        private URL _url;
+        private URLConnection _conn;
 
-class DeployCacheRequest extends java.net.CacheRequest {
+        DeployCacheRequest(URL url, URLConnection conn) {
+            _url = url;
+            _conn = conn;
+        }
 
-    private URL _url;
-    private URLConnection _conn;
-    private boolean _downloading = false;
+        public void abort() {
 
-    DeployCacheRequest(URL url, URLConnection conn) {
-        _url = url;
-        _conn = conn;
-    }
+        }
 
-    public void abort() {
+        public OutputStream getBody() throws IOException {
 
+            return null;
+        }
     }
 
-    public OutputStream getBody() throws IOException {
+    static class DeployCacheResponse extends java.net.CacheResponse {
+        protected InputStream is;
+        protected Map<String, List<String>> headers;
 
-        return null;
-    }
-}
+        DeployCacheResponse(InputStream is, Map<String, List<String>> headers) {
+            this.is = is;
+            this.headers = headers;
+        }
 
-class DeployCacheResponse extends java.net.CacheResponse {
-    protected InputStream is;
-    protected Map headers;
+        public InputStream getBody() throws IOException {
+            return is;
+        }
 
-    DeployCacheResponse(InputStream is, Map headers) {
-        this.is = is;
-        this.headers = headers;
-    }
-
-    public InputStream getBody() throws IOException {
-        return is;
-    }
-
-    public Map getHeaders() throws IOException {
-        return headers;
-    }
-}
-
-class EmptyInputStream extends InputStream {
-    public EmptyInputStream() {
+        public Map<String, List<String>> getHeaders() throws IOException {
+            List<String> val = new ArrayList<>();
+            val.add("HTTP/1.1 200 OK");
+            headers.put(null, val);
+            return headers;
+        }
     }
 
-    public int read()
-    throws IOException {
-        return -1;
+    static class EmptyInputStream extends InputStream {
+
+        public int read() throws IOException {
+            return -1;
+        }
     }
 }

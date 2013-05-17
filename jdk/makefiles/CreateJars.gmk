@@ -216,19 +216,7 @@ RT_JAR_EXCLUDES += \
 	sun/net/spi/nameservice/dns \
 	sun/nio/cs/ext \
 	sun/rmi/rmic \
-	sun/security/ec/ECDHKeyAgreement.class \
-	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECDSASignature\$$$$Raw.class \
-	sun/security/ec/ECDSASignature\$$$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$$$SHA512.class \
-	sun/security/ec/ECKeyFactory.class \
-	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$$$1.class \
-	sun/security/ec/SunEC.class \
-	sun/security/ec/SunECEntries.class \
+	sun/security/ec \
 	sun/security/internal \
 	sun/security/mscapi \
 	sun/security/pkcs11 \
