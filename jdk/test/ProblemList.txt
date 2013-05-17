@@ -214,10 +214,6 @@ sun/misc/URLClassPath/ClassnameCharTest.java                     generic-all
 # 8014719
 sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
 
-# 7150552
-sun/net/www/protocol/http/B6299712.java                         macosx-all
-java/net/CookieHandler/CookieManagerTest.java                   macosx-all
-
 ############################################################################
 
 # jdk_io
