@@ -784,7 +784,6 @@ class PSParallelCompact : AllStatic {
   //
   class IsAliveClosure: public BoolObjectClosure {
    public:
-    virtual void do_object(oop p);
     virtual bool do_object_b(oop p);
   };
 
