@@ -3165,12 +3165,12 @@ void ClassFileParser::layout_fields(Handle class_loader,
   first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
                                  nonstatic_field_size * heapOopSize;
 
+  next_nonstatic_field_offset = first_nonstatic_field_offset;
+
   // class is contended, pad before all the fields
   if (parsed_annotations->is_contended()) {
-    first_nonstatic_field_offset += pad_size;
+    next_nonstatic_field_offset += pad_size;
   }
-
-  next_nonstatic_field_offset = first_nonstatic_field_offset;
 
   unsigned int nonstatic_double_count = fac->count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
   unsigned int nonstatic_word_count   = fac->count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
@@ -3562,7 +3562,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
   int instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
 
   assert(instance_size == align_object_size(align_size_up(
-         (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize + ((parsed_annotations->is_contended()) ? pad_size : 0)),
+         (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize),
           wordSize) / wordSize), "consistent layout helper value");
 
   // Number of non-static oop map blocks allocated at end of klass.
