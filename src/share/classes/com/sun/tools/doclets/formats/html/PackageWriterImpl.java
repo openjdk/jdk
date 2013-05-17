@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content tHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.title, packageLabel);
         tHeading.addContent(getSpace());
-        Content packageHead = new RawHtml(heading);
+        Content packageHead = new StringContent(heading);
         tHeading.addContent(packageHead);
         div.addContent(tHeading);
         addDeprecationInfo(div);
@@ -168,7 +168,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             String tableSummary, String[] tableHeader, Content summaryContentTree) {
         if(classes.length > 0) {
             Arrays.sort(classes);
-            Content caption = getTableCaption(label);
+            Content caption = getTableCaption(new RawHtml(label));
             Content table = HtmlTree.TABLE(HtmlStyle.packageSummary, 0, 3, 0,
                     tableSummary, caption);
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
@@ -178,9 +178,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     !configuration.isGeneratedDoc(classes[i])) {
                     continue;
                 }
-                Content classContent = new RawHtml(getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.CONTEXT_PACKAGE, classes[i],
-                        false)));
+                Content classContent = getLink(new LinkInfoImpl(
+                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i]));
                 Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
                 HtmlTree tr = HtmlTree.TR(tdClass);
                 if (i%2 == 0)

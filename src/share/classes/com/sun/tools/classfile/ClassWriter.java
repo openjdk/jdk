@@ -751,7 +751,7 @@ public class ClassWriter {
                 break;
             // exception parameter
             case EXCEPTION_PARAMETER:
-                out.writeByte(p.exception_index);
+                out.writeShort(p.exception_index);
                 break;
             // method receiver
             case METHOD_RECEIVER:
@@ -770,11 +770,11 @@ public class ClassWriter {
                 break;
             // class extends or implements clause
             case CLASS_EXTENDS:
-                out.writeByte(p.type_index);
+                out.writeShort(p.type_index);
                 break;
             // throws
             case THROWS:
-                out.writeByte(p.type_index);
+                out.writeShort(p.type_index);
                 break;
             // method parameter
             case METHOD_FORMAL_PARAMETER:

@@ -1213,7 +1213,7 @@ public class Check {
 
     /** Validate a type expression. That is,
      *  check that all type arguments of a parametric type are within
-     *  their bounds. This must be done in a second phase after type attributon
+     *  their bounds. This must be done in a second phase after type attribution
      *  since a class might have a subclass as type parameter bound. E.g:
      *
      *  <pre>{@code
@@ -1361,23 +1361,23 @@ public class Check {
             for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
                 validateTree(l.head, checkRaw, isOuter);
         }
+    }
 
-        void checkRaw(JCTree tree, Env<AttrContext> env) {
-            if (lint.isEnabled(LintCategory.RAW) &&
-                tree.type.hasTag(CLASS) &&
-                !TreeInfo.isDiamond(tree) &&
-                !withinAnonConstr(env) &&
-                tree.type.isRaw()) {
-                log.warning(LintCategory.RAW,
-                        tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
-            }
+    void checkRaw(JCTree tree, Env<AttrContext> env) {
+        if (lint.isEnabled(LintCategory.RAW) &&
+            tree.type.hasTag(CLASS) &&
+            !TreeInfo.isDiamond(tree) &&
+            !withinAnonConstr(env) &&
+            tree.type.isRaw()) {
+            log.warning(LintCategory.RAW,
+                    tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
         }
-
-        boolean withinAnonConstr(Env<AttrContext> env) {
+    }
+    //where
+        private boolean withinAnonConstr(Env<AttrContext> env) {
             return env.enclClass.name.isEmpty() &&
                     env.enclMethod != null && env.enclMethod.name == names.init;
         }
-    }
 
 /* *************************************************************************
  * Exception checking
@@ -3024,9 +3024,9 @@ public class Check {
         // collect an inventory of the annotation elements
         Set<MethodSymbol> members = new LinkedHashSet<MethodSymbol>();
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
-             e != null;
-             e = e.sibling)
-            if (e.sym.kind == MTH)
+                e != null;
+                e = e.sibling)
+            if (e.sym.kind == MTH && e.sym.name != names.clinit)
                 members.add((MethodSymbol) e.sym);
 
         // remove the ones that are assigned values

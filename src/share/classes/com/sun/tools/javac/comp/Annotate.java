@@ -216,18 +216,42 @@ public class Annotate {
     Attribute.Compound enterAnnotation(JCAnnotation a,
                                        Type expected,
                                        Env<AttrContext> env) {
+        return enterAnnotation(a, expected, env, false);
+    }
+
+    Attribute.TypeCompound enterTypeAnnotation(JCAnnotation a,
+            Type expected,
+            Env<AttrContext> env) {
+        return (Attribute.TypeCompound) enterAnnotation(a, expected, env, true);
+    }
+
+    // boolean typeAnnotation determines whether the method returns
+    // a Compound (false) or TypeCompound (true).
+    Attribute.Compound enterAnnotation(JCAnnotation a,
+            Type expected,
+            Env<AttrContext> env,
+            boolean typeAnnotation) {
         // The annotation might have had its type attributed (but not checked)
         // by attr.attribAnnotationTypes during MemberEnter, in which case we do not
         // need to do it again.
         Type at = (a.annotationType.type != null ? a.annotationType.type
                   : attr.attribType(a.annotationType, env));
         a.type = chk.checkType(a.annotationType.pos(), at, expected);
-        if (a.type.isErroneous())
-            return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
+        if (a.type.isErroneous()) {
+            if (typeAnnotation) {
+                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(), null);
+            } else {
+                return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
+            }
+        }
         if ((a.type.tsym.flags() & Flags.ANNOTATION) == 0) {
             log.error(a.annotationType.pos(),
                       "not.annotation.type", a.type.toString());
-            return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
+            if (typeAnnotation) {
+                return new Attribute.TypeCompound(a.type, List.<Pair<MethodSymbol,Attribute>>nil(), null);
+            } else {
+                return new Attribute.Compound(a.type, List.<Pair<MethodSymbol,Attribute>>nil());
+            }
         }
         List<JCExpression> args = a.args;
         if (args.length() == 1 && !args.head.hasTag(ASSIGN)) {
@@ -266,12 +290,21 @@ public class Annotate {
                            ((MethodSymbol)method, value));
             t.type = result;
         }
-        // TODO: this should be a TypeCompound if "a" is a JCTypeAnnotation.
-        // However, how do we find the correct position?
-        Attribute.Compound ac = new Attribute.Compound(a.type, buf.toList());
-        // TODO: is this something we want? Who would use it?
-        // a.attribute = ac;
-        return ac;
+        if (typeAnnotation) {
+            if (a.attribute == null || !(a.attribute instanceof Attribute.TypeCompound)) {
+                // Create a new TypeCompound
+                Attribute.TypeCompound tc = new Attribute.TypeCompound(a.type, buf.toList(), new TypeAnnotationPosition());
+                a.attribute = tc;
+                return tc;
+            } else {
+                // Use an existing TypeCompound
+                return a.attribute;
+            }
+        } else {
+            Attribute.Compound ac = new Attribute.Compound(a.type, buf.toList());
+            a.attribute = ac;
+            return ac;
+        }
     }
 
     Attribute enterAttributeValue(Type expected,
@@ -352,15 +385,6 @@ public class Annotate {
         if (!expected.isErroneous())
             log.error(tree.pos(), "annotation.value.not.allowable.type");
         return new Attribute.Error(attr.attribExpr(tree, env, expected));
-    }
-
-    Attribute.TypeCompound enterTypeAnnotation(JCAnnotation a,
-            Type expected,
-            Env<AttrContext> env) {
-        Attribute.Compound c = enterAnnotation(a, expected, env);
-        Attribute.TypeCompound tc = new Attribute.TypeCompound(c.type, c.values, new TypeAnnotationPosition());
-        a.attribute = tc;
-        return tc;
     }
 
     /* *********************************

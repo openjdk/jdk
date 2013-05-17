@@ -111,7 +111,7 @@ public class TypeAnnotation {
             break;
         // exception parameter
         case EXCEPTION_PARAMETER:
-            position.exception_index = cr.readUnsignedByte();
+            position.exception_index = cr.readUnsignedShort();
             break;
         // method receiver
         case METHOD_RECEIVER:
@@ -198,7 +198,7 @@ public class TypeAnnotation {
             break;
         // exception parameter
         case EXCEPTION_PARAMETER:
-            n += 1; // exception_index
+            n += 2; // exception_index
             break;
         // method receiver
         case METHOD_RECEIVER:
