@@ -93,7 +93,6 @@ public class TCKChronologySerialization {
     //-----------------------------------------------------------------------
     @Test(dataProvider="calendars")
     public void test_ChronoSerialization(Chronology chrono) throws Exception {
-        System.out.printf(" ChronoSerialization: %s%n", chrono);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(chrono);

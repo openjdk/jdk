@@ -532,17 +532,22 @@ ifndef OPENJDK
     $(IMAGES_OUTPUTDIR)/_unzip/%.unzipped: $(JDK_TOPDIR)/src/closed/share/db/%
 	$(ECHO) Unzipping $(patsubst $(SRC_ROOT)/%,%,$<)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/db
-	cd $(JDK_IMAGE_DIR)/db && $(UNZIP) -q -o $< -x index.html 2> /dev/null
+	cd $(JDK_IMAGE_DIR)/db && $(UNZIP) -q -o $< -x */index.html */KEYS */test/* *javadoc/* */docs/* */demo/* 2> /dev/null
+	cd $(JDK_IMAGE_DIR)/db && $(MV) db-derby-*-bin/* . && $(RM) -r db-derby-*-bin
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
 
     $(JDK_IMAGE_DIR)/db/README-JDK.html: $(JDK_TOPDIR)/src/closed/share/db/README-JDK.html
 	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
-	$(install-file)
+	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
+
+    $(JDK_IMAGE_DIR)/db/3RDPARTY: $(JDK_TOPDIR)/src/closed/share/db/3RDPARTY
+	$(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
 
     JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%,$(IMAGES_OUTPUTDIR)/_unzip/%.unzipped,\
-			$(call not-containing,demo,$(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip))) \
-		      $(JDK_IMAGE_DIR)/db/README-JDK.html
+			$(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip)) \
+		      $(JDK_IMAGE_DIR)/db/README-JDK.html $(JDK_IMAGE_DIR)/db/3RDPARTY
 
 endif
 

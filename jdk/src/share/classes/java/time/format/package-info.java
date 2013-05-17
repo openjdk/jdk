@@ -76,7 +76,7 @@
  * Localization occurs by calling
  * {@link java.time.format.DateTimeFormatter#withLocale(java.util.Locale) withLocale(Locale)}
  * on the formatter. Further customization is possible using
- * {@link java.time.format.DateTimeFormatSymbols DateTimeFormatSymbols}.
+ * {@link java.time.format.DecimalStyle DecimalStyle}.
  * </p>
  *
  * <h3>Package specification</h3>
