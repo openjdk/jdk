@@ -609,7 +609,7 @@ public final class Syntax implements SyntaxProperties{
         OP_ESC_CONTROL_CHARS | OP_ESC_C_CONTROL | OP_ESC_X_HEX2)
         & ~OP_ESC_LTGT_WORD_BEGIN_END ),
 
-        ( OP2_QMARK_GROUP_EFFECT | OP2_CCLASS_SET_OP |
+        ( OP2_QMARK_GROUP_EFFECT |
         OP2_ESC_V_VTAB | OP2_ESC_U_HEX4 ),
 
         ( GNU_REGEX_BV | DIFFERENT_LEN_ALT_LOOK_BEHIND ),

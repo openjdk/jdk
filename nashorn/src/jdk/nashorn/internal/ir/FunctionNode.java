@@ -250,6 +250,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final FunctionNode functionNode,
         final long lastToken,
         final int flags,
+        final String name,
         final Type returnType,
         final CompileUnit compileUnit,
         final EnumSet<CompilationState> compilationState,
@@ -260,6 +261,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         super(functionNode);
 
         this.flags            = flags;
+        this.name             = name;
         this.returnType       = returnType;
         this.compileUnit      = compileUnit;
         this.lastToken        = lastToken;
@@ -271,7 +273,6 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
 
         // the fields below never change - they are final and assigned in constructor
         this.source          = functionNode.source;
-        this.name            = functionNode.name;
         this.ident           = functionNode.ident;
         this.namespace       = functionNode.namespace;
         this.declaredSymbols = functionNode.declaredSymbols;
@@ -315,7 +316,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.snapshot == null) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, null, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, null, hints));
     }
 
     /**
@@ -331,7 +332,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (isProgram() || parameters.isEmpty()) {
             return this; //never specialize anything that won't be recompiled
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, this, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, this, hints));
     }
 
     /**
@@ -389,7 +390,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         }
         final EnumSet<CompilationState> newState = EnumSet.copyOf(this.compilationState);
         newState.add(state);
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, newState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, newState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -410,7 +411,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.hints == hints) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -463,7 +464,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.flags == flags) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     @Override
@@ -529,7 +530,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     }
 
     /**
-     * Get the identifier for this function
+     * Get the identifier for this function, this is its symbol.
      * @return the identifier as an IdentityNode
      */
     public IdentNode getIdent() {
@@ -572,7 +573,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if(this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -640,7 +641,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.lastToken == lastToken) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -649,6 +650,20 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public String getName() {
         return name;
+    }
+
+
+    /**
+     * Set the internal name for this function
+     * @param lc    lexical context
+     * @param name new name
+     * @return new function node if changed, otherwise the same
+     */
+    public FunctionNode setName(final LexicalContext lc, final String name) {
+        if (this.name.equals(name)) {
+            return this;
+        }
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -698,7 +713,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.parameters == parameters) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -762,6 +777,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
                 this,
                 lastToken,
                 flags,
+                name,
                 Type.widest(this.returnType, returnType.isObject() ?
                     Type.OBJECT :
                     returnType),
@@ -801,7 +817,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if (this.compileUnit == compileUnit) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
