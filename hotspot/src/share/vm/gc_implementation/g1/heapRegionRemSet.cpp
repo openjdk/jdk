@@ -707,10 +707,11 @@ size_t OtherRegionsTable::mem_size() const {
   // Cast away const in this case.
   MutexLockerEx x((Mutex*)&_m, Mutex::_no_safepoint_check_flag);
   size_t sum = 0;
-  PerRegionTable * cur = _first_all_fine_prts;
-  while (cur != NULL) {
-    sum += cur->mem_size();
-    cur = cur->next();
+  // all PRTs are of the same size so it is sufficient to query only one of them.
+  if (_first_all_fine_prts != NULL) {
+    assert(_last_all_fine_prts != NULL &&
+      _first_all_fine_prts->mem_size() == _last_all_fine_prts->mem_size(), "check that mem_size() is constant");
+    sum += _first_all_fine_prts->mem_size() * _n_fine_entries;
   }
   sum += (sizeof(PerRegionTable*) * _max_fine_entries);
   sum += (_coarse_map.size_in_words() * HeapWordSize);
