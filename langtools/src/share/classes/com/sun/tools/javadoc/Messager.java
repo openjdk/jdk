@@ -26,9 +26,7 @@
 package com.sun.tools.javadoc;
 
 import java.io.PrintWriter;
-import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.Context;

@@ -433,9 +433,26 @@ public abstract class XMLInputFactory {
   public abstract void setXMLReporter(XMLReporter reporter);
 
   /**
-   * Allows the user to set specific feature/property on the underlying implementation. The underlying implementation
-   * is not required to support every setting of every property in the specification and may use IllegalArgumentException
-   * to signal that an unsupported property may not be set with the specified value.
+   * Allows the user to set specific feature/property on the underlying
+   * implementation. The underlying implementation is not required to support
+   * every setting of every property in the specification and may use
+   * IllegalArgumentException to signal that an unsupported property may not be
+   * set with the specified value.
+   * <p>
+   * All implementations that implement JAXP 1.5 or newer are required to
+   * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
+   * </p>
+   * <ul>
+   *   <li>
+   *        <p>
+   *        Access to external DTDs, external Entity References is restricted to the
+   *        protocols specified by the property. If access is denied during parsing
+   *        due to the restriction of this property, {@link javax.xml.stream.XMLStreamException}
+   *        will be thrown by the {@link javax.xml.stream.XMLStreamReader#next()} or
+   *        {@link javax.xml.stream.XMLEventReader#nextEvent()} method.
+   *        </p>
+   *   </li>
+   * </ul>
    * @param name The name of the property (may not be null)
    * @param value The value of the property
    * @throws java.lang.IllegalArgumentException if the property is not supported

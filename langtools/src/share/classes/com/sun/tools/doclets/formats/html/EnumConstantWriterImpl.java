@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(enumConstant, pre);
         addModifiers(enumConstant, pre);
-        Content enumConstantLink = new RawHtml(writer.getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.CONTEXT_MEMBER, enumConstant.type())));
+        Content enumConstantLink = writer.getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.MEMBER, enumConstant.type()));
         pre.addContent(enumConstantLink);
         pre.addContent(" ");
         if (configuration.linksource) {
@@ -182,8 +182,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Enum_Constants");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Enum_Constants");
     }
 
     /**
@@ -220,10 +220,10 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+    protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getDocLink(context, (MemberDoc) member, member.name(), false)));
+        Content strong = HtmlTree.STRONG(
+                writer.getDocLink(context, (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }
@@ -254,7 +254,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected Content getDeprecatedLink(ProgramElementDoc member) {
-        return writer.getDocLink(LinkInfoImpl.CONTEXT_MEMBER,
+        return writer.getDocLink(LinkInfoImpl.Kind.MEMBER,
                 (MemberDoc) member, ((FieldDoc)member).qualifiedName());
     }
 

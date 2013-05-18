@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.Pack200;
 import static com.sun.java.util.jar.pack.Constants.*;
+import java.util.LinkedList;
 
 /**
  * Define the structure and ordering of "bands" in a packed file.
@@ -495,6 +496,7 @@ class BandStructure {
         }
 
         protected int lengthForDebug = -1;  // DEBUG ONLY
+        @Override
         public String toString() {  // DEBUG ONLY
             int length = (lengthForDebug != -1 ? lengthForDebug : length());
             String str = name;
@@ -518,20 +520,24 @@ class BandStructure {
             super(name, regularCoding);
         }
 
+        @Override
         public int capacity() {
             return values == null ? -1 : values.length;
         }
 
         /** Declare predicted or needed capacity. */
+        @Override
         protected void setCapacity(int cap) {
             assert(length <= cap);
             if (cap == -1) { values = null; return; }
             values = realloc(values, cap);
         }
 
+        @Override
         public int length() {
             return length;
         }
+        @Override
         protected int valuesRemainingForDebug() {
             return length - valuesDisbursed;
         }
@@ -583,6 +589,7 @@ class BandStructure {
             return true;
         }
 
+        @Override
         protected void chooseBandCodings() throws IOException {
             boolean canVary = canVaryCoding();
             if (!canVary || !shouldVaryCoding()) {
@@ -653,6 +660,7 @@ class BandStructure {
             }
         }
 
+        @Override
         protected long computeOutputSize() {
             outputSize = getCodingChooser().computeByteSize(bandCoding,
                                                             values, 0, length);
@@ -668,6 +676,7 @@ class BandStructure {
             return regularCoding.setD(0).getLength(X);
         }
 
+        @Override
         protected void writeDataTo(OutputStream out) throws IOException {
             if (length == 0)  return;  // nothing to write
             long len0 = 0;
@@ -691,6 +700,7 @@ class BandStructure {
             if (optDumpBands)  dumpBand();
         }
 
+        @Override
         protected void readDataFrom(InputStream in) throws IOException {
             length = valuesExpected();
             if (length == 0)  return;  // nothing to read
@@ -707,7 +717,6 @@ class BandStructure {
                 if (XB < 0) {
                     // Do not consume this value.  No alternate coding.
                     in.reset();
-                    XB = _meta_default;
                     bandCoding = regularCoding;
                     metaCoding = noMetaCoding;
                 } else if (XB == _meta_default) {
@@ -733,6 +742,7 @@ class BandStructure {
             if (optDumpBands)  dumpBand();
         }
 
+        @Override
         public void doneDisbursing() {
             super.doneDisbursing();
             values = null;  // for GC
@@ -763,7 +773,10 @@ class BandStructure {
         /** Disburse one value. */
         protected int getValue() {
             assert(phase() == DISBURSE_PHASE);
-            assert(valuesDisbursed < length);
+            // when debugging return a zero if lengths are zero
+            if (optDebugBands && length == 0 && valuesDisbursed == length)
+                return 0;
+            assert(valuesDisbursed <= length);
             return values[valuesDisbursed++];
         }
 
@@ -784,9 +797,11 @@ class BandStructure {
             super(name, BYTE1);
         }
 
+        @Override
         public int capacity() {
             return bytes == null ? -1 : Integer.MAX_VALUE;
         }
+        @Override
         protected void setCapacity(int cap) {
             assert(bytes == null);  // do this just once
             bytes = new ByteArrayOutputStream(cap);
@@ -796,27 +811,32 @@ class BandStructure {
             bytes = null;
         }
 
+        @Override
         public int length() {
             return bytes == null ? -1 : bytes.size();
         }
         public void reset() {
             bytes.reset();
         }
+        @Override
         protected int valuesRemainingForDebug() {
             return (bytes == null) ? -1 : ((ByteArrayInputStream)in).available();
         }
 
+        @Override
         protected void chooseBandCodings() throws IOException {
             // No-op.
             assert(decodeEscapeValue(regularCoding.min(), regularCoding) < 0);
             assert(decodeEscapeValue(regularCoding.max(), regularCoding) < 0);
         }
 
+        @Override
         protected long computeOutputSize() {
             // do not cache
             return bytes.size();
         }
 
+        @Override
         public void writeDataTo(OutputStream out) throws IOException {
             if (length() == 0)  return;
             bytes.writeTo(out);
@@ -834,6 +854,7 @@ class BandStructure {
             }
         }
 
+        @Override
         public void readDataFrom(InputStream in) throws IOException {
             int vex = valuesExpected();
             if (vex == 0)  return;
@@ -852,11 +873,13 @@ class BandStructure {
             if (optDumpBands)  dumpBand();
         }
 
+        @Override
         public void readyToDisburse() {
             in = new ByteArrayInputStream(bytes.toByteArray());
             super.readyToDisburse();
         }
 
+        @Override
         public void doneDisbursing() {
             super.doneDisbursing();
             if (optDumpBands
@@ -882,11 +905,13 @@ class BandStructure {
                 // Tap the stream.
                 bytesForDump = new ByteArrayOutputStream();
                 this.in = new FilterInputStream(in) {
+                    @Override
                     public int read() throws IOException {
                         int ch = in.read();
                         if (ch >= 0)  bytesForDump.write(ch);
                         return ch;
                     }
+                    @Override
                     public int read(byte b[], int off, int len) throws IOException {
                         int nr = in.read(b, off, len);
                         if (nr >= 0)  bytesForDump.write(b, off, nr);
@@ -917,6 +942,7 @@ class BandStructure {
             assert(b == (b & 0xFF));
             collectorStream().write(b);
         }
+        @Override
         public String toString() {
             return "byte "+super.toString();
         }
@@ -1184,6 +1210,7 @@ class BandStructure {
             super(name, regularCoding);
         }
 
+        @Override
         public Band init() {
             super.init();
             // This is all just to keep the asserts happy:
@@ -1259,12 +1286,17 @@ class BandStructure {
         int bandCount() { return bandCount; }
 
         private int cap = -1;
+        @Override
         public int capacity() { return cap; }
+        @Override
         public void setCapacity(int cap) { this.cap = cap; }
 
+        @Override
         public int length() { return 0; }
+        @Override
         public int valuesRemainingForDebug() { return 0; }
 
+        @Override
         protected void chooseBandCodings() throws IOException {
             // coding decision pass
             for (int i = 0; i < bandCount; i++) {
@@ -1273,6 +1305,7 @@ class BandStructure {
             }
         }
 
+        @Override
         protected long computeOutputSize() {
             // coding decision pass
             long sum = 0;
@@ -1286,6 +1319,7 @@ class BandStructure {
             return sum;
         }
 
+        @Override
         protected void writeDataTo(OutputStream out) throws IOException {
             long preCount = 0;
             if (outputCounter != null)  preCount = outputCounter.getCount();
@@ -1303,6 +1337,7 @@ class BandStructure {
             }
         }
 
+        @Override
         protected void readDataFrom(InputStream in) throws IOException {
             assert(false);  // not called?
             for (int i = 0; i < bandCount; i++) {
@@ -1314,6 +1349,7 @@ class BandStructure {
             }
         }
 
+        @Override
         public String toString() {
             return "{"+bandCount()+" bands: "+super.toString()+"}";
         }
@@ -1335,14 +1371,17 @@ class BandStructure {
         public long getCount() { return count; }
         public void setCount(long c) { count = c; }
 
+        @Override
         public void write(int b) throws IOException {
             count++;
             if (out != null)  out.write(b);
         }
+        @Override
         public void write(byte b[], int off, int len) throws IOException {
             count += len;
             if (out != null)  out.write(b, off, len);
         }
+        @Override
         public String toString() {
             return String.valueOf(getCount());
         }
@@ -1490,6 +1529,7 @@ class BandStructure {
     CPRefBand field_ConstantValue_KQ = field_attr_bands.newCPRefBand("field_ConstantValue_KQ", CONSTANT_FieldSpecific);
     CPRefBand field_Signature_RS = field_attr_bands.newCPRefBand("field_Signature_RS", CONSTANT_Signature);
     MultiBand field_metadata_bands = field_attr_bands.newMultiBand("(field_metadata_bands)", UNSIGNED5);
+    MultiBand field_type_metadata_bands = field_attr_bands.newMultiBand("(field_type_metadata_bands)", UNSIGNED5);
 
     CPRefBand method_descr = class_bands.newCPRefBand("method_descr", MDELTA5, CONSTANT_NameandType);
     MultiBand method_attr_bands = class_bands.newMultiBand("(method_attr_bands)", UNSIGNED5);
@@ -1507,6 +1547,7 @@ class BandStructure {
     IntBand  method_MethodParameters_NB = method_attr_bands.newIntBand("method_MethodParameters_NB", BYTE1);
     CPRefBand method_MethodParameters_name_RUN = method_attr_bands.newCPRefBand("method_MethodParameters_name_RUN", UNSIGNED5, CONSTANT_Utf8, NULL_IS_OK);
     IntBand   method_MethodParameters_flag_FH = method_attr_bands.newIntBand("method_MethodParameters_flag_FH");
+    MultiBand method_type_metadata_bands = method_attr_bands.newMultiBand("(method_type_metadata_bands)", UNSIGNED5);
 
     MultiBand class_attr_bands = class_bands.newMultiBand("(class_attr_bands)", UNSIGNED5);
     IntBand class_flags_hi = class_attr_bands.newIntBand("class_flags_hi");
@@ -1527,6 +1568,7 @@ class BandStructure {
     CPRefBand class_InnerClasses_name_RUN = class_attr_bands.newCPRefBand("class_InnerClasses_name_RUN", UNSIGNED5, CONSTANT_Utf8, NULL_IS_OK);
     IntBand class_ClassFile_version_minor_H = class_attr_bands.newIntBand("class_ClassFile_version_minor_H");
     IntBand class_ClassFile_version_major_H = class_attr_bands.newIntBand("class_ClassFile_version_major_H");
+    MultiBand class_type_metadata_bands = class_attr_bands.newMultiBand("(class_type_metadata_bands)", UNSIGNED5);
 
     MultiBand code_bands = class_bands.newMultiBand("(code_bands)", UNSIGNED5);
     ByteBand  code_headers = code_bands.newByteBand("code_headers"); //BYTE1
@@ -1545,7 +1587,7 @@ class BandStructure {
     IntBand   code_attr_indexes = code_attr_bands.newIntBand("code_attr_indexes");
     IntBand   code_attr_calls = code_attr_bands.newIntBand("code_attr_calls");
 
-    MultiBand stackmap_bands = code_attr_bands.newMultiBand("StackMapTable_bands", UNSIGNED5);
+    MultiBand stackmap_bands = code_attr_bands.newMultiBand("(StackMapTable_bands)", UNSIGNED5);
     IntBand   code_StackMapTable_N = stackmap_bands.newIntBand("code_StackMapTable_N");
     IntBand   code_StackMapTable_frame_T = stackmap_bands.newIntBand("code_StackMapTable_frame_T",BYTE1);
     IntBand   code_StackMapTable_local_N = stackmap_bands.newIntBand("code_StackMapTable_local_N");
@@ -1573,6 +1615,7 @@ class BandStructure {
     CPRefBand code_LocalVariableTypeTable_name_RU = code_attr_bands.newCPRefBand("code_LocalVariableTypeTable_name_RU", CONSTANT_Utf8);
     CPRefBand code_LocalVariableTypeTable_type_RS = code_attr_bands.newCPRefBand("code_LocalVariableTypeTable_type_RS", CONSTANT_Signature);
     IntBand   code_LocalVariableTypeTable_slot = code_attr_bands.newIntBand("code_LocalVariableTypeTable_slot");
+    MultiBand code_type_metadata_bands = code_attr_bands.newMultiBand("(code_type_metadata_bands)", UNSIGNED5);
 
     // bands for bytecodes
     MultiBand bc_bands = all_bands.newMultiBand("(byte_codes)", UNSIGNED5);
@@ -1677,6 +1720,14 @@ class BandStructure {
         metadataBands[ATTR_CONTEXT_CLASS] = class_metadata_bands;
         metadataBands[ATTR_CONTEXT_FIELD] = field_metadata_bands;
         metadataBands[ATTR_CONTEXT_METHOD] = method_metadata_bands;
+    }
+    // Table of bands which contains type_metadata (TypeAnnotations)
+    protected MultiBand[] typeMetadataBands = new MultiBand[ATTR_CONTEXT_LIMIT];
+    {
+        typeMetadataBands[ATTR_CONTEXT_CLASS] = class_type_metadata_bands;
+        typeMetadataBands[ATTR_CONTEXT_FIELD] = field_type_metadata_bands;
+        typeMetadataBands[ATTR_CONTEXT_METHOD] = method_type_metadata_bands;
+        typeMetadataBands[ATTR_CONTEXT_CODE]   = code_type_metadata_bands;
     }
 
     // Attribute layouts.
@@ -1793,36 +1844,47 @@ class BandStructure {
 
         for (int ctype = 0; ctype < ATTR_CONTEXT_LIMIT; ctype++) {
             MultiBand xxx_metadata_bands = metadataBands[ctype];
-            if (xxx_metadata_bands == null)
-                continue;  // no code attrs
+            if (ctype != ATTR_CONTEXT_CODE) {
+                // These arguments cause the bands to be built
+                // automatically for this complicated layout:
+                predefineAttribute(X_ATTR_RuntimeVisibleAnnotations,
+                                   ATTR_CONTEXT_NAME[ctype]+"_RVA_",
+                                   xxx_metadata_bands,
+                                   Attribute.lookup(null, ctype,
+                                                    "RuntimeVisibleAnnotations"));
+                predefineAttribute(X_ATTR_RuntimeInvisibleAnnotations,
+                                   ATTR_CONTEXT_NAME[ctype]+"_RIA_",
+                                   xxx_metadata_bands,
+                                   Attribute.lookup(null, ctype,
+                                                    "RuntimeInvisibleAnnotations"));
 
-            // These arguments cause the bands to be built
-            // automatically for this complicated layout:
-            predefineAttribute(X_ATTR_RuntimeVisibleAnnotations,
-                               ATTR_CONTEXT_NAME[ctype]+"_RVA_",
-                               xxx_metadata_bands,
-                               Attribute.lookup(null, ctype,
-                                                "RuntimeVisibleAnnotations"));
-            predefineAttribute(X_ATTR_RuntimeInvisibleAnnotations,
-                               ATTR_CONTEXT_NAME[ctype]+"_RIA_",
-                               xxx_metadata_bands,
-                               Attribute.lookup(null, ctype,
-                                                "RuntimeInvisibleAnnotations"));
-            if (ctype != ATTR_CONTEXT_METHOD)
-                continue;
-
-            predefineAttribute(METHOD_ATTR_RuntimeVisibleParameterAnnotations,
-                               "method_RVPA_", xxx_metadata_bands,
-                               Attribute.lookup(null, ctype,
-                                                "RuntimeVisibleParameterAnnotations"));
-            predefineAttribute(METHOD_ATTR_RuntimeInvisibleParameterAnnotations,
-                               "method_RIPA_", xxx_metadata_bands,
-                               Attribute.lookup(null, ctype,
-                                                "RuntimeInvisibleParameterAnnotations"));
-            predefineAttribute(METHOD_ATTR_AnnotationDefault,
-                               "method_AD_", xxx_metadata_bands,
-                               Attribute.lookup(null, ctype,
-                                                "AnnotationDefault"));
+                if (ctype == ATTR_CONTEXT_METHOD) {
+                    predefineAttribute(METHOD_ATTR_RuntimeVisibleParameterAnnotations,
+                                       "method_RVPA_", xxx_metadata_bands,
+                                       Attribute.lookup(null, ctype,
+                                       "RuntimeVisibleParameterAnnotations"));
+                    predefineAttribute(METHOD_ATTR_RuntimeInvisibleParameterAnnotations,
+                                       "method_RIPA_", xxx_metadata_bands,
+                                       Attribute.lookup(null, ctype,
+                                       "RuntimeInvisibleParameterAnnotations"));
+                    predefineAttribute(METHOD_ATTR_AnnotationDefault,
+                                       "method_AD_", xxx_metadata_bands,
+                                       Attribute.lookup(null, ctype,
+                                       "AnnotationDefault"));
+                }
+            }
+            // All contexts have these
+            MultiBand xxx_type_metadata_bands = typeMetadataBands[ctype];
+            predefineAttribute(X_ATTR_RuntimeVisibleTypeAnnotations,
+                    ATTR_CONTEXT_NAME[ctype] + "_RVTA_",
+                    xxx_type_metadata_bands,
+                    Attribute.lookup(null, ctype,
+                    "RuntimeVisibleTypeAnnotations"));
+            predefineAttribute(X_ATTR_RuntimeInvisibleTypeAnnotations,
+                    ATTR_CONTEXT_NAME[ctype] + "_RITA_",
+                    xxx_type_metadata_bands,
+                    Attribute.lookup(null, ctype,
+                    "RuntimeInvisibleTypeAnnotations"));
         }
 
 
@@ -2053,8 +2115,7 @@ class BandStructure {
         Attribute.Layout def = attr.layout();
         int ctype = def.ctype();
         return predefineAttribute(index, ctype,
-                                  makeNewAttributeBands(bandPrefix, def,
-                                                        addHere),
+                                  makeNewAttributeBands(bandPrefix, def, addHere),
                                   def.name(), def.layout());
     }
 
@@ -2539,7 +2600,7 @@ class BandStructure {
         return true;
     }
 
-    // DEBUG ONLY:  Validate next input band.
+    // DEBUG ONLY:  Validate next input band, ensure bands are read in sequence
     private boolean assertReadyToReadFrom(Band b, InputStream in) throws IOException {
         Band p = prevForAssertMap.get(b);
         // Any previous band must be done reading before this one starts.
@@ -2547,30 +2608,19 @@ class BandStructure {
             Utils.log.warning("Previous band not done reading.");
             Utils.log.info("    Previous band: "+p);
             Utils.log.info("        Next band: "+b);
-            Thread.dumpStack();
             assert(verbose > 0);  // die unless verbose is true
         }
         String name = b.name;
         if (optDebugBands && !name.startsWith("(")) {
+            assert(bandSequenceList != null);
             // Verify synchronization between reader & writer:
-            StringBuilder buf = new StringBuilder();
-            int ch;
-            while ((ch = in.read()) > 0)
-                buf.append((char)ch);
-            String inName = buf.toString();
+            String inName = bandSequenceList.removeFirst();
+            // System.out.println("Reading: " + name);
             if (!inName.equals(name)) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Expected "+name+" but read: ");
-                inName += (char)ch;
-                while (inName.length() < 10) {
-                    inName += (char) in.read();
-                }
-                for (int i = 0; i < inName.length(); i++) {
-                    sb.append(inName.charAt(i));
-                }
-                Utils.log.warning(sb.toString());
+                Utils.log.warning("Expected " + name + " but read: " + inName);
                 return false;
             }
+            Utils.log.info("Read band in sequence: " + name);
         }
         return true;
     }
@@ -2590,7 +2640,12 @@ class BandStructure {
         return true;
     }
 
-    // DEBUG ONLY:  Maybe write a debugging cookie to next output band.
+    /*
+     * DEBUG ONLY:  write the bands to a list and read back the list in order,
+     * this works perfectly if we use the java packer and unpacker, typically
+     * this will work with --repack or if they are in the same jvm instance.
+     */
+    static LinkedList<String> bandSequenceList = null;
     private boolean assertReadyToWriteTo(Band b, OutputStream out) throws IOException {
         Band p = prevForAssertMap.get(b);
         // Any previous band must be done writing before this one starts.
@@ -2598,16 +2653,15 @@ class BandStructure {
             Utils.log.warning("Previous band not done writing.");
             Utils.log.info("    Previous band: "+p);
             Utils.log.info("        Next band: "+b);
-            Thread.dumpStack();
             assert(verbose > 0);  // die unless verbose is true
         }
         String name = b.name;
         if (optDebugBands && !name.startsWith("(")) {
+            if (bandSequenceList == null)
+                bandSequenceList = new LinkedList<>();
             // Verify synchronization between reader & writer:
-            for (int j = 0; j < name.length(); j++) {
-                out.write((byte)name.charAt(j));
-            }
-            out.write((byte)0);
+            bandSequenceList.add(name);
+            // System.out.println("Writing: " + b);
         }
         return true;
     }
@@ -2664,7 +2718,7 @@ class BandStructure {
                     buf.append("\\r");
                 } else {
                     String str = "000"+Integer.toHexString(ch);
-                    buf.append("\\u"+str.substring(str.length()-4));
+                    buf.append("\\u").append(str.substring(str.length()-4));
                 }
             }
             ps.println(buf);

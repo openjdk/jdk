@@ -30,7 +30,6 @@
  *
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2011 INRIA, France Telecom
- * Copyright (c) 2011 Google
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,9 +80,10 @@ import jdk.internal.org.objectweb.asm.tree.VarInsnNode;
  * A semantic bytecode analyzer. <i>This class does not fully check that JSR and
  * RET instructions are valid.</i>
  *
- * @param <V> type of the Value used for the analysis.
+ * @param <V>
+ *            type of the Value used for the analysis.
  *
- *  @author Eric Bruneton
+ * @author Eric Bruneton
  */
 public class Analyzer<V extends Value> implements Opcodes {
 
@@ -108,8 +108,9 @@ public class Analyzer<V extends Value> implements Opcodes {
     /**
      * Constructs a new {@link Analyzer}.
      *
-     * @param interpreter the interpreter to be used to symbolically interpret
-     *        the bytecode instructions.
+     * @param interpreter
+     *            the interpreter to be used to symbolically interpret the
+     *            bytecode instructions.
      */
     public Analyzer(final Interpreter<V> interpreter) {
         this.interpreter = interpreter;
@@ -118,26 +119,28 @@ public class Analyzer<V extends Value> implements Opcodes {
     /**
      * Analyzes the given method.
      *
-     * @param owner the internal name of the class to which the method belongs.
-     * @param m the method to be analyzed.
+     * @param owner
+     *            the internal name of the class to which the method belongs.
+     * @param m
+     *            the method to be analyzed.
      * @return the symbolic state of the execution stack frame at each bytecode
      *         instruction of the method. The size of the returned array is
      *         equal to the number of instructions (and labels) of the method. A
      *         given frame is <tt>null</tt> if and only if the corresponding
      *         instruction cannot be reached (dead code).
-     * @throws AnalyzerException if a problem occurs during the analysis.
+     * @throws AnalyzerException
+     *             if a problem occurs during the analysis.
      */
     public Frame<V>[] analyze(final String owner, final MethodNode m)
-            throws AnalyzerException
-    {
+            throws AnalyzerException {
         if ((m.access & (ACC_ABSTRACT | ACC_NATIVE)) != 0) {
-            frames = (Frame<V>[])new Frame<?>[0];
+            frames = (Frame<V>[]) new Frame<?>[0];
             return frames;
         }
         n = m.instructions.size();
         insns = m.instructions;
-        handlers = (List<TryCatchBlockNode>[])new List<?>[n];
-        frames = (Frame<V>[])new Frame<?>[n];
+        handlers = (List<TryCatchBlockNode>[]) new List<?>[n];
+        frames = (Frame<V>[]) new Frame<?>[n];
         subroutines = new Subroutine[n];
         queued = new boolean[n];
         queue = new int[n];
@@ -218,8 +221,7 @@ public class Analyzer<V extends Value> implements Opcodes {
 
                 if (insnType == AbstractInsnNode.LABEL
                         || insnType == AbstractInsnNode.LINE
-                        || insnType == AbstractInsnNode.FRAME)
-                {
+                        || insnType == AbstractInsnNode.FRAME) {
                     merge(insn + 1, f, subroutine);
                     newControlFlowEdge(insn, insn + 1);
                 } else {
@@ -235,8 +237,7 @@ public class Analyzer<V extends Value> implements Opcodes {
                         int jump = insns.indexOf(j.label);
                         if (insnOpcode == JSR) {
                             merge(jump, current, new Subroutine(j.label,
-                                    m.maxLocals,
-                                    j));
+                                    m.maxLocals, j));
                         } else {
                             merge(jump, current, subroutine);
                         }
@@ -265,31 +266,27 @@ public class Analyzer<V extends Value> implements Opcodes {
                         }
                     } else if (insnOpcode == RET) {
                         if (subroutine == null) {
-                            throw new AnalyzerException(insnNode, "RET instruction outside of a sub routine");
+                            throw new AnalyzerException(insnNode,
+                                    "RET instruction outside of a sub routine");
                         }
                         for (int i = 0; i < subroutine.callers.size(); ++i) {
                             JumpInsnNode caller = subroutine.callers.get(i);
                             int call = insns.indexOf(caller);
                             if (frames[call] != null) {
-                                merge(call + 1,
-                                        frames[call],
-                                        current,
-                                        subroutines[call],
-                                        subroutine.access);
+                                merge(call + 1, frames[call], current,
+                                        subroutines[call], subroutine.access);
                                 newControlFlowEdge(insn, call + 1);
                             }
                         }
                     } else if (insnOpcode != ATHROW
-                            && (insnOpcode < IRETURN || insnOpcode > RETURN))
-                    {
+                            && (insnOpcode < IRETURN || insnOpcode > RETURN)) {
                         if (subroutine != null) {
                             if (insnNode instanceof VarInsnNode) {
                                 int var = ((VarInsnNode) insnNode).var;
                                 subroutine.access[var] = true;
                                 if (insnOpcode == LLOAD || insnOpcode == DLOAD
                                         || insnOpcode == LSTORE
-                                        || insnOpcode == DSTORE)
-                                {
+                                        || insnOpcode == DSTORE) {
                                     subroutine.access[var + 1] = true;
                                 }
                             } else if (insnNode instanceof IincInsnNode) {
@@ -322,23 +319,23 @@ public class Analyzer<V extends Value> implements Opcodes {
                     }
                 }
             } catch (AnalyzerException e) {
-                throw new AnalyzerException(e.node, "Error at instruction " + insn
-                        + ": " + e.getMessage(), e);
+                throw new AnalyzerException(e.node, "Error at instruction "
+                        + insn + ": " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new AnalyzerException(insnNode, "Error at instruction " + insn
-                        + ": " + e.getMessage(), e);
+                throw new AnalyzerException(insnNode, "Error at instruction "
+                        + insn + ": " + e.getMessage(), e);
             }
         }
 
         return frames;
     }
 
-    private void findSubroutine(int insn, final Subroutine sub, final List<AbstractInsnNode> calls)
-            throws AnalyzerException
-    {
+    private void findSubroutine(int insn, final Subroutine sub,
+            final List<AbstractInsnNode> calls) throws AnalyzerException {
         while (true) {
             if (insn < 0 || insn >= n) {
-                throw new AnalyzerException(null, "Execution can fall off end of the code");
+                throw new AnalyzerException(null,
+                        "Execution can fall off end of the code");
             }
             if (subroutines[insn] != null) {
                 return;
@@ -382,18 +379,18 @@ public class Analyzer<V extends Value> implements Opcodes {
 
             // if insn does not falls through to the next instruction, return.
             switch (node.getOpcode()) {
-                case GOTO:
-                case RET:
-                case TABLESWITCH:
-                case LOOKUPSWITCH:
-                case IRETURN:
-                case LRETURN:
-                case FRETURN:
-                case DRETURN:
-                case ARETURN:
-                case RETURN:
-                case ATHROW:
-                    return;
+            case GOTO:
+            case RET:
+            case TABLESWITCH:
+            case LOOKUPSWITCH:
+            case IRETURN:
+            case LRETURN:
+            case FRETURN:
+            case DRETURN:
+            case ARETURN:
+            case RETURN:
+            case ATHROW:
+                return;
             }
             insn++;
         }
@@ -417,8 +414,9 @@ public class Analyzer<V extends Value> implements Opcodes {
     /**
      * Returns the exception handlers for the given instruction.
      *
-     * @param insn the index of an instruction of the last recently analyzed
-     *        method.
+     * @param insn
+     *            the index of an instruction of the last recently analyzed
+     *            method.
      * @return a list of {@link TryCatchBlockNode} objects.
      */
     public List<TryCatchBlockNode> getHandlers(final int insn) {
@@ -430,9 +428,12 @@ public class Analyzer<V extends Value> implements Opcodes {
      * execution of control flow analysis loop in #analyze. The default
      * implementation of this method does nothing.
      *
-     * @param owner the internal name of the class to which the method belongs.
-     * @param m the method to be analyzed.
-     * @throws AnalyzerException if a problem occurs.
+     * @param owner
+     *            the internal name of the class to which the method belongs.
+     * @param m
+     *            the method to be analyzed.
+     * @throws AnalyzerException
+     *             if a problem occurs.
      */
     protected void init(String owner, MethodNode m) throws AnalyzerException {
     }
@@ -440,8 +441,10 @@ public class Analyzer<V extends Value> implements Opcodes {
     /**
      * Constructs a new frame with the given size.
      *
-     * @param nLocals the maximum number of local variables of the frame.
-     * @param nStack the maximum stack size of the frame.
+     * @param nLocals
+     *            the maximum number of local variables of the frame.
+     * @param nStack
+     *            the maximum stack size of the frame.
      * @return the created frame.
      */
     protected Frame<V> newFrame(final int nLocals, final int nStack) {
@@ -451,7 +454,8 @@ public class Analyzer<V extends Value> implements Opcodes {
     /**
      * Constructs a new frame that is identical to the given frame.
      *
-     * @param src a frame.
+     * @param src
+     *            a frame.
      * @return the created frame.
      */
     protected Frame<V> newFrame(final Frame<? extends V> src) {
@@ -464,8 +468,10 @@ public class Analyzer<V extends Value> implements Opcodes {
      * control flow graph of a method (this method is called by the
      * {@link #analyze analyze} method during its visit of the method's code).
      *
-     * @param insn an instruction index.
-     * @param successor index of a successor instruction.
+     * @param insn
+     *            an instruction index.
+     * @param successor
+     *            index of a successor instruction.
      */
     protected void newControlFlowEdge(final int insn, final int successor) {
     }
@@ -477,16 +483,16 @@ public class Analyzer<V extends Value> implements Opcodes {
      * method is called by the {@link #analyze analyze} method during its visit
      * of the method's code).
      *
-     * @param insn an instruction index.
-     * @param successor index of a successor instruction.
+     * @param insn
+     *            an instruction index.
+     * @param successor
+     *            index of a successor instruction.
      * @return true if this edge must be considered in the data flow analysis
      *         performed by this analyzer, or false otherwise. The default
      *         implementation of this method always returns true.
      */
-    protected boolean newControlFlowExceptionEdge(
-        final int insn,
-        final int successor)
-    {
+    protected boolean newControlFlowExceptionEdge(final int insn,
+            final int successor) {
         return true;
     }
 
@@ -499,28 +505,25 @@ public class Analyzer<V extends Value> implements Opcodes {
      * the {@link #analyze analyze} method during its visit of the method's
      * code).
      *
-     * @param insn an instruction index.
-     * @param tcb TryCatchBlockNode corresponding to this edge.
+     * @param insn
+     *            an instruction index.
+     * @param tcb
+     *            TryCatchBlockNode corresponding to this edge.
      * @return true if this edge must be considered in the data flow analysis
      *         performed by this analyzer, or false otherwise. The default
      *         implementation of this method delegates to
      *         {@link #newControlFlowExceptionEdge(int, int)
      *         newControlFlowExceptionEdge(int, int)}.
      */
-    protected boolean newControlFlowExceptionEdge(
-        final int insn,
-        final TryCatchBlockNode tcb)
-    {
+    protected boolean newControlFlowExceptionEdge(final int insn,
+            final TryCatchBlockNode tcb) {
         return newControlFlowExceptionEdge(insn, insns.indexOf(tcb.handler));
     }
 
     // -------------------------------------------------------------------------
 
-    private void merge(
-        final int insn,
-        final Frame<V> frame,
-        final Subroutine subroutine) throws AnalyzerException
-    {
+    private void merge(final int insn, final Frame<V> frame,
+            final Subroutine subroutine) throws AnalyzerException {
         Frame<V> oldFrame = frames[insn];
         Subroutine oldSubroutine = subroutines[insn];
         boolean changes;
@@ -548,13 +551,9 @@ public class Analyzer<V extends Value> implements Opcodes {
         }
     }
 
-    private void merge(
-        final int insn,
-        final Frame<V> beforeJSR,
-        final Frame<V> afterRET,
-        final Subroutine subroutineBeforeJSR,
-        final boolean[] access) throws AnalyzerException
-    {
+    private void merge(final int insn, final Frame<V> beforeJSR,
+            final Frame<V> afterRET, final Subroutine subroutineBeforeJSR,
+            final boolean[] access) throws AnalyzerException {
         Frame<V> oldFrame = frames[insn];
         Subroutine oldSubroutine = subroutines[insn];
         boolean changes;

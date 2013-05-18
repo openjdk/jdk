@@ -51,7 +51,7 @@ import javax.lang.model.type.*;
  * <li> for an invocation of {@code getAnnotation(Class<T>)} or
  * {@code getAnnotationMirrors()}, <i>E</i>'s annotations contain <i>A</i>.
  *
- * <li> for an invocation of getAnnotationsByType(Class<T>),
+ * <li> for an invocation of {@code getAnnotationsByType(Class<T>)},
  * <i>E</i>'s annotations either contain <i>A</i> or, if the type of
  * <i>A</i> is repeatable, contain exactly one annotation whose value
  * element contains <i>A</i> and whose type is the containing

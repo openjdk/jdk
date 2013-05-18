@@ -338,9 +338,6 @@ install_jvm: $(LIBJVM)
 #----------------------------------------------------------------------
 # Other files
 
-# Gamma launcher
-include $(MAKEFILES_DIR)/launcher.make
-
 # Signal interposition library
 include $(MAKEFILES_DIR)/jsig.make
 

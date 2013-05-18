@@ -27,6 +27,8 @@ package com.sun.tools.doclets.formats.html.markup;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
@@ -195,8 +197,7 @@ public class HtmlWriter {
                 configuration.getText("doclet.Modifier"),
                 configuration.getText("doclet.Type"));
         overviewLabel = getResource("doclet.Overview");
-        defaultPackageLabel = new RawHtml(
-                DocletConstants.DEFAULT_PACKAGE_NAME);
+        defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
         packageLabel = getResource("doclet.Package");
         profileLabel = getResource("doclet.Profile");
         useLabel = getResource("doclet.navClassUse");
@@ -252,30 +253,30 @@ public class HtmlWriter {
      * @return a content tree for the text
      */
     public Content getResource(String key) {
-        return new StringContent(configuration.getText(key));
+        return configuration.getResource(key);
     }
 
     /**
      * Get the configuration string as a content.
      *
      * @param key the key to look for in the configuration file
-     * @param a1 string argument added to configuration text
+     * @param o   string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, String a1) {
-        return new RawHtml(configuration.getText(key, a1));
+    public Content getResource(String key, Object o) {
+        return configuration.getResource(key, o);
     }
 
     /**
      * Get the configuration string as a content.
      *
      * @param key the key to look for in the configuration file
-     * @param a1 string argument added to configuration text
-     * @param a2 string argument added to configuration text
+     * @param o1  string or content argument added to configuration text
+     * @param o2  string or content argument added to configuration text
      * @return a content tree for the text
      */
-    public Content getResource(String key, String a1, String a2) {
-        return new RawHtml(configuration.getText(key, a1, a2));
+    public Content getResource(String key, Object o0, Object o1) {
+        return configuration.getResource(key, o0, o1);
     }
 
     /**
@@ -303,10 +304,11 @@ public class HtmlWriter {
      *
      * @return a content for the SCRIPT tag
      */
-    protected Content getFramesetJavaScript(){
+    protected Content getFramesetJavaScript() {
         HtmlTree script = new HtmlTree(HtmlTag.SCRIPT);
         script.addAttr(HtmlAttr.TYPE, "text/javascript");
-        String scriptCode = DocletConstants.NL + "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
+        String scriptCode = DocletConstants.NL +
+                "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
                 "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
                 "        targetPage = targetPage.substring(1);" + DocletConstants.NL +
                 "    if (targetPage.indexOf(\":\") != -1)" + DocletConstants.NL +
@@ -398,16 +400,6 @@ public class HtmlWriter {
     public HtmlTree getTitle() {
         HtmlTree title = HtmlTree.TITLE(new StringContent(winTitle));
         return title;
-    }
-
-    /**
-     * Return, text passed, with Italics &lt;i&gt; and &lt;/i&gt; tags, surrounding it.
-     * So if the text passed is "Hi", then string returned will be "&lt;i&gt;Hi&lt;/i&gt;".
-     *
-     * @param text String to be printed in between &lt;I&gt; and &lt;/I&gt; tags.
-     */
-    public String italicsText(String text) {
-        return "<i>" + text + "</i>";
     }
 
     public String codeText(String text) {

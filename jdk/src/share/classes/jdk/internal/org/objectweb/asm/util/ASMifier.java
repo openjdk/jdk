@@ -30,7 +30,6 @@
  *
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2011 INRIA, France Telecom
- * Copyright (c) 2011 Google
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,6 +69,7 @@ import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
+import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
  * A {@link Printer} that prints the ASM code to generate the classes if visits.
@@ -115,17 +115,20 @@ public class ASMifier extends Printer {
      * {@link #ASMifier(int, String, int)} version.
      */
     public ASMifier() {
-        this(Opcodes.ASM4, "cw", 0);
+        this(Opcodes.ASM5, "cw", 0);
     }
 
     /**
      * Constructs a new {@link ASMifier}.
      *
-     * @param api the ASM API version implemented by this class. Must be one of
-     *        {@link Opcodes#ASM4}.
-     * @param name the name of the visitor variable in the produced code.
-     * @param id identifier of the annotation visitor variable in the produced
-     *        code.
+     * @param api
+     *            the ASM API version implemented by this class. Must be one of
+     *            {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     * @param name
+     *            the name of the visitor variable in the produced code.
+     * @param id
+     *            identifier of the annotation visitor variable in the produced
+     *            code.
      */
     protected ASMifier(final int api, final String name, final int id) {
         super(api);
@@ -135,13 +138,15 @@ public class ASMifier extends Printer {
 
     /**
      * Prints the ASM source code to generate the given class to the standard
-     * output. <p> Usage: ASMifier [-debug] &lt;binary
-     * class name or class file name&gt;
+     * output.
+     * <p>
+     * Usage: ASMifier [-debug] &lt;binary class name or class file name&gt;
      *
-     * @param args the command line arguments.
+     * @param args
+     *            the command line arguments.
      *
-     * @throws Exception if the class cannot be found, or if an IO exception
-     *         occurs.
+     * @throws Exception
+     *             if the class cannot be found, or if an IO exception occurs.
      */
     public static void main(final String[] args) throws Exception {
         int i = 0;
@@ -159,22 +164,21 @@ public class ASMifier extends Printer {
             }
         }
         if (!ok) {
-            System.err.println("Prints the ASM code to generate the given class.");
+            System.err
+                    .println("Prints the ASM code to generate the given class.");
             System.err.println("Usage: ASMifier [-debug] "
                     + "<fully qualified class name or class file name>");
             return;
         }
         ClassReader cr;
         if (args[i].endsWith(".class") || args[i].indexOf('\\') > -1
-                || args[i].indexOf('/') > -1)
-        {
+                || args[i].indexOf('/') > -1) {
             cr = new ClassReader(new FileInputStream(args[i]));
         } else {
             cr = new ClassReader(args[i]);
         }
-        cr.accept(new TraceClassVisitor(null,
-                new ASMifier(),
-                new PrintWriter(System.out)), flags);
+        cr.accept(new TraceClassVisitor(null, new ASMifier(), new PrintWriter(
+                System.out)), flags);
     }
 
     // ------------------------------------------------------------------------
@@ -182,14 +186,9 @@ public class ASMifier extends Printer {
     // ------------------------------------------------------------------------
 
     @Override
-    public void visit(
-        final int version,
-        final int access,
-        final String name,
-        final String signature,
-        final String superName,
-        final String[] interfaces)
-    {
+    public void visit(final int version, final int access, final String name,
+            final String signature, final String superName,
+            final String[] interfaces) {
         String simpleName;
         int n = name.lastIndexOf('/');
         if (n == -1) {
@@ -212,30 +211,30 @@ public class ASMifier extends Printer {
         buf.setLength(0);
         buf.append("cw.visit(");
         switch (version) {
-            case Opcodes.V1_1:
-                buf.append("V1_1");
-                break;
-            case Opcodes.V1_2:
-                buf.append("V1_2");
-                break;
-            case Opcodes.V1_3:
-                buf.append("V1_3");
-                break;
-            case Opcodes.V1_4:
-                buf.append("V1_4");
-                break;
-            case Opcodes.V1_5:
-                buf.append("V1_5");
-                break;
-            case Opcodes.V1_6:
-                buf.append("V1_6");
-                break;
-            case Opcodes.V1_7:
-                buf.append("V1_7");
-                break;
-            default:
-                buf.append(version);
-                break;
+        case Opcodes.V1_1:
+            buf.append("V1_1");
+            break;
+        case Opcodes.V1_2:
+            buf.append("V1_2");
+            break;
+        case Opcodes.V1_3:
+            buf.append("V1_3");
+            break;
+        case Opcodes.V1_4:
+            buf.append("V1_4");
+            break;
+        case Opcodes.V1_5:
+            buf.append("V1_5");
+            break;
+        case Opcodes.V1_6:
+            buf.append("V1_6");
+            break;
+        case Opcodes.V1_7:
+            buf.append("V1_7");
+            break;
+        default:
+            buf.append(version);
+            break;
         }
         buf.append(", ");
         appendAccess(access | ACCESS_CLASS);
@@ -272,11 +271,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitOuterClass(
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void visitOuterClass(final String owner, final String name,
+            final String desc) {
         buf.setLength(0);
         buf.append("cw.visitOuterClass(");
         appendConstant(owner);
@@ -289,11 +285,15 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public ASMifier visitClassAnnotation(
-        final String desc,
-        final boolean visible)
-    {
+    public ASMifier visitClassAnnotation(final String desc,
+            final boolean visible) {
         return visitAnnotation(desc, visible);
+    }
+
+    @Override
+    public ASMifier visitClassTypeAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation(typeRef, typePath, desc, visible);
     }
 
     @Override
@@ -302,12 +302,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitInnerClass(
-        final String name,
-        final String outerName,
-        final String innerName,
-        final int access)
-    {
+    public void visitInnerClass(final String name, final String outerName,
+            final String innerName, final int access) {
         buf.setLength(0);
         buf.append("cw.visitInnerClass(");
         appendConstant(name);
@@ -322,13 +318,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public ASMifier visitField(
-        final int access,
-        final String name,
-        final String desc,
-        final String signature,
-        final Object value)
-    {
+    public ASMifier visitField(final int access, final String name,
+            final String desc, final String signature, final Object value) {
         buf.setLength(0);
         buf.append("{\n");
         buf.append("fv = cw.visitField(");
@@ -350,13 +341,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public ASMifier visitMethod(
-        final int access,
-        final String name,
-        final String desc,
-        final String signature,
-        final String[] exceptions)
-    {
+    public ASMifier visitMethod(final int access, final String name,
+            final String desc, final String signature, final String[] exceptions) {
         buf.setLength(0);
         buf.append("{\n");
         buf.append("mv = cw.visitMethod(");
@@ -410,11 +396,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitEnum(
-        final String name,
-        final String desc,
-        final String value)
-    {
+    public void visitEnum(final String name, final String desc,
+            final String value) {
         buf.setLength(0);
         buf.append("av").append(id).append(".visitEnum(");
         appendConstant(buf, name);
@@ -427,10 +410,7 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public ASMifier visitAnnotation(
-        final String name,
-        final String desc)
-    {
+    public ASMifier visitAnnotation(final String name, final String desc) {
         buf.setLength(0);
         buf.append("{\n");
         buf.append("AnnotationVisitor av").append(id + 1).append(" = av");
@@ -473,11 +453,15 @@ public class ASMifier extends Printer {
     // ------------------------------------------------------------------------
 
     @Override
-    public ASMifier visitFieldAnnotation(
-        final String desc,
-        final boolean visible)
-    {
+    public ASMifier visitFieldAnnotation(final String desc,
+            final boolean visible) {
         return visitAnnotation(desc, visible);
+    }
+
+    @Override
+    public ASMifier visitFieldTypeAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation(typeRef, typePath, desc, visible);
     }
 
     @Override
@@ -497,11 +481,18 @@ public class ASMifier extends Printer {
     // ------------------------------------------------------------------------
 
     @Override
+    public void visitParameter(String parameterName, int access) {
+        buf.setLength(0);
+        buf.append(name).append(".visitParameter(").append(parameterName)
+                .append(", ");
+        appendAccess(access);
+        text.add(buf.append(");\n").toString());
+    }
+
+    @Override
     public ASMifier visitAnnotationDefault() {
         buf.setLength(0);
-        buf.append("{\n")
-                .append("av0 = ")
-                .append(name)
+        buf.append("{\n").append("av0 = ").append(name)
                 .append(".visitAnnotationDefault();\n");
         text.add(buf.toString());
         ASMifier a = createASMifier("av", 0);
@@ -511,23 +502,23 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public ASMifier visitMethodAnnotation(
-        final String desc,
-        final boolean visible)
-    {
+    public ASMifier visitMethodAnnotation(final String desc,
+            final boolean visible) {
         return visitAnnotation(desc, visible);
     }
 
     @Override
-    public ASMifier visitParameterAnnotation(
-        final int parameter,
-        final String desc,
-        final boolean visible)
-    {
+    public ASMifier visitMethodTypeAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation(typeRef, typePath, desc, visible);
+    }
+
+    @Override
+    public ASMifier visitParameterAnnotation(final int parameter,
+            final String desc, final boolean visible) {
         buf.setLength(0);
-        buf.append("{\n")
-                .append("av0 = ").append(name).append(".visitParameterAnnotation(")
-                .append(parameter)
+        buf.append("{\n").append("av0 = ").append(name)
+                .append(".visitParameterAnnotation(").append(parameter)
                 .append(", ");
         appendConstant(desc);
         buf.append(", ").append(visible).append(");\n");
@@ -549,52 +540,47 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitFrame(
-        final int type,
-        final int nLocal,
-        final Object[] local,
-        final int nStack,
-        final Object[] stack)
-    {
+    public void visitFrame(final int type, final int nLocal,
+            final Object[] local, final int nStack, final Object[] stack) {
         buf.setLength(0);
         switch (type) {
-            case Opcodes.F_NEW:
-            case Opcodes.F_FULL:
-                declareFrameTypes(nLocal, local);
-                declareFrameTypes(nStack, stack);
-                if (type == Opcodes.F_NEW) {
-                    buf.append(name).append(".visitFrame(Opcodes.F_NEW, ");
-                } else {
-                    buf.append(name).append(".visitFrame(Opcodes.F_FULL, ");
-                }
-                buf.append(nLocal).append(", new Object[] {");
-                appendFrameTypes(nLocal, local);
-                buf.append("}, ").append(nStack).append(", new Object[] {");
-                appendFrameTypes(nStack, stack);
-                buf.append('}');
-                break;
-            case Opcodes.F_APPEND:
-                declareFrameTypes(nLocal, local);
-                buf.append(name).append(".visitFrame(Opcodes.F_APPEND,")
-                        .append(nLocal)
-                        .append(", new Object[] {");
-                appendFrameTypes(nLocal, local);
-                buf.append("}, 0, null");
-                break;
-            case Opcodes.F_CHOP:
-                buf.append(name).append(".visitFrame(Opcodes.F_CHOP,")
-                        .append(nLocal)
-                        .append(", null, 0, null");
-                break;
-            case Opcodes.F_SAME:
-                buf.append(name).append(".visitFrame(Opcodes.F_SAME, 0, null, 0, null");
-                break;
-            case Opcodes.F_SAME1:
-                declareFrameTypes(1, stack);
-                buf.append(name).append(".visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {");
-                appendFrameTypes(1, stack);
-                buf.append('}');
-                break;
+        case Opcodes.F_NEW:
+        case Opcodes.F_FULL:
+            declareFrameTypes(nLocal, local);
+            declareFrameTypes(nStack, stack);
+            if (type == Opcodes.F_NEW) {
+                buf.append(name).append(".visitFrame(Opcodes.F_NEW, ");
+            } else {
+                buf.append(name).append(".visitFrame(Opcodes.F_FULL, ");
+            }
+            buf.append(nLocal).append(", new Object[] {");
+            appendFrameTypes(nLocal, local);
+            buf.append("}, ").append(nStack).append(", new Object[] {");
+            appendFrameTypes(nStack, stack);
+            buf.append('}');
+            break;
+        case Opcodes.F_APPEND:
+            declareFrameTypes(nLocal, local);
+            buf.append(name).append(".visitFrame(Opcodes.F_APPEND,")
+                    .append(nLocal).append(", new Object[] {");
+            appendFrameTypes(nLocal, local);
+            buf.append("}, 0, null");
+            break;
+        case Opcodes.F_CHOP:
+            buf.append(name).append(".visitFrame(Opcodes.F_CHOP,")
+                    .append(nLocal).append(", null, 0, null");
+            break;
+        case Opcodes.F_SAME:
+            buf.append(name).append(
+                    ".visitFrame(Opcodes.F_SAME, 0, null, 0, null");
+            break;
+        case Opcodes.F_SAME1:
+            declareFrameTypes(1, stack);
+            buf.append(name).append(
+                    ".visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {");
+            appendFrameTypes(1, stack);
+            buf.append('}');
+            break;
         }
         buf.append(");\n");
         text.add(buf.toString());
@@ -603,7 +589,8 @@ public class ASMifier extends Printer {
     @Override
     public void visitInsn(final int opcode) {
         buf.setLength(0);
-        buf.append(name).append(".visitInsn(").append(OPCODES[opcode]).append(");\n");
+        buf.append(name).append(".visitInsn(").append(OPCODES[opcode])
+                .append(");\n");
         text.add(buf.toString());
     }
 
@@ -614,43 +601,35 @@ public class ASMifier extends Printer {
                 .append(".visitIntInsn(")
                 .append(OPCODES[opcode])
                 .append(", ")
-                .append(opcode == Opcodes.NEWARRAY
-                        ? TYPES[operand]
-                        : Integer.toString(operand))
-                .append(");\n");
+                .append(opcode == Opcodes.NEWARRAY ? TYPES[operand] : Integer
+                        .toString(operand)).append(");\n");
         text.add(buf.toString());
     }
 
     @Override
     public void visitVarInsn(final int opcode, final int var) {
         buf.setLength(0);
-        buf.append(name)
-                .append(".visitVarInsn(")
-                .append(OPCODES[opcode])
-                .append(", ")
-                .append(var)
-                .append(");\n");
+        buf.append(name).append(".visitVarInsn(").append(OPCODES[opcode])
+                .append(", ").append(var).append(");\n");
         text.add(buf.toString());
     }
 
     @Override
     public void visitTypeInsn(final int opcode, final String type) {
         buf.setLength(0);
-        buf.append(name).append(".visitTypeInsn(").append(OPCODES[opcode]).append(", ");
+        buf.append(name).append(".visitTypeInsn(").append(OPCODES[opcode])
+                .append(", ");
         appendConstant(type);
         buf.append(");\n");
         text.add(buf.toString());
     }
 
     @Override
-    public void visitFieldInsn(
-        final int opcode,
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void visitFieldInsn(final int opcode, final String owner,
+            final String name, final String desc) {
         buf.setLength(0);
-        buf.append(this.name).append(".visitFieldInsn(").append(OPCODES[opcode]).append(", ");
+        buf.append(this.name).append(".visitFieldInsn(")
+                .append(OPCODES[opcode]).append(", ");
         appendConstant(owner);
         buf.append(", ");
         appendConstant(name);
@@ -661,14 +640,11 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitMethodInsn(
-        final int opcode,
-        final String owner,
-        final String name,
-        final String desc)
-    {
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc) {
         buf.setLength(0);
-        buf.append(this.name).append(".visitMethodInsn(").append(OPCODES[opcode]).append(", ");
+        buf.append(this.name).append(".visitMethodInsn(")
+                .append(OPCODES[opcode]).append(", ");
         appendConstant(owner);
         buf.append(", ");
         appendConstant(name);
@@ -679,12 +655,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitInvokeDynamicInsn(
-        String name,
-        String desc,
-        Handle bsm,
-        Object... bsmArgs)
-    {
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
+            Object... bsmArgs) {
         buf.setLength(0);
         buf.append(this.name).append(".visitInvokeDynamicInsn(");
         appendConstant(name);
@@ -707,7 +679,8 @@ public class ASMifier extends Printer {
     public void visitJumpInsn(final int opcode, final Label label) {
         buf.setLength(0);
         declareLabel(label);
-        buf.append(name).append(".visitJumpInsn(").append(OPCODES[opcode]).append(", ");
+        buf.append(name).append(".visitJumpInsn(").append(OPCODES[opcode])
+                .append(", ");
         appendLabel(label);
         buf.append(");\n");
         text.add(buf.toString());
@@ -735,34 +708,22 @@ public class ASMifier extends Printer {
     @Override
     public void visitIincInsn(final int var, final int increment) {
         buf.setLength(0);
-        buf.append(name)
-                .append(".visitIincInsn(")
-                .append(var)
-                .append(", ")
-                .append(increment)
-                .append(");\n");
+        buf.append(name).append(".visitIincInsn(").append(var).append(", ")
+                .append(increment).append(");\n");
         text.add(buf.toString());
     }
 
     @Override
-    public void visitTableSwitchInsn(
-        final int min,
-        final int max,
-        final Label dflt,
-        final Label... labels)
-    {
+    public void visitTableSwitchInsn(final int min, final int max,
+            final Label dflt, final Label... labels) {
         buf.setLength(0);
         for (int i = 0; i < labels.length; ++i) {
             declareLabel(labels[i]);
         }
         declareLabel(dflt);
 
-        buf.append(name)
-                .append(".visitTableSwitchInsn(")
-                .append(min)
-                .append(", ")
-                .append(max)
-                .append(", ");
+        buf.append(name).append(".visitTableSwitchInsn(").append(min)
+                .append(", ").append(max).append(", ");
         appendLabel(dflt);
         buf.append(", new Label[] {");
         for (int i = 0; i < labels.length; ++i) {
@@ -774,11 +735,8 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitLookupSwitchInsn(
-        final Label dflt,
-        final int[] keys,
-        final Label[] labels)
-    {
+    public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
+            final Label[] labels) {
         buf.setLength(0);
         for (int i = 0; i < labels.length; ++i) {
             declareLabel(labels[i]);
@@ -810,12 +768,15 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitTryCatchBlock(
-        final Label start,
-        final Label end,
-        final Label handler,
-        final String type)
-    {
+    public ASMifier visitInsnAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation("visitInsnAnnotation", typeRef, typePath,
+                desc, visible);
+    }
+
+    @Override
+    public void visitTryCatchBlock(final Label start, final Label end,
+            final Label handler, final String type) {
         buf.setLength(0);
         declareLabel(start);
         declareLabel(end);
@@ -833,14 +794,16 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitLocalVariable(
-        final String name,
-        final String desc,
-        final String signature,
-        final Label start,
-        final Label end,
-        final int index)
-    {
+    public ASMifier visitTryCatchAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation("visitTryCatchAnnotation", typeRef,
+                typePath, desc, visible);
+    }
+
+    @Override
+    public void visitLocalVariable(final String name, final String desc,
+            final String signature, final Label start, final Label end,
+            final int index) {
         buf.setLength(0);
         buf.append(this.name).append(".visitLocalVariable(");
         appendConstant(name);
@@ -857,6 +820,39 @@ public class ASMifier extends Printer {
     }
 
     @Override
+    public Printer visitLocalVariableAnnotation(int typeRef, TypePath typePath,
+            Label[] start, Label[] end, int[] index, String desc,
+            boolean visible) {
+        buf.setLength(0);
+        buf.append("{\n").append("av0 = ").append(name)
+                .append(".visitLocalVariableAnnotation(");
+        buf.append(typeRef);
+        buf.append(", TypePath.fromString(\"").append(typePath).append("\"), ");
+        buf.append("new Label[] {");
+        for (int i = 0; i < start.length; ++i) {
+            buf.append(i == 0 ? " " : ", ");
+            appendLabel(start[i]);
+        }
+        buf.append(" }, new Label[] {");
+        for (int i = 0; i < end.length; ++i) {
+            buf.append(i == 0 ? " " : ", ");
+            appendLabel(end[i]);
+        }
+        buf.append(" }, new int[] {");
+        for (int i = 0; i < index.length; ++i) {
+            buf.append(i == 0 ? " " : ", ").append(index[i]);
+        }
+        buf.append(" }, ");
+        appendConstant(desc);
+        buf.append(", ").append(visible).append(");\n");
+        text.add(buf.toString());
+        ASMifier a = createASMifier("av", 0);
+        text.add(a.getText());
+        text.add("}\n");
+        return a;
+    }
+
+    @Override
     public void visitLineNumber(final int line, final Label start) {
         buf.setLength(0);
         buf.append(name).append(".visitLineNumber(").append(line).append(", ");
@@ -868,12 +864,8 @@ public class ASMifier extends Printer {
     @Override
     public void visitMaxs(final int maxStack, final int maxLocals) {
         buf.setLength(0);
-        buf.append(name)
-                .append(".visitMaxs(")
-                .append(maxStack)
-                .append(", ")
-                .append(maxLocals)
-                .append(");\n");
+        buf.append(name).append(".visitMaxs(").append(maxStack).append(", ")
+                .append(maxLocals).append(");\n");
         text.add(buf.toString());
     }
 
@@ -888,15 +880,32 @@ public class ASMifier extends Printer {
     // Common methods
     // ------------------------------------------------------------------------
 
-    public ASMifier visitAnnotation(
-        final String desc,
-        final boolean visible)
-    {
+    public ASMifier visitAnnotation(final String desc, final boolean visible) {
         buf.setLength(0);
-        buf.append("{\n")
-                .append("av0 = ")
-                .append(name)
+        buf.append("{\n").append("av0 = ").append(name)
                 .append(".visitAnnotation(");
+        appendConstant(desc);
+        buf.append(", ").append(visible).append(");\n");
+        text.add(buf.toString());
+        ASMifier a = createASMifier("av", 0);
+        text.add(a.getText());
+        text.add("}\n");
+        return a;
+    }
+
+    public ASMifier visitTypeAnnotation(final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        return visitTypeAnnotation("visitTypeAnnotation", typeRef, typePath,
+                desc, visible);
+    }
+
+    public ASMifier visitTypeAnnotation(final String method, final int typeRef,
+            final TypePath typePath, final String desc, final boolean visible) {
+        buf.setLength(0);
+        buf.append("{\n").append("av0 = ").append(name).append(".")
+                .append(method).append("(");
+        buf.append(typeRef);
+        buf.append(", TypePath.fromString(\"").append(typePath).append("\"), ");
         appendConstant(desc);
         buf.append(", ").append(visible).append(");\n");
         text.add(buf.toString());
@@ -925,15 +934,16 @@ public class ASMifier extends Printer {
     // Utility methods
     // ------------------------------------------------------------------------
 
-    protected ASMifier createASMifier(final String name, final int id)    {
-        return new ASMifier(Opcodes.ASM4, name, id);
+    protected ASMifier createASMifier(final String name, final int id) {
+        return new ASMifier(Opcodes.ASM5, name, id);
     }
 
     /**
-     * Appends a string representation of the given access modifiers to {@link
-     * #buf buf}.
+     * Appends a string representation of the given access modifiers to
+     * {@link #buf buf}.
      *
-     * @param access some access modifiers.
+     * @param access
+     *            some access modifiers.
      */
     void appendAccess(final int access) {
         boolean first = true;
@@ -975,8 +985,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_VOLATILE) != 0
-                && (access & ACCESS_FIELD) != 0)
-        {
+                && (access & ACCESS_FIELD) != 0) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -984,8 +993,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_BRIDGE) != 0 && (access & ACCESS_CLASS) == 0
-                && (access & ACCESS_FIELD) == 0)
-        {
+                && (access & ACCESS_FIELD) == 0) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -993,8 +1001,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_VARARGS) != 0 && (access & ACCESS_CLASS) == 0
-                && (access & ACCESS_FIELD) == 0)
-        {
+                && (access & ACCESS_FIELD) == 0) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -1002,8 +1009,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_TRANSIENT) != 0
-                && (access & ACCESS_FIELD) != 0)
-        {
+                && (access & ACCESS_FIELD) != 0) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -1011,8 +1017,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_NATIVE) != 0 && (access & ACCESS_CLASS) == 0
-                && (access & ACCESS_FIELD) == 0)
-        {
+                && (access & ACCESS_FIELD) == 0) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -1021,8 +1026,7 @@ public class ASMifier extends Printer {
         }
         if ((access & Opcodes.ACC_ENUM) != 0
                 && ((access & ACCESS_CLASS) != 0
-                        || (access & ACCESS_FIELD) != 0 || (access & ACCESS_INNER) != 0))
-        {
+                        || (access & ACCESS_FIELD) != 0 || (access & ACCESS_INNER) != 0)) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -1030,8 +1034,7 @@ public class ASMifier extends Printer {
             first = false;
         }
         if ((access & Opcodes.ACC_ANNOTATION) != 0
-                && ((access & ACCESS_CLASS) != 0 || (access & ACCESS_INNER) != 0))
-        {
+                && ((access & ACCESS_CLASS) != 0 || (access & ACCESS_INNER) != 0)) {
             if (!first) {
                 buf.append(" + ");
             }
@@ -1082,8 +1085,9 @@ public class ASMifier extends Printer {
      * Appends a string representation of the given constant to the given
      * buffer.
      *
-     * @param cst an {@link Integer}, {@link Float}, {@link Long},
-     *        {@link Double} or {@link String} object. May be <tt>null</tt>.
+     * @param cst
+     *            an {@link Integer}, {@link Float}, {@link Long},
+     *            {@link Double} or {@link String} object. May be <tt>null</tt>.
      */
     protected void appendConstant(final Object cst) {
         appendConstant(buf, cst);
@@ -1093,9 +1097,11 @@ public class ASMifier extends Printer {
      * Appends a string representation of the given constant to the given
      * buffer.
      *
-     * @param buf a string buffer.
-     * @param cst an {@link Integer}, {@link Float}, {@link Long},
-     *        {@link Double} or {@link String} object. May be <tt>null</tt>.
+     * @param buf
+     *            a string buffer.
+     * @param cst
+     *            an {@link Integer}, {@link Float}, {@link Long},
+     *            {@link Double} or {@link String} object. May be <tt>null</tt>.
      */
     static void appendConstant(final StringBuffer buf, final Object cst) {
         if (cst == null) {
@@ -1109,14 +1115,16 @@ public class ASMifier extends Printer {
         } else if (cst instanceof Handle) {
             buf.append("new Handle(");
             Handle h = (Handle) cst;
-            buf.append("Opcodes.").append(HANDLE_TAG[h.getTag()]).append(", \"");
+            buf.append("Opcodes.").append(HANDLE_TAG[h.getTag()])
+                    .append(", \"");
             buf.append(h.getOwner()).append("\", \"");
             buf.append(h.getName()).append("\", \"");
             buf.append(h.getDesc()).append("\")");
         } else if (cst instanceof Byte) {
             buf.append("new Byte((byte)").append(cst).append(')');
         } else if (cst instanceof Boolean) {
-            buf.append(((Boolean) cst).booleanValue() ? "Boolean.TRUE" : "Boolean.FALSE");
+            buf.append(((Boolean) cst).booleanValue() ? "Boolean.TRUE"
+                    : "Boolean.FALSE");
         } else if (cst instanceof Short) {
             buf.append("new Short((short)").append(cst).append(')');
         } else if (cst instanceof Character) {
@@ -1155,8 +1163,7 @@ public class ASMifier extends Printer {
             char[] v = (char[]) cst;
             buf.append("new char[] {");
             for (int i = 0; i < v.length; i++) {
-                buf.append(i == 0 ? "" : ",")
-                        .append("(char)")
+                buf.append(i == 0 ? "" : ",").append("(char)")
                         .append((int) v[i]);
             }
             buf.append('}');
@@ -1208,27 +1215,27 @@ public class ASMifier extends Printer {
                 appendConstant(o[i]);
             } else if (o[i] instanceof Integer) {
                 switch (((Integer) o[i]).intValue()) {
-                    case 0:
-                        buf.append("Opcodes.TOP");
-                        break;
-                    case 1:
-                        buf.append("Opcodes.INTEGER");
-                        break;
-                    case 2:
-                        buf.append("Opcodes.FLOAT");
-                        break;
-                    case 3:
-                        buf.append("Opcodes.DOUBLE");
-                        break;
-                    case 4:
-                        buf.append("Opcodes.LONG");
-                        break;
-                    case 5:
-                        buf.append("Opcodes.NULL");
-                        break;
-                    case 6:
-                        buf.append("Opcodes.UNINITIALIZED_THIS");
-                        break;
+                case 0:
+                    buf.append("Opcodes.TOP");
+                    break;
+                case 1:
+                    buf.append("Opcodes.INTEGER");
+                    break;
+                case 2:
+                    buf.append("Opcodes.FLOAT");
+                    break;
+                case 3:
+                    buf.append("Opcodes.DOUBLE");
+                    break;
+                case 4:
+                    buf.append("Opcodes.LONG");
+                    break;
+                case 5:
+                    buf.append("Opcodes.NULL");
+                    break;
+                case 6:
+                    buf.append("Opcodes.UNINITIALIZED_THIS");
+                    break;
                 }
             } else {
                 appendLabel((Label) o[i]);
@@ -1241,7 +1248,8 @@ public class ASMifier extends Printer {
      * declaration is of the form "Label lXXX = new Label();". Does nothing if
      * the given label has already been declared.
      *
-     * @param l a label.
+     * @param l
+     *            a label.
      */
     protected void declareLabel(final Label l) {
         if (labelNames == null) {
@@ -1257,10 +1265,11 @@ public class ASMifier extends Printer {
 
     /**
      * Appends the name of the given label to {@link #buf buf}. The given label
-     * <i>must</i> already have a name. One way to ensure this is to always
-     * call {@link #declareLabel declared} before calling this method.
+     * <i>must</i> already have a name. One way to ensure this is to always call
+     * {@link #declareLabel declared} before calling this method.
      *
-     * @param l a label.
+     * @param l
+     *            a label.
      */
     protected void appendLabel(final Label l) {
         buf.append(labelNames.get(l));

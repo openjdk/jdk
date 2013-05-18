@@ -39,6 +39,9 @@ import java.io.ObjectStreamField;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 /**
  * A random number generator isolated to the current thread.  Like the
@@ -239,6 +242,26 @@ public class ThreadLocalRandom extends Random {
             n = nextn;
         }
         return offset + nextInt((int) n);
+    }
+
+    @Override
+    public IntStream ints() {
+        return IntStream.generate(() -> current().nextInt());
+    }
+
+    @Override
+    public LongStream longs() {
+        return LongStream.generate(() -> current().nextLong());
+    }
+
+    @Override
+    public DoubleStream doubles() {
+        return DoubleStream.generate(() -> current().nextDouble());
+    }
+
+    @Override
+    public DoubleStream gaussians() {
+        return DoubleStream.generate(() -> current().nextGaussian());
     }
 
     /**

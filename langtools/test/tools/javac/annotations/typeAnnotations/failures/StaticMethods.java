@@ -6,7 +6,7 @@
  * @compile/fail/ref=StaticMethods.out -XDrawDiagnostics StaticMethods.java
  */
 class StaticMethods {
-  static void main(@A StaticMethods this) { }
+  static void main(StaticMethods this) { }
 }
 
 @interface A { }

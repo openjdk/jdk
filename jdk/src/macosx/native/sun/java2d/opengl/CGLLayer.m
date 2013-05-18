@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,13 @@ AWT_ASSERT_APPKIT_THREAD;
 
     //Disable CALayer's default animation
     NSMutableDictionary * actions = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                    [NSNull null], @"anchorPoint",
                                     [NSNull null], @"bounds",
                                     [NSNull null], @"contents",
                                     [NSNull null], @"contentsScale",
                                     [NSNull null], @"onOrderIn",
                                     [NSNull null], @"onOrderOut",
+                                    [NSNull null], @"position",
                                     [NSNull null], @"sublayers",
                                     nil];
     self.actions = actions;

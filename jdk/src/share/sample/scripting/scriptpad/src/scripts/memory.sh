@@ -30,7 +30,3 @@
 #
 
 jrunscript -J-Dcom.sun.management.jmxremote.port=1090 -J-Dcom.sun.management.jmxremote.ssl=false -J-Dcom.sun.management.jmxremote.authenticate=false memory.js
-
-
-
-

@@ -3041,7 +3041,7 @@ AnnotationArray* ClassFileParser::assemble_annotations(u1* runtime_visible_annot
 }
 
 
-#ifndef PRODUCT
+#ifdef ASSERT
 static void parseAndPrintGenericSignatures(
     instanceKlassHandle this_klass, TRAPS) {
   assert(ParseAllGenericSignatures == true, "Shouldn't call otherwise");
@@ -3066,7 +3066,7 @@ static void parseAndPrintGenericSignatures(
     }
   }
 }
-#endif // ndef PRODUCT
+#endif // def ASSERT
 
 
 instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
