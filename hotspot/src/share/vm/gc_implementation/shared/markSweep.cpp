@@ -30,7 +30,7 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-unsigned int            MarkSweep::_total_invocations = 0;
+uint                    MarkSweep::_total_invocations = 0;
 
 Stack<oop, mtGC>              MarkSweep::_marking_stack;
 Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;

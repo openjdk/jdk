@@ -31,7 +31,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a function call.
@@ -137,14 +136,14 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
     /**
      * Constructors
      *
-     * @param source   the source
-     * @param token    token
-     * @param finish   finish
-     * @param function the function to call
-     * @param args     args to the call
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param function   the function to call
+     * @param args       args to the call
      */
-    public CallNode(final Source source, final long token, final int finish, final Node function, final List<Node> args) {
-        super(source, token, finish);
+    public CallNode(final int lineNumber, final long token, final int finish, final Node function, final List<Node> args) {
+        super(lineNumber, token, finish);
 
         this.function = function;
         this.args     = args;
@@ -171,7 +170,7 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
     }
 
     @Override
-    public CallNode setType(final Type type) {
+    public CallNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         if (this.type == type) {
             return this;
         }
@@ -201,7 +200,7 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
                     setFunction(function.accept(visitor)).
                     setArgs(Node.accept(visitor, Node.class, args)).
                     setFlags(flags).
-                    setType(type).
+                    setType(null, lc, type).
                     setEvalArgs(evalArgs == null ?
                             null :
                             evalArgs.setCode(evalArgs.getCode().accept(visitor)).

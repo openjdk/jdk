@@ -91,7 +91,7 @@ import sun.util.calendar.CalendarDate;
  * and the year of era of Seireki is proleptic Gregorian year.
  * (The Julian to Gregorian transition is not supported.)
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

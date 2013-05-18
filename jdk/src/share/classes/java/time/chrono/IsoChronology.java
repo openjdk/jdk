@@ -121,7 +121,7 @@ import java.util.Objects;
  * <li>leap-year - Leap years occur every 4 years, except where the year is divisble by 100 and not divisble by 400.
  * </ul><p>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -588,7 +588,12 @@ public final class IsoChronology extends Chronology implements Serializable {
         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
         int dom = DAY_OF_MONTH.checkValidIntValue(fieldValues.remove(DAY_OF_MONTH));
         if (resolverStyle == ResolverStyle.SMART) {  // previous valid
-            dom = Math.min(dom, Month.of(moy).length(Year.isLeap(y)));
+            if (moy == 4 || moy == 6 || moy == 9 || moy == 11) {
+                dom = Math.min(dom, 30);
+            } else if (moy == 2) {
+                dom = Math.min(dom, Month.FEBRUARY.length(Year.isLeap(y)));
+
+            }
         }
         return LocalDate.of(y, moy, dom);
     }

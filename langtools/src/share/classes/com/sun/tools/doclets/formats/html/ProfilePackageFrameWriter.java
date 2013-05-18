@@ -158,7 +158,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
             Arrays.sort(arr);
             boolean printedHeader = false;
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
-            ul.addAttr(HtmlAttr.TITLE, labelContent.toString());
+            ul.setTitle(labelContent);
             for (int i = 0; i < arr.length; i++) {
                 if (!isTypeInProfile(arr[i], profileValue)) {
                     continue;
@@ -173,10 +173,10 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                     contentTree.addContent(heading);
                     printedHeader = true;
                 }
-                Content link = new RawHtml (getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.PACKAGE_FRAME, arr[i],
-                        (arr[i].isInterface() ? italicsText(arr[i].name()) :
-                            arr[i].name()),"classFrame")));
+                Content arr_i_name = new StringContent(arr[i].name());
+                if (arr[i].isInterface()) arr_i_name = HtmlTree.I(arr_i_name);
+                Content link = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.PACKAGE_FRAME, arr[i]).label(arr_i_name).target("classFrame"));
                 Content li = HtmlTree.LI(link);
                 ul.addContent(li);
             }

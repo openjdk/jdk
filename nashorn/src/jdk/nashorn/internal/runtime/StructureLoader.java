@@ -110,8 +110,7 @@ final class StructureLoader extends NashornLoader {
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         if (name.startsWith(JS_OBJECT_PREFIX_EXTERNAL)) {
-            final int start = name.indexOf(JS_OBJECT_PREFIX.symbolName()) + JS_OBJECT_PREFIX.symbolName().length();
-            return generateClass(name, name.substring(start, name.length()));
+            return generateClass(name, name.substring(JS_OBJECT_PREFIX_EXTERNAL.length()));
         }
         return super.findClass(name);
     }

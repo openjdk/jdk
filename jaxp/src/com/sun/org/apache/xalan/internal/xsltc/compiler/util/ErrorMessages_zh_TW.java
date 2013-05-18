@@ -444,6 +444,12 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
         "\u627E\u4E0D\u5230\u6A23\u5F0F\u8868\u76EE\u6A19 ''{0}''\u3002"},
 
         /*
+         * Note to translators:  access to the stylesheet target is denied
+         */
+        {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+
+        /*
          * Note to translators:  This message represents an internal error in
          * condition in XSLTC.  The substitution text is the class name in XSLTC
          * that is missing some functionality.

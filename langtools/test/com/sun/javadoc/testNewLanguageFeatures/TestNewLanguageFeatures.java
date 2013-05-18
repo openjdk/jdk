@@ -80,21 +80,21 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Class TypeParameters&lt;E&gt;</h2>"},
             //Check class type parameters section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dt><span class=\"strong\">Type Parameters:</span></dt><dd><code>E</code> - " +
+                "<dt><span class=\"strong\">Type Parameters:</span></dt>" + NL + "<dd><code>E</code> - " +
                 "the type parameter for this class."},
             //Type parameters in @see/@link
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<dl><dt><span class=\"strong\">See Also:</span></dt><dd>" +
+                "<dl>" + NL + "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd>" +
                 "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">" +
-                "<code>TypeParameters</code></a></dd></dl>"},
+                "<code>TypeParameters</code></a></dd>" + NL + "</dl>"},
             //Method that uses class type parameter.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
                 "(<a href=\"../pkg/TypeParameters.html\" title=\"type " +
                     "parameter in TypeParameters\">E</a>&nbsp;param)"},
             //Method type parameter section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<span class=\"strong\">Type Parameters:</span></dt><dd><code>T</code> - This is the first " +
-                    "type parameter.</dd><dd><code>V</code> - This is the second type " +
+                "<span class=\"strong\">Type Parameters:</span></dt>" + NL + "<dd><code>T</code> - This is the first " +
+                    "type parameter.</dd>" + NL + "<dd><code>V</code> - This is the second type " +
                     "parameter."},
             //Signature of method with type parameters
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
@@ -235,8 +235,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">" +
                 "optional</a>=\"Parameter Annotation\",<a " +
                 "href=\"../pkg/AnnotationType.html#required()\">required</a>=1994)" + NL +
-                "                    int&nbsp;documented," + NL +
-                "                    int&nbsp;undocmented)</pre>"},
+                "                             int&nbsp;documented," + NL +
+                "                             int&nbsp;undocmented)</pre>"},
 
             //CONSTRUCTOR PARAMS
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
@@ -245,8 +245,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">" +
                 "optional</a>=\"Constructor Param Annotation\",<a " +
                 "href=\"../pkg/AnnotationType.html#required()\">required</a>=1994)" + NL +
-                "                   int&nbsp;documented," + NL +
-                "                   int&nbsp;undocmented)</pre>"},
+                "                           int&nbsp;documented," + NL +
+                "                           int&nbsp;undocmented)</pre>"},
 
             //=================================
             // ANNOTATION TYPE USAGE TESTING (All Different Types).
@@ -306,7 +306,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             // Handle multiple bounds.
             //==============================================================
             {BUG_ID + FS + "pkg" + FS + "MultiTypeParameters.html",
-                "public&nbsp;&lt;T extends java.lang.Number & java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)"},
+                "public&nbsp;&lt;T extends java.lang.Number &amp; java.lang.Runnable&gt;&nbsp;T&nbsp;foo(T&nbsp;t)"},
 
             //==============================================================
             // Test Class-Use Documenation for Type Parameters.
@@ -323,7 +323,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "<td class=\"colLast\"><code><strong><a href=\"../../pkg2/ClassUseTest1.html\" " +
                      "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
                      "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> & <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
+                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
                      "Foo2</a>&gt;</strong></code>&nbsp;</td>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
@@ -375,7 +375,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     "<td class=\"colLast\"><code><strong><a href=\"../../pkg2/ClassUseTest1.html\" " +
                      "title=\"class in pkg2\">ClassUseTest1</a>&lt;T extends " +
                      "<a href=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo" +
-                     "</a> & <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
+                     "</a> &amp; <a href=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">" +
                      "Foo2</a>&gt;</strong></code>&nbsp;</td>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
@@ -443,7 +443,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../" +
                      "../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest" +
                      "</a>&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in " +
-                     "pkg2\">Foo3</a>&gt;&gt;&nbsp;<br><a href=\"../../pkg2/" +
+                     "pkg2\">Foo3</a>&gt;&gt;<br><a href=\"../../pkg2/" +
                      "ParamTest.html\" title=\"class in pkg2\">ParamTest</a>" +
                      "&lt;<a href=\"../../pkg2/Foo3.html\" title=\"class in " +
                      "pkg2\">Foo3</a>&gt;</code></td>"
@@ -486,7 +486,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../../" +
                      "pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</a>&lt;" +
                      "<a href=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3" +
-                     "</a>&gt;&gt;&nbsp;<br><a href=\"../../pkg2/ParamTest.html\" " +
+                     "</a>&gt;&gt;<br><a href=\"../../pkg2/ParamTest.html\" " +
                      "title=\"class in pkg2\">ParamTest</a>&lt;<a href=\"../../pkg2/" +
                      "Foo3.html\" title=\"class in pkg2\">Foo3</a>&gt;</code></td>"
             },
@@ -524,7 +524,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
                      "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".." +
                      "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;" +
-                     "&gt;&gt;&nbsp;<br><a href=\"../../pkg2/ParamTest2.html\" " +
+                     "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" " +
                      "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List" +
                      "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\"" +
                      "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"
@@ -569,7 +569,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      "../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
                      "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".." +
                      "/../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</a>&gt;" +
-                     "&gt;&gt;&nbsp;<br><a href=\"../../pkg2/ParamTest2.html\" " +
+                     "&gt;&gt;<br><a href=\"../../pkg2/ParamTest2.html\" " +
                      "title=\"class in pkg2\">ParamTest2</a>&lt;java.util.List" +
                      "&lt;? extends <a href=\"../../pkg2/Foo4.html\" title=\"" +
                      "class in pkg2\">Foo4</a>&gt;&gt;</code></td>"

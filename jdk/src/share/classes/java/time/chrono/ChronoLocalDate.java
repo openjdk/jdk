@@ -234,7 +234,7 @@ import java.util.Objects;
  * Use {@link TemporalAccessor} if read-only access is required, or use {@link Temporal}
  * if read-write access is required.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * Subclasses should be Serializable wherever possible.
@@ -257,6 +257,7 @@ public interface ChronoLocalDate<D extends ChronoLocalDate<D>>
      * This allows dates in different calendar systems to be compared based
      * on the position of the date on the local time-line.
      * The underlying comparison is equivalent to comparing the epoch-day.
+     * @return a comparator that compares in time-line order ignoring the chronology
      *
      * @see #isAfter
      * @see #isBefore
@@ -510,17 +511,17 @@ public interface ChronoLocalDate<D extends ChronoLocalDate<D>>
     }
 
     /**
-     * Calculates the period between this date and another date in
-     * terms of the specified unit.
+     * Calculates the amount of time until another date in terms of the specified unit.
      * <p>
-     * This calculates the period between two dates in terms of a single unit.
+     * This calculates the amount of time between two {@code ChronoLocalDate}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method must be a
      * {@code ChronoLocalDate} in the same chronology.
      * The calculation returns a whole number, representing the number of
      * complete units between the two dates.
-     * For example, the period in days between two dates can be calculated
+     * For example, the amount in days between two dates can be calculated
      * using {@code startDate.periodUntil(endDate, DAYS)}.
      * <p>
      * There are two equivalent ways of using this method.
@@ -548,9 +549,9 @@ public interface ChronoLocalDate<D extends ChronoLocalDate<D>>
      *
      * @param endDate  the end date, which must be a {@code ChronoLocalDate}
      *  in the same chronology, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this date and the end date
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this date and the end date
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc

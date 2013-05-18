@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 getResource("doclet.Overview"));
             Content liOverview = HtmlTree.LI(HtmlStyle.blockList, overviewHeading);
             Content line3 = getResource("doclet.Help_line_3",
-                    getHyperLinkString(DocPaths.OVERVIEW_SUMMARY,
+                    getHyperLink(DocPaths.OVERVIEW_SUMMARY,
                     configuration.getText("doclet.Overview")));
             Content overviewPara = HtmlTree.P(line3);
             liOverview.addContent(overviewPara);
@@ -234,8 +234,9 @@ public class HelpWriter extends HtmlDocletWriter {
                     getResource("doclet.Help_line_16"));
             Content liTree = HtmlTree.LI(HtmlStyle.blockList, treeHead);
             Content line17 = getResource("doclet.Help_line_17_with_tree_link",
-                    getHyperLinkString(DocPaths.OVERVIEW_TREE,
-                    configuration.getText("doclet.Class_Hierarchy")));
+                    getHyperLink(DocPaths.OVERVIEW_TREE,
+                    configuration.getText("doclet.Class_Hierarchy")),
+                    HtmlTree.CODE(new StringContent("java.lang.Object")));
             Content treePara = HtmlTree.P(line17);
             liTree.addContent(treePara);
             HtmlTree tul = new HtmlTree(HtmlTag.UL);
@@ -252,19 +253,19 @@ public class HelpWriter extends HtmlDocletWriter {
                     getResource("doclet.Deprecated_API"));
             Content liDeprecated = HtmlTree.LI(HtmlStyle.blockList, dHead);
             Content line20 = getResource("doclet.Help_line_20_with_deprecated_api_link",
-                    getHyperLinkString(DocPaths.DEPRECATED_LIST,
+                    getHyperLink(DocPaths.DEPRECATED_LIST,
                     configuration.getText("doclet.Deprecated_API")));
             Content dPara = HtmlTree.P(line20);
             liDeprecated.addContent(dPara);
             ul.addContent(liDeprecated);
         }
         if (configuration.createindex) {
-            String indexlink;
+            Content indexlink;
             if (configuration.splitindex) {
-                indexlink = getHyperLinkString(DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1)),
+                indexlink = getHyperLink(DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1)),
                         configuration.getText("doclet.Index"));
             } else {
-                indexlink = getHyperLinkString(DocPaths.INDEX_ALL,
+                indexlink = getHyperLink(DocPaths.INDEX_ALL,
                         configuration.getText("doclet.Index"));
             }
             Content indexHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
@@ -293,7 +294,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 getResource("doclet.All_Classes"));
         Content liAllClasses = HtmlTree.LI(HtmlStyle.blockList, allclassesHead);
         Content line27 = getResource("doclet.Help_line_27",
-                getHyperLinkString(DocPaths.ALLCLASSES_NOFRAME,
+                getHyperLink(DocPaths.ALLCLASSES_NOFRAME,
                 configuration.getText("doclet.All_Classes")));
         Content allclassesPara = HtmlTree.P(line27);
         liAllClasses.addContent(allclassesPara);
@@ -309,7 +310,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 getResource("doclet.Constants_Summary"));
         Content liConst = HtmlTree.LI(HtmlStyle.blockList, constHead);
         Content line29 = getResource("doclet.Help_line_29",
-                getHyperLinkString(DocPaths.CONSTANT_VALUES,
+                getHyperLink(DocPaths.CONSTANT_VALUES,
                 configuration.getText("doclet.Constants_Summary")));
         Content constPara = HtmlTree.P(line29);
         liConst.addContent(constPara);

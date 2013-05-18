@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.util.DocTreePath;
+import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -125,7 +127,7 @@ public class ReferenceTest extends AbstractProcessor {
         return true;
     }
 
-    class DocCommentScanner extends DocTreeScanner<Void, Void> {
+    class DocCommentScanner extends DocTreePathScanner<Void, Void> {
         TreePath path;
         DocCommentTree dc;
 
@@ -135,7 +137,7 @@ public class ReferenceTest extends AbstractProcessor {
 
         void scan() {
             dc = trees.getDocCommentTree(path);
-            scan(dc, null);
+            scan(new DocTreePath(path, dc), null);
         }
 
         @Override
@@ -158,7 +160,7 @@ public class ReferenceTest extends AbstractProcessor {
         void checkReference(ReferenceTree tree, List<? extends DocTree> label) {
             String sig = tree.getSignature();
 
-            Element found = trees.getElement(path, tree);
+            Element found = trees.getElement(new DocTreePath(getCurrentPath(), tree));
             if (found == null) {
                 System.err.println(sig + " NOT FOUND");
             } else {

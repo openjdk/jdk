@@ -30,9 +30,12 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.LinkedList;
+
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.parser.Token;
@@ -148,10 +151,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
          if (functionNode.isLazy()) {
              Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
-             final Compiler compiler = new Compiler(installer, functionNode);
-             functionNode = compiler.compile();
+             final Compiler compiler = new Compiler(installer);
+             functionNode = compiler.compile(functionNode);
              assert !functionNode.isLazy();
-             compiler.install();
+             compiler.install(functionNode);
 
              // we don't need to update any flags - varArgs and needsCallee are instrincic
              // in the function world we need to get a destination node from the compile instead
@@ -164,23 +167,118 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
          assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
 
          // code exists - look it up and add it into the automatically sorted invoker list
-         code.add(
-            new CompiledFunction(
-                MH.findStatic(
-                    LOOKUP,
-                    functionNode.getCompileUnit().getCode(),
-                    functionNode.getName(),
-                    new FunctionSignature(functionNode).
-                        getMethodType())));
+         addCode(functionNode, null, null);
     }
+
+    private MethodHandle addCode(final FunctionNode fn, final MethodHandle guard, final MethodHandle fallback) {
+        final MethodHandle target =
+            MH.findStatic(
+                    LOOKUP,
+                    fn.getCompileUnit().getCode(),
+                    fn.getName(),
+                    new FunctionSignature(fn).
+                        getMethodType());
+        MethodHandle mh = target;
+        if (guard != null) {
+            try {
+                mh = MH.guardWithTest(MH.asCollector(guard, Object[].class, target.type().parameterCount()), MH.asType(target, fallback.type()), fallback);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        final CompiledFunction cf = new CompiledFunction(mh);
+        code.add(cf);
+
+        return cf.getInvoker();
+    }
+
+    private static Type runtimeType(final Object arg) {
+        if (arg == null) {
+            return Type.OBJECT;
+        }
+
+        final Class<?> clazz = arg.getClass();
+        assert !clazz.isPrimitive() : "always boxed";
+        if (clazz == Double.class) {
+            return JSType.isRepresentableAsInt((double)arg) ? Type.INT : Type.NUMBER;
+        } else if (clazz == Integer.class) {
+            return Type.INT;
+        } else if (clazz == Long.class) {
+            return Type.LONG;
+        } else if (clazz == String.class) {
+            return Type.STRING;
+        }
+        return Type.OBJECT;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean paramTypeGuard(final Type[] compileTimeTypes, final Type[] runtimeTypes, Object... args) {
+        //System.err.println("Param type guard " + Arrays.asList(args));
+        return false;
+    }
+
+    private static final MethodHandle PARAM_TYPE_GUARD = findOwnMH("paramTypeGuard", boolean.class, Type[].class, Type[].class, Object[].class);
 
     @Override
     MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
         final MethodHandle mh = super.getBestInvoker(callSiteType, args);
-        if (code.isLessSpecificThan(callSiteType)) {
-            // opportunity for code specialization - we can regenerate a better version of this method
+
+        if (!functionNode.canSpecialize() || !code.isLessSpecificThan(callSiteType)) {
+            return mh;
         }
-        return mh;
+
+        final FunctionNode snapshot = functionNode.getSnapshot();
+        if (snapshot == null) {
+            return mh;
+        }
+
+        int i;
+
+        //classes known at runtime
+        final LinkedList<Type> runtimeArgs = new LinkedList<>();
+        for (i = args.length - 1; i >= args.length - snapshot.getParameters().size(); i--) {
+            runtimeArgs.addLast(runtimeType(args[i]));
+        }
+
+        //classes known at compile time
+        final LinkedList<Type> compileTimeArgs = new LinkedList<>();
+        for (i = callSiteType.parameterCount() - 1; i >= 0 && compileTimeArgs.size() < snapshot.getParameters().size(); i--) {
+            compileTimeArgs.addLast(Type.typeFor(callSiteType.parameterType(i)));
+        }
+
+        //the classes known at compile time are a safe to generate as primitives without parameter guards
+        //the classes known at runtime are safe to generate as primitives IFF there are parameter guards
+        MethodHandle guard = null;
+        for (i = 0; i < compileTimeArgs.size(); i++) {
+            final Type runtimeType = runtimeArgs.get(i);
+            final Type compileType = compileTimeArgs.get(i);
+
+            if (compileType.isObject() && !runtimeType.isObject()) {
+                if (guard == null) {
+                    guard = PARAM_TYPE_GUARD;
+                    guard = MH.insertArguments(guard, 0, compileTimeArgs.toArray(new Type[compileTimeArgs.size()]), runtimeArgs.toArray(new Type[runtimeArgs.size()]));
+                }
+            }
+        }
+
+        //System.err.println("Specialized " + name + " " + runtimeArgs + " known=" + compileTimeArgs);
+
+        assert snapshot != null;
+        assert snapshot != functionNode;
+
+        final Compiler compiler = new Compiler(installer);
+        final FunctionNode compiledSnapshot = compiler.compile(snapshot.setHints(null, new Compiler.Hints(compileTimeArgs.toArray(new Type[compileTimeArgs.size()]))));
+
+        compiler.install(compiledSnapshot);
+
+        final MethodHandle nmh = addCode(compiledSnapshot, guard, mh);
+
+        return nmh;
+    }
+
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), RecompilableScriptFunctionData.class, name, MH.type(rtype, types));
     }
 
 }

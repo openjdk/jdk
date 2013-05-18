@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ final class LWScrollBarPeer extends LWComponentPeer<Scrollbar, JScrollBar>
     void initializeImpl() {
         super.initializeImpl();
         final Scrollbar target = getTarget();
+        setLineIncrement(target.getUnitIncrement());
+        setPageIncrement(target.getBlockIncrement());
         setValues(target.getValue(), target.getVisibleAmount(),
                   target.getMinimum(), target.getMaximum());
 
