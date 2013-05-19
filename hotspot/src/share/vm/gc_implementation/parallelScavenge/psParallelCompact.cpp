@@ -781,7 +781,6 @@ ParallelCompactData PSParallelCompact::_summary_data;
 
 PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
-void PSParallelCompact::IsAliveClosure::do_object(oop p)   { ShouldNotReachHere(); }
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
 void PSParallelCompact::KeepAliveClosure::do_oop(oop* p)       { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
@@ -2413,7 +2412,6 @@ void PSParallelCompact::adjust_class_loader(ParCompactionManager* cm,
 // This should be moved to the shared markSweep code!
 class PSAlwaysTrueClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) { ShouldNotReachHere(); }
   bool do_object_b(oop p) { return true; }
 };
 static PSAlwaysTrueClosure always_true;
