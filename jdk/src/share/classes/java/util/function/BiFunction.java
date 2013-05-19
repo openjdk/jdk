@@ -24,15 +24,17 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * Apply a function to the input arguments, yielding an appropriate result. This
  * is the two-arity specialization of {@link Function}. A function may
  * variously provide a mapping between types, object instances or keys and
  * values or any other form of transformation upon the input.
  *
- * @param <T> the type of the first argument to the {@code apply} operation.
- * @param <U> the type of the second argument to the {@code apply} operation.
- * @param <R> the type of results returned by the {@code apply} operation.
+ * @param <T> the type of the first argument to the {@code apply} operation
+ * @param <U> the type of the second argument to the {@code apply} operation
+ * @param <R> the type of results returned by the {@code apply} operation
  *
  * @see Function
  * @since 1.8
@@ -48,4 +50,22 @@ public interface BiFunction<T, U, R> {
      * @return the function result
      */
     R apply(T t, U u);
+
+    /**
+     * Returns a new function which applies this function followed by the
+     * provided function.  If either function throws an exception, it is relayed
+     * to the caller.
+     *
+     * @param <V> Type of output objects to the combined function. May be the
+     * same type as {@code <T>}, {@code <U>} or {@code <R>}
+     * @param after An additional function to be applied after this function is
+     * applied
+     * @return A function which performs this function followed by the provided
+     * function
+     * @throws NullPointerException if after is null
+     */
+    default <V> BiFunction<T, U, V> andThen(Function<? super R, ? extends V> after) {
+        Objects.requireNonNull(after);
+        return (T t, U u) -> after.apply(apply(t, u));
+    }
 }

@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation on a single {@code int} operand yielding an {@code int} result.
  * This is the primitive type specialization of {@link UnaryOperator} for
@@ -37,10 +39,51 @@ public interface IntUnaryOperator {
 
     /**
      * Returns the {@code int} value result of the operation upon the
-     * {@code int}  operand.
+     * {@code int} operand.
      *
      * @param operand the operand value
      * @return the operation result value
      */
-    public int applyAsInt(int operand);
+    int applyAsInt(int operand);
+
+    /**
+     * Compose a new function which applies the provided function followed by
+     * this function.  If either function throws an exception, it is relayed
+     * to the caller.
+     *
+     * @param before an additional function to be applied before this function
+     * is applied
+     * @return a function which performs the provided function followed by this
+     * function
+     * @throws NullPointerException if before is null
+     */
+    default IntUnaryOperator compose(IntUnaryOperator before) {
+        Objects.requireNonNull(before);
+        return (int v) -> applyAsInt(before.applyAsInt(v));
+    }
+
+    /**
+     * Compose a new function which applies this function followed by the
+     * provided function.  If either function throws an exception, it is relayed
+     * to the caller.
+     *
+     * @param after an additional function to be applied after this function is
+     * applied
+     * @return a function which performs this function followed by the provided
+     * function followed
+     * @throws NullPointerException if after is null
+     */
+    default IntUnaryOperator andThen(IntUnaryOperator after) {
+        Objects.requireNonNull(after);
+        return (int t) -> after.applyAsInt(applyAsInt(t));
+    }
+
+    /**
+     * Returns a unary operator that provides its input value as the result.
+     *
+     * @return a unary operator that provides its input value as the result
+     */
+    static IntUnaryOperator identity() {
+        return t -> t;
+    }
 }
