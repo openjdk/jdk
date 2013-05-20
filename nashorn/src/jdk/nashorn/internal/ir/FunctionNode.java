@@ -340,7 +340,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      * @return true if specialization is possible
      */
     public boolean canSpecialize() {
-        return getFlag(CAN_SPECIALIZE);
+        return snapshot != null && getFlag(CAN_SPECIALIZE);
     }
 
     /**
