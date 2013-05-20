@@ -212,7 +212,9 @@
            target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
-           includeantruntime="false"/>
+           includeantruntime="false">
+        <compilerarg line="-extdirs &quot;&quot;"/>
+    </javac>
 
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
