@@ -43,9 +43,9 @@ import sun.misc.Contended;
  * @bug     8003985
  * @summary Support Contended Annotation - JEP 142
  *
- * @run main/othervm -XX:-RestrictContended Test8003985
+ * @run main/othervm -XX:-RestrictContended Basic
  */
-public class Test8003985 {
+public class Basic {
 
     private static final Unsafe U;
     private static int ADDRESS_SIZE;
