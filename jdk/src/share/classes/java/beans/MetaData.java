@@ -42,6 +42,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
 import java.security.AccessController;
@@ -56,7 +57,7 @@ import javax.swing.plaf.ColorUIResource;
 
 import sun.swing.PrintColorUIResource;
 
-import java.util.Objects;
+import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /*
  * Like the <code>Intropector</code>, the <code>MetaData</code> class
@@ -850,13 +851,15 @@ static final class java_awt_AWTKeyStroke_PersistenceDelegate extends Persistence
 
 static class StaticFieldsPersistenceDelegate extends PersistenceDelegate {
     protected void installFields(Encoder out, Class<?> cls) {
-        Field fields[] = cls.getFields();
-        for(int i = 0; i < fields.length; i++) {
-            Field field = fields[i];
-            // Don't install primitives, their identity will not be preserved
-            // by wrapping.
-            if (Object.class.isAssignableFrom(field.getType())) {
-                out.writeExpression(new Expression(field, "get", new Object[]{null}));
+        if (Modifier.isPublic(cls.getModifiers()) && isPackageAccessible(cls)) {
+            Field fields[] = cls.getFields();
+            for(int i = 0; i < fields.length; i++) {
+                Field field = fields[i];
+                // Don't install primitives, their identity will not be preserved
+                // by wrapping.
+                if (Object.class.isAssignableFrom(field.getType())) {
+                    out.writeExpression(new Expression(field, "get", new Object[]{null}));
+                }
             }
         }
     }
