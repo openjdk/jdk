@@ -1985,21 +1985,25 @@ expandPacked(JNIEnv *env, BufImageS_t *img, ColorModelS_t *cmP,
     return 0;
 }
 
+#define NUM_LINES    10
+
 static int
 cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
                    unsigned char *dataP) {
-    ColorModelS_t *cmP = &imageP->cmodel;
-    RasterS_t *rasterP = &imageP->raster;
+    const RasterS_t *rasterP = &imageP->raster;
+    const int w = rasterP->width;
+    const int h = rasterP->height;
+
     int y;
-    jobject jpixels = NULL;
+    jintArray jpixels = NULL;
     jint *pixels;
     unsigned char *dP = dataP;
-#define NUM_LINES    10
-    int numLines = NUM_LINES;
+    int numLines = h > NUM_LINES ? NUM_LINES : h;
+
     /* it is safe to calculate the scan length, because width has been verified
      * on creation of the mlib image
      */
-    int scanLength = rasterP->width * 4;
+    const int scanLength = w * 4;
 
     int nbytes = 0;
     if (!SAFE_TO_MULT(numLines, scanLength)) {
@@ -2008,42 +2012,70 @@ cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
 
     nbytes = numLines * scanLength;
 
-    for (y=0; y < rasterP->height; y+=numLines) {
-        /* getData, one scanline at a time */
-        if (y+numLines > rasterP->height) {
-            numLines = rasterP->height - y;
+    jpixels = (*env)->NewIntArray(env, nbytes);
+    if (JNU_IsNull(env, jpixels)) {
+        JNU_ThrowOutOfMemoryError(env, "Out of Memory");
+        return -1;
+    }
+
+    for (y = 0; y < h; y += numLines) {
+        if (y + numLines > h) {
+            numLines = h - y;
             nbytes = numLines * scanLength;
         }
-        jpixels = (*env)->CallObjectMethod(env, imageP->jimage,
-                                           g_BImgGetRGBMID, 0, y,
-                                           rasterP->width, numLines,
-                                           jpixels,0, rasterP->width);
-        if (jpixels == NULL) {
-            JNU_ThrowInternalError(env, "Can't retrieve pixels.");
+
+        (*env)->CallObjectMethod(env, imageP->jimage,
+                                 g_BImgGetRGBMID, 0, y,
+                                 w, numLines,
+                                 jpixels, 0, w);
+        if ((*env)->ExceptionOccurred(env)) {
+            (*env)->DeleteLocalRef(env, jpixels);
             return -1;
         }
 
         pixels = (*env)->GetPrimitiveArrayCritical(env, jpixels, NULL);
+        if (pixels == NULL) {
+            (*env)->DeleteLocalRef(env, jpixels);
+            return -1;
+        }
+
         memcpy(dP, pixels, nbytes);
         dP += nbytes;
+
         (*env)->ReleasePrimitiveArrayCritical(env, jpixels, pixels,
                                               JNI_ABORT);
     }
+
+    /* Need to release the array */
+    (*env)->DeleteLocalRef(env, jpixels);
+
     return 0;
 }
 
 static int
 cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
                    unsigned char *dataP) {
-    ColorModelS_t *cmP = &imageP->cmodel;
-    RasterS_t *rasterP = &imageP->raster;
+    const RasterS_t *rasterP = &imageP->raster;
+    const int w = rasterP->width;
+    const int h = rasterP->height;
+
     int y;
+    jintArray jpixels = NULL;
     jint *pixels;
     unsigned char *dP = dataP;
-#define NUM_LINES    10
-    int numLines = NUM_LINES;
-    int nbytes = rasterP->width*4*NUM_LINES;
-    jintArray jpixels;
+    int numLines = h > NUM_LINES ? NUM_LINES : h;
+
+    /* it is safe to calculate the scan length, because width has been verified
+     * on creation of the mlib image
+     */
+    const int scanLength = w * 4;
+
+    int nbytes = 0;
+    if (!SAFE_TO_MULT(numLines, scanLength)) {
+        return -1;
+    }
+
+    nbytes = numLines * scanLength;
 
     jpixels = (*env)->NewIntArray(env, nbytes);
     if (JNU_IsNull(env, jpixels)) {
@@ -2051,14 +2083,15 @@ cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
         return -1;
     }
 
-    for (y=0; y < rasterP->height; y+=NUM_LINES) {
-        if (y+numLines > rasterP->height) {
-            numLines = rasterP->height - y;
-            nbytes = rasterP->width*4*numLines;
+    for (y = 0; y < h; y += numLines) {
+        if (y + numLines > h) {
+            numLines = h - y;
+            nbytes = numLines * scanLength;
         }
+
         pixels = (*env)->GetPrimitiveArrayCritical(env, jpixels, NULL);
         if (pixels == NULL) {
-            /* JNI error */
+            (*env)->DeleteLocalRef(env, jpixels);
             return -1;
         }
 
@@ -2067,12 +2100,11 @@ cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
 
        (*env)->ReleasePrimitiveArrayCritical(env, jpixels, pixels, 0);
 
-       /* setData, one scanline at a time */
-       /* Fix 4223648, 4184283 */
        (*env)->CallVoidMethod(env, imageP->jimage, g_BImgSetRGBMID, 0, y,
-                                rasterP->width, numLines, jpixels, 0,
-                                rasterP->width);
+                                w, numLines, jpixels,
+                                0, w);
        if ((*env)->ExceptionOccurred(env)) {
+           (*env)->DeleteLocalRef(env, jpixels);
            return -1;
        }
     }
