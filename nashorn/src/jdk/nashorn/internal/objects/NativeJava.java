@@ -240,39 +240,52 @@ public final class NativeJava {
     }
 
     /**
-     * Given a JavaScript array and a Java type, returns a Java array with the same initial contents, and with the
-     * specified component type. Example:
+     * Given a script object and a Java type, converts the script object into the desired Java type. Currently it only
+     * performs shallow creation of Java arrays, but might be extended for other types in the future. Example:
      * <pre>
      * var anArray = [1, "13", false]
-     * var javaIntArray = Java.toJavaArray(anArray, "int")
+     * var javaIntArray = Java.to(anArray, "int[]")
      * print(javaIntArray[0]) // prints 1
      * print(javaIntArray[1]) // prints 13, as string "13" was converted to number 13 as per ECMAScript ToNumber conversion
      * print(javaIntArray[2]) // prints 0, as boolean false was converted to number 0 as per ECMAScript ToNumber conversion
      * </pre>
      * @param self not used
-     * @param objArray the JavaScript array. Can be null.
-     * @param objType either a {@link #type(Object, Object) type object} or a String describing the component type of
-     * the Java array to create. Can not be null. If undefined, Object is assumed (allowing the argument to be omitted).
-     * @return a Java array with the copy of JavaScript array's contents, converted to the appropriate Java component
-     * type. Returns null if objArray is null.
+     * @param objArray the script object. Can be null.
+     * @param objType either a {@link #type(Object, Object) type object} or a String describing the type of the Java
+     * object to create. Can not be null. If undefined, a "default" conversion is presumed (allowing the argument to be
+     * omitted).
+     * @return a Java object whose value corresponds to the original script object's value. Specifically, for array
+     * target types, returns a Java array of the same type with contents converted to the array's component type. Does
+     * not recursively convert for multidimensional arrays.
+     * type. Returns null if scriptObject is null.
      * @throws ClassNotFoundException if the class described by objType is not found
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object toJavaArray(final Object self, final Object objArray, final Object objType) throws ClassNotFoundException {
-        final StaticClass componentType =
-            objType instanceof StaticClass ?
-                (StaticClass)objType :
-                objType == UNDEFINED ?
-                    StaticClass.forClass(Object.class) :
-                    type(objType);
-
+    public static Object to(final Object self, final Object objArray, final Object objType) throws ClassNotFoundException {
         if (objArray == null) {
             return null;
         }
 
+        final Class<?> componentType;
+        if(objType == UNDEFINED) {
+            componentType = Object.class;
+        } else {
+            final StaticClass arrayType;
+            if(objType instanceof StaticClass) {
+                arrayType = (StaticClass)objType;
+            } else {
+                arrayType = type(objType);
+            }
+            final Class<?> arrayClass = arrayType.getRepresentedClass();
+            if(!arrayClass.isArray()) {
+                throw typeError("to.expects.array.type", arrayClass.getName());
+            }
+            componentType = arrayClass.getComponentType();
+        }
+
         Global.checkObject(objArray);
 
-        return ((ScriptObject)objArray).getArray().asArrayOfType(componentType.getRepresentedClass());
+        return ((ScriptObject)objArray).getArray().asArrayOfType(componentType);
     }
 
     /**
@@ -283,7 +296,7 @@ public final class NativeJava {
      * <pre>
      * var File = Java.type("java.io.File")
      * var listHomeDir = new File("~").listFiles()
-     * var jsListHome = Java.toJavaScriptArray(listHomeDir)
+     * var jsListHome = Java.from(listHomeDir)
      * var jpegModifiedDates = jsListHome
      *     .filter(function(val) { return val.getName().endsWith(".jpg") })
      *     .map(function(val) { return val.lastModified() })
@@ -294,7 +307,7 @@ public final class NativeJava {
      * null.
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object toJavaScriptArray(final Object self, final Object objArray) {
+    public static Object from(final Object self, final Object objArray) {
         if (objArray == null) {
             return null;
         } else if (objArray instanceof Collection) {

@@ -616,26 +616,26 @@ print(a[0]);
 </pre>
 <p>
 It is also possible to convert between JavaScript and Java arrays.
-Given a JavaScript array and a Java type, <code>Java.toJavaArray</code> returns a Java array with the same initial contents, and with the specified component type. 
+Given a JavaScript array and a Java type, <code>Java.to</code> returns a Java array with the same initial contents, and with the specified array type. 
 </p>
 <pre><code>
  var anArray = [1, "13", false]
- var javaIntArray = Java.toJavaArray(anArray, "int")
+ var javaIntArray = Java.to(anArray, "int[]")
  print(javaIntArray[0]) // prints 1
  print(javaIntArray[1]) // prints 13, as string "13" was converted to number 13 as per ECMAScript ToNumber conversion
  print(javaIntArray[2]) // prints 0, as boolean false was converted to number 0 as per ECMAScript ToNumber conversion
 </code></pre>
 <p>
-You can use either a string or a type object returned from <code>Java.type()</code> to specify the component type of the array. 
+You can use either a string or a type object returned from <code>Java.type()</code> to specify the type of the array. 
 You can also omit the array type, in which case a <code>Object[]</code> will be created.
 </p>
 <p>
-Given a Java array or Collection, <code>Java.toJavaScriptArray</code> returns a JavaScript array with a shallow copy of its contents. Note that in most cases, you can use Java arrays and lists natively in Nashorn; in cases where for some reason you need to have an actual JavaScript native array (e.g. to work with the array comprehensions functions), you will want to use this method.
+Given a Java array or Collection, <code>Java.from</code> returns a JavaScript array with a shallow copy of its contents. Note that in most cases, you can use Java arrays and lists natively in Nashorn; in cases where for some reason you need to have an actual JavaScript native array (e.g. to work with the array comprehensions functions), you will want to use this method.
 </p>
 <pre><code>
 var File = Java.type("java.io.File");
 var listCurDir = new File(".").listFiles();
-var jsList = Java.toJavaScriptArray(listCurDir);
+var jsList = Java.from(listCurDir);
 print(jsList);
 </code></pre>
 <hr>
