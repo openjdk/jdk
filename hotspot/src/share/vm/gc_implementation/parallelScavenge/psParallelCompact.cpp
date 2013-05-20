@@ -356,6 +356,7 @@ ParallelCompactData::ParallelCompactData()
   _region_start = 0;
 
   _region_vspace = 0;
+  _reserved_byte_size = 0;
   _region_data = 0;
   _region_count = 0;
 }
@@ -382,11 +383,11 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region(raw_bytes, raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t bytes = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(bytes, rs_align, rs_align > 0);
+  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
   os::trace_page_sizes("par compact", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
 
@@ -394,7 +395,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
   if (vspace != 0) {
-    if (vspace->expand_by(bytes)) {
+    if (vspace->expand_by(_reserved_byte_size)) {
       return vspace;
     }
     delete vspace;
@@ -840,14 +841,18 @@ bool PSParallelCompact::initialize() {
   initialize_dead_wood_limiter();
 
   if (!_mark_bitmap.initialize(mr)) {
-    vm_shutdown_during_initialization("Unable to allocate bit map for "
-      "parallel garbage collection for the requested heap size.");
+    vm_shutdown_during_initialization(
+      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
+      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
-    vm_shutdown_during_initialization("Unable to allocate tables for "
-      "parallel garbage collection for the requested heap size.");
+    vm_shutdown_during_initialization(
+      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
+      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
