@@ -58,7 +58,7 @@ public abstract class SunToolkit extends Toolkit
     implements WindowClosingSupport, WindowClosingListener,
     ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
-    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.SunToolkit");
+    // 8014718: logging has been removed from SunToolkit
 
     /* Load debug settings for native code */
     static {
@@ -496,9 +496,7 @@ public abstract class SunToolkit extends Toolkit
         setSystemGenerated(event);
         AppContext eventContext = targetToAppContext(event.getSource());
         if (eventContext != null && !eventContext.equals(appContext)) {
-            if (log.isLoggable(PlatformLogger.FINE)) {
-                log.fine("Event posted on wrong app context : " + event);
-            }
+            throw new RuntimeException("Event posted on wrong app context : " + event);
         }
         PostEventQueue postEventQueue =
             (PostEventQueue)appContext.get(POST_EVENT_QUEUE_KEY);
@@ -889,10 +887,6 @@ public abstract class SunToolkit extends Toolkit
             //with scale factors x1, x3/4, x2/3, xN, x1/N.
             Image im = i.next();
             if (im == null) {
-                if (log.isLoggable(PlatformLogger.FINER)) {
-                    log.finer("SunToolkit.getScaledIconImage: " +
-                              "Skipping the image passed into Java because it's null.");
-                }
                 continue;
             }
             if (im instanceof ToolkitImage) {
@@ -905,10 +899,6 @@ public abstract class SunToolkit extends Toolkit
                 iw = im.getWidth(null);
                 ih = im.getHeight(null);
             } catch (Exception e){
-                if (log.isLoggable(PlatformLogger.FINER)) {
-                    log.finer("SunToolkit.getScaledIconImage: " +
-                              "Perhaps the image passed into Java is broken. Skipping this icon.");
-                }
                 continue;
             }
             if (iw > 0 && ih > 0) {
@@ -980,14 +970,6 @@ public abstract class SunToolkit extends Toolkit
         try {
             int x = (width - bestWidth) / 2;
             int y = (height - bestHeight) / 2;
-            if (log.isLoggable(PlatformLogger.FINER)) {
-                log.finer("WWindowPeer.getScaledIconData() result : " +
-                        "w : " + width + " h : " + height +
-                        " iW : " + bestImage.getWidth(null) + " iH : " + bestImage.getHeight(null) +
-                        " sim : " + bestSimilarity + " sf : " + bestScaleFactor +
-                        " adjW : " + bestWidth + " adjH : " + bestHeight +
-                        " x : " + x + " y : " + y);
-            }
             g.drawImage(bestImage, x, y, bestWidth, bestHeight, null);
         } finally {
             g.dispose();
@@ -998,10 +980,6 @@ public abstract class SunToolkit extends Toolkit
     public static DataBufferInt getScaledIconData(java.util.List<Image> imageList, int width, int height) {
         BufferedImage bimage = getScaledIconImage(imageList, width, height);
         if (bimage == null) {
-             if (log.isLoggable(PlatformLogger.FINER)) {
-                 log.finer("SunToolkit.getScaledIconData: " +
-                           "Perhaps the image passed into Java is broken. Skipping this icon.");
-             }
             return null;
         }
         Raster raster = bimage.getRaster();
