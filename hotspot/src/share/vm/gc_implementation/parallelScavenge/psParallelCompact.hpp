@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,6 +347,7 @@ public:
   bool initialize(MemRegion covered_region);
 
   size_t region_count() const { return _region_count; }
+  size_t reserved_byte_size() const { return _reserved_byte_size; }
 
   // Convert region indices to/from RegionData pointers.
   inline RegionData* region(size_t region_idx) const;
@@ -420,6 +421,7 @@ private:
 #endif  // #ifdef ASSERT
 
   PSVirtualSpace* _region_vspace;
+  size_t          _reserved_byte_size;
   RegionData*     _region_data;
   size_t          _region_count;
 };
