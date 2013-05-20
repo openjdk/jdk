@@ -153,6 +153,14 @@ public abstract class Node implements Cloneable {
     }
 
     /**
+     * Returns true if this node represents a comparison operator
+     * @return true if comparison
+     */
+    public boolean isComparison() {
+        return false;
+    }
+
+    /**
      * For reference copies - ensure that labels in the copy node are unique
      * using an appropriate copy constructor
      * @param lc lexical context

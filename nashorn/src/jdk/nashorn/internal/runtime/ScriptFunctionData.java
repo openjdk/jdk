@@ -91,12 +91,13 @@ public abstract class ScriptFunctionData {
     CompiledFunction bind(final CompiledFunction originalInv, final ScriptFunction fn, final Object self, final Object[] args) {
         final MethodHandle boundInvoker = bindInvokeHandle(originalInv.getInvoker(), fn, self, args);
 
+        //TODO the boundinvoker.type() could actually be more specific here
         if (isConstructor()) {
             ensureConstructor(originalInv);
-            return new CompiledFunction(boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
+            return new CompiledFunction(boundInvoker.type(), boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
         }
 
-        return new CompiledFunction(boundInvoker);
+        return new CompiledFunction(boundInvoker.type(), boundInvoker);
     }
 
     /**
