@@ -3121,10 +3121,6 @@ void ClassFileParser::layout_fields(Handle class_loader,
                                     FieldLayoutInfo* info,
                                     TRAPS) {
 
-  // get the padding width from the option
-  // TODO: Ask VM about specific CPU we are running on
-  int pad_size = ContendedPaddingWidth;
-
   // Field size and offset computation
   int nonstatic_field_size = _super_klass() == NULL ? 0 : _super_klass()->nonstatic_field_size();
   int next_static_oop_offset;
@@ -3137,13 +3133,14 @@ void ClassFileParser::layout_fields(Handle class_loader,
   int next_nonstatic_word_offset;
   int next_nonstatic_short_offset;
   int next_nonstatic_byte_offset;
-  int next_nonstatic_type_offset;
   int first_nonstatic_oop_offset;
-  int first_nonstatic_field_offset;
   int next_nonstatic_field_offset;
   int next_nonstatic_padded_offset;
 
   // Count the contended fields by type.
+  //
+  // We ignore static fields, because @Contended is not supported for them.
+  // The layout code below will also ignore the static fields.
   int nonstatic_contended_count = 0;
   FieldAllocationCount fac_contended;
   for (AllFieldStream fs(_fields, _cp); !fs.done(); fs.next()) {
@@ -3175,16 +3172,17 @@ void ClassFileParser::layout_fields(Handle class_loader,
   next_static_byte_offset     = next_static_short_offset +
                                 ((fac->count[STATIC_SHORT]) * BytesPerShort);
 
-  first_nonstatic_field_offset = instanceOopDesc::base_offset_in_bytes() +
-                                 nonstatic_field_size * heapOopSize;
+  int nonstatic_fields_start  = instanceOopDesc::base_offset_in_bytes() +
+                                nonstatic_field_size * heapOopSize;
 
-  next_nonstatic_field_offset = first_nonstatic_field_offset;
+  next_nonstatic_field_offset = nonstatic_fields_start;
 
-  // class is contended, pad before all the fields
+  // Class is contended, pad before all the fields
   if (parsed_annotations->is_contended()) {
-    next_nonstatic_field_offset += pad_size;
+    next_nonstatic_field_offset += ContendedPaddingWidth;
   }
 
+  // Compute the non-contended fields count
   unsigned int nonstatic_double_count = fac->count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
   unsigned int nonstatic_word_count   = fac->count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
   unsigned int nonstatic_short_count  = fac->count[NONSTATIC_SHORT]  - fac_contended.count[NONSTATIC_SHORT];
@@ -3242,6 +3240,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
     compact_fields   = false; // Don't compact fields
   }
 
+  // Rearrange fields for a given allocation style
   if( allocation_style == 0 ) {
     // Fields order: oops, longs/doubles, ints, shorts/chars, bytes, padded fields
     next_nonstatic_oop_offset    = next_nonstatic_field_offset;
@@ -3282,6 +3281,8 @@ void ClassFileParser::layout_fields(Handle class_loader,
   int nonstatic_short_space_offset;
   int nonstatic_byte_space_offset;
 
+  // Try to squeeze some of the fields into the gaps due to
+  // long/double alignment.
   if( nonstatic_double_count > 0 ) {
     int offset = next_nonstatic_double_offset;
     next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
@@ -3455,7 +3456,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
 
     // if there is at least one contended field, we need to have pre-padding for them
     if (nonstatic_contended_count > 0) {
-      next_nonstatic_padded_offset += pad_size;
+      next_nonstatic_padded_offset += ContendedPaddingWidth;
     }
 
     // collect all contended groups
@@ -3534,7 +3535,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
           // the fields within the same contended group are not inter-padded.
           // The only exception is default group, which does not incur the
           // equivalence, and so requires intra-padding.
-          next_nonstatic_padded_offset += pad_size;
+          next_nonstatic_padded_offset += ContendedPaddingWidth;
         }
 
         fs.set_offset(real_offset);
@@ -3546,7 +3547,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
       // subclass fields and/or adjacent object.
       // If this was the default group, the padding is already in place.
       if (current_group != 0) {
-        next_nonstatic_padded_offset += pad_size;
+        next_nonstatic_padded_offset += ContendedPaddingWidth;
       }
     }
 
@@ -3560,19 +3561,19 @@ void ClassFileParser::layout_fields(Handle class_loader,
   // This helps to alleviate memory contention effects for subclass fields
   // and/or adjacent object.
   if (parsed_annotations->is_contended()) {
-    notaligned_offset += pad_size;
+    notaligned_offset += ContendedPaddingWidth;
   }
 
-  int next_static_type_offset     = align_size_up(next_static_byte_offset, wordSize);
-  int static_field_size           = (next_static_type_offset -
-                                InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
+  int nonstatic_fields_end      = align_size_up(notaligned_offset, heapOopSize);
+  int instance_end              = align_size_up(notaligned_offset, wordSize);
+  int static_fields_end         = align_size_up(next_static_byte_offset, wordSize);
 
-  next_nonstatic_type_offset = align_size_up(notaligned_offset, heapOopSize );
-  nonstatic_field_size = nonstatic_field_size + ((next_nonstatic_type_offset
-                                 - first_nonstatic_field_offset)/heapOopSize);
+  int static_field_size         = (static_fields_end -
+                                   InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
+  nonstatic_field_size          = nonstatic_field_size +
+                                  (nonstatic_fields_end - nonstatic_fields_start) / heapOopSize;
 
-  next_nonstatic_type_offset = align_size_up(notaligned_offset, wordSize );
-  int instance_size = align_object_size(next_nonstatic_type_offset / wordSize);
+  int instance_size             = align_object_size(instance_end / wordSize);
 
   assert(instance_size == align_object_size(align_size_up(
          (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize),
@@ -3589,9 +3590,9 @@ void ClassFileParser::layout_fields(Handle class_loader,
           _fields,
           _cp,
           instance_size,
-          first_nonstatic_field_offset,
-          next_nonstatic_field_offset,
-          next_static_type_offset);
+          nonstatic_fields_start,
+          nonstatic_fields_end,
+          static_fields_end);
   }
 
 #endif
