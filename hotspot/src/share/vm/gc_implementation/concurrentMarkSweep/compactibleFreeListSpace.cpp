@@ -285,6 +285,7 @@ void CompactibleFreeListSpace::reset(MemRegion mr) {
       _bt.verify_not_unallocated((HeapWord*)fc, fc->size());
       _indexedFreeList[mr.word_size()].return_chunk_at_head(fc);
     }
+    coalBirth(mr.word_size());
   }
   _promoInfo.reset();
   _smallLinearAllocBlock._ptr = NULL;
