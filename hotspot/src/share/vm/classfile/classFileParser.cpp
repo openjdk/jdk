@@ -444,8 +444,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
             break;
           case JVM_REF_invokeStatic:
           case JVM_REF_invokeSpecial:
-            check_property(
-               tag.is_method() || tag.is_interface_method(),
+            check_property(tag.is_method() ||
+                           ((_major_version >= JAVA_8_VERSION) && tag.is_interface_method()),
                "Invalid constant pool index %u in class file %s (not a method)",
                ref_index, CHECK_(nullHandle));
              break;
