@@ -2101,13 +2101,13 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
         // Used for diagnostics
         size_policy->clear_generation_free_space_flags();
 
-        size_policy->compute_generation_free_space(young_live,
-                                                   eden_live,
-                                                   old_live,
-                                                   cur_eden,
-                                                   max_old_gen_size,
-                                                   max_eden_size,
-                                                   true /* full gc*/);
+        size_policy->compute_generations_free_space(young_live,
+                                                    eden_live,
+                                                    old_live,
+                                                    cur_eden,
+                                                    max_old_gen_size,
+                                                    max_eden_size,
+                                                    true /* full gc*/);
 
         size_policy->check_gc_overhead_limit(young_live,
                                              eden_live,
