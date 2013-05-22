@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,13 +133,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
 
-  // Card Table Count Cache stats
-  double _min_clear_cc_time_ms;         // min
-  double _max_clear_cc_time_ms;         // max
-  double _cur_clear_cc_time_ms;         // clearing time during current pause
-  double _cum_clear_cc_time_ms;         // cummulative clearing time
-  jlong  _num_cc_clears;                // number of times the card count cache has been cleared
-
   double _cur_collection_start_sec;
   double _root_region_scan_wait_time_ms;
 
@@ -226,8 +219,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
   }
-
-  void record_cc_clear_time_ms(double ms);
 
   void record_young_free_cset_time_ms(double time_ms) {
     _recorded_young_free_cset_time_ms = time_ms;

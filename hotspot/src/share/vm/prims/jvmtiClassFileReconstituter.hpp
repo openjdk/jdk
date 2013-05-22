@@ -127,6 +127,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_signature_attribute(u2 generic_signaure_index);
   void write_attribute_name_index(const char* name);
   void write_annotations_attribute(const char* attr_name, AnnotationArray* annos);
+  void write_bootstrapmethod_attribute();
 
   address writeable_address(size_t size);
   void write_u1(u1 x);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,12 +149,15 @@ static int  KnownVMIndex(const char* name);
 static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
-#define ARG_CHECK(n, f, a) if (n < 1) { \
-    JLI_ReportErrorMessage(f, a); \
-    printUsage = JNI_TRUE; \
-    *pret = 1; \
-    return JNI_TRUE; \
-}
+#define ARG_CHECK(AC_arg_count, AC_failure_message, AC_questionable_arg) \
+    do { \
+        if (AC_arg_count < 1) { \
+            JLI_ReportErrorMessage(AC_failure_message, AC_questionable_arg); \
+            printUsage = JNI_TRUE; \
+            *pret = 1; \
+            return JNI_TRUE; \
+        } \
+    } while (JNI_FALSE)
 
 /*
  * Running Java code in primordial thread caused many problems. We will
@@ -310,29 +313,37 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
  * mainThread.isAlive() to work as expected.
  */
 #define LEAVE() \
-    if ((*vm)->DetachCurrentThread(vm) != 0) { \
-        JLI_ReportErrorMessage(JVM_ERROR2); \
-        ret = 1; \
-    } \
-    (*vm)->DestroyJavaVM(vm); \
-    return ret \
+    do { \
+        if ((*vm)->DetachCurrentThread(vm) != JNI_OK) { \
+            JLI_ReportErrorMessage(JVM_ERROR2); \
+            ret = 1; \
+        } \
+        if (JNI_TRUE) { \
+            (*vm)->DestroyJavaVM(vm); \
+            return ret; \
+        } \
+    } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_NULL_LEAVE(e) \
-    if ((*env)->ExceptionOccurred(env)) { \
-        JLI_ReportExceptionDescription(env); \
-        LEAVE(); \
-    } \
-    if ((e) == NULL) { \
-        JLI_ReportErrorMessage(JNI_ERROR); \
-        LEAVE(); \
-    }
+#define CHECK_EXCEPTION_NULL_LEAVE(CENL_exception) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            JLI_ReportExceptionDescription(env); \
+            LEAVE(); \
+        } \
+        if ((CENL_exception) == NULL) { \
+            JLI_ReportErrorMessage(JNI_ERROR); \
+            LEAVE(); \
+        } \
+    } while (JNI_FALSE)
 
-#define CHECK_EXCEPTION_LEAVE(rv) \
-    if ((*env)->ExceptionOccurred(env)) { \
-        JLI_ReportExceptionDescription(env); \
-        ret = (rv); \
-        LEAVE(); \
-    }
+#define CHECK_EXCEPTION_LEAVE(CEL_return_value) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            JLI_ReportExceptionDescription(env); \
+            ret = (CEL_return_value); \
+            LEAVE(); \
+        } \
+    } while (JNI_FALSE)
 
 int JNICALL
 JavaMain(void * _args)
@@ -434,7 +445,7 @@ JavaMain(void * _args)
      * consistent in the UI we need to track and report the application main class.
      */
     appClass = GetApplicationClass(env);
-    NULL_CHECK(appClass);
+    NULL_CHECK_RETURN_VALUE(appClass, -1);
     /*
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for

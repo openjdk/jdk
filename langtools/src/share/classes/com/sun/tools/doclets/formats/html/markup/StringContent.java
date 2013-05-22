@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
-public class StringContent extends Content{
+public class StringContent extends Content {
 
     private StringBuilder stringContent;
 
@@ -58,8 +58,8 @@ public class StringContent extends Content{
      * @param initialContent initial content for the object
      */
     public StringContent(String initialContent) {
-        stringContent = new StringBuilder(
-                Util.escapeHtmlChars(nullCheck(initialContent)));
+        stringContent = new StringBuilder();
+        appendChars(initialContent);
     }
 
     /**
@@ -81,7 +81,7 @@ public class StringContent extends Content{
      * @param strContent string content to be added
      */
     public void addContent(String strContent) {
-        stringContent.append(Util.escapeHtmlChars(nullCheck(strContent)));
+        appendChars(strContent);
     }
 
     /**
@@ -89,6 +89,10 @@ public class StringContent extends Content{
      */
     public boolean isEmpty() {
         return (stringContent.length() == 0);
+    }
+
+    public int charCount() {
+        return RawHtml.charCount(stringContent.toString());
     }
 
     /**
@@ -106,5 +110,17 @@ public class StringContent extends Content{
         String s = stringContent.toString();
         out.write(s);
         return s.endsWith(DocletConstants.NL);
+    }
+
+    private void appendChars(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                case '<': stringContent.append("&lt;");  break;
+                case '>': stringContent.append("&gt;");  break;
+                case '&': stringContent.append("&amp;"); break;
+                default:  stringContent.append(ch);      break;
+            }
+        }
     }
 }

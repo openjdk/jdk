@@ -69,11 +69,28 @@ public class XRGlyphCacheEntry {
     }
 
     public static int getGlyphID(long glyphInfoPtr) {
-        return (int) StrikeCache.unsafe.getInt(glyphInfoPtr + StrikeCache.cacheCellOffset);
+        // We need to access the GlyphID with Unsafe.getAddress() because the
+        // corresponding field in the underlying C data-structure is of type
+        // 'void*' (see field 'cellInfo' of struct 'GlyphInfo'
+        // in src/share/native/sun/font/fontscalerdefs.h).
+        // On 64-bit Big-endian architectures it would be wrong to access this
+        // field with Unsafe.getInt().
+        return (int) StrikeCache.unsafe.getAddress(glyphInfoPtr +
+                                                   StrikeCache.cacheCellOffset);
     }
 
     public static void setGlyphID(long glyphInfoPtr, int id) {
-        StrikeCache.unsafe.putInt(glyphInfoPtr + StrikeCache.cacheCellOffset, id);
+        // We need to access the GlyphID with Unsafe.putAddress() because the
+        // corresponding field in the underlying C data-structure is of type
+        // 'void*' (see field 'cellInfo' of struct 'GlyphInfo' in
+        // src/share/native/sun/font/fontscalerdefs.h).
+        // On 64-bit Big-endian architectures it would be wrong to write this
+        // field with Unsafe.putInt() because it is also accessed from native
+        // code as a 'long'.
+        // See Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative()
+        // in src/solaris/native/sun/java2d/x11/XRBackendNative.c
+        StrikeCache.unsafe.putAddress(glyphInfoPtr +
+                                      StrikeCache.cacheCellOffset, (long)id);
     }
 
     public int getGlyphID() {
@@ -105,12 +122,9 @@ public class XRGlyphCacheEntry {
     }
 
     public void writePixelData(ByteArrayOutputStream os, boolean uploadAsLCD) {
-        long pixelDataAddress;
-        if (StrikeCache.nativeAddressSize == 4) {
-            pixelDataAddress = 0xffffffff & StrikeCache.unsafe.getInt(glyphInfoPtr + StrikeCache.pixelDataOffset);
-        } else {
-            pixelDataAddress = StrikeCache.unsafe.getLong(glyphInfoPtr + StrikeCache.pixelDataOffset);
-        }
+        long pixelDataAddress =
+            StrikeCache.unsafe.getAddress(glyphInfoPtr +
+                                          StrikeCache.pixelDataOffset);
         if (pixelDataAddress == 0L) {
             return;
         }

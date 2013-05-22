@@ -109,13 +109,13 @@ final class Frame {
      * table contains only internal type names (array type descriptors are
      * forbidden - dimensions must be represented through the DIM field).
      *
-     * The LONG and DOUBLE types are always represented by using two slots (LONG +
-     * TOP or DOUBLE + TOP), for local variable types as well as in the operand
-     * stack. This is necessary to be able to simulate DUPx_y instructions,
-     * whose effect would be dependent on the actual type values if types were
-     * always represented by a single slot in the stack (and this is not
-     * possible, since actual type values are not always known - cf LOCAL and
-     * STACK type kinds).
+     * The LONG and DOUBLE types are always represented by using two slots (LONG
+     * + TOP or DOUBLE + TOP), for local variable types as well as in the
+     * operand stack. This is necessary to be able to simulate DUPx_y
+     * instructions, whose effect would be dependent on the actual type values
+     * if types were always represented by a single slot in the stack (and this
+     * is not possible, since actual type values are not always known - cf LOCAL
+     * and STACK type kinds).
      */
 
     /**
@@ -146,9 +146,9 @@ final class Frame {
     /**
      * Flag used for LOCAL and STACK types. Indicates that if this type happens
      * to be a long or double type (during the computations of input frames),
-     * then it must be set to TOP because the second word of this value has
-     * been reused to store other data in the basic block. Hence the first word
-     * no longer stores a valid long or double value.
+     * then it must be set to TOP because the second word of this value has been
+     * reused to store other data in the basic block. Hence the first word no
+     * longer stores a valid long or double value.
      */
     static final int TOP_IF_LONG_OR_DOUBLE = 0x800000;
 
@@ -552,7 +552,8 @@ final class Frame {
     /**
      * Returns the output frame local variable type at the given index.
      *
-     * @param local the index of the local that must be returned.
+     * @param local
+     *            the index of the local that must be returned.
      * @return the output frame local variable type at the given index.
      */
     private int get(final int local) {
@@ -574,8 +575,10 @@ final class Frame {
     /**
      * Sets the output frame local variable type at the given index.
      *
-     * @param local the index of the local that must be set.
-     * @param type the value of the local that must be set.
+     * @param local
+     *            the index of the local that must be set.
+     * @param type
+     *            the value of the local that must be set.
      */
     private void set(final int local, final int type) {
         // creates and/or resizes the output local variables array if necessary
@@ -595,7 +598,8 @@ final class Frame {
     /**
      * Pushes a new type onto the output frame stack.
      *
-     * @param type the type that must be pushed.
+     * @param type
+     *            the type that must be pushed.
      */
     private void push(final int type) {
         // creates and/or resizes the output stack array if necessary
@@ -620,10 +624,12 @@ final class Frame {
     /**
      * Pushes a new type onto the output frame stack.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param desc the descriptor of the type to be pushed. Can also be a method
-     *        descriptor (in this case this method pushes its return type onto
-     *        the output frame stack).
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param desc
+     *            the descriptor of the type to be pushed. Can also be a method
+     *            descriptor (in this case this method pushes its return type
+     *            onto the output frame stack).
      */
     private void push(final ClassWriter cw, final String desc) {
         int type = type(cw, desc);
@@ -638,72 +644,74 @@ final class Frame {
     /**
      * Returns the int encoding of the given type.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param desc a type descriptor.
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param desc
+     *            a type descriptor.
      * @return the int encoding of the given type.
      */
     private static int type(final ClassWriter cw, final String desc) {
         String t;
         int index = desc.charAt(0) == '(' ? desc.indexOf(')') + 1 : 0;
         switch (desc.charAt(index)) {
-            case 'V':
-                return 0;
+        case 'V':
+            return 0;
+        case 'Z':
+        case 'C':
+        case 'B':
+        case 'S':
+        case 'I':
+            return INTEGER;
+        case 'F':
+            return FLOAT;
+        case 'J':
+            return LONG;
+        case 'D':
+            return DOUBLE;
+        case 'L':
+            // stores the internal name, not the descriptor!
+            t = desc.substring(index + 1, desc.length() - 1);
+            return OBJECT | cw.addType(t);
+            // case '[':
+        default:
+            // extracts the dimensions and the element type
+            int data;
+            int dims = index + 1;
+            while (desc.charAt(dims) == '[') {
+                ++dims;
+            }
+            switch (desc.charAt(dims)) {
             case 'Z':
+                data = BOOLEAN;
+                break;
             case 'C':
+                data = CHAR;
+                break;
             case 'B':
+                data = BYTE;
+                break;
             case 'S':
+                data = SHORT;
+                break;
             case 'I':
-                return INTEGER;
+                data = INTEGER;
+                break;
             case 'F':
-                return FLOAT;
+                data = FLOAT;
+                break;
             case 'J':
-                return LONG;
+                data = LONG;
+                break;
             case 'D':
-                return DOUBLE;
-            case 'L':
-                // stores the internal name, not the descriptor!
-                t = desc.substring(index + 1, desc.length() - 1);
-                return OBJECT | cw.addType(t);
-                // case '[':
+                data = DOUBLE;
+                break;
+            // case 'L':
             default:
-                // extracts the dimensions and the element type
-                int data;
-                int dims = index + 1;
-                while (desc.charAt(dims) == '[') {
-                    ++dims;
-                }
-                switch (desc.charAt(dims)) {
-                    case 'Z':
-                        data = BOOLEAN;
-                        break;
-                    case 'C':
-                        data = CHAR;
-                        break;
-                    case 'B':
-                        data = BYTE;
-                        break;
-                    case 'S':
-                        data = SHORT;
-                        break;
-                    case 'I':
-                        data = INTEGER;
-                        break;
-                    case 'F':
-                        data = FLOAT;
-                        break;
-                    case 'J':
-                        data = LONG;
-                        break;
-                    case 'D':
-                        data = DOUBLE;
-                        break;
-                    // case 'L':
-                    default:
-                        // stores the internal name, not the descriptor
-                        t = desc.substring(dims + 1, desc.length() - 1);
-                        data = OBJECT | cw.addType(t);
-                }
-                return (dims - index) << 28 | data;
+                // stores the internal name, not the descriptor
+                t = desc.substring(dims + 1, desc.length() - 1);
+                data = OBJECT | cw.addType(t);
+            }
+            return (dims - index) << 28 | data;
         }
     }
 
@@ -724,7 +732,8 @@ final class Frame {
     /**
      * Pops the given number of types from the output frame stack.
      *
-     * @param elements the number of types that must be popped.
+     * @param elements
+     *            the number of types that must be popped.
      */
     private void pop(final int elements) {
         if (outputStackTop >= elements) {
@@ -741,9 +750,10 @@ final class Frame {
     /**
      * Pops a type from the output frame stack.
      *
-     * @param desc the descriptor of the type to be popped. Can also be a method
-     *        descriptor (in this case this method pops the types corresponding
-     *        to the method arguments).
+     * @param desc
+     *            the descriptor of the type to be popped. Can also be a method
+     *            descriptor (in this case this method pops the types
+     *            corresponding to the method arguments).
      */
     private void pop(final String desc) {
         char c = desc.charAt(0);
@@ -760,7 +770,8 @@ final class Frame {
      * Adds a new type to the list of types on which a constructor is invoked in
      * the basic block.
      *
-     * @param var a type on a which a constructor is invoked.
+     * @param var
+     *            a type on a which a constructor is invoked.
      */
     private void init(final int var) {
         // creates and/or resizes the initializations array if necessary
@@ -781,8 +792,10 @@ final class Frame {
      * Replaces the given type with the appropriate type if it is one of the
      * types on which a constructor is invoked in the basic block.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param t a type
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param t
+     *            a type
      * @return t or, if t is one of the types on which a constructor is invoked
      *         in the basic block, the type corresponding to this constructor.
      */
@@ -816,17 +829,17 @@ final class Frame {
      * Initializes the input frame of the first basic block from the method
      * descriptor.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param access the access flags of the method to which this label belongs.
-     * @param args the formal parameter types of this method.
-     * @param maxLocals the maximum number of local variables of this method.
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param access
+     *            the access flags of the method to which this label belongs.
+     * @param args
+     *            the formal parameter types of this method.
+     * @param maxLocals
+     *            the maximum number of local variables of this method.
      */
-    void initInputFrame(
-        final ClassWriter cw,
-        final int access,
-        final Type[] args,
-        final int maxLocals)
-    {
+    void initInputFrame(final ClassWriter cw, final int access,
+            final Type[] args, final int maxLocals) {
         inputLocals = new int[maxLocals];
         inputStack = new int[0];
         int i = 0;
@@ -852,435 +865,435 @@ final class Frame {
     /**
      * Simulates the action of the given instruction on the output stack frame.
      *
-     * @param opcode the opcode of the instruction.
-     * @param arg the operand of the instruction, if any.
-     * @param cw the class writer to which this label belongs.
-     * @param item the operand of the instructions, if any.
+     * @param opcode
+     *            the opcode of the instruction.
+     * @param arg
+     *            the operand of the instruction, if any.
+     * @param cw
+     *            the class writer to which this label belongs.
+     * @param item
+     *            the operand of the instructions, if any.
      */
-    void execute(
-        final int opcode,
-        final int arg,
-        final ClassWriter cw,
-        final Item item)
-    {
+    void execute(final int opcode, final int arg, final ClassWriter cw,
+            final Item item) {
         int t1, t2, t3, t4;
         switch (opcode) {
-            case Opcodes.NOP:
-            case Opcodes.INEG:
-            case Opcodes.LNEG:
-            case Opcodes.FNEG:
-            case Opcodes.DNEG:
-            case Opcodes.I2B:
-            case Opcodes.I2C:
-            case Opcodes.I2S:
-            case Opcodes.GOTO:
-            case Opcodes.RETURN:
-                break;
-            case Opcodes.ACONST_NULL:
-                push(NULL);
-                break;
-            case Opcodes.ICONST_M1:
-            case Opcodes.ICONST_0:
-            case Opcodes.ICONST_1:
-            case Opcodes.ICONST_2:
-            case Opcodes.ICONST_3:
-            case Opcodes.ICONST_4:
-            case Opcodes.ICONST_5:
-            case Opcodes.BIPUSH:
-            case Opcodes.SIPUSH:
-            case Opcodes.ILOAD:
+        case Opcodes.NOP:
+        case Opcodes.INEG:
+        case Opcodes.LNEG:
+        case Opcodes.FNEG:
+        case Opcodes.DNEG:
+        case Opcodes.I2B:
+        case Opcodes.I2C:
+        case Opcodes.I2S:
+        case Opcodes.GOTO:
+        case Opcodes.RETURN:
+            break;
+        case Opcodes.ACONST_NULL:
+            push(NULL);
+            break;
+        case Opcodes.ICONST_M1:
+        case Opcodes.ICONST_0:
+        case Opcodes.ICONST_1:
+        case Opcodes.ICONST_2:
+        case Opcodes.ICONST_3:
+        case Opcodes.ICONST_4:
+        case Opcodes.ICONST_5:
+        case Opcodes.BIPUSH:
+        case Opcodes.SIPUSH:
+        case Opcodes.ILOAD:
+            push(INTEGER);
+            break;
+        case Opcodes.LCONST_0:
+        case Opcodes.LCONST_1:
+        case Opcodes.LLOAD:
+            push(LONG);
+            push(TOP);
+            break;
+        case Opcodes.FCONST_0:
+        case Opcodes.FCONST_1:
+        case Opcodes.FCONST_2:
+        case Opcodes.FLOAD:
+            push(FLOAT);
+            break;
+        case Opcodes.DCONST_0:
+        case Opcodes.DCONST_1:
+        case Opcodes.DLOAD:
+            push(DOUBLE);
+            push(TOP);
+            break;
+        case Opcodes.LDC:
+            switch (item.type) {
+            case ClassWriter.INT:
                 push(INTEGER);
                 break;
-            case Opcodes.LCONST_0:
-            case Opcodes.LCONST_1:
-            case Opcodes.LLOAD:
+            case ClassWriter.LONG:
                 push(LONG);
                 push(TOP);
                 break;
-            case Opcodes.FCONST_0:
-            case Opcodes.FCONST_1:
-            case Opcodes.FCONST_2:
-            case Opcodes.FLOAD:
+            case ClassWriter.FLOAT:
                 push(FLOAT);
                 break;
-            case Opcodes.DCONST_0:
-            case Opcodes.DCONST_1:
-            case Opcodes.DLOAD:
+            case ClassWriter.DOUBLE:
                 push(DOUBLE);
                 push(TOP);
                 break;
-            case Opcodes.LDC:
-                switch (item.type) {
-                    case ClassWriter.INT:
-                        push(INTEGER);
-                        break;
-                    case ClassWriter.LONG:
-                        push(LONG);
-                        push(TOP);
-                        break;
-                    case ClassWriter.FLOAT:
-                        push(FLOAT);
-                        break;
-                    case ClassWriter.DOUBLE:
-                        push(DOUBLE);
-                        push(TOP);
-                        break;
-                    case ClassWriter.CLASS:
-                        push(OBJECT | cw.addType("java/lang/Class"));
-                        break;
-                    case ClassWriter.STR:
-                        push(OBJECT | cw.addType("java/lang/String"));
-                        break;
-                    case ClassWriter.MTYPE:
-                        push(OBJECT | cw.addType("java/lang/invoke/MethodType"));
-                        break;
-                    // case ClassWriter.HANDLE_BASE + [1..9]:
-                    default:
-                        push(OBJECT | cw.addType("java/lang/invoke/MethodHandle"));
-                }
+            case ClassWriter.CLASS:
+                push(OBJECT | cw.addType("java/lang/Class"));
                 break;
-            case Opcodes.ALOAD:
-                push(get(arg));
+            case ClassWriter.STR:
+                push(OBJECT | cw.addType("java/lang/String"));
                 break;
-            case Opcodes.IALOAD:
-            case Opcodes.BALOAD:
-            case Opcodes.CALOAD:
-            case Opcodes.SALOAD:
-                pop(2);
-                push(INTEGER);
+            case ClassWriter.MTYPE:
+                push(OBJECT | cw.addType("java/lang/invoke/MethodType"));
                 break;
-            case Opcodes.LALOAD:
-            case Opcodes.D2L:
-                pop(2);
-                push(LONG);
-                push(TOP);
-                break;
-            case Opcodes.FALOAD:
-                pop(2);
-                push(FLOAT);
-                break;
-            case Opcodes.DALOAD:
-            case Opcodes.L2D:
-                pop(2);
-                push(DOUBLE);
-                push(TOP);
-                break;
-            case Opcodes.AALOAD:
-                pop(1);
-                t1 = pop();
-                push(ELEMENT_OF + t1);
-                break;
-            case Opcodes.ISTORE:
-            case Opcodes.FSTORE:
-            case Opcodes.ASTORE:
-                t1 = pop();
-                set(arg, t1);
-                if (arg > 0) {
-                    t2 = get(arg - 1);
-                    // if t2 is of kind STACK or LOCAL we cannot know its size!
-                    if (t2 == LONG || t2 == DOUBLE) {
-                        set(arg - 1, TOP);
-                    } else if ((t2 & KIND) != BASE) {
-                        set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
-                    }
-                }
-                break;
-            case Opcodes.LSTORE:
-            case Opcodes.DSTORE:
-                pop(1);
-                t1 = pop();
-                set(arg, t1);
-                set(arg + 1, TOP);
-                if (arg > 0) {
-                    t2 = get(arg - 1);
-                    // if t2 is of kind STACK or LOCAL we cannot know its size!
-                    if (t2 == LONG || t2 == DOUBLE) {
-                        set(arg - 1, TOP);
-                    } else if ((t2 & KIND) != BASE) {
-                        set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
-                    }
-                }
-                break;
-            case Opcodes.IASTORE:
-            case Opcodes.BASTORE:
-            case Opcodes.CASTORE:
-            case Opcodes.SASTORE:
-            case Opcodes.FASTORE:
-            case Opcodes.AASTORE:
-                pop(3);
-                break;
-            case Opcodes.LASTORE:
-            case Opcodes.DASTORE:
-                pop(4);
-                break;
-            case Opcodes.POP:
-            case Opcodes.IFEQ:
-            case Opcodes.IFNE:
-            case Opcodes.IFLT:
-            case Opcodes.IFGE:
-            case Opcodes.IFGT:
-            case Opcodes.IFLE:
-            case Opcodes.IRETURN:
-            case Opcodes.FRETURN:
-            case Opcodes.ARETURN:
-            case Opcodes.TABLESWITCH:
-            case Opcodes.LOOKUPSWITCH:
-            case Opcodes.ATHROW:
-            case Opcodes.MONITORENTER:
-            case Opcodes.MONITOREXIT:
-            case Opcodes.IFNULL:
-            case Opcodes.IFNONNULL:
-                pop(1);
-                break;
-            case Opcodes.POP2:
-            case Opcodes.IF_ICMPEQ:
-            case Opcodes.IF_ICMPNE:
-            case Opcodes.IF_ICMPLT:
-            case Opcodes.IF_ICMPGE:
-            case Opcodes.IF_ICMPGT:
-            case Opcodes.IF_ICMPLE:
-            case Opcodes.IF_ACMPEQ:
-            case Opcodes.IF_ACMPNE:
-            case Opcodes.LRETURN:
-            case Opcodes.DRETURN:
-                pop(2);
-                break;
-            case Opcodes.DUP:
-                t1 = pop();
-                push(t1);
-                push(t1);
-                break;
-            case Opcodes.DUP_X1:
-                t1 = pop();
-                t2 = pop();
-                push(t1);
-                push(t2);
-                push(t1);
-                break;
-            case Opcodes.DUP_X2:
-                t1 = pop();
-                t2 = pop();
-                t3 = pop();
-                push(t1);
-                push(t3);
-                push(t2);
-                push(t1);
-                break;
-            case Opcodes.DUP2:
-                t1 = pop();
-                t2 = pop();
-                push(t2);
-                push(t1);
-                push(t2);
-                push(t1);
-                break;
-            case Opcodes.DUP2_X1:
-                t1 = pop();
-                t2 = pop();
-                t3 = pop();
-                push(t2);
-                push(t1);
-                push(t3);
-                push(t2);
-                push(t1);
-                break;
-            case Opcodes.DUP2_X2:
-                t1 = pop();
-                t2 = pop();
-                t3 = pop();
-                t4 = pop();
-                push(t2);
-                push(t1);
-                push(t4);
-                push(t3);
-                push(t2);
-                push(t1);
-                break;
-            case Opcodes.SWAP:
-                t1 = pop();
-                t2 = pop();
-                push(t1);
-                push(t2);
-                break;
-            case Opcodes.IADD:
-            case Opcodes.ISUB:
-            case Opcodes.IMUL:
-            case Opcodes.IDIV:
-            case Opcodes.IREM:
-            case Opcodes.IAND:
-            case Opcodes.IOR:
-            case Opcodes.IXOR:
-            case Opcodes.ISHL:
-            case Opcodes.ISHR:
-            case Opcodes.IUSHR:
-            case Opcodes.L2I:
-            case Opcodes.D2I:
-            case Opcodes.FCMPL:
-            case Opcodes.FCMPG:
-                pop(2);
-                push(INTEGER);
-                break;
-            case Opcodes.LADD:
-            case Opcodes.LSUB:
-            case Opcodes.LMUL:
-            case Opcodes.LDIV:
-            case Opcodes.LREM:
-            case Opcodes.LAND:
-            case Opcodes.LOR:
-            case Opcodes.LXOR:
-                pop(4);
-                push(LONG);
-                push(TOP);
-                break;
-            case Opcodes.FADD:
-            case Opcodes.FSUB:
-            case Opcodes.FMUL:
-            case Opcodes.FDIV:
-            case Opcodes.FREM:
-            case Opcodes.L2F:
-            case Opcodes.D2F:
-                pop(2);
-                push(FLOAT);
-                break;
-            case Opcodes.DADD:
-            case Opcodes.DSUB:
-            case Opcodes.DMUL:
-            case Opcodes.DDIV:
-            case Opcodes.DREM:
-                pop(4);
-                push(DOUBLE);
-                push(TOP);
-                break;
-            case Opcodes.LSHL:
-            case Opcodes.LSHR:
-            case Opcodes.LUSHR:
-                pop(3);
-                push(LONG);
-                push(TOP);
-                break;
-            case Opcodes.IINC:
-                set(arg, INTEGER);
-                break;
-            case Opcodes.I2L:
-            case Opcodes.F2L:
-                pop(1);
-                push(LONG);
-                push(TOP);
-                break;
-            case Opcodes.I2F:
-                pop(1);
-                push(FLOAT);
-                break;
-            case Opcodes.I2D:
-            case Opcodes.F2D:
-                pop(1);
-                push(DOUBLE);
-                push(TOP);
-                break;
-            case Opcodes.F2I:
-            case Opcodes.ARRAYLENGTH:
-            case Opcodes.INSTANCEOF:
-                pop(1);
-                push(INTEGER);
-                break;
-            case Opcodes.LCMP:
-            case Opcodes.DCMPL:
-            case Opcodes.DCMPG:
-                pop(4);
-                push(INTEGER);
-                break;
-            case Opcodes.JSR:
-            case Opcodes.RET:
-                throw new RuntimeException("JSR/RET are not supported with computeFrames option");
-            case Opcodes.GETSTATIC:
-                push(cw, item.strVal3);
-                break;
-            case Opcodes.PUTSTATIC:
-                pop(item.strVal3);
-                break;
-            case Opcodes.GETFIELD:
-                pop(1);
-                push(cw, item.strVal3);
-                break;
-            case Opcodes.PUTFIELD:
-                pop(item.strVal3);
-                pop();
-                break;
-            case Opcodes.INVOKEVIRTUAL:
-            case Opcodes.INVOKESPECIAL:
-            case Opcodes.INVOKESTATIC:
-            case Opcodes.INVOKEINTERFACE:
-                pop(item.strVal3);
-                if (opcode != Opcodes.INVOKESTATIC) {
-                    t1 = pop();
-                    if (opcode == Opcodes.INVOKESPECIAL
-                            && item.strVal2.charAt(0) == '<')
-                    {
-                        init(t1);
-                    }
-                }
-                push(cw, item.strVal3);
-                break;
-            case Opcodes.INVOKEDYNAMIC:
-                pop(item.strVal2);
-                push(cw, item.strVal2);
-                break;
-            case Opcodes.NEW:
-                push(UNINITIALIZED | cw.addUninitializedType(item.strVal1, arg));
-                break;
-            case Opcodes.NEWARRAY:
-                pop();
-                switch (arg) {
-                    case Opcodes.T_BOOLEAN:
-                        push(ARRAY_OF | BOOLEAN);
-                        break;
-                    case Opcodes.T_CHAR:
-                        push(ARRAY_OF | CHAR);
-                        break;
-                    case Opcodes.T_BYTE:
-                        push(ARRAY_OF | BYTE);
-                        break;
-                    case Opcodes.T_SHORT:
-                        push(ARRAY_OF | SHORT);
-                        break;
-                    case Opcodes.T_INT:
-                        push(ARRAY_OF | INTEGER);
-                        break;
-                    case Opcodes.T_FLOAT:
-                        push(ARRAY_OF | FLOAT);
-                        break;
-                    case Opcodes.T_DOUBLE:
-                        push(ARRAY_OF | DOUBLE);
-                        break;
-                    // case Opcodes.T_LONG:
-                    default:
-                        push(ARRAY_OF | LONG);
-                        break;
-                }
-                break;
-            case Opcodes.ANEWARRAY:
-                String s = item.strVal1;
-                pop();
-                if (s.charAt(0) == '[') {
-                    push(cw, '[' + s);
-                } else {
-                    push(ARRAY_OF | OBJECT | cw.addType(s));
-                }
-                break;
-            case Opcodes.CHECKCAST:
-                s = item.strVal1;
-                pop();
-                if (s.charAt(0) == '[') {
-                    push(cw, s);
-                } else {
-                    push(OBJECT | cw.addType(s));
-                }
-                break;
-            // case Opcodes.MULTIANEWARRAY:
+            // case ClassWriter.HANDLE_BASE + [1..9]:
             default:
-                pop(arg);
-                push(cw, item.strVal1);
+                push(OBJECT | cw.addType("java/lang/invoke/MethodHandle"));
+            }
+            break;
+        case Opcodes.ALOAD:
+            push(get(arg));
+            break;
+        case Opcodes.IALOAD:
+        case Opcodes.BALOAD:
+        case Opcodes.CALOAD:
+        case Opcodes.SALOAD:
+            pop(2);
+            push(INTEGER);
+            break;
+        case Opcodes.LALOAD:
+        case Opcodes.D2L:
+            pop(2);
+            push(LONG);
+            push(TOP);
+            break;
+        case Opcodes.FALOAD:
+            pop(2);
+            push(FLOAT);
+            break;
+        case Opcodes.DALOAD:
+        case Opcodes.L2D:
+            pop(2);
+            push(DOUBLE);
+            push(TOP);
+            break;
+        case Opcodes.AALOAD:
+            pop(1);
+            t1 = pop();
+            push(ELEMENT_OF + t1);
+            break;
+        case Opcodes.ISTORE:
+        case Opcodes.FSTORE:
+        case Opcodes.ASTORE:
+            t1 = pop();
+            set(arg, t1);
+            if (arg > 0) {
+                t2 = get(arg - 1);
+                // if t2 is of kind STACK or LOCAL we cannot know its size!
+                if (t2 == LONG || t2 == DOUBLE) {
+                    set(arg - 1, TOP);
+                } else if ((t2 & KIND) != BASE) {
+                    set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
+                }
+            }
+            break;
+        case Opcodes.LSTORE:
+        case Opcodes.DSTORE:
+            pop(1);
+            t1 = pop();
+            set(arg, t1);
+            set(arg + 1, TOP);
+            if (arg > 0) {
+                t2 = get(arg - 1);
+                // if t2 is of kind STACK or LOCAL we cannot know its size!
+                if (t2 == LONG || t2 == DOUBLE) {
+                    set(arg - 1, TOP);
+                } else if ((t2 & KIND) != BASE) {
+                    set(arg - 1, t2 | TOP_IF_LONG_OR_DOUBLE);
+                }
+            }
+            break;
+        case Opcodes.IASTORE:
+        case Opcodes.BASTORE:
+        case Opcodes.CASTORE:
+        case Opcodes.SASTORE:
+        case Opcodes.FASTORE:
+        case Opcodes.AASTORE:
+            pop(3);
+            break;
+        case Opcodes.LASTORE:
+        case Opcodes.DASTORE:
+            pop(4);
+            break;
+        case Opcodes.POP:
+        case Opcodes.IFEQ:
+        case Opcodes.IFNE:
+        case Opcodes.IFLT:
+        case Opcodes.IFGE:
+        case Opcodes.IFGT:
+        case Opcodes.IFLE:
+        case Opcodes.IRETURN:
+        case Opcodes.FRETURN:
+        case Opcodes.ARETURN:
+        case Opcodes.TABLESWITCH:
+        case Opcodes.LOOKUPSWITCH:
+        case Opcodes.ATHROW:
+        case Opcodes.MONITORENTER:
+        case Opcodes.MONITOREXIT:
+        case Opcodes.IFNULL:
+        case Opcodes.IFNONNULL:
+            pop(1);
+            break;
+        case Opcodes.POP2:
+        case Opcodes.IF_ICMPEQ:
+        case Opcodes.IF_ICMPNE:
+        case Opcodes.IF_ICMPLT:
+        case Opcodes.IF_ICMPGE:
+        case Opcodes.IF_ICMPGT:
+        case Opcodes.IF_ICMPLE:
+        case Opcodes.IF_ACMPEQ:
+        case Opcodes.IF_ACMPNE:
+        case Opcodes.LRETURN:
+        case Opcodes.DRETURN:
+            pop(2);
+            break;
+        case Opcodes.DUP:
+            t1 = pop();
+            push(t1);
+            push(t1);
+            break;
+        case Opcodes.DUP_X1:
+            t1 = pop();
+            t2 = pop();
+            push(t1);
+            push(t2);
+            push(t1);
+            break;
+        case Opcodes.DUP_X2:
+            t1 = pop();
+            t2 = pop();
+            t3 = pop();
+            push(t1);
+            push(t3);
+            push(t2);
+            push(t1);
+            break;
+        case Opcodes.DUP2:
+            t1 = pop();
+            t2 = pop();
+            push(t2);
+            push(t1);
+            push(t2);
+            push(t1);
+            break;
+        case Opcodes.DUP2_X1:
+            t1 = pop();
+            t2 = pop();
+            t3 = pop();
+            push(t2);
+            push(t1);
+            push(t3);
+            push(t2);
+            push(t1);
+            break;
+        case Opcodes.DUP2_X2:
+            t1 = pop();
+            t2 = pop();
+            t3 = pop();
+            t4 = pop();
+            push(t2);
+            push(t1);
+            push(t4);
+            push(t3);
+            push(t2);
+            push(t1);
+            break;
+        case Opcodes.SWAP:
+            t1 = pop();
+            t2 = pop();
+            push(t1);
+            push(t2);
+            break;
+        case Opcodes.IADD:
+        case Opcodes.ISUB:
+        case Opcodes.IMUL:
+        case Opcodes.IDIV:
+        case Opcodes.IREM:
+        case Opcodes.IAND:
+        case Opcodes.IOR:
+        case Opcodes.IXOR:
+        case Opcodes.ISHL:
+        case Opcodes.ISHR:
+        case Opcodes.IUSHR:
+        case Opcodes.L2I:
+        case Opcodes.D2I:
+        case Opcodes.FCMPL:
+        case Opcodes.FCMPG:
+            pop(2);
+            push(INTEGER);
+            break;
+        case Opcodes.LADD:
+        case Opcodes.LSUB:
+        case Opcodes.LMUL:
+        case Opcodes.LDIV:
+        case Opcodes.LREM:
+        case Opcodes.LAND:
+        case Opcodes.LOR:
+        case Opcodes.LXOR:
+            pop(4);
+            push(LONG);
+            push(TOP);
+            break;
+        case Opcodes.FADD:
+        case Opcodes.FSUB:
+        case Opcodes.FMUL:
+        case Opcodes.FDIV:
+        case Opcodes.FREM:
+        case Opcodes.L2F:
+        case Opcodes.D2F:
+            pop(2);
+            push(FLOAT);
+            break;
+        case Opcodes.DADD:
+        case Opcodes.DSUB:
+        case Opcodes.DMUL:
+        case Opcodes.DDIV:
+        case Opcodes.DREM:
+            pop(4);
+            push(DOUBLE);
+            push(TOP);
+            break;
+        case Opcodes.LSHL:
+        case Opcodes.LSHR:
+        case Opcodes.LUSHR:
+            pop(3);
+            push(LONG);
+            push(TOP);
+            break;
+        case Opcodes.IINC:
+            set(arg, INTEGER);
+            break;
+        case Opcodes.I2L:
+        case Opcodes.F2L:
+            pop(1);
+            push(LONG);
+            push(TOP);
+            break;
+        case Opcodes.I2F:
+            pop(1);
+            push(FLOAT);
+            break;
+        case Opcodes.I2D:
+        case Opcodes.F2D:
+            pop(1);
+            push(DOUBLE);
+            push(TOP);
+            break;
+        case Opcodes.F2I:
+        case Opcodes.ARRAYLENGTH:
+        case Opcodes.INSTANCEOF:
+            pop(1);
+            push(INTEGER);
+            break;
+        case Opcodes.LCMP:
+        case Opcodes.DCMPL:
+        case Opcodes.DCMPG:
+            pop(4);
+            push(INTEGER);
+            break;
+        case Opcodes.JSR:
+        case Opcodes.RET:
+            throw new RuntimeException(
+                    "JSR/RET are not supported with computeFrames option");
+        case Opcodes.GETSTATIC:
+            push(cw, item.strVal3);
+            break;
+        case Opcodes.PUTSTATIC:
+            pop(item.strVal3);
+            break;
+        case Opcodes.GETFIELD:
+            pop(1);
+            push(cw, item.strVal3);
+            break;
+        case Opcodes.PUTFIELD:
+            pop(item.strVal3);
+            pop();
+            break;
+        case Opcodes.INVOKEVIRTUAL:
+        case Opcodes.INVOKESPECIAL:
+        case Opcodes.INVOKESTATIC:
+        case Opcodes.INVOKEINTERFACE:
+            pop(item.strVal3);
+            if (opcode != Opcodes.INVOKESTATIC) {
+                t1 = pop();
+                if (opcode == Opcodes.INVOKESPECIAL
+                        && item.strVal2.charAt(0) == '<') {
+                    init(t1);
+                }
+            }
+            push(cw, item.strVal3);
+            break;
+        case Opcodes.INVOKEDYNAMIC:
+            pop(item.strVal2);
+            push(cw, item.strVal2);
+            break;
+        case Opcodes.NEW:
+            push(UNINITIALIZED | cw.addUninitializedType(item.strVal1, arg));
+            break;
+        case Opcodes.NEWARRAY:
+            pop();
+            switch (arg) {
+            case Opcodes.T_BOOLEAN:
+                push(ARRAY_OF | BOOLEAN);
                 break;
+            case Opcodes.T_CHAR:
+                push(ARRAY_OF | CHAR);
+                break;
+            case Opcodes.T_BYTE:
+                push(ARRAY_OF | BYTE);
+                break;
+            case Opcodes.T_SHORT:
+                push(ARRAY_OF | SHORT);
+                break;
+            case Opcodes.T_INT:
+                push(ARRAY_OF | INTEGER);
+                break;
+            case Opcodes.T_FLOAT:
+                push(ARRAY_OF | FLOAT);
+                break;
+            case Opcodes.T_DOUBLE:
+                push(ARRAY_OF | DOUBLE);
+                break;
+            // case Opcodes.T_LONG:
+            default:
+                push(ARRAY_OF | LONG);
+                break;
+            }
+            break;
+        case Opcodes.ANEWARRAY:
+            String s = item.strVal1;
+            pop();
+            if (s.charAt(0) == '[') {
+                push(cw, '[' + s);
+            } else {
+                push(ARRAY_OF | OBJECT | cw.addType(s));
+            }
+            break;
+        case Opcodes.CHECKCAST:
+            s = item.strVal1;
+            pop();
+            if (s.charAt(0) == '[') {
+                push(cw, s);
+            } else {
+                push(OBJECT | cw.addType(s));
+            }
+            break;
+        // case Opcodes.MULTIANEWARRAY:
+        default:
+            pop(arg);
+            push(cw, item.strVal1);
+            break;
         }
     }
 
@@ -1289,10 +1302,13 @@ final class Frame {
      * frames of this basic block. Returns <tt>true</tt> if the input frame of
      * the given label has been changed by this operation.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param frame the basic block whose input frame must be updated.
-     * @param edge the kind of the {@link Edge} between this label and 'label'.
-     *        See {@link Edge#info}.
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param frame
+     *            the basic block whose input frame must be updated.
+     * @param edge
+     *            the kind of the {@link Edge} between this label and 'label'.
+     *            See {@link Edge#info}.
      * @return <tt>true</tt> if the input frame of the given label has been
      *         changed by this operation.
      */
@@ -1323,7 +1339,8 @@ final class Frame {
                         } else {
                             t = dim + inputStack[nStack - (s & VALUE)];
                         }
-                        if ((s & TOP_IF_LONG_OR_DOUBLE) != 0 && (t == LONG || t == DOUBLE)) {
+                        if ((s & TOP_IF_LONG_OR_DOUBLE) != 0
+                                && (t == LONG || t == DOUBLE)) {
                             t = TOP;
                         }
                     }
@@ -1375,7 +1392,8 @@ final class Frame {
                 } else {
                     t = dim + inputStack[nStack - (s & VALUE)];
                 }
-                if ((s & TOP_IF_LONG_OR_DOUBLE) != 0 && (t == LONG || t == DOUBLE)) {
+                if ((s & TOP_IF_LONG_OR_DOUBLE) != 0
+                        && (t == LONG || t == DOUBLE)) {
                     t = TOP;
                 }
             }
@@ -1392,19 +1410,19 @@ final class Frame {
      * type. Returns <tt>true</tt> if the type array has been modified by this
      * operation.
      *
-     * @param cw the ClassWriter to which this label belongs.
-     * @param t the type with which the type array element must be merged.
-     * @param types an array of types.
-     * @param index the index of the type that must be merged in 'types'.
+     * @param cw
+     *            the ClassWriter to which this label belongs.
+     * @param t
+     *            the type with which the type array element must be merged.
+     * @param types
+     *            an array of types.
+     * @param index
+     *            the index of the type that must be merged in 'types'.
      * @return <tt>true</tt> if the type array has been modified by this
      *         operation.
      */
-    private static boolean merge(
-        final ClassWriter cw,
-        int t,
-        final int[] types,
-        final int index)
-    {
+    private static boolean merge(final ClassWriter cw, int t,
+            final int[] types, final int index) {
         int u = types[index];
         if (u == t) {
             // if the types are equal, merge(u,t)=u, so there is no change

@@ -28,14 +28,10 @@ package com.sun.tools.javadoc;
 import java.lang.reflect.Modifier;
 import java.text.CollationKey;
 
-import javax.lang.model.type.TypeKind;
-
 import com.sun.javadoc.*;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.util.List;

@@ -37,7 +37,10 @@ import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
 import com.sun.tools.javac.comp.Infer.InferenceContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
+import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.DiagnosticRewriter;
+import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -94,6 +97,7 @@ public class Resolve {
     public final boolean allowDefaultMethods;
     public final boolean allowStructuralMostSpecific;
     private final boolean debugResolve;
+    private final boolean compactMethodDiags;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     Scope polymorphicSignatureScope;
@@ -124,6 +128,8 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
+        compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
+                options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
@@ -661,6 +667,10 @@ public class Resolve {
             this.basicKey = basicKey;
             this.inferKey = inferKey;
         }
+
+        String regex() {
+            return String.format("([a-z]*\\.)*(%s|%s)", basicKey, inferKey);
+        }
     }
 
     /**
@@ -691,6 +701,7 @@ public class Resolve {
                                     Warner warn) {
             //should we expand formals?
             boolean useVarargs = deferredAttrContext.phase.isVarargsRequired();
+            List<JCExpression> trees = TreeInfo.args(env.tree);
 
             //inference context used during this method check
             InferenceContext inferenceContext = deferredAttrContext.inferenceContext;
@@ -699,17 +710,19 @@ public class Resolve {
 
             if (varargsFormal == null &&
                     argtypes.size() != formals.size()) {
-                reportMC(MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
+                reportMC(env.tree, MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
             }
 
             while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-                checkArg(false, argtypes.head, formals.head, deferredAttrContext, warn);
+                DiagnosticPosition pos = trees != null ? trees.head : null;
+                checkArg(pos, false, argtypes.head, formals.head, deferredAttrContext, warn);
                 argtypes = argtypes.tail;
                 formals = formals.tail;
+                trees = trees != null ? trees.tail : trees;
             }
 
             if (formals.head != varargsFormal) {
-                reportMC(MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
+                reportMC(env.tree, MethodCheckDiag.ARITY_MISMATCH, inferenceContext); // not enough args
             }
 
             if (useVarargs) {
@@ -717,8 +730,10 @@ public class Resolve {
                 //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
                 final Type elt = types.elemtype(varargsFormal);
                 while (argtypes.nonEmpty()) {
-                    checkArg(true, argtypes.head, elt, deferredAttrContext, warn);
+                    DiagnosticPosition pos = trees != null ? trees.head : null;
+                    checkArg(pos, true, argtypes.head, elt, deferredAttrContext, warn);
                     argtypes = argtypes.tail;
+                    trees = trees != null ? trees.tail : trees;
                 }
             }
         }
@@ -726,9 +741,9 @@ public class Resolve {
         /**
          * Does the actual argument conforms to the corresponding formal?
          */
-        abstract void checkArg(boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn);
+        abstract void checkArg(DiagnosticPosition pos, boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn);
 
-        protected void reportMC(MethodCheckDiag diag, InferenceContext inferenceContext, Object... args) {
+        protected void reportMC(DiagnosticPosition pos, MethodCheckDiag diag, InferenceContext inferenceContext, Object... args) {
             boolean inferDiag = inferenceContext != infer.emptyContext;
             InapplicableMethodException ex = inferDiag ?
                     infer.inferenceException : inapplicableMethodException;
@@ -738,7 +753,8 @@ public class Resolve {
                 args2[0] = inferenceContext.inferenceVars();
                 args = args2;
             }
-            throw ex.setMessage(inferDiag ? diag.inferKey : diag.basicKey, args);
+            String key = inferDiag ? diag.inferKey : diag.basicKey;
+            throw ex.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
 
         public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
@@ -752,7 +768,7 @@ public class Resolve {
      */
     MethodCheck arityMethodCheck = new AbstractMethodCheck() {
         @Override
-        void checkArg(boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
+        void checkArg(DiagnosticPosition pos, boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
             //do nothing - actual always compatible to formals
         }
     };
@@ -778,9 +794,9 @@ public class Resolve {
     MethodCheck resolveMethodCheck = new AbstractMethodCheck() {
 
         @Override
-        void checkArg(boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
+        void checkArg(DiagnosticPosition pos, boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
             ResultInfo mresult = methodCheckResult(varargs, formal, deferredAttrContext, warn);
-            mresult.check(null, actual);
+            mresult.check(pos, actual);
         }
 
         @Override
@@ -809,7 +825,7 @@ public class Resolve {
             } else {
                 if (!isAccessible(env, t)) {
                     Symbol location = env.enclClass.sym;
-                    reportMC(MethodCheckDiag.INACCESSIBLE_VARARGS, inferenceContext, t, Kinds.kindName(location), location);
+                    reportMC(env.tree, MethodCheckDiag.INACCESSIBLE_VARARGS, inferenceContext, t, Kinds.kindName(location), location);
                 }
             }
         }
@@ -822,7 +838,7 @@ public class Resolve {
 
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    reportMC(methodDiag, deferredAttrContext.inferenceContext, details);
+                    reportMC(pos, methodDiag, deferredAttrContext.inferenceContext, details);
                 }
             };
             return new MethodResultInfo(to, checkContext);
@@ -3327,6 +3343,18 @@ public class Resolve {
             }
             else {
                 Candidate c = errCandidate();
+                if (compactMethodDiags) {
+                    for (Map.Entry<Template, DiagnosticRewriter> _entry :
+                            MethodResolutionDiagHelper.rewriters.entrySet()) {
+                        if (_entry.getKey().matches(c.details)) {
+                            JCDiagnostic simpleDiag =
+                                    _entry.getValue().rewriteDiagnostic(diags, pos,
+                                        log.currentSource(), dkind, c.details);
+                            simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
+                            return simpleDiag;
+                        }
+                    }
+                }
                 Symbol ws = c.sym.asMemberOf(site, types);
                 return diags.create(dkind, log.currentSource(), pos,
                           "cant.apply.symbol",
@@ -3375,35 +3403,75 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (!resolveContext.candidates.isEmpty()) {
+            Map<Symbol, JCDiagnostic> candidatesMap = mapCandidates();
+            Map<Symbol, JCDiagnostic> filteredCandidates = filterCandidates(candidatesMap);
+            if (filteredCandidates.isEmpty()) {
+                filteredCandidates = candidatesMap;
+            }
+            boolean truncatedDiag = candidatesMap.size() != filteredCandidates.size();
+            if (filteredCandidates.size() > 1) {
                 JCDiagnostic err = diags.create(dkind,
+                        null,
+                        truncatedDiag ?
+                            EnumSet.of(DiagnosticFlag.COMPRESSED) :
+                            EnumSet.noneOf(DiagnosticFlag.class),
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",
                         name == names.init ? KindName.CONSTRUCTOR : absentKind(kind),
                         name == names.init ? site.tsym.name : name,
                         methodArguments(argtypes));
-                return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(site));
+                return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(filteredCandidates, site));
+            } else if (filteredCandidates.size() == 1) {
+                JCDiagnostic d =  new InapplicableSymbolError(resolveContext).getDiagnostic(dkind, pos,
+                    location, site, name, argtypes, typeargtypes);
+                if (truncatedDiag) {
+                    d.setFlag(DiagnosticFlag.COMPRESSED);
+                }
+                return d;
             } else {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,
                     location, site, name, argtypes, typeargtypes);
             }
         }
-
         //where
-        List<JCDiagnostic> candidateDetails(Type site) {
-            Map<Symbol, JCDiagnostic> details = new LinkedHashMap<Symbol, JCDiagnostic>();
-            for (Candidate c : resolveContext.candidates) {
-                if (c.isApplicable()) continue;
-                JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
-                        Kinds.kindName(c.sym),
-                        c.sym.location(site, types),
-                        c.sym.asMemberOf(site, types),
-                        c.details);
-                details.put(c.sym, detailDiag);
+            private Map<Symbol, JCDiagnostic> mapCandidates() {
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                for (Candidate c : resolveContext.candidates) {
+                    if (c.isApplicable()) continue;
+                    candidates.put(c.sym, c.details);
+                }
+                return candidates;
             }
-            return List.from(details.values());
-        }
+
+            Map<Symbol, JCDiagnostic> filterCandidates(Map<Symbol, JCDiagnostic> candidatesMap) {
+                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
+                for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
+                    JCDiagnostic d = _entry.getValue();
+                    if (!compactMethodDiags ||
+                            !new Template(MethodCheckDiag.ARITY_MISMATCH.regex()).matches(d)) {
+                        candidates.put(_entry.getKey(), d);
+                    }
+                }
+                return candidates;
+            }
+
+            private List<JCDiagnostic> candidateDetails(Map<Symbol, JCDiagnostic> candidatesMap, Type site) {
+                List<JCDiagnostic> details = List.nil();
+                for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
+                    Symbol sym = _entry.getKey();
+                    JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
+                            Kinds.kindName(sym),
+                            sym.location(site, types),
+                            sym.asMemberOf(site, types),
+                            _entry.getValue());
+                    details = details.prepend(detailDiag);
+                }
+                //typically members are visited in reverse order (see Scope)
+                //so we need to reverse the candidate list so that candidates
+                //conform to source order
+                return details;
+            }
     }
 
     /**
@@ -3621,6 +3689,105 @@ public class Resolve {
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
             return delegatedError.getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes);
+        }
+    }
+
+    /**
+     * Helper class for method resolution diagnostic simplification.
+     * Certain resolution diagnostic are rewritten as simpler diagnostic
+     * where the enclosing resolution diagnostic (i.e. 'inapplicable method')
+     * is stripped away, as it doesn't carry additional info. The logic
+     * for matching a given diagnostic is given in terms of a template
+     * hierarchy: a diagnostic template can be specified programmatically,
+     * so that only certain diagnostics are matched. Each templete is then
+     * associated with a rewriter object that carries out the task of rewtiting
+     * the diagnostic to a simpler one.
+     */
+    static class MethodResolutionDiagHelper {
+
+        /**
+         * A diagnostic rewriter transforms a method resolution diagnostic
+         * into a simpler one
+         */
+        interface DiagnosticRewriter {
+            JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
+                    DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
+                    DiagnosticType preferredKind, JCDiagnostic d);
+        }
+
+        /**
+         * A diagnostic template is made up of two ingredients: (i) a regular
+         * expression for matching a diagnostic key and (ii) a list of sub-templates
+         * for matching diagnostic arguments.
+         */
+        static class Template {
+
+            /** regex used to match diag key */
+            String regex;
+
+            /** templates used to match diagnostic args */
+            Template[] subTemplates;
+
+            Template(String key, Template... subTemplates) {
+                this.regex = key;
+                this.subTemplates = subTemplates;
+            }
+
+            /**
+             * Returns true if the regex matches the diagnostic key and if
+             * all diagnostic arguments are matches by corresponding sub-templates.
+             */
+            boolean matches(Object o) {
+                JCDiagnostic d = (JCDiagnostic)o;
+                Object[] args = d.getArgs();
+                if (!d.getCode().matches(regex) ||
+                        subTemplates.length != d.getArgs().length) {
+                    return false;
+                }
+                for (int i = 0; i < args.length ; i++) {
+                    if (!subTemplates[i].matches(args[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        /** a dummy template that match any diagnostic argument */
+        static final Template skip = new Template("") {
+            @Override
+            boolean matches(Object d) {
+                return true;
+            }
+        };
+
+        /** rewriter map used for method resolution simplification */
+        static final Map<Template, DiagnosticRewriter> rewriters =
+                new LinkedHashMap<Template, DiagnosticRewriter>();
+
+        static {
+            String argMismatchRegex = MethodCheckDiag.ARG_MISMATCH.regex();
+            rewriters.put(new Template(argMismatchRegex, new Template("(.*)(bad.arg.types.in.lambda)", skip, skip)),
+                    new DiagnosticRewriter() {
+                @Override
+                public JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
+                        DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
+                        DiagnosticType preferredKind, JCDiagnostic d) {
+                    return (JCDiagnostic)((JCDiagnostic)d.getArgs()[0]).getArgs()[1];
+                }
+            });
+
+            rewriters.put(new Template(argMismatchRegex, skip),
+                    new DiagnosticRewriter() {
+                @Override
+                public JCDiagnostic rewriteDiagnostic(JCDiagnostic.Factory diags,
+                        DiagnosticPosition preferedPos, DiagnosticSource preferredSource,
+                        DiagnosticType preferredKind, JCDiagnostic d) {
+                    JCDiagnostic cause = (JCDiagnostic)d.getArgs()[0];
+                    return diags.create(preferredKind, preferredSource, d.getDiagnosticPosition(),
+                            "prob.found.req", cause);
+                }
+            });
         }
     }
 

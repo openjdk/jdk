@@ -200,6 +200,19 @@ public final class Parameter implements AnnotatedElement {
         return tmp;
     }
 
+    /**
+     * Returns an AnnotatedType object that represents the use of a type to
+     * specify the type of the formal parameter represented by this Parameter.
+     *
+     * @return an {@code AnnotatedType} object representing the use of a type
+     *         to specify the type of the formal parameter represented by this
+     *         Parameter
+     */
+    public AnnotatedType getAnnotatedType() {
+        // no caching for now
+        return executable.getAnnotatedParameterTypes()[index];
+    }
+
     private transient volatile Class<?> parameterClassCache = null;
 
     /**
