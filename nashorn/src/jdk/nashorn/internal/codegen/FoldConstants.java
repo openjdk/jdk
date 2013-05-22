@@ -279,9 +279,9 @@ final class FoldConstants extends NodeVisitor {
             isLong    &= value != 0.0 && JSType.isRepresentableAsLong(value);
 
             if (isInteger) {
-                return LiteralNode.newInstance(token, finish, JSType.toInt32(value));
+                return LiteralNode.newInstance(token, finish, (int)value);
             } else if (isLong) {
-                return LiteralNode.newInstance(token, finish, JSType.toLong(value));
+                return LiteralNode.newInstance(token, finish, (long)value);
             }
 
             return LiteralNode.newInstance(token, finish, value);

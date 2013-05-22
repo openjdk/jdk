@@ -565,8 +565,11 @@ public enum JSType {
     }
 
     /**
-     * JavaScript compliant Object to integer conversion
-     * See ECMA 9.4 ToInteger
+     * JavaScript compliant Object to integer conversion. See ECMA 9.4 ToInteger
+     *
+     * <p>Note that this returns {@link java.lang.Integer#MAX_VALUE} or {@link java.lang.Integer#MIN_VALUE}
+     * for double values that exceed the int range, including positive and negative Infinity. It is the
+     * caller's responsibility to handle such values correctly.</p>
      *
      * @param obj  an object
      * @return an integer
@@ -576,8 +579,11 @@ public enum JSType {
     }
 
     /**
-     * JavaScript compliant Object to long conversion
-     * See ECMA 9.4 ToInteger
+     * JavaScript compliant Object to long conversion. See ECMA 9.4 ToInteger
+     *
+     * <p>Note that this returns {@link java.lang.Long#MAX_VALUE} or {@link java.lang.Long#MIN_VALUE}
+     * for double values that exceed the long range, including positive and negative Infinity. It is the
+     * caller's responsibility to handle such values correctly.</p>
      *
      * @param obj  an object
      * @return a long
