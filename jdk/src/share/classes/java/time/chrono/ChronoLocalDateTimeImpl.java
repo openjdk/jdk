@@ -92,7 +92,7 @@ import java.util.Objects;
  * It does not store or represent a time-zone. For example, the value
  * "2nd October 2007 at 13:45.30.123456789" can be stored in an {@code ChronoLocalDateTime}.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @param <D> the concrete type for the date of this date-time
@@ -353,12 +353,12 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     @Override
     public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof ChronoLocalDateTime == false) {
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         @SuppressWarnings("unchecked")
         ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) endDateTime;
         if (toLocalDate().getChronology().equals(end.toLocalDate().getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate period between two different chronologies");
+            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
         }
         if (unit instanceof ChronoUnit) {
             ChronoUnit f = (ChronoUnit) unit;

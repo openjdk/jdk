@@ -790,16 +790,12 @@ public class GIFImageReader extends ImageReader {
     }
 
     private void startPass(int pass) {
-        if (updateListeners == null) {
+        if (updateListeners == null || !imageMetadata.interlaceFlag) {
             return;
         }
 
-        int y = 0;
-        int yStep = 1;
-        if (imageMetadata.interlaceFlag) {
-            y = interlaceOffset[interlacePass];
-            yStep = interlaceIncrement[interlacePass];
-        }
+        int y = interlaceOffset[interlacePass];
+        int yStep = interlaceIncrement[interlacePass];
 
         int[] vals = ReaderUtil.
             computeUpdatedPixels(sourceRegion,

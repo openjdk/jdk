@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ class Package {
                     byte[] bytes = new byte[2];
                     sfName = getRefString(obvious);
                     Object f = null;
-                    f = Fixups.add(f, bytes, 0, Fixups.U2_FORMAT, sfName);
+                    f = Fixups.addRefWithBytes(f, bytes, sfName);
                     a = attrSourceFileSpecial.addContent(bytes, f);
                 }
             } else if (obvious.equals(sfName.stringValue())) {

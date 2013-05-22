@@ -330,6 +330,7 @@ class Parse : public GraphKit {
   bool          _wrote_final;   // Did we write a final field?
   bool          _count_invocations; // update and test invocation counter
   bool          _method_data_update; // update method data oop
+  Node*         _alloc_with_final;   // An allocation node with final field
 
   // Variables which track Java semantics during bytecode parsing:
 
@@ -370,6 +371,11 @@ class Parse : public GraphKit {
   void      set_wrote_final(bool z)   { _wrote_final = z; }
   bool          count_invocations() const  { return _count_invocations; }
   bool          method_data_update() const { return _method_data_update; }
+  Node*    alloc_with_final() const   { return _alloc_with_final; }
+  void set_alloc_with_final(Node* n)  {
+    assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
+    _alloc_with_final = n;
+  }
 
   Block*             block()    const { return _block; }
   ciBytecodeStream&  iter()           { return _iter; }
@@ -512,7 +518,7 @@ class Parse : public GraphKit {
 
   // loading from a constant field or the constant pool
   // returns false if push failed (non-perm field constants only, not ldcs)
-  bool push_constant(ciConstant con, bool require_constant = false);
+  bool push_constant(ciConstant con, bool require_constant = false, bool is_autobox_cache = false);
 
   // implementation of object creation bytecodes
   void emit_guard_for_new(ciInstanceKlass* klass);

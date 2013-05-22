@@ -104,34 +104,31 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Per ScriptObject flag - is this an arguments object? */
     public static final int IS_ARGUMENTS   = 0b0000_0100;
 
+    /** Is this a prototype PropertyMap? */
+    public static final int IS_PROTOTYPE   = 0b0000_1000;
+
     /** Spill growth rate - by how many elements does {@link ScriptObject#spill} when full */
     public static final int SPILL_RATE = 8;
 
     /** Map to property information and accessor functions. Ordered by insertion. */
     private PropertyMap map;
 
+    /** objects proto. */
+    private ScriptObject proto;
+
+    /** Context of the object, lazily cached. */
+    private Context context;
+
     /** Object flags. */
     private int flags;
 
-    /** Area for properties added to object after instantiation, see {@link SpillProperty} */
+    /** Area for properties added to object after instantiation, see {@link AccessorProperty} */
     public Object[] spill;
-
-    /** Local embed area position 0 - used for {@link SpillProperty} before {@link ScriptObject#spill} */
-    public Object embed0;
-
-    /** Local embed area position 1 - used for {@link SpillProperty} before {@link ScriptObject#spill} */
-    public Object embed1;
-
-    /** Local embed area position 2 - used for {@link SpillProperty} before {@link ScriptObject#spill} */
-    public Object embed2;
-
-    /** Local embed area position 3 - used for {@link SpillProperty} before {@link ScriptObject#spill} */
-    public Object embed3;
 
     /** Indexed array data. */
     private ArrayData arrayData;
 
-    static final MethodHandle SETEMBED           = findOwnMH("setEmbed",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, int.class, Object.class, Object.class);
+    static final MethodHandle SETFIELD           = findOwnMH("setField",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, MethodHandle.class, Object.class, Object.class);
     static final MethodHandle SETSPILL           = findOwnMH("setSpill",         void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
     static final MethodHandle SETSPILLWITHNEW    = findOwnMH("setSpillWithNew",  void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, Object.class, Object.class);
     static final MethodHandle SETSPILLWITHGROW   = findOwnMH("setSpillWithGrow", void.class, CallSiteDescriptor.class, PropertyMap.class, PropertyMap.class, int.class, int.class, Object.class, Object.class);
@@ -665,9 +662,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         if (deep) {
-            final ScriptObject proto = getProto();
-            if(proto != null) {
-                return proto.findProperty(key, deep, stopOnNonScope, start);
+            final ScriptObject myProto = getProto();
+            if (myProto != null) {
+                return myProto.findProperty(key, deep, stopOnNonScope, start);
             }
         }
 
@@ -783,8 +780,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 // delete getter and setter function references so that we don't leak
                 if (property instanceof UserAccessorProperty) {
                     final UserAccessorProperty uc = (UserAccessorProperty) property;
-                    setEmbedOrSpill(uc.getGetterSlot(), null);
-                    setEmbedOrSpill(uc.getSetterSlot(), null);
+                    setSpill(uc.getGetterSlot(), null);
+                    setSpill(uc.getSetterSlot(), null);
                 }
                 return true;
             }
@@ -809,7 +806,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
             int getterSlot = uc.getGetterSlot();
             // clear the old getter and set the new getter
-            setEmbedOrSpill(getterSlot, getter);
+            setSpill(getterSlot, getter);
             // if getter function is null, flag the slot to be negative (less by 1)
             if (getter == null) {
                 getterSlot = -getterSlot - 1;
@@ -817,7 +814,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
             int setterSlot = uc.getSetterSlot();
             // clear the old setter and set the new setter
-            setEmbedOrSpill(setterSlot, setter);
+            setSpill(setterSlot, setter);
             // if setter function is null, flag the slot to be negative (less by 1)
             if (setter == null) {
                 setterSlot = -setterSlot - 1;
@@ -973,9 +970,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param bindName  null or name to bind to second argument (property not found method.)
      *
      * @return value of property as a MethodHandle or null.
-     *
      */
-    @SuppressWarnings("static-method")
     protected MethodHandle getCallMethodHandle(final FindProperty find, final MethodType type, final String bindName) {
         return getCallMethodHandle(getObjectValue(find), type, bindName);
     }
@@ -1056,8 +1051,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Return the current context from the object's map.
      * @return Current context.
      */
-    final Context getContext() {
-        return getMap().getContext();
+    protected final Context getContext() {
+        if (context == null) {
+            context = Context.fromClass(getClass());
+        }
+        return context;
     }
 
     /**
@@ -1097,44 +1095,30 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return __proto__ object.
      */
     public final ScriptObject getProto() {
-        return getMap().getProto();
-    }
-
-    /**
-     * Check if this is a prototype
-     * @return true if {@link PropertyMap#isPrototype()} is true for this ScriptObject
-     */
-    public final boolean isPrototype() {
-        return getMap().isPrototype();
+        return proto;
     }
 
     /**
      * Set the __proto__ of an object.
      * @param newProto new __proto__ to set.
      */
-    public final void setProto(final ScriptObject newProto) {
-        PropertyMap  oldMap   = getMap();
-        ScriptObject oldProto = getProto();
+    public synchronized final void setProto(final ScriptObject newProto) {
+        final ScriptObject oldProto = proto;
+        map = map.changeProto(oldProto, newProto);
 
-        while (oldProto != newProto) {
-            final PropertyMap newMap = oldMap.setProto(newProto);
+        if (newProto != null) {
+            newProto.setIsPrototype();
+        }
 
-            if (!compareAndSetMap(oldMap, newMap)) {
-                oldMap = getMap();
-                oldProto = getProto();
-            } else {
-                if (isPrototype()) {
+        proto = newProto;
 
-                    if (oldProto != null) {
-                        oldProto.removePropertyListener(this);
-                    }
+        if (isPrototype()) {
+            if (oldProto != null) {
+                oldProto.removePropertyListener(this);
+            }
 
-                    if (newProto != null) {
-                        newProto.addPropertyListener(this);
-                    }
-                }
-
-                return;
+            if (newProto != null) {
+                newProto.addPropertyListener(this);
             }
         }
     }
@@ -1324,6 +1308,25 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     public final void setIsArguments() {
         flags |= IS_ARGUMENTS;
+    }
+
+    /**
+     * Check if this object is a prototype
+     *
+     * @return {@code true} if is prototype
+     */
+    public boolean isPrototype() {
+        return (flags & IS_PROTOTYPE) != 0;
+    }
+
+    /**
+     * Flag this object as having a prototype.
+     */
+    public void setIsPrototype() {
+        if (proto != null && !isPrototype()) {
+            proto.addPropertyListener(this);
+        }
+        flags |= IS_PROTOTYPE;
     }
 
     /**
@@ -1719,11 +1722,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (!property.hasGetterFunction()) {
                 methodHandle = bindTo(methodHandle, prototype);
             }
-            return new GuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(name), guard);
+            return new GuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(proto, name), guard);
         }
 
         assert !NashornCallSiteDescriptor.isFastScope(desc);
-        return new GuardedInvocation(Lookup.emptyGetter(returnType), getMap().getProtoGetSwitchPoint(name), guard);
+        return new GuardedInvocation(Lookup.emptyGetter(returnType), getMap().getProtoGetSwitchPoint(proto, name), guard);
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name) {
@@ -1822,27 +1825,31 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
            }
            assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
            final PropertyMap myMap = getMap();
-           return new GuardedInvocation(Lookup.EMPTY_SETTER, myMap.getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(myMap));
+           return new GuardedInvocation(Lookup.EMPTY_SETTER, myMap.getProtoGetSwitchPoint(proto, name), NashornGuards.getMapGuard(myMap));
     }
 
     @SuppressWarnings("unused")
-    private static void setEmbed(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final MethodHandle setter, final int i, final Object self, final Object value) throws Throwable {
+    private static void setField(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final MethodHandle setter, final Object self, final Object value) throws Throwable {
         final ScriptObject obj = (ScriptObject)self;
-        if (obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
-            obj.useEmbed(i);
+        final boolean isStrict = NashornCallSiteDescriptor.isStrict(desc);
+        if (!obj.isExtensible()) {
+            throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(obj));
+        } else if (obj.compareAndSetMap(oldMap, newMap)) {
             setter.invokeExact(self, value);
+        } else {
+            obj.set(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND), value, isStrict);
         }
     }
 
     @SuppressWarnings("unused")
     private static void setSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final int index, final Object self, final Object value) {
         final ScriptObject obj = (ScriptObject)self;
-        if (obj.trySetEmbedOrSpill(desc, oldMap, newMap, value)) {
+        if (obj.trySetSpill(desc, oldMap, newMap, value)) {
             obj.spill[index] = value;
         }
     }
 
-    private boolean trySetEmbedOrSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final Object value) {
+    private boolean trySetSpill(final CallSiteDescriptor desc, final PropertyMap oldMap, final PropertyMap newMap, final Object value) {
         final boolean isStrict = NashornCallSiteDescriptor.isStrict(desc);
         if (!isExtensible() && isStrict) {
             throw typeError("object.non.extensible", desc.getNameToken(2), ScriptRuntime.safeToString(this));
@@ -1964,7 +1971,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                     methodHandle = bindTo(methodHandle, UNDEFINED);
                 }
                 return new GuardedInvocation(methodHandle,
-                        find.isInherited()? getMap().getProtoGetSwitchPoint(NO_SUCH_PROPERTY_NAME) : null,
+                        find.isInherited()? getMap().getProtoGetSwitchPoint(proto, NO_SUCH_PROPERTY_NAME) : null,
                         getKnownFunctionPropertyGuard(getMap(), find.getGetter(Object.class), find.getOwner(), func));
             }
         }
@@ -1995,7 +2002,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private GuardedInvocation createEmptyGetter(final CallSiteDescriptor desc, final String name) {
-        return new GuardedInvocation(Lookup.emptyGetter(desc.getMethodType().returnType()), getMap().getProtoGetSwitchPoint(name), NashornGuards.getMapGuard(getMap()));
+        return new GuardedInvocation(Lookup.emptyGetter(desc.getMethodType().returnType()), getMap().getProtoGetSwitchPoint(proto, name), NashornGuards.getMapGuard(getMap()));
     }
 
     private abstract static class ScriptObjectIterator <T extends Object> implements Iterator<T> {
@@ -2070,36 +2077,39 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return Added property.
      */
     private Property addSpillProperty(final String key, final int propertyFlags) {
-        int i = findEmbed();
-        Property spillProperty;
+        int fieldCount   = getMap().getFieldCount();
+        int fieldMaximum = getMap().getFieldMaximum();
+        Property property;
 
-        if (i >= EMBED_SIZE) {
-            i = getMap().getSpillLength();
+        if (fieldCount < fieldMaximum) {
+            property = new AccessorProperty(key, propertyFlags & ~Property.IS_SPILL, getClass(), fieldCount);
+            notifyPropertyAdded(this, property);
+            property = addOwnProperty(property);
+        } else {
+            int i = getMap().getSpillLength();
             MethodHandle getter = MH.arrayElementGetter(Object[].class);
             MethodHandle setter = MH.arrayElementSetter(Object[].class);
             getter = MH.asType(MH.insertArguments(getter, 1, i), Lookup.GET_OBJECT_TYPE);
             setter = MH.asType(MH.insertArguments(setter, 1, i), Lookup.SET_OBJECT_TYPE);
-            spillProperty = new SpillProperty(key, propertyFlags | Property.IS_SPILL, i, getter, setter);
-            notifyPropertyAdded(this, spillProperty);
-            spillProperty = addOwnProperty(spillProperty);
-            i = spillProperty.getSlot();
+            property = new AccessorProperty(key, propertyFlags | Property.IS_SPILL, i, getter, setter);
+            notifyPropertyAdded(this, property);
+            property = addOwnProperty(property);
+            i = property.getSlot();
 
             final int newLength = (i + SPILL_RATE) / SPILL_RATE * SPILL_RATE;
-            final Object[] newSpill = new Object[newLength];
 
-            if (spill != null) {
-                System.arraycopy(spill, 0, newSpill, 0, spill.length);
+            if (spill == null || newLength > spill.length) {
+                final Object[] newSpill = new Object[newLength];
+
+                if (spill != null) {
+                    System.arraycopy(spill, 0, newSpill, 0, spill.length);
+                }
+
+                spill = newSpill;
             }
-
-            spill = newSpill;
-         } else {
-            useEmbed(i);
-            spillProperty = new SpillProperty(key, propertyFlags, i, GET_EMBED[i], SET_EMBED[i]);
-            notifyPropertyAdded(this, spillProperty);
-            spillProperty = addOwnProperty(spillProperty);
         }
 
-        return spillProperty;
+        return property;
     }
 
 
@@ -3159,67 +3169,22 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /*
-     * Embed management
-     */
-
-    /** Number of embed slots */
-    public static final int EMBED_SIZE   = 4;
-    /** Embed offset */
-    public static final int EMBED_OFFSET = 32 - EMBED_SIZE;
-
-    static final MethodHandle[] GET_EMBED;
-    static final MethodHandle[] SET_EMBED;
-
-    static {
-        GET_EMBED = new MethodHandle[EMBED_SIZE];
-        SET_EMBED = new MethodHandle[EMBED_SIZE];
-
-        for (int i = 0; i < EMBED_SIZE; i++) {
-            final String name = "embed" + i;
-            GET_EMBED[i] = MH.asType(MH.getter(MethodHandles.lookup(), ScriptObject.class, name, Object.class), Lookup.GET_OBJECT_TYPE);
-            SET_EMBED[i] = MH.asType(MH.setter(MethodHandles.lookup(), ScriptObject.class, name, Object.class), Lookup.SET_OBJECT_TYPE);
-        }
-    }
-
-    void useEmbed(final int i) {
-        flags |= 1 << (EMBED_OFFSET + i);
-    }
-
-    int findEmbed() {
-        final int bits  = ~(flags >>> EMBED_OFFSET);
-        final int least = bits ^ -bits;
-        final int index = Integer.numberOfTrailingZeros(least) - 1;
-
-        return index;
-    }
-
-    /*
      * Make a new UserAccessorProperty property. getter and setter functions are stored in
      * this ScriptObject and slot values are used in property object.
      */
     private UserAccessorProperty newUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
         int oldSpillLength = getMap().getSpillLength();
 
-        int getterSlot = findEmbed();
-        if (getterSlot >= EMBED_SIZE) {
-            getterSlot = oldSpillLength + EMBED_SIZE;
-            ++oldSpillLength;
-        } else {
-            useEmbed(getterSlot);
-        }
-        setEmbedOrSpill(getterSlot, getter);
+        int getterSlot = oldSpillLength++;
+        setSpill(getterSlot, getter);
         // if getter function is null, flag the slot to be negative (less by 1)
         if (getter == null) {
             getterSlot = -getterSlot - 1;
         }
 
-        int setterSlot = findEmbed();
-        if (setterSlot >= EMBED_SIZE) {
-            setterSlot = oldSpillLength + EMBED_SIZE;
-        } else {
-            useEmbed(setterSlot);
-        }
-        setEmbedOrSpill(setterSlot, setter);
+        int setterSlot = oldSpillLength++;
+
+        setSpill(setterSlot, setter);
         // if setter function is null, flag the slot to be negative (less by 1)
         if (setter == null) {
             setterSlot = -setterSlot - 1;
@@ -3228,56 +3193,28 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return new UserAccessorProperty(key, propertyFlags, getterSlot, setterSlot);
     }
 
-    private void setEmbedOrSpill(final int slot, final Object value) {
-        switch (slot) {
-        case 0:
-            embed0 = value;
-            break;
-        case 1:
-            embed1 = value;
-            break;
-        case 2:
-            embed2 = value;
-            break;
-        case 3:
-            embed3 = value;
-            break;
-        default:
-            if (slot >= 0) {
-                final int index = (slot - EMBED_SIZE);
-                if (spill == null) {
-                    // create new spill.
-                    spill = new Object[Math.max(index + 1, SPILL_RATE)];
-                } else if (index >= spill.length) {
-                    // grow spill as needed
-                    final Object[] newSpill = new Object[index + 1];
-                    System.arraycopy(spill, 0, newSpill, 0, spill.length);
-                    spill = newSpill;
-                }
-
-                spill[index] = value;
+    private void setSpill(final int slot, final Object value) {
+        if (slot >= 0) {
+            final int index = slot;
+            if (spill == null) {
+                // create new spill.
+                spill = new Object[Math.max(index + 1, SPILL_RATE)];
+            } else if (index >= spill.length) {
+                // grow spill as needed
+                final Object[] newSpill = new Object[index + 1];
+                System.arraycopy(spill, 0, newSpill, 0, spill.length);
+                spill = newSpill;
             }
-            break;
+
+            spill[index] = value;
         }
     }
 
-    // user accessors are either stored in embed fields or spill array slots
-    // get the accessor value using slot number. Note that slot is either embed
-    // field number or (spill array index + embedSize).
-    Object getEmbedOrSpill(final int slot) {
-        switch (slot) {
-        case 0:
-            return embed0;
-        case 1:
-            return embed1;
-        case 2:
-            return embed2;
-        case 3:
-            return embed3;
-        default:
-            final int index = (slot - EMBED_SIZE);
-            return (index < 0 || (index >= spill.length)) ? null : spill[index];
-        }
+    // user accessors are either stored in spill array slots
+    // get the accessor value using slot number. Note that slot is spill array index.
+    Object getSpill(final int slot) {
+        final int index = slot;
+        return (index < 0 || (index >= spill.length)) ? null : spill[index];
     }
 
     // User defined getter and setter are always called by "dyn:call". Note that the user
@@ -3287,7 +3224,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     @SuppressWarnings("unused")
     private static Object userAccessorGetter(final ScriptObject proto, final int slot, final Object self) {
         final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
-        final Object       func      = container.getEmbedOrSpill(slot);
+        final Object       func      = container.getSpill(slot);
 
         if (func instanceof ScriptFunction) {
             try {
@@ -3305,7 +3242,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     @SuppressWarnings("unused")
     private static void userAccessorSetter(final ScriptObject proto, final int slot, final String name, final Object self, final Object value) {
         final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
-        final Object       func      = container.getEmbedOrSpill(slot);
+        final Object       func      = container.getSpill(slot);
 
         if (func instanceof ScriptFunction) {
             try {

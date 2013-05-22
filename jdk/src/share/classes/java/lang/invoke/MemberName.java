@@ -236,6 +236,8 @@ import java.util.Objects;
             assert(MethodHandleNatives.refKindIsMethod(refKind));
             if (clazz.isInterface())
                 assert(refKind == REF_invokeInterface ||
+                       refKind == REF_invokeStatic    ||
+                       refKind == REF_invokeSpecial   ||
                        refKind == REF_invokeVirtual && isObjectPublicMethod());
         } else {
             assert(false);
@@ -268,7 +270,7 @@ import java.util.Objects;
             assert(refKind == REF_invokeSpecial) : this;
             return true;
         }
-        assert(false) : this;
+        assert(false) : this+" != "+MethodHandleNatives.refKindName((byte)originalRefKind);
         return true;
     }
     private boolean staticIsConsistent() {
@@ -485,14 +487,19 @@ import java.util.Objects;
         if (this.type == null)
             this.type = new Object[] { m.getReturnType(), m.getParameterTypes() };
         if (wantSpecial) {
+            assert(!isAbstract()) : this;
             if (getReferenceKind() == REF_invokeVirtual)
                 changeReferenceKind(REF_invokeSpecial, REF_invokeVirtual);
+            else if (getReferenceKind() == REF_invokeInterface)
+                // invokeSpecial on a default method
+                changeReferenceKind(REF_invokeSpecial, REF_invokeInterface);
         }
     }
     public MemberName asSpecial() {
         switch (getReferenceKind()) {
         case REF_invokeSpecial:     return this;
         case REF_invokeVirtual:     return clone().changeReferenceKind(REF_invokeSpecial, REF_invokeVirtual);
+        case REF_invokeInterface:   return clone().changeReferenceKind(REF_invokeSpecial, REF_invokeInterface);
         case REF_newInvokeSpecial:  return clone().changeReferenceKind(REF_invokeSpecial, REF_newInvokeSpecial);
         }
         throw new IllegalArgumentException(this.toString());
