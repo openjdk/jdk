@@ -39,35 +39,76 @@ import javax.lang.model.type.*;
  * are on a <em>declaration</em>, whereas annotations on a type are on
  * a specific <em>use</em> of a type name.
  *
- * The terms <em>directly present</em> and <em>present</em> are used
+ * The terms <em>directly present</em>, <em>present</em>,
+ * <em>indirectly present</em>, and <em>associated </em> are used
  * throughout this interface to describe precisely which annotations
- * are returned by methods:
+ * are returned by the methods defined herein.
  *
- * <p>An annotation <i>A</i> is <em>directly present</em> on a
- * construct <i>E</i> if <i>E</i> is annotated, and:
+ * <p>In the definitions below, an annotation <i>A</i> has an
+ * annotation type <i>AT</i>. If <i>AT</i> is a repeatable annotation
+ * type, the type of the containing annotation is <i>ATC</i>.
+ *
+ * <p>Annotation <i>A</i> is <em>directly present</em> on a construct
+ * <i>C</i> if either:
  *
  * <ul>
  *
- * <li> for an invocation of {@code getAnnotation(Class<T>)} or
- * {@code getAnnotationMirrors()}, <i>E</i>'s annotations contain <i>A</i>.
+ * <li><i>A</i> is explicitly or implicitly declared as applying to
+ * the source code representation of <i>C</i>.
  *
- * <li> for an invocation of {@code getAnnotationsByType(Class<T>)},
- * <i>E</i>'s annotations either contain <i>A</i> or, if the type of
- * <i>A</i> is repeatable, contain exactly one annotation whose value
- * element contains <i>A</i> and whose type is the containing
- * annotation type of <i>A</i>'s type.
+ * <p>Typically, if exactly one annotation of type <i>AT</i> appears in
+ * the source code of representation of <i>C</i>, then <i>A</i> is
+ * explicitly declared as applying to <i>C</i>.
+ *
+ * If there are multiple annotations of type <i>AT</i> present on
+ * <i>C</i>, then if <i>AT</i> is repeatable annotation type, an
+ * annotation of type <i>ATC</i> is implicitly declared on <i>C</i>.
+ *
+ * <li> A representation of <i>A</i> appears in the executable output
+ * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} or
+ * {@code RuntimeVisibleParameterAnnotations} attributes of a class
+ * file.
  *
  * </ul>
  *
- * <p>An annotation A is <em>present</em> on a construct E if either:
+ * <p>An annotation <i>A</i> is <em>present</em> on a
+ * construct <i>C</i> if either:
+ * <ul>
+ *
+ * <li><i>A</i> is directly present on <i>C</i>.
+ *
+ * <li>No annotation of type <i>AT</i> is directly present on
+ * <i>C</i>, and <i>C</i> is a class and <i>AT</i> is inheritable
+ * and <i>A</i> is present on the superclass of <i>C</i>.
+ *
+ * </ul>
+ *
+ * An annotation <i>A</i> is <em>indirectly present</em> on a construct
+ * <i>C</i> if both:
  *
  * <ul>
- *  <li> <i>A</i> is <em>directly present</em> on <i>E</i>; or
  *
- *  <li> <i>A</i> is not <em>directly present</em> on <i>E</i>, and
- *  <i>E</i> is an element representing a class, and <i>A</i>'s type
- *  is inheritable, and <i>A</i> is <em>present</em> on the element
- *  representing the superclass of <i>E</i>.
+ * <li><i>AT</i> is a repeatable annotation type with a containing
+ * annotation type <i>ATC</i>.
+ *
+ * <li>An annotation of type <i>ATC</i> is directly present on
+ * <i>C</i> and <i>A</i> is an annotation included in the result of
+ * calling the {@code value} method of the directly present annotation
+ * of type <i>ATC</i>.
+ *
+ * </ul>
+ *
+ * An annotation <i>A</i> is <em>associated</em> with a construct
+ * <i>C</i> if either:
+ *
+ * <ul>
+ *
+ * <li> <i>A</i> is directly or indirectly present on <i>C</i>.
+ *
+ * <li> No annotation of type <i>AT</i> is directly or indirectly
+ * present on <i>C</i>, and <i>C</i> is a class, and <i>AT</i> is
+ * inheritable, and <i>A</i> is associated with the superclass of
+ * <i>C</i>.
  *
  * </ul>
  *
@@ -86,9 +127,8 @@ public interface AnnotatedConstruct {
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * Returns this construct's annotation of the
-     * specified type if such an annotation is <em>present</em>, else {@code
-     * null}.
+     * Returns this construct's annotation of the specified type if
+     * such an annotation is <em>present</em>, else {@code null}.
      *
      * <p> The annotation returned by this method could contain an element
      * whose value is of type {@code Class}.
@@ -118,9 +158,8 @@ public interface AnnotatedConstruct {
      * @param <A>  the annotation type
      * @param annotationType  the {@code Class} object corresponding to
      *          the annotation type
-     * @return this element's or type use's annotation for the
-     * specified annotation type if present on this element, else
-     * {@code null}
+     * @return this construct's annotation for the specified
+     * annotation type if present, else {@code null}
      *
      * @see #getAnnotationMirrors()
      * @see java.lang.reflect.AnnotatedElement#getAnnotation
@@ -134,10 +173,16 @@ public interface AnnotatedConstruct {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * Returns annotations that are <em>present</em> on this construct.
+     * Returns annotations that are <em>associated</em> with this construct.
      *
-     * If there are no annotations <em>present</em> on this construct,
-     * the return value is an array of length 0.
+     * If there are no annotations associated with this construct, the
+     * return value is an array of length 0.
+     *
+     * The order of annotations which are directly or indirectly
+     * present on a construct <i>C</i> is computed as if indirectly present
+     * annotations on <i>C</i> are directly present on <i>C</i> in place of their
+     * container annotation, in the order in which they appear in the
+     * value element of the container annotation.
      *
      * The difference between this method and {@link #getAnnotation(Class)}
      * is that this method detects if its argument is a <em>repeatable
@@ -172,8 +217,8 @@ public interface AnnotatedConstruct {
      * @param <A>  the annotation type
      * @param annotationType  the {@code Class} object corresponding to
      *          the annotation type
-     * @return this element's annotations for the specified annotation
-     *         type if present on this element, else an empty array
+     * @return this construct's annotations for the specified annotation
+     *         type if present on this construct, else an empty array
      *
      * @see #getAnnotationMirrors()
      * @see #getAnnotation(java.lang.Class)
