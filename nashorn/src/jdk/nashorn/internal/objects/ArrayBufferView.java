@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -56,11 +57,6 @@ abstract class ArrayBufferView extends ScriptObject {
 
     private int bytesPerElement() {
         return factory().bytesPerElement;
-    }
-
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
-    public static Object BYTES_PER_ELEMENT(final Object self) {
-        return ((ArrayBufferView)self).bytesPerElement();
     }
 
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
