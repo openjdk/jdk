@@ -2013,7 +2013,7 @@ public class JavacParser implements Parser {
     /** Creator = [Annotations] Qualident [TypeArguments] ( ArrayCreatorRest | ClassCreatorRest )
      */
     JCExpression creator(int newpos, List<JCExpression> typeArgs) {
-        List<JCAnnotation> newAnnotations = typeAnnotationsOpt();
+        List<JCAnnotation> newAnnotations = annotationsOpt(Tag.ANNOTATION);
 
         switch (token.kind) {
         case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
@@ -2029,11 +2029,6 @@ public class JavacParser implements Parser {
         default:
         }
         JCExpression t = qualident(true);
-
-        // handle type annotations for non primitive arrays
-        if (newAnnotations.nonEmpty()) {
-            t = insertAnnotationsToMostInner(t, newAnnotations, false);
-        }
 
         int oldmode = mode;
         mode = TYPE;
@@ -2068,6 +2063,11 @@ public class JavacParser implements Parser {
         }
         mode = oldmode;
         if (token.kind == LBRACKET || token.kind == MONKEYS_AT) {
+            // handle type annotations for non primitive arrays
+            if (newAnnotations.nonEmpty()) {
+                t = insertAnnotationsToMostInner(t, newAnnotations, false);
+            }
+
             JCExpression e = arrayCreatorRest(newpos, t);
             if (diamondFound) {
                 reportSyntaxError(lastTypeargsPos, "cannot.create.array.with.diamond");
@@ -2092,8 +2092,18 @@ public class JavacParser implements Parser {
             if (newClass.def != null) {
                 assert newClass.def.mods.annotations.isEmpty();
                 if (newAnnotations.nonEmpty()) {
+                    // Add type and declaration annotations to the new class;
+                    // com.sun.tools.javac.code.TypeAnnotations.TypeAnnotationPositions.visitNewClass(JCNewClass)
+                    // will later remove all type annotations and only leave the
+                    // declaration annotations.
                     newClass.def.mods.pos = earlier(newClass.def.mods.pos, newAnnotations.head.pos);
-                    newClass.def.mods.annotations = List.convert(JCAnnotation.class, newAnnotations);
+                    newClass.def.mods.annotations = newAnnotations;
+                }
+            } else {
+                // handle type annotations for instantiations
+                if (newAnnotations.nonEmpty()) {
+                    t = insertAnnotationsToMostInner(t, newAnnotations, false);
+                    newClass.clazz = t;
                 }
             }
             return newClass;
@@ -2987,7 +2997,22 @@ public class JavacParser implements Parser {
             syntaxError(pos, "expected", IDENTIFIER);
             name = token.name();
         } else {
-            name = ident();
+            if (allowThisIdent) {
+                JCExpression pn = qualident(false);
+                if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
+                    name = ((JCIdent)pn).name;
+                } else {
+                    if ((mods.flags & Flags.VARARGS) != 0) {
+                        log.error(token.pos, "varargs.and.receiver");
+                    }
+                    if (token.kind == LBRACKET) {
+                        log.error(token.pos, "array.and.receiver");
+                    }
+                    return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
+                }
+            } else {
+                name = ident();
+            }
         }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
@@ -3526,18 +3551,24 @@ public class JavacParser implements Parser {
         ListBuffer<JCExpression> ts = new ListBuffer<JCExpression>();
 
         List<JCAnnotation> typeAnnos = typeAnnotationsOpt();
-        if (!typeAnnos.isEmpty())
-            ts.append(toP(F.at(typeAnnos.head.pos).AnnotatedType(typeAnnos, qualident(true))));
-        else
-            ts.append(qualident(true));
+        JCExpression qi = qualident(true);
+        if (!typeAnnos.isEmpty()) {
+            JCExpression at = insertAnnotationsToMostInner(qi, typeAnnos, false);
+            ts.append(at);
+        } else {
+            ts.append(qi);
+        }
         while (token.kind == COMMA) {
             nextToken();
 
             typeAnnos = typeAnnotationsOpt();
-            if (!typeAnnos.isEmpty())
-                ts.append(toP(F.at(typeAnnos.head.pos).AnnotatedType(typeAnnos, qualident(true))));
-            else
-                ts.append(qualident(true));
+            qi = qualident(true);
+            if (!typeAnnos.isEmpty()) {
+                JCExpression at = insertAnnotationsToMostInner(qi, typeAnnos, false);
+                ts.append(at);
+            } else {
+                ts.append(qi);
+            }
         }
         return ts.toList();
     }
@@ -3601,7 +3632,7 @@ public class JavacParser implements Parser {
         if (token.kind != RPAREN) {
             this.allowThisIdent = true;
             lastParam = formalParameter(lambdaParameters);
-            if (lastParam.name.contentEquals(TokenKind.THIS.name)) {
+            if (lastParam.nameexpr != null) {
                 this.receiverParam = lastParam;
             } else {
                 params.append(lastParam);

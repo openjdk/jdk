@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,8 @@ public class Base64 {
      * character(s) padded), they are decoded as if followed by padding
      * character(s). If there is padding character present in the
      * final unit, the correct number of padding character(s) must be
-     * present, otherwise {@code IllegalArgumentException} is thrown
+     * present, otherwise {@code IllegalArgumentException} (
+     * {@code IOException} when reading from a Base64 stream) is thrown
      * during decoding.
      *
      * <p> Instances of {@link Decoder} class are safe for use by
@@ -1306,7 +1307,12 @@ public class Base64 {
                         return off - oldOff;
                 }
                 if (v == '=') {                  // padding byte(s)
-                    if (nextin != 6 && nextin != 0) {
+                    // =     shiftto==18 unnecessary padding
+                    // x=    shiftto==12 invalid unit
+                    // xx=   shiftto==6 && missing last '='
+                    // xx=y                or last is not '='
+                    if (nextin == 18 || nextin == 12 ||
+                        nextin == 6 && is.read() != '=') {
                         throw new IOException("Illegal base64 ending sequence:" + nextin);
                     }
                     b[off++] = (byte)(bits >> (16));

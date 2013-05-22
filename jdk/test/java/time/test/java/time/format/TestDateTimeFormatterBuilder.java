@@ -65,13 +65,19 @@ import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.Temporal;
@@ -268,7 +274,7 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValueReduced() throws Exception {
         builder.appendValueReduced(YEAR, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ReducedValue(Year,2,2000)");
+        assertEquals(f.toString(), "ReducedValue(Year,2,2,2000)");
         TemporalAccessor parsed = f.parseUnresolved("12", new ParsePosition(0));
         assertEquals(parsed.getLong(YEAR), 2012L);
     }
@@ -277,8 +283,10 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendValueReduced_subsequent_parse() throws Exception {
         builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValueReduced(YEAR, 2, 2000);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2000)");
-        TemporalAccessor parsed = f.parseUnresolved("123", new ParsePosition(0));
+        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2,2000)");
+        ParsePosition ppos = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("123", ppos);
+        assertNotNull(parsed, "Parse failed: " + ppos.toString());
         assertEquals(parsed.getLong(MONTH_OF_YEAR), 1L);
         assertEquals(parsed.getLong(YEAR), 2023L);
     }
@@ -646,13 +654,13 @@ public class TestDateTimeFormatterBuilder {
             {"GGGGG", "Text(Era,NARROW)"},
 
             {"u", "Value(Year)"},
-            {"uu", "ReducedValue(Year,2,2000)"},
+            {"uu", "ReducedValue(Year,2,2,2000)"},
             {"uuu", "Value(Year,3,19,NORMAL)"},
             {"uuuu", "Value(Year,4,19,EXCEEDS_PAD)"},
             {"uuuuu", "Value(Year,5,19,EXCEEDS_PAD)"},
 
             {"y", "Value(YearOfEra)"},
-            {"yy", "ReducedValue(YearOfEra,2,2000)"},
+            {"yy", "ReducedValue(YearOfEra,2,2,2000)"},
             {"yyy", "Value(YearOfEra,3,19,NORMAL)"},
             {"yyyy", "Value(YearOfEra,4,19,EXCEEDS_PAD)"},
             {"yyyyy", "Value(YearOfEra,5,19,EXCEEDS_PAD)"},
@@ -890,6 +898,109 @@ public class TestDateTimeFormatterBuilder {
         DateTimeFormatter f = builder.appendPattern(input).toFormatter(Locale.UK);
         String test = f.format(temporal);
         assertEquals(test, expected);
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="localePatterns")
+    Object[][] localizedDateTimePatterns() {
+        return new Object[][] {
+            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, yyyy h:mm:ss a z"},
+            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "MMMM d, yyyy h:mm:ss a z"},
+            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "MMM d, yyyy h:mm:ss a"},
+            {FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "M/d/yy h:mm a"},
+            {FormatStyle.FULL, null, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, yyyy"},
+            {FormatStyle.LONG, null, IsoChronology.INSTANCE, Locale.US, "MMMM d, yyyy"},
+            {FormatStyle.MEDIUM, null, IsoChronology.INSTANCE, Locale.US, "MMM d, yyyy"},
+            {FormatStyle.SHORT, null, IsoChronology.INSTANCE, Locale.US, "M/d/yy"},
+            {null, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a z"},
+            {null, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a z"},
+            {null, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a"},
+            {null, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "h:mm a"},
+
+            // French Locale and ISO Chronology
+            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.FRENCH, "EEEE d MMMM yyyy HH' h 'mm z"},
+            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.FRENCH, "d MMMM yyyy HH:mm:ss z"},
+            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.FRENCH, "d MMM yyyy HH:mm:ss"},
+            {FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.FRENCH, "dd/MM/yy HH:mm"},
+            {FormatStyle.FULL, null, IsoChronology.INSTANCE, Locale.FRENCH, "EEEE d MMMM yyyy"},
+            {FormatStyle.LONG, null, IsoChronology.INSTANCE, Locale.FRENCH, "d MMMM yyyy"},
+            {FormatStyle.MEDIUM, null, IsoChronology.INSTANCE, Locale.FRENCH, "d MMM yyyy"},
+            {FormatStyle.SHORT, null, IsoChronology.INSTANCE, Locale.FRENCH, "dd/MM/yy"},
+            {null, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.FRENCH, "HH' h 'mm z"},
+            {null, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.FRENCH, "HH:mm:ss z"},
+            {null, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.FRENCH, "HH:mm:ss"},
+            {null, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.FRENCH, "HH:mm"},
+
+            // Japanese Locale and JapaneseChronology
+            {FormatStyle.FULL, FormatStyle.FULL, JapaneseChronology.INSTANCE, Locale.JAPANESE, "Gy'\u5e74'M'\u6708'd'\u65e5' H'\u6642'mm'\u5206'ss'\u79d2' z"},
+            {FormatStyle.LONG, FormatStyle.LONG, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd H:mm:ss z"},
+            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd H:mm:ss"},
+            {FormatStyle.SHORT, FormatStyle.SHORT, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd H:mm"},
+            {FormatStyle.FULL, null, JapaneseChronology.INSTANCE, Locale.JAPANESE, "Gy'\u5e74'M'\u6708'd'\u65e5'"},
+            {FormatStyle.LONG, null, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd"},
+            {FormatStyle.MEDIUM, null, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd"},
+            {FormatStyle.SHORT, null, JapaneseChronology.INSTANCE, Locale.JAPANESE, "GGGGGy.MM.dd"},
+            {null, FormatStyle.FULL, JapaneseChronology.INSTANCE, Locale.JAPANESE, "H'\u6642'mm'\u5206'ss'\u79d2' z"},
+            {null, FormatStyle.LONG, JapaneseChronology.INSTANCE, Locale.JAPANESE, "H:mm:ss z"},
+            {null, FormatStyle.MEDIUM, JapaneseChronology.INSTANCE, Locale.JAPANESE, "H:mm:ss"},
+            {null, FormatStyle.SHORT, JapaneseChronology.INSTANCE, Locale.JAPANESE, "H:mm"},
+
+            // Chinese Local and Chronology
+            {FormatStyle.FULL, FormatStyle.FULL, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy\u5e74M\u6708d\u65e5EEEE ahh'\u65f6'mm'\u5206'ss'\u79d2' z"},
+            {FormatStyle.LONG, FormatStyle.LONG, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy\u5e74M\u6708d\u65e5 ahh'\u65f6'mm'\u5206'ss'\u79d2'"},
+            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy-M-d H:mm:ss"},
+            {FormatStyle.SHORT, FormatStyle.SHORT, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy-M-d ah:mm"},
+            {FormatStyle.FULL, null, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy\u5e74M\u6708d\u65e5EEEE"},
+            {FormatStyle.LONG, null, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy\u5e74M\u6708d\u65e5"},
+            {FormatStyle.MEDIUM, null, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy-M-d"},
+            {FormatStyle.SHORT, null, MinguoChronology.INSTANCE, Locale.CHINESE, "Gy-M-d"},
+            {null, FormatStyle.FULL, MinguoChronology.INSTANCE, Locale.CHINESE, "ahh'\u65f6'mm'\u5206'ss'\u79d2' z"},
+            {null, FormatStyle.LONG, MinguoChronology.INSTANCE, Locale.CHINESE, "ahh'\u65f6'mm'\u5206'ss'\u79d2'"},
+            {null, FormatStyle.MEDIUM, MinguoChronology.INSTANCE, Locale.CHINESE, "H:mm:ss"},
+            {null, FormatStyle.SHORT, MinguoChronology.INSTANCE, Locale.CHINESE, "ah:mm"},
+        };
+    }
+
+    @Test(dataProvider="localePatterns")
+    public void test_getLocalizedDateTimePattern(FormatStyle dateStyle, FormatStyle timeStyle,
+            Chronology chrono, Locale locale, String expected) {
+        String actual = DateTimeFormatterBuilder.getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale);
+        assertEquals(actual, expected, "Pattern " + convertNonAscii(actual));
+    }
+
+    @Test(expectedExceptions=java.lang.IllegalArgumentException.class)
+    public void test_getLocalizedDateTimePatternIAE() {
+        DateTimeFormatterBuilder.getLocalizedDateTimePattern(null, null, IsoChronology.INSTANCE, Locale.US);
+    }
+
+    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    public void test_getLocalizedChronoNPE() {
+        DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, null, Locale.US);
+    }
+
+    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    public void test_getLocalizedLocaleNPE() {
+        DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, null);
+    }
+
+    /**
+     * Returns a string that includes non-ascii characters after expanding
+     * the non-ascii characters to their Java language \\uxxxx form.
+     * @param input an input string
+     * @return the encoded string.
+     */
+    private String convertNonAscii(String input) {
+        StringBuilder sb = new StringBuilder(input.length() * 6);
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if (ch < 255) {
+                sb.append(ch);
+            } else {
+                sb.append("\\u");
+                sb.append(Integer.toHexString(ch));
+            }
+        }
+        return sb.toString();
     }
 
     private static Temporal date(int y, int m, int d) {

@@ -27,6 +27,7 @@ package com.sun.tools.doclets.internal.toolkit.util.links;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * Encapsulates information about a link.
@@ -77,7 +78,7 @@ public abstract class LinkInfo {
     /**
      * The label for the link.
      */
-    public String label;
+    public Content label;
 
     /**
      * True if the link should be strong.
@@ -90,7 +91,7 @@ public abstract class LinkInfo {
     public boolean includeTypeInClassLinkLabel = true;
 
     /**
-     * True if we should include the type as seperate link.  False otherwise.
+     * True if we should include the type as separate link.  False otherwise.
      */
     public boolean includeTypeAsSepLink = false;
 
@@ -116,24 +117,11 @@ public abstract class LinkInfo {
     public boolean linkToSelf = true;
 
     /**
-     * The display length for the link.
-     */
-    public int displayLength = 0;
-
-    /**
-     * Return the id indicating where the link appears in the documentation.
-     * This is used for special processing of different types of links.
+     * Return an empty instance of a content object.
      *
-     * @return the id indicating where the link appears in the documentation.
+     * @return an empty instance of a content object.
      */
-    public abstract int getContext();
-
-    /**
-     * Set the context.
-     *
-     * @param c the context id to set.
-     */
-    public abstract void setContext(int c);
+    protected abstract Content newContent();
 
     /**
      * Return true if this link is linkable and false if we can't link to the
@@ -150,13 +138,17 @@ public abstract class LinkInfo {
      * @param configuration the current configuration of the doclet.
      * @return the label for this class link.
      */
-    public String getClassLinkLabel(Configuration configuration) {
-        if (label != null && label.length() > 0) {
+    public Content getClassLinkLabel(Configuration configuration) {
+        if (label != null && !label.isEmpty()) {
             return label;
         } else if (isLinkable()) {
-            return classDoc.name();
+            Content label = newContent();
+            label.addContent(classDoc.name());
+            return label;
         } else {
-            return configuration.getClassName(classDoc);
+            Content label = newContent();
+            label.addContent(configuration.getClassName(classDoc));
+            return label;
         }
     }
 }

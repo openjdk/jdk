@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary JSR 199: The method JavaCompilerTool.run fails to handle null arguments
  * @author  Peter von der Ah\u00e9
  * @library ../lib
+ * @build ToolTester
+ * @run main T6410643
  */
 
 import javax.tools.JavaFileObject;

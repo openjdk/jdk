@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.Configuration;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -160,7 +161,7 @@ public class ValueTaglet extends BaseInlineTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         FieldDoc field = getFieldDoc(
             writer.configuration(), tag, tag.text());
         if (field == null) {
@@ -169,7 +170,7 @@ public class ValueTaglet extends BaseInlineTaglet {
                 "doclet.value_tag_invalid_reference", tag.text());
         } else if (field.constantValue() != null) {
             return writer.valueTagOutput(field,
-                Util.escapeHtmlChars(field.constantValueExpression()),
+                field.constantValueExpression(),
                 ! field.equals(tag.holder()));
         } else {
             //Referenced field is not a constant.

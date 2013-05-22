@@ -834,14 +834,19 @@ void freeif(netif *ifs) {
     }
 }
 
-netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct sockaddr* ifr_addrP, int family, short prefix) {
+netif *addif(JNIEnv *env, int sock, const char * if_name,
+             netif *ifs, struct sockaddr* ifr_addrP, int family,
+             short prefix)
+{
     netif *currif = ifs, *parent;
     netaddr *addrP;
 
 #ifdef LIFNAMSIZ
-    char name[LIFNAMSIZ],  vname[LIFNAMSIZ];
+    int ifnam_size = LIFNAMSIZ;
+    char name[LIFNAMSIZ], vname[LIFNAMSIZ];
 #else
-    char name[IFNAMSIZ],  vname[IFNAMSIZ];
+    int ifnam_size = IFNAMSIZ;
+    char name[IFNAMSIZ], vname[IFNAMSIZ];
 #endif
 
     char  *name_colonP;
@@ -857,7 +862,8 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
      * currently doesn't have any concept of physical vs.
      * logical interfaces.
      */
-    strcpy(name, if_name);
+    strncpy(name, if_name, ifnam_size);
+    name[ifnam_size - 1] = '\0';
     *vname = 0;
 
     /*
@@ -934,9 +940,10 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
      * insert it onto the list.
      */
     if (currif == NULL) {
-         CHECKED_MALLOC3(currif, netif *, sizeof(netif)+IFNAMSIZ );
+         CHECKED_MALLOC3(currif, netif *, sizeof(netif) + ifnam_size);
          currif->name = (char *) currif+sizeof(netif);
-         strcpy(currif->name, name);
+         strncpy(currif->name, name, ifnam_size);
+         currif->name[ifnam_size - 1] = '\0';
          currif->index = getIndex(sock, name);
          currif->addr = NULL;
          currif->childs = NULL;
@@ -969,9 +976,10 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
         }
 
         if (currif == NULL) {
-            CHECKED_MALLOC3(currif, netif *, sizeof(netif)+ IFNAMSIZ );
+            CHECKED_MALLOC3(currif, netif *, sizeof(netif) + ifnam_size);
             currif->name = (char *) currif + sizeof(netif);
-            strcpy(currif->name, vname);
+            strncpy(currif->name, vname, ifnam_size);
+            currif->name[ifnam_size - 1] = '\0';
             currif->index = getIndex(sock, vname);
             currif->addr = NULL;
            /* Need to duplicate the addr entry? */

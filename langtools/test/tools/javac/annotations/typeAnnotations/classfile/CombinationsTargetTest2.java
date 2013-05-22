@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 8005085 8005877 8004829 8005681 8006734 8006775
- * @ignore
+ * @bug 8005085 8005877 8004829 8005681 8006734 8006775 8006507
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
  */
 
@@ -32,9 +31,27 @@ import com.sun.tools.classfile.*;
 import java.io.File;
 
 public class CombinationsTargetTest2 extends ClassfileTestHelper {
-    // Helps identify test case in event of failure.
+
+    // Test count helps identify test case in event of failure.
     int testcount = 0;
-    int src3 = 3, src8 = 8, src9 = 9;
+
+    // Base test case template descriptions
+    enum srce  {
+        src1("(repeating) type annotations on on field in method body",true),
+        src2("(repeating) type annotations on type parameters, bounds and  type arguments", true),
+        src3("(repeating) type annotations on type parameters of class, method return value in method", true),
+        src4("(repeating) type annotations on field in anonymous class", false),
+        src5("(repeating) type annotations on field in anonymous class", false);
+
+        String description;
+        Boolean local;
+
+        srce(String desc, Boolean b) {
+            this.description = this + ": " +desc;
+            this.local = b;
+        }
+    }
+
 
     String[] ETypes={"TYPE", "FIELD", "METHOD", "PARAMETER", "CONSTRUCTOR",
                      "LOCAL_VARIABLE", "ANNOTATION_TYPE", "PACKAGE"};
@@ -51,31 +68,36 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         // Determines which repeat and order in source(ABMix).
         Boolean As= false, BDs=true, ABMix=false;
         int testrun=0;
-        // A repeats and/or B/D repeats, ABMix for order of As and Bs.
         Boolean [][] bRepeat = new Boolean[][]{{false,false,false},//no repeats
                                                {true,false,false}, //repeat @A
                                                {false,true,false}, //repeat @B
                                                {true,true,false},  //repeat both
                                                {false,false,true}  //repeat mix
         };
+
         for(Boolean[] bCombo : bRepeat) {
             As=bCombo[0]; BDs=bCombo[1]; ABMix=bCombo[2];
             for(String et : ETypes) {
                switch(et) {
                    case "METHOD":
-                       test( 8,  0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, src3);
-                       test( 0,  8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, src3);
+                       test( 8, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src1);
+                       test( 0, 8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src1);
+                       test( 2, 0, 2, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src5);
+                       test( 0, 2, 0, 2, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src5);
                        break;
-                   case "CONSTRUCTOR":
                    case "FIELD":
-                       test( 8,  0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, src3);
-                       test( 8,  0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, src8);
-                       test( 6,  0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, src9);
-                       test( 0,  8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, src3);
-                       test( 0,  8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, src8);
-                       test( 0,  6, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, src9);
+                       test( 8, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src1);
+                       test( 8, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src2);
+                       test( 6, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src3);
+                       test( 2, 0, 2, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src4);
+                       test( 0, 8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src1);
+                       test( 0, 8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src2);
+                       test( 0, 6, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src3);
+                       test( 0, 2, 0, 2, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src4);
                        break;
                    default:/*TYPE,PARAMETER,LOCAL_VARIABLE,ANNOTATION_TYPE,PACKAGE*/
+                       test( 0, 2, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src4);
+                       test( 0, 2, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src5);
                        break;
                }
             }
@@ -84,7 +106,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
 
     public void test(int tinv, int tvis, int inv, int vis, Boolean Arepeats,
                      Boolean BDrepeats, Boolean ABmix, String rtn, String et2,
-                     Integer N, int source) throws Exception {
+                     Integer N, srce source) throws Exception {
         ++testcount;
         expected_tvisibles = tvis;
         expected_tinvisibles = tinv;
@@ -97,14 +119,19 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                 ", tvis=" + tvis + ", inv=" + inv + ", vis=" + vis +
                 ", Arepeats=" + Arepeats + ", BDrepeats=" + BDrepeats +
                 ", ABmix=" + ABmix + ", retention: " + rtn + ", anno2: " +
-                et2 + ", src=" + source;
+                et2 + ", src=" + source + "\n    " + source.description;
 
-// Uncomment this block to run the tests but skip failing scenarios.
-//        // 8005681 - skip cases with repeated annotations on new, array, cast.
-//        if((source==3 || source==8 || source==9) && (ABmix || (Arepeats && BDrepeats))) {
-//            System.out.println(testDef+"\n8005681-skip repeated annotations on new,array,cast");
-//            return;
-//        }
+        if(
+// 8005681 - src1,2,3 - skip cases with repeated annotations on new, array, cast.
+            (( source.equals(srce.src1) || source.equals(srce.src2) ||
+              source.equals(srce.src3)) && (ABmix || (Arepeats && BDrepeats)))
+ // 8008928 - src4,5 - this change cause crash with t-a on anon class)
+            || (source.equals(srce.src4) || source.equals(srce.src5))
+          ) {
+            System.out.println(testDef +
+                       "\n    8005681-skip repeated annotations on new,array,cast");
+            return;
+        }
 
         println(testDef);
         // Create test source and File.
@@ -123,6 +150,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         if(hasInnerClass) {
             StringBuffer sb = new StringBuffer(classFile.getAbsolutePath());
             classFile=new File(sb.insert(sb.lastIndexOf(".class"),innerClassname).toString());
+            println("classfile: " + classFile.getAbsolutePath());
         }
         ClassFile cf = ClassFile.read(classFile);
 
@@ -130,10 +158,16 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         test(cf);
 
         for (Field f : cf.fields) {
-            test(cf, f);
+            if(source.local)
+                test(cf, f, true);
+            else
+                test(cf,f);
         }
         for (Method m: cf.methods) {
-            test(cf, m);
+            if(source.local)
+                test(cf, m, true);
+            else
+                test(cf, m);
         }
         countAnnotations();
         if (errors > 0) {
@@ -149,7 +183,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
     //
     String sourceString(String testname, String retentn, String annot2,
                         Boolean Arepeats, Boolean BDrepeats, Boolean ABmix,
-                        int src) {
+                        srce src) {
 
         String As = "@A", Bs = "@B", Ds = "@D";
         if(Arepeats) As = "@A @A";
@@ -198,7 +232,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
 
         // Test case sources with sample generated source
         switch(src) {
-            case 3: // (repeating) type annotations on field in method body
+            case src1: // (repeating) type annotations on field in method body
                     /*
                      * class Test1 {
                      * Test1(){}
@@ -210,18 +244,19 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                      * }}
                       */
                 source = new String(
-                "class " + testname + " {\n" +
-                "" + testname +"(){} \n" +
-                "// type usage in method body \n" +
-                "String test("+testname+" this, " +
-                   "String param, String ... vararg) { \n" +
-                "    _As_ _Bs_\n    Object o = new _As_ _Bs_  String _As_ _Bs_  [3]; \n" +
-                "        return (_As_ _Bs_  String) null; \n" +
-                "} \n" +
-                "} \n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
-                "\n\n";
-                break;
-            case 8: // (repeating) annotations on type parameters, bounds and  type arguments in new statement.
+                    "// " + src.description + "\n" +
+                    "class " + testname + " {\n" +
+                    "" + testname +"(){} \n" +
+                    "// type usage in method body \n" +
+                    "String test("+testname+" this, " +
+                       "String param, String ... vararg) { \n" +
+                    "    _As_ _Bs_\n    Object o = new _As_ _Bs_  String _As_ _Bs_  [3]; \n" +
+                    "        return (_As_ _Bs_  String) null; \n" +
+                    "} \n" +
+                    "} \n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    break;
+            case src2: // (repeating) annotations on type parameters, bounds and  type arguments in new statement.
                     /*
                      * class Test2<T extends Object> {
                      *     Map<List<String>, Integer> map =
@@ -232,17 +267,17 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                      * }
                      */
                 source = new String( source +
-                "// (repeating) annotations on type parameters, bounds and  type arguments. \n" +
-                "class " + testname + "<T extends Object> {\n" +
-                "    Map<List<String>, Integer> map =\n" +
-                "        new HashMap<_As_ _Bs_ List<_As_ _Bs_ String>, _As_ _Bs_ Integer>();\n" +
-                "    Map<List<String>, Integer> map2 = new _As_ _Bs_ HashMap<>();\n" +
-                "    String test(" + testname + "<T> this) { return null;}\n" +
-                "    <T> String genericMethod(T t) { return null; }\n" +
-                "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
-                "\n\n";
-            break;
-            case 9: // (repeating)annotations on type parameters of class, method return value in method.
+                    "// " + src.description + "\n" +
+                    "class " + testname + "<T extends Object> {\n" +
+                    "    Map<List<String>, Integer> map =\n" +
+                    "        new HashMap<_As_ _Bs_ List<_As_ _Bs_ String>, _As_ _Bs_ Integer>();\n" +
+                    "    Map<List<String>, Integer> map2 = new _As_ _Bs_ HashMap<>();\n" +
+                    "    String test(" + testname + "<T> this) { return null;}\n" +
+                    "    <T> String genericMethod(T t) { return null; }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                break;
+            case src3: // (repeating)annotations on type parameters of class, method return value in method.
                     /*
                      * class Test3{
                      *     <E extends Comparable> Map<List<E>, E > foo(E e) {
@@ -258,24 +293,72 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                      * }
                      */
                 source = new String( source +
-                "// (repeating)annotations on type parameters of class, method return value in method. \n" +
-                "class "+ testname + "{\n" +
-                "    <E extends Comparable> Map<List<E>, E > foo(E e) {\n" +
-                "        class maptest <E> {\n" +                  // inner class $1maptest
-                "            Map<List<E>,E> getMap() { \n" +
-                "                Map<List<E>,E> Em = new HashMap<List<_As_ _Bs_ _Ds_ E>,_As_ _Bs_ _Ds_ E>();\n" +
-                "                return Em;\n" +
-                "            }\n" +
-                "        }\n" +
-                "        return new maptest<E>().getMap();\n" +
-                "   }\n" +
-                "   Map<List<String>,String> shm = foo(new String(\"hello\"));\n" +
-                "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs).replace("_Ds_",Ds) +
-                "\n\n";
-                hasInnerClass=true;
-                innerClassname="$1maptest";
-            break;
-
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    <E extends Comparable> Map<List<E>, E > foo(E e) {\n" +
+                    "        class maptest <E> {\n" +                  // inner class $1maptest
+                    "            Map<List<E>,E> getMap() { \n" +
+                    "                Map<List<E>,E> Em = new HashMap<List<_As_ _Bs_ _Ds_ E>,_As_ _Bs_ _Ds_ E>();\n" +
+                    "                return Em;\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "        return new maptest<E>().getMap();\n" +
+                    "   }\n" +
+                    "   Map<List<String>,String> shm = foo(new String(\"hello\"));\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs).replace("_Ds_",Ds) +
+                    "\n\n";
+                    hasInnerClass=true;
+                    innerClassname="$1maptest";
+                break;
+            case src4: // (repeating)annotations on field in anonymous class
+                    /*
+                     * class Test95{
+                     *     void mtest( Test95 t){  }
+                     *     public void test() {
+                     *         mtest( new Test95() {
+                     *             @A @A @B @B String data2 = "test";
+                     *         });
+                     *     }
+                     * }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    void mtest( "+ testname + " t){  }\n" +
+                    "    public void test() {\n" +
+                    "        mtest( new "+ testname + "() {\n" +
+                    "            _As_ _Bs_ String data2 = \"test\";\n" +
+                    "        });\n" +
+                    "    }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    hasInnerClass=true;
+                    innerClassname="$1";
+                break;
+            case src5: // (repeating)annotations on method in anonymous class
+                    /*
+                     * class Test120{
+                     *     void mtest( Test120 t){  }
+                     *     public void test() {
+                     *         mtest( new Test120() {
+                     *             @A @B @A @B String m2(){return null;};
+                     *         });
+                     *     }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    void mtest( "+ testname + " t){  }\n" +
+                    "    public void test() {\n" +
+                    "        mtest( new "+ testname + "() {\n" +
+                    "            _As_ _Bs_ String m2(){return null;};\n" +
+                    "        });\n" +
+                    "    }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    hasInnerClass=true;
+                    innerClassname="$1";
+                break;
         }
         return imports + source;
     }

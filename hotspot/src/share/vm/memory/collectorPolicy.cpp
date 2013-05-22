@@ -48,6 +48,17 @@
 // CollectorPolicy methods.
 
 void CollectorPolicy::initialize_flags() {
+  assert(max_alignment() >= min_alignment(),
+      err_msg("max_alignment: " SIZE_FORMAT " less than min_alignment: " SIZE_FORMAT,
+          max_alignment(), min_alignment()));
+  assert(max_alignment() % min_alignment() == 0,
+      err_msg("max_alignment: " SIZE_FORMAT " not aligned by min_alignment: " SIZE_FORMAT,
+          max_alignment(), min_alignment()));
+
+  if (MaxHeapSize < InitialHeapSize) {
+    vm_exit_during_initialization("Incompatible initial and maximum heap sizes specified");
+  }
+
   if (MetaspaceSize > MaxMetaspaceSize) {
     MaxMetaspaceSize = MetaspaceSize;
   }
@@ -71,21 +82,9 @@ void CollectorPolicy::initialize_flags() {
 }
 
 void CollectorPolicy::initialize_size_info() {
-  // User inputs from -mx and ms are aligned
-  set_initial_heap_byte_size(InitialHeapSize);
-  if (initial_heap_byte_size() == 0) {
-    set_initial_heap_byte_size(NewSize + OldSize);
-  }
-  set_initial_heap_byte_size(align_size_up(_initial_heap_byte_size,
-                                           min_alignment()));
-
-  set_min_heap_byte_size(Arguments::min_heap_size());
-  if (min_heap_byte_size() == 0) {
-    set_min_heap_byte_size(NewSize + OldSize);
-  }
-  set_min_heap_byte_size(align_size_up(_min_heap_byte_size,
-                                       min_alignment()));
-
+  // User inputs from -mx and ms must be aligned
+  set_min_heap_byte_size(align_size_up(Arguments::min_heap_size(), min_alignment()));
+  set_initial_heap_byte_size(align_size_up(InitialHeapSize, min_alignment()));
   set_max_heap_byte_size(align_size_up(MaxHeapSize, max_alignment()));
 
   // Check heap parameter properties
@@ -201,9 +200,6 @@ void GenCollectorPolicy::initialize_flags() {
   // All sizes must be multiples of the generation granularity.
   set_min_alignment((uintx) Generation::GenGrain);
   set_max_alignment(compute_max_alignment());
-  assert(max_alignment() >= min_alignment() &&
-         max_alignment() % min_alignment() == 0,
-         "invalid alignment constraints");
 
   CollectorPolicy::initialize_flags();
 
@@ -233,9 +229,6 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
   GenCollectorPolicy::initialize_flags();
 
   OldSize = align_size_down(OldSize, min_alignment());
-  if (NewSize + OldSize > MaxHeapSize) {
-    MaxHeapSize = NewSize + OldSize;
-  }
 
   if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(NewSize)) {
     // NewRatio will be used later to set the young generation size so we use
@@ -248,6 +241,48 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
     MaxHeapSize = calculated_heapsize;
     InitialHeapSize = calculated_heapsize;
   }
+  MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
+
+  // adjust max heap size if necessary
+  if (NewSize + OldSize > MaxHeapSize) {
+    if (FLAG_IS_CMDLINE(MaxHeapSize)) {
+      // somebody set a maximum heap size with the intention that we should not
+      // exceed it. Adjust New/OldSize as necessary.
+      uintx calculated_size = NewSize + OldSize;
+      double shrink_factor = (double) MaxHeapSize / calculated_size;
+      // align
+      NewSize = align_size_down((uintx) (NewSize * shrink_factor), min_alignment());
+      // OldSize is already aligned because above we aligned MaxHeapSize to
+      // max_alignment(), and we just made sure that NewSize is aligned to
+      // min_alignment(). In initialize_flags() we verified that max_alignment()
+      // is a multiple of min_alignment().
+      OldSize = MaxHeapSize - NewSize;
+    } else {
+      MaxHeapSize = NewSize + OldSize;
+    }
+  }
+  // need to do this again
+  MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
+
+  // adjust max heap size if necessary
+  if (NewSize + OldSize > MaxHeapSize) {
+    if (FLAG_IS_CMDLINE(MaxHeapSize)) {
+      // somebody set a maximum heap size with the intention that we should not
+      // exceed it. Adjust New/OldSize as necessary.
+      uintx calculated_size = NewSize + OldSize;
+      double shrink_factor = (double) MaxHeapSize / calculated_size;
+      // align
+      NewSize = align_size_down((uintx) (NewSize * shrink_factor), min_alignment());
+      // OldSize is already aligned because above we aligned MaxHeapSize to
+      // max_alignment(), and we just made sure that NewSize is aligned to
+      // min_alignment(). In initialize_flags() we verified that max_alignment()
+      // is a multiple of min_alignment().
+      OldSize = MaxHeapSize - NewSize;
+    } else {
+      MaxHeapSize = NewSize + OldSize;
+    }
+  }
+  // need to do this again
   MaxHeapSize = align_size_up(MaxHeapSize, max_alignment());
 
   always_do_update_barrier = UseConcMarkSweepGC;
@@ -717,7 +752,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   // free memory should be here, especially if they are expensive. If this
   // attempt fails, an OOM exception will be thrown.
   {
-    IntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
+    UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
 
     gch->do_collection(true             /* full */,
                        true             /* clear_all_soft_refs */,
@@ -842,7 +877,7 @@ MarkSweepPolicy::MarkSweepPolicy() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  _generations = new GenerationSpecPtr[number_of_generations()];
+  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, 0, AllocFailStrategy::RETURN_NULL);
   if (_generations == NULL)
     vm_exit_during_initialization("Unable to allocate gen spec");
 
