@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import com.sun.tools.doclets.internal.toolkit.taglets.*;
  * @author Bhavesh Patel (Modified)
  */
 public class HtmlSerialFieldWriter extends FieldWriterImpl
-    implements SerializedFormWriter.SerialFieldWriter {
+        implements SerializedFormWriter.SerialFieldWriter {
     ProgramElementDoc[] members = null;
 
     private boolean printedOverallAnchor = false;
@@ -129,8 +129,8 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (fieldType == null) {
             pre.addContent(fieldTypeStr);
         } else {
-            Content fieldContent = new RawHtml(writer.getLink(new LinkInfoImpl(
-                    configuration, LinkInfoImpl.CONTEXT_SERIAL_MEMBER, fieldType)));
+            Content fieldContent = writer.getLink(new LinkInfoImpl(
+                    configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
             pre.addContent(fieldContent);
         }
         pre.addContent(fieldDimensions + " ");
@@ -186,17 +186,13 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param contentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(FieldDoc field, Content contentTree) {
-        TagletOutputImpl output = new TagletOutputImpl("");
+        Content tagContent = new ContentBuilder();
         TagletWriter.genTagOuput(configuration.tagletManager, field,
-                configuration.tagletManager.getCustomTags(field),
-                writer.getTagletWriterInstance(false), output);
-        String outputString = output.toString().trim();
+                configuration.tagletManager.getCustomTaglets(field),
+                writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        if (!outputString.isEmpty()) {
-            Content tagContent = new RawHtml(outputString);
-            dlTags.addContent(tagContent);
-        }
-        contentTree.addContent(dlTags);
+        dlTags.addContent(tagContent);
+        contentTree.addContent(dlTags);  // TODO: what if empty?
     }
 
     /**

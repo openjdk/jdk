@@ -90,7 +90,7 @@ public class TestValueTag extends JavadocTester {
         //Test @value tag used with custom tag.
         {BUG_ID + FS + "pkg1" + FS + "CustomTagUsage.html",
             "<dt><span class=\"strong\">Todo:</span></dt>" + NL +
-                "  <dd>the value of this constant is 55.</dd>"},
+                "<dd>the value of this constant is 55.</dd>"},
         //Test @value warning printed when used with non-constant.
         {WARNING_OUTPUT,"warning - @value tag (which references nonConstant) " +
             "can only be used in constants."

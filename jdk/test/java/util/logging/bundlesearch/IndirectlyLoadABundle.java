@@ -23,41 +23,26 @@
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 
 /**
  * This class is used to ensure that a resource bundle loadable by a classloader
- * is on the caller's stack, but not on the classpath or TCCL to ensure that
- * Logger.getLogger() can't load the bundle via a stack search
+ * is on the caller's stack, but not on the classpath or TCCL.  It tests that
+ * Logger.getLogger() can load the bundle via the immediate caller's classloader
  *
  * @author Jim Gish
  */
 public class IndirectlyLoadABundle {
 
-    private final static String rbName = "StackSearchableResource";
+    private final static String rbName = "CallerSearchableResource";
 
     public boolean loadAndTest() throws Throwable {
-        // Find out where we are running from so we can setup the URLClassLoader URLs
-        // test.src and test.classes will be set if running in jtreg, but probably
-        // not otherwise
-        String testDir = System.getProperty("test.src", System.getProperty("user.dir"));
-        String testClassesDir = System.getProperty("test.classes",
-                System.getProperty("user.dir"));
-        String sep = System.getProperty("file.separator");
-
-        URL[] urls = new URL[2];
-
-        // Allow for both jtreg and standalone cases here
-        urls[0] = Paths.get(testDir, "resources").toUri().toURL();
-        urls[1] = Paths.get(testClassesDir).toUri().toURL();
-
-        System.out.println("INFO: urls[0] = " + urls[0]);
-        System.out.println("INFO: urls[1] = " + urls[1]);
-
         // Make sure we can find it via the URLClassLoader
-        URLClassLoader yetAnotherResourceCL = new URLClassLoader(urls, null);
+        URLClassLoader yetAnotherResourceCL = new URLClassLoader(getURLs(), null);
         if (!testForValidResourceSetup(yetAnotherResourceCL)) {
             throw new Exception("Couldn't directly load bundle " + rbName
                     + " as expected. Test config problem");
@@ -70,23 +55,109 @@ public class IndirectlyLoadABundle {
                     + " able to. Test config problem");
         }
 
-        Class<?> loadItUpClazz = Class.forName("LoadItUp", true, yetAnotherResourceCL);
+        Class<?> loadItUpClazz = Class.forName("LoadItUp1", true,
+                                               yetAnotherResourceCL);
         ClassLoader actual = loadItUpClazz.getClassLoader();
         if (actual != yetAnotherResourceCL) {
-            throw new Exception("LoadItUp was loaded by an unexpected CL: " + actual);
+            throw new Exception("LoadItUp1 was loaded by an unexpected CL: " + actual);
         }
         Object loadItUp = loadItUpClazz.newInstance();
-        Method testMethod = loadItUpClazz.getMethod("test", String.class);
+        Method testMethod = loadItUpClazz.getMethod("getLogger", String.class, String.class);
         try {
-            return (Boolean) testMethod.invoke(loadItUp, rbName);
+            return (Logger)testMethod.invoke(loadItUp, "NestedLogger1", rbName) != null;
         } catch (InvocationTargetException ex) {
             throw ex.getTargetException();
         }
     }
 
+    public boolean testGetAnonymousLogger() throws Throwable {
+        // Test getAnonymousLogger()
+        URLClassLoader loadItUpCL = new URLClassLoader(getURLs(), null);
+        Class<?> loadItUpClazz = Class.forName("LoadItUp1", true, loadItUpCL);
+        ClassLoader actual = loadItUpClazz.getClassLoader();
+        if (actual != loadItUpCL) {
+            throw new Exception("LoadItUp1 was loaded by an unexpected CL: "
+                                 + actual);
+        }
+        Object loadItUpAnon = loadItUpClazz.newInstance();
+        Method testAnonMethod = loadItUpClazz.getMethod("getAnonymousLogger",
+                                                        String.class);
+        try {
+            return (Logger)testAnonMethod.invoke(loadItUpAnon, rbName) != null;
+        } catch (InvocationTargetException ex) {
+            throw ex.getTargetException();
+        }
+    }
+
+
+    public boolean testGetLoggerGetLoggerWithBundle() throws Throwable {
+        // test getLogger("NestedLogger2"); followed by
+        // getLogger("NestedLogger2", rbName) to see if the bundle is found
+        //
+        URL[] urls = getURLs();
+        if (getLoggerWithNewCL(urls, "NestedLogger2", null)) {
+            return getLoggerWithNewCL(urls, "NestedLogger2", rbName);
+
+        } else {
+            throw new Exception("TEST FAILED: first call to getLogger() failed "
+                                 + " in IndirectlyLoadABundle."
+                                 + "testGetLoggerGetLoggerWithBundle");
+        }
+    }
+
+    private URL[] getURLs() throws MalformedURLException {
+        // Find out where we are running from so we can setup the URLClassLoader URLs
+        // test.src and test.classes will be set if running in jtreg, but probably
+        // not otherwise
+        String testDir = System.getProperty("test.src", System.getProperty("user.dir"));
+        String testClassesDir = System.getProperty("test.classes",
+                                                   System.getProperty("user.dir"));
+        URL[] urls = new URL[2];
+        // Allow for both jtreg and standalone cases here
+        urls[0] = Paths.get(testDir, "resources").toUri().toURL();
+        urls[1] = Paths.get(testClassesDir).toUri().toURL();
+
+        return urls;
+    }
+
+    private boolean getLoggerWithNewCL(URL[] urls, String loggerName,
+                                         String bundleName) throws Throwable {
+        Logger result = null;;
+        // Test getLogger("foo"); getLogger("foo", "rbName");
+        // First do the getLogger() call with no bundle name
+        URLClassLoader getLoggerCL = new URLClassLoader(urls, null);
+        Class<?> loadItUpClazz1 = Class.forName("LoadItUp1", true, getLoggerCL);
+        ClassLoader actual = loadItUpClazz1.getClassLoader();
+        if (actual != getLoggerCL) {
+            throw new Exception("LoadItUp1 was loaded by an unexpected CL: "
+                                 + actual);
+        }
+        Object loadItUp1 = loadItUpClazz1.newInstance();
+        if (bundleName != null) {
+            Method getLoggerMethod = loadItUpClazz1.getMethod("getLogger",
+                                                              String.class,
+                                                              String.class);
+            try {
+                result = (Logger) getLoggerMethod.invoke(loadItUp1, loggerName,
+                                                         bundleName);
+            } catch (InvocationTargetException ex) {
+                throw ex.getTargetException();
+            }
+        } else {
+            Method getLoggerMethod = loadItUpClazz1.getMethod("getLogger",
+                                                              String.class);
+            try {
+                result = (Logger) getLoggerMethod.invoke(loadItUp1, loggerName);
+            } catch (InvocationTargetException ex) {
+                throw ex.getTargetException();
+            }
+        }
+        return result != null;
+    }
+
     private boolean testForValidResourceSetup(ClassLoader cl) {
-        // First make sure the test environment is setup properly and the bundle actually
-        // exists
+        // First make sure the test environment is setup properly and the bundle
+        // actually exists
         return ResourceBundleSearchTest.isOnClassPath(rbName, cl);
     }
 }

@@ -17,7 +17,8 @@ the test passed.
 <p>
 Press "Pass" if ... press "Fail" otherwise.
 <p>
-<ol>
+<ol start="0">
+<li> If testing on Windows, create a temporary directory. (Example: C:\foo\tmp)
 <li> Pull down the 'File' and 'KeyStore' menus and check values
 <li> Pull down 'File' menu and select 'View Warning Log'.  Confirm FileNotFound.
 <li> Pull down 'File' menu and select 'New'.
@@ -54,14 +55,17 @@ Press "Pass" if ... press "Fail" otherwise.
 <li> Do not remove the entry, click 'Cancel'.
 <li> Pull down 'File' menu and select 'Exit'.  Confirm Save option.
 	Click 'Cancel'.
-<li> Select 'File' menu value 'Save', enter "/tmp/policy1" as the filename,
-	and check status message
+<li> Select 'File' menu value 'Save' and enter "/tmp/policy1" as the filename.<br>
+     If testing on Windows, use the temporary directory created in Step 0.
+        (Example: Save as "C:\foo\tmp\policy1")<br>
+     Check status message.
 <li> Select 'File' menu value 'New'
 <li> Click 'Add Policy Entry', type in "hello" for 'SignedBy' field,
 	click 'Done'.  Confirm warning.
 <li> Select 'File' menu value 'Open' and confirm save option
 	(do not save changes)
-<li> Type "/tmp/policy1" for the filename and confirm warning message
+<li> Type "/tmp/policy1" (if Windows, "C:\foo\tmp\policy1") for the filename
+        and confirm warning message<br>
 <li> Pull down 'File' menu, select 'View Warning Log'
 	and confirm KeyStore alias warning
 <li> Pull down 'KeyStore' menu and select 'Edit'
@@ -80,11 +84,13 @@ Press "Pass" if ... press "Fail" otherwise.
 <li> Pull down 'KeyStore' menu and select 'Edit'
 <li> Confirm URL, Type, Provider, and Password URL values.
 <li> Click OK
-<li> Pull down 'File' menu and select 'Save As'.  Enter /tmp/policy2.
-	Confirm status message.
+<li> Pull down 'File' menu and select 'Save As'.  Enter "/tmp/policy2"
+        (if Windows, "C:\foo\tmp\policy2").
+	Confirm status message.<br>
 <li> Pull down 'File' menu and select 'New'.
-<li> Pull down 'File' menu and select 'Open'.  Enter /tmp/policy2.
-	Confirm warning message.
+<li> Pull down 'File' menu and select 'Open'.  Enter "/tmp/policy2"
+        (if Windows, "C:\foo\tmp\policy2").
+	Confirm warning message.<br>
 <li> Click on 'Add Policy Entry', enter Codebase 'http://foo',
 	SignedBy 'bar'.  Click on 'Done' and confirm alias warning.
 <li> Double-Click on just created policy entry, confirm edit window appears.
@@ -115,6 +121,8 @@ Press "Pass" if ... press "Fail" otherwise.
 <li> Confirm entries in main window listing.
 <li> Select 'File' menu value 'Exit'
 <li> Save Changes, confirm status message.
+<li> If testing on Windows, delete the temporary directory and its contents
+        created during this test.
 </ol>
 <p>
 

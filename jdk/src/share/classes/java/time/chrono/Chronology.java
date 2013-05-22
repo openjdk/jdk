@@ -176,7 +176,7 @@ import sun.util.logging.PlatformLogger;
  * CLDR specification then the calendar type is the concatenation of the
  * CLDR type and, if applicable, the CLDR variant,
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * Subclasses should be Serializable wherever possible.
@@ -338,16 +338,13 @@ public abstract class Chronology implements Comparable<Chronology> {
      * <p>
      * The {@code Locale} class also supports an extension mechanism that
      * can be used to identify a calendar system. The mechanism is a form
-     * of key-value pairs, where the calendar system has the key "ca"
-     * and an optional variant key "cv".
+     * of key-value pairs, where the calendar system has the key "ca".
      * For example, the locale "en-JP-u-ca-japanese" represents the English
      * language as used in Japan with the Japanese calendar system.
      * <p>
      * This method finds the desired calendar system by in a manner equivalent
      * to passing "ca" to {@link Locale#getUnicodeLocaleType(String)}.
      * If the "ca" key is not present, then {@code IsoChronology} is returned.
-     * The variant, if present, is appended to the "ca" value separated by  "-"
-     * and the concatenated value is used to find the calendar system by type.
      * <p>
      * Note that the behavior of this method differs from the older
      * {@link java.util.Calendar#getInstance(Locale)} method.
@@ -373,10 +370,6 @@ public abstract class Chronology implements Comparable<Chronology> {
         String type = locale.getUnicodeLocaleType("ca");
         if (type == null || "iso".equals(type) || "iso8601".equals(type)) {
             return IsoChronology.INSTANCE;
-        }
-        String variant = locale.getUnicodeLocaleType("cv");
-        if (variant != null && !variant.isEmpty()) {
-            type = type + '-' + variant;
         }
         // Not pre-defined; lookup by the type
         do {
@@ -563,7 +556,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * and the variant, if applicable, is appended separated by "-".
      * The calendar type is used to lookup the {@code Chronology} using {@link #of(String)}.
      *
-     * @return the calendar system type, null if the calendar is not defined
+     * @return the calendar system type, null if the calendar is not defined by CLDR/LDML
      * @see #getId()
      */
     public abstract String getCalendarType();

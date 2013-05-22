@@ -486,8 +486,8 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an AnnotatedType object that represents the potentially
-     * annotated return type of the method/constructor represented by this
+     * Returns an AnnotatedType object that represents the use of a type to
+     * specify the return type of the method/constructor represented by this
      * Executable.
      *
      * If this Executable represents a constructor, the AnnotatedType object
@@ -510,12 +510,12 @@ public abstract class Executable extends AccessibleObject
      */
     AnnotatedType getAnnotatedReturnType0(Type returnType) {
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes(),
-                                                       sun.misc.SharedSecrets.getJavaLangAccess().
-                                                           getConstantPool(getDeclaringClass()),
-                                                       this,
-                                                       getDeclaringClass(),
-                                                       returnType,
-                                                       TypeAnnotation.TypeAnnotationTarget.METHOD_RETURN_TYPE);
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                this,
+                getDeclaringClass(),
+                returnType,
+                TypeAnnotation.TypeAnnotationTarget.METHOD_RETURN);
     }
 
     /**
@@ -535,12 +535,12 @@ public abstract class Executable extends AccessibleObject
      */
     public AnnotatedType getAnnotatedReceiverType() {
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes(),
-                                                       sun.misc.SharedSecrets.getJavaLangAccess().
-                                                           getConstantPool(getDeclaringClass()),
-                                                       this,
-                                                       getDeclaringClass(),
-                                                       getDeclaringClass(),
-                                                       TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER_TYPE);
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                this,
+                getDeclaringClass(),
+                getDeclaringClass(),
+                TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 
     /**
@@ -556,7 +556,13 @@ public abstract class Executable extends AccessibleObject
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        throw new UnsupportedOperationException("Not yet");
+        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes(),
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                this,
+                getDeclaringClass(),
+                getParameterTypes(),
+                TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
     }
 
     /**
@@ -573,12 +579,12 @@ public abstract class Executable extends AccessibleObject
      */
     public AnnotatedType[] getAnnotatedExceptionTypes() {
         return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes(),
-                                                        sun.misc.SharedSecrets.getJavaLangAccess().
-                                                            getConstantPool(getDeclaringClass()),
-                                                        this,
-                                                        getDeclaringClass(),
-                                                        getGenericExceptionTypes(),
-                                                        TypeAnnotation.TypeAnnotationTarget.THROWS);
+                sun.misc.SharedSecrets.getJavaLangAccess().
+                        getConstantPool(getDeclaringClass()),
+                this,
+                getDeclaringClass(),
+                getGenericExceptionTypes(),
+                TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
 
 }

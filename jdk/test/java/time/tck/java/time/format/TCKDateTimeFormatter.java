@@ -90,7 +90,7 @@ import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
 import java.time.chrono.ThaiBuddhistDate;
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -134,14 +134,14 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_withLocale() {
-        DateTimeFormatter base = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter base = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         DateTimeFormatter test = base.withLocale(Locale.GERMAN);
         assertEquals(test.getLocale(), Locale.GERMAN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_withLocale_null() {
-        DateTimeFormatter base = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter base = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         base.withLocale((Locale) null);
     }
 
@@ -192,7 +192,9 @@ public class TCKDateTimeFormatter {
                 .appendValue(YEAR).appendLiteral('-').appendValue(MONTH_OF_YEAR).appendLiteral('-')
                 .appendValue(DAY_OF_MONTH).appendLiteral('-').appendValue(DAY_OF_YEAR).toFormatter();
         DateTimeFormatter f = base.withResolverFields(YEAR, DAY_OF_YEAR);
-        assertEquals(f.getResolverFields(), new HashSet<>(Arrays.asList(YEAR, DAY_OF_YEAR)));
+        Set<TemporalField> expected = new HashSet<>(Arrays.asList(YEAR, DAY_OF_YEAR));
+        // Use set.equals();  testNG comparison of Collections is ordered
+        assertTrue(f.getResolverFields().equals(expected), "ResolveFields: " + f.getResolverFields());
         try {
             base.parse("2012-6-30-321", LocalDate::from);  // wrong month/day-of-month
             fail();
@@ -392,27 +394,27 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_format_TemporalAccessor_simple() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         String result = test.format(LocalDate.of(2008, 6, 30));
         assertEquals(result, "ONE30");
     }
 
     @Test(expectedExceptions = DateTimeException.class)
     public void test_format_TemporalAccessor_noSuchField() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.format(LocalTime.of(11, 30));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_format_TemporalAccessor_null() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.format((TemporalAccessor) null);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_print_TemporalAppendable() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         StringBuilder buf = new StringBuilder();
         test.formatTo(LocalDate.of(2008, 6, 30), buf);
         assertEquals(buf.toString(), "ONE30");
@@ -420,21 +422,21 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=DateTimeException.class)
     public void test_print_TemporalAppendable_noSuchField() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         StringBuilder buf = new StringBuilder();
         test.formatTo(LocalTime.of(11, 30), buf);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_print_TemporalAppendable_nullTemporal() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         StringBuilder buf = new StringBuilder();
         test.formatTo((TemporalAccessor) null, buf);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_print_TemporalAppendable_nullAppendable() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.formatTo(LocalDate.of(2008, 6, 30), (Appendable) null);
     }
 
@@ -443,7 +445,7 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_CharSequence() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         TemporalAccessor result = test.parse("ONE30");
         assertEquals(result.isSupported(DAY_OF_MONTH), true);
         assertEquals(result.getLong(DAY_OF_MONTH), 30L);
@@ -466,7 +468,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parse_CharSequence_null() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parse((String) null);
     }
 
@@ -475,7 +477,7 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_parse_CharSequence_ParsePosition() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(3);
         TemporalAccessor result = test.parse("XXXONE30XXX", pos);
         assertEquals(pos.getIndex(), 8);
@@ -523,13 +525,13 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parse_CharSequence_ParsePosition_nullText() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parse((CharSequence) null, new ParsePosition(0));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parse_CharSequence_ParsePosition_nullParsePosition() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parse("Text", (ParsePosition) null);
     }
 
@@ -594,7 +596,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parse_Query_String_nullRule() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parse("30", (TemporalQuery<?>) null);
     }
 
@@ -630,7 +632,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=DateTimeParseException.class)
     public void test_parseBest_String_parseErrorLongText() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         try {
             test.parseBest("ONEXXX67890123456789012345678901234567890123456789012345678901234567890123456789", ZonedDateTime::from, LocalDate::from);
         } catch (DateTimeParseException ex) {
@@ -644,7 +646,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=DateTimeParseException.class)
     public void test_parseBest_String_parseIncomplete() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         try {
             test.parseBest("ONE30SomethingElse", ZonedDateTime::from, LocalDate::from);
         } catch (DateTimeParseException ex) {
@@ -658,32 +660,32 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parseBest_String_nullText() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parseBest((String) null, ZonedDateTime::from, LocalDate::from);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parseBest_String_nullRules() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parseBest("30", (TemporalQuery<?>[]) null);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_parseBest_String_zeroRules() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parseBest("30", new TemporalQuery<?>[0]);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_parseBest_String_oneRule() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parseBest("30", LocalDate::from);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_parseUnresolved_StringParsePosition() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor result = test.parseUnresolved("ONE30XXX", pos);
         assertEquals(pos.getIndex(), 5);
@@ -693,7 +695,7 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_parseUnresolved_StringParsePosition_parseError() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor result = test.parseUnresolved("ONEXXX", pos);
         assertEquals(pos.getIndex(), 0);
@@ -725,20 +727,20 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parseUnresolved_StringParsePosition_nullString() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(0);
         test.parseUnresolved((String) null, pos);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_parseUnresolved_StringParsePosition_nullParsePosition() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         test.parseUnresolved("ONE30", (ParsePosition) null);
     }
 
     @Test(expectedExceptions=IndexOutOfBoundsException.class)
     public void test_parseUnresolved_StringParsePosition_invalidPosition() {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(6);
         test.parseUnresolved("ONE30", pos);
     }
@@ -747,7 +749,7 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_toFormat_format() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         String result = format.format(LocalDate.of(2008, 6, 30));
         assertEquals(result, "ONE30");
@@ -755,14 +757,14 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_toFormat_format_null() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         format.format(null);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_toFormat_format_notTemporal() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         format.format("Not a Temporal");
     }
@@ -770,7 +772,7 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_toFormat_parseObject_String() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         TemporalAccessor result = (TemporalAccessor) format.parseObject("ONE30");
         assertEquals(result.isSupported(DAY_OF_MONTH), true);
@@ -779,7 +781,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=ParseException.class)
     public void test_toFormat_parseObject_String_parseError() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         try {
             format.parseObject("ONEXXX");
@@ -792,7 +794,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=ParseException.class)
     public void test_toFormat_parseObject_String_parseErrorLongText() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         try {
             format.parseObject("ONEXXX67890123456789012345678901234567890123456789012345678901234567890123456789");
@@ -806,7 +808,7 @@ public class TCKDateTimeFormatter {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_toFormat_parseObject_String_null() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         format.parseObject((String) null);
     }
@@ -814,7 +816,7 @@ public class TCKDateTimeFormatter {
     //-----------------------------------------------------------------------
     @Test
     public void test_toFormat_parseObject_StringParsePosition() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor result = (TemporalAccessor) format.parseObject("ONE30XXX", pos);
@@ -826,7 +828,7 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_toFormat_parseObject_StringParsePosition_parseError() throws Exception {
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor result = (TemporalAccessor) format.parseObject("ONEXXX", pos);
@@ -838,7 +840,7 @@ public class TCKDateTimeFormatter {
     @Test(expectedExceptions=NullPointerException.class)
     public void test_toFormat_parseObject_StringParsePosition_nullString() throws Exception {
         // SimpleDateFormat has this behavior
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         ParsePosition pos = new ParsePosition(0);
         format.parseObject((String) null, pos);
@@ -847,7 +849,7 @@ public class TCKDateTimeFormatter {
     @Test(expectedExceptions=NullPointerException.class)
     public void test_toFormat_parseObject_StringParsePosition_nullParsePosition() throws Exception {
         // SimpleDateFormat has this behavior
-        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter test = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         Format format = test.toFormat();
         format.parseObject("ONE30", (ParsePosition) null);
     }
@@ -855,7 +857,7 @@ public class TCKDateTimeFormatter {
     @Test
     public void test_toFormat_parseObject_StringParsePosition_invalidPosition_tooBig() throws Exception {
         // SimpleDateFormat has this behavior
-        DateTimeFormatter dtf = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter dtf = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(6);
         Format test = dtf.toFormat();
         assertNull(test.parseObject("ONE30", pos));
@@ -865,7 +867,7 @@ public class TCKDateTimeFormatter {
     @Test
     public void test_toFormat_parseObject_StringParsePosition_invalidPosition_tooSmall() throws Exception {
         // SimpleDateFormat throws StringIndexOutOfBoundException
-        DateTimeFormatter dtf = fmt.withLocale(Locale.ENGLISH).withSymbols(DateTimeFormatSymbols.STANDARD);
+        DateTimeFormatter dtf = fmt.withLocale(Locale.ENGLISH).withDecimalStyle(DecimalStyle.STANDARD);
         ParsePosition pos = new ParsePosition(-1);
         Format test = dtf.toFormat();
         assertNull(test.parseObject("ONE30", pos));

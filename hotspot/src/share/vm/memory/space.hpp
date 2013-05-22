@@ -537,9 +537,8 @@ protected:
    * Occasionally, we want to ensure a full compaction, which is determined  \
    * by the MarkSweepAlwaysCompactCount parameter.                           \
    */                                                                        \
-  int invocations = MarkSweep::total_invocations();                          \
-  bool skip_dead = (MarkSweepAlwaysCompactCount < 1)                         \
-    ||((invocations % MarkSweepAlwaysCompactCount) != 0);                    \
+  uint invocations = MarkSweep::total_invocations();                         \
+  bool skip_dead = ((invocations % MarkSweepAlwaysCompactCount) != 0);       \
                                                                              \
   size_t allowed_deadspace = 0;                                              \
   if (skip_dead) {                                                           \

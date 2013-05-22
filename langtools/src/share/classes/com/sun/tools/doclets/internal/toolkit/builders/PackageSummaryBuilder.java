@@ -120,8 +120,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param contentTree the content tree to which the documentation will be added
      */
     public void buildPackageDoc(XMLNode node, Content contentTree) throws Exception {
-        contentTree = packageWriter.getPackageHeader(
-                Util.getPackageName(packageDoc));
+        contentTree = packageWriter.getPackageHeader(Util.getPackageName(packageDoc));
         buildChildren(node, contentTree);
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);

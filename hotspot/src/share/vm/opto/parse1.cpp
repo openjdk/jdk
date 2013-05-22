@@ -390,6 +390,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
   _wrote_final = false;
+  _alloc_with_final = NULL;
   _entry_bci = InvocationEntryBci;
   _tf = NULL;
   _block = NULL;
@@ -723,6 +724,8 @@ void Parse::build_exits() {
   // Note:  iophi and memphi are not transformed until do_exits.
   Node* iophi  = new (C) PhiNode(region, Type::ABIO);
   Node* memphi = new (C) PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  gvn().set_type_bottom(iophi);
+  gvn().set_type_bottom(memphi);
   _exits.set_i_o(iophi);
   _exits.set_all_memory(memphi);
 
@@ -738,6 +741,7 @@ void Parse::build_exits() {
     }
     int         ret_size = type2size[ret_type->basic_type()];
     Node*       ret_phi  = new (C) PhiNode(region, ret_type);
+    gvn().set_type_bottom(ret_phi);
     _exits.ensure_stack(ret_size);
     assert((int)(tf()->range()->cnt() - TypeFunc::Parms) == ret_size, "good tf range");
     assert(method()->return_type()->size() == ret_size, "tf agrees w/ method");
@@ -917,7 +921,7 @@ void Parse::do_exits() {
     // such unusual early publications.  But no barrier is needed on
     // exceptional returns, since they cannot publish normally.
     //
-    _exits.insert_mem_bar(Op_MemBarRelease);
+    _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
 #ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();

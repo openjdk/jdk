@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * An abstract class for that implements the {@link Taglet} interface.
@@ -130,7 +131,7 @@ public abstract class BaseTaglet implements Taglet {
      * {@inheritDoc}
      * @throws IllegalArgumentException thrown when the method is not supported by the taglet.
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         throw new IllegalArgumentException("Method not supported in taglet " + getName() + ".");
     }
 
@@ -138,7 +139,7 @@ public abstract class BaseTaglet implements Taglet {
      * {@inheritDoc}
      * @throws IllegalArgumentException thrown when the method is not supported by the taglet.
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         throw new IllegalArgumentException("Method not supported in taglet " + getName() + ".");
     }
 }
