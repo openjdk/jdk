@@ -742,7 +742,12 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
     for (i=0; i < glyphCnt; i++) {
       GlyphInfo *jginfo = (GlyphInfo *) jlong_to_ptr(glyphInfoPtrs[i]);
 
-      gid[i] = (Glyph) (0x0ffffffffL & ((unsigned long)(jginfo->cellInfo)));
+      // 'jginfo->cellInfo' is of type 'void*'
+      // (see definition of 'GlyphInfo' in fontscalerdefs.h)
+      // 'Glyph' is typedefed to 'unsigned long'
+      // (see http://www.x.org/releases/X11R7.7/doc/libXrender/libXrender.txt)
+      // Maybe we should assert that (sizeof(void*) == sizeof(Glyph)) ?
+      gid[i] = (Glyph) (jginfo->cellInfo);
       xginfo[i].x = (-jginfo->topLeftX);
       xginfo[i].y = (-jginfo->topLeftY);
       xginfo[i].width = jginfo->width;
