@@ -43,10 +43,12 @@ public interface TypeOverride<T extends Node> {
     /**
      * Set the override type
      *
-     * @param type  the type
+     * @param ts temporary symbols
+     * @param lc the current lexical context
+     * @param type the type
      * @return a node equivalent to this one except for the requested change.
      */
-    public T setType(final Type type);
+    public T setType(final TemporarySymbols ts, final LexicalContext lc, final Type type);
 
     /**
      * Returns true if this node can have a callsite override, e.g. all scope ident nodes

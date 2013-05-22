@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import javax.xml.XMLConstants;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
@@ -67,6 +68,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerHandler;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import java.util.Objects;
 
 /**
  * <p>
@@ -229,6 +231,14 @@ public class XIncludeHandler
     protected static final String PARSER_SETTINGS =
         Constants.XERCES_FEATURE_PREFIX + Constants.PARSER_SETTINGS;
 
+    /** property identifier: access external dtd. */
+    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** access external dtd: file protocol
+     *  For DOM/SAX, the secure feature is set to true by default
+     */
+    final static String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
+
     /** Recognized features. */
     private static final String[] RECOGNIZED_FEATURES =
         { ALLOW_UE_AND_NOTATION_EVENTS, XINCLUDE_FIXUP_BASE_URIS, XINCLUDE_FIXUP_LANGUAGE };
@@ -283,6 +293,12 @@ public class XIncludeHandler
     protected XMLErrorReporter fErrorReporter;
     protected XMLEntityResolver fEntityResolver;
     protected SecurityManager fSecurityManager;
+    /**
+     * comma-delimited list of protocols that are allowed for the purpose
+     * of accessing external dtd or entity references
+     */
+    protected String fAccessExternalDTD = EXTERNAL_ACCESS_DEFAULT;
+
 
     // these are needed for text include processing
     protected XIncludeTextReader fXInclude10TextReader;
@@ -375,6 +391,7 @@ public class XIncludeHandler
 
     // XMLComponent methods
 
+    @Override
     public void reset(XMLComponentManager componentManager)
         throws XNIException {
         fNamespaceContext = null;
@@ -523,6 +540,8 @@ public class XIncludeHandler
             fSecurityManager = null;
         }
 
+        fAccessExternalDTD = (String)componentManager.getProperty(ACCESS_EXTERNAL_DTD);
+
         // Get buffer size.
         try {
             Integer value =
@@ -580,6 +599,7 @@ public class XIncludeHandler
      * this component. This method may return null if no features
      * are recognized by this component.
      */
+    @Override
     public String[] getRecognizedFeatures() {
         return (String[])(RECOGNIZED_FEATURES.clone());
     } // getRecognizedFeatures():String[]
@@ -599,6 +619,7 @@ public class XIncludeHandler
      * @throws SAXNotSupportedException The component should not throw
      *                                  this exception.
      */
+    @Override
     public void setFeature(String featureId, boolean state)
         throws XMLConfigurationException {
         if (featureId.equals(ALLOW_UE_AND_NOTATION_EVENTS)) {
@@ -615,6 +636,7 @@ public class XIncludeHandler
      * this component. This method may return null if no properties
      * are recognized by this component.
      */
+    @Override
     public String[] getRecognizedProperties() {
         return (String[])(RECOGNIZED_PROPERTIES.clone());
     } // getRecognizedProperties():String[]
@@ -634,6 +656,7 @@ public class XIncludeHandler
      * @throws SAXNotSupportedException The component should not throw
      *                                  this exception.
      */
+    @Override
     public void setProperty(String propertyId, Object value)
         throws XMLConfigurationException {
         if (propertyId.equals(SYMBOL_TABLE)) {
@@ -664,6 +687,14 @@ public class XIncludeHandler
             }
             return;
         }
+        if (propertyId.equals(ACCESS_EXTERNAL_DTD)) {
+            fAccessExternalDTD = (String)value;
+            if (fChildConfig != null) {
+                fChildConfig.setProperty(propertyId, value);
+            }
+            return;
+        }
+
         if (propertyId.equals(BUFFER_SIZE)) {
             Integer bufferSize = (Integer) value;
             if (fChildConfig != null) {
@@ -694,6 +725,7 @@ public class XIncludeHandler
      *
      * @since Xerces 2.2.0
      */
+    @Override
     public Boolean getFeatureDefault(String featureId) {
         for (int i = 0; i < RECOGNIZED_FEATURES.length; i++) {
             if (RECOGNIZED_FEATURES[i].equals(featureId)) {
@@ -712,6 +744,7 @@ public class XIncludeHandler
      *
      * @since Xerces 2.2.0
      */
+    @Override
     public Object getPropertyDefault(String propertyId) {
         for (int i = 0; i < RECOGNIZED_PROPERTIES.length; i++) {
             if (RECOGNIZED_PROPERTIES[i].equals(propertyId)) {
@@ -721,10 +754,12 @@ public class XIncludeHandler
         return null;
     } // getPropertyDefault(String):Object
 
+    @Override
     public void setDocumentHandler(XMLDocumentHandler handler) {
         fDocumentHandler = handler;
     }
 
+    @Override
     public XMLDocumentHandler getDocumentHandler() {
         return fDocumentHandler;
     }
@@ -739,6 +774,7 @@ public class XIncludeHandler
      *
      * This event is only passed on to the document handler if this is the root document.
      */
+    @Override
     public void startDocument(
         XMLLocator locator,
         String encoding,
@@ -786,6 +822,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void xmlDecl(
         String version,
         String encoding,
@@ -798,6 +835,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void doctypeDecl(
         String rootElement,
         String publicId,
@@ -809,6 +847,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void comment(XMLString text, Augmentations augs)
         throws XNIException {
         if (!fInDTD) {
@@ -825,6 +864,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void processingInstruction(
         String target,
         XMLString data,
@@ -845,6 +885,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void startElement(
         QName element,
         XMLAttributes attributes,
@@ -915,6 +956,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void emptyElement(
         QName element,
         XMLAttributes attributes,
@@ -996,6 +1038,7 @@ public class XIncludeHandler
         fDepth--;
     }
 
+    @Override
     public void endElement(QName element, Augmentations augs)
         throws XNIException {
 
@@ -1041,6 +1084,7 @@ public class XIncludeHandler
         fDepth--;
     }
 
+    @Override
     public void startGeneralEntity(
         String name,
         XMLResourceIdentifier resId,
@@ -1059,6 +1103,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void textDecl(String version, String encoding, Augmentations augs)
         throws XNIException {
         if (fDocumentHandler != null
@@ -1067,6 +1112,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void endGeneralEntity(String name, Augmentations augs)
         throws XNIException {
         if (fDocumentHandler != null
@@ -1076,6 +1122,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void characters(XMLString text, Augmentations augs)
         throws XNIException {
         if (getState() == STATE_NORMAL_PROCESSING) {
@@ -1092,6 +1139,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void ignorableWhitespace(XMLString text, Augmentations augs)
         throws XNIException {
         if (fDocumentHandler != null
@@ -1101,6 +1149,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void startCDATA(Augmentations augs) throws XNIException {
         if (fDocumentHandler != null
             && getState() == STATE_NORMAL_PROCESSING
@@ -1109,6 +1158,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void endCDATA(Augmentations augs) throws XNIException {
         if (fDocumentHandler != null
             && getState() == STATE_NORMAL_PROCESSING
@@ -1117,6 +1167,7 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void endDocument(Augmentations augs) throws XNIException {
         if (isRootDocument()) {
             if (!fSeenRootElement) {
@@ -1128,10 +1179,12 @@ public class XIncludeHandler
         }
     }
 
+    @Override
     public void setDocumentSource(XMLDocumentSource source) {
         fDocumentSource = source;
     }
 
+    @Override
     public XMLDocumentSource getDocumentSource() {
         return fDocumentSource;
     }
@@ -1143,6 +1196,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#attributeDecl(java.lang.String, java.lang.String, java.lang.String, java.lang.String[], java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLString, com.sun.org.apache.xerces.internal.xni.XMLString, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void attributeDecl(
         String elementName,
         String attributeName,
@@ -1169,6 +1223,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#elementDecl(java.lang.String, java.lang.String, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void elementDecl(
         String name,
         String contentModel,
@@ -1182,6 +1237,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#endAttlist(com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void endAttlist(Augmentations augmentations) throws XNIException {
         if (fDTDHandler != null) {
             fDTDHandler.endAttlist(augmentations);
@@ -1191,6 +1247,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#endConditional(com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void endConditional(Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1201,6 +1258,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#endDTD(com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void endDTD(Augmentations augmentations) throws XNIException {
         if (fDTDHandler != null) {
             fDTDHandler.endDTD(augmentations);
@@ -1211,6 +1269,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#endExternalSubset(com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void endExternalSubset(Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1221,6 +1280,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#endParameterEntity(java.lang.String, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void endParameterEntity(String name, Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1231,6 +1291,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#externalEntityDecl(java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void externalEntityDecl(
         String name,
         XMLResourceIdentifier identifier,
@@ -1244,6 +1305,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#getDTDSource()
      */
+    @Override
     public XMLDTDSource getDTDSource() {
         return fDTDSource;
     }
@@ -1251,6 +1313,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#ignoredCharacters(com.sun.org.apache.xerces.internal.xni.XMLString, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void ignoredCharacters(XMLString text, Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1261,6 +1324,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#internalEntityDecl(java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLString, com.sun.org.apache.xerces.internal.xni.XMLString, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void internalEntityDecl(
         String name,
         XMLString text,
@@ -1279,6 +1343,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#notationDecl(java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void notationDecl(
         String name,
         XMLResourceIdentifier identifier,
@@ -1293,6 +1358,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#setDTDSource(com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource)
      */
+    @Override
     public void setDTDSource(XMLDTDSource source) {
         fDTDSource = source;
     }
@@ -1300,6 +1366,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#startAttlist(java.lang.String, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void startAttlist(String elementName, Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1310,6 +1377,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#startConditional(short, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void startConditional(short type, Augmentations augmentations)
         throws XNIException {
         if (fDTDHandler != null) {
@@ -1320,6 +1388,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#startDTD(com.sun.org.apache.xerces.internal.xni.XMLLocator, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void startDTD(XMLLocator locator, Augmentations augmentations)
         throws XNIException {
         fInDTD = true;
@@ -1331,6 +1400,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#startExternalSubset(com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void startExternalSubset(
         XMLResourceIdentifier identifier,
         Augmentations augmentations)
@@ -1343,6 +1413,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#startParameterEntity(java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier, java.lang.String, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void startParameterEntity(
         String name,
         XMLResourceIdentifier identifier,
@@ -1361,6 +1432,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.XMLDTDHandler#unparsedEntityDecl(java.lang.String, com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier, java.lang.String, com.sun.org.apache.xerces.internal.xni.Augmentations)
      */
+    @Override
     public void unparsedEntityDecl(
         String name,
         XMLResourceIdentifier identifier,
@@ -1380,6 +1452,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource#getDTDHandler()
      */
+    @Override
     public XMLDTDHandler getDTDHandler() {
         return fDTDHandler;
     }
@@ -1387,6 +1460,7 @@ public class XIncludeHandler
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource#setDTDHandler(com.sun.org.apache.xerces.internal.xni.XMLDTDHandler)
      */
+    @Override
     public void setDTDHandler(XMLDTDHandler handler) {
         fDTDHandler = handler;
     }
@@ -1578,6 +1652,7 @@ public class XIncludeHandler
                 if (fErrorReporter != null) fChildConfig.setProperty(ERROR_REPORTER, fErrorReporter);
                 if (fEntityResolver != null) fChildConfig.setProperty(ENTITY_RESOLVER, fEntityResolver);
                 fChildConfig.setProperty(SECURITY_MANAGER, fSecurityManager);
+                fChildConfig.setProperty(ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
                 fChildConfig.setProperty(BUFFER_SIZE, new Integer(fBufferSize));
 
                 // features must be copied to child configuration
@@ -1615,11 +1690,10 @@ public class XIncludeHandler
                         fNamespaceContext);
 
                     ((XPointerHandler)fXPtrProcessor).setProperty(XINCLUDE_FIXUP_BASE_URIS,
-                            new Boolean(fFixupBaseURIs));
+                            fFixupBaseURIs);
 
                     ((XPointerHandler)fXPtrProcessor).setProperty(
-                            XINCLUDE_FIXUP_LANGUAGE,
-                            new Boolean (fFixupLanguage));
+                            XINCLUDE_FIXUP_LANGUAGE, fFixupLanguage);
 
                     if (fErrorReporter != null)
                         ((XPointerHandler)fXPtrProcessor).setProperty(ERROR_REPORTER, fErrorReporter);
@@ -1691,7 +1765,7 @@ public class XIncludeHandler
                 if (fErrorReporter != null) {
                     fErrorReporter.setDocumentLocator(fDocLocation);
                 }
-                reportFatalError("XMLParseError", new Object[] { href });
+                reportFatalError("XMLParseError", new Object[] { href, e.getMessage() });
             }
             catch (IOException e) {
                 // necessary to make sure proper location is reported in errors
@@ -2093,14 +2167,14 @@ public class XIncludeHandler
                 /** Check whether the scheme components are equal. */
                 final String baseScheme = base.getScheme();
                 final String literalScheme = uri.getScheme();
-                if (!isEqual(baseScheme, literalScheme)) {
+                if (!Objects.equals(baseScheme, literalScheme)) {
                     return relativeURI;
                 }
 
                 /** Check whether the authority components are equal. */
                 final String baseAuthority = base.getAuthority();
                 final String literalAuthority = uri.getAuthority();
-                if (!isEqual(baseAuthority, literalAuthority)) {
+                if (!Objects.equals(baseAuthority, literalAuthority)) {
                     return uri.getSchemeSpecificPart();
                 }
 
@@ -2113,7 +2187,7 @@ public class XIncludeHandler
                 final String literalQuery = uri.getQueryString();
                 final String literalFragment = uri.getFragment();
                 if (literalQuery != null || literalFragment != null) {
-                    StringBuffer buffer = new StringBuffer();
+                    final StringBuilder buffer = new StringBuilder();
                     if (literalPath != null) {
                         buffer.append(literalPath);
                     }
@@ -2624,15 +2698,15 @@ public class XIncludeHandler
 
         // equals() returns true if two Notations have the same name.
         // Useful for searching Vectors for notations with the same name
+        @Override
         public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (obj instanceof Notation) {
-                Notation other = (Notation)obj;
-                return name.equals(other.name);
-            }
-            return false;
+            return obj == this || obj instanceof Notation
+                    && Objects.equals(name, ((Notation)obj).name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(name);
         }
 
         // from 4.5.2
@@ -2645,15 +2719,11 @@ public class XIncludeHandler
         public boolean isDuplicate(Object obj) {
             if (obj != null && obj instanceof Notation) {
                 Notation other = (Notation)obj;
-                return name.equals(other.name)
-                && isEqual(publicId, other.publicId)
-                && isEqual(expandedSystemId, other.expandedSystemId);
+                return Objects.equals(name, other.name)
+                && Objects.equals(publicId, other.publicId)
+                && Objects.equals(expandedSystemId, other.expandedSystemId);
             }
             return false;
-        }
-
-        private boolean isEqual(String one, String two) {
-            return (one == two || (one != null && one.equals(two)));
         }
     }
 
@@ -2670,15 +2740,15 @@ public class XIncludeHandler
 
         // equals() returns true if two UnparsedEntities have the same name.
         // Useful for searching Vectors for entities with the same name
+        @Override
         public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (obj instanceof UnparsedEntity) {
-                UnparsedEntity other = (UnparsedEntity)obj;
-                return name.equals(other.name);
-            }
-            return false;
+            return obj == this || obj instanceof UnparsedEntity
+                    && Objects.equals(name, ((UnparsedEntity)obj).name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(name);
         }
 
         // from 4.5.1:
@@ -2691,16 +2761,12 @@ public class XIncludeHandler
         public boolean isDuplicate(Object obj) {
             if (obj != null && obj instanceof UnparsedEntity) {
                 UnparsedEntity other = (UnparsedEntity)obj;
-                return name.equals(other.name)
-                && isEqual(publicId, other.publicId)
-                && isEqual(expandedSystemId, other.expandedSystemId)
-                && isEqual(notation, other.notation);
+                return Objects.equals(name, other.name)
+                && Objects.equals(publicId, other.publicId)
+                && Objects.equals(expandedSystemId, other.expandedSystemId)
+                && Objects.equals(notation, other.notation);
             }
             return false;
-        }
-
-        private boolean isEqual(String one, String two) {
-            return (one == two || (one != null && one.equals(two)));
         }
     }
 
@@ -2891,17 +2957,13 @@ public class XIncludeHandler
         return httpSource;
     }
 
-    private boolean isEqual(String one, String two) {
-        return (one == two || (one != null && one.equals(two)));
-    }
-
     // which ASCII characters need to be escaped
-    private static boolean gNeedEscaping[] = new boolean[128];
+    private static final boolean gNeedEscaping[] = new boolean[128];
     // the first hex character if a character needs to be escaped
-    private static char gAfterEscaping1[] = new char[128];
+    private static final char gAfterEscaping1[] = new char[128];
     // the second hex character if a character needs to be escaped
-    private static char gAfterEscaping2[] = new char[128];
-    private static char[] gHexChs = {'0', '1', '2', '3', '4', '5', '6', '7',
+    private static final char gAfterEscaping2[] = new char[128];
+    private static final char[] gHexChs = {'0', '1', '2', '3', '4', '5', '6', '7',
                                      '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     // initialize the above 3 arrays
     static {
@@ -2931,7 +2993,7 @@ public class XIncludeHandler
     private String escapeHref(String href) {
         int len = href.length();
         int ch;
-        StringBuffer buffer = new StringBuffer(len*3);
+        final StringBuilder buffer = new StringBuilder(len*3);
 
         // for each character in the href
         int i = 0;

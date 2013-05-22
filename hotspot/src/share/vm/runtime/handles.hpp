@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ class HandleArea: public Arena {
 // across the HandleMark boundary.
 
 // The base class of HandleMark should have been StackObj but we also heap allocate
-// a HandleMark when a thread is created.
+// a HandleMark when a thread is created. The operator new is for this special case.
 
 class HandleMark {
  private:
@@ -308,6 +308,11 @@ class HandleMark {
   void push();
   // called in the destructor of HandleMarkCleaner
   void pop_and_restore();
+  // overloaded operators
+  void* operator new(size_t size);
+  void* operator new [](size_t size);
+  void operator delete(void* p);
+  void operator delete[](void* p);
 };
 
 //------------------------------------------------------------------------------------------------------------------------

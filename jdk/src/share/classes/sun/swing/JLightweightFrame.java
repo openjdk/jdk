@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.security.AccessController;
 
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -43,6 +44,7 @@ import javax.swing.LayoutFocusTraversalPolicy;
 import javax.swing.RootPaneContainer;
 
 import sun.awt.LightweightFrame;
+import sun.security.action.GetPropertyAction;
 
 /**
  * The frame serves as a lightweight container which paints its content
@@ -66,11 +68,27 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     private BufferedImage bbImage;
 
     /**
+     * {@code copyBufferEnabled}, true by default, defines the following strategy.
+     * A duplicating (copy) buffer is created for the original pixel buffer.
+     * The copy buffer is synchronized with the original buffer every time the
+     * latter changes. {@code JLightweightFrame} passes the copy buffer array
+     * to the {@link LightweightContent#imageBufferReset} method. The code spot
+     * which synchronizes two buffers becomes the only critical section guarded
+     * by the lock (managed with the {@link LightweightContent#paintLock()},
+     * {@link LightweightContent#paintUnlock()} methods).
+     */
+    private boolean copyBufferEnabled;
+    private int[] copyBuffer;
+
+    /**
      * Constructs a new, initially invisible {@code JLightweightFrame}
      * instance.
      */
     public JLightweightFrame() {
         super();
+        copyBufferEnabled = "true".equals(AccessController.
+            doPrivileged(new GetPropertyAction("jlf.copyBufferEnabled", "true")));
+
         add(rootPane, BorderLayout.CENTER);
         setFocusTraversalPolicy(new LayoutFocusTraversalPolicy());
         if (getGraphicsConfiguration().isTranslucencyCapable()) {
@@ -124,16 +142,37 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         if (content != null) content.focusUngrabbed();
     }
 
+    private void syncCopyBuffer(boolean reset, int x, int y, int w, int h) {
+        content.paintLock();
+        try {
+            int[] srcBuffer = ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
+            if (reset) {
+                copyBuffer = new int[srcBuffer.length];
+            }
+            int linestride = bbImage.getWidth();
+
+            for (int i=0; i<h; i++) {
+                int from = (y + i) * linestride + x;
+                System.arraycopy(srcBuffer, from, copyBuffer, from, w);
+            }
+        } finally {
+            content.paintUnlock();
+        }
+    }
+
     private void initInterior() {
         contentPane = new JPanel() {
             @Override
             public void paint(Graphics g) {
-                content.paintLock();
+                if (!copyBufferEnabled) {
+                    content.paintLock();
+                }
                 try {
                     super.paint(g);
 
                     final Rectangle clip = g.getClipBounds() != null ?
-                            g.getClipBounds() : new Rectangle(0, 0, contentPane.getWidth(), contentPane.getHeight());
+                            g.getClipBounds() :
+                            new Rectangle(0, 0, contentPane.getWidth(), contentPane.getHeight());
 
                     clip.x = Math.max(0, clip.x);
                     clip.y = Math.max(0, clip.y);
@@ -143,11 +182,16 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                     EventQueue.invokeLater(new Runnable() {
                         @Override
                         public void run() {
+                            if (copyBufferEnabled) {
+                                syncCopyBuffer(false, clip.x, clip.y, clip.width, clip.height);
+                            }
                             content.imageUpdated(clip.x, clip.y, clip.width, clip.height);
                         }
                     });
                 } finally {
-                    content.paintUnlock();
+                    if (!copyBufferEnabled) {
+                        content.paintUnlock();
+                    }
                 }
             }
             @Override
@@ -167,8 +211,9 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         if (width == 0 || height == 0) {
             return;
         }
-
-        content.paintLock();
+        if (!copyBufferEnabled) {
+            content.paintLock();
+        }
         try {
             if ((bbImage == null) || (width != bbImage.getWidth()) || (height != bbImage.getHeight())) {
                 boolean createBB = true;
@@ -204,14 +249,21 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                             oldBB.flush();
                         }
                     }
-                    DataBufferInt dataBuf = (DataBufferInt)bbImage.getRaster().getDataBuffer();
-                    content.imageBufferReset(dataBuf.getData(), 0, 0, width, height, bbImage.getWidth());
-                } else {
-                    content.imageReshaped(0, 0, width, height);
+                    int[] pixels = ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
+                    if (copyBufferEnabled) {
+                        syncCopyBuffer(true, 0, 0, width, height);
+                        pixels = copyBuffer;
+                    }
+                    content.imageBufferReset(pixels, 0, 0, width, height, bbImage.getWidth());
+                    return;
                 }
             }
+            content.imageReshaped(0, 0, width, height);
+
         } finally {
-            content.paintUnlock();
+            if (!copyBufferEnabled) {
+                content.paintUnlock();
+            }
         }
     }
 

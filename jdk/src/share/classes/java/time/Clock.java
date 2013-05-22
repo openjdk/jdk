@@ -103,7 +103,7 @@ import java.util.TimeZone;
  * system clock This may use {@link System#currentTimeMillis()}, or a higher
  * resolution clock if one is available.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This abstract class must be implemented with care to ensure other operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * <p>
@@ -112,12 +112,22 @@ import java.util.TimeZone;
  * obtain the time from a central time server across the network. Obviously, in this case the
  * lookup could fail, and so the method is permitted to throw an exception.
  * <p>
- * The returned instants from {@code Clock} work on a time-scale that ignores leap seconds.
- * If the implementation wraps a source that provides leap second information, then a mechanism
- * should be used to "smooth" the leap second, such as UTC-SLS.
+ * The returned instants from {@code Clock} work on a time-scale that ignores leap seconds,
+ * as described in {@link Instant}. If the implementation wraps a source that provides leap
+ * second information, then a mechanism should be used to "smooth" the leap second.
+ * The Java Time-Scale mandates the use of UTC-SLS, however clock implementations may choose
+ * how accurate they are with the time-scale so long as they document how they work.
+ * Implementations are therefore not required to actually perform the UTC-SLS slew or to
+ * otherwise be aware of leap seconds.
  * <p>
  * Implementations should implement {@code Serializable} wherever possible and must
  * document whether or not they do support serialization.
+ *
+ * @implNote
+ * The clock implementation provided here is based on {@link System#currentTimeMillis()}.
+ * That method provides little to no guarantee about the accuracy of the clock.
+ * Applications requiring a more accurate clock must implement this abstract class
+ * themselves using a different external clock, such as an NTP server.
  *
  * @since 1.8
  */
@@ -370,7 +380,7 @@ public abstract class Clock {
     /**
      * Gets the current millisecond instant of the clock.
      * <p>
-     * This returns the millisecond-based instant, measured from 1970-01-01T00:00 UTC.
+     * This returns the millisecond-based instant, measured from 1970-01-01T00:00Z (UTC).
      * This is equivalent to the definition of {@link System#currentTimeMillis()}.
      * <p>
      * Most applications should avoid this method and use {@link Instant} to represent
@@ -381,7 +391,7 @@ public abstract class Clock {
      * The default implementation currently calls {@link #instant}.
      *
      * @return the current millisecond instant from this clock, measured from
-     *  the Java epoch of 1970-01-01T00:00 UTC, not null
+     *  the Java epoch of 1970-01-01T00:00Z (UTC), not null
      * @throws DateTimeException if the instant cannot be obtained, not thrown by most implementations
      */
     public long millis() {
