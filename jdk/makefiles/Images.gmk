@@ -352,11 +352,8 @@ ifneq ($(OPENJDK_TARGET_OS),windows)
         JDK_MAN_PAGES += jvisualvm.1
     endif
 
-    ifndef OPENJDK
-        MAN_SRC_BASEDIR:=$(JDK_TOPDIR)/src/closed
-    else
-        MAN_SRC_BASEDIR:=$(JDK_TOPDIR)/src
-    endif
+    # This variable is potentially overridden in the closed makefile.
+    MAN_SRC_BASEDIR ?= $(JDK_TOPDIR)/src
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
         MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/linux/doc
