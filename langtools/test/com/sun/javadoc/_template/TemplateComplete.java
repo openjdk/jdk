@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,13 @@
  */
 
 /*
- * test
- * @bug      0000000
- * @summary  <DESC>
- * @author   jamieh
- * @library  ../lib/
- * @ignore   This is a template for regression tests.
- * @build    JavadocTester
- * @build    <CLASS NAME>
- * @run main <CLASS NAME>
+ * @ test
+ * @ bug      <BUG-ID>
+ * @ summary  <BUG-SYNOPSIS>
+ * @ author   <AUTHOR> or delete
+ * @ library  ../lib/
+ * @ build    JavadocTester <CLASS NAME>
+ * @ run main <CLASS NAME>
  */
 
 public class TemplateComplete extends JavadocTester {

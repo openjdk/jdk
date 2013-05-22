@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 /*
  * @test
  * @bug 6337171 6996415
- * @ignore fix has been disabled as a consequence of 6996415
+ * @ignore 6996758: Investigate better override bridges strategy
  * @summary  javac should create bridge methods when type variable bounds restricted
  * @run main OverrideBridge
  */
+
+// fix, and test, has been disabled as a consequence of 6996415
 
 import java.io.*;
 import java.net.URI;

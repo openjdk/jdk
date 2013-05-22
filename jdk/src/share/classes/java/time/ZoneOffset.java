@@ -114,7 +114,7 @@ import java.util.concurrent.ConcurrentMap;
  * Implementations may choose to cache certain common offsets, however
  * applications must not rely on such caching.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

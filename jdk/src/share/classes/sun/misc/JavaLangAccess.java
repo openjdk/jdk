@@ -97,4 +97,14 @@ public interface JavaLangAccess {
      * Returns the ith StackTraceElement for the given throwable.
      */
     StackTraceElement getStackTraceElement(Throwable t, int i);
+
+    /**
+     * Returns a new string backed by the provided character array. The
+     * character array is not copied and must never be modified after the
+     * String is created, in order to fulfill String's contract.
+     *
+     * @param chars the character array to back the string
+     * @return a newly created string whose content is the character array
+     */
+    String newStringUnsafe(char[] chars);
 }

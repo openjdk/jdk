@@ -37,7 +37,10 @@ import java.io.BufferedOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -145,6 +148,66 @@ final class ProcessImpl extends Process {
 
     }
 
+    private static class LazyPattern {
+        // Escape-support version:
+        //    "(\")((?:\\\\\\1|.)+?)\\1|([^\\s\"]+)";
+        private static final Pattern PATTERN =
+            Pattern.compile("[^\\s\"]+|\"[^\"]*\"");
+    };
+
+    /* Parses the command string parameter into the executable name and
+     * program arguments.
+     *
+     * The command string is broken into tokens. The token separator is a space
+     * or quota character. The space inside quotation is not a token separator.
+     * There are no escape sequences.
+     */
+    private static String[] getTokensFromCommand(String command) {
+        ArrayList<String> matchList = new ArrayList<>(8);
+        Matcher regexMatcher = LazyPattern.PATTERN.matcher(command);
+        while (regexMatcher.find())
+            matchList.add(regexMatcher.group());
+        return matchList.toArray(new String[matchList.size()]);
+    }
+
+    private static String createCommandLine(boolean isCmdFile,
+                                     final String executablePath,
+                                     final String cmd[])
+    {
+        StringBuilder cmdbuf = new StringBuilder(80);
+
+        cmdbuf.append(executablePath);
+
+        for (int i = 1; i < cmd.length; ++i) {
+            cmdbuf.append(' ');
+            String s = cmd[i];
+            if (needsEscaping(isCmdFile, s)) {
+                cmdbuf.append('"');
+                cmdbuf.append(s);
+
+                // The code protects the [java.exe] and console command line
+                // parser, that interprets the [\"] combination as an escape
+                // sequence for the ["] char.
+                //     http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
+                //
+                // If the argument is an FS path, doubling of the tail [\]
+                // char is not a problem for non-console applications.
+                //
+                // The [\"] sequence is not an escape sequence for the [cmd.exe]
+                // command line parser. The case of the [""] tail escape
+                // sequence could not be realized due to the argument validation
+                // procedure.
+                if (!isCmdFile && s.endsWith("\\")) {
+                    cmdbuf.append('\\');
+                }
+                cmdbuf.append('"');
+            } else {
+                cmdbuf.append(s);
+            }
+        }
+        return cmdbuf.toString();
+    }
+
     // We guarantee the only command file execution for implicit [cmd.exe] run.
     //    http://technet.microsoft.com/en-us/library/bb490954.aspx
     private static final char CMD_BAT_ESCAPE[] = {' ', '\t', '<', '>', '&', '|', '^'};
@@ -227,64 +290,89 @@ final class ProcessImpl extends Process {
     }
 
 
+    private boolean isShellFile(String executablePath) {
+        String upPath = executablePath.toUpperCase();
+        return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
+    }
+
+    private String quoteString(String arg) {
+        StringBuilder argbuf = new StringBuilder(arg.length() + 2);
+        return argbuf.append('"').append(arg).append('"').toString();
+    }
+
+
     private long handle = 0;
     private OutputStream stdin_stream;
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
-    private ProcessImpl(final String cmd[],
+    private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
                         final long[] stdHandles,
                         final boolean redirectErrorStream)
         throws IOException
     {
-        // The [executablePath] is not quoted for any case.
-        String executablePath = getExecutablePath(cmd[0]);
-
-        // We need to extend the argument verification procedure
-        // to guarantee the only command file execution for implicit [cmd.exe]
-        // run.
-        String upPath = executablePath.toUpperCase();
-        boolean isCmdFile = (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
-
-        StringBuilder cmdbuf = new StringBuilder(80);
-
-        // Quotation protects from interpretation of the [path] argument as
-        // start of longer path with spaces. Quotation has no influence to
-        // [.exe] extension heuristic.
-        cmdbuf.append('"');
-        cmdbuf.append(executablePath);
-        cmdbuf.append('"');
-
-        for (int i = 1; i < cmd.length; i++) {
-            cmdbuf.append(' ');
-            String s = cmd[i];
-            if (needsEscaping(isCmdFile, s)) {
-                cmdbuf.append('"');
-                cmdbuf.append(s);
-
-                // The code protects the [java.exe] and console command line
-                // parser, that interprets the [\"] combination as an escape
-                // sequence for the ["] char.
-                //     http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
-                //
-                // If the argument is an FS path, doubling of the tail [\]
-                // char is not a problem for non-console applications.
-                //
-                // The [\"] sequence is not an escape sequence for the [cmd.exe]
-                // command line parser. The case of the [""] tail escape
-                // sequence could not be realized due to the argument validation
-                // procedure.
-                if (!isCmdFile && s.endsWith("\\")) {
-                    cmdbuf.append('\\');
-                }
-                cmdbuf.append('"');
-            } else {
-                cmdbuf.append(s);
-            }
+        String cmdstr;
+        SecurityManager security = System.getSecurityManager();
+        boolean allowAmbigousCommands = false;
+        if (security == null) {
+            String value = System.getProperty("jdk.lang.Process.allowAmbigousCommands");
+            if (value != null)
+                allowAmbigousCommands = !"false".equalsIgnoreCase(value);
         }
-        String cmdstr = cmdbuf.toString();
+        if (allowAmbigousCommands) {
+            // Legacy mode.
+
+            // Normalize path if possible.
+            String executablePath = new File(cmd[0]).getPath();
+
+            // No worry about internal and unpaired ["] .
+            if (needsEscaping(false, executablePath) )
+                executablePath = quoteString(executablePath);
+
+            cmdstr = createCommandLine(
+                false, //legacy mode doesn't worry about extended verification
+                executablePath,
+                cmd);
+        } else {
+            String executablePath;
+            try {
+                executablePath = getExecutablePath(cmd[0]);
+            } catch (IllegalArgumentException e) {
+                // Workaround for the calls like
+                // Runtime.getRuntime().exec("\"C:\\Program Files\\foo\" bar")
+
+                // No chance to avoid CMD/BAT injection, except to do the work
+                // right from the beginning. Otherwise we have too many corner
+                // cases from
+                //    Runtime.getRuntime().exec(String[] cmd [, ...])
+                // calls with internal ["] and escape sequences.
+
+                // Restore original command line.
+                StringBuilder join = new StringBuilder();
+                // terminal space in command line is ok
+                for (String s : cmd)
+                    join.append(s).append(' ');
+
+                // Parse the command line again.
+                cmd = getTokensFromCommand(join.toString());
+                executablePath = getExecutablePath(cmd[0]);
+
+                // Check new executable name once more
+                if (security != null)
+                    security.checkExec(executablePath);
+            }
+
+            // Quotation protects from interpretation of the [path] argument as
+            // start of longer path with spaces. Quotation has no influence to
+            // [.exe] extension heuristic.
+            cmdstr = createCommandLine(
+                    // We need the extended verification procedure for CMD files.
+                    isShellFile(executablePath),
+                    quoteString(executablePath),
+                    cmd);
+        }
 
         handle = create(cmdstr, envblock, path,
                         stdHandles, redirectErrorStream);

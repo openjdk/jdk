@@ -24,6 +24,9 @@
 // key: compiler.err.cant.apply.symbol
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.bad.arg.types.in.lambda
+// key: compiler.err.prob.found.req
+// key: compiler.misc.inconvertible.types
+// options: -Xdiags:verbose
 
 class BadArgTypesInLambda {
     interface SAM {

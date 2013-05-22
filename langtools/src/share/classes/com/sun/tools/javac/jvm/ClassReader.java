@@ -1518,7 +1518,7 @@ public class ClassReader implements Completer {
             break;
         // exception parameter
         case EXCEPTION_PARAMETER:
-            position.exception_index = nextByte();
+            position.exception_index = nextChar();
             break;
         // method receiver
         case METHOD_RECEIVER:

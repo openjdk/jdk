@@ -26,7 +26,6 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 /*
  * @test
  * @bug 8006732 8006775
- * @ignore
  * @summary Test population of reference info for multicatch exception parameters
  * @author Werner Dietl
  * @compile -g Driver.java ReferenceInfoUtil.java MultiCatch.java
@@ -53,4 +52,16 @@ public class MultiCatch {
             "try { new Object(); } catch (@TA NullPointerException | @TB IndexOutOfBoundsException | @TC IllegalArgumentException e) { e.toString(); } }";
     }
 
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = EXCEPTION_PARAMETER, exceptionIndex = 1),
+        @TADescription(annotation = "TB", type = EXCEPTION_PARAMETER, exceptionIndex = 1),
+        @TADescription(annotation = "TC", type = EXCEPTION_PARAMETER, exceptionIndex = 2),
+        @TADescription(annotation = "TD", type = EXCEPTION_PARAMETER, exceptionIndex = 2),
+        @TADescription(annotation = "TE", type = EXCEPTION_PARAMETER, exceptionIndex = 3),
+    })
+    public String multiCatch3() {
+        return "void multiCatch3() { " +
+            "try { new Object(); } catch (NullPointerException e1) {}" +
+            "try { new Object(); } catch (@TA @TB NullPointerException | @TC @TD IndexOutOfBoundsException | @TE IllegalArgumentException e2) { e2.toString(); } }";
+    }
 }

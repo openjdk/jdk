@@ -306,7 +306,7 @@ public class TestLambdaBytecode
     String makeIndyType(int id) {
         StringBuilder buf = new StringBuilder();
         buf.append("(");
-        if (!mk2.isStatic() || mk1.inInterface()) {
+        if (!mk2.isStatic()) {
             buf.append(String.format("LTest%d;", id));
         }
         buf.append(")Ljava/lang/Runnable;");

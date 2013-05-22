@@ -81,7 +81,7 @@ public class BasicControl implements Control {
         this.id = id;
         this.criticality = criticality;
         if (value != null) {
-            this.value = value;
+            this.value = value.clone();
         }
     }
 

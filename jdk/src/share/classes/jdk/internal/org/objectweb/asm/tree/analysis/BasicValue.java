@@ -77,11 +77,14 @@ public class BasicValue implements Value {
 
     public static final BasicValue LONG_VALUE = new BasicValue(Type.LONG_TYPE);
 
-    public static final BasicValue DOUBLE_VALUE = new BasicValue(Type.DOUBLE_TYPE);
+    public static final BasicValue DOUBLE_VALUE = new BasicValue(
+            Type.DOUBLE_TYPE);
 
-    public static final BasicValue REFERENCE_VALUE = new BasicValue(Type.getObjectType("java/lang/Object"));
+    public static final BasicValue REFERENCE_VALUE = new BasicValue(
+            Type.getObjectType("java/lang/Object"));
 
-    public static final BasicValue RETURNADDRESS_VALUE = new BasicValue(Type.VOID_TYPE);
+    public static final BasicValue RETURNADDRESS_VALUE = new BasicValue(
+            Type.VOID_TYPE);
 
     private final Type type;
 

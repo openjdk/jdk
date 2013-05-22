@@ -212,7 +212,13 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Update the invocation counter
   if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
-    InvocationCounter *counter = method->invocation_counter();
+    MethodCounters* mcs = method->method_counters();
+    if (mcs == NULL) {
+      CALL_VM_NOCHECK(mcs = InterpreterRuntime::build_method_counters(thread, method));
+      if (HAS_PENDING_EXCEPTION)
+        goto unwind_and_return;
+    }
+    InvocationCounter *counter = mcs->invocation_counter();
     counter->increment();
     if (counter->reached_InvocationLimit()) {
       CALL_VM_NOCHECK(
