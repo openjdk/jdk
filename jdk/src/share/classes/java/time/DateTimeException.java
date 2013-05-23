@@ -67,7 +67,7 @@ package java.time;
  * This exception is used to indicate problems with creating, querying
  * and manipulating date-time objects.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is intended for use in a single thread.
  *
  * @since 1.8

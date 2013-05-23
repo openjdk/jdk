@@ -23,18 +23,19 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.io.File;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.util.Enumeration;
-
-import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
+import com.sun.org.apache.xalan.internal.XalanConstants;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
-
+import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
+import java.io.File;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.util.Enumeration;
+import javax.xml.XMLConstants;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -84,6 +85,17 @@ final class Import extends TopLevelElement {
             // No SourceLoader or not resolved by SourceLoader
             if (input == null) {
                 docToLoad = SystemIDResolver.getAbsoluteURI(docToLoad, currLoadedDoc);
+                String accessError = SecuritySupport.checkAccess(docToLoad,
+                        xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
+                        XalanConstants.ACCESS_EXTERNAL_ALL);
+
+                if (accessError != null) {
+                    final ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                                        SecuritySupport.sanitizePath(docToLoad), accessError,
+                                        this);
+                    parser.reportError(Constants.FATAL, msg);
+                    return;
+                }
                 input = new InputSource(docToLoad);
             }
 

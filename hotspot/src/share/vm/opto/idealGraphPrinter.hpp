@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,8 @@ class Node;
 class InlineTree;
 class ciMethod;
 
-class IdealGraphPrinter
-{
-private:
+class IdealGraphPrinter : public CHeapObj<mtCompiler> {
+ private:
 
   static const char *INDENT;
   static const char *TOP_ELEMENT;
@@ -121,7 +120,7 @@ private:
   IdealGraphPrinter();
   ~IdealGraphPrinter();
 
-public:
+ public:
 
   static void clean_up();
   static IdealGraphPrinter *printer();
@@ -135,8 +134,6 @@ public:
   void print_method(Compile* compile, const char *name, int level=1, bool clear_nodes = false);
   void print(Compile* compile, const char *name, Node *root, int level=1, bool clear_nodes = false);
   void print_xml(const char *name);
-
-
 };
 
 #endif

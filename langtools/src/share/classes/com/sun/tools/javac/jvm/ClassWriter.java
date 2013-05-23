@@ -632,7 +632,7 @@ public class ClassWriter extends ClassFile {
             acount++;
         }
         acount += writeJavaAnnotations(sym.getRawAttributes());
-        acount += writeTypeAnnotations(sym.getRawTypeAttributes());
+        acount += writeTypeAnnotations(sym.getRawTypeAttributes(), false);
         return acount;
     }
 
@@ -759,44 +759,30 @@ public class ClassWriter extends ClassFile {
         return attrCount;
     }
 
-    int writeTypeAnnotations(List<Attribute.TypeCompound> typeAnnos) {
+    int writeTypeAnnotations(List<Attribute.TypeCompound> typeAnnos, boolean inCode) {
         if (typeAnnos.isEmpty()) return 0;
 
         ListBuffer<Attribute.TypeCompound> visibles = ListBuffer.lb();
         ListBuffer<Attribute.TypeCompound> invisibles = ListBuffer.lb();
 
         for (Attribute.TypeCompound tc : typeAnnos) {
-            if (tc.position == null || tc.position.type == TargetType.UNKNOWN) {
-                boolean found = false;
-                // TODO: the position for the container annotation of a
-                // repeating type annotation has to be set.
-                // This cannot be done when the container is created, because
-                // then the position is not determined yet.
-                // How can we link these pieces better together?
-                if (tc.values.size() == 1) {
-                    Pair<MethodSymbol, Attribute> val = tc.values.get(0);
-                    if (val.fst.getSimpleName().contentEquals("value") &&
-                            val.snd instanceof Attribute.Array) {
-                        Attribute.Array arr = (Attribute.Array) val.snd;
-                        if (arr.values.length != 0 &&
-                                arr.values[0] instanceof Attribute.TypeCompound) {
-                            TypeCompound atycomp = (Attribute.TypeCompound) arr.values[0];
-                            if (atycomp.position.type != TargetType.UNKNOWN) {
-                                tc.position = atycomp.position;
-                                found = true;
-                            }
-                        }
-                    }
-                }
-                if (!found) {
+            if (tc.hasUnknownPosition()) {
+                boolean fixed = tc.tryFixPosition();
+
+                // Could we fix it?
+                if (!fixed) {
                     // This happens for nested types like @A Outer. @B Inner.
                     // For method parameters we get the annotation twice! Once with
                     // a valid position, once unknown.
                     // TODO: find a cleaner solution.
-                    // System.err.println("ClassWriter: Position UNKNOWN in type annotation: " + tc);
+                    PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+                    pw.println("ClassWriter: Position UNKNOWN in type annotation: " + tc);
                     continue;
                 }
             }
+
+            if (tc.position.type.isLocal() != inCode)
+                continue;
             if (!tc.position.emitToClassfile())
                 continue;
             switch (types.getRetention(tc)) {
@@ -936,7 +922,7 @@ public class ClassWriter extends ClassFile {
             break;
         // exception parameter
         case EXCEPTION_PARAMETER:
-            databuf.appendByte(p.exception_index);
+            databuf.appendChar(p.exception_index);
             break;
         // method receiver
         case METHOD_RECEIVER:
@@ -1241,6 +1227,9 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
+
+        acount += writeTypeAnnotations(code.meth.getRawTypeAttributes(), true);
+
         endAttrs(acountIdx, acount);
     }
     //where
@@ -1627,7 +1616,7 @@ public class ClassWriter extends ClassFile {
             out = null;
         } finally {
             if (out != null) {
-                // if we are propogating an exception, delete the file
+                // if we are propagating an exception, delete the file
                 out.close();
                 outFile.delete();
                 outFile = null;
@@ -1741,7 +1730,7 @@ public class ClassWriter extends ClassFile {
 
         acount += writeFlagAttrs(c.flags());
         acount += writeJavaAnnotations(c.getRawAttributes());
-        acount += writeTypeAnnotations(c.getRawTypeAttributes());
+        acount += writeTypeAnnotations(c.getRawTypeAttributes(), false);
         acount += writeEnclosingMethodAttribute(c);
         acount += writeExtraClassAttributes(c);
 

@@ -74,8 +74,9 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  * the target of a jump instruction, or that starts an exception handler block.
  * The stack map frame types must describe the values of the local variables and
  * of the operand stack elements <i>just before</i> <b>i</b> is executed. <br>
- * <br> (*) this is mandatory only for classes whose version is greater than or
- * equal to {@link Opcodes#V1_6 V1_6}.
+ * <br>
+ * (*) this is mandatory only for classes whose version is greater than or equal
+ * to {@link Opcodes#V1_6 V1_6}.
  *
  * @author Eric Bruneton
  */
@@ -112,48 +113,48 @@ public class FrameNode extends AbstractInsnNode {
     /**
      * Constructs a new {@link FrameNode}.
      *
-     * @param type the type of this frame. Must be {@link Opcodes#F_NEW} for
-     *        expanded frames, or {@link Opcodes#F_FULL},
-     *        {@link Opcodes#F_APPEND}, {@link Opcodes#F_CHOP},
-     *        {@link Opcodes#F_SAME} or {@link Opcodes#F_APPEND},
-     *        {@link Opcodes#F_SAME1} for compressed frames.
-     * @param nLocal number of local variables of this stack map frame.
-     * @param local the types of the local variables of this stack map frame.
-     *        Elements of this list can be Integer, String or LabelNode objects
-     *        (for primitive, reference and uninitialized types respectively -
-     *        see {@link MethodVisitor}).
-     * @param nStack number of operand stack elements of this stack map frame.
-     * @param stack the types of the operand stack elements of this stack map
-     *        frame. Elements of this list can be Integer, String or LabelNode
-     *        objects (for primitive, reference and uninitialized types
-     *        respectively - see {@link MethodVisitor}).
+     * @param type
+     *            the type of this frame. Must be {@link Opcodes#F_NEW} for
+     *            expanded frames, or {@link Opcodes#F_FULL},
+     *            {@link Opcodes#F_APPEND}, {@link Opcodes#F_CHOP},
+     *            {@link Opcodes#F_SAME} or {@link Opcodes#F_APPEND},
+     *            {@link Opcodes#F_SAME1} for compressed frames.
+     * @param nLocal
+     *            number of local variables of this stack map frame.
+     * @param local
+     *            the types of the local variables of this stack map frame.
+     *            Elements of this list can be Integer, String or LabelNode
+     *            objects (for primitive, reference and uninitialized types
+     *            respectively - see {@link MethodVisitor}).
+     * @param nStack
+     *            number of operand stack elements of this stack map frame.
+     * @param stack
+     *            the types of the operand stack elements of this stack map
+     *            frame. Elements of this list can be Integer, String or
+     *            LabelNode objects (for primitive, reference and uninitialized
+     *            types respectively - see {@link MethodVisitor}).
      */
-    public FrameNode(
-        final int type,
-        final int nLocal,
-        final Object[] local,
-        final int nStack,
-        final Object[] stack)
-    {
+    public FrameNode(final int type, final int nLocal, final Object[] local,
+            final int nStack, final Object[] stack) {
         super(-1);
         this.type = type;
         switch (type) {
-            case Opcodes.F_NEW:
-            case Opcodes.F_FULL:
-                this.local = asList(nLocal, local);
-                this.stack = asList(nStack, stack);
-                break;
-            case Opcodes.F_APPEND:
-                this.local = asList(nLocal, local);
-                break;
-            case Opcodes.F_CHOP:
-                this.local = Arrays.asList(new Object[nLocal]);
-                break;
-            case Opcodes.F_SAME:
-                break;
-            case Opcodes.F_SAME1:
-                this.stack = asList(1, stack);
-                break;
+        case Opcodes.F_NEW:
+        case Opcodes.F_FULL:
+            this.local = asList(nLocal, local);
+            this.stack = asList(nStack, stack);
+            break;
+        case Opcodes.F_APPEND:
+            this.local = asList(nLocal, local);
+            break;
+        case Opcodes.F_CHOP:
+            this.local = Arrays.asList(new Object[nLocal]);
+            break;
+        case Opcodes.F_SAME:
+            break;
+        case Opcodes.F_SAME1:
+            this.stack = asList(1, stack);
+            break;
         }
     }
 
@@ -165,31 +166,29 @@ public class FrameNode extends AbstractInsnNode {
     /**
      * Makes the given visitor visit this stack map frame.
      *
-     * @param mv a method visitor.
+     * @param mv
+     *            a method visitor.
      */
     @Override
     public void accept(final MethodVisitor mv) {
         switch (type) {
-            case Opcodes.F_NEW:
-            case Opcodes.F_FULL:
-                mv.visitFrame(type,
-                        local.size(),
-                        asArray(local),
-                        stack.size(),
-                        asArray(stack));
-                break;
-            case Opcodes.F_APPEND:
-                mv.visitFrame(type, local.size(), asArray(local), 0, null);
-                break;
-            case Opcodes.F_CHOP:
-                mv.visitFrame(type, local.size(), null, 0, null);
-                break;
-            case Opcodes.F_SAME:
-                mv.visitFrame(type, 0, null, 0, null);
-                break;
-            case Opcodes.F_SAME1:
-                mv.visitFrame(type, 0, null, 1, asArray(stack));
-                break;
+        case Opcodes.F_NEW:
+        case Opcodes.F_FULL:
+            mv.visitFrame(type, local.size(), asArray(local), stack.size(),
+                    asArray(stack));
+            break;
+        case Opcodes.F_APPEND:
+            mv.visitFrame(type, local.size(), asArray(local), 0, null);
+            break;
+        case Opcodes.F_CHOP:
+            mv.visitFrame(type, local.size(), null, 0, null);
+            break;
+        case Opcodes.F_SAME:
+            mv.visitFrame(type, 0, null, 0, null);
+            break;
+        case Opcodes.F_SAME1:
+            mv.visitFrame(type, 0, null, 1, asArray(stack));
+            break;
         }
     }
 

@@ -27,10 +27,11 @@ import com.sun.tools.classfile.*;
 /*
  * @test NewArray
  * @bug 6843077
- * @summary test that all type annotations are present in the classfile
+ * @summary Test type annotations on local array are in method's code attribute.
  */
 
 public class NewArray {
+
     public static void main(String[] args) throws Exception {
         new NewArray().run();
     }
@@ -40,10 +41,6 @@ public class NewArray {
         File classFile = compileTestFile(javaFile);
 
         ClassFile cf = ClassFile.read(classFile);
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
-        }
         for (Method m: cf.methods) {
             test(cf, m);
         }
@@ -55,66 +52,34 @@ public class NewArray {
         System.out.println("PASSED");
     }
 
-    void test(ClassFile cf) {
-        test(cf, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
     void test(ClassFile cf, Method m) {
         test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
         test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
     }
 
-    void test(ClassFile cf, Field m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, String name, boolean visible) {
-        int index = cf.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = cf.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
     // test the result of Attributes.getIndex according to expectations
     // encoded in the method's name
     void test(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
+        Attribute attr = null;
+        Code_attribute cAttr = null;
+        RuntimeTypeAnnotations_attribute tAttr = null;
 
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Field m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
+        int index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
+        if(index!= -1) {
+            attr = m.attributes.get(index);
+            assert attr instanceof Code_attribute;
+            cAttr = (Code_attribute)attr;
+            index = cAttr.attributes.getIndex(cf.constant_pool, name);
+            if(index!= -1) {
+                attr = cAttr.attributes.get(index);
+                assert attr instanceof RuntimeTypeAnnotations_attribute;
+                tAttr = (RuntimeTypeAnnotations_attribute)attr;
+                all += tAttr.annotations.length;
+                if (visible)
+                    visibles += tAttr.annotations.length;
+                else
+                    invisibles += tAttr.annotations.length;
+               }
         }
     }
 
@@ -124,14 +89,12 @@ public class NewArray {
         out.println("import java.lang.annotation.*;");
         out.println("import java.util.*;");
         out.println("class Test { ");
-        out.println("  @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})");
-        out.println("  @interface A { }");
-
-        out.println(" void test() {");
-        out.println("  Object a = new @A String @A [5] @A  [];");
-        out.println("  Object b = new @A String @A [5] @A [3];");
-        out.println("  Object c = new @A String @A [] @A [] {};");
-        out.println(" }");
+        out.println("  @Target(ElementType.TYPE_USE) @interface A { }");
+        out.println("  void test() {");
+        out.println("    Object a = new @A String @A [5] @A  [];");
+        out.println("    Object b = new @A String @A [5] @A [3];");
+        out.println("    Object c = new @A String @A [] @A [] {};");
+        out.println("  }");
         out.println("}");
 
         out.close();

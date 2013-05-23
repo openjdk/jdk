@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a property access (period operator.)
@@ -41,14 +40,13 @@ public final class AccessNode extends BaseNode {
     /**
      * Constructor
      *
-     * @param source    source code
      * @param token     token
      * @param finish    finish
      * @param base      base node
      * @param property  property
      */
-    public AccessNode(final Source source, final long token, final int finish, final Node base, final IdentNode property) {
-        super(source, token, finish, base, false, false);
+    public AccessNode(final long token, final int finish, final Node base, final IdentNode property) {
+        super(token, finish, base, false, false);
         this.property = property.setIsPropertyName();
     }
 
@@ -121,10 +119,10 @@ public final class AccessNode extends BaseNode {
     }
 
     @Override
-    public AccessNode setType(final Type type) {
+    public AccessNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         logTypeChange(type);
-        getSymbol().setTypeOverride(type); //always a temp so this is fine.
-        return new AccessNode(this, base, property.setType(type), isFunction(), hasCallSiteType());
+        final AccessNode newAccessNode = (AccessNode)setSymbol(lc, getSymbol().setTypeOverrideShared(type, ts));
+        return new AccessNode(newAccessNode, base, property.setType(ts, lc, type), isFunction(), hasCallSiteType());
     }
 
     @Override

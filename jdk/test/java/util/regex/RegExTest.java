@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640 7189363 8007395
+ * 7067045 7014640 7189363 8007395 8013252 8013254 8012646
  */
 
 import java.util.regex.*;
@@ -41,6 +41,7 @@ import java.util.Random;
 import java.io.*;
 import java.util.*;
 import java.nio.CharBuffer;
+import java.util.function.Predicate;
 
 /**
  * This is a test class created to check the operation of
@@ -145,6 +146,7 @@ public class RegExTest {
         linebreakTest();
         branchTest();
         groupCurlyNotFoundSuppTest();
+        patternAsPredicate();
         if (failure) {
             throw new
                 RuntimeException("RegExTest failed, 1st failure: " +
@@ -3390,7 +3392,9 @@ public class RegExTest {
     private static void check(Pattern p, String s, String g, String expected) {
         Matcher m = p.matcher(s);
         m.find();
-        if (!m.group(g).equals(expected))
+        if (!m.group(g).equals(expected) ||
+            s.charAt(m.start(g)) != expected.charAt(0) ||
+            s.charAt(m.end(g) - 1) != expected.charAt(expected.length() - 1))
             failCount++;
     }
 
@@ -3420,19 +3424,42 @@ public class RegExTest {
         failCount++;
     }
 
-    private static void checkExpectedFail(Matcher m, String g) {
+    private static void checkExpectedIAE(Matcher m, String g) {
         m.find();
         try {
             m.group(g);
-        } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException x) {
             //iae.printStackTrace();
-            return;
-        } catch (NullPointerException npe) {
-            return;
+            try {
+                m.start(g);
+            } catch (IllegalArgumentException xx) {
+                try {
+                    m.start(g);
+                } catch (IllegalArgumentException xxx) {
+                    return;
+                }
+            }
         }
         failCount++;
     }
 
+    private static void checkExpectedNPE(Matcher m) {
+        m.find();
+        try {
+            m.group(null);
+        } catch (NullPointerException x) {
+            try {
+                m.start(null);
+            } catch (NullPointerException xx) {
+                try {
+                    m.end(null);
+                } catch (NullPointerException xxx) {
+                    return;
+                }
+            }
+        }
+        failCount++;
+    }
 
     private static void namedGroupCaptureTest() throws Exception {
         check(Pattern.compile("x+(?<gname>y+)z+"),
@@ -3559,10 +3586,9 @@ public class RegExTest {
         checkExpectedFail("(?<6groupnamestartswithdigit>abc)(def)");
         checkExpectedFail("(?<gname>abc)(def)\\k<gnameX>");
         checkExpectedFail("(?<gname>abc)(?<gname>def)\\k<gnameX>");
-        checkExpectedFail(Pattern.compile("(?<gname>abc)(def)").matcher("abcdef"),
-                          "gnameX");
-        checkExpectedFail(Pattern.compile("(?<gname>abc)(def)").matcher("abcdef"),
-                          null);
+        checkExpectedIAE(Pattern.compile("(?<gname>abc)(def)").matcher("abcdef"),
+                         "gnameX");
+        checkExpectedNPE(Pattern.compile("(?<gname>abc)(def)").matcher("abcdef"));
         report("NamedGroupCapture");
     }
 
@@ -3759,6 +3785,7 @@ public class RegExTest {
         Matcher spaceP  = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
         Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
+        Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
 
         // javaMethod
         Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
@@ -3829,7 +3856,8 @@ public class RegExTest {
                 Character.isIdeographic(cp) != ideogP.reset(str).matches() ||
                 Character.isIdeographic(cp) != ideogJ.reset(str).matches() ||
                 (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
-                POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches())
+                POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
+                POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches())
                 failCount++;
         }
 
@@ -3971,4 +3999,19 @@ public class RegExTest {
         report("GroupCurly NotFoundSupp");
     }
 
+    // This test is for 8012646
+    private static void patternAsPredicate() throws Exception {
+        Predicate<String> p = Pattern.compile("[a-z]+").asPredicate();
+
+        if (p.test("")) {
+            failCount++;
+        }
+        if (!p.test("word")) {
+            failCount++;
+        }
+        if (p.test("1234")) {
+            failCount++;
+        }
+        report("Pattern.asPredicate");
+    }
 }

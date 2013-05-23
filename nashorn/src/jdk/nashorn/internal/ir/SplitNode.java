@@ -46,12 +46,13 @@ public class SplitNode extends LexicalContextNode {
     /**
      * Constructor
      *
+     * @param lineNumber  lineNumber
      * @param name        name of split node
      * @param body        body of split code
      * @param compileUnit compile unit to use for the body
      */
-    public SplitNode(final String name, final Node body, final CompileUnit compileUnit) {
-        super(body.getSource(), body.getToken(), body.getFinish());
+    public SplitNode(final int lineNumber, final String name, final Node body, final CompileUnit compileUnit) {
+        super(lineNumber, body.getToken(), body.getFinish());
         this.name        = name;
         this.body        = body;
         this.compileUnit = compileUnit;

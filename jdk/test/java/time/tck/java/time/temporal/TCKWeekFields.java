@@ -71,7 +71,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.time.temporal.WeekFields;
@@ -161,9 +160,6 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField dowField = week.dayOfWeek();
         TemporalField womField = week.weekOfMonth();
 
-        DayOfWeek isoDOW = day.getDayOfWeek();
-        int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
-
         for (int i = 1; i <= 15; i++) {
             int actualDOW = day.get(dowField);
             int actualWOM = day.get(womField);
@@ -196,9 +192,6 @@ public class TCKWeekFields extends AbstractTCKTest {
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
         TemporalField dowField = week.dayOfWeek();
         TemporalField woyField = week.weekOfYear();
-
-        DayOfWeek isoDOW = day.getDayOfWeek();
-        int dow = (7 + isoDOW.getValue() - firstDayOfWeek.getValue()) % 7 + 1;
 
         for (int i = 1; i <= 15; i++) {
             int actualDOW = day.get(dowField);
@@ -468,6 +461,28 @@ public class TCKWeekFields extends AbstractTCKTest {
 
     @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWoWBY(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 31);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField wowbyField = week.weekOfWeekBasedYear();
+        TemporalField yowbyField = week.weekBasedYear();
+
+        for (int i = 1; i <= 60; i++) {
+            // Test that with dayOfWeek, week of year and year of week-based-year it computes the date
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(yowbyField).appendLiteral('-')
+                    .appendValue(wowbyField).appendLiteral('-')
+                    .appendValue(DAY_OF_WEEK).toFormatter();
+            String str = date.get(yowbyField) + "-" + date.get(wowbyField) + "-" +
+                    date.get(DAY_OF_WEEK);
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, date, " :: " + str + " " + i);
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoWBYDow(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 31);
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
         TemporalField dowField = week.dayOfWeek();

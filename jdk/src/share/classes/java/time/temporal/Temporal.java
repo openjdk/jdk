@@ -119,7 +119,7 @@ import java.time.ZoneId;
  *  days to months.
  * </ul><p>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface places no restrictions on the mutability of implementations,
  * however immutability is strongly recommended.
  * All implementations must be {@link Comparable}.
@@ -146,7 +146,7 @@ public interface Temporal extends TemporalAccessor {
      *  date = date.with(next(WEDNESDAY));   // static import from Adjusters and DayOfWeek
      * </pre>
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must not alter either this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
@@ -177,7 +177,7 @@ public interface Temporal extends TemporalAccessor {
      * In cases like this, the field is responsible for resolving the result. Typically it will choose
      * the previous valid date, which would be the last valid day of February in this example.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the adjustment must be performed.
      * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
@@ -217,7 +217,7 @@ public interface Temporal extends TemporalAccessor {
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must not alter either this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
@@ -247,12 +247,8 @@ public interface Temporal extends TemporalAccessor {
      * a date representing the 31st January, then adding one month would be unclear.
      * In cases like this, the field is responsible for resolving the result. Typically it will choose
      * the previous valid date, which would be the last valid day of February in this example.
-     * <p>
-     * If the implementation represents a date-time that has boundaries, such as {@code LocalTime},
-     * then the permitted units must include the boundary unit, but no multiples of the boundary unit.
-     * For example, {@code LocalTime} must accept {@code DAYS} but not {@code WEEKS} or {@code MONTHS}.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must check and handle all units defined in {@link ChronoUnit}.
      * If the unit is supported, then the addition must be performed.
      * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
@@ -292,7 +288,7 @@ public interface Temporal extends TemporalAccessor {
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must not alter either this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
@@ -322,12 +318,8 @@ public interface Temporal extends TemporalAccessor {
      * a date representing the 31st March, then subtracting one month would be unclear.
      * In cases like this, the field is responsible for resolving the result. Typically it will choose
      * the previous valid date, which would be the last valid day of February in this example.
-     * <p>
-     * If the implementation represents a date-time that has boundaries, such as {@code LocalTime},
-     * then the permitted units must include the boundary unit, but no multiples of the boundary unit.
-     * For example, {@code LocalTime} must accept {@code DAYS} but not {@code WEEKS} or {@code MONTHS}.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must behave in a manor equivalent to the default method behavior.
      * <p>
      * Implementations must not alter either this object or the specified temporal object.
@@ -353,10 +345,10 @@ public interface Temporal extends TemporalAccessor {
 
     //-----------------------------------------------------------------------
     /**
-     * Calculates the period between this temporal and another temporal in
-     * terms of the specified unit.
+     * Calculates the amount of time until another temporal in terms of the specified unit.
      * <p>
-     * This calculates the period between two temporals in terms of a single unit.
+     * This calculates the amount of time between two temporal objects
+     * of the same type in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified temporal.
      * The result will be negative if the end is before the start.
      * For example, the period in hours between two temporal objects can be
@@ -385,7 +377,7 @@ public interface Temporal extends TemporalAccessor {
      *  long daysBetween = DAYS.between(start, end);
      * </pre>
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * Implementations must begin by checking to ensure that the input temporal
      * object is of the same observable type as the implementation.
      * They must then perform the calculation for all instances of {@link ChronoUnit}.
@@ -410,11 +402,11 @@ public interface Temporal extends TemporalAccessor {
      * Neither this object, nor the specified temporal, may be altered.
      *
      * @param endTemporal  the end temporal, of the same type as this object, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the period between this temporal object and the specified one in terms of
-     *  the unit; positive if the specified object is later than this one, negative if
-     *  it is earlier than this one
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this temporal object and the specified one
+     *  in terms of the unit; positive if the specified object is later than this one,
+     *  negative if it is earlier than this one
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */

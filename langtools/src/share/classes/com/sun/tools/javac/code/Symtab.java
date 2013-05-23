@@ -131,7 +131,6 @@ public class Symtab {
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
     public final Type nativeHeaderType;
-    public final Type nativeHeaderType_old;
     public final Type throwableType;
     public final Type errorType;
     public final Type interruptedExceptionType;
@@ -526,7 +525,6 @@ public class Symtab {
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
         nativeHeaderType = enterClass("java.lang.annotation.Native");
-        nativeHeaderType_old = enterClass("javax.tools.annotation.GenerateNativeHeader");
         lambdaMetafactory = enterClass("java.lang.invoke.LambdaMetafactory");
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
 

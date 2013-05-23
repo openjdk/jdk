@@ -27,7 +27,7 @@
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
 # From Paul Eggert (2006-03-22):
 # A good source for time zone historical data outside the U.S. is
@@ -52,6 +52,12 @@
 #	<a href="http://www.pettswoodvillage.co.uk/Daylight_Savings_William_Willett.pdf">
 #	William Willett, The Waste of Daylight, 19th edition
 #	</a> (1914-03)
+#
+#	Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+#	<http://www.jstor.org/stable/1774359>.  He writes:
+#	"It is requested that corrections and additions to these tables
+#	may be sent to Mr. John Milne, Royal Geographical Society,
+#	Savile Row, London."  Nowadays please email them to tz@iana.org.
 #
 #	Brazil's Departamento Servico da Hora (DSH),
 #	<a href="http://pcdsh01.on.br/HISTHV.htm">
@@ -689,6 +695,8 @@ Zone	Europe/Andorra	0:06:04 -	LMT	1901
 
 # Austria
 
+# Milne says Vienna time was 1:05:21.
+
 # From Paul Eggert (2006-03-22): Shanks & Pottenger give 1918-06-16 and
 # 1945-11-18, but the Austrian Federal Office of Metrology and
 # Surveying (BEV) gives 1918-09-16 and for Vienna gives the "alleged"
@@ -706,7 +714,7 @@ Rule	Austria	1948	only	-	Apr	18	2:00s	1:00	S
 Rule	Austria	1980	only	-	Apr	 6	0:00	1:00	S
 Rule	Austria	1980	only	-	Sep	28	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Vienna	1:05:20 -	LMT	1893 Apr
+Zone	Europe/Vienna	1:05:21 -	LMT	1893 Apr
 			1:00	C-Eur	CE%sT	1920
 			1:00	Austria	CE%sT	1940 Apr  1 2:00s
 			1:00	C-Eur	CE%sT	1945 Apr  2 2:00s
@@ -1261,6 +1269,21 @@ Zone	Europe/Berlin	0:53:28 -	LMT	1893 Apr
 			1:00 SovietZone	CE%sT	1946
 			1:00	Germany	CE%sT	1980
 			1:00	EU	CE%sT
+
+# From Tobias Conradi (2011-09-12):
+# Busingen <http://www.buesingen.de>, surrounded by the Swiss canton
+# Schaffhausen, did not start observing DST in 1980 as the rest of DE
+# (West Germany at that time) and DD (East Germany at that time) did.
+# DD merged into DE, the area is currently covered by code DE in ISO 3166-1,
+# which in turn is covered by the zone Europe/Berlin.
+#
+# Source for the time in Busingen 1980:
+# http://www.srf.ch/player/video?id=c012c029-03b7-4c2b-9164-aa5902cd58d3
+
+# From Arthur David Olson (2012-03-03):
+# Busingen and Zurich have shared clocks since 1970.
+
+Link	Europe/Zurich	Europe/Busingen
 
 # Georgia
 # Please see the "asia" file for Asia/Tbilisi.
@@ -2066,6 +2089,70 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 
 # Russia
 
+# From Alexander Krivenyshev (2011-09-15):
+# Based on last Russian Government Decree # 725 on August 31, 2011
+# (Government document
+# <a href="http://www.government.ru/gov/results/16355/print/">
+# http://www.government.ru/gov/results/16355/print/
+# </a>
+# in Russian)
+# there are few corrections have to be made for some Russian time zones...
+# All updated Russian Time Zones were placed in table and translated to English
+# by WorldTimeZone.com at the link below:
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_russia36.htm">
+# http://www.worldtimezone.com/dst_news/dst_news_russia36.htm
+# </a>
+
+# From Sanjeev Gupta (2011-09-27):
+# Scans of [Decree #23 of January 8, 1992] are available at:
+# <a href="http://government.consultant.ru/page.aspx?1223966">
+# http://government.consultant.ru/page.aspx?1223966
+# They are in Cyrillic letters (presumably Russian).
+
+# From Arthur David Olson (2012-05-09):
+# Regarding the instant when clocks in time-zone-shifting parts of Russia
+# changed in September 2011:
+#
+# One source is
+# < a href="http://government.ru/gov/results/16355/>
+# http://government.ru/gov/results/16355/
+# </a>
+# which, according to translate.google.com, begins "Decree of August 31,
+# 2011 No 725" and contains no other dates or "effective date" information.
+#
+# Another source is
+# <a href="http://www.rg.ru/2011/09/06/chas-zona-dok.html">
+# http://www.rg.ru/2011/09/06/chas-zona-dok.html
+# </a>
+# which, according to translate.google.com, begins "Resolution of the
+# Government of the Russian Federation on August 31, 2011 N 725" and also
+# contains "Date first official publication: September 6, 2011 Posted on:
+# in the 'RG' - Federal Issue number 5573 September 6, 2011" but which
+# does not contain any "effective date" information.
+#
+# Another source is
+# <a href="http://en.wikipedia.org/wiki/Oymyakonsky_District#cite_note-RuTime-7">
+# http://en.wikipedia.org/wiki/Oymyakonsky_District#cite_note-RuTime-7
+# </a>
+# which, in note 8, contains "Resolution #725 of August 31, 2011...
+# Effective as of after 7 days following the day of the official publication"
+# but which does not contain any reference to September 6, 2011.
+#
+# The Wikipedia article refers to
+# <a href="http://base.consultant.ru/cons/cgi/online.cgi?req=doc;base=LAW;n=118896">
+# http://base.consultant.ru/cons/cgi/online.cgi?req=doc;base=LAW;n=118896
+# </a>
+# which seems to copy the text of the government.ru page.
+#
+# Tobias Conradi combines Wikipedia's
+# "as of after 7 days following the day of the official publication"
+# with www.rg.ru's "Date of first official publication: September 6, 2011" to get
+# September 13, 2011 as the cutover date (unusually, a Tuesday, as Tobias Conradi notes).
+#
+# None of the sources indicates a time of day for changing clocks.
+#
+# Go with 2011-09-13 0:00s.
+
 # From Paul Eggert (2006-03-22):
 # Except for Moscow after 1919-07-01, I invented the time zone abbreviations.
 # Moscow time zone abbreviations after 1919-07-01, and Moscow rules after 1991,
@@ -2293,14 +2380,32 @@ Zone Asia/Yakutsk	 8:38:40 -	LMT	1919 Dec 15
 # [parts of] Respublika Sakha (Yakutiya).
 
 # From Oscar van Vlijmen (2009-11-29):
-# The Sakha districts are: Bulunskij, Verkhoyanskij, Tomponskij, Ust'-Majskij,
-# Ust'-Yanskij.
+# The Sakha districts are: Bulunskij, Verkhoyanskij, ... Ust'-Yanskij.
 Zone Asia/Vladivostok	 8:47:44 -	LMT	1922 Nov 15
 			 9:00	-	VLAT	1930 Jun 21 # Vladivostok Time
 			10:00	Russia	VLA%sT	1991 Mar 31 2:00s
 			 9:00	Russia	VLA%sST	1992 Jan 19 2:00s
 			10:00	Russia	VLA%sT	2011 Mar 27 2:00s
 			11:00	-	VLAT
+
+# From Arthur David Olson (2012-05-09):
+# Tomponskij and Ust'-Majskij switched from Vladivostok time to Yakutsk time
+# in 2011.
+#
+# From Paul Eggert (2012-11-25):
+# Shanks and Pottenger (2003) has Khandyga on Yakutsk time.
+# Make a wild guess that it switched to Vladivostok time in 2004.
+# This transition is no doubt wrong, but we have no better info.
+#
+Zone Asia/Khandyga	 9:02:13 -	LMT	1919 Dec 15
+			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
+			 9:00	Russia	YAK%sT	1991 Mar 31 2:00s
+			 8:00	Russia	YAK%sT	1992 Jan 19 2:00s
+			 9:00	Russia	YAK%sT	2004
+			10:00	Russia	VLA%sT	2011 Mar 27 2:00s
+			11:00	-	VLAT	2011 Sep 13 0:00s # Decree 725?
+			10:00	-	YAKT
+
 #
 # Sakhalinskaya oblast'.
 # The Zone name should be Yuzhno-Sakhalinsk, but that's too long.
@@ -2319,14 +2424,26 @@ Zone Asia/Sakhalin	 9:30:48 -	LMT	1905 Aug 23
 
 # From Oscar van Vlijmen (2009-11-29):
 # The Sakha districts are: Abyjskij, Allaikhovskij, Verkhhhnekolymskij, Momskij,
-# Nizhnekolymskij, Ojmyakonskij, Srednekolymskij.
+# Nizhnekolymskij, ... Srednekolymskij.
 Zone Asia/Magadan	10:03:12 -	LMT	1924 May  2
 			10:00	-	MAGT	1930 Jun 21 # Magadan Time
 			11:00	Russia	MAG%sT	1991 Mar 31 2:00s
 			10:00	Russia	MAG%sT	1992 Jan 19 2:00s
 			11:00	Russia	MAG%sT	2011 Mar 27 2:00s
 			12:00	-	MAGT
-#
+
+# From Arthur David Olson (2012-05-09):
+# Ojmyakonskij and the Kuril Islands switched from
+# Magadan time to Vladivostok time in 2011.
+Zone Asia/Ust-Nera	 9:32:54 -	LMT	1919 Dec 15
+			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
+			 9:00	Russia	YAKT	1981 Apr  1
+			11:00	Russia	MAG%sT	1991 Mar 31 2:00s
+			10:00	Russia	MAG%sT	1992 Jan 19 2:00s
+			11:00	Russia	MAG%sT	2011 Mar 27 2:00s
+			12:00	-	MAGT	2011 Sep 13 0:00s # Decree 725?
+			11:00	-	VLAT
+
 # From Oscar van Vlijmen (2001-08-25): [This region consists of]
 # Kamchatskaya oblast', Koryakskij avtonomnyj okrug.
 #
