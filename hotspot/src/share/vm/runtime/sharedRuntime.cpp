@@ -883,24 +883,28 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 }
 
 
-JNI_ENTRY(void, throw_unsatisfied_link_error(JNIEnv* env, ...))
+/**
+ * Throws an java/lang/UnsatisfiedLinkError.  The address of this method is
+ * installed in the native function entry of all native Java methods before
+ * they get linked to their actual native methods.
+ *
+ * \note
+ * This method actually never gets called!  The reason is because
+ * the interpreter's native entries call NativeLookup::lookup() which
+ * throws the exception when the lookup fails.  The exception is then
+ * caught and forwarded on the return from NativeLookup::lookup() call
+ * before the call to the native function.  This might change in the future.
+ */
+JNI_ENTRY(void*, throw_unsatisfied_link_error(JNIEnv* env, ...))
 {
-  THROW(vmSymbols::java_lang_UnsatisfiedLinkError());
-}
-JNI_END
-
-JNI_ENTRY(void, throw_unsupported_operation_exception(JNIEnv* env, ...))
-{
-  THROW(vmSymbols::java_lang_UnsupportedOperationException());
+  // We return a bad value here to make sure that the exception is
+  // forwarded before we look at the return value.
+  THROW_(vmSymbols::java_lang_UnsatisfiedLinkError(), (void*)badJNIHandle);
 }
 JNI_END
 
 address SharedRuntime::native_method_throw_unsatisfied_link_error_entry() {
   return CAST_FROM_FN_PTR(address, &throw_unsatisfied_link_error);
-}
-
-address SharedRuntime::native_method_throw_unsupported_operation_exception_entry() {
-  return CAST_FROM_FN_PTR(address, &throw_unsupported_operation_exception);
 }
 
 

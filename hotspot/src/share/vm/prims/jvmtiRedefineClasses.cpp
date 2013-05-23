@@ -160,7 +160,8 @@ void VM_RedefineClasses::doit() {
   if (RC_TRACE_ENABLED(0x00004000)) {
 #endif
     RC_TRACE_WITH_THREAD(0x00004000, thread, ("calling check_class"));
-    SystemDictionary::classes_do(check_class, thread);
+    CheckClass check_class(thread);
+    ClassLoaderDataGraph::classes_do(&check_class);
 #ifdef PRODUCT
   }
 #endif
@@ -2653,29 +2654,35 @@ void VM_RedefineClasses::set_new_constant_pool(
 } // end set_new_constant_pool()
 
 
-void VM_RedefineClasses::adjust_array_vtable(Klass* k_oop) {
-  ArrayKlass* ak = ArrayKlass::cast(k_oop);
-  bool trace_name_printed = false;
-  ak->vtable()->adjust_method_entries(_matching_old_methods,
-                                      _matching_new_methods,
-                                      _matching_methods_length,
-                                      &trace_name_printed);
-}
-
 // Unevolving classes may point to methods of the_class directly
 // from their constant pool caches, itables, and/or vtables. We
-// use the SystemDictionary::classes_do() facility and this helper
+// use the ClassLoaderDataGraph::classes_do() facility and this helper
 // to fix up these pointers.
-//
-// Note: We currently don't support updating the vtable in
-// arrayKlassOops. See Open Issues in jvmtiRedefineClasses.hpp.
-void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
-       ClassLoaderData* initiating_loader,
-       TRAPS) {
-  Klass *k = k_oop;
-  if (k->oop_is_instance()) {
-    HandleMark hm(THREAD);
-    InstanceKlass *ik = (InstanceKlass *) k;
+
+// Adjust cpools and vtables closure
+void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
+
+  // This is a very busy routine. We don't want too much tracing
+  // printed out.
+  bool trace_name_printed = false;
+
+  // Very noisy: only enable this call if you are trying to determine
+  // that a specific class gets found by this routine.
+  // RC_TRACE macro has an embedded ResourceMark
+  // RC_TRACE_WITH_THREAD(0x00100000, THREAD,
+  //   ("adjust check: name=%s", k->external_name()));
+  // trace_name_printed = true;
+
+  // If the class being redefined is java.lang.Object, we need to fix all
+  // array class vtables also
+  if (k->oop_is_array() && _the_class_oop == SystemDictionary::Object_klass()) {
+    k->vtable()->adjust_method_entries(_matching_old_methods,
+                                       _matching_new_methods,
+                                       _matching_methods_length,
+                                       &trace_name_printed);
+  } else if (k->oop_is_instance()) {
+    HandleMark hm(_thread);
+    InstanceKlass *ik = InstanceKlass::cast(k);
 
     // HotSpot specific optimization! HotSpot does not currently
     // support delegation from the bootstrap class loader to a
@@ -2695,23 +2702,6 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
       return;
     }
 
-    // If the class being redefined is java.lang.Object, we need to fix all
-    // array class vtables also
-    if (_the_class_oop == SystemDictionary::Object_klass()) {
-      ik->array_klasses_do(adjust_array_vtable);
-    }
-
-    // This is a very busy routine. We don't want too much tracing
-    // printed out.
-    bool trace_name_printed = false;
-
-    // Very noisy: only enable this call if you are trying to determine
-    // that a specific class gets found by this routine.
-    // RC_TRACE macro has an embedded ResourceMark
-    // RC_TRACE_WITH_THREAD(0x00100000, THREAD,
-    //   ("adjust check: name=%s", ik->external_name()));
-    // trace_name_printed = true;
-
     // Fix the vtable embedded in the_class and subclasses of the_class,
     // if one exists. We discard scratch_class and we don't keep an
     // InstanceKlass around to hold obsolete methods so we don't have
@@ -2719,7 +2709,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
     // holds the Method*s for virtual (but not final) methods.
     if (ik->vtable_length() > 0 && ik->is_subtype_of(_the_class_oop)) {
       // ik->vtable() creates a wrapper object; rm cleans it up
-      ResourceMark rm(THREAD);
+      ResourceMark rm(_thread);
       ik->vtable()->adjust_method_entries(_matching_old_methods,
                                           _matching_new_methods,
                                           _matching_methods_length,
@@ -2735,7 +2725,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
     if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
-      ResourceMark rm(THREAD);
+      ResourceMark rm(_thread);
       ik->itable()->adjust_method_entries(_matching_old_methods,
                                           _matching_new_methods,
                                           _matching_methods_length,
@@ -2758,7 +2748,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
     constantPoolHandle other_cp;
     ConstantPoolCache* cp_cache;
 
-    if (k_oop != _the_class_oop) {
+    if (ik != _the_class_oop) {
       // this klass' constant pool cache may need adjustment
       other_cp = constantPoolHandle(ik->constants());
       cp_cache = other_cp->cache();
@@ -2770,7 +2760,7 @@ void VM_RedefineClasses::adjust_cpool_cache_and_vtable(Klass* k_oop,
       }
     }
     {
-      ResourceMark rm(THREAD);
+      ResourceMark rm(_thread);
       // PreviousVersionInfo objects returned via PreviousVersionWalker
       // contain a GrowableArray of handles. We have to clean up the
       // GrowableArray _after_ the PreviousVersionWalker destructor
@@ -3208,7 +3198,7 @@ void VM_RedefineClasses::swap_annotations(instanceKlassHandle the_class,
 //      parts of the_class
 //    - adjusting constant pool caches and vtables in other classes
 //      that refer to methods in the_class. These adjustments use the
-//      SystemDictionary::classes_do() facility which only allows
+//      ClassLoaderDataGraph::classes_do() facility which only allows
 //      a helper method to be specified. The interesting parameters
 //      that we would like to pass to the helper method are saved in
 //      static global fields in the VM operation.
@@ -3366,6 +3356,10 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   }
 #endif
 
+  // NULL out in scratch class to not delete twice.  The class to be redefined
+  // always owns these bytes.
+  scratch_class->set_cached_class_file(NULL, 0);
+
   // Replace inner_classes
   Array<u2>* old_inner_classes = the_class->inner_classes();
   the_class->set_inner_classes(scratch_class->inner_classes());
@@ -3438,7 +3432,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // Adjust constantpool caches and vtables for all classes
   // that reference methods of the evolved class.
-  SystemDictionary::classes_do(adjust_cpool_cache_and_vtable, THREAD);
+  AdjustCpoolCacheAndVtable adjust_cpool_cache_and_vtable(THREAD);
+  ClassLoaderDataGraph::classes_do(&adjust_cpool_cache_and_vtable);
 
   // JSR-292 support
   MemberNameTable* mnt = the_class->member_names();
@@ -3499,34 +3494,33 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
   }
 }
 
-void VM_RedefineClasses::check_class(Klass* k_oop,
-                                     ClassLoaderData* initiating_loader,
-                                     TRAPS) {
-  Klass *k = k_oop;
-  if (k->oop_is_instance()) {
-    HandleMark hm(THREAD);
-    InstanceKlass *ik = (InstanceKlass *) k;
-    bool no_old_methods = true;  // be optimistic
-    ResourceMark rm(THREAD);
+void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
+  bool no_old_methods = true;  // be optimistic
 
-    // a vtable should never contain old or obsolete methods
-    if (ik->vtable_length() > 0 &&
-        !ik->vtable()->check_no_old_or_obsolete_entries()) {
-      if (RC_TRACE_ENABLED(0x00004000)) {
-        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
-          ("klassVtable::check_no_old_or_obsolete_entries failure"
-           " -- OLD or OBSOLETE method found -- class: %s",
-           ik->signature_name()));
-        ik->vtable()->dump_vtable();
-      }
-      no_old_methods = false;
+  // Both array and instance classes have vtables.
+  // a vtable should never contain old or obsolete methods
+  ResourceMark rm(_thread);
+  if (k->vtable_length() > 0 &&
+      !k->vtable()->check_no_old_or_obsolete_entries()) {
+    if (RC_TRACE_ENABLED(0x00004000)) {
+      RC_TRACE_WITH_THREAD(0x00004000, _thread,
+        ("klassVtable::check_no_old_or_obsolete_entries failure"
+         " -- OLD or OBSOLETE method found -- class: %s",
+         k->signature_name()));
+      k->vtable()->dump_vtable();
     }
+    no_old_methods = false;
+  }
+
+  if (k->oop_is_instance()) {
+    HandleMark hm(_thread);
+    InstanceKlass *ik = InstanceKlass::cast(k);
 
     // an itable should never contain old or obsolete methods
     if (ik->itable_length() > 0 &&
         !ik->itable()->check_no_old_or_obsolete_entries()) {
       if (RC_TRACE_ENABLED(0x00004000)) {
-        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
+        RC_TRACE_WITH_THREAD(0x00004000, _thread,
           ("klassItable::check_no_old_or_obsolete_entries failure"
            " -- OLD or OBSOLETE method found -- class: %s",
            ik->signature_name()));
@@ -3540,7 +3534,7 @@ void VM_RedefineClasses::check_class(Klass* k_oop,
         ik->constants()->cache() != NULL &&
         !ik->constants()->cache()->check_no_old_or_obsolete_entries()) {
       if (RC_TRACE_ENABLED(0x00004000)) {
-        RC_TRACE_WITH_THREAD(0x00004000, THREAD,
+        RC_TRACE_WITH_THREAD(0x00004000, _thread,
           ("cp-cache::check_no_old_or_obsolete_entries failure"
            " -- OLD or OBSOLETE method found -- class: %s",
            ik->signature_name()));
@@ -3548,18 +3542,20 @@ void VM_RedefineClasses::check_class(Klass* k_oop,
       }
       no_old_methods = false;
     }
+  }
 
-    if (!no_old_methods) {
-      if (RC_TRACE_ENABLED(0x00004000)) {
-        dump_methods();
-      } else {
-        tty->print_cr("INFO: use the '-XX:TraceRedefineClasses=16384' option "
-          "to see more info about the following guarantee() failure.");
-      }
-      guarantee(false, "OLD and/or OBSOLETE method(s) found");
+  // print and fail guarantee if old methods are found.
+  if (!no_old_methods) {
+    if (RC_TRACE_ENABLED(0x00004000)) {
+      dump_methods();
+    } else {
+      tty->print_cr("INFO: use the '-XX:TraceRedefineClasses=16384' option "
+        "to see more info about the following guarantee() failure.");
     }
+    guarantee(false, "OLD and/or OBSOLETE method(s) found");
   }
 }
+
 
 void VM_RedefineClasses::dump_methods() {
   int j;

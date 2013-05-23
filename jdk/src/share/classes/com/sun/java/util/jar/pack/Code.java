@@ -146,7 +146,6 @@ class Code extends Attribute.Holder {
         int verbose = getPackage().verbose;
         if (verbose > 2)
             System.out.println("Reference scan "+this);
-        Class cls = thisClass();
         refs.addAll(Arrays.asList(handler_class));
         if (fixups != null) {
             fixups.visitRefs(refs);

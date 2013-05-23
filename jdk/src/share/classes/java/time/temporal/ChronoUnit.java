@@ -72,7 +72,7 @@ import java.time.chrono.ChronoZonedDateTime;
  * just with slightly different rules.
  * The documentation of each unit explains how it operates.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is a final, immutable and thread-safe enum.
  *
  * @since 1.8

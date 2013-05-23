@@ -133,9 +133,10 @@ import sun.util.logging.PlatformLogger;
  *      Chronology chrono = Chronology.ofLocale(locale);
  * </pre>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
- * <h3>Implementation Note for Hijrah Calendar Variant Configuration</h3>
+ *
+ * @implNote
  * Each Hijrah variant is configured individually. Each variant is defined by a
  * property resource that defines the {@code ID}, the {@code calendar type},
  * the start of the calendar, the alignment with the
@@ -230,6 +231,11 @@ public final class HijrahChronology extends Chronology implements Serializable {
      */
     public static final HijrahChronology INSTANCE;
     /**
+     * Flag to indicate the initialization of configuration data is complete.
+     * @see #checkCalendarInit()
+     */
+    private volatile boolean initComplete;
+    /**
      * Array of epoch days indexed by Hijrah Epoch month.
      * Computed by {@link #loadCalendarData}.
      */
@@ -285,7 +291,8 @@ public final class HijrahChronology extends Chronology implements Serializable {
     private static final String PROP_TYPE_SUFFIX = ".type";
 
     /**
-     * Name data.
+     * Static initialization of the predefined calendars found in the
+     * lib/calendars.properties file.
      */
     static {
         try {
@@ -299,8 +306,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
             // Register it by its aliases
             Chronology.registerChrono(INSTANCE, "Hijrah");
             Chronology.registerChrono(INSTANCE, "islamic");
-
-        } catch (Exception ex) {
+        } catch (DateTimeException ex) {
             // Absence of Hijrah calendar is fatal to initializing this class.
             PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
             logger.severe("Unable to initialize Hijrah calendar: Hijrah-umalqura", ex);
@@ -327,7 +333,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
                     // Create and register the variant
                     HijrahChronology chrono = new HijrahChronology(id);
                     Chronology.registerChrono(chrono);
-                } catch (Exception ex) {
+                } catch (DateTimeException ex) {
                     // Log error and continue
                     PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
                     logger.severe("Unable to initialize Hijrah calendar: " + id, ex);
@@ -343,22 +349,39 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * The property names are {@code "calendar.hijrah." + id}
      * and  {@code "calendar.hijrah." + id + ".type"}
      * @param id the id of the calendar
-     * @throws Exception if the resource can not be accessed or
-     *    the format is invalid
+     * @throws DateTimeException if the calendar type is missing from the properties file.
+     * @throws IllegalArgumentException if the id is empty
      */
-    private HijrahChronology(String id) throws Exception {
+    private HijrahChronology(String id) throws DateTimeException {
         if (id.isEmpty()) {
             throw new IllegalArgumentException("calendar id is empty");
         }
+        String propName = PROP_PREFIX + id + PROP_TYPE_SUFFIX;
+        String calType = calendarProperties.getProperty(propName);
+        if (calType == null || calType.isEmpty()) {
+            throw new DateTimeException("calendarType is missing or empty for: " + propName);
+        }
         this.typeId = id;
-        this.calendarType = calendarProperties.getProperty(PROP_PREFIX + id + PROP_TYPE_SUFFIX);
+        this.calendarType = calType;
+    }
 
-        try {
-            String resource = calendarProperties.getProperty(PROP_PREFIX + id);
-            Objects.requireNonNull(resource, "Resource missing for calendar");
-            loadCalendarData(resource);
-        } catch (Exception ex) {
-            throw new Exception("Unable to initialize HijrahCalendar: " + id, ex);
+    /**
+     * Check and ensure that the calendar data has been initialized.
+     * The initialization check is performed at the boundary between
+     * public and package methods.  If a public calls another public method
+     * a check is not necessary in the caller.
+     * The constructors of HijrahDate call {@link #getEpochDay} or
+     * {@link #getHijrahDateInfo} so every call from HijrahDate to a
+     * HijrahChronology via package private methods has been checked.
+     *
+     * @throws DateTimeException if the calendar data configuration is
+     *     malformed or IOExceptions occur loading the data
+     */
+    private void checkCalendarInit() {
+        // Keep this short so it can be inlined for performance
+        if (initComplete == false) {
+            loadCalendarData();
+            initComplete = true;
         }
     }
 
@@ -509,6 +532,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
     //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear(long prolepticYear) {
+        checkCalendarInit();
         int epochMonth = yearToEpochMonth((int) prolepticYear);
         if (epochMonth < 0 || epochMonth > maxEpochDay) {
             throw new DateTimeException("Hijrah date out of range");
@@ -543,6 +567,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
     //-----------------------------------------------------------------------
     @Override
     public ValueRange range(ChronoField field) {
+        checkCalendarInit();
         if (field instanceof ChronoField) {
             ChronoField f = field;
             switch (f) {
@@ -595,6 +620,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * @return int[0] = YEAR, int[1] = MONTH, int[2] = DATE
      */
     int[] getHijrahDateInfo(int epochDay) {
+        checkCalendarInit();    // ensure that the chronology is initialized
         if (epochDay < minEpochDay || epochDay >= maxEpochDay) {
             throw new DateTimeException("Hijrah date out of range");
         }
@@ -621,6 +647,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * @return the epoch day
      */
     long getEpochDay(int prolepticYear, int monthOfYear, int dayOfMonth) {
+        checkCalendarInit();    // ensure that the chronology is initialized
         checkValidMonth(monthOfYear);
         int epochMonth = yearToEpochMonth(prolepticYear) + (monthOfYear - 1);
         if (epochMonth < 0 || epochMonth >= hijrahEpochMonthStartDays.length) {
@@ -846,84 +873,90 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     /**
-     * Loads and processes the Hijrah calendar properties file.
+     * Loads and processes the Hijrah calendar properties file for this calendarType.
      * The starting Hijrah date and the corresponding ISO date are
      * extracted and used to calculate the epochDate offset.
      * The version number is identified and ignored.
      * Everything else is the data for a year with containing the length of each
      * of 12 months.
      *
-     * @param resourceName  containing the properties defining the calendar, not null
-     * @throws IllegalArgumentException  if any of the values are malformed
-     * @throws NumberFormatException  if numbers, including properties that should
-     *      be years are invalid
-     * @throws IOException  if access to the property resource fails.
+     * @throws DateTimeException if initialization of the calendar data from the
+     *     resource fails
      */
-    private void loadCalendarData(String resourceName)  throws Exception {
-        Properties props = readConfigProperties(resourceName);
+    private void loadCalendarData() {
+        try {
+            String resourceName = calendarProperties.getProperty(PROP_PREFIX + typeId);
+            Objects.requireNonNull(resourceName, "Resource missing for calendar: " + PROP_PREFIX + typeId);
+            Properties props = readConfigProperties(resourceName);
 
-        Map<Integer, int[]> years = new HashMap<>();
-        int minYear = Integer.MAX_VALUE;
-        int maxYear = Integer.MIN_VALUE;
-        String id = null;
-        String type = null;
-        String version = null;
-        int isoStart = 0;
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            String key = (String) entry.getKey();
-            switch (key) {
-                case KEY_ID:
-                    id = (String)entry.getValue();
-                    break;
-                case KEY_TYPE:
-                    type = (String)entry.getValue();
-                    break;
-                case KEY_VERSION:
-                    version = (String)entry.getValue();
-                    break;
-                case KEY_ISO_START: {
-                    int[] ymd = parseYMD((String) entry.getValue());
-                    isoStart = (int) LocalDate.of(ymd[0], ymd[1], ymd[2]).toEpochDay();
-                    break;
-                }
-                default:
-                    try {
-                        // Everything else is either a year or invalid
-                        int year = Integer.valueOf(key);
-                        int[] months = parseMonths((String) entry.getValue());
-                        years.put(year, months);
-                        maxYear = Math.max(maxYear, year);
-                        minYear = Math.min(minYear, year);
-                    } catch (NumberFormatException nfe) {
-                        throw new IllegalArgumentException("bad key: " + key);
+            Map<Integer, int[]> years = new HashMap<>();
+            int minYear = Integer.MAX_VALUE;
+            int maxYear = Integer.MIN_VALUE;
+            String id = null;
+            String type = null;
+            String version = null;
+            int isoStart = 0;
+            for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                String key = (String) entry.getKey();
+                switch (key) {
+                    case KEY_ID:
+                        id = (String)entry.getValue();
+                        break;
+                    case KEY_TYPE:
+                        type = (String)entry.getValue();
+                        break;
+                    case KEY_VERSION:
+                        version = (String)entry.getValue();
+                        break;
+                    case KEY_ISO_START: {
+                        int[] ymd = parseYMD((String) entry.getValue());
+                        isoStart = (int) LocalDate.of(ymd[0], ymd[1], ymd[2]).toEpochDay();
+                        break;
                     }
+                    default:
+                        try {
+                            // Everything else is either a year or invalid
+                            int year = Integer.valueOf(key);
+                            int[] months = parseMonths((String) entry.getValue());
+                            years.put(year, months);
+                            maxYear = Math.max(maxYear, year);
+                            minYear = Math.min(minYear, year);
+                        } catch (NumberFormatException nfe) {
+                            throw new IllegalArgumentException("bad key: " + key);
+                        }
+                }
             }
-        }
 
-        if (!getId().equals(id)) {
-            throw new IllegalArgumentException("Configuration is for a different calendar: " + id);
-        }
-        if (!getCalendarType().equals(type)) {
-            throw new IllegalArgumentException("Configuration is for a different calendar type: " + type);
-        }
-        if (version == null || version.isEmpty()) {
-            throw new IllegalArgumentException("Configuration does not contain a version");
-        }
-        if (isoStart == 0) {
-            throw new IllegalArgumentException("Configuration does not contain a ISO start date");
-        }
+            if (!getId().equals(id)) {
+                throw new IllegalArgumentException("Configuration is for a different calendar: " + id);
+            }
+            if (!getCalendarType().equals(type)) {
+                throw new IllegalArgumentException("Configuration is for a different calendar type: " + type);
+            }
+            if (version == null || version.isEmpty()) {
+                throw new IllegalArgumentException("Configuration does not contain a version");
+            }
+            if (isoStart == 0) {
+                throw new IllegalArgumentException("Configuration does not contain a ISO start date");
+            }
 
-        // Now create and validate the array of epochDays indexed by epochMonth
-        hijrahStartEpochMonth = minYear * 12;
-        minEpochDay = isoStart;
-        hijrahEpochMonthStartDays = createEpochMonths(minEpochDay, minYear, maxYear, years);
-        maxEpochDay = hijrahEpochMonthStartDays[hijrahEpochMonthStartDays.length - 1];
+            // Now create and validate the array of epochDays indexed by epochMonth
+            hijrahStartEpochMonth = minYear * 12;
+            minEpochDay = isoStart;
+            hijrahEpochMonthStartDays = createEpochMonths(minEpochDay, minYear, maxYear, years);
+            maxEpochDay = hijrahEpochMonthStartDays[hijrahEpochMonthStartDays.length - 1];
 
-        // Compute the min and max year length in days.
-        for (int year = minYear; year < maxYear; year++) {
-            int length = getYearLength(year);
-            minYearLength = Math.min(minYearLength, length);
-            maxYearLength = Math.max(maxYearLength, length);
+            // Compute the min and max year length in days.
+            for (int year = minYear; year < maxYear; year++) {
+                int length = getYearLength(year);
+                minYearLength = Math.min(minYearLength, length);
+                maxYearLength = Math.max(maxYearLength, length);
+            }
+        } catch (Exception ex) {
+            // Log error and throw a DateTimeException
+            PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
+            logger.severe("Unable to initialize Hijrah calendar proxy: " + typeId, ex);
+            throw new DateTimeException("Unable to initialize HijrahCalendar: " + typeId, ex);
         }
     }
 

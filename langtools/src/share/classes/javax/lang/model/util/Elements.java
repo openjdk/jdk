@@ -247,6 +247,7 @@ public interface Elements {
      * argument.
      *
      * @param cs the character sequence to return as a name
+     * @return a name with the same sequence of characters as the argument
      */
     Name getName(CharSequence cs);
 

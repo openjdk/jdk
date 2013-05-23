@@ -25,8 +25,6 @@
 
 package com.sun.tools.javadoc;
 
-import javax.lang.model.type.TypeKind;
-
 import com.sun.javadoc.*;
 
 import com.sun.tools.javac.code.Attribute;

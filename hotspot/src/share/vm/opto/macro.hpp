@@ -86,10 +86,11 @@ private:
   Node *value_from_mem(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, Node *alloc, Node_Stack *value_phis, int level);
 
+  bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
   bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
-  void process_users_of_allocation(AllocateNode *alloc);
+  void process_users_of_allocation(CallNode *alloc);
 
   void eliminate_card_mark(Node *cm);
   void mark_eliminated_box(Node* box, Node* obj);

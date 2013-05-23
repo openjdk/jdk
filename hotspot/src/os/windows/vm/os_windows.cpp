@@ -3307,7 +3307,7 @@ void os::pd_start_thread(Thread* thread) {
   assert(ret != SYS_THREAD_ERROR, "StartThread failed"); // should propagate back
 }
 
-class HighResolutionInterval {
+class HighResolutionInterval : public CHeapObj<mtThread> {
   // The default timer resolution seems to be 10 milliseconds.
   // (Where is this written down?)
   // If someone wants to sleep for only a fraction of the default,

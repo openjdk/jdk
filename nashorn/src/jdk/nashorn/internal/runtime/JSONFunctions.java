@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.ScriptObject.isArray;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import java.util.List;
