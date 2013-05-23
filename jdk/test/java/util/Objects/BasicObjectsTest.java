@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 6797535 6889858 6891113
+ * @bug 6797535 6889858 6891113 8013712 8011800 8014365
  * @summary Basic tests for methods in java.util.Objects
  * @author  Joseph D. Darcy
  */
 
 import java.util.*;
+import java.util.function.*;
 
 public class BasicObjectsTest {
     public static void main(String... args) {
@@ -40,6 +41,8 @@ public class BasicObjectsTest {
         errors += testToString();
         errors += testToString2();
         errors += testCompare();
+        errors += testRequireNonNull();
+        errors += testIsNull();
         errors += testNonNull();
         if (errors > 0 )
             throw new RuntimeException();
@@ -158,52 +161,75 @@ public class BasicObjectsTest {
         return errors;
     }
 
+    private static int testRequireNonNull() {
+        int errors = 0;
+
+        final String RNN_1 = "1-arg requireNonNull";
+        final String RNN_2 = "2-arg requireNonNull";
+        final String RNN_3 = "Supplier requireNonNull";
+
+        Function<String, String> rnn1 = s -> Objects.requireNonNull(s);
+        Function<String, String> rnn2 = s -> Objects.requireNonNull(s, "trousers");
+        Function<String, String> rnn3 = s -> Objects.requireNonNull(s, () -> "trousers");
+
+        errors += testRNN_NonNull(rnn1, RNN_1);
+        errors += testRNN_NonNull(rnn2, RNN_2);
+        errors += testRNN_NonNull(rnn3, RNN_3);
+
+        errors += testRNN_Null(rnn1, RNN_1, null);
+        errors += testRNN_Null(rnn2, RNN_2, "trousers");
+        errors += testRNN_Null(rnn3, RNN_3, "trousers");
+        return errors;
+    }
+
+    private static int testRNN_NonNull(Function<String, String> testFunc,
+                                       String testFuncName) {
+        int errors = 0;
+        try {
+            String s = testFunc.apply("pants");
+            if (s != "pants") {
+                System.err.printf(testFuncName + " failed to return its arg");
+                errors++;
+            }
+        } catch (NullPointerException e) {
+            System.err.printf(testFuncName + " threw unexpected NPE");
+            errors++;
+        }
+        return errors;
+    }
+
+    private static int testRNN_Null(Function<String, String> testFunc,
+                                    String testFuncName,
+                                    String expectedMessage) {
+        int errors = 0;
+        try {
+            String s = testFunc.apply(null);
+            System.err.printf(testFuncName + " failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            if (e.getMessage() != expectedMessage) {
+                System.err.printf(testFuncName + " threw NPE w/ bad detail msg");
+                errors++;
+            }
+        }
+        return errors;
+    }
+
+    private static int testIsNull() {
+        int errors = 0;
+
+        errors += Objects.isNull(null) ? 0 : 1;
+        errors += Objects.isNull(Objects.class) ? 1 : 0;
+
+        return errors;
+    }
+
     private static int testNonNull() {
         int errors = 0;
-        String s;
 
-        // Test 1-arg variant
-        try {
-            s = Objects.requireNonNull("pants");
-            if (s != "pants") {
-                System.err.printf("1-arg non-null failed to return its arg");
-                errors++;
-            }
-        } catch (NullPointerException e) {
-            System.err.printf("1-arg nonNull threw unexpected NPE");
-            errors++;
-        }
+        errors += Objects.nonNull(null) ? 1 : 0;
+        errors += Objects.nonNull(Objects.class) ? 0 : 1;
 
-        try {
-            s = Objects.requireNonNull(null);
-            System.err.printf("1-arg nonNull failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            // Expected
-        }
-
-        // Test 2-arg variant
-        try {
-            s = Objects.requireNonNull("pants", "trousers");
-            if (s != "pants") {
-                System.err.printf("2-arg nonNull failed to return its arg");
-                errors++;
-            }
-        } catch (NullPointerException e) {
-            System.err.printf("2-arg nonNull threw unexpected NPE");
-            errors++;
-        }
-
-        try {
-            s = Objects.requireNonNull(null, "pantaloons");
-            System.err.printf("2-arg nonNull failed to throw NPE");
-            errors++;
-        } catch (NullPointerException e) {
-            if (e.getMessage() != "pantaloons") {
-                System.err.printf("2-arg nonNull threw NPE w/ bad detail msg");
-                errors++;
-            }
-        }
         return errors;
     }
 }

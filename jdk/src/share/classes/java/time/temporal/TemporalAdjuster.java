@@ -97,7 +97,7 @@ import java.util.function.UnaryOperator;
  * <li>finding the next or previous day-of-week, such as "next Thursday"
  * </ul>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface places no restrictions on the mutability of implementations,
  * however immutability is strongly recommended.
  * <p>
@@ -127,7 +127,7 @@ public interface TemporalAdjuster {
      * It is recommended to use the second approach, {@code with(TemporalAdjuster)},
      * as it is a lot clearer to read in code.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The implementation must take the input object and adjust it.
      * The implementation defines the logic of the adjustment and is responsible for
      * documenting that logic. It may use any method on {@code Temporal} to
@@ -162,10 +162,10 @@ public interface TemporalAdjuster {
      * This is provided for convenience to make user-written adjusters simpler.
      * <p>
      * In general, user-written adjusters should be static constants:
-     * <pre>
+     * <pre>{@code
      *  static TemporalAdjuster TWO_DAYS_LATER = TemporalAdjuster.ofDateAdjuster(
      *    date -> date.plusDays(2));
-     * </pre>
+     * }</pre>
      *
      * @param dateBasedAdjuster  the date-based adjuster, not null
      * @return the temporal adjuster wrapping on the date adjuster, not null

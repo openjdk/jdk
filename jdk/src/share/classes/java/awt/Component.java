@@ -1671,6 +1671,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /* do nothing */
     }
 
+    /*
+     * Delete references from LightweithDispatcher of a heavyweight parent
+     */
+    void clearLightweightDispatcherOnRemove(Component removedComponent) {
+        if (parent != null) {
+            parent.clearLightweightDispatcherOnRemove(removedComponent);
+        }
+    }
+
     /**
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setVisible(boolean)</code>.
@@ -6974,6 +6983,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         synchronized (getTreeLock()) {
+            clearLightweightDispatcherOnRemove(this);
+
             if (isFocusOwner() && KeyboardFocusManager.isAutoFocusTransferEnabledFor(this)) {
                 transferFocus(true);
             }

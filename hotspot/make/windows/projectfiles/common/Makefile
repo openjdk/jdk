@@ -65,7 +65,6 @@ JvmtiOutDir=$(HOTSPOTBUILDSPACE)\$(Variant)\generated\jvmtifiles
 !endif
 
 HS_INTERNAL_NAME=jvm
-!include $(HOTSPOTWORKSPACE)/make/windows/makefiles/launcher.make
 
 default:: $(AdditionalTargets) $(JvmtiGeneratedFiles)
 

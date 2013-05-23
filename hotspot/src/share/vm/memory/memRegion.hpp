@@ -34,7 +34,9 @@
 
 // Note that MemRegions are passed by value, not by reference.
 // The intent is that they remain very small and contain no
-// objects.
+// objects. _ValueObj should never be allocated in heap but we do
+// create MemRegions (in CardTableModRefBS) in heap so operator
+// new and operator new [] added for this special case.
 
 class MetaWord;
 
@@ -92,6 +94,10 @@ public:
   size_t word_size() const { return _word_size; }
 
   bool is_empty() const { return word_size() == 0; }
+  void* operator new(size_t size);
+  void* operator new [](size_t size);
+  void  operator delete(void* p);
+  void  operator delete [](void* p);
 };
 
 // For iteration over MemRegion's.

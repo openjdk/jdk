@@ -154,12 +154,12 @@ KlassInfoTable::~KlassInfoTable() {
   }
 }
 
-uint KlassInfoTable::hash(Klass* p) {
+uint KlassInfoTable::hash(const Klass* p) {
   assert(p->is_metadata(), "all klasses are metadata");
   return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
 }
 
-KlassInfoEntry* KlassInfoTable::lookup(Klass* const k) {
+KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
   uint         idx = hash(k) % _size;
   assert(_buckets != NULL, "Allocation failure should have been caught");
   KlassInfoEntry*  e   = _buckets[idx].lookup(k);

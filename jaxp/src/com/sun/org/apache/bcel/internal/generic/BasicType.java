@@ -97,8 +97,14 @@ public final class BasicType extends Type {
 
   /** @return true if both type objects refer to the same type
    */
+  @Override
   public boolean equals(Object type) {
     return (type instanceof BasicType)?
       ((BasicType)type).type == this.type : false;
+  }
+
+  @Override
+  public int hashCode() {
+      return type;
   }
 }
