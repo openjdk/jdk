@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,14 +156,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             if (!Util.isCoreClass(cd)) {
                 continue;
             }
-            String label = italicsClassName(cd, false);
+            Content label = italicsClassName(cd, false);
             Content linkContent;
-            if(wantFrames){
-                linkContent = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.ALL_CLASSES_FRAME, cd, label, "classFrame")));
+            if (wantFrames) {
+                linkContent = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.ALL_CLASSES_FRAME, cd).label(label).target("classFrame"));
             } else {
-                linkContent = new RawHtml(getLink(new LinkInfoImpl(
-                        configuration, cd, label)));
+                linkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, cd).label(label));
             }
             Content li = HtmlTree.LI(linkContent);
             content.addContent(li);

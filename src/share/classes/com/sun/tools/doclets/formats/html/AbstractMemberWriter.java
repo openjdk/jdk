@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public abstract class AbstractMemberWriter {
      *
      * @return a string for the table caption
      */
-    public abstract String getCaption();
+    public abstract Content getCaption();
 
     /**
      * Get the summary table header for the member.
@@ -143,7 +143,7 @@ public abstract class AbstractMemberWriter {
      */
     protected void addSummaryLink(ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        addSummaryLink(LinkInfoImpl.CONTEXT_MEMBER, cd, member, tdSummary);
+        addSummaryLink(LinkInfoImpl.Kind.MEMBER, cd, member, tdSummary);
     }
 
     /**
@@ -154,7 +154,7 @@ public abstract class AbstractMemberWriter {
      * @param member the member to be documented
      * @param tdSummary the content tree to which the summary link will be added
      */
-    protected abstract void addSummaryLink(int context,
+    protected abstract void addSummaryLink(LinkInfoImpl.Kind context,
             ClassDoc cd, ProgramElementDoc member, Content tdSummary);
 
     /**
@@ -193,14 +193,13 @@ public abstract class AbstractMemberWriter {
     protected abstract void addNavDetailLink(boolean link, Content liNav);
 
     /**
-     * Add the member name to the content tree and modifies the display length.
+     * Add the member name to the content tree.
      *
      * @param name the member name to be added to the content tree.
      * @param htmltree the content tree to which the name will be added.
      */
     protected void addName(String name, Content htmltree) {
         htmltree.addContent(name);
-        writer.displayLength += name.length();
     }
 
     /**
@@ -259,7 +258,7 @@ public abstract class AbstractMemberWriter {
             return "";
         }
         StringBuilder sb = new StringBuilder(len);
-        for(int i = 0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             sb.append(' ');
     }
         return sb.toString();
@@ -286,19 +285,22 @@ public abstract class AbstractMemberWriter {
         } else {
             if (member instanceof ExecutableMemberDoc &&
                     ((ExecutableMemberDoc) member).typeParameters().length > 0) {
+                Content typeParameters = ((AbstractExecutableMemberWriter) this).getTypeParameters(
+                        (ExecutableMemberDoc) member);
+                    code.addContent(typeParameters);
                 //Code to avoid ugly wrapping in member summary table.
-                int displayLength = ((AbstractExecutableMemberWriter) this).addTypeParameters(
-                        (ExecutableMemberDoc) member, code);
-                if (displayLength > 10) {
+                if (typeParameters.charCount() > 10) {
                     code.addContent(new HtmlTree(HtmlTag.BR));
+                } else {
+                    code.addContent(writer.getSpace());
                 }
-                code.addContent(new RawHtml(
+                code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             } else {
-                code.addContent(new RawHtml(
+                code.addContent(
                         writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_SUMMARY_RETURN_TYPE, type))));
+                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             }
 
         }
@@ -346,10 +348,10 @@ public abstract class AbstractMemberWriter {
      * @param contentTree the content tree to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(ProgramElementDoc member, Content contentTree) {
-        String output = (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false)).toString().trim();
+        Content output = (new DeprecatedTaglet()).getTagletOutput(member,
+            writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
-            Content deprecatedContent = new RawHtml(output);
+            Content deprecatedContent = output;
             Content div = HtmlTree.DIV(HtmlStyle.block, deprecatedContent);
             contentTree.addContent(div);
         }
@@ -378,7 +380,7 @@ public abstract class AbstractMemberWriter {
      * @return a header content for the section.
      */
     protected Content getHead(MemberDoc member) {
-        Content memberContent = new RawHtml(member.name());
+        Content memberContent = new StringContent(member.name());
         Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, memberContent);
         return heading;
     }
@@ -412,7 +414,7 @@ public abstract class AbstractMemberWriter {
             String tableSummary, String[] tableHeader, Content contentTree) {
         if (deprmembers.size() > 0) {
             Content table = HtmlTree.TABLE(0, 3, 0, tableSummary,
-                writer.getTableCaption(configuration.getText(headingKey)));
+                writer.getTableCaption(configuration.getResource(headingKey)));
             table.addContent(writer.getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < deprmembers.size(); i++) {
@@ -444,7 +446,7 @@ public abstract class AbstractMemberWriter {
      * @param contentTree the content tree to which the use information will be added
      */
     protected void addUseInfo(List<? extends ProgramElementDoc> mems,
-            String heading, String tableSummary, Content contentTree) {
+            Content heading, String tableSummary, Content contentTree) {
         if (mems == null) {
             return;
         }
@@ -483,7 +485,7 @@ public abstract class AbstractMemberWriter {
                     tdLast.addContent(name);
                 }
                 addSummaryLink(pgmdoc instanceof ClassDoc ?
-                    LinkInfoImpl.CONTEXT_CLASS_USE : LinkInfoImpl.CONTEXT_MEMBER,
+                    LinkInfoImpl.Kind.CLASS_USE : LinkInfoImpl.Kind.MEMBER,
                     cd, pgmdoc, tdLast);
                 writer.addSummaryLinkComment(this, pgmdoc, tdLast);
                 tr.addContent(tdLast);

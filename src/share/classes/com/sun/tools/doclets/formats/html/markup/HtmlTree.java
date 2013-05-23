@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,12 @@ public class HtmlTree extends Content {
      */
     public void addAttr(HtmlAttr attrName, String attrValue) {
         if (attrs.isEmpty())
-            attrs = new LinkedHashMap<HtmlAttr,String>();
-        attrs.put(nullCheck(attrName), nullCheck(attrValue));
+            attrs = new LinkedHashMap<HtmlAttr,String>(3);
+        attrs.put(nullCheck(attrName), escapeHtmlChars(attrValue));
+    }
+
+    public void setTitle(Content body) {
+        addAttr(HtmlAttr.TITLE, stripHtml(body));
     }
 
     /**
@@ -123,6 +127,42 @@ public class HtmlTree extends Content {
             addContent(new StringContent(stringContent));
     }
 
+    public int charCount() {
+        int n = 0;
+        for (Content c : content)
+            n += c.charCount();
+        return n;
+    }
+
+    /**
+     * Given a string, escape all special html characters and
+     * return the result.
+     *
+     * @param s The string to check.
+     * @return the original string with all of the HTML characters escaped.
+     */
+    private static String escapeHtmlChars(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            switch (ch) {
+                // only start building a new string if we need to
+                case '<': case '>': case '&':
+                    StringBuilder sb = new StringBuilder(s.substring(0, i));
+                    for ( ; i < s.length(); i++) {
+                        ch = s.charAt(i);
+                        switch (ch) {
+                            case '<': sb.append("&lt;");  break;
+                            case '>': sb.append("&gt;");  break;
+                            case '&': sb.append("&amp;"); break;
+                            default:  sb.append(ch);      break;
+                        }
+                    }
+                    return sb.toString();
+            }
+        }
+        return s;
+    }
+
     /**
      * Generates an HTML anchor tag.
      *
@@ -132,7 +172,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree A(String ref, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.A, nullCheck(body));
-        htmltree.addAttr(HtmlAttr.HREF, nullCheck(ref));
+        htmltree.addAttr(HtmlAttr.HREF, ref);
         return htmltree;
     }
 
@@ -317,7 +357,7 @@ public class HtmlTree extends Content {
             HtmlStyle styleClass, Content body) {
         HtmlTree htmltree = new HtmlTree(headingTag, nullCheck(body));
         if (printTitle)
-            htmltree.addAttr(HtmlAttr.TITLE, Util.stripHtml(body.toString()));
+            htmltree.setTitle(body);
         if (styleClass != null)
             htmltree.addStyle(styleClass);
         return htmltree;
@@ -802,7 +842,7 @@ public class HtmlTree extends Content {
         out.write(tagString);
         Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
         HtmlAttr key;
-        String value = "";
+        String value;
         while (iterator.hasNext()) {
             key = iterator.next();
             value = attrs.get(key);
@@ -829,5 +869,23 @@ public class HtmlTree extends Content {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Given a Content node, strips all html characters and
+     * return the result.
+     *
+     * @param body The content node to check.
+     * @return the plain text from the content node
+     *
+     */
+    private static String stripHtml(Content body) {
+        String rawString = body.toString();
+        // remove HTML tags
+        rawString = rawString.replaceAll("\\<.*?>", " ");
+        // consolidate multiple spaces between a word to a single space
+        rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
+        // remove extra whitespaces
+        return rawString.trim();
     }
 }

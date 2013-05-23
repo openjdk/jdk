@@ -34,10 +34,6 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
-
-import com.sun.tools.javac.util.Position;
-
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 
 /**
