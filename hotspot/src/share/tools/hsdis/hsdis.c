@@ -27,6 +27,7 @@
    HotSpot PrintAssembly option.
 */
 
+#include <config.h> /* required by bfd.h */
 #include <libiberty.h>
 #include <bfd.h>
 #include <dis-asm.h>
