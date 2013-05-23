@@ -1179,6 +1179,44 @@ bool ciMethod::has_jsrs       () const {         FETCH_FLAG_FROM_VM(has_jsrs);  
 bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor); }
 bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
 
+bool ciMethod::is_boxing_method() const {
+  if (holder()->is_box_klass()) {
+    switch (intrinsic_id()) {
+      case vmIntrinsics::_Boolean_valueOf:
+      case vmIntrinsics::_Byte_valueOf:
+      case vmIntrinsics::_Character_valueOf:
+      case vmIntrinsics::_Short_valueOf:
+      case vmIntrinsics::_Integer_valueOf:
+      case vmIntrinsics::_Long_valueOf:
+      case vmIntrinsics::_Float_valueOf:
+      case vmIntrinsics::_Double_valueOf:
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+bool ciMethod::is_unboxing_method() const {
+  if (holder()->is_box_klass()) {
+    switch (intrinsic_id()) {
+      case vmIntrinsics::_booleanValue:
+      case vmIntrinsics::_byteValue:
+      case vmIntrinsics::_charValue:
+      case vmIntrinsics::_shortValue:
+      case vmIntrinsics::_intValue:
+      case vmIntrinsics::_longValue:
+      case vmIntrinsics::_floatValue:
+      case vmIntrinsics::_doubleValue:
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
 #ifdef COMPILER2
   if (_bcea == NULL) {

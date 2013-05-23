@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,11 +155,6 @@ void WorkerDataArray<T>::verify() {
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
-  _min_clear_cc_time_ms(-1.0),
-  _max_clear_cc_time_ms(-1.0),
-  _cur_clear_cc_time_ms(0.0),
-  _cum_clear_cc_time_ms(0.0),
-  _num_cc_clears(0L),
   _last_gc_worker_start_times_ms(_max_gc_threads, "%.1lf", false),
   _last_ext_root_scan_times_ms(_max_gc_threads, "%.1lf"),
   _last_satb_filtering_times_ms(_max_gc_threads, "%.1lf"),
@@ -212,11 +207,11 @@ void G1GCPhaseTimes::note_gc_end() {
     _last_gc_worker_times_ms.set(i, worker_time);
 
     double worker_known_time = _last_ext_root_scan_times_ms.get(i) +
-      _last_satb_filtering_times_ms.get(i) +
-      _last_update_rs_times_ms.get(i) +
-      _last_scan_rs_times_ms.get(i) +
-      _last_obj_copy_times_ms.get(i) +
-      _last_termination_times_ms.get(i);
+                               _last_satb_filtering_times_ms.get(i) +
+                               _last_update_rs_times_ms.get(i) +
+                               _last_scan_rs_times_ms.get(i) +
+                               _last_obj_copy_times_ms.get(i) +
+                               _last_termination_times_ms.get(i);
 
     double worker_other_time = worker_time - worker_known_time;
     _last_gc_worker_other_times_ms.set(i, worker_other_time);
@@ -285,15 +280,6 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   }
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
-  if (Verbose && G1Log::finest()) {
-    print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
-    print_stats(1, "Cum Clear CC", _cum_clear_cc_time_ms);
-    print_stats(1, "Min Clear CC", _min_clear_cc_time_ms);
-    print_stats(1, "Max Clear CC", _max_clear_cc_time_ms);
-    if (_num_cc_clears > 0) {
-      print_stats(1, "Avg Clear CC", _cum_clear_cc_time_ms / ((double)_num_cc_clears));
-    }
-  }
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
@@ -310,20 +296,4 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   if (_cur_verify_after_time_ms > 0.0) {
     print_stats(2, "Verify After", _cur_verify_after_time_ms);
   }
-}
-
-void G1GCPhaseTimes::record_cc_clear_time_ms(double ms) {
-  if (!(Verbose && G1Log::finest())) {
-    return;
-  }
-
-  if (_min_clear_cc_time_ms < 0.0 || ms <= _min_clear_cc_time_ms) {
-    _min_clear_cc_time_ms = ms;
-  }
-  if (_max_clear_cc_time_ms < 0.0 || ms >= _max_clear_cc_time_ms) {
-    _max_clear_cc_time_ms = ms;
-  }
-  _cur_clear_cc_time_ms = ms;
-  _cum_clear_cc_time_ms += ms;
-  _num_cc_clears++;
 }

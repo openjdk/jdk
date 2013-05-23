@@ -57,7 +57,6 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
      * Is this a reverse order iteration?
      * @return true if reverse
      */
-    @SuppressWarnings("static-method")
     public boolean isReverse() {
         return false;
     }

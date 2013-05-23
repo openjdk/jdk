@@ -110,7 +110,7 @@ public final class PropertyHashMap implements Map <String, Property> {
     private static final int LIST_THRESHOLD = 8;
 
     /** Initial map. */
-    public static final PropertyHashMap EMPTY_MAP = new PropertyHashMap();
+    public static final PropertyHashMap EMPTY_HASHMAP = new PropertyHashMap();
 
     /** Number of properties in the map. */
     private final int size;
@@ -246,7 +246,7 @@ public final class PropertyHashMap implements Map <String, Property> {
             }
         } else if (findElement(list, key) != null) {
             final int newSize = size - 1;
-            return newSize != 0 ? new PropertyHashMap(newSize, null, removeFromList(list, key)) : EMPTY_MAP;
+            return newSize != 0 ? new PropertyHashMap(newSize, null, removeFromList(list, key)) : EMPTY_HASHMAP;
         }
         return this;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.javadoc;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -296,6 +298,7 @@ class Comment {
     static Tag[] getInlineTags(DocImpl holder, String inlinetext) {
         ListBuffer<Tag> taglist = new ListBuffer<Tag>();
         int delimend = 0, textstart = 0, len = inlinetext.length();
+        boolean inPre = false;
         DocEnv docenv = holder.env;
 
         if (len == 0) {
@@ -309,6 +312,7 @@ class Comment {
                                            inlinetext.substring(textstart)));
                 break;
             } else {
+                inPre = scanForPre(inlinetext, textstart, linkstart, inPre);
                 int seetextstart = linkstart;
                 for (int i = linkstart; i < inlinetext.length(); i++) {
                     char c = inlinetext.charAt(i);
@@ -319,18 +323,20 @@ class Comment {
                      }
                 }
                 String linkName = inlinetext.substring(linkstart+2, seetextstart);
-                //Move past the white space after the inline tag name.
-                while (Character.isWhitespace(inlinetext.
-                                                  charAt(seetextstart))) {
-                    if (inlinetext.length() <= seetextstart) {
-                        taglist.append(new TagImpl(holder, "Text",
-                                                   inlinetext.substring(textstart, seetextstart)));
-                        docenv.warning(holder,
-                                       "tag.Improper_Use_Of_Link_Tag",
-                                       inlinetext);
-                        return taglist.toArray(new Tag[taglist.length()]);
-                    } else {
-                        seetextstart++;
+                if (!(inPre && (linkName.equals("code") || linkName.equals("literal")))) {
+                    //Move past the white space after the inline tag name.
+                    while (Character.isWhitespace(inlinetext.
+                                                      charAt(seetextstart))) {
+                        if (inlinetext.length() <= seetextstart) {
+                            taglist.append(new TagImpl(holder, "Text",
+                                                       inlinetext.substring(textstart, seetextstart)));
+                            docenv.warning(holder,
+                                           "tag.Improper_Use_Of_Link_Tag",
+                                           inlinetext);
+                            return taglist.toArray(new Tag[taglist.length()]);
+                        } else {
+                            seetextstart++;
+                        }
                     }
                 }
                 taglist.append(new TagImpl(holder, "Text",
@@ -364,6 +370,17 @@ class Comment {
             }
         }
         return taglist.toArray(new Tag[taglist.length()]);
+    }
+
+    /** regex for case-insensitive match for {@literal <pre> } and  {@literal </pre> }. */
+    private static final Pattern prePat = Pattern.compile("(?i)<(/?)pre>");
+
+    private static boolean scanForPre(String inlinetext, int start, int end, boolean inPre) {
+        Matcher m = prePat.matcher(inlinetext).region(start, end);
+        while (m.find()) {
+            inPre = m.group(1).isEmpty();
+        }
+        return inPre;
     }
 
     /**

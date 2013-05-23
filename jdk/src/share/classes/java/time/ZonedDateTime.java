@@ -142,7 +142,7 @@ import java.util.Objects;
  * a vital, but secondary, piece of information, used to ensure that the class
  * represents an instant, especially during a daylight savings overlap.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * A {@code ZonedDateTime} holds state equivalent to three separate objects,
  * a {@code LocalDateTime}, a {@code ZoneId} and the resolved {@code ZoneOffset}.
  * The offset and local date-time are used to define an instant when necessary.
@@ -1983,10 +1983,10 @@ public final class ZonedDateTime
     }
 
     /**
-     * Calculates the period between this date-time and another date-time in
-     * terms of the specified unit.
+     * Calculates the amount of time until another date-time in terms of the specified unit.
      * <p>
-     * This calculates the period between two date-times in terms of a single unit.
+     * This calculates the amount of time between two {@code ZonedDateTime}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
      * For example, the period in days between two date-times can be calculated
@@ -2040,9 +2040,9 @@ public final class ZonedDateTime
      * This instance is immutable and unaffected by this method call.
      *
      * @param endDateTime  the end date-time, which must be a {@code ZonedDateTime}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this date-time and the end date-time
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this date-time and the end date-time
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -2050,7 +2050,7 @@ public final class ZonedDateTime
     public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof ZonedDateTime == false) {
             Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         if (unit instanceof ChronoUnit) {
             ZonedDateTime end = (ZonedDateTime) endDateTime;

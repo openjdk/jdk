@@ -77,6 +77,7 @@ import java.text.Format;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.Chronology;
@@ -121,7 +122,7 @@ import java.util.Set;
  * </pre></blockquote>
  * <p>
  * In addition to the format, formatters can be created with desired Locale,
- * Chronology, ZoneId, and formatting symbols.
+ * Chronology, ZoneId, and DecimalStyle.
  * <p>
  * The {@link #withLocale withLocale} method returns a new formatter that
  * overrides the locale. The locale affects some aspects of formatting and
@@ -138,8 +139,8 @@ import java.util.Set;
  * with the requested ZoneId before formatting. During parsing the ZoneId is
  * applied before the value is returned.
  * <p>
- * The {@link #withSymbols withSymbols} method returns a new formatter that
- * overrides the {@link DateTimeFormatSymbols}. The symbols are used for
+ * The {@link #withDecimalStyle withDecimalStyle} method returns a new formatter that
+ * overrides the {@link DecimalStyle}. The DecimalStyle symbols are used for
  * formatting and parsing.
  * <p>
  * Some applications may need to use the older {@link Format java.text.Format}
@@ -417,7 +418,65 @@ import java.util.Set;
  * that you want to output directly to ensure that future changes do not break
  * your application.
  *
- * <h3>Specification for implementors</h3>
+ * <h3 id="resolving">Resolving</h3>
+ * Parsing is implemented as a two-phase operation.
+ * First, the text is parsed using the layout defined by the formatter, producing
+ * a {@code Map} of field to value, a {@code ZoneId} and a {@code Chronology}.
+ * Second, the parsed data is <em>resolved</em>, by validating, combining and
+ * simplifying the various fields into more useful ones.
+ * <p>
+ * Five parsing methods are supplied by this class.
+ * Four of these perform both the parse and resolve phases.
+ * The fifth method, {@link #parseUnresolved(CharSequence, ParsePosition)},
+ * only performs the first phase, leaving the result unresolved.
+ * As such, it is essentially a low-level operation.
+ * <p>
+ * The resolve phase is controlled by two parameters, set on this class.
+ * <p>
+ * The {@link ResolverStyle} is an enum that offers three different approaches,
+ * strict, smart and lenient. The smart option is the default.
+ * It can be set using {@link #withResolverStyle(ResolverStyle)}.
+ * <p>
+ * The {@link #withResolverFields(TemporalField...)} parameter allows the
+ * set of fields that will be resolved to be filtered before resolving starts.
+ * For example, if the formatter has parsed a year, month, day-of-month
+ * and day-of-year, then there are two approaches to resolve a date:
+ * (year + month + day-of-month) and (year + day-of-year).
+ * The resolver fields allows one of the two approaches to be selected.
+ * If no resolver fields are set then both approaches must result in the same date.
+ * <p>
+ * Resolving separate fields to form a complete date and time is a complex
+ * process with behaviour distributed across a number of classes.
+ * It follows these steps:
+ * <ol>
+ * <li>The chronology is determined.
+ * The chronology of the result is either the chronology that was parsed,
+ * or if no chronology was parsed, it is the chronology set on this class,
+ * or if that is null, it is {@code IsoChronology}.
+ * <li>The {@code ChronoField} date fields are resolved.
+ * This is achieved using {@link Chronology#resolveDate(Map, ResolverStyle)}.
+ * Documentation about field resolution is located in the implementation
+ * of {@code Chronology}.
+ * <li>The {@code ChronoField} time fields are resolved.
+ * This is documented on {@link ChronoField} and is the same for all chronologies.
+ * <li>Any fields that are not {@code ChronoField} are processed.
+ * This is achieved using {@link TemporalField#resolve(TemporalAccessor, long, ResolverStyle)}.
+ * Documentation about field resolution is located in the implementation
+ * of {@code TemporalField}.
+ * <li>The {@code ChronoField} date and time fields are re-resolved.
+ * This allows fields in step four to produce {@code ChronoField} values
+ * and have them be processed into dates and times.
+ * <li>A {@code LocalTime} is formed if there is at least an hour-of-day available.
+ * This involves providing default values for minute, second and fraction of second.
+ * <li>Any remaining unresolved fields are cross-checked against any
+ * date and/or time that was resolved. Thus, an earlier stage would resolve
+ * (year + month + day-of-month) to a date, and this stage would check that
+ * day-of-week was valid for the date.
+ * <li>If an {@linkplain #parsedExcessDays() excess number of days}
+ * was parsed then it is added to the date if a date is available.
+ * </ol>
+ *
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -435,7 +494,7 @@ public final class DateTimeFormatter {
     /**
      * The symbols to use for formatting, not null.
      */
-    private final DateTimeFormatSymbols symbols;
+    private final DecimalStyle decimalStyle;
     /**
      * The resolver style to use, not null.
      */
@@ -1040,6 +1099,11 @@ public final class DateTimeFormatter {
      * <p>
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 instant format.
+     * When formatting, the second-of-minute is always output.
+     * The nano-of-second outputs zero, three, six or nine digits digits as necessary.
+     * When parsing, time to at least the seconds field is required.
+     * Fractional seconds from zero to nine are parsed.
+     * The localized decimal style is not used.
      * <p>
      * This is a special case formatter intended to allow a human readable form
      * of an {@link java.time.Instant}. The {@code Instant} class is designed to
@@ -1201,25 +1265,117 @@ public final class DateTimeFormatter {
                 .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
+    //-----------------------------------------------------------------------
+    /**
+     * A query that provides access to the excess days that were parsed.
+     * <p>
+     * This returns a singleton {@linkplain TemporalQuery query} that provides
+     * access to additional information from the parse. The query always returns
+     * a non-null period, with a zero period returned instead of null.
+     * <p>
+     * There are two situations where this query may return a non-zero period.
+     * <p><ul>
+     * <li>If the {@code ResolverStyle} is {@code LENIENT} and a time is parsed
+     *  without a date, then the complete result of the parse consists of a
+     *  {@code LocalTime} and an excess {@code Period} in days.
+     * <p>
+     * <li>If the {@code ResolverStyle} is {@code SMART} and a time is parsed
+     *  without a date where the time is 24:00:00, then the complete result of
+     *  the parse consists of a {@code LocalTime} of 00:00:00 and an excess
+     *  {@code Period} of one day.
+     * </ul>
+     * <p>
+     * In both cases, if a complete {@code ChronoLocalDateTime} or {@code Instant}
+     * is parsed, then the excess days are added to the date part.
+     * As a result, this query will return a zero period.
+     * <p>
+     * The {@code SMART} behaviour handles the common "end of day" 24:00 value.
+     * Processing in {@code LENIENT} mode also produces the same result:
+     * <pre>
+     *  Text to parse        Parsed object                         Excess days
+     *  "2012-12-03T00:00"   LocalDateTime.of(2012, 12, 3, 0, 0)   ZERO
+     *  "2012-12-03T24:00"   LocalDateTime.of(2012, 12, 4, 0, 0)   ZERO
+     *  "00:00"              LocalTime.of(0, 0)                    ZERO
+     *  "24:00"              LocalTime.of(0, 0)                    Period.ofDays(1)
+     * </pre>
+     * The query can be used as follows:
+     * <pre>
+     *  TemporalAccessor parsed = formatter.parse(str);
+     *  LocalTime time = parsed.query(LocalTime::from);
+     *  Period extraDays = parsed.query(DateTimeFormatter.parsedExcessDays());
+     * </pre>
+     */
+    public static final TemporalQuery<Period> parsedExcessDays() {
+        return PARSED_EXCESS_DAYS;
+    }
+    private static final TemporalQuery<Period> PARSED_EXCESS_DAYS = t -> {
+        if (t instanceof Parsed) {
+            return ((Parsed) t).excessDays;
+        } else {
+            return Period.ZERO;
+        }
+    };
+
+    /**
+     * A query that provides access to whether a leap-second was parsed.
+     * <p>
+     * This returns a singleton {@linkplain TemporalQuery query} that provides
+     * access to additional information from the parse. The query always returns
+     * a non-null boolean, true if parsing saw a leap-second, false if not.
+     * <p>
+     * Instant parsing handles the special "leap second" time of '23:59:60'.
+     * Leap seconds occur at '23:59:60' in the UTC time-zone, but at other
+     * local times in different time-zones. To avoid this potential ambiguity,
+     * the handling of leap-seconds is limited to
+     * {@link DateTimeFormatterBuilder#appendInstant()}, as that method
+     * always parses the instant with the UTC zone offset.
+     * <p>
+     * If the time '23:59:60' is received, then a simple conversion is applied,
+     * replacing the second-of-minute of 60 with 59. This query can be used
+     * on the parse result to determine if the leap-second adjustment was made.
+     * The query will return one second of excess if it did adjust to remove
+     * the leap-second, and zero if not. Note that applying a leap-second
+     * smoothing mechanism, such as UTC-SLS, is the responsibility of the
+     * application, as follows:
+     * <pre>
+     *  TemporalAccessor parsed = formatter.parse(str);
+     *  Instant instant = parsed.query(Instant::from);
+     *  if (parsed.query(DateTimeFormatter.parsedLeapSecond())) {
+     *    // validate leap-second is correct and apply correct smoothing
+     *  }
+     * </pre>
+     */
+    public static final TemporalQuery<Boolean> parsedLeapSecond() {
+        return PARSED_LEAP_SECOND;
+    }
+    private static final TemporalQuery<Boolean> PARSED_LEAP_SECOND = t -> {
+        if (t instanceof Parsed) {
+            return ((Parsed) t).leapSecond;
+        } else {
+            return Boolean.FALSE;
+        }
+    };
+
+    //-----------------------------------------------------------------------
     /**
      * Constructor.
      *
      * @param printerParser  the printer/parser to use, not null
      * @param locale  the locale to use, not null
-     * @param symbols  the symbols to use, not null
+     * @param decimalStyle  the DecimalStyle to use, not null
      * @param resolverStyle  the resolver style to use, not null
      * @param resolverFields  the fields to use during resolving, null for all fields
      * @param chrono  the chronology to use, null for no override
      * @param zone  the zone to use, null for no override
      */
     DateTimeFormatter(CompositePrinterParser printerParser,
-            Locale locale, DateTimeFormatSymbols symbols,
+            Locale locale, DecimalStyle decimalStyle,
             ResolverStyle resolverStyle, Set<TemporalField> resolverFields,
             Chronology chrono, ZoneId zone) {
         this.printerParser = Objects.requireNonNull(printerParser, "printerParser");
         this.resolverFields = resolverFields;
         this.locale = Objects.requireNonNull(locale, "locale");
-        this.symbols = Objects.requireNonNull(symbols, "symbols");
+        this.decimalStyle = Objects.requireNonNull(decimalStyle, "decimalStyle");
         this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.chrono = chrono;
         this.zone = zone;
@@ -1253,32 +1409,32 @@ public final class DateTimeFormatter {
         if (this.locale.equals(locale)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the set of symbols to be used during formatting.
+     * Gets the DecimalStyle to be used during formatting.
      *
      * @return the locale of this formatter, not null
      */
-    public DateTimeFormatSymbols getSymbols() {
-        return symbols;
+    public DecimalStyle getDecimalStyle() {
+        return decimalStyle;
     }
 
     /**
-     * Returns a copy of this formatter with a new set of symbols.
+     * Returns a copy of this formatter with a new DecimalStyle.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param symbols  the new symbols, not null
-     * @return a formatter based on this formatter with the requested symbols, not null
+     * @param decimalStyle  the new DecimalStyle, not null
+     * @return a formatter based on this formatter with the requested DecimalStyle, not null
      */
-    public DateTimeFormatter withSymbols(DateTimeFormatSymbols symbols) {
-        if (this.symbols.equals(symbols)) {
+    public DateTimeFormatter withDecimalStyle(DecimalStyle decimalStyle) {
+        if (this.decimalStyle.equals(decimalStyle)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1332,7 +1488,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.chrono, chrono)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1389,7 +1545,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.zone, zone)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1431,7 +1587,7 @@ public final class DateTimeFormatter {
         if (Objects.equals(this.resolverStyle, resolverStyle)) {
             return this;
         }
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -1495,7 +1651,7 @@ public final class DateTimeFormatter {
             return this;
         }
         fields = Collections.unmodifiableSet(fields);
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, fields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, fields, chrono, zone);
     }
 
     /**
@@ -1543,7 +1699,7 @@ public final class DateTimeFormatter {
             return this;
         }
         resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
-        return new DateTimeFormatter(printerParser, locale, symbols, resolverStyle, resolverFields, chrono, zone);
+        return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
     }
 
     //-----------------------------------------------------------------------

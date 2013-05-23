@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Type.AnnotatedType;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.tree.*;
@@ -2767,10 +2768,28 @@ public class Lower extends TreeTranslator {
         }
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
-        // No need to retain type annotations any longer.
+        // No need to retain type annotations in the tree
         // tree.annotations = translate(tree.annotations);
+        tree.annotations = List.nil();
         tree.underlyingType = translate(tree.underlyingType);
-        result = tree.underlyingType;
+        // but maintain type annotations in the type.
+        if (tree.type.isAnnotated()) {
+            if (tree.underlyingType.type.isAnnotated()) {
+                // The erasure of a type variable might be annotated.
+                // Merge all annotations.
+                AnnotatedType newat = (AnnotatedType) tree.underlyingType.type;
+                AnnotatedType at = (AnnotatedType) tree.type;
+                at.underlyingType = newat.underlyingType;
+                newat.typeAnnotations = at.typeAnnotations.appendList(newat.typeAnnotations);
+                tree.type = newat;
+            } else {
+                // Create a new AnnotatedType to have the correct tag.
+                AnnotatedType oldat = (AnnotatedType) tree.type;
+                tree.type = new AnnotatedType(tree.underlyingType.type);
+                ((AnnotatedType) tree.type).typeAnnotations = oldat.typeAnnotations;
+            }
+        }
+        result = tree;
     }
 
     public void visitTypeCast(JCTypeCast tree) {

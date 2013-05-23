@@ -362,7 +362,7 @@ void TypeOrigin::print_on(outputStream* str) const {
 }
 #endif
 
-void ErrorContext::details(outputStream* ss, Method* method) const {
+void ErrorContext::details(outputStream* ss, const Method* method) const {
   if (is_valid()) {
     ss->print_cr("");
     ss->print_cr("Exception Details:");
@@ -435,7 +435,7 @@ void ErrorContext::reason_details(outputStream* ss) const {
   ss->print_cr("");
 }
 
-void ErrorContext::location_details(outputStream* ss, Method* method) const {
+void ErrorContext::location_details(outputStream* ss, const Method* method) const {
   if (_bci != -1 && method != NULL) {
     streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
@@ -470,7 +470,7 @@ void ErrorContext::frame_details(outputStream* ss) const {
   }
 }
 
-void ErrorContext::bytecode_details(outputStream* ss, Method* method) const {
+void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != NULL) {
     streamIndentor si(ss);
     ss->indent().print_cr("Bytecode:");
@@ -479,7 +479,7 @@ void ErrorContext::bytecode_details(outputStream* ss, Method* method) const {
   }
 }
 
-void ErrorContext::handler_details(outputStream* ss, Method* method) const {
+void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != NULL) {
     streamIndentor si(ss);
     ExceptionTable table(method);
@@ -494,7 +494,7 @@ void ErrorContext::handler_details(outputStream* ss, Method* method) const {
   }
 }
 
-void ErrorContext::stackmap_details(outputStream* ss, Method* method) const {
+void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != NULL && method->has_stackmap_table()) {
     streamIndentor si(ss);
     ss->indent().print_cr("Stackmap Table:");

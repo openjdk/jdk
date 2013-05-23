@@ -146,7 +146,7 @@ import sun.util.locale.provider.LocaleResources;
  * <tr><th>2009-01-05</th><td>Monday</td><td>Week 2 of week-based-year 2009</td></tr>
  * </table>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * <p>
  * This class is immutable and thread-safe.
  *

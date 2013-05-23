@@ -36,9 +36,9 @@ import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LabelNode;
-import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TryNode;
@@ -55,7 +55,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 public final class PrintVisitor extends NodeVisitor {
     /** Tab width */
-    private static final int TABWIDTH = 1;
+    private static final int TABWIDTH = 4;
 
     /** Composing buffer. */
     private final StringBuilder sb;
@@ -68,6 +68,8 @@ public final class PrintVisitor extends NodeVisitor {
 
     /** Print line numbers */
     private final boolean printLineNumbers;
+
+    private int lastLineNumber = -1;
 
     /**
      * Constructor.
@@ -138,23 +140,26 @@ public final class PrintVisitor extends NodeVisitor {
     @Override
     public boolean enterBlock(final Block block) {
         sb.append(' ');
+        //sb.append(Debug.id(block));
         sb.append('{');
 
         indent += TABWIDTH;
 
-        final List<Node> statements = block.getStatements();
-
-        boolean lastLineNumber = false;
+        final List<Statement> statements = block.getStatements();
 
         for (final Node statement : statements) {
-            if (printLineNumbers || !lastLineNumber) {
-                sb.append(EOLN);
-                indent();
+            if (printLineNumbers && (statement instanceof Statement)) {
+                final int lineNumber = ((Statement)statement).getLineNumber();
+                sb.append('\n');
+                if (lineNumber != lastLineNumber) {
+                    indent();
+                    sb.append("[|").append(lineNumber).append("|];").append('\n');
+                }
+                lastLineNumber = lineNumber;
             }
+            indent();
 
             statement.accept(this);
-
-            lastLineNumber = statement instanceof LineNumberNode;
 
             if (statement instanceof FunctionNode) {
                 continue;
@@ -168,12 +173,14 @@ public final class PrintVisitor extends NodeVisitor {
                 sb.append(']');
             }
 
-            final char lastChar = sb.charAt(sb.length() - 1);
+            int  lastIndex = sb.length() - 1;
+            char lastChar  = sb.charAt(lastIndex);
+            while (Character.isWhitespace(lastChar) && lastIndex >= 0) {
+                lastChar = sb.charAt(--lastIndex);
+            }
 
             if (lastChar != '}' && lastChar != ';') {
-                if (printLineNumbers || !lastLineNumber) {
-                    sb.append(';');
-                }
+                sb.append(';');
             }
 
             if (statement.hasGoto()) {
@@ -189,7 +196,8 @@ public final class PrintVisitor extends NodeVisitor {
 
         sb.append(EOLN);
         indent();
-        sb.append("}");
+        sb.append('}');
+       // sb.append(Debug.id(block));
 
         return false;
     }
@@ -221,7 +229,7 @@ public final class PrintVisitor extends NodeVisitor {
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         functionNode.toString(sb);
         enterBlock(functionNode.getBody());
-        sb.append(EOLN);
+        //sb.append(EOLN);
         return false;
     }
 
@@ -247,15 +255,6 @@ public final class PrintVisitor extends NodeVisitor {
         indent += TABWIDTH;
         labeledNode.toString(sb);
         labeledNode.getBody().accept(this);
-
-        return false;
-    }
-
-    @Override
-    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        if (printLineNumbers) {
-            lineNumberNode.toString(sb);
-        }
 
         return false;
     }
@@ -334,6 +333,7 @@ public final class PrintVisitor extends NodeVisitor {
             sb.append(" = ");
             init.accept(this);
         }
+
         return false;
     }
 

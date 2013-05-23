@@ -26,6 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
+ *          4802647 7123424
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @run main MOAT
@@ -58,6 +59,8 @@ import static java.util.Collections.*;
 public class MOAT {
     public static void realMain(String[] args) {
 
+        testCollection(new NewAbstractCollection<Integer>());
+        testCollection(new NewAbstractSet<Integer>());
         testCollection(new LinkedHashSet<Integer>());
         testCollection(new HashSet<Integer>());
         testCollection(new Vector<Integer>());
@@ -753,9 +756,25 @@ public class MOAT {
         // The "all" operations should throw NPE when passed null
         //----------------------------------------------------------------
         {
+            clear(c);
+            try {
+                c.removeAll(null);
+                fail("Expected NullPointerException");
+            }
+            catch (NullPointerException e) { pass(); }
+            catch (Throwable t) { unexpected(t); }
+
             oneElement(c);
             try {
                 c.removeAll(null);
+                fail("Expected NullPointerException");
+            }
+            catch (NullPointerException e) { pass(); }
+            catch (Throwable t) { unexpected(t); }
+
+            clear(c);
+            try {
+                c.retainAll(null);
                 fail("Expected NullPointerException");
             }
             catch (NullPointerException e) { pass(); }
@@ -1205,4 +1224,35 @@ public class MOAT {
     static <T> T serialClone(T obj) {
         try { return (T) readObject(serializedForm(obj)); }
         catch (Exception e) { throw new Error(e); }}
+    private static class NewAbstractCollection<E> extends AbstractCollection<E> {
+        ArrayList<E> list = new ArrayList<>();
+        public boolean remove(Object obj) {
+            return list.remove(obj);
+        }
+        public boolean add(E e) {
+            return list.add(e);
+        }
+        public Iterator<E> iterator() {
+            return list.iterator();
+        }
+        public int size() {
+            return list.size();
+        }
+    }
+    private static class NewAbstractSet<E> extends AbstractSet<E> {
+        HashSet<E> set = new HashSet<>();
+        public boolean remove(Object obj) {
+            return set.remove(obj);
+        }
+        public boolean add(E e) {
+            return set.add(e);
+        }
+        public Iterator<E> iterator() {
+            return set.iterator();
+        }
+        public int size() {
+            return set.size();
+        }
+    }
+
 }
