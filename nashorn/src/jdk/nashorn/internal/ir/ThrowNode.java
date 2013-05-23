@@ -72,7 +72,7 @@ public final class ThrowNode extends Statement {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterThrowNode(this)) {
             return visitor.leaveThrowNode(setExpression(expression.accept(visitor)));
         }

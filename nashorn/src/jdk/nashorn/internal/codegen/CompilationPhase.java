@@ -24,15 +24,14 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -74,7 +73,7 @@ enum CompilationPhase {
 
             FunctionNode newFunctionNode = outermostFunctionNode;
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor() {
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 // self references are done with invokestatic and thus cannot
                 // have trampolines - never lazy
                 @Override
@@ -107,10 +106,9 @@ enum CompilationPhase {
                 lazy.remove(node);
             }
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeOperatorVisitor() {
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode functionNode) {
-                    final LexicalContext lc = getLexicalContext();
                     if (lazy.contains(functionNode)) {
                         Compiler.LOG.fine(
                                 "Marking ",
@@ -194,12 +192,11 @@ enum CompilationPhase {
          * @param functionNode node where to start iterating
          */
         private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
-            return (FunctionNode)functionNode.accept(new NodeVisitor() {
+            return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode node) {
-                    final LexicalContext lc = getLexicalContext();
                     if (node.isLazy()) {
-                        FunctionNode newNode = node.setReturnType(getLexicalContext(), Type.OBJECT);
+                        FunctionNode newNode = node.setReturnType(lc, Type.OBJECT);
                         return ts.ensureSymbol(lc, Type.OBJECT, newNode);
                     }
                     //node may have a reference here that needs to be nulled if it was referred to by
@@ -230,7 +227,7 @@ enum CompilationPhase {
             FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer());
             final List<ReturnNode> returns = new ArrayList<>();
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor() {
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 private final Deque<ArrayList<ReturnNode>> returnStack = new ArrayDeque<>();
 
                 @Override
@@ -249,7 +246,7 @@ enum CompilationPhase {
                         }
                         returnType = Type.widest(returnType, ret.getExpression().getType());
                     }
-                    return functionNode.setReturnType(getLexicalContext(), returnType);
+                    return functionNode.setReturnType(lc, returnType);
                 }
 
                 @Override
@@ -270,8 +267,8 @@ enum CompilationPhase {
                         }
                         final Type  rangeType  = range.getType();
                         if (!Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                            RangeAnalyzer.LOG.info("[", getLexicalContext().getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
-                            return node.setSymbol(getLexicalContext(), symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
+                            RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
+                            return node.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
                         }
                     }
                     return node;
