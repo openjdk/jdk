@@ -186,7 +186,7 @@ public final class ScriptEnvironment {
      * @param out output print writer
      * @param err error print writer
      */
-    ScriptEnvironment(final Options options, final PrintWriter out, final PrintWriter err) {
+    public ScriptEnvironment(final Options options, final PrintWriter out, final PrintWriter err) {
         this.out = out;
         this.err = err;
         this.namespace = new Namespace();
