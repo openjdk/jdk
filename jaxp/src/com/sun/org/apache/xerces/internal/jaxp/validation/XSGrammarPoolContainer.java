@@ -55,4 +55,21 @@ public interface XSGrammarPoolContainer {
      */
     public Boolean getFeature(String featureId);
 
+    /*
+     * Set a feature on the schema
+     */
+    public void setFeature(String featureId, boolean state);
+
+    /**
+     * Returns the initial value of a property for validators created
+     * using this grammar pool container or null if the validators
+     * should use the default value.
+     */
+    public Object getProperty(String propertyId);
+
+    /*
+     * Set a property on the schema
+     */
+    public void setProperty(String propertyId, Object state);
+
 }

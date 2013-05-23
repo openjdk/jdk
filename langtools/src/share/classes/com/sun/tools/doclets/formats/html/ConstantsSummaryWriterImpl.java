@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,13 +184,17 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      */
     public Content getConstantMembersHeader(ClassDoc cd) {
         //generate links backward only to public classes.
-        String classlink = (cd.isPublic() || cd.isProtected()) ?
+        Content classlink = (cd.isPublic() || cd.isProtected()) ?
             getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, cd, false)) :
-            cd.qualifiedName();
+                    LinkInfoImpl.Kind.CONSTANT_SUMMARY, cd)) :
+            new StringContent(cd.qualifiedName());
         String name = cd.containingPackage().name();
         if (name.length() > 0) {
-            return getClassName(name + "." + classlink);
+            Content cb = new ContentBuilder();
+            cb.addContent(name);
+            cb.addContent(".");
+            cb.addContent(classlink);
+            return getClassName(cb);
         } else {
             return getClassName(classlink);
         }
@@ -202,7 +206,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @param classStr the class name to print.
      * @return the table caption and header
      */
-    protected Content getClassName(String classStr) {
+    protected Content getClassName(Content classStr) {
         Content table = HtmlTree.TABLE(0, 3, 0, constantsTableSummary,
                 getTableCaption(classStr));
         table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
@@ -260,8 +264,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
             code.addContent(modifier);
             code.addContent(getSpace());
         }
-        Content type = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member.type())));
+        Content type = getLink(new LinkInfoImpl(configuration,
+                LinkInfoImpl.Kind.CONSTANT_SUMMARY, member.type()));
         code.addContent(type);
         tdType.addContent(code);
         return tdType;
@@ -274,8 +278,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter
      * @return the name column of the constant table row
      */
     private Content getNameColumn(FieldDoc member) {
-        Content nameContent = new RawHtml(getDocLink(
-                LinkInfoImpl.CONTEXT_CONSTANT_SUMMARY, member, member.name(), false));
+        Content nameContent = getDocLink(
+                LinkInfoImpl.Kind.CONSTANT_SUMMARY, member, member.name(), false);
         Content code = HtmlTree.CODE(nameContent);
         return HtmlTree.TD(code);
     }

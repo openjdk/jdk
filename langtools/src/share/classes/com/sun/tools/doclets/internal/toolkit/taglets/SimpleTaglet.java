@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
+import com.sun.tools.doclets.internal.toolkit.util.DocFinder;
 
 /**
  * A simple single argument custom tag.
@@ -38,7 +40,7 @@ import com.sun.javadoc.*;
  * @author Jamie Ho
  */
 
-public class SimpleTaglet extends BaseTaglet {
+public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * The marker in the location string for excluded tags.
@@ -199,17 +201,28 @@ public class SimpleTaglet extends BaseTaglet {
         return false;
     }
 
+    @Override
+    public void inherit(DocFinder.Input input, DocFinder.Output output) {
+        Tag[] tags = input.element.tags(tagName);
+        if (tags.length > 0) {
+            output.holder = input.element;
+            output.holderTag = tags[0];
+            output.inlineTags = input.isFirstSentence
+                    ? tags[0].firstSentenceTags() : tags[0].inlineTags();
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         return header == null || tag == null ? null : writer.simpleTagOutput(tag, header);
     }
 
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         if (header == null || holder.tags(getName()).length == 0) {
             return null;
         }

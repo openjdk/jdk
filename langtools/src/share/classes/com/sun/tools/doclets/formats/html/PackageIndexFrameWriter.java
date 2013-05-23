@@ -84,7 +84,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
                 packagesLabel);
         Content div = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addAttr(HtmlAttr.TITLE, packagesLabel.toString());
+        ul.setTitle(packagesLabel);
         for(int i = 0; i < packages.length; i++) {
             // Do not list the package if -nodeprecated option is set and the
             // package is marked as deprecated.
@@ -112,7 +112,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
                      DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
         } else {
-            packageLabel = new RawHtml("&lt;unnamed package&gt;");
+            packageLabel = new StringContent("<unnamed package>");
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
                     packageLabel, "", "packageFrame");
         }

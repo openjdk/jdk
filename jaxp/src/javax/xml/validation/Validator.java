@@ -440,8 +440,27 @@ public abstract class Validator {
      * in specific contexts, such as before, during, or after
      * a validation.</p>
      *
-     * <p>{@link Validator}s are not required to recognize setting
-     * any specific property names.</p>
+     * <p>
+     * All implementations that implement JAXP 1.5 or newer are required to
+     * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} and
+     * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} properties.
+     * </p>
+     * <ul>
+     *   <li>
+     *      <p>Access to external DTDs in source or Schema file is restricted to
+     *      the protocols specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD}
+     *      property.  If access is denied during validation due to the restriction
+     *      of this property, {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link #validate(Source)} method.</p>
+     *
+     *      <p>Access to external reference set by the schemaLocation attribute is
+     *      restricted to the protocols specified by the
+     *      {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property.
+     *      If access is denied during validation due to the restriction of this property,
+     *      {@link org.xml.sax.SAXException} will be thrown by the
+     *      {@link #validate(Source)} method.</p>
+     *   </li>
+     * </ul>
      *
      * @param name The property name, which is a non-null fully-qualified URI.
      * @param object The requested value for the property.

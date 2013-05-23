@@ -52,6 +52,7 @@ public interface Types {
      * Returns {@code null} if the type is not one with a
      * corresponding element.
      *
+     * @param t the type to map to an element
      * @return the element corresponding to the given type
      */
     Element asElement(TypeMirror t);

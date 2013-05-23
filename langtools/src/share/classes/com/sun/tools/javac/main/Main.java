@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 import javax.annotation.processing.Processor;
@@ -56,6 +55,7 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
+import com.sun.tools.javac.util.ServiceLoader;
 import static com.sun.tools.javac.main.Option.*;
 
 /** This class provides a command line interface to the javac compiler.
@@ -469,7 +469,6 @@ public class Main {
                                 pluginMessage(ex);
                                 return Result.SYSERR;
                             }
-
                         }
                     }
                 }

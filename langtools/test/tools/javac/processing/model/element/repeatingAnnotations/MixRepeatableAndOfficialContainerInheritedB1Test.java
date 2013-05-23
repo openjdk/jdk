@@ -22,13 +22,13 @@
  */
 
 /*
- * @ignore
  * @test
  * @bug     8004822
  * @author  mnunez
  * @summary Language model api test basics for repeating annotations
  * @library /tools/javac/lib
  * @library supportingAnnotations
+ * @ignore  8013407: test failures for repeating annotations
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
  * @compile -processor ElementRepAnnoTester -proc:only
  * MixRepeatableAndOfficialContainerInheritedB1Test.java

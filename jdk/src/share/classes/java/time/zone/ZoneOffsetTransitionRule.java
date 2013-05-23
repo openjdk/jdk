@@ -90,7 +90,7 @@ import java.util.Objects;
  * </ul><p>
  * These different rule types can be expressed and queried.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

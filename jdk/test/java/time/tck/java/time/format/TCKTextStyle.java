@@ -67,7 +67,7 @@ import java.time.format.TextStyle;
 import org.testng.annotations.Test;
 
 /**
- * Test DateTimeFormatSymbols.
+ * Test DecimalStyle.
  */
 @Test
 public class TCKTextStyle {

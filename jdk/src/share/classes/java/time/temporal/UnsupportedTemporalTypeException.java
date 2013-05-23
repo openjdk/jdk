@@ -67,7 +67,7 @@ import java.time.DateTimeException;
  * UnsupportedTemporalTypeException indicates that a ChronoField or ChronoUnit is
  * not supported for a Temporal class.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is intended for use in a single thread.
  *
  * @since 1.8

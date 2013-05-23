@@ -675,6 +675,8 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                     spf.setNamespaceAware(true);
                     try {
                         reader = spf.newSAXParser().getXMLReader();
+                           reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                                   fComponentManager.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
                         // If this is a Xerces SAX parser, set the security manager if there is one
                         if (reader instanceof com.sun.org.apache.xerces.internal.parsers.SAXParser) {
                            SecurityManager securityManager = (SecurityManager) fComponentManager.getProperty(SECURITY_MANAGER);
@@ -685,6 +687,8 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                                // Ignore the exception if the security manager cannot be set.
                                catch (SAXException exc) {}
                            }
+                           reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                                   fComponentManager.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
                         }
                     } catch( Exception e ) {
                         // this is impossible, but better safe than sorry
