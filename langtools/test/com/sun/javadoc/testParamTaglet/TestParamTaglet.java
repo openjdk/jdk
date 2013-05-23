@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ public class TestParamTaglet extends JavadocTester {
     private static final String[][] TEST = {
         //Regular param tags.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"strong\">Parameters:</span></dt><dd><code>param1</code> - testing 1 2 3.</dd>" +
-                "<dd><code>param2</code> - testing 1 2 3."
+            "<span class=\"strong\">Parameters:</span></dt>" + NL + "<dd><code>param1</code> - testing 1 2 3.</dd>" +
+                NL + "<dd><code>param2</code> - testing 1 2 3."
         },
         //Param tags that don't match with any real parameters.
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            "<span class=\"strong\">Parameters:</span></dt><dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
-                "<dd><code><I>p2</I></code> - testing 1 2 3."
+            "<span class=\"strong\">Parameters:</span></dt>" + NL + "<dd><code><I>p1</I></code> - testing 1 2 3.</dd>" +
+                NL + "<dd><code><I>p2</I></code> - testing 1 2 3."
         },
         //{@inherit} doc misuse does not cause doclet to throw exception.
         // Param is printed with nothing inherited.

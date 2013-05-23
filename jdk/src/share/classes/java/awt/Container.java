@@ -3306,6 +3306,16 @@ public class Container extends Component {
         }
     }
 
+    @Override
+    void clearLightweightDispatcherOnRemove(Component removedComponent) {
+        if (dispatcher != null) {
+            dispatcher.removeReferences(removedComponent);
+        } else {
+            //It is a Lightweight Container, should clear parent`s Dispatcher
+            super.clearLightweightDispatcherOnRemove(removedComponent);
+        }
+    }
+
     final Container getTraversalRoot() {
         if (isFocusCycleRoot()) {
             return findTraversalRoot();
@@ -4411,6 +4421,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         //System.out.println("Disposing lw dispatcher");
         stopListeningForOtherDrags();
         mouseEventTarget = null;
+        targetLastEntered = null;
     }
 
     /**
@@ -4502,6 +4513,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     // MOUSE_CLICKED.
     if (!isMouseGrab(e) && id != MouseEvent.MOUSE_CLICKED) {
             mouseEventTarget = (mouseOver != nativeContainer) ? mouseOver: null;
+            isCleaned = false;
         }
 
         if (mouseEventTarget != null) {
@@ -4545,10 +4557,14 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             retargetMouseEvent(mouseOver, id, e);
         break;
             }
-            //Consuming of wheel events is implemented in "retargetMouseEvent".
-            if (id != MouseEvent.MOUSE_WHEEL) {
-                e.consume();
-            }
+        //Consuming of wheel events is implemented in "retargetMouseEvent".
+        if (id != MouseEvent.MOUSE_WHEEL) {
+            e.consume();
+        }
+    } else if (isCleaned && id != MouseEvent.MOUSE_WHEEL) {
+        //After mouseEventTarget was removed and cleaned should consume all events
+        //until new mouseEventTarget is found
+        e.consume();
     }
     return e.isConsumed();
     }
@@ -4892,6 +4908,11 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private transient Component targetLastEntered;
 
     /**
+     * Indicates whether {@code mouseEventTarget} was removed and nulled
+     */
+    private transient boolean isCleaned;
+
+    /**
      * Is the mouse over the native container
      */
     private transient boolean isMouseInNativeContainer = false;
@@ -4925,4 +4946,14 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         AWTEvent.MOUSE_EVENT_MASK |
         AWTEvent.MOUSE_MOTION_EVENT_MASK |
         AWTEvent.MOUSE_WHEEL_EVENT_MASK;
+
+    void removeReferences(Component removedComponent) {
+        if (mouseEventTarget == removedComponent) {
+            isCleaned = true;
+            mouseEventTarget = null;
+        }
+        if (targetLastEntered == removedComponent) {
+            targetLastEntered = null;
+        }
+    }
 }

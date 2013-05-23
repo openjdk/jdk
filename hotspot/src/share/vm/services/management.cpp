@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ Klass* Management::_garbageCollectorMXBean_klass = NULL;
 Klass* Management::_managementFactory_klass = NULL;
 Klass* Management::_garbageCollectorImpl_klass = NULL;
 Klass* Management::_gcInfo_klass = NULL;
+Klass* Management::_diagnosticCommandImpl_klass = NULL;
+Klass* Management::_managementFactoryHelper_klass = NULL;
+
 
 jmmOptionalSupport Management::_optional_support = {0};
 TimeStamp Management::_stamp;
@@ -128,11 +131,14 @@ void Management::init() {
   _optional_support.isSynchronizerUsageSupported = 1;
 #endif // INCLUDE_SERVICES
   _optional_support.isThreadAllocatedMemorySupported = 1;
+  _optional_support.isRemoteDiagnosticCommandsSupported = 1;
 
   // Registration of the diagnostic commands
   DCmdRegistrant::register_dcmds();
   DCmdRegistrant::register_dcmds_ext();
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(true, false));
+  uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
+                         | DCmd_Source_MBean;
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
 }
 
 void Management::initialize(TRAPS) {
@@ -260,6 +266,20 @@ Klass* Management::com_sun_management_GcInfo_klass(TRAPS) {
     _gcInfo_klass = load_and_initialize_klass(vmSymbols::com_sun_management_GcInfo(), CHECK_NULL);
   }
   return _gcInfo_klass;
+}
+
+Klass* Management::sun_management_DiagnosticCommandImpl_klass(TRAPS) {
+  if (_diagnosticCommandImpl_klass == NULL) {
+    _diagnosticCommandImpl_klass = load_and_initialize_klass(vmSymbols::sun_management_DiagnosticCommandImpl(), CHECK_NULL);
+  }
+  return _diagnosticCommandImpl_klass;
+}
+
+Klass* Management::sun_management_ManagementFactoryHelper_klass(TRAPS) {
+  if (_managementFactoryHelper_klass == NULL) {
+    _managementFactoryHelper_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactoryHelper(), CHECK_NULL);
+  }
+  return _managementFactoryHelper_klass;
 }
 
 static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args, ThreadSnapshot* snapshot, TRAPS) {
@@ -2144,7 +2164,7 @@ JVM_END
 
 JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
   ResourceMark rm(THREAD);
-  GrowableArray<const char *>* dcmd_list = DCmdFactory::DCmd_list();
+  GrowableArray<const char *>* dcmd_list = DCmdFactory::DCmd_list(DCmd_Source_MBean);
   objArrayOop cmd_array_oop = oopFactory::new_objArray(SystemDictionary::String_klass(),
           dcmd_list->length(), CHECK_NULL);
   objArrayHandle cmd_array(THREAD, cmd_array_oop);
@@ -2173,7 +2193,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
                "Array element type is not String class");
   }
 
-  GrowableArray<DCmdInfo *>* info_list = DCmdFactory::DCmdInfo_list();
+  GrowableArray<DCmdInfo *>* info_list = DCmdFactory::DCmdInfo_list(DCmd_Source_MBean);
 
   int num_cmds = cmds_ah->length();
   for (int i = 0; i < num_cmds; i++) {
@@ -2196,6 +2216,10 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].name = info->name();
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
+    JavaPermission p = info->permission();
+    infoArray[i].permission_class = p._class;
+    infoArray[i].permission_name = p._name;
+    infoArray[i].permission_action = p._action;
     infoArray[i].num_arguments = info->num_arguments();
     infoArray[i].enabled = info->is_enabled();
   }
@@ -2215,7 +2239,8 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
               "Command line content cannot be null.");
   }
   DCmd* dcmd = NULL;
-  DCmdFactory*factory = DCmdFactory::factory(cmd_name, strlen(cmd_name));
+  DCmdFactory*factory = DCmdFactory::factory(DCmd_Source_MBean, cmd_name,
+                                             strlen(cmd_name));
   if (factory != NULL) {
     dcmd = factory->create_resource_instance(NULL);
   }
@@ -2235,6 +2260,7 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandArgumentsInfo(JNIEnv *env,
     infoArray[i].default_string = array->at(i)->default_string();
     infoArray[i].mandatory = array->at(i)->is_mandatory();
     infoArray[i].option = array->at(i)->is_option();
+    infoArray[i].multiple = array->at(i)->is_multiple();
     infoArray[i].position = array->at(i)->position();
   }
   return;
@@ -2253,9 +2279,13 @@ JVM_ENTRY(jstring, jmm_ExecuteDiagnosticCommand(JNIEnv *env, jstring commandline
                    "Command line content cannot be null.");
   }
   bufferedStream output;
-  DCmd::parse_and_execute(&output, cmdline, ' ', CHECK_NULL);
+  DCmd::parse_and_execute(DCmd_Source_MBean, &output, cmdline, ' ', CHECK_NULL);
   oop result = java_lang_String::create_oop_from_str(output.as_string(), CHECK_NULL);
   return (jstring) JNIHandles::make_local(env, result);
+JVM_END
+
+JVM_ENTRY(void, jmm_SetDiagnosticFrameworkNotificationEnabled(JNIEnv *env, jboolean enabled))
+  DCmdFactory::set_jmx_notification_enabled(enabled?true:false);
 JVM_END
 
 jlong Management::ticks_to_ms(jlong ticks) {
@@ -2304,7 +2334,8 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetDiagnosticCommands,
   jmm_GetDiagnosticCommandInfo,
   jmm_GetDiagnosticCommandArgumentsInfo,
-  jmm_ExecuteDiagnosticCommand
+  jmm_ExecuteDiagnosticCommand,
+  jmm_SetDiagnosticFrameworkNotificationEnabled
 };
 #endif // INCLUDE_MANAGEMENT
 

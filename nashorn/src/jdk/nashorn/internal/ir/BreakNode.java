@@ -27,26 +27,25 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for {@code break} statements.
  */
 @Immutable
-public final class BreakNode extends Node {
+public final class BreakNode extends Statement {
 
     private final IdentNode label;
 
     /**
      * Constructor
      *
-     * @param source source code
-     * @param token  token
-     * @param finish finish
-     * @param label  label for break or null if none
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param label      label for break or null if none
      */
-    public BreakNode(final Source source, final long token, final int finish, final IdentNode label) {
-        super(source, token, finish);
+    public BreakNode(final int lineNumber, final long token, final int finish, final IdentNode label) {
+        super(lineNumber, token, finish);
         this.label = label;
     }
 

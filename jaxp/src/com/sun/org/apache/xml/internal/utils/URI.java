@@ -27,6 +27,7 @@ import java.io.Serializable;
 
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
+import java.util.Objects;
 
 /**
  * A class to represent a Uniform Resource Identifier (URI). This class
@@ -883,7 +884,7 @@ public class URI implements Serializable
   public String getSchemeSpecificPart()
   {
 
-    StringBuffer schemespec = new StringBuffer();
+    final StringBuilder schemespec = new StringBuilder();
 
     if (m_userinfo != null || m_host != null || m_port != -1)
     {
@@ -975,7 +976,7 @@ public class URI implements Serializable
                         boolean p_includeFragment)
   {
 
-    StringBuffer pathString = new StringBuffer(m_path);
+    final StringBuilder pathString = new StringBuilder(m_path);
 
     if (p_includeQueryString && m_queryString != null)
     {
@@ -1341,6 +1342,7 @@ public class URI implements Serializable
    * @return true if p_test is a URI with all values equal to this
    *         URI, false otherwise
    */
+  @Override
   public boolean equals(Object p_test)
   {
 
@@ -1363,15 +1365,29 @@ public class URI implements Serializable
     return false;
   }
 
+  @Override
+  public int hashCode() {
+    int hash = 7;
+    hash = 59 * hash + Objects.hashCode(this.m_scheme);
+    hash = 59 * hash + Objects.hashCode(this.m_userinfo);
+    hash = 59 * hash + Objects.hashCode(this.m_host);
+    hash = 59 * hash + this.m_port;
+    hash = 59 * hash + Objects.hashCode(this.m_path);
+    hash = 59 * hash + Objects.hashCode(this.m_queryString);
+    hash = 59 * hash + Objects.hashCode(this.m_fragment);
+    return hash;
+  }
+
   /**
    * Get the URI as a string specification. See RFC 2396 Section 5.2.
    *
    * @return the URI string specification
    */
+  @Override
   public String toString()
   {
 
-    StringBuffer uriSpecString = new StringBuffer();
+    final StringBuilder uriSpecString = new StringBuilder();
 
     if (m_scheme != null)
     {

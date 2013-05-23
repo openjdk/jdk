@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util.zip;
 
 import java.io.SequenceInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
@@ -212,7 +213,10 @@ class GZIPInputStream extends InflaterInputStream {
         int n = inf.getRemaining();
         if (n > 0) {
             in = new SequenceInputStream(
-                        new ByteArrayInputStream(buf, len - n, n), in);
+                        new ByteArrayInputStream(buf, len - n, n),
+                        new FilterInputStream(in) {
+                            public void close() throws IOException {}
+                        });
         }
         // Uses left-to-right evaluation order
         if ((readUInt(in) != crc.getValue()) ||
