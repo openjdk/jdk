@@ -692,8 +692,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _cmsGen ->init_initiating_occupancy(CMSInitiatingOccupancyFraction, CMSTriggerRatio);
 
   // Clip CMSBootstrapOccupancy between 0 and 100.
-  _bootstrap_occupancy = ((double)MIN2((uintx)100, MAX2((uintx)0, CMSBootstrapOccupancy)))
-                         /(double)100;
+  _bootstrap_occupancy = ((double)CMSBootstrapOccupancy)/(double)100;
 
   _full_gcs_since_conc_gc = 0;
 

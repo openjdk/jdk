@@ -207,7 +207,7 @@ public class Driver {
 
         if (isSnippet) {
             // Have a few common nested types for testing
-            sb.append("class Outer { class Inner {} }");
+            sb.append("class Outer { class Inner {} class Middle { class MInner {} } }");
             sb.append("class SOuter { static class SInner {} }");
             sb.append("class GOuter<X, Y> { class GInner<X, Y> {} }");
         }

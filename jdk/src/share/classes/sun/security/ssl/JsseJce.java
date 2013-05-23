@@ -41,8 +41,7 @@ import java.security.Provider;
 import sun.security.jca.Providers;
 import sun.security.jca.ProviderList;
 
-import sun.security.ec.ECParameters;
-import sun.security.ec.NamedCurve;
+import sun.security.util.ECUtil;
 
 import static sun.security.ssl.SunJSSE.cryptoProvider;
 
@@ -383,20 +382,20 @@ final class JsseJce {
     }
 
     static ECParameterSpec getECParameterSpec(String namedCurveOid) {
-        return NamedCurve.getECParameterSpec(namedCurveOid);
+        return ECUtil.getECParameterSpec(cryptoProvider, namedCurveOid);
     }
 
     static String getNamedCurveOid(ECParameterSpec params) {
-        return ECParameters.getCurveName(params);
+        return ECUtil.getCurveName(cryptoProvider, params);
     }
 
     static ECPoint decodePoint(byte[] encoded, EllipticCurve curve)
             throws java.io.IOException {
-        return ECParameters.decodePoint(encoded, curve);
+        return ECUtil.decodePoint(encoded, curve);
     }
 
     static byte[] encodePoint(ECPoint point, EllipticCurve curve) {
-        return ECParameters.encodePoint(point, curve);
+        return ECUtil.encodePoint(point, curve);
     }
 
     // In FIPS mode, set thread local providers; otherwise a no-op.

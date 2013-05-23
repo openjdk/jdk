@@ -43,6 +43,11 @@ public class HTMLDataFlavorTest {
 
     public static void main(String[] args) throws IOException, UnsupportedFlavorException {
 
+        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.WINDOWS) {
+            System.err.println("This test is for MS Windows only. Considered passed.");
+            return;
+        }
+
         dataFlavors.put(DataFlavor.allHtmlFlavor, HtmlTransferable.ALL_HTML_AS_STRING);
         dataFlavors.put(DataFlavor.fragmentHtmlFlavor, HtmlTransferable.FRAGMENT_HTML_AS_STRING);
         dataFlavors.put(DataFlavor.selectionHtmlFlavor, HtmlTransferable.SELECTION_HTML_AS_STRING);

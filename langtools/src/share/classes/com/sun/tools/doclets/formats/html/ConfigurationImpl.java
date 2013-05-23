@@ -31,6 +31,7 @@ import java.util.*;
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclint.DocLint;
@@ -561,5 +562,10 @@ public class ConfigurationImpl extends Configuration {
             return pos == null || ((RootDocImpl) root).showTagMessages();
         }
         return true;
+    }
+
+    @Override
+    public Content newContent() {
+        return new ContentBuilder();
     }
 }

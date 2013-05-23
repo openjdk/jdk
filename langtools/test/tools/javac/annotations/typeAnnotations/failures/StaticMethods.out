@@ -1,2 +1,2 @@
-StaticMethods.java:9:37: compiler.err.annotation.type.not.applicable
+StaticMethods.java:9:34: compiler.err.non-static.cant.be.ref: kindname.variable, this
 1 error

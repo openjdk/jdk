@@ -349,6 +349,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         SYNTAX,
         RECOVERABLE,
         NON_DEFERRABLE,
+        COMPRESSED
     }
 
     private final DiagnosticType type;

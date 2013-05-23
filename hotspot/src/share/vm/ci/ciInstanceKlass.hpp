@@ -217,9 +217,13 @@ public:
   ciInstanceKlass* implementor();
 
   // Is the defining class loader of this class the default loader?
-  bool uses_default_loader();
+  bool uses_default_loader() const;
 
   bool is_java_lang_Object() const;
+
+  BasicType box_klass_type() const;
+  bool is_box_klass() const;
+  bool is_boxed_value_offset(int offset) const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {

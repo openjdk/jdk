@@ -58,6 +58,6 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-debug
 
-VERSION = optimized
+VERSION = fastdebug
 SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT

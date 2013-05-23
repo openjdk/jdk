@@ -246,16 +246,16 @@ public class LocalGregorianCalendar extends BaseCalendar {
                 return false;
             }
             ldate.setNormalizedYear(era.getSinceDate().getYear() + ldate.getYear() - 1);
-            // If it's not the last Era, validate the date.
-            if (era != eras[eras.length - 1]) {
-                Date tmp = newCalendarDate(date.getZone());
-                tmp.setEra(era).setDate(date.getYear(), date.getMonth(), date.getDayOfMonth());
-                normalize(tmp);
-                if (tmp.getEra() != era) {
-                    return false;
-                }
+            Date tmp = newCalendarDate(date.getZone());
+            tmp.setEra(era).setDate(date.getYear(), date.getMonth(), date.getDayOfMonth());
+            normalize(tmp);
+            if (tmp.getEra() != era) {
+                return false;
             }
         } else {
+            if (date.getYear() >= eras[0].getSinceDate().getYear()) {
+                return false;
+            }
             ldate.setNormalizedYear(ldate.getYear());
         }
         return super.validate(ldate);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestHref extends JavadocTester {
         },
         //@see test.
         {BUG_ID + FS + "pkg" + FS + "C2.html",
-            "See Also:</span></dt><dd><a href=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
+            "See Also:</span></dt>" + NL + "<dd><a href=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
         },
 
         //Header does not link to the page itself.
