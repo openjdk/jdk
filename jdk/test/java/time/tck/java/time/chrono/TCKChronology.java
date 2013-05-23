@@ -162,39 +162,30 @@ public class TCKChronology {
     @DataProvider(name = "calendarsystemtype")
     Object[][] data_CalendarType() {
         return new Object[][] {
-            {HijrahChronology.INSTANCE, "islamic", "umalqura"},
-            {IsoChronology.INSTANCE, "iso8601", null},
-            {JapaneseChronology.INSTANCE, "japanese", null},
-            {MinguoChronology.INSTANCE, "roc", null},
-            {ThaiBuddhistChronology.INSTANCE, "buddhist", null},
+            {HijrahChronology.INSTANCE, "islamic-umalqura"},
+            {IsoChronology.INSTANCE, "iso8601"},
+            {JapaneseChronology.INSTANCE, "japanese"},
+            {MinguoChronology.INSTANCE, "roc"},
+            {ThaiBuddhistChronology.INSTANCE, "buddhist"},
         };
     }
 
     @Test(dataProvider = "calendarsystemtype")
-    public void test_getCalendarType(Chronology chrono, String calendarType, String variant) {
+    public void test_getCalendarType(Chronology chrono, String calendarType) {
         String type = calendarType;
-        if (variant != null) {
-            type += '-';
-            type += variant;
-        }
         assertEquals(chrono.getCalendarType(), type);
     }
 
     @Test(dataProvider = "calendarsystemtype")
-    public void test_lookupLocale(Chronology chrono, String calendarType, String variant) {
+    public void test_lookupLocale(Chronology chrono, String calendarType) {
         Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
         builder.setUnicodeLocaleKeyword("ca", calendarType);
-        if (variant != null) {
-            builder.setUnicodeLocaleKeyword("cv", variant);
-        }
         Locale locale = builder.build();
         assertEquals(Chronology.ofLocale(locale), chrono);
     }
 
-
     /**
      * Test lookup by calendarType of each chronology.
-     * The calendarType is split on "-" to separate the calendar and variant.
      * Verify that the calendar can be found by {@link java.time.chrono.Chronology#ofLocale}.
      */
     @Test
@@ -202,15 +193,10 @@ public class TCKChronology {
         // Test that all available chronologies can be successfully found using ofLocale
         Set<Chronology> chronos = Chronology.getAvailableChronologies();
         for (Chronology chrono : chronos) {
-            String[] split = chrono.getCalendarType().split("-");
-
             Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
-            builder.setUnicodeLocaleKeyword("ca", split[0]);
-            if (split.length > 1) {
-                builder.setUnicodeLocaleKeyword("cv", split[1]);
-            }
+            builder.setUnicodeLocaleKeyword("ca", chrono.getCalendarType());
             Locale locale = builder.build();
-            assertEquals(Chronology.ofLocale(locale), chrono, "Lookup by type and variant");
+            assertEquals(Chronology.ofLocale(locale), chrono, "Lookup by type");
         }
     }
 
@@ -218,7 +204,6 @@ public class TCKChronology {
     public void test_lookupLocale() {
         Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
         builder.setUnicodeLocaleKeyword("ca", "xxx");
-        builder.setUnicodeLocaleKeyword("cv", "yyy");
 
         Locale locale = builder.build();
         Chronology.ofLocale(locale);

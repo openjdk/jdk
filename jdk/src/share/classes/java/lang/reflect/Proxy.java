@@ -31,6 +31,7 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import sun.misc.ProxyGenerator;
@@ -255,9 +256,13 @@ public class Proxy implements java.io.Serializable {
      * (typically, a dynamic proxy class) with the specified value
      * for its invocation handler.
      *
-     * @param   h the invocation handler for this proxy instance
+     * @param  h the invocation handler for this proxy instance
+     *
+     * @throws NullPointerException if the given invocation handler, {@code h},
+     *         is {@code null}.
      */
     protected Proxy(InvocationHandler h) {
+        Objects.requireNonNull(h);
         this.h = h;
     }
 
@@ -698,9 +703,7 @@ public class Proxy implements java.io.Serializable {
                                           InvocationHandler h)
         throws IllegalArgumentException
     {
-        if (h == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(h);
 
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

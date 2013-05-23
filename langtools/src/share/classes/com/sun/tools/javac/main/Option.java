@@ -407,6 +407,8 @@ public enum Option {
         }
     },
 
+    XDIAGS("-Xdiags:", "opt.diags", EXTENDED, BASIC, ONEOF, "compact", "verbose"),
+
     /* This is a back door to the compiler's option table.
      * -XDx=y sets the option x to the value y.
      * -XDx sets the option x to the value x.

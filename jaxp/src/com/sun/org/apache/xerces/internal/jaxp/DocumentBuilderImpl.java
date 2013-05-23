@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.validation.Schema;
+import javax.xml.XMLConstants;
 
 import com.sun.org.apache.xerces.internal.dom.DOMImplementationImpl;
 import com.sun.org.apache.xerces.internal.dom.DOMMessageFormatter;
@@ -42,6 +43,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import javax.xml.XMLConstants;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
@@ -94,6 +96,12 @@ public class DocumentBuilderImpl extends DocumentBuilder
     /** Property identifier: security manager. */
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
+
+    /** property identifier: access external dtd. */
+    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema */
+    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     private final DOMParser domParser;
     private final Schema grammar;
@@ -155,6 +163,23 @@ public class DocumentBuilderImpl extends DocumentBuilder
         // If the secure processing feature is on set a security manager.
         if (secureProcessing) {
             domParser.setProperty(SECURITY_MANAGER, new SecurityManager());
+
+            /**
+             * By default, secure processing is set, no external access is allowed.
+             * However, we need to check if it is actively set on the factory since we
+             * allow the use of the System Property or jaxp.properties to override
+             * the default value
+             */
+            if (features != null) {
+                Object temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
+                if (temp != null) {
+                    boolean value = ((Boolean) temp).booleanValue();
+                    if (value) {
+                        domParser.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        domParser.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    }
+                }
+            }
         }
 
         this.grammar = dbf.getSchema();
@@ -211,6 +236,10 @@ public class DocumentBuilderImpl extends DocumentBuilder
                 String feature = (String) entry.getKey();
                 boolean value = ((Boolean) entry.getValue()).booleanValue();
                 domParser.setFeature(feature, value);
+                if (feature.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
+                    domParser.setProperty(ACCESS_EXTERNAL_DTD, "");
+                    domParser.setProperty(ACCESS_EXTERNAL_SCHEMA, "");
+                }
             }
         }
     }

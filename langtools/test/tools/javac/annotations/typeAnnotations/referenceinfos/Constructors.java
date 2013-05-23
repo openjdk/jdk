@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ public class Constructors {
                " } }";
     }
 
-    /* TODO: Outer.this annotation support.
     @TADescriptions({
         @TADescription(annotation = "TA", type = METHOD_RECEIVER),
         @TADescription(annotation = "TB", type = METHOD_RETURN),
@@ -69,5 +68,21 @@ public class Constructors {
                " @TD Inner(@TC Test Test.this, @TE int b) {}" +
                " } }";
     }
-    */
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_RECEIVER),
+        @TADescription(annotation = "TB", type = METHOD_RECEIVER, genericLocation = {1, 0}),
+        @TADescription(annotation = "TC", type = METHOD_RETURN),
+        @TADescription(annotation = "TD", type = METHOD_RECEIVER, genericLocation = {1, 0}),
+        @TADescription(annotation = "TE", type = METHOD_RETURN),
+        @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    })
+    @TestClass("Outer$Middle$Inner")
+    public String innerClass3() {
+        return "class Outer { class Middle { class Inner {" +
+               " @TC Inner(@TA Outer. @TB Middle Middle.this) {}" +
+               " @TE Inner(@TD Middle Outer.Middle.this, @TF int b) {}" +
+               " } } }";
+    }
+
 }

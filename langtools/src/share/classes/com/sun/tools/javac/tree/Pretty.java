@@ -261,8 +261,6 @@ public class Pretty extends JCTree.Visitor {
     }
 
     public void printTypeAnnotations(List<JCAnnotation> trees) throws IOException {
-        if (trees.nonEmpty())
-            print(" ");
         for (List<JCAnnotation> l = trees; l.nonEmpty(); l = l.tail) {
             printExpr(l.head);
             print(" ");
@@ -564,8 +562,10 @@ public class Pretty extends JCTree.Visitor {
                         vartype = ((JCAnnotatedType)vartype).underlyingType;
                     }
                     printExpr(((JCArrayTypeTree) vartype).elemtype);
-                    if (tas != null)
+                    if (tas != null) {
+                        print(' ');
                         printTypeAnnotations(tas);
+                    }
                     print("... " + tree.name);
                 } else {
                     printExpr(tree.vartype);
@@ -918,6 +918,9 @@ public class Pretty extends JCTree.Visitor {
                 printExprs(tree.typeargs);
                 print(">");
             }
+            if (tree.def != null && tree.def.mods.annotations.nonEmpty()) {
+                printTypeAnnotations(tree.def.mods.annotations);
+            }
             printExpr(tree.clazz);
             print("(");
             printExprs(tree.args);
@@ -948,7 +951,8 @@ public class Pretty extends JCTree.Visitor {
                 int i = 0;
                 List<List<JCAnnotation>> da = tree.dimAnnotations;
                 for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
-                    if (da.size() > i) {
+                    if (da.size() > i && !da.get(i).isEmpty()) {
+                        print(' ');
                         printTypeAnnotations(da.get(i));
                     }
                     print("[");
@@ -958,6 +962,7 @@ public class Pretty extends JCTree.Visitor {
                 }
                 if (tree.elems != null) {
                     if (isElemAnnoType) {
+                        print(' ');
                         printTypeAnnotations(((JCAnnotatedType)tree.elemtype).annotations);
                     }
                     print("[]");
@@ -1264,6 +1269,7 @@ public class Pretty extends JCTree.Visitor {
                 JCAnnotatedType atype = (JCAnnotatedType) elem;
                 elem = atype.underlyingType;
                 if (!elem.hasTag(TYPEARRAY)) break;
+                print(' ');
                 printTypeAnnotations(atype.annotations);
             }
             print("[]");
@@ -1301,6 +1307,9 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitTypeParameter(JCTypeParameter tree) {
         try {
+            if (tree.annotations.nonEmpty()) {
+                this.printTypeAnnotations(tree.annotations);
+            }
             print(tree.name);
             if (tree.bounds.nonEmpty()) {
                 print(" extends ");
@@ -1379,6 +1388,7 @@ public class Pretty extends JCTree.Visitor {
             } else if (tree.underlyingType.getKind() == JCTree.Kind.ARRAY_TYPE) {
                 JCArrayTypeTree array = (JCArrayTypeTree) tree.underlyingType;
                 printBaseElementType(tree);
+                print(' ');
                 printTypeAnnotations(tree.annotations);
                 print("[]");
                 JCExpression elem = array.elemtype;

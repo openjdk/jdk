@@ -330,15 +330,7 @@ class ServerImpl implements TimeSource {
         public void run() {
             while (!finished) {
                 try {
-                    ListIterator<HttpConnection> li =
-                        connsToRegister.listIterator();
-                    for (HttpConnection c : connsToRegister) {
-                        reRegister(c);
-                    }
-                    connsToRegister.clear();
-
                     List<Event> list = null;
-                    selector.select(1000);
                     synchronized (lolock) {
                         if (events.size() > 0) {
                             list = events;
@@ -352,8 +344,14 @@ class ServerImpl implements TimeSource {
                         }
                     }
 
-                    /* process the selected list now  */
+                    for (HttpConnection c : connsToRegister) {
+                        reRegister(c);
+                    }
+                    connsToRegister.clear();
 
+                    selector.select(1000);
+
+                    /* process the selected list now  */
                     Set<SelectionKey> selected = selector.selectedKeys();
                     Iterator<SelectionKey> iter = selected.iterator();
                     while (iter.hasNext()) {

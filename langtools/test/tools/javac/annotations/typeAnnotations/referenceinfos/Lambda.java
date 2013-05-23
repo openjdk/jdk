@@ -259,4 +259,30 @@ public class Lambda {
                 "}";
     }
 
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = METHOD_FORMAL_PARAMETER,
+                paramIndex = 0),
+        @TADescription(annotation = "TB", type = METHOD_FORMAL_PARAMETER,
+                paramIndex = 1),
+        @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER,
+                paramIndex = 1, genericLocation = { 3, 0 }),
+        @TADescription(annotation = "TD", type = LOCAL_VARIABLE,
+                lvarOffset = ReferenceInfoUtil.IGNORE_VALUE,
+                lvarLength = ReferenceInfoUtil.IGNORE_VALUE,
+                lvarIndex = ReferenceInfoUtil.IGNORE_VALUE),
+        @TADescription(annotation = "TE", type = CAST,
+                offset = ReferenceInfoUtil.IGNORE_VALUE,
+                typeIndex = 0)
+    })
+    public String returnLambdaExpr1() {
+        return
+                "interface LambdaInt {" +
+                "  void lambda(Object p1, List<Object> p2);" +
+                "}" +
+                "class Test {" +
+                "  LambdaInt getLambda() {" +
+                "    return (@TA Object x, @TB List<@TC Object> y) -> { @TD Object l = null; System.out.println((@TE Object) l); };" +
+                "  }" +
+                "}";
+    }
 }
