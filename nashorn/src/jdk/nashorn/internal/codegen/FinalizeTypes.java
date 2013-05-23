@@ -800,7 +800,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         Node resultNode = node;
 
-        if (node instanceof LiteralNode && !to.isObject()) {
+        if (node instanceof LiteralNode && !(node instanceof ArrayLiteralNode) && !to.isObject()) {
             final LiteralNode<?> newNode = new LiteralNodeConstantEvaluator((LiteralNode<?>)node, to).eval();
             if (newNode != null) {
                 resultNode = newNode;

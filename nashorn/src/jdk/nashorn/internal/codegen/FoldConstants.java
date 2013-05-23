@@ -34,6 +34,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
@@ -141,6 +142,10 @@ final class FoldConstants extends NodeVisitor {
                 return null;
             }
 
+            if (rhsNode instanceof ArrayLiteralNode) {
+                return null;
+            }
+
             final LiteralNode<?> rhs = (LiteralNode<?>)rhsNode;
             final boolean rhsInteger = rhs.getType().isInteger();
 
@@ -212,6 +217,10 @@ final class FoldConstants extends NodeVisitor {
             final LiteralNode<?> lhs = (LiteralNode<?>)parent.lhs();
             final LiteralNode<?> rhs = (LiteralNode<?>)parent.rhs();
 
+            if (lhs instanceof ArrayLiteralNode || rhs instanceof ArrayLiteralNode) {
+                return null;
+            }
+
             final Type widest = Type.widest(lhs.getType(), rhs.getType());
 
             boolean isInteger = widest.isInteger();
@@ -279,9 +288,9 @@ final class FoldConstants extends NodeVisitor {
             isLong    &= value != 0.0 && JSType.isRepresentableAsLong(value);
 
             if (isInteger) {
-                return LiteralNode.newInstance(token, finish, JSType.toInt32(value));
+                return LiteralNode.newInstance(token, finish, (int)value);
             } else if (isLong) {
-                return LiteralNode.newInstance(token, finish, JSType.toLong(value));
+                return LiteralNode.newInstance(token, finish, (long)value);
             }
 
             return LiteralNode.newInstance(token, finish, value);

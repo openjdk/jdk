@@ -2295,7 +2295,7 @@ final class CodeGenerator extends NodeOperatorVisitor {
     @Override
     public boolean enterADD(final UnaryNode unaryNode) {
         load(unaryNode.rhs());
-        assert unaryNode.rhs().getType().isNumber();
+        assert unaryNode.rhs().getType().isNumber() : unaryNode.rhs().getType() + " "+ unaryNode.getSymbol();
         method.store(unaryNode.getSymbol());
 
         return false;
