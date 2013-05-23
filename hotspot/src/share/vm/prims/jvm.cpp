@@ -1779,7 +1779,7 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
     for (int i = 0; i < num_params; i++) {
       MethodParametersElement* params = mh->method_parameters_start();
       // For a 0 index, give a NULL symbol
-      Symbol* const sym = 0 != params[i].name_cp_index ?
+      Symbol* sym = 0 != params[i].name_cp_index ?
         mh->constants()->symbol_at(params[i].name_cp_index) : NULL;
       int flags = params[i].flags;
       oop param = Reflection::new_parameter(reflected_method, i, sym,

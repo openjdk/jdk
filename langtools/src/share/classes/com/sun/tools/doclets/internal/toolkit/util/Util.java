@@ -420,69 +420,6 @@ public class Util {
     }
 
     /**
-     * Given a string, escape all special html characters and
-     * return the result.
-     *
-     * @param s The string to check.
-     * @return the original string with all of the HTML characters escaped.
-     */
-    public static String escapeHtmlChars(String s) {
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                // only start building a new string if we need to
-                case '<': case '>': case '&':
-                    StringBuilder sb = new StringBuilder(s.substring(0, i));
-                    for ( ; i < s.length(); i++) {
-                        ch = s.charAt(i);
-                        switch (ch) {
-                            case '<': sb.append("&lt;");  break;
-                            case '>': sb.append("&gt;");  break;
-                            case '&': sb.append("&amp;"); break;
-                            default:  sb.append(ch);      break;
-                        }
-                    }
-                    return sb.toString();
-            }
-        }
-        return s;
-    }
-
-    /**
-     * Escape all special html characters in a string buffer.
-     *
-     * @param sb The string buffer to update
-     */
-    public static void escapeHtmlChars(StringBuilder sb) {
-        // scan backwards, replacing characters as needed.
-        for (int i = sb.length() - 1; i >= 0; i--) {
-            switch (sb.charAt(i)) {
-                case '<': sb.replace(i, i+1, "&lt;"); break;
-                case '>': sb.replace(i, i+1, "&gt;"); break;
-                case '&': sb.replace(i, i+1, "&amp;"); break;
-            }
-        }
-    }
-
-    /**
-     * Given a string, strips all html characters and
-     * return the result.
-     *
-     * @param rawString The string to check.
-     * @return the original string with all of the HTML characters
-     * stripped.
-     *
-     */
-    public static String stripHtml(String rawString) {
-        // remove HTML tags
-        rawString = rawString.replaceAll("\\<.*?>", " ");
-        // consolidate multiple spaces between a word to a single space
-        rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
-        // remove extra whitespaces
-        return rawString.trim();
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
@@ -656,20 +593,42 @@ public class Util {
     }
 
     /**
-     * Replace all tabs with the appropriate number of spaces.
+     * Replace all tabs in a string with the appropriate number of spaces.
+     * The string may be a multi-line string.
      * @param configuration the doclet configuration defining the setting for the
      *                      tab length.
-     * @param sb the StringBuilder in which to replace the tabs
+     * @param text the text for which the tabs should be expanded
+     * @return the text with all tabs expanded
      */
-    public static void replaceTabs(Configuration configuration, StringBuilder sb) {
-        int tabLength = configuration.sourcetab;
-        String whitespace = configuration.tabSpaces;
-        int index = 0;
-        while ((index = sb.indexOf("\t", index)) != -1) {
-            int spaceCount = tabLength - index % tabLength;
-            sb.replace(index, index+1, whitespace.substring(0, spaceCount));
-            index += spaceCount;
+    public static String replaceTabs(Configuration configuration, String text) {
+        if (text.indexOf("\t") == -1)
+            return text;
+
+        final int tabLength = configuration.sourcetab;
+        final String whitespace = configuration.tabSpaces;
+        final int textLength = text.length();
+        StringBuilder result = new StringBuilder(textLength);
+        int pos = 0;
+        int lineLength = 0;
+        for (int i = 0; i < textLength; i++) {
+            char ch = text.charAt(i);
+            switch (ch) {
+                case '\n': case '\r':
+                    lineLength = 0;
+                    break;
+                case '\t':
+                    result.append(text, pos, i);
+                    int spaceCount = tabLength - lineLength % tabLength;
+                    result.append(whitespace, 0, spaceCount);
+                    lineLength += spaceCount;
+                    pos = i + 1;
+                    break;
+                default:
+                    lineLength++;
+            }
         }
+        result.append(text, pos, textLength);
+        return result.toString();
     }
 
     /**

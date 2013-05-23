@@ -313,10 +313,7 @@ public:
   static void classes_do(void f(Klass*, TRAPS), TRAPS);
   //   All classes, and their class loaders
   static void classes_do(void f(Klass*, ClassLoaderData*));
-  //   All classes, and their class loaders
-  //   (added for helpers that use HandleMarks and ResourceMarks)
-  static void classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS);
-  // All entries in the placeholder table and their class loaders
+
   static void placeholders_do(void f(Symbol*));
 
   // Iterate over all methods in all klasses in dictionary

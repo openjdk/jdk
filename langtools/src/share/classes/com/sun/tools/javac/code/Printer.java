@@ -31,6 +31,7 @@ import javax.lang.model.type.TypeKind;
 
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.code.Type.AnnotatedType;
+import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.util.List;
@@ -127,7 +128,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     }
 
     /**
-     * Get a localized string represenation for a given type.
+     * Get a localized string representation for a given type.
      *
      * @param t type to be displayed
      * @param locale the locale in which the string is to be rendered
@@ -138,7 +139,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     }
 
     /**
-     * Get a localized string represenation for a given symbol.
+     * Get a localized string representation for a given symbol.
      *
      * @param s symbol to be displayed
      * @param locale the locale in which the string is to be rendered
@@ -182,7 +183,33 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitArrayType(ArrayType t, Locale locale) {
-        return visit(t.elemtype, locale) + "[]";
+        StringBuilder res = new StringBuilder();
+        printBaseElementType(t, res, locale);
+        printBrackets(t, res, locale);
+        return res.toString();
+    }
+
+    void printBaseElementType(Type t, StringBuilder sb, Locale locale) {
+        Type arrel = t;
+        while (arrel.getKind() == TypeKind.ARRAY) {
+            arrel = arrel.unannotatedType();
+            arrel = ((ArrayType) arrel).elemtype;
+        }
+        sb.append(visit(arrel, locale));
+    }
+
+    void printBrackets(Type t, StringBuilder sb, Locale locale) {
+        Type arrel = t;
+        while (arrel.getKind() == TypeKind.ARRAY) {
+            if (arrel.isAnnotated()) {
+                sb.append(' ');
+                sb.append(arrel.getAnnotationMirrors());
+                sb.append(' ');
+            }
+            sb.append("[]");
+            arrel = arrel.unannotatedType();
+            arrel = ((ArrayType) arrel).elemtype;
+        }
     }
 
     @Override
@@ -237,10 +264,22 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     public String visitAnnotatedType(AnnotatedType t, Locale locale) {
         if (t.typeAnnotations != null &&
                 t.typeAnnotations.nonEmpty()) {
-            // TODO: better logic for arrays, ...
-            return "(" + t.typeAnnotations + " :: " + visit(t.underlyingType, locale) + ")";
+            if (t.underlyingType.getKind() == TypeKind.ARRAY) {
+                StringBuilder res = new StringBuilder();
+                printBaseElementType(t, res, locale);
+                printBrackets(t, res, locale);
+                return res.toString();
+            } else if (t.underlyingType.getKind() == TypeKind.DECLARED &&
+                    t.underlyingType.getEnclosingType() != Type.noType) {
+                return visit(t.underlyingType.getEnclosingType(), locale) +
+                        ". " +
+                        t.typeAnnotations +
+                        " " + className((ClassType)t.underlyingType, false, locale);
+            } else {
+                return t.typeAnnotations + " " + visit(t.underlyingType, locale);
+            }
         } else {
-            return "({} :: " + visit(t.underlyingType, locale) + ")";
+            return visit(t.underlyingType, locale);
         }
     }
 
@@ -253,7 +292,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     /**
      * Converts a class name into a (possibly localized) string. Anonymous
-     * inner classes gets converted into a localized string.
+     * inner classes get converted into a localized string.
      *
      * @param t the type of the class whose name is to be rendered
      * @param longform if set, the class' fullname is displayed - if unset the
@@ -266,7 +305,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
         if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
             StringBuilder s = new StringBuilder(visit(t.supertype_field, locale));
             for (List<Type> is = t.interfaces_field; is.nonEmpty(); is = is.tail) {
-                s.append("&");
+                s.append('&');
                 s.append(visit(is.head, locale));
             }
             return s.toString();

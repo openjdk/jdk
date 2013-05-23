@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -123,10 +123,10 @@ ifeq ($(PROPS_ARE_CREATED),yes)
              genstubs.GenStubs
         # We fetch source from the JDK...
         JDKS=$(JDK_TOPDIR)/src/share/classes
-        # Build the list of classes to generate stubs from. java/util/Objects.java isn't
+        # Build the list of classes to generate stubs from. java/util/function/Predicate.java isn't
         # currently needed, but is used as a demo for now.
 	 STUBSOURCES:=$(shell $(FIND) $(JDKS) -name "*.java" | $(GREP) \
-		    -e "$(JDKS)/java/util/Objects.java")
+		    -e "$(JDKS)/java/util/function/Predicate.java")
         # Rewrite the file names into class names because the GenStubs tool require this.
         STUBCLASSES:=$(subst /,.,$(patsubst $(JDKS)/%.java,%,$(STUBSOURCES)))
 

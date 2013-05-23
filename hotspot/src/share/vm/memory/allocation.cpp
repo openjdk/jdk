@@ -49,10 +49,15 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-void* StackObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
-void  StackObj::operator delete(void* p)   { ShouldNotCallThis(); };
-void* _ValueObj::operator new(size_t size)  { ShouldNotCallThis(); return 0; };
-void  _ValueObj::operator delete(void* p)   { ShouldNotCallThis(); };
+void* StackObj::operator new(size_t size)       { ShouldNotCallThis(); return 0; }
+void  StackObj::operator delete(void* p)        { ShouldNotCallThis(); }
+void* StackObj::operator new [](size_t size)    { ShouldNotCallThis(); return 0; }
+void  StackObj::operator delete [](void* p)     { ShouldNotCallThis(); }
+
+void* _ValueObj::operator new(size_t size)      { ShouldNotCallThis(); return 0; }
+void  _ValueObj::operator delete(void* p)       { ShouldNotCallThis(); }
+void* _ValueObj::operator new [](size_t size)   { ShouldNotCallThis(); return 0; }
+void  _ValueObj::operator delete [](void* p)    { ShouldNotCallThis(); }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                 size_t word_size, bool read_only, TRAPS) {
@@ -81,7 +86,6 @@ void MetaspaceObj::print_address_on(outputStream* st) const {
   st->print(" {"INTPTR_FORMAT"}", this);
 }
 
-
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) {
   address res;
   switch (type) {
@@ -97,6 +101,10 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
     ShouldNotReachHere();
   }
   return res;
+}
+
+void* ResourceObj::operator new [](size_t size, allocation_type type, MEMFLAGS flags) {
+  return (address) operator new(size, type, flags);
 }
 
 void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
@@ -118,12 +126,20 @@ void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_cons
   return res;
 }
 
+void* ResourceObj::operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
+    allocation_type type, MEMFLAGS flags) {
+  return (address)operator new(size, nothrow_constant, type, flags);
+}
 
 void ResourceObj::operator delete(void* p) {
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
   DEBUG_ONLY(((ResourceObj *)p)->_allocation_t[0] = (uintptr_t)badHeapOopVal;)
   FreeHeap(p);
+}
+
+void ResourceObj::operator delete [](void* p) {
+  operator delete(p);
 }
 
 #ifdef ASSERT
@@ -214,8 +230,6 @@ void trace_heap_free(void* p) {
   // A lock is not needed here - tty uses a lock internally
   tty->print_cr("Heap free   " INTPTR_FORMAT, p);
 }
-
-bool warn_new_operator = false; // see vm_main
 
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
@@ -360,7 +374,7 @@ class ChunkPoolCleaner : public PeriodicTask {
 void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, size_t length) {
   // requested_size is equal to sizeof(Chunk) but in order for the arena
   // allocations to come out aligned as expected the size must be aligned
-  // to expected arean alignment.
+  // to expected arena alignment.
   // expect requested_size but if sizeof(Chunk) doesn't match isn't proper size we must align it.
   assert(ARENA_ALIGN(requested_size) == aligned_overhead_size(), "Bad alignment");
   size_t bytes = ARENA_ALIGN(requested_size) + length;
@@ -667,19 +681,40 @@ void* Arena::internal_malloc_4(size_t x) {
 // a memory leak.  Use CHeapObj as the base class of such objects to make it explicit
 // that they're allocated on the C heap.
 // Commented out in product version to avoid conflicts with third-party C++ native code.
-// %% note this is causing a problem on solaris debug build. the global
-// new is being called from jdk source and causing data corruption.
-// src/share/native/sun/awt/font/fontmanager/textcache/hsMemory.cpp::hsSoftNew
-// define CATCH_OPERATOR_NEW_USAGE if you want to use this.
-#ifdef CATCH_OPERATOR_NEW_USAGE
+// On certain platforms, such as Mac OS X (Darwin), in debug version, new is being called
+// from jdk source and causing data corruption. Such as
+//  Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
+// define ALLOW_OPERATOR_NEW_USAGE for platform on which global operator new allowed.
+//
+#ifndef ALLOW_OPERATOR_NEW_USAGE
 void* operator new(size_t size){
-  static bool warned = false;
-  if (!warned && warn_new_operator)
-    warning("should not call global (default) operator new");
-  warned = true;
-  return (void *) AllocateHeap(size, "global operator new");
+  assert(false, "Should not call global operator new");
+  return 0;
 }
-#endif
+
+void* operator new [](size_t size){
+  assert(false, "Should not call global operator new[]");
+  return 0;
+}
+
+void* operator new(size_t size, const std::nothrow_t&  nothrow_constant){
+  assert(false, "Should not call global operator new");
+  return 0;
+}
+
+void* operator new [](size_t size, std::nothrow_t&  nothrow_constant){
+  assert(false, "Should not call global operator new[]");
+  return 0;
+}
+
+void operator delete(void* p) {
+  assert(false, "Should not call global delete");
+}
+
+void operator delete [](void* p) {
+  assert(false, "Should not call global delete []");
+}
+#endif // ALLOW_OPERATOR_NEW_USAGE
 
 void AllocatedObj::print() const       { print_on(tty); }
 void AllocatedObj::print_value() const { print_value_on(tty); }

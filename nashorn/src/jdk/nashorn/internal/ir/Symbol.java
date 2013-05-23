@@ -29,7 +29,6 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
@@ -67,6 +66,10 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int IS_INTERNAL      = 1 << 9;
     /** Is this a function self-reference symbol */
     public static final int IS_FUNCTION_SELF = 1 << 10;
+    /** Is this a specialized param? */
+    public static final int IS_SPECIALIZED_PARAM = 1 << 11;
+    /** Is this symbol a shared temporary? */
+    public static final int IS_SHARED = 1 << 12;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -150,6 +153,16 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public Symbol(final String name, final int flags, final Type type) {
         this(name, flags, type, -1);
+    }
+
+    private Symbol(final Symbol base, final String name, final int flags) {
+        this.flags = flags;
+        this.name = name;
+
+        this.fieldIndex = base.fieldIndex;
+        this.slot = base.slot;
+        this.type = base.type;
+        this.useCount = base.useCount;
     }
 
     private static String align(final String string, final int max) {
@@ -261,32 +274,14 @@ public final class Symbol implements Comparable<Symbol> {
         return type.isCategory2() ? 2 : 1;
     }
 
-    private static String type(final String desc) {
-        switch (desc.charAt(desc.length() - 1)) {
-        case ';':
-            return desc;//"obj";
-        case 'D':
-            return "double";
-        case 'I':
-            return "int";
-        case 'J':
-            return "long";
-        case 'Z':
-            return "boolean";
-        default:
-            return "UNKNOWN";
-        }
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb   = new StringBuilder();
-        final String        desc = getSymbolType().getDescriptor();
 
         sb.append(name).
             append(' ').
             append('(').
-            append(type(desc)).
+            append(getSymbolType().getTypeClass().getSimpleName()).
             append(')');
 
         if (hasSlot()) {
@@ -347,6 +342,24 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
+     * Returns true if this symbol is a temporary that is being shared across expressions.
+     * @return true if this symbol is a temporary that is being shared across expressions.
+     */
+    public boolean isShared() {
+        return (flags & IS_SHARED) == IS_SHARED;
+    }
+
+    /**
+     * Creates an unshared copy of a symbol. The symbol must be currently shared.
+     * @param newName the name for the new symbol.
+     * @return a new, unshared symbol.
+     */
+    public Symbol createUnshared(final String newName) {
+        assert isShared();
+        return new Symbol(this, newName, flags & ~IS_SHARED);
+    }
+
+    /**
      * Flag this symbol as scope as described in {@link Symbol#isScope()}
      */
     /**
@@ -355,9 +368,22 @@ public final class Symbol implements Comparable<Symbol> {
      public void setIsScope() {
         if (!isScope()) {
             trace("SET IS SCOPE");
+            assert !isShared();
+            flags |= IS_SCOPE;
         }
-        flags |= IS_SCOPE;
     }
+
+     /**
+      * Mark this symbol as one being shared by multiple expressions. The symbol must be a temporary.
+      */
+     public void setIsShared() {
+         if(!isShared()) {
+             assert isTemp();
+             trace("SET IS SHARED");
+             flags |= IS_SHARED;
+         }
+     }
+
 
     /**
      * Check if this symbol is a variable
@@ -384,6 +410,15 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
+     * Check if this symbol is a function parameter of known
+     * narrowest type
+     * @return true if parameter
+     */
+    public boolean isSpecializedParam() {
+        return (flags & IS_SPECIALIZED_PARAM) == IS_SPECIALIZED_PARAM;
+    }
+
+    /**
      * Check whether this symbol ever has primitive assignments. Conservative
      * @return true if primitive assignments exist
      */
@@ -404,7 +439,10 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setCanBeUndefined() {
         assert type.isObject() : type;
-        flags |= CAN_BE_UNDEFINED;
+        if(!canBeUndefined()) {
+            assert !isShared();
+            flags |= CAN_BE_UNDEFINED;
+        }
     }
 
     /**
@@ -412,7 +450,10 @@ public final class Symbol implements Comparable<Symbol> {
      * @param type the primitive type it occurs with, currently unused but can be used for width guesses
      */
     public void setCanBePrimitive(final Type type) {
-        flags |= CAN_BE_PRIMITIVE;
+        if(!canBePrimitive()) {
+            assert !isShared();
+            flags |= CAN_BE_PRIMITIVE;
+        }
     }
 
     /**
@@ -452,7 +493,10 @@ public final class Symbol implements Comparable<Symbol> {
      * Flag this symbol as a let
      */
     public void setIsLet() {
-        flags |= IS_LET;
+        if(!isLet()) {
+            assert !isShared();
+            flags |= IS_LET;
+        }
     }
 
     /**
@@ -481,7 +525,10 @@ public final class Symbol implements Comparable<Symbol> {
      * @param fieldIndex field index - a positive integer
      */
     public void setFieldIndex(final int fieldIndex) {
-        this.fieldIndex = fieldIndex;
+        if(this.fieldIndex != fieldIndex) {
+            assert !isShared();
+            this.fieldIndex = fieldIndex;
+        }
     }
 
     /**
@@ -497,7 +544,10 @@ public final class Symbol implements Comparable<Symbol> {
      * @param flags flags
      */
     public void setFlags(final int flags) {
-        this.flags = flags;
+        if(this.flags != flags) {
+            assert !isShared();
+            this.flags = flags;
+        }
     }
 
     /**
@@ -537,6 +587,7 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setSlot(final int slot) {
         if (slot != this.slot) {
+            assert !isShared();
             trace("SET SLOT " + slot);
             this.slot = slot;
         }
@@ -562,6 +613,15 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
+     * Returns true if calling {@link #setType(Type)} on this symbol would effectively change its type.
+     * @param newType the new type to test for
+     * @return true if setting this symbols type to a new value would effectively change its type.
+     */
+    public boolean wouldChangeType(final Type newType) {
+        return Type.widest(this.type, newType) != this.type;
+    }
+
+    /**
      * Only use this if you know about an existing type
      * constraint - otherwise a type can only be
      * widened
@@ -571,9 +631,30 @@ public final class Symbol implements Comparable<Symbol> {
     public void setTypeOverride(final Type type) {
         final Type old = this.type;
         if (old != type) {
+            assert !isShared();
             trace("TYPE CHANGE: " + old + "=>" + type + " == " + type);
             this.type = type;
         }
+    }
+
+    /**
+     * Sets the type of the symbol to the specified type. If the type would be changed, but this symbol is a shared
+     * temporary, it will instead return a different temporary symbol of the requested type from the passed temporary
+     * symbols. That way, it never mutates the type of a shared temporary.
+     * @param type the new type for the symbol
+     * @param ts a holder of temporary symbols
+     * @return either this symbol, or a different symbol if this symbol is a shared temporary and it type would have to
+     * be changed.
+     */
+    public Symbol setTypeOverrideShared(final Type type, final TemporarySymbols ts) {
+        if(getSymbolType() != type) {
+            if(isShared()) {
+                assert !hasSlot();
+                return ts.getTypedTemporarySymbol(type);
+            }
+            setTypeOverride(type);
+        }
+        return this;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class DocFinder {
      */
     public static class Input {
         /**
-         * The method to search documentation from.
+         * The element to search documentation from.
          */
-        public MethodDoc method = null;
+        public ProgramElementDoc element;
         /**
          * The taglet to search for documentation on behalf of. Null if we want
          * to search for overall documentation.
@@ -84,54 +84,55 @@ public class DocFinder {
          */
         public boolean isTypeVariableParamTag = false;
 
-        public Input() {}
-
-        public Input(MethodDoc method, InheritableTaglet taglet, Tag tag,
+        public Input(ProgramElementDoc element, InheritableTaglet taglet, Tag tag,
                 boolean isFirstSentence, boolean isInheritDocTag) {
-            this.method = method;
+            this(element);
             this.taglet = taglet;
             this.tag = tag;
             this.isFirstSentence = isFirstSentence;
             this.isInheritDocTag = isInheritDocTag;
         }
 
-        public Input(MethodDoc method, InheritableTaglet taglet, String tagId) {
-            this.method = method;
+        public Input(ProgramElementDoc element, InheritableTaglet taglet, String tagId) {
+            this(element);
             this.taglet = taglet;
             this.tagId = tagId;
         }
 
-        public Input(MethodDoc method, InheritableTaglet taglet, String tagId,
+        public Input(ProgramElementDoc element, InheritableTaglet taglet, String tagId,
             boolean isTypeVariableParamTag) {
-            this.method = method;
+            this(element);
             this.taglet = taglet;
             this.tagId = tagId;
             this.isTypeVariableParamTag = isTypeVariableParamTag;
         }
 
-        public Input(MethodDoc method, InheritableTaglet taglet) {
-            this.method = method;
+        public Input(ProgramElementDoc element, InheritableTaglet taglet) {
+            this(element);
             this.taglet = taglet;
         }
 
-        public Input(MethodDoc method) {
-            this.method = method;
+        public Input(ProgramElementDoc element) {
+            if (element == null)
+                throw new NullPointerException();
+            this.element = element;
         }
 
-        public Input(MethodDoc method, boolean isFirstSentence) {
-            this.method = method;
+        public Input(ProgramElementDoc element, boolean isFirstSentence) {
+            this(element);
             this.isFirstSentence = isFirstSentence;
         }
 
         public Input copy() {
-            Input clone = new Input();
-            clone.method = this.method;
+            Input clone = new Input(this.element);
             clone.taglet = this.taglet;
             clone.tagId = this.tagId;
             clone.tag = this.tag;
             clone.isFirstSentence = this.isFirstSentence;
             clone.isInheritDocTag = this.isInheritDocTag;
             clone.isTypeVariableParamTag = this.isTypeVariableParamTag;
+            if (clone.element == null)
+                throw new NullPointerException();
             return clone;
 
         }
@@ -164,8 +165,8 @@ public class DocFinder {
 
         /**
          * When automatically inheriting throws tags, you sometime must inherit
-         * more than one tag.  For example if the method declares that it throws
-         * IOException and the overidden method has throws tags for IOException and
+         * more than one tag.  For example if the element declares that it throws
+         * IOException and the overridden element has throws tags for IOException and
          * ZipException, both tags would be inherited because ZipException is a
          * subclass of IOException.  This subclass of DocFinder.Output allows
          * multiple tag inheritence.
@@ -174,9 +175,9 @@ public class DocFinder {
     }
 
     /**
-     * Search for the requested comments in the given method.  If it does not
-     * have comments, return documentation from the overriden method if possible.
-     * If the overriden method does not exist or does not have documentation to
+     * Search for the requested comments in the given element.  If it does not
+     * have comments, return documentation from the overriden element if possible.
+     * If the overriden element does not exist or does not have documentation to
      * inherit, search for documentation to inherit from implemented methods.
      *
      * @param input the input object used to perform the search.
@@ -186,14 +187,14 @@ public class DocFinder {
     public static Output search(Input input) {
         Output output = new Output();
         if (input.isInheritDocTag) {
-            //Do nothing because "method" does not have any documentation.
+            //Do nothing because "element" does not have any documentation.
             //All it has it {@inheritDoc}.
         } else if (input.taglet == null) {
             //We want overall documentation.
             output.inlineTags = input.isFirstSentence ?
-                input.method.firstSentenceTags() :
-                input.method.inlineTags();
-            output.holder = input.method;
+                input.element.firstSentenceTags() :
+                input.element.inlineTags();
+            output.holder = input.element;
         } else {
             input.taglet.inherit(input, output);
         }
@@ -204,25 +205,38 @@ public class DocFinder {
         output.isValidInheritDocTag = false;
         Input inheritedSearchInput = input.copy();
         inheritedSearchInput.isInheritDocTag = false;
-        if (input.method.overriddenMethod() != null) {
-            inheritedSearchInput.method = input.method.overriddenMethod();
-            output = search(inheritedSearchInput);
-            output.isValidInheritDocTag = true;
-            if (output != null && output.inlineTags.length > 0) {
-                return output;
+        if (input.element instanceof MethodDoc) {
+            MethodDoc overriddenMethod = ((MethodDoc) input.element).overriddenMethod();
+            if (overriddenMethod != null) {
+                inheritedSearchInput.element = overriddenMethod;
+                output = search(inheritedSearchInput);
+                output.isValidInheritDocTag = true;
+                if (output.inlineTags.length > 0) {
+                    return output;
+                }
             }
-        }
-        //NOTE:  When we fix the bug where ClassDoc.interfaceTypes() does
-        //       not pass all implemented interfaces, we will use the
-        //       appropriate method here.
-        MethodDoc[] implementedMethods =
-            (new ImplementedMethods(input.method, null)).build(false);
-        for (int i = 0; i < implementedMethods.length; i++) {
-            inheritedSearchInput.method = implementedMethods[i];
-            output = search(inheritedSearchInput);
-            output.isValidInheritDocTag = true;
-            if (output != null && output.inlineTags.length > 0) {
-                return output;
+            //NOTE:  When we fix the bug where ClassDoc.interfaceTypes() does
+            //       not pass all implemented interfaces, we will use the
+            //       appropriate element here.
+            MethodDoc[] implementedMethods =
+                (new ImplementedMethods((MethodDoc) input.element, null)).build(false);
+            for (int i = 0; i < implementedMethods.length; i++) {
+                inheritedSearchInput.element = implementedMethods[i];
+                output = search(inheritedSearchInput);
+                output.isValidInheritDocTag = true;
+                if (output.inlineTags.length > 0) {
+                    return output;
+                }
+            }
+        } else if (input.element instanceof ClassDoc) {
+            ProgramElementDoc superclass = ((ClassDoc) input.element).superclass();
+            if (superclass != null) {
+                inheritedSearchInput.element = superclass;
+                output = search(inheritedSearchInput);
+                output.isValidInheritDocTag = true;
+                if (output.inlineTags.length > 0) {
+                    return output;
+                }
             }
         }
         return output;

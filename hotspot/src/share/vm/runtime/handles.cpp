@@ -179,6 +179,22 @@ HandleMark::~HandleMark() {
   _thread->set_last_handle_mark(previous_handle_mark());
 }
 
+void* HandleMark::operator new(size_t size) {
+  return AllocateHeap(size, mtThread);
+}
+
+void* HandleMark::operator new [] (size_t size) {
+  return AllocateHeap(size, mtThread);
+}
+
+void HandleMark::operator delete(void* p) {
+  FreeHeap(p, mtThread);
+}
+
+void HandleMark::operator delete[](void* p) {
+  FreeHeap(p, mtThread);
+}
+
 #ifdef ASSERT
 
 NoHandleMark::NoHandleMark() {

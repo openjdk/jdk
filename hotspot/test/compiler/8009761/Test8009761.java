@@ -25,7 +25,7 @@
  * @test
  * @bug 8009761
  * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
- * @run main/othervm -Xmixed -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8009761
+ * @run main/othervm -XX:CompileCommand=exclude,Test8009761::m2 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xss256K Test8009761
  *
  */
 
@@ -249,7 +249,7 @@ public class Test8009761 {
             System.out.println("Failed: init recursive calls: " + c1 + ". After deopt " + count);
             System.exit(97);
         } else {
-            System.out.println("PASSED");
+            System.out.println("PASSED " + c1);
         }
     }
 }

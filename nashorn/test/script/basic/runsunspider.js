@@ -86,7 +86,7 @@ function runsuite(tests) {
 	    changed = true;
 	}
     } catch (e) {
-	print("error: " + e);
+	print("error: " + e.printStackTrace());
 	if (e.toString().indexOf(tests) == 1) {
 	    throw e;
 	}

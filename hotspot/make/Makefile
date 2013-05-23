@@ -151,32 +151,43 @@ else
 		      $(MAKE_ARGS) BUILD_FLAVOR=product docs
 endif
 
+# Output directories
+C1_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler1
+C2_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler2
+MINIMAL1_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_minimal1
+ZERO_DIR    =$(OUTPUTDIR)/$(VM_PLATFORM)_zero
+SHARK_DIR   =$(OUTPUTDIR)/$(VM_PLATFORM)_shark
+
 # Build variation of hotspot
 $(C1_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_FLAVOR=$(@:%1=%) VM_TARGET=$@ generic_build1 $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(C1_DIR) BUILD_FLAVOR=$(@:%1=%) VM_TARGET=$@ generic_build1 $(ALT_OUT)
 
 $(C2_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_FLAVOR=$@ VM_TARGET=$@ generic_build2 $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(C2_DIR) BUILD_FLAVOR=$@ VM_TARGET=$@ generic_build2 $(ALT_OUT)
 
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_FLAVOR=$(@:%zero=%) VM_TARGET=$@ \
-	  generic_buildzero $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(ZERO_DIR) BUILD_FLAVOR=$(@:%zero=%) VM_TARGET=$@ generic_buildzero $(ALT_OUT)
 
 $(SHARK_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_FLAVOR=$(@:%shark=%) VM_TARGET=$@ \
-	  generic_buildshark $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(SHARK_DIR) BUILD_FLAVOR=$(@:%shark=%) VM_TARGET=$@ generic_buildshark $(ALT_OUT)
 
 $(MINIMAL1_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_FLAVOR=$(@:%minimal1=%) VM_TARGET=$@ \
-	  generic_buildminimal1 $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(MINIMAL1_DIR) BUILD_FLAVOR=$(@:%minimal1=%) VM_TARGET=$@ generic_buildminimal1 $(ALT_OUT)
+
+# Install hotspot script in build directory
+HOTSPOT_SCRIPT=$(BUILD_DIR)/$(BUILD_FLAVOR)/hotspot
+$(HOTSPOT_SCRIPT): $(GAMMADIR)/make/hotspot.script
+	$(QUIETLY) $(MKDIR) -p $(BUILD_DIR)/$(BUILD_FLAVOR)
+	$(QUIETLY) cat $< | sed -e 's|@@LIBARCH@@|$(LIBARCH)|g' | sed -e 's|@@JDK_IMPORT_PATH@@|$(JDK_IMPORT_PATH)|g' > $@
+	$(QUIETLY) chmod +x $@
 
 # Build compiler1 (client) rule, different for platforms
-generic_build1:
+generic_build1: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
 ifeq ($(OSNAME),windows)
   ifeq ($(ARCH_DATA_MODEL), 32)
@@ -201,7 +212,7 @@ else
 endif
 
 # Build compiler2 (server) rule, different for platforms
-generic_build2:
+generic_build2: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
 ifeq ($(OSNAME),windows)
 	$(CD) $(OUTPUTDIR); \
@@ -217,19 +228,19 @@ else
 		      $(MAKE_ARGS) $(VM_TARGET)
 endif
 
-generic_buildzero:
+generic_buildzero: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(CD) $(OUTPUTDIR); \
 		$(MAKE) -f $(ABS_OS_MAKEFILE) \
 			$(MAKE_ARGS) $(VM_TARGET)
 
-generic_buildshark:
+generic_buildshark: $(HOTSPOT_SCRIPT)
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(CD) $(OUTPUTDIR); \
 		$(MAKE) -f $(ABS_OS_MAKEFILE) \
 			$(MAKE_ARGS) $(VM_TARGET)
 
-generic_buildminimal1:
+generic_buildminimal1: $(HOTSPOT_SCRIPT)
 ifeq ($(JVM_VARIANT_MINIMAL1),true)
 	$(MKDIR) -p $(OUTPUTDIR)
   ifeq ($(ARCH_DATA_MODEL), 32)
@@ -252,224 +263,210 @@ endif
 
 # Export file rule
 generic_export: $(EXPORT_LIST)
+
 export_product:
-	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
-          generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) generic_export
 export_fastdebug:
-	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
-	  EXPORT_SUBDIR=/$(@:export_%=%) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) EXPORT_SUBDIR=/$(@:export_%=%) generic_export
 export_debug:
-	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
-	  EXPORT_SUBDIR=/$(@:export_%=%) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) EXPORT_SUBDIR=/$(@:export_%=%) generic_export
 export_optimized:
-	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
-	  EXPORT_SUBDIR=/$(@:export_%=%) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) EXPORT_SUBDIR=/$(@:export_%=%) generic_export
+
 export_product_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
-	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) generic_export
 export_optimized_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
-	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) generic_export
 export_fastdebug_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
-	  VM_SUBDIR=$(@:export_%_jdk=%)  \
-	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) generic_export
 export_debug_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) VM_SUBDIR=$(@:export_%_jdk=%) \
-	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
-	  generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) generic_export
 
 # Export file copy rules
 XUSAGE=$(HS_SRC_DIR)/share/vm/Xusage.txt
-DOCS_DIR    =$(OUTPUTDIR)/$(VM_PLATFORM)_docs
-C1_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler1/$(VM_SUBDIR)
-C2_DIR      =$(OUTPUTDIR)/$(VM_PLATFORM)_compiler2/$(VM_SUBDIR)
-MINIMAL1_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_minimal1/$(VM_SUBDIR)
-ZERO_DIR    =$(OUTPUTDIR)/$(VM_PLATFORM)_zero/$(VM_SUBDIR)
-SHARK_DIR   =$(OUTPUTDIR)/$(VM_PLATFORM)_shark/$(VM_SUBDIR)
+DOCS_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_docs
+C1_BUILD_DIR      =$(C1_DIR)/$(BUILD_FLAVOR)
+C2_BUILD_DIR      =$(C2_DIR)/$(BUILD_FLAVOR)
+MINIMAL1_BUILD_DIR=$(MINIMAL1_DIR)/$(BUILD_FLAVOR)
+ZERO_BUILD_DIR    =$(ZERO_DIR)/$(BUILD_FLAVOR)
+SHARK_BUILD_DIR   =$(SHARK_DIR)/$(BUILD_FLAVOR)
 
 # Server (C2)
 ifeq ($(JVM_VARIANT_SERVER), true)
 # Common
-$(EXPORT_SERVER_DIR)/%.diz:       		$(C2_DIR)/%.diz
+$(EXPORT_SERVER_DIR)/%.diz:       		$(C2_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.jar:			$(C2_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(C2_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(C2_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(C2_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Windows
-$(EXPORT_SERVER_DIR)/%.dll:			$(C2_DIR)/%.dll
+$(EXPORT_SERVER_DIR)/%.dll:			$(C2_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.pdb:			$(C2_DIR)/%.pdb
+$(EXPORT_SERVER_DIR)/%.pdb:			$(C2_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.map:			$(C2_DIR)/%.map
+$(EXPORT_SERVER_DIR)/%.map:			$(C2_BUILD_DIR)/%.map
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.lib:			$(C2_DIR)/%.lib
+$(EXPORT_LIB_DIR)/%.lib:			$(C2_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C2_DIR)/%.diz
+$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C2_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C2_DIR)/%.dll
+$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C2_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C2_DIR)/%.pdb
+$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C2_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(C2_DIR)/%.map
+$(EXPORT_JRE_BIN_DIR)/%.map:			$(C2_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C2_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.debuginfo:       	$(C2_DIR)/%.debuginfo
+$(EXPORT_SERVER_DIR)/%.debuginfo:       	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.debuginfo:    	$(C2_DIR)/%.debuginfo
+$(EXPORT_SERVER_DIR)/64/%.debuginfo:    	$(C2_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C2_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C2_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.diz:    		$(C2_DIR)/%.diz
+$(EXPORT_SERVER_DIR)/64/%.diz:    		$(C2_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
 # Client (C1)
 ifeq ($(JVM_VARIANT_CLIENT), true)
 # Common
-$(EXPORT_CLIENT_DIR)/%.diz:       		$(C1_DIR)/%.diz
+$(EXPORT_CLIENT_DIR)/%.diz:       		$(C1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.jar:			$(C1_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(C1_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(C1_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(C1_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Windows
-$(EXPORT_CLIENT_DIR)/%.dll:			$(C1_DIR)/%.dll
+$(EXPORT_CLIENT_DIR)/%.dll:			$(C1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.pdb:			$(C1_DIR)/%.pdb
+$(EXPORT_CLIENT_DIR)/%.pdb:			$(C1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.map:			$(C1_DIR)/%.map
+$(EXPORT_CLIENT_DIR)/%.map:			$(C1_BUILD_DIR)/%.map
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.lib:			$(C1_DIR)/%.lib
+$(EXPORT_LIB_DIR)/%.lib:			$(C1_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C1_DIR)/%.diz
+$(EXPORT_JRE_BIN_DIR)/%.diz:			$(C1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C1_DIR)/%.dll
+$(EXPORT_JRE_BIN_DIR)/%.dll:			$(C1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C1_DIR)/%.pdb
+$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(C1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(C1_DIR)/%.map
+$(EXPORT_JRE_BIN_DIR)/%.map:			$(C1_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C1_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.debuginfo:       	$(C1_DIR)/%.debuginfo
+$(EXPORT_CLIENT_DIR)/%.debuginfo:       	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.debuginfo:    	$(C1_DIR)/%.debuginfo
+$(EXPORT_CLIENT_DIR)/64/%.debuginfo:    	$(C1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C1_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 		$(C1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.diz:    		$(C1_DIR)/%.diz
+$(EXPORT_CLIENT_DIR)/64/%.diz:    		$(C1_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
 # Minimal1
 ifeq ($(JVM_VARIANT_MINIMAL1), true)
 # Common
-$(EXPORT_MINIMAL_DIR)/%.diz:			$(MINIMAL1_DIR)/%.diz
+$(EXPORT_MINIMAL_DIR)/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.jar:			$(MINIMAL1_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(MINIMAL1_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(MINIMAL1_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(MINIMAL1_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Windows
-$(EXPORT_MINIMAL_DIR)/%.dll:			$(MINIMAL1_DIR)/%.dll
+$(EXPORT_MINIMAL_DIR)/%.dll:			$(MINIMAL1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/%.pdb:			$(MINIMAL1_DIR)/%.pdb
+$(EXPORT_MINIMAL_DIR)/%.pdb:			$(MINIMAL1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/%.map:			$(MINIMAL1_DIR)/%.map
+$(EXPORT_MINIMAL_DIR)/%.map:			$(MINIMAL1_BUILD_DIR)/%.map
 	$(install-file)
-$(EXPORT_LIB_DIR)/%.lib:			$(MINIMAL1_DIR)/%.lib
+$(EXPORT_LIB_DIR)/%.lib:			$(MINIMAL1_BUILD_DIR)/%.lib
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.diz:			$(MINIMAL1_DIR)/%.diz
+$(EXPORT_JRE_BIN_DIR)/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.dll:			$(MINIMAL1_DIR)/%.dll
+$(EXPORT_JRE_BIN_DIR)/%.dll:			$(MINIMAL1_BUILD_DIR)/%.dll
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(MINIMAL1_DIR)/%.pdb
+$(EXPORT_JRE_BIN_DIR)/%.pdb:			$(MINIMAL1_BUILD_DIR)/%.pdb
 	$(install-file)
-$(EXPORT_JRE_BIN_DIR)/%.map:			$(MINIMAL1_DIR)/%.map
+$(EXPORT_JRE_BIN_DIR)/%.map:			$(MINIMAL1_BUILD_DIR)/%.map
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_MINIMAL_DIR)/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/64/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_MINIMAL_DIR)/64/%.$(LIBRARY_SUFFIX):	$(MINIMAL1_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(MINIMAL1_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/%.debuginfo:		$(MINIMAL1_DIR)/%.debuginfo
+$(EXPORT_MINIMAL_DIR)/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/64/%.debuginfo:		$(MINIMAL1_DIR)/%.debuginfo
+$(EXPORT_MINIMAL_DIR)/64/%.debuginfo:		$(MINIMAL1_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(MINIMAL1_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_MINIMAL_DIR)/64/%.diz:			$(MINIMAL1_DIR)/%.diz
+$(EXPORT_MINIMAL_DIR)/64/%.diz:			$(MINIMAL1_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
 # Zero
 ifeq ($(JVM_VARIANT_ZERO), true)
 # Common
-$(EXPORT_LIB_DIR)/%.jar:			$(ZERO_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(ZERO_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(ZERO_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(ZERO_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(ZERO_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(ZERO_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(ZERO_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(ZERO_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.debuginfo:		$(ZERO_DIR)/%.debuginfo
+$(EXPORT_SERVER_DIR)/%.debuginfo:		$(ZERO_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.diz:			$(ZERO_DIR)/%.diz
+$(EXPORT_SERVER_DIR)/%.diz:			$(ZERO_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
 # Shark
 ifeq ($(JVM_VARIANT_ZEROSHARK), true)
 # Common
-$(EXPORT_LIB_DIR)/%.jar:			$(SHARK_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(SHARK_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(SHARK_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(SHARK_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo):	$(SHARK_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo):	$(SHARK_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(SHARK_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(SHARK_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.debuginfo:		$(SHARK_DIR)/%.debuginfo
+$(EXPORT_SERVER_DIR)/%.debuginfo:		$(SHARK_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.diz:			$(SHARK_DIR)/%.diz
+$(EXPORT_SERVER_DIR)/%.diz:			$(SHARK_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
