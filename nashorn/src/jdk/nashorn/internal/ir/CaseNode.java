@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of CASE clause.
@@ -48,14 +47,13 @@ public final class CaseNode extends Node {
     /**
      * Constructors
      *
-     * @param source   the source
      * @param token    token
      * @param finish   finish
      * @param test     case test node, can be any node in JavaScript
      * @param body     case body
      */
-    public CaseNode(final Source source, final long token, final int finish, final Node test, final Block body) {
-        super(source, token, finish);
+    public CaseNode(final long token, final int finish, final Node test, final Block body) {
+        super(token, finish);
 
         this.test  = test;
         this.body  = body;

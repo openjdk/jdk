@@ -37,7 +37,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @version $Id: DocumentBuilderFactoryImpl.java,v 1.6 2009/07/28 23:48:32 joehw Exp $
+ * @version $Id: DocumentBuilderFactoryImpl.java,v 1.8 2010-11-01 04:40:06 joehw Exp $
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -191,6 +191,9 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
 
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException {
+        if (features == null) {
+            features = new Hashtable();
+        }
         // If this is the secure processing feature, save it then return.
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
             if (System.getSecurityManager() != null && (!value)) {
@@ -199,11 +202,10 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
                         "jaxp-secureprocessing-feature", null));
             }
             fSecureProcess = value;
+            features.put(name, value ? Boolean.TRUE : Boolean.FALSE);
             return;
         }
-        if (features == null) {
-            features = new Hashtable();
-        }
+
         features.put(name, value ? Boolean.TRUE : Boolean.FALSE);
         // Test the feature by possibly throwing SAX exceptions
         try {

@@ -126,7 +126,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     public Content getSignature(ConstructorDoc constructor) {
-        writer.displayLength = 0;
         Content pre = new HtmlTree(HtmlTag.PRE);
         writer.addAnnotationInfo(constructor, pre);
         addModifiers(constructor, pre);
@@ -136,8 +135,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         } else {
             addName(constructor.name(), pre);
         }
-        addParameters(constructor, pre);
-        addExceptions(constructor, pre);
+        int indent = pre.charCount();
+        addParameters(constructor, pre, indent);
+        addExceptions(constructor, pre, indent);
         return pre;
     }
 
@@ -225,8 +225,8 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Constructors");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Constructors");
     }
 
     /**

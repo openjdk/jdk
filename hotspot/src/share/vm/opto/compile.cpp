@@ -418,6 +418,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   }
   // clean up the late inline lists
   remove_useless_late_inlines(&_string_late_inlines, useful);
+  remove_useless_late_inlines(&_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
@@ -483,6 +484,12 @@ void Compile::print_compile_messages() {
     // Recompiling without escape analysis
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
+    tty->print_cr("*********************************************************");
+  }
+  if (_eliminate_boxing != EliminateAutoBox && PrintOpto) {
+    // Recompiling without boxing elimination
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
   if (env()->break_at_compile()) {
@@ -601,7 +608,8 @@ debug_only( int Compile::_debug_idx = 100000; )
 // the continuation bci for on stack replacement.
 
 
-Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr_bci, bool subsume_loads, bool do_escape_analysis )
+Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr_bci,
+                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing )
                 : Phase(Compiler),
                   _env(ci_env),
                   _log(ci_env->log()),
@@ -617,6 +625,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _warm_calls(NULL),
                   _subsume_loads(subsume_loads),
                   _do_escape_analysis(do_escape_analysis),
+                  _eliminate_boxing(eliminate_boxing),
                   _failure_reason(NULL),
                   _code_buffer("Compile::Fill_buffer"),
                   _orig_pc_slot(0),
@@ -638,6 +647,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _congraph(NULL),
                   _late_inlines(comp_arena(), 2, 0, NULL),
                   _string_late_inlines(comp_arena(), 2, 0, NULL),
+                  _boxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _inlining_progress(false),
@@ -906,6 +916,7 @@ Compile::Compile( ciEnv* ci_env,
     _orig_pc_slot_offset_in_bytes(0),
     _subsume_loads(true),
     _do_escape_analysis(false),
+    _eliminate_boxing(false),
     _failure_reason(NULL),
     _code_buffer("Compile::Fill_buffer"),
     _has_method_handle_invokes(false),
@@ -1016,6 +1027,7 @@ void Compile::Init(int aliaslevel) {
   set_has_split_ifs(false);
   set_has_loops(has_method() && method()->has_loops()); // first approximation
   set_has_stringbuilder(false);
+  set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
@@ -1807,6 +1819,38 @@ void Compile::inline_string_calls(bool parse_time) {
   _string_late_inlines.trunc_to(0);
 }
 
+// Late inlining of boxing methods
+void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
+  if (_boxing_late_inlines.length() > 0) {
+    assert(has_boxed_value(), "inconsistent");
+
+    PhaseGVN* gvn = initial_gvn();
+    set_inlining_incrementally(true);
+
+    assert( igvn._worklist.size() == 0, "should be done with igvn" );
+    for_igvn()->clear();
+    gvn->replace_with(&igvn);
+
+    while (_boxing_late_inlines.length() > 0) {
+      CallGenerator* cg = _boxing_late_inlines.pop();
+      cg->do_late_inline();
+      if (failing())  return;
+    }
+    _boxing_late_inlines.trunc_to(0);
+
+    {
+      ResourceMark rm;
+      PhaseRemoveUseless pru(gvn, for_igvn());
+    }
+
+    igvn = PhaseIterGVN(gvn);
+    igvn.optimize();
+
+    set_inlining_progress(false);
+    set_inlining_incrementally(false);
+  }
+}
+
 void Compile::inline_incrementally_one(PhaseIterGVN& igvn) {
   assert(IncrementalInline, "incremental inlining should be on");
   PhaseGVN* gvn = initial_gvn();
@@ -1831,7 +1875,7 @@ void Compile::inline_incrementally_one(PhaseIterGVN& igvn) {
 
   {
     ResourceMark rm;
-    PhaseRemoveUseless pru(C->initial_gvn(), C->for_igvn());
+    PhaseRemoveUseless pru(gvn, for_igvn());
   }
 
   igvn = PhaseIterGVN(gvn);
@@ -1929,11 +1973,24 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  inline_incrementally(igvn);
+  {
+    NOT_PRODUCT( TracePhase t2("incrementalInline", &_t_incrInline, TimeCompiler); )
+    inline_incrementally(igvn);
+  }
 
   print_method("Incremental Inline", 2);
 
   if (failing())  return;
+
+  if (eliminate_boxing()) {
+    NOT_PRODUCT( TracePhase t2("incrementalInline", &_t_incrInline, TimeCompiler); )
+    // Inline valueOf() methods now.
+    inline_boxing_calls(igvn);
+
+    print_method("Incremental Boxing Inline", 2);
+
+    if (failing())  return;
+  }
 
   // No more new expensive nodes will be added to the list from here
   // so keep only the actual candidates for optimizations.
@@ -2896,6 +2953,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     }
     break;
   case Op_MemBarStoreStore:
+  case Op_MemBarRelease:
     // Break the link with AllocateNode: it is no longer useful and
     // confuses register allocation.
     if (n->req() > MemBarNode::Precedent) {

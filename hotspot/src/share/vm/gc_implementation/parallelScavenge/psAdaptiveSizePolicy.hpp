@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,18 +136,24 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
 
   // Change the young generation size to achieve a minor GC pause time goal
-  void adjust_for_minor_pause_time(bool is_full_gc,
+  void adjust_promo_for_minor_pause_time(bool is_full_gc,
                                    size_t* desired_promo_size_ptr,
+                                   size_t* desired_eden_size_ptr);
+  void adjust_eden_for_minor_pause_time(bool is_full_gc,
                                    size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal
   // Returned sizes are not necessarily aligned.
-  void adjust_for_pause_time(bool is_full_gc,
+  void adjust_promo_for_pause_time(bool is_full_gc,
+                         size_t* desired_promo_size_ptr,
+                         size_t* desired_eden_size_ptr);
+  void adjust_eden_for_pause_time(bool is_full_gc,
                          size_t* desired_promo_size_ptr,
                          size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve an application throughput goal
   // Returned sizes are not necessarily aligned.
-  void adjust_for_throughput(bool is_full_gc,
-                             size_t* desired_promo_size_ptr,
+  void adjust_promo_for_throughput(bool is_full_gc,
+                             size_t* desired_promo_size_ptr);
+  void adjust_eden_for_throughput(bool is_full_gc,
                              size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve minimum footprint
   // Returned sizes are not aligned.
@@ -167,9 +173,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   virtual size_t promo_decrement(size_t cur_promo);
   size_t promo_decrement_aligned_down(size_t cur_promo);
   size_t promo_increment_with_supplement_aligned_up(size_t cur_promo);
-
-  // Decay the supplemental growth additive.
-  void decay_supplemental_growth(bool is_full_gc);
 
   // Returns a change that has been scaled down.  Result
   // is not aligned.  (If useful, move to some shared
@@ -336,7 +339,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // perform a Full GC?
   bool should_full_GC(size_t live_in_old_gen);
 
-  // Calculates optimial free space sizes for both the old and young
+  // Calculates optimal (free) space sizes for both the young and old
   // generations.  Stores results in _eden_size and _promo_size.
   // Takes current used space in all generations as input, as well
   // as an indication if a full gc has just been performed, for use
@@ -347,9 +350,18 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                                      size_t cur_eden,  // current eden in bytes
                                      size_t max_old_gen_size,
                                      size_t max_eden_size,
-                                     bool   is_full_gc,
-                                     GCCause::Cause gc_cause,
-                                     CollectorPolicy* collector_policy);
+                                     bool   is_full_gc);
+
+  void compute_eden_space_size(size_t young_live,
+                               size_t eden_live,
+                               size_t cur_eden,  // current eden in bytes
+                               size_t max_eden_size,
+                               bool   is_full_gc);
+
+  void compute_old_gen_free_space(size_t old_live,
+                                             size_t cur_eden,  // current eden in bytes
+                                             size_t max_old_gen_size,
+                                             bool   is_full_gc);
 
   // Calculates new survivor space size;  returns a new tenuring threshold
   // value. Stores new survivor size in _survivor_size.
@@ -390,6 +402,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
+
+  // Decay the supplemental growth additive.
+  void decay_supplemental_growth(bool is_full_gc);
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSADAPTIVESIZEPOLICY_HPP

@@ -42,7 +42,6 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
-import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
@@ -807,12 +806,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCModifiers mods;
         /** variable name */
         public Name name;
+        /** variable name expression */
+        public JCExpression nameexpr;
         /** type of the variable */
         public JCExpression vartype;
         /** variable's initial value */
         public JCExpression init;
         /** symbol */
         public VarSymbol sym;
+
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
@@ -824,12 +826,27 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.init = init;
             this.sym = sym;
         }
+
+        protected JCVariableDecl(JCModifiers mods,
+                         JCExpression nameexpr,
+                         JCExpression vartype) {
+            this(mods, null, vartype, null, null);
+            this.nameexpr = nameexpr;
+            if (nameexpr.hasTag(Tag.IDENT)) {
+                this.name = ((JCIdent)nameexpr).name;
+            } else {
+                // Only other option is qualified name x.y.this;
+                this.name = ((JCFieldAccess)nameexpr).name;
+            }
+        }
+
         @Override
         public void accept(Visitor v) { v.visitVarDef(this); }
 
         public Kind getKind() { return Kind.VARIABLE; }
         public JCModifiers getModifiers() { return mods; }
         public Name getName() { return name; }
+        public JCExpression getNameExpression() { return nameexpr; }
         public JCTree getType() { return vartype; }
         public JCExpression getInitializer() {
             return init;
@@ -845,7 +862,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
-      /**
+    /**
      * A no-op statement ";".
      */
     public static class JCSkip extends JCStatement implements EmptyStatementTree {

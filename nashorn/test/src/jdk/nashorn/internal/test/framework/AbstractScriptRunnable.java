@@ -117,7 +117,7 @@ public abstract class AbstractScriptRunnable {
     // run this test - compile or compile-and-run depending on option passed
     public void runTest() throws IOException {
         log(toString());
-
+        Thread.currentThread().setName(testFile.getPath());
         if (shouldRun) {
             // Analysis of failing tests list -
             // if test is in failing list it must fail

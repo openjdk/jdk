@@ -32,12 +32,11 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Empty object class.
  */
 public class JO extends ScriptObject {
-
     /**
      * Constructor
      */
     public JO() {
-        super();
+        super(PropertyMap.newMap(JO.class));
     }
 
     /**

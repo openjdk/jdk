@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TypeCasts extends ClassfileTestHelper{
             test(cf, f);
         }
         for (Method m: cf.methods) {
-            test(cf, m);
+            test(cf, m, true);
         }
 
         countAnnotations();

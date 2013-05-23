@@ -40,7 +40,7 @@ import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
 
-import sun.security.ec.NamedCurve;
+import sun.security.util.ECUtil;
 
 public class TestECDSA2 extends PKCS11Test {
 
@@ -75,8 +75,9 @@ public class TestECDSA2 extends PKCS11Test {
         System.out.println(p.getName() + ": " + alg + " Passed");
     }
 
-    private KeyPair genECKeyPair(String curvName, String privD, String pubX, String pubY) throws Exception {
-        ECParameterSpec ecParams = NamedCurve.getECParameterSpec(curvName);
+    private KeyPair genECKeyPair(String curvName, String privD, String pubX,
+            String pubY, Provider p) throws Exception {
+        ECParameterSpec ecParams = ECUtil.getECParameterSpec(p, curvName);
         ECPrivateKeySpec privKeySpec =
             new ECPrivateKeySpec(new BigInteger(privD, 16), ecParams);
         ECPublicKeySpec pubKeySpec =
@@ -108,12 +109,14 @@ public class TestECDSA2 extends PKCS11Test {
         long start = System.currentTimeMillis();
         if (testP256) {
             // can use secp256r1, NIST P-256, X9.62 prime256v1, or 1.2.840.10045.3.1.7
-            KeyPair kp = genECKeyPair("secp256r1", privD256, pubX256, pubY256);
+            KeyPair kp =
+                genECKeyPair("secp256r1", privD256, pubX256, pubY256, provider);
             testSignAndVerify("SHA256withECDSA", kp, provider);
         }
         if (testP384) {
             // can use secp384r1, NIST P-384, 1.3.132.0.34
-            KeyPair kp = genECKeyPair("secp384r1", privD384, pubX384, pubY384);
+            KeyPair kp =
+                genECKeyPair("secp384r1", privD384, pubX384, pubY384, provider);
             testSignAndVerify("SHA384withECDSA", kp, provider);
         }
         long stop = System.currentTimeMillis();

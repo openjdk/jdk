@@ -83,6 +83,7 @@ import java.time.temporal.ValueRange;
 import java.util.Calendar;
 import java.util.Objects;
 
+import sun.util.calendar.CalendarDate;
 import sun.util.calendar.LocalGregorianCalendar;
 
 /**
@@ -101,7 +102,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  * Calling {@code japaneseDate.get(ERA)} will return 2, corresponding to
  * {@code JapaneseChronology.ERA_HEISEI}.<br>
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -232,6 +233,24 @@ public final class JapaneseDate
     public static JapaneseDate ofYearDay(int prolepticYear, int dayOfYear) {
         LocalDate date = LocalDate.ofYearDay(prolepticYear, dayOfYear);
         return of(prolepticYear, date.getMonthValue(), date.getDayOfMonth());
+    }
+
+    static JapaneseDate ofYearDay(JapaneseEra era, int yearOfEra, int dayOfYear) {
+        CalendarDate firstDay = era.getPrivateEra().getSinceDate();
+        LocalGregorianCalendar.Date jdate = JapaneseChronology.JCAL.newCalendarDate(null);
+        jdate.setEra(era.getPrivateEra());
+        if (yearOfEra == 1) {
+            jdate.setDate(yearOfEra, firstDay.getMonth(), firstDay.getDayOfMonth() + dayOfYear - 1);
+        } else {
+            jdate.setDate(yearOfEra, 1, dayOfYear);
+        }
+        JapaneseChronology.JCAL.normalize(jdate);
+        if (era.getPrivateEra() != jdate.getEra() || yearOfEra != jdate.getYear()) {
+            throw new DateTimeException("Invalid parameters");
+        }
+        LocalDate localdate = LocalDate.of(jdate.getNormalizedYear(),
+                                      jdate.getMonth(), jdate.getDayOfMonth());
+        return new JapaneseDate(era, yearOfEra, localdate);
     }
 
     /**

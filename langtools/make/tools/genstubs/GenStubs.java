@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
@@ -208,6 +209,21 @@ public class GenStubs {
          * methods: remove method bodies, make methods native
          */
         @Override
+        public void visitClassDef(JCClassDecl tree) {
+            long prevClassMods = currClassMods;
+            currClassMods = tree.mods.flags;
+            try {
+                super.visitClassDef(tree);;
+            } finally {
+                currClassMods = prevClassMods;
+            }
+        }
+        private long currClassMods = 0;
+
+        /**
+         * methods: remove method bodies, make methods native
+         */
+        @Override
         public void visitMethodDef(JCMethodDecl tree) {
             tree.mods = translate(tree.mods);
             tree.restype = translate(tree.restype);
@@ -215,7 +231,11 @@ public class GenStubs {
             tree.params = translateVarDefs(tree.params);
             tree.thrown = translate(tree.thrown);
             if (tree.restype != null && tree.body != null) {
-                tree.mods.flags |= Flags.NATIVE;
+                if ((currClassMods & Flags.INTERFACE) != 0) {
+                    tree.mods.flags &= ~Flags.DEFAULT;
+                } else {
+                    tree.mods.flags |= Flags.NATIVE;
+                }
                 tree.body = null;
             }
             result = tree;

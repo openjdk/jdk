@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2857,7 +2857,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // references from the constant pool
     {
-      ConstantPool* const pool = ik->constants();
+      ConstantPool* pool = ik->constants();
       for (int i = 1; i < pool->length(); i++) {
         constantTag tag = pool->tag_at(i).value();
         if (tag.is_string() || tag.is_klass()) {

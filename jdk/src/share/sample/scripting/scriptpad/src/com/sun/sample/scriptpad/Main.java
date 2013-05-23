@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@ public class Main {
          */
         InputStream is = Main.class.getResourceAsStream("/resources/" + name);
         // current script file name for better error messages
-        engine.put(ScriptEngine.NAME, name);
+        engine.put(ScriptEngine.FILENAME, name);
         // evaluate the script in the InputStream
         engine.eval(new InputStreamReader(is));
     }

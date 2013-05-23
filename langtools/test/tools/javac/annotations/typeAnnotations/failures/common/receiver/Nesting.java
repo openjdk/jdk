@@ -28,6 +28,11 @@
  * @author Werner Dietl
  * @compile Nesting.java
  */
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE_USE)
 @interface A { }
 
 class Nesting {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,29 +127,28 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * @return a content tree for the class header
      */
     public Content getClassHeader(ClassDoc classDoc) {
-        String classLink = (classDoc.isPublic() || classDoc.isProtected())?
-            getLink(new LinkInfoImpl(configuration, classDoc,
-            configuration.getClassName(classDoc))):
-            classDoc.qualifiedName();
+        Content classLink = (classDoc.isPublic() || classDoc.isProtected()) ?
+            getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, classDoc)
+            .label(configuration.getClassName(classDoc))) :
+            new StringContent(classDoc.qualifiedName());
         Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
                 classDoc.qualifiedName()));
-        String superClassLink =
+        Content superClassLink =
             classDoc.superclassType() != null ?
                 getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_SERIALIZED_FORM,
+                        LinkInfoImpl.Kind.SERIALIZED_FORM,
                         classDoc.superclassType())) :
                 null;
 
         //Print the heading.
-        String className = superClassLink == null ?
-            configuration.getText(
+        Content className = superClassLink == null ?
+            configuration.getResource(
             "doclet.Class_0_implements_serializable", classLink) :
-            configuration.getText(
+            configuration.getResource(
             "doclet.Class_0_extends_implements_serializable", classLink,
             superClassLink);
-        Content classNameContent = new RawHtml(className);
         li.addContent(HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,
-                classNameContent));
+                className));
         return li;
     }
 

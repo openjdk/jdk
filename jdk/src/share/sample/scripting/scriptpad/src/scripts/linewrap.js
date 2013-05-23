@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,19 +37,15 @@
  * this sample code.
  */
 
-
 /*
  * This script adds "Line Wrap" mode menu item to "Tools" menu.
  * When selected, this menu toggles the current word wrap mode
  * of the editor.
  */
-with (guiPkgs) {
 
-    function toggleLineWrap() {
-        var wrap = application.editor.lineWrap;
-        application.editor.lineWrap = !wrap;
-    }
-
-    application.addTool("Line Wrap",  toggleLineWrap);
+function toggleLineWrap() {
+    var wrap = application.editor.lineWrap;
+    application.editor.lineWrap = !wrap;
 }
 
+application.addTool("Line Wrap",  toggleLineWrap);

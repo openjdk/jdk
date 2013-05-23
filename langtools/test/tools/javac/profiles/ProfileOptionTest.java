@@ -179,7 +179,7 @@ public class ProfileOptionTest {
                 javax.xml.XMLConstants.class);
 
         init(Profile.COMPACT3,
-                javax.script.Bindings.class,
+                javax.sql.rowset.Predicate.class,
                 com.sun.security.auth.PolicyFile.class); // specifically included in 3
 
         init(Profile.DEFAULT,
