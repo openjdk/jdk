@@ -42,6 +42,8 @@
     <condition property="hg.executable" value="/usr/local/bin/hg" else="hg">
       <available file="/usr/local/bin/hg"/>
     </condition>
+    <!-- check if JDK already has ASM classes -->
+    <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
     <!-- check if testng.jar is avaiable -->
     <available property="testng.available" file="${file.reference.testng.jar}"/>
 
@@ -78,7 +80,19 @@
     <delete dir="${dist.dir}"/>
   </target>
 
-  <target name="compile" depends="prepare" description="Compiles nashorn">
+  <!-- do it only if ASM is not available -->
+  <target name="compile-asm" depends="prepare" unless="asm.available">
+    <javac srcdir="${jdk.asm.src.dir}"
+           destdir="${build.classes.dir}"
+           excludes="**/optimizer/* **/xml/* **/attrs/*"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false"/>
+  </target>
+
+  <target name="compile" depends="compile-asm" description="Compiles nashorn">
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
            classpath="${javac.classpath}"
