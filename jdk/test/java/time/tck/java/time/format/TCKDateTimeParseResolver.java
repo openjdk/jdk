@@ -59,6 +59,9 @@
  */
 package tck.java.time.format;
 
+import static java.time.format.ResolverStyle.LENIENT;
+import static java.time.format.ResolverStyle.SMART;
+import static java.time.format.ResolverStyle.STRICT;
 import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
 import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
 import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
@@ -88,11 +91,15 @@ import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -517,6 +524,352 @@ public class TCKDateTimeParseResolver {
         TemporalAccessor accessor = f.parse(str);
         assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate);
         assertEquals(accessor.query(TemporalQuery.localTime()), null);
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveFourToTime")
+    Object[][] data_resolveFourToTime() {
+        return new Object[][]{
+                // merge
+                {null, 0, 0, 0, 0, LocalTime.of(0, 0, 0, 0), Period.ZERO},
+                {null, 1, 0, 0, 0, LocalTime.of(1, 0, 0, 0), Period.ZERO},
+                {null, 0, 2, 0, 0, LocalTime.of(0, 2, 0, 0), Period.ZERO},
+                {null, 0, 0, 3, 0, LocalTime.of(0, 0, 3, 0), Period.ZERO},
+                {null, 0, 0, 0, 4, LocalTime.of(0, 0, 0, 4), Period.ZERO},
+                {null, 1, 2, 3, 4, LocalTime.of(1, 2, 3, 4), Period.ZERO},
+                {null, 23, 59, 59, 123456789, LocalTime.of(23, 59, 59, 123456789), Period.ZERO},
+
+                {ResolverStyle.STRICT, 14, 59, 60, 123456789, null, null},
+                {ResolverStyle.SMART, 14, 59, 60, 123456789, null, null},
+                {ResolverStyle.LENIENT, 14, 59, 60, 123456789, LocalTime.of(15, 0, 0, 123456789), Period.ZERO},
+
+                {ResolverStyle.STRICT, 23, 59, 60, 123456789, null, null},
+                {ResolverStyle.SMART, 23, 59, 60, 123456789, null, null},
+                {ResolverStyle.LENIENT, 23, 59, 60, 123456789, LocalTime.of(0, 0, 0, 123456789), Period.ofDays(1)},
+
+                {ResolverStyle.STRICT, 24, 0, 0, 0, null, null},
+                {ResolverStyle.SMART, 24, 0, 0, 0, LocalTime.of(0, 0, 0, 0), Period.ofDays(1)},
+                {ResolverStyle.LENIENT, 24, 0, 0, 0, LocalTime.of(0, 0, 0, 0), Period.ofDays(1)},
+
+                {ResolverStyle.STRICT, 24, 1, 0, 0, null, null},
+                {ResolverStyle.SMART, 24, 1, 0, 0, null, null},
+                {ResolverStyle.LENIENT, 24, 1, 0, 0, LocalTime.of(0, 1, 0, 0), Period.ofDays(1)},
+
+                {ResolverStyle.STRICT, 25, 0, 0, 0, null, null},
+                {ResolverStyle.SMART, 25, 0, 0, 0, null, null},
+                {ResolverStyle.LENIENT, 25, 0, 0, 0, LocalTime.of(1, 0, 0, 0), Period.ofDays(1)},
+
+                {ResolverStyle.STRICT, 49, 2, 3, 4, null, null},
+                {ResolverStyle.SMART, 49, 2, 3, 4, null, null},
+                {ResolverStyle.LENIENT, 49, 2, 3, 4, LocalTime.of(1, 2, 3, 4), Period.ofDays(2)},
+
+                {ResolverStyle.STRICT, -1, 2, 3, 4, null, null},
+                {ResolverStyle.SMART, -1, 2, 3, 4, null, null},
+                {ResolverStyle.LENIENT, -1, 2, 3, 4, LocalTime.of(23, 2, 3, 4), Period.ofDays(-1)},
+
+                {ResolverStyle.STRICT, -6, 2, 3, 4, null, null},
+                {ResolverStyle.SMART, -6, 2, 3, 4, null, null},
+                {ResolverStyle.LENIENT, -6, 2, 3, 4, LocalTime.of(18, 2, 3, 4), Period.ofDays(-1)},
+
+                {ResolverStyle.STRICT, 25, 61, 61, 1_123456789, null, null},
+                {ResolverStyle.SMART, 25, 61, 61, 1_123456789, null, null},
+                {ResolverStyle.LENIENT, 25, 61, 61, 1_123456789, LocalTime.of(2, 2, 2, 123456789), Period.ofDays(1)},
+        };
+    }
+
+    @Test(dataProvider="resolveFourToTime")
+    public void test_resolveFourToTime(ResolverStyle style,
+                       long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .parseDefaulting(HOUR_OF_DAY, hour)
+                .parseDefaulting(MINUTE_OF_HOUR, min)
+                .parseDefaulting(SECOND_OF_MINUTE, sec)
+                .parseDefaulting(NANO_OF_SECOND, nano).toFormatter();
+
+        ResolverStyle[] styles = (style != null ? new ResolverStyle[] {style} : ResolverStyle.values());
+        for (ResolverStyle s : styles) {
+            if (expectedTime != null) {
+                TemporalAccessor accessor = f.withResolverStyle(s).parse("");
+                assertEquals(accessor.query(TemporalQuery.localDate()), null, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime, "ResolverStyle: " + s);
+                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
+            } else {
+                try {
+                    f.withResolverStyle(style).parse("");
+                    fail();
+                } catch (DateTimeParseException ex) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider="resolveFourToTime")
+    public void test_resolveThreeToTime(ResolverStyle style,
+                                       long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .parseDefaulting(HOUR_OF_DAY, hour)
+                .parseDefaulting(MINUTE_OF_HOUR, min)
+                .parseDefaulting(SECOND_OF_MINUTE, sec).toFormatter();
+
+        ResolverStyle[] styles = (style != null ? new ResolverStyle[] {style} : ResolverStyle.values());
+        for (ResolverStyle s : styles) {
+            if (expectedTime != null) {
+                TemporalAccessor accessor = f.withResolverStyle(s).parse("");
+                assertEquals(accessor.query(TemporalQuery.localDate()), null, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime.minusNanos(nano), "ResolverStyle: " + s);
+                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), excessPeriod, "ResolverStyle: " + s);
+            } else {
+                try {
+                    f.withResolverStyle(style).parse("");
+                    fail();
+                } catch (DateTimeParseException ex) {
+                    // expected
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider="resolveFourToTime")
+    public void test_resolveFourToDateTime(ResolverStyle style,
+                       long hour, long min, long sec, long nano, LocalTime expectedTime, Period excessPeriod) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .parseDefaulting(YEAR, 2012).parseDefaulting(MONTH_OF_YEAR, 6).parseDefaulting(DAY_OF_MONTH, 30)
+                .parseDefaulting(HOUR_OF_DAY, hour)
+                .parseDefaulting(MINUTE_OF_HOUR, min)
+                .parseDefaulting(SECOND_OF_MINUTE, sec)
+                .parseDefaulting(NANO_OF_SECOND, nano).toFormatter();
+
+        ResolverStyle[] styles = (style != null ? new ResolverStyle[] {style} : ResolverStyle.values());
+        if (expectedTime != null && excessPeriod != null) {
+            LocalDate expectedDate = LocalDate.of(2012, 6, 30).plus(excessPeriod);
+            for (ResolverStyle s : styles) {
+                TemporalAccessor accessor = f.withResolverStyle(s).parse("");
+                assertEquals(accessor.query(TemporalQuery.localDate()), expectedDate, "ResolverStyle: " + s);
+                assertEquals(accessor.query(TemporalQuery.localTime()), expectedTime, "ResolverStyle: " + s);
+                assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ZERO, "ResolverStyle: " + s);
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveSecondOfDay")
+    Object[][] data_resolveSecondOfDay() {
+        return new Object[][]{
+                {STRICT, 0, 0, 0},
+                {STRICT, 1, 1, 0},
+                {STRICT, 86399, 86399, 0},
+                {STRICT, -1, null, 0},
+                {STRICT, 86400, null, 0},
+
+                {SMART, 0, 0, 0},
+                {SMART, 1, 1, 0},
+                {SMART, 86399, 86399, 0},
+                {SMART, -1, null, 0},
+                {SMART, 86400, null, 0},
+
+                {LENIENT, 0, 0, 0},
+                {LENIENT, 1, 1, 0},
+                {LENIENT, 86399, 86399, 0},
+                {LENIENT, -1, 86399, -1},
+                {LENIENT, 86400, 0, 1},
+        };
+    }
+
+    @Test(dataProvider="resolveSecondOfDay")
+    public void test_resolveSecondOfDay(ResolverStyle style, long value, Integer expectedSecond, int expectedDays) {
+        String str = Long.toString(value);
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(SECOND_OF_DAY).toFormatter();
+
+        if (expectedSecond != null) {
+            TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
+            assertEquals(accessor.query(TemporalQuery.localDate()), null);
+            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.ofSecondOfDay(expectedSecond));
+            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+        } else {
+            try {
+                f.withResolverStyle(style).parse(str);
+                fail();
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveMinuteOfDay")
+    Object[][] data_resolveMinuteOfDay() {
+        return new Object[][]{
+                {STRICT, 0, 0, 0},
+                {STRICT, 1, 1, 0},
+                {STRICT, 1439, 1439, 0},
+                {STRICT, -1, null, 0},
+                {STRICT, 1440, null, 0},
+
+                {SMART, 0, 0, 0},
+                {SMART, 1, 1, 0},
+                {SMART, 1439, 1439, 0},
+                {SMART, -1, null, 0},
+                {SMART, 1440, null, 0},
+
+                {LENIENT, 0, 0, 0},
+                {LENIENT, 1, 1, 0},
+                {LENIENT, 1439, 1439, 0},
+                {LENIENT, -1, 1439, -1},
+                {LENIENT, 1440, 0, 1},
+        };
+    }
+
+    @Test(dataProvider="resolveMinuteOfDay")
+    public void test_resolveMinuteOfDay(ResolverStyle style, long value, Integer expectedMinute, int expectedDays) {
+        String str = Long.toString(value);
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(MINUTE_OF_DAY).toFormatter();
+
+        if (expectedMinute != null) {
+            TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
+            assertEquals(accessor.query(TemporalQuery.localDate()), null);
+            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.ofSecondOfDay(expectedMinute * 60));
+            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+        } else {
+            try {
+                f.withResolverStyle(style).parse(str);
+                fail();
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveClockHourOfDay")
+    Object[][] data_resolveClockHourOfDay() {
+        return new Object[][]{
+                {STRICT, 1, 1, 0},
+                {STRICT, 24, 0, 0},
+                {STRICT, 0, null, 0},
+                {STRICT, -1, null, 0},
+                {STRICT, 25, null, 0},
+
+                {SMART, 1, 1, 0},
+                {SMART, 24, 0, 0},
+                {SMART, 0, 0, 0},
+                {SMART, -1, null, 0},
+                {SMART, 25, null, 0},
+
+                {LENIENT, 1, 1, 0},
+                {LENIENT, 24, 0, 0},
+                {LENIENT, 0, 0, 0},
+                {LENIENT, -1, 23, -1},
+                {LENIENT, 25, 1, 1},
+        };
+    }
+
+    @Test(dataProvider="resolveClockHourOfDay")
+    public void test_resolveClockHourOfDay(ResolverStyle style, long value, Integer expectedHour, int expectedDays) {
+        String str = Long.toString(value);
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(CLOCK_HOUR_OF_DAY).toFormatter();
+
+        if (expectedHour != null) {
+            TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
+            assertEquals(accessor.query(TemporalQuery.localDate()), null);
+            assertEquals(accessor.query(TemporalQuery.localTime()), LocalTime.of(expectedHour, 0));
+            assertEquals(accessor.query(DateTimeFormatter.parsedExcessDays()), Period.ofDays(expectedDays));
+        } else {
+            try {
+                f.withResolverStyle(style).parse(str);
+                fail();
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveClockHourOfAmPm")
+    Object[][] data_resolveClockHourOfAmPm() {
+        return new Object[][]{
+                {STRICT, 1, 1},
+                {STRICT, 12, 0},
+                {STRICT, 0, null},
+                {STRICT, -1, null},
+                {STRICT, 13, null},
+
+                {SMART, 1, 1},
+                {SMART, 12, 0},
+                {SMART, 0, 0},
+                {SMART, -1, null},
+                {SMART, 13, null},
+
+                {LENIENT, 1, 1},
+                {LENIENT, 12, 0},
+                {LENIENT, 0, 0},
+                {LENIENT, -1, -1},
+                {LENIENT, 13, 13},
+        };
+    }
+
+    @Test(dataProvider="resolveClockHourOfAmPm")
+    public void test_resolveClockHourOfAmPm(ResolverStyle style, long value, Integer expectedValue) {
+        String str = Long.toString(value);
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(CLOCK_HOUR_OF_AMPM).toFormatter();
+
+        if (expectedValue != null) {
+            TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
+            assertEquals(accessor.query(TemporalQuery.localDate()), null);
+            assertEquals(accessor.query(TemporalQuery.localTime()), null);
+            assertEquals(accessor.isSupported(CLOCK_HOUR_OF_AMPM), false);
+            assertEquals(accessor.isSupported(HOUR_OF_AMPM), true);
+            assertEquals(accessor.getLong(HOUR_OF_AMPM), expectedValue.longValue());
+        } else {
+            try {
+                f.withResolverStyle(style).parse(str);
+                fail();
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="resolveAmPm")
+    Object[][] data_resolveAmPm() {
+        return new Object[][]{
+                {STRICT, 0, 0},
+                {STRICT, 1, 1},
+                {STRICT, -1, null},
+                {STRICT, 2, null},
+
+                {SMART, 0, 0},
+                {SMART, 1, 1},
+                {SMART, -1, null},
+                {SMART, 2, null},
+
+                {LENIENT, 0, 0},
+                {LENIENT, 1, 1},
+                {LENIENT, -1, -1},
+                {LENIENT, 2, 2},
+        };
+    }
+
+    @Test(dataProvider="resolveAmPm")
+    public void test_resolveAmPm(ResolverStyle style, long value, Integer expectedValue) {
+        String str = Long.toString(value);
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(AMPM_OF_DAY).toFormatter();
+
+        if (expectedValue != null) {
+            TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
+            assertEquals(accessor.query(TemporalQuery.localDate()), null);
+            assertEquals(accessor.query(TemporalQuery.localTime()), null);
+            assertEquals(accessor.isSupported(AMPM_OF_DAY), true);
+            assertEquals(accessor.getLong(AMPM_OF_DAY), expectedValue.longValue());
+        } else {
+            try {
+                f.withResolverStyle(style).parse(str);
+                fail();
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
     }
 
 }

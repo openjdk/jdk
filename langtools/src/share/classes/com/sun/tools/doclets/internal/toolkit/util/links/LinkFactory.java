@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.util.links;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * A factory that constructs links from given link information.
@@ -41,11 +42,11 @@ import com.sun.javadoc.*;
 public abstract class LinkFactory {
 
     /**
-     * Return an empty instance of the link output object.
+     * Return an empty instance of a content object.
      *
-     * @return an empty instance of the link output object.
+     * @return an empty instance of a content object.
      */
-    protected abstract LinkOutput getOutputInstance();
+    protected abstract Content newContent();
 
     /**
      * Constructs a link from the given link information.
@@ -53,63 +54,59 @@ public abstract class LinkFactory {
      * @param linkInfo the information about the link.
      * @return the output of the link.
      */
-    public LinkOutput getLinkOutput(LinkInfo linkInfo) {
+    public Content getLink(LinkInfo linkInfo) {
         if (linkInfo.type != null) {
             Type type = linkInfo.type;
-            LinkOutput linkOutput = getOutputInstance();
+            Content link = newContent();
             if (type.isPrimitive()) {
                 //Just a primitive.
-                linkInfo.displayLength += type.typeName().length();
-                linkOutput.append(type.typeName());
+                link.addContent(type.typeName());
             } else if (type.asAnnotatedType() != null && type.dimension().length() == 0) {
-                linkOutput.append(getTypeAnnotationLinks(linkInfo));
+                link.addContent(getTypeAnnotationLinks(linkInfo));
                 linkInfo.type = type.asAnnotatedType().underlyingType();
-                linkOutput.append(getLinkOutput(linkInfo));
-                return linkOutput;
+                link.addContent(getLink(linkInfo));
+                return link;
             } else if (type.asWildcardType() != null) {
                 //Wildcard type.
                 linkInfo.isTypeBound = true;
-                linkInfo.displayLength += 1;
-                linkOutput.append("?");
+                link.addContent("?");
                 WildcardType wildcardType = type.asWildcardType();
                 Type[] extendsBounds = wildcardType.extendsBounds();
                 for (int i = 0; i < extendsBounds.length; i++) {
-                    linkInfo.displayLength += i > 0 ? 2 : 9;
-                    linkOutput.append(i > 0 ? ", " : " extends ");
+                    link.addContent(i > 0 ? ", " : " extends ");
                     setBoundsLinkInfo(linkInfo, extendsBounds[i]);
-                    linkOutput.append(getLinkOutput(linkInfo));
+                    link.addContent(getLink(linkInfo));
                 }
                 Type[] superBounds = wildcardType.superBounds();
                 for (int i = 0; i < superBounds.length; i++) {
-                    linkInfo.displayLength += i > 0 ? 2 : 7;
-                    linkOutput.append(i > 0 ? ", " : " super ");
+                    link.addContent(i > 0 ? ", " : " super ");
                     setBoundsLinkInfo(linkInfo, superBounds[i]);
-                    linkOutput.append(getLinkOutput(linkInfo));
+                    link.addContent(getLink(linkInfo));
                 }
             } else if (type.asTypeVariable()!= null) {
-                linkOutput.append(getTypeAnnotationLinks(linkInfo));
+                link.addContent(getTypeAnnotationLinks(linkInfo));
                 linkInfo.isTypeBound = true;
                 //A type variable.
                 Doc owner = type.asTypeVariable().owner();
                 if ((! linkInfo.excludeTypeParameterLinks) &&
                         owner instanceof ClassDoc) {
                     linkInfo.classDoc = (ClassDoc) owner;
-                    linkInfo.label = type.typeName();
-                    linkOutput.append(getClassLink(linkInfo));
+                    Content label = newContent();
+                    label.addContent(type.typeName());
+                    linkInfo.label = label;
+                    link.addContent(getClassLink(linkInfo));
                 } else {
                     //No need to link method type parameters.
-                    linkInfo.displayLength += type.typeName().length();
-                    linkOutput.append(type.typeName());
+                    link.addContent(type.typeName());
                 }
 
                 Type[] bounds = type.asTypeVariable().bounds();
                 if (! linkInfo.excludeTypeBounds) {
                     linkInfo.excludeTypeBounds = true;
                     for (int i = 0; i < bounds.length; i++) {
-                        linkInfo.displayLength += i > 0 ? 2 : 9;
-                        linkOutput.append(i > 0 ? " & " : " extends ");
+                        link.addContent(i > 0 ? " & " : " extends ");
                         setBoundsLinkInfo(linkInfo, bounds[i]);
-                        linkOutput.append(getLinkOutput(linkInfo));
+                        link.addContent(getLink(linkInfo));
                     }
                 }
             } else if (type.asClassDoc() != null) {
@@ -118,15 +115,15 @@ public abstract class LinkFactory {
                         linkInfo.excludeTypeBoundsLinks) {
                     //Since we are excluding type parameter links, we should not
                     //be linking to the type bound.
-                    linkInfo.displayLength += type.typeName().length();
-                    linkOutput.append(type.typeName());
-                    linkOutput.append(getTypeParameterLinks(linkInfo));
-                    return linkOutput;
+                    link.addContent(type.typeName());
+                    link.addContent(getTypeParameterLinks(linkInfo));
+                    return link;
                 } else {
                     linkInfo.classDoc = type.asClassDoc();
-                    linkOutput = getClassLink(linkInfo);
+                    link = newContent();
+                    link.addContent(getClassLink(linkInfo));
                     if (linkInfo.includeTypeAsSepLink) {
-                        linkOutput.append(getTypeParameterLinks(linkInfo, false));
+                        link.addContent(getTypeParameterLinks(linkInfo, false));
                     }
                 }
             }
@@ -135,36 +132,37 @@ public abstract class LinkFactory {
                 if (type.dimension().length() > 2) {
                     //Javadoc returns var args as array.
                     //Strip out the first [] from the var arg.
-                    linkInfo.displayLength += type.dimension().length()-2;
-                    linkOutput.append(type.dimension().substring(2));
+                    link.addContent(type.dimension().substring(2));
                 }
-                linkInfo.displayLength += 3;
-                linkOutput.append("...");
+                link.addContent("...");
             } else {
                 while (type != null && type.dimension().length() > 0) {
-                    linkInfo.displayLength += type.dimension().length();
                     if (type.asAnnotatedType() != null) {
                         linkInfo.type = type;
-                        linkOutput.append(" ");
-                        linkOutput.append(getTypeAnnotationLinks(linkInfo));
-                        linkOutput.append("[]");
+                        link.addContent(" ");
+                        link.addContent(getTypeAnnotationLinks(linkInfo));
+                        link.addContent("[]");
                         type = type.asAnnotatedType().underlyingType().getElementType();
                     } else {
-                        linkOutput.append("[]");
+                        link.addContent("[]");
                         type = type.getElementType();
                     }
                 }
                 linkInfo.type = type;
-                linkOutput.insert(0, getTypeAnnotationLinks(linkInfo));
+                Content newLink = newContent();
+                newLink.addContent(getTypeAnnotationLinks(linkInfo));
+                newLink.addContent(link);
+                link = newLink;
             }
-            return linkOutput;
+            return link;
         } else if (linkInfo.classDoc != null) {
             //Just a class link
-            LinkOutput linkOutput = getClassLink(linkInfo);
+            Content link = newContent();
+            link.addContent(getClassLink(linkInfo));
             if (linkInfo.includeTypeAsSepLink) {
-                linkOutput.append(getTypeParameterLinks(linkInfo, false));
+                link.addContent(getTypeParameterLinks(linkInfo, false));
             }
-            return linkOutput;
+            return link;
         } else {
             return null;
         }
@@ -183,7 +181,7 @@ public abstract class LinkFactory {
      *
      * @return the link for the given class.
      */
-    protected abstract LinkOutput getClassLink(LinkInfo linkInfo);
+    protected abstract Content getClassLink(LinkInfo linkInfo);
 
     /**
      * Return the link to the given type parameter.
@@ -191,10 +189,10 @@ public abstract class LinkFactory {
      * @param linkInfo     the information about the link to construct.
      * @param typeParam the type parameter to link to.
      */
-    protected abstract LinkOutput getTypeParameterLink(LinkInfo linkInfo,
+    protected abstract Content getTypeParameterLink(LinkInfo linkInfo,
         Type typeParam);
 
-    protected abstract LinkOutput getTypeAnnotationLink(LinkInfo linkInfo,
+    protected abstract Content getTypeAnnotationLink(LinkInfo linkInfo,
             AnnotationDesc annotation);
 
     /**
@@ -203,7 +201,7 @@ public abstract class LinkFactory {
      * @param linkInfo     the information about the link to construct.
      * @return the links to the type parameters.
      */
-    public LinkOutput getTypeParameterLinks(LinkInfo linkInfo) {
+    public Content getTypeParameterLinks(LinkInfo linkInfo) {
         return getTypeParameterLinks(linkInfo, true);
     }
 
@@ -215,8 +213,8 @@ public abstract class LinkFactory {
      *                     the type parameters portion of the link.
      * @return the links to the type parameters.
      */
-    public LinkOutput getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel) {
-        LinkOutput output = getOutputInstance();
+    public Content getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel) {
+        Content links = newContent();
         Type[] vars;
         if (linkInfo.executableMemberDoc != null) {
             vars = linkInfo.executableMemberDoc.typeParameters();
@@ -227,62 +225,37 @@ public abstract class LinkFactory {
             vars = linkInfo.classDoc.typeParameters();
         } else {
             //Nothing to document.
-            return output;
+            return links;
         }
         if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel) ||
              (linkInfo.includeTypeAsSepLink && ! isClassLabel)
               )
             && vars.length > 0) {
-            linkInfo.displayLength += 1;
-            output.append(getLessThanString());
+            links.addContent("<");
             for (int i = 0; i < vars.length; i++) {
                 if (i > 0) {
-                    linkInfo.displayLength += 1;
-                    output.append(",");
+                    links.addContent(",");
                 }
-                output.append(getTypeParameterLink(linkInfo, vars[i]));
+                links.addContent(getTypeParameterLink(linkInfo, vars[i]));
             }
-            linkInfo.displayLength += 1;
-            output.append(getGreaterThanString());
+            links.addContent(">");
         }
-        return output;
+        return links;
     }
 
-    public LinkOutput getTypeAnnotationLinks(LinkInfo linkInfo) {
-        LinkOutput output = getOutputInstance();
+    public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
+        Content links = newContent();
         if (linkInfo.type.asAnnotatedType() == null)
-            return output;
+            return links;
         AnnotationDesc[] annotations = linkInfo.type.asAnnotatedType().annotations();
         for (int i = 0; i < annotations.length; i++) {
             if (i > 0) {
-                linkInfo.displayLength += 1;
-                output.append(" ");
+                links.addContent(" ");
             }
-            output.append(getTypeAnnotationLink(linkInfo, annotations[i]));
+            links.addContent(getTypeAnnotationLink(linkInfo, annotations[i]));
         }
 
-        linkInfo.displayLength += 1;
-        output.append(" ");
-        return output;
-    }
-
-    /**
-     * Return &amp;lt;, which is used in type parameters.  Override this
-     * if your doclet uses something different.
-     *
-     * @return return &amp;lt;, which is used in type parameters.
-     */
-    protected String getLessThanString() {
-        return "&lt;";
-    }
-
-    /**
-     * Return &amp;gt;, which is used in type parameters.  Override this
-     * if your doclet uses something different.
-     *
-     * @return return &amp;gt;, which is used in type parameters.
-     */
-    protected String getGreaterThanString() {
-        return "&gt;";
+        links.addContent(" ");
+        return links;
     }
 }

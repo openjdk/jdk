@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -948,7 +948,6 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 
   pre_gc_values->fill(heap);
 
-  NOT_PRODUCT(_mark_bitmap.reset_counters());
   DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
   DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
@@ -2042,15 +2041,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     marking_start.update();
     marking_phase(vmthread_cm, maximum_heap_compaction);
 
-#ifndef PRODUCT
-    if (TraceParallelOldGCMarkingPhase) {
-      gclog_or_tty->print_cr("marking_phase: cas_tries %d  cas_retries %d "
-        "cas_by_another %d",
-        mark_bitmap()->cas_tries(), mark_bitmap()->cas_retries(),
-        mark_bitmap()->cas_by_another());
-    }
-#endif  // #ifndef PRODUCT
-
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && gc_cause == GCCause::_java_lang_system_gc;
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
@@ -2094,19 +2084,36 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
           young_gen->from_space()->capacity_in_bytes() +
           young_gen->to_space()->capacity_in_bytes(),
           "Sizes of space in young gen are out-of-bounds");
+
+        size_t young_live = young_gen->used_in_bytes();
+        size_t eden_live = young_gen->eden_space()->used_in_bytes();
+        size_t old_live = old_gen->used_in_bytes();
+        size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
+        size_t max_old_gen_size = old_gen->max_gen_size();
         size_t max_eden_size = young_gen->max_size() -
           young_gen->from_space()->capacity_in_bytes() -
           young_gen->to_space()->capacity_in_bytes();
-        size_policy->compute_generation_free_space(
-                              young_gen->used_in_bytes(),
-                              young_gen->eden_space()->used_in_bytes(),
-                              old_gen->used_in_bytes(),
-                              young_gen->eden_space()->capacity_in_bytes(),
-                              old_gen->max_gen_size(),
-                              max_eden_size,
-                              true /* full gc*/,
-                              gc_cause,
-                              heap->collector_policy());
+
+        // Used for diagnostics
+        size_policy->clear_generation_free_space_flags();
+
+        size_policy->compute_generation_free_space(young_live,
+                                                   eden_live,
+                                                   old_live,
+                                                   cur_eden,
+                                                   max_old_gen_size,
+                                                   max_eden_size,
+                                                   true /* full gc*/);
+
+        size_policy->check_gc_overhead_limit(young_live,
+                                             eden_live,
+                                             max_old_gen_size,
+                                             max_eden_size,
+                                             true /* full gc*/,
+                                             gc_cause,
+                                             heap->collector_policy());
+
+        size_policy->decay_supplemental_growth(true /* full gc*/);
 
         heap->resize_old_gen(
           size_policy->calculated_old_free_size_in_bytes());

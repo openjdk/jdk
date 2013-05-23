@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.DocFile;
 import com.sun.tools.doclets.internal.toolkit.util.DocLink;
 import com.sun.tools.doclets.internal.toolkit.util.DocPath;
-import com.sun.tools.doclets.internal.toolkit.util.DocPaths;
 
 
 /**
@@ -72,43 +71,8 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      */
     public abstract Configuration configuration();
 
-    /**
-     * Return Html Hyper Link string.
-     *
-     * @param link       String name of the file.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @return String    Hyper Link.
-     */
-    public String getHyperLinkString(DocPath link,
-                               String label, boolean strong) {
-        return getHyperLinkString(link, label, strong, "", "", "");
-    }
-
-    public String getHyperLinkString(DocLink link,
-                               String label, boolean strong) {
-        return getHyperLinkString(link, label, strong, "", "", "");
-    }
-
-    /**
-     * Get Html Hyper Link string.
-     *
-     * @param link       String name of the file.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @param stylename  String style of text defined in style sheet.
-     * @return String    Hyper Link.
-     */
-    public String getHyperLinkString(DocPath link,
-                               String label, boolean strong,
-                               String stylename) {
-        return getHyperLinkString(link, label, strong, stylename, "", "");
-    }
-
-    public String getHyperLinkString(DocLink link,
-                               String label, boolean strong,
-                               String stylename) {
-        return getHyperLinkString(link, label, strong, stylename, "", "");
+    public Content getHyperLink(DocPath link, String label) {
+        return getHyperLink(link, new StringContent(label), false, "", "", "");
     }
 
     /**
@@ -125,69 +89,47 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     }
 
     /**
-     * Get Html Hyper Link string.
+     * Get Html hyperlink.
      *
-     * @param link       String name of the file.
+     * @param link       path of the file.
      * @param label      Tag for the link.
      * @return a content tree for the hyper link
      */
+    public Content getHyperLink(DocPath link, Content label) {
+        return getHyperLink(link, label, "", "");
+    }
+
+    public Content getHyperLink(DocLink link, Content label) {
+        return getHyperLink(link, label, "", "");
+    }
+
     public Content getHyperLink(DocPath link,
-                               Content label) {
-        return getHyperLink(link, label, "", "");
-    }
-
-    public Content getHyperLink(DocLink link,
-                               Content label) {
-        return getHyperLink(link, label, "", "");
-    }
-
-    /**
-     * Get Html Hyper Link string.
-     *
-     * @param link       String name of the file.
-     * @param label      Tag for the link.
-     * @param strong       Boolean that sets label to strong.
-     * @param stylename  String style of text defined in style sheet.
-     * @param title      String that describes the links content for accessibility.
-     * @param target     Target frame.
-     * @return String    Hyper Link.
-     */
-    public String getHyperLinkString(DocPath link,
-                               String label, boolean strong,
+                               Content label, boolean strong,
                                String stylename, String title, String target) {
-        return getHyperLinkString(new DocLink(link), label, strong,
+        return getHyperLink(new DocLink(link), label, strong,
                 stylename, title, target);
     }
 
-    public String getHyperLinkString(DocLink link,
-                               String label, boolean strong,
+    public Content getHyperLink(DocLink link,
+                               Content label, boolean strong,
                                String stylename, String title, String target) {
-        StringBuilder retlink = new StringBuilder();
-        retlink.append("<a href=\"").append(link).append('"');
+        Content body = label;
+        if (strong) {
+            body = HtmlTree.SPAN(HtmlStyle.strong, body);
+        }
+        if (stylename != null && stylename.length() != 0) {
+            HtmlTree t = new HtmlTree(HtmlTag.FONT, body);
+            t.addAttr(HtmlAttr.CLASS, stylename);
+            body = t;
+        }
+        HtmlTree l = HtmlTree.A(link.toString(), body);
         if (title != null && title.length() != 0) {
-            retlink.append(" title=\"").append(title).append('"');
+            l.addAttr(HtmlAttr.TITLE, title);
         }
         if (target != null && target.length() != 0) {
-            retlink.append(" target=\"").append(target).append('"');
+            l.addAttr(HtmlAttr.TARGET, target);
         }
-        retlink.append(">");
-        if (stylename != null && stylename.length() != 0) {
-            retlink.append("<FONT CLASS=\"");
-            retlink.append(stylename);
-            retlink.append("\">");
-        }
-        if (strong) {
-            retlink.append("<span class=\"strong\">");
-        }
-        retlink.append(label);
-        if (strong) {
-            retlink.append("</span>");
-        }
-        if (stylename != null && stylename.length() != 0) {
-            retlink.append("</FONT>");
-        }
-        retlink.append("</a>");
-        return retlink.toString();
+        return l;
     }
 
     /**
@@ -214,17 +156,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             anchor.addAttr(HtmlAttr.TARGET, target);
         }
         return anchor;
-    }
-
-    /**
-     * Get link string without positioning in the file.
-     *
-     * @param link       String name of the file.
-     * @param label      Tag for the link.
-     * @return Strign    Hyper link.
-     */
-    public String getHyperLinkString(DocPath link, String label) {
-        return getHyperLinkString(link, label, false);
     }
 
     /**
@@ -275,20 +206,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         Content htmlDocument = new HtmlDocument(htmlDocType,
                 htmlComment, htmlTree);
         write(htmlDocument);
-    }
-
-    /**
-     * Print the appropriate spaces to format the class tree in the class page.
-     *
-     * @param len   Number of spaces.
-     */
-    public String spaces(int len) {
-        String space = "";
-
-        for (int i = 0; i < len; i++) {
-            space += " ";
-        }
-        return space;
     }
 
     protected String getGeneratedByString() {

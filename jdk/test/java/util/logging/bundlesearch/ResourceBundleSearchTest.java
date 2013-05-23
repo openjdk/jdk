@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug     8002070
+ * @bug     8002070 8013382
  * @summary Remove the stack search for a resource bundle Logger to use
  * @author  Jim Gish
- * @build  ResourceBundleSearchTest IndirectlyLoadABundle LoadItUp
- * @run main ResourceBundleSearchTest
+ * @build  ResourceBundleSearchTest IndirectlyLoadABundle LoadItUp1 LoadItUp2 TwiceIndirectlyLoadABundle LoadItUp2Invoker
+ * @run main/othervm ResourceBundleSearchTest
  */
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -39,6 +39,12 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
+/**
+ * This class tests various scenarios of loading resource bundles from
+ * java.util.logging.  Since jtreg uses the logging system, it is necessary to
+ * run these tests using othervm mode to ensure no interference from logging
+ * initialization by jtreg
+ */
 public class ResourceBundleSearchTest {
 
     private final static boolean DEBUG = false;
@@ -60,15 +66,11 @@ public class ResourceBundleSearchTest {
         // ensure we are using en as the default Locale so we can find the resource
         Locale.setDefault(Locale.ENGLISH);
 
-        String testClasses = System.getProperty("test.classes");
-        System.out.println( "test.classes = " + testClasses );
-
         ClassLoader myClassLoader = ClassLoader.getSystemClassLoader();
 
         // Find out where we are running from so we can setup the URLClassLoader URL
         String userDir = System.getProperty("user.dir");
         String testDir = System.getProperty("test.src", userDir);
-        String sep = System.getProperty("file.separator");
 
         URL[] urls = new URL[1];
 
@@ -77,29 +79,40 @@ public class ResourceBundleSearchTest {
 
         // Test 1 - can we find a Logger bundle from doing a stack search?
         // We shouldn't be able to
-        assertFalse(testGetBundleFromStackSearch(), "testGetBundleFromStackSearch");
+        assertFalse(testGetBundleFromStackSearch(), "1-testGetBundleFromStackSearch");
 
         // Test 2 - can we find a Logger bundle off of the Thread context class
         // loader? We should be able to.
-        assertTrue(
-                testGetBundleFromTCCL(TCCL_TEST_BUNDLE, rbClassLoader),
-                "testGetBundleFromTCCL");
+        assertTrue(testGetBundleFromTCCL(TCCL_TEST_BUNDLE, rbClassLoader),
+                   "2-testGetBundleFromTCCL");
 
         // Test 3 - Can we find a Logger bundle from the classpath?  We should be
-        // able to, but ....
-        // We check to see if the bundle is on the classpath or not so that this
-        // will work standalone.  In the case of jtreg/samevm,
-        // the resource bundles are not on the classpath.  Running standalone
-        // (or othervm), they are
+        // able to.  We'll first check to make sure the setup is correct and
+        // it actually is on the classpath before checking whether logging
+        // can see it there.
         if (isOnClassPath(PROP_RB_NAME, myClassLoader)) {
             debug("We should be able to see " + PROP_RB_NAME + " on the classpath");
             assertTrue(testGetBundleFromSystemClassLoader(PROP_RB_NAME),
-                    "testGetBundleFromSystemClassLoader");
+                       "3-testGetBundleFromSystemClassLoader");
         } else {
-            debug("We should not be able to see " + PROP_RB_NAME + " on the classpath");
-            assertFalse(testGetBundleFromSystemClassLoader(PROP_RB_NAME),
-                    "testGetBundleFromSystemClassLoader");
+            throw new Exception("TEST SETUP FAILURE: Cannot see " + PROP_RB_NAME
+                                 + " on the classpath");
         }
+
+        // Test 4 - we should be able to find a bundle from the caller's
+        // classloader, but only one level up.
+        assertTrue(testGetBundleFromCallersClassLoader(),
+                   "4-testGetBundleFromCallersClassLoader");
+
+        // Test 5 - this ensures that getAnonymousLogger(String rbName)
+        // can find the bundle from the caller's classloader
+        assertTrue(testGetAnonymousLogger(), "5-testGetAnonymousLogger");
+
+        // Test 6 - first call getLogger("myLogger").
+        // Then call getLogger("myLogger","bundleName") from a different ClassLoader
+        // Make sure we find the bundle
+        assertTrue(testGetBundleFromSecondCallersClassLoader(),
+                   "6-testGetBundleFromSecondCallersClassLoader");
 
         report();
     }
@@ -112,7 +125,7 @@ public class ResourceBundleSearchTest {
                 System.out.println(msg);
             }
             throw new Exception(numFail + " out of " + (numPass + numFail)
-                    + " tests failed.");
+                                 + " tests failed.");
         }
     }
 
@@ -122,7 +135,7 @@ public class ResourceBundleSearchTest {
         } else {
             numFail++;
             System.out.println("FAILED: " + testName
-                    + " was supposed to return true but did NOT!");
+                               + " was supposed to return true but did NOT!");
         }
     }
 
@@ -132,13 +145,20 @@ public class ResourceBundleSearchTest {
         } else {
             numFail++;
             System.out.println("FAILED: " + testName
-                    + " was supposed to return false but did NOT!");
+                               + " was supposed to return false but did NOT!");
         }
     }
 
     public boolean testGetBundleFromStackSearch() throws Throwable {
         // This should fail.  This was the old functionality to search up the
         // caller's call stack
+        TwiceIndirectlyLoadABundle indirectLoader = new TwiceIndirectlyLoadABundle();
+        return indirectLoader.loadAndTest();
+    }
+
+    public boolean testGetBundleFromCallersClassLoader() throws Throwable {
+        // This should pass.  This exercises getting the bundle using the
+        // class loader of the caller (one level up)
         IndirectlyLoadABundle indirectLoader = new IndirectlyLoadABundle();
         return indirectLoader.loadAndTest();
     }
@@ -193,12 +213,27 @@ public class ResourceBundleSearchTest {
                     bundleName);
         } catch (MissingResourceException re) {
             msgs.add("INFO: testGetBundleFromSystemClassLoader() did not find bundle "
-                    + bundleName);
+                     + bundleName);
             return false;
         }
         msgs.add("INFO: testGetBundleFromSystemClassLoader() found the bundle "
-                + bundleName);
+                 + bundleName);
         return true;
+    }
+
+    private boolean testGetAnonymousLogger() throws Throwable {
+        // This should pass.  This exercises getting the bundle using the
+        // class loader of the caller (one level up) when calling
+        // Logger.getAnonymousLogger(String rbName)
+        IndirectlyLoadABundle indirectLoader = new IndirectlyLoadABundle();
+        return indirectLoader.testGetAnonymousLogger();
+    }
+
+    private boolean testGetBundleFromSecondCallersClassLoader() throws Throwable {
+        // This should pass.  This exercises getting the bundle using the
+        // class loader of the caller (one level up)
+        IndirectlyLoadABundle indirectLoader = new IndirectlyLoadABundle();
+        return indirectLoader.testGetLoggerGetLoggerWithBundle();
     }
 
     public static class LoggingThread extends Thread {
@@ -227,13 +262,13 @@ public class ResourceBundleSearchTest {
                 // this should succeed if the bundle is on the system classpath.
                 try {
                     Logger aLogger = Logger.getLogger(ResourceBundleSearchTest.newLoggerName(),
-                            bundleName);
-                    msg = "INFO: LoggingRunnable() found the bundle " + bundleName
-                            + (setTCCL ? " with " : " without ") + "setting the TCCL";
+                                                      bundleName);
+                    msg = "INFO: LoggingThread.run() found the bundle " + bundleName
+                          + (setTCCL ? " with " : " without ") + "setting the TCCL";
                     foundBundle = true;
                 } catch (MissingResourceException re) {
-                    msg = "INFO: LoggingRunnable() did not find the bundle " + bundleName
-                            + (setTCCL ? " with " : " without ") + "setting the TCCL";
+                    msg = "INFO: LoggingThread.run() did not find the bundle " + bundleName
+                          + (setTCCL ? " with " : " without ") + "setting the TCCL";
                     foundBundle = false;
                 }
             } catch (Throwable e) {

@@ -214,6 +214,11 @@ public class Log extends AbstractLog {
     public Set<String> expectDiagKeys;
 
     /**
+     * Set to true if a compressed diagnostic is reported
+     */
+    public boolean compressedOutput;
+
+    /**
      * JavacMessages object used for localization.
      */
     private JavacMessages messages;
@@ -596,6 +601,9 @@ public class Log extends AbstractLog {
                     nerrors++;
                 }
                 break;
+            }
+            if (diagnostic.isFlagSet(JCDiagnostic.DiagnosticFlag.COMPRESSED)) {
+                compressedOutput = true;
             }
         }
     }

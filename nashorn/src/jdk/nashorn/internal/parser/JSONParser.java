@@ -193,13 +193,13 @@ public class JSONParser extends AbstractParser {
             return getLiteral();
         case FALSE:
             next();
-            return LiteralNode.newInstance(source, literalToken, finish, false);
+            return LiteralNode.newInstance(literalToken, finish, false);
         case TRUE:
             next();
-            return LiteralNode.newInstance(source, literalToken, finish, true);
+            return LiteralNode.newInstance(literalToken, finish, true);
         case NULL:
             next();
-            return LiteralNode.newInstance(source, literalToken, finish);
+            return LiteralNode.newInstance(literalToken, finish);
         case LBRACKET:
             return arrayLiteral();
         case LBRACE:
@@ -218,7 +218,7 @@ public class JSONParser extends AbstractParser {
 
             if (value instanceof Number) {
                 next();
-                return new UnaryNode(source, literalToken, LiteralNode.newInstance(source, realToken, finish, (Number)value));
+                return new UnaryNode(literalToken, LiteralNode.newInstance(realToken, finish, (Number)value));
             }
 
             throw error(AbstractParser.message("expected", "number", type.getNameOrType()));
@@ -250,7 +250,7 @@ loop:
             switch (type) {
             case RBRACKET:
                 next();
-                result = LiteralNode.newInstance(source, arrayToken, finish, elements);
+                result = LiteralNode.newInstance(arrayToken, finish, elements);
                 break loop;
 
             case COMMARIGHT:
@@ -310,7 +310,7 @@ loop:
         }
 
         // Construct new object literal.
-        return new ObjectNode(source, objectToken, finish, elements);
+        return new ObjectNode(objectToken, finish, elements);
     }
 
     /**
@@ -331,7 +331,7 @@ loop:
         if (name != null) {
             expect(COLON);
             final Node value = jsonLiteral();
-            return new PropertyNode(source, propertyToken, value.getFinish(), name, value, null, null);
+            return new PropertyNode(propertyToken, value.getFinish(), name, value, null, null);
         }
 
         // Raise an error.

@@ -469,6 +469,7 @@ public class DPrinter {
                     indent(+1);
                     printSymbol("tsym", type.tsym, Details.SUMMARY);
                     printObject("constValue", type.constValue(), Details.SUMMARY);
+                    printObject("annotations", type.getAnnotationMirrors(), Details.SUMMARY);
                     type.accept(typeVisitor, null);
                     indent(-1);
             }

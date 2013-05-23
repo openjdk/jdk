@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,8 @@ public class CompilerThread implements Runnable {
             }
             // Load visible sources
             Set<URI> visibleSources = new HashSet<URI>();
-            boolean fix_drive_letter_case = System.getProperty("os.name").toLowerCase().equals("windows");
+            boolean fix_drive_letter_case =
+                System.getProperty("os.name").toLowerCase().startsWith("windows");
             for (;;) {
                 String l = in.readLine();
                 if (l == null)

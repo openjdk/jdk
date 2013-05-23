@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,7 +37,6 @@
  * this sample code.
  */
 
-
 /*
  * This script adds "Insert File" mode menu item to "Tools" menu.
  * When selected, this menu shows a file dialog box and inserts
@@ -48,18 +47,22 @@ if (this.application) {
     application.addTool("Insert File...",
         function() {
             var file = fileDialog();
-            if (file) {               
+
+            if (file) {
                 var reader = new java.io.FileReader(file);
                 var arr = java.lang.reflect.Array.newInstance(
                       java.lang.Character.TYPE, 8*1024); // 8K at a time
                 var buf = new java.lang.StringBuffer();
                 var numChars;
+
                 while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
                     buf.append(arr, 0, numChars);
                 }
+
                 var pos = application.editor.caretPosition;
                 var doc = application.editor.document;
+
                 doc.insertString(pos, buf.toString(), null);
            }
-        })
+        });
 }

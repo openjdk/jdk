@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkPrevious() {
         Content li;
         if (prev != null) {
-            Content prevLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS, prev.asClassDoc(), "",
-                    configuration.getText("doclet.Prev_Class"), true)));
+            Content prevLink = getLink(new LinkInfoImpl(configuration,
+                    LinkInfoImpl.Kind.CLASS, prev.asClassDoc())
+                    .label(configuration.getText("doclet.Prev_Class")).strong(true));
             li = HtmlTree.LI(prevLink);
         }
         else
@@ -134,9 +134,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
     public Content getNavLinkNext() {
         Content li;
         if (next != null) {
-            Content nextLink = new RawHtml(getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.CONTEXT_CLASS, next.asClassDoc(), "",
-                    configuration.getText("doclet.Next_Class"), true)));
+            Content nextLink = getLink(new LinkInfoImpl(configuration,
+                    LinkInfoImpl.Kind.CLASS, next.asClassDoc())
+                    .label(configuration.getText("doclet.Next_Class")).strong(true));
             li = HtmlTree.LI(nextLink);
         }
         else
@@ -163,11 +163,11 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CLASS_HEADER, annotationType, false);
+                LinkInfoImpl.Kind.CLASS_HEADER, annotationType);
         Content headerContent = new StringContent(header);
         Content heading = HtmlTree.HEADING(HtmlConstants.CLASS_PAGE_HEADING, true,
                 HtmlStyle.title, headerContent);
-        heading.addContent(new RawHtml(getTypeParameterLinks(linkInfo)));
+        heading.addContent(getTypeParameterLinks(linkInfo));
         div.addContent(heading);
         bodyTree.addContent(div);
         return bodyTree;
@@ -220,9 +220,9 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         addAnnotationInfo(annotationType, pre);
         pre.addContent(modifiers);
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
-                LinkInfoImpl.CONTEXT_CLASS_SIGNATURE, annotationType, false);
+                LinkInfoImpl.Kind.CLASS_SIGNATURE, annotationType);
         Content annotationName = new StringContent(annotationType.name());
-        Content parameterLinks = new RawHtml(getTypeParameterLinks(linkInfo));
+        Content parameterLinks = getTypeParameterLinks(linkInfo);
         if (configuration.linksource) {
             addSrcLink(annotationType, annotationName, pre);
             pre.addContent(parameterLinks);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ public class TestSinceTag extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
-            "  <dd>JDK1.0</dd>"
+            "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+            "<dd>JDK1.0</dd>"
         },
         {BUG_ID + FS + "serialized-form.html",
-            "<dl><dt><span class=\"strong\">Since:</span></dt>" + NL +
-            "  <dd>1.4</dd>"
+            "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
+            "<dd>1.4</dd>"
         }
     };
 

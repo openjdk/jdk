@@ -472,6 +472,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
 			  -D "JDK_FNAME=unpack200.exe" \
 			  -D "JDK_INTERNAL_NAME=unpack200" \
 			  -D "JDK_FTYPE=0x1L",\
+	        DEBUG_SYMBOLS:=true,\
 		MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest))
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
@@ -555,6 +556,7 @@ ifneq ($(BUILD_JEXEC_SRC),)
 			 $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/jexec_obj,\
 		OUTPUT_DIR:=$(BUILD_JEXEC_DST_DIR),\
+		DEBUG_SYMBOLS:=true,\
 		PROGRAM:=jexec))
 
 	BUILD_LAUNCHERS += $(BUILD_JEXEC)

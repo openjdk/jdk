@@ -93,6 +93,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
    * Dump instruction as byte code to stream out.
    * @param out Output stream
    */
+  @Override
   public void dump(DataOutputStream out) throws IOException {
     out.writeByte(opcode);
 
@@ -153,6 +154,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
    * @param verbose long/short format switch
    * @return mnemonic for instruction
    */
+  @Override
   public String toString(boolean verbose) {
     String s = super.toString(verbose);
     String t = "null";
@@ -184,6 +186,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
    * @param wide wide prefix?
    * @see InstructionList
    */
+  @Override
   protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
   {
     length = 3;
@@ -204,26 +207,41 @@ public abstract class BranchInstruction extends Instruction implements Instructi
    * Set branch target
    * @param target branch target
    */
-  public void setTarget(InstructionHandle target) {
-    notifyTarget(this.target, target, this);
+  public final void setTarget(InstructionHandle target) {
+    notifyTargetChanging(this.target, this);
     this.target = target;
+    notifyTargetChanged(this.target, this);
   }
 
   /**
-   * Used by BranchInstruction, LocalVariableGen, CodeExceptionGen
+   * Used by BranchInstruction, LocalVariableGen, CodeExceptionGen.
+   * Must be called before the target is actually changed in the
+   * InstructionTargeter.
    */
-  static final void notifyTarget(InstructionHandle old_ih, InstructionHandle new_ih,
+  static void notifyTargetChanging(InstructionHandle old_ih,
                                  InstructionTargeter t) {
-    if(old_ih != null)
+    if(old_ih != null) {
       old_ih.removeTargeter(t);
-    if(new_ih != null)
+    }
+  }
+
+  /**
+   * Used by BranchInstruction, LocalVariableGen, CodeExceptionGen.
+   * Must be called after the target is actually changed in the
+   * InstructionTargeter.
+   */
+  static void notifyTargetChanged(InstructionHandle new_ih,
+                                 InstructionTargeter t) {
+    if(new_ih != null) {
       new_ih.addTargeter(t);
+    }
   }
 
   /**
    * @param old_ih old target
    * @param new_ih new target
    */
+  @Override
   public void updateTarget(InstructionHandle old_ih, InstructionHandle new_ih) {
     if(target == old_ih)
       setTarget(new_ih);
@@ -234,6 +252,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
   /**
    * @return true, if ih is target of this instruction
    */
+  @Override
   public boolean containsTarget(InstructionHandle ih) {
     return (target == ih);
   }
@@ -241,6 +260,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
   /**
    * Inform target that it's not targeted anymore.
    */
+  @Override
   void dispose() {
     setTarget(null);
     index=-1;
