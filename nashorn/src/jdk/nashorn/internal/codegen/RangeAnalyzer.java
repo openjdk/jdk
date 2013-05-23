@@ -35,6 +35,7 @@ import jdk.nashorn.internal.ir.Assignment;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.IdentNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LoopNode;
@@ -61,7 +62,7 @@ import jdk.nashorn.internal.runtime.DebugLogger;
  *
  *  Proves that the multiplication never exceeds 24 bits and can thus be an int
  */
-final class RangeAnalyzer extends NodeOperatorVisitor {
+final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
     static final DebugLogger LOG = new DebugLogger("ranges");
 
     private static final Range.Functionality RANGE = new Range.Functionality(LOG);
@@ -69,6 +70,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor {
     private final Map<LoopNode, Symbol> loopCounters = new HashMap<>();
 
     RangeAnalyzer() {
+        super(new LexicalContext());
     }
 
     @Override
@@ -96,7 +98,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor {
         final Range symRange = RANGE.join(symbol.getRange(), range);
 
         //anything assigned in the loop, not being the safe loop counter(s) invalidates its entire range
-        if (getLexicalContext().inLoop() && !isLoopCounter(getLexicalContext().getCurrentLoop(), symbol)) {
+        if (lc.inLoop() && !isLoopCounter(lc.getCurrentLoop(), symbol)) {
             symbol.setRange(Range.createGenericRange());
             return symbol;
         }
@@ -399,7 +401,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor {
         final HashSet<Node> skip = new HashSet<>();
         final HashSet<Node> assignmentsInLoop = new HashSet<>();
 
-        loopNode.accept(new NodeVisitor() {
+        loopNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             private boolean assigns(final Node node, final Symbol s) {
                 return node.isAssignment() && ((Assignment<?>)node).getAssignmentDest().getSymbol() == s;
             }

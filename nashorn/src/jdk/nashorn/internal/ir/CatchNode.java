@@ -79,7 +79,7 @@ public final class CatchNode extends Statement {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterCatchNode(this)) {
             return visitor.leaveCatchNode(
                 setException((IdentNode)exception.accept(visitor)).

@@ -33,6 +33,7 @@ import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -46,11 +47,12 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 /**
  * Simple constant folding pass, executed before IR is starting to be lowered.
  */
-final class FoldConstants extends NodeVisitor {
+final class FoldConstants extends NodeVisitor<LexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("fold");
 
     FoldConstants() {
+        super(new LexicalContext());
     }
 
     @Override
@@ -80,7 +82,7 @@ final class FoldConstants extends NodeVisitor {
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        return functionNode.setState(getLexicalContext(), CompilationState.CONSTANT_FOLDED);
+        return functionNode.setState(lc, CompilationState.CONSTANT_FOLDED);
     }
 
     @Override

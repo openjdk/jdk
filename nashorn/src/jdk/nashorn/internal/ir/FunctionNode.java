@@ -281,7 +281,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     }
 
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterFunctionNode(this)) {
             return visitor.leaveFunctionNode(setBody(lc, (Block)body.accept(visitor)));
         }

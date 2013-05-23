@@ -160,7 +160,7 @@ public final class BinaryNode extends Node implements Assignment<Node> {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterBinaryNode(this)) {
             return visitor.leaveBinaryNode(setLHS(lhs.accept(visitor)).setRHS(rhs.accept(visitor)));
         }
