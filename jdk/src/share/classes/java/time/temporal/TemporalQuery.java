@@ -96,7 +96,7 @@ import java.time.chrono.Chronology;
  * {@code LocalDate::from} and {@code ZoneId::from}.
  * Additional common implementations are provided on this interface as static methods.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface places no restrictions on the mutability of implementations,
  * however immutability is strongly recommended.
  *
@@ -124,7 +124,7 @@ public interface TemporalQuery<R> {
      * It is recommended to use the second approach, {@code query(TemporalQuery)},
      * as it is a lot clearer to read in code.
      *
-     * <h3>Specification for implementors</h3>
+     * @implSpec
      * The implementation must take the input object and query it.
      * The implementation defines the logic of the query and is responsible for
      * documenting that logic.

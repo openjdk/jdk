@@ -1528,7 +1528,7 @@ public class PKCS11 {
      *
      * @exception Throwable If finalization fails.
      */
-    public void finalize() throws Throwable {
+    protected void finalize() throws Throwable {
         disconnect();
     }
 

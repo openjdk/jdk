@@ -128,8 +128,8 @@ public abstract class Tester {
 
     /**
      * Individual test-cases failing due to product bugs, may temporarily
-     * be excluded by marking them like  this:
-     * @ignore // 1234567:bug synopsis
+     * be excluded by marking them like this, (where "at-" is replaced by "@")
+     * at-ignore // 1234567: bug synopsis
      */
     @Retention(RetentionPolicy.RUNTIME)
     @interface ignore { }

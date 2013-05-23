@@ -113,7 +113,7 @@ class MarkSweep : AllStatic {
   //
  protected:
   // Total invocations of a MarkSweep collection
-  static unsigned int _total_invocations;
+  static uint _total_invocations;
 
   // Traversal stacks used during phase1
   static Stack<oop, mtGC>                      _marking_stack;
@@ -147,7 +147,7 @@ class MarkSweep : AllStatic {
   static AdjustKlassClosure   adjust_klass_closure;
 
   // Accessors
-  static unsigned int total_invocations() { return _total_invocations; }
+  static uint total_invocations() { return _total_invocations; }
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }

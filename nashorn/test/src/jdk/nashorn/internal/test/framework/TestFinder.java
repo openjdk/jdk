@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_COMP
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_RUN_FAIL;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_IGNORE_STD_ERROR;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_RUN;
+import static jdk.nashorn.internal.test.framework.TestConfig.TEST_FAILED_LIST_FILE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_ENABLE_STRICT_MODE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDES_FILE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDE_DIR;
@@ -41,7 +42,9 @@ import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_LIST;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_ROOTS;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_UNCHECKED_DIR;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -86,6 +89,22 @@ final class TestFinder {
     static <T> void findAllTests(final List<T> tests, final Set<String> orphans, final TestFactory<T> testFactory) throws Exception {
         final String framework = System.getProperty(TEST_JS_FRAMEWORK);
         final String testList = System.getProperty(TEST_JS_LIST);
+        final String failedTestFileName = System.getProperty(TEST_FAILED_LIST_FILE);
+        if(failedTestFileName != null) {
+            File failedTestFile = new File(failedTestFileName);
+            if(failedTestFile.exists() && failedTestFile.length() > 0L) {
+                try(final BufferedReader r = new BufferedReader(new FileReader(failedTestFile))) {
+                    for(;;) {
+                        final String testFileName = r.readLine();
+                        if(testFileName == null) {
+                            break;
+                        }
+                        handleOneTest(framework, new File(testFileName).toPath(), tests, orphans, testFactory);
+                    }
+                }
+                return;
+            }
+        }
         if (testList == null || testList.length() == 0) {
             // Run the tests under the test roots dir, selected by the
             // TEST_JS_INCLUDES patterns

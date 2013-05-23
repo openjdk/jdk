@@ -585,12 +585,17 @@ public final class ZoneInfoFile {
                 dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
 
                 // Note: known mismatching -> Asia/Amman
+                //                            Asia/Gaza
+                //                            Asia/Hebron
                 // ZoneInfo :      startDayOfWeek=5     <= Thursday
                 //                 startTime=86400000   <= 24 hours
                 // This:           startDayOfWeek=6
                 //                 startTime=0
                 // Below is the workaround, it probably slows down everyone a little
-                if (params[2] == 6 && params[3] == 0 && zoneId.equals("Asia/Amman")) {
+                if (params[2] == 6 && params[3] == 0 &&
+                    (zoneId.equals("Asia/Amman") ||
+                     zoneId.equals("Asia/Gaza") ||
+                     zoneId.equals("Asia/Hebron"))) {
                     params[2] = 5;
                     params[3] = 86400000;
                 }

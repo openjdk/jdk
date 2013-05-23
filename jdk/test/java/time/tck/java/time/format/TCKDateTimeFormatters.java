@@ -63,6 +63,7 @@ import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
@@ -1180,6 +1181,52 @@ public class TCKDateTimeFormatters {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
+    @DataProvider(name="sample_isoInstant")
+    Object[][] provider_sample_isoInstant() {
+        return new Object[][]{
+                {0, 0, "1970-01-01T00:00:00Z", null},
+                {0, null, "1970-01-01T00:00:00Z", null},
+                {0, -1, null, DateTimeException.class},
+
+                {-1, 0, "1969-12-31T23:59:59Z", null},
+                {1, 0, "1970-01-01T00:00:01Z", null},
+                {60, 0, "1970-01-01T00:01:00Z", null},
+                {3600, 0, "1970-01-01T01:00:00Z", null},
+                {86400, 0, "1970-01-02T00:00:00Z", null},
+
+                {0, 1, "1970-01-01T00:00:00.000000001Z", null},
+                {0, 2, "1970-01-01T00:00:00.000000002Z", null},
+                {0, 10, "1970-01-01T00:00:00.000000010Z", null},
+                {0, 100, "1970-01-01T00:00:00.000000100Z", null},
+        };
+    }
+
+    @Test(dataProvider="sample_isoInstant")
+    public void test_print_isoInstant(
+            long instantSecs, Integer nano, String expected, Class<?> expectedEx) {
+        TemporalAccessor test = buildAccessorInstant(instantSecs, nano);
+        if (expectedEx == null) {
+            assertEquals(DateTimeFormatter.ISO_INSTANT.format(test), expected);
+        } else {
+            try {
+                DateTimeFormatter.ISO_INSTANT.format(test);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
+        }
+    }
+
+    @Test(dataProvider="sample_isoInstant")
+    public void test_parse_isoInstant(
+            long instantSecs, Integer nano, String input, Class<?> invalid) {
+        if (input != null) {
+            TemporalAccessor parsed = DateTimeFormatter.ISO_INSTANT.parseUnresolved(input, new ParsePosition(0));
+            assertEquals(parsed.getLong(INSTANT_SECONDS), instantSecs);
+            assertEquals(parsed.getLong(NANO_OF_SECOND), (nano == null ? 0 : nano));
+        }
+    }
+
     @Test
     public void test_isoInstant_basics() {
         assertEquals(DateTimeFormatter.ISO_INSTANT.getChronology(), null);
@@ -1331,6 +1378,15 @@ public class TCKDateTimeFormatters {
         mock.setFields(base);
         mock.setOffset(offsetId);
         mock.setZone(zoneId);
+        return mock;
+    }
+
+    private TemporalAccessor buildAccessorInstant(long instantSecs, Integer nano) {
+        MockAccessor mock = new MockAccessor();
+        mock.fields.put(INSTANT_SECONDS, instantSecs);
+        if (nano != null) {
+            mock.fields.put(NANO_OF_SECOND, (long) nano);
+        }
         return mock;
     }
 

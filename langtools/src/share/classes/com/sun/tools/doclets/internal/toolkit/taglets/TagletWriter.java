@@ -53,15 +53,23 @@ public abstract class TagletWriter {
     }
 
     /**
-     * @return an instance of the output object.
+     * @return an instance of an output object.
      */
-    public abstract TagletOutput getOutputInstance();
+    public abstract Content getOutputInstance();
+
+    /**
+     * Return the output for a {@code...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    protected abstract Content codeTagOutput(Tag tag);
 
     /**
      * Returns the output for the DocRoot inline tag.
      * @return the output for the DocRoot inline tag.
      */
-    protected abstract TagletOutput getDocRootOutput();
+    protected abstract Content getDocRootOutput();
 
     /**
      * Return the deprecated tag output.
@@ -69,7 +77,15 @@ public abstract class TagletWriter {
      * @param doc the doc to write deprecated documentation for.
      * @return the output of the deprecated tag.
      */
-    protected abstract TagletOutput deprecatedTagOutput(Doc doc);
+    protected abstract Content deprecatedTagOutput(Doc doc);
+
+    /**
+     * Return the output for a {@literal...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    protected abstract Content literalTagOutput(Tag tag);
 
     /**
      * Returns {@link MessageRetriever} for output purposes.
@@ -84,7 +100,7 @@ public abstract class TagletWriter {
      * @param header the header to display.
      * @return the header for the param tags.
      */
-    protected abstract TagletOutput getParamHeader(String header);
+    protected abstract Content getParamHeader(String header);
 
     /**
      * Return the output for param tags.
@@ -93,8 +109,17 @@ public abstract class TagletWriter {
      * @param paramName the name of the parameter.
      * @return the output of the param tag.
      */
-    protected abstract TagletOutput paramTagOutput(ParamTag paramTag,
+    protected abstract Content paramTagOutput(ParamTag paramTag,
         String paramName);
+
+    /**
+     * Return the output for property tags.
+     *
+     * @param propertyTag the parameter to document.
+     * @param prefix the text with which to prefix the property name.
+     * @return the output of the param tag.
+     */
+    protected abstract Content propertyTagOutput(Tag propertyTag, String prefix);
 
     /**
      * Return the return tag output.
@@ -102,7 +127,7 @@ public abstract class TagletWriter {
      * @param returnTag the return tag to output.
      * @return the output of the return tag.
      */
-    protected abstract TagletOutput returnTagOutput(Tag returnTag);
+    protected abstract Content returnTagOutput(Tag returnTag);
 
     /**
      * Return the see tag output.
@@ -110,7 +135,7 @@ public abstract class TagletWriter {
      * @param seeTags the array of See tags.
      * @return the output of the see tags.
      */
-    protected abstract TagletOutput seeTagOutput(Doc holder, SeeTag[] seeTags);
+    protected abstract Content seeTagOutput(Doc holder, SeeTag[] seeTags);
 
     /**
      * Return the output for a simple tag.
@@ -118,7 +143,7 @@ public abstract class TagletWriter {
      * @param simpleTags the array of simple tags.
      * @return the output of the simple tags.
      */
-    protected abstract TagletOutput simpleTagOutput(Tag[] simpleTags,
+    protected abstract Content simpleTagOutput(Tag[] simpleTags,
         String header);
 
     /**
@@ -127,14 +152,14 @@ public abstract class TagletWriter {
      * @param simpleTag the simple tag.
      * @return the output of the simple tag.
      */
-    protected abstract TagletOutput simpleTagOutput(Tag simpleTag, String header);
+    protected abstract Content simpleTagOutput(Tag simpleTag, String header);
 
     /**
      * Return the header for the throws tag.
      *
      * @return the header for the throws tag.
      */
-    protected abstract TagletOutput getThrowsHeader();
+    protected abstract Content getThrowsHeader();
 
     /**
      * Return the header for the throws tag.
@@ -142,7 +167,7 @@ public abstract class TagletWriter {
      * @param throwsTag the throws tag.
      * @return the output of the throws tag.
      */
-    protected abstract TagletOutput throwsTagOutput(ThrowsTag throwsTag);
+    protected abstract Content throwsTagOutput(ThrowsTag throwsTag);
 
     /**
      * Return the output for the throws tag.
@@ -150,7 +175,7 @@ public abstract class TagletWriter {
      * @param throwsType the throws type.
      * @return the output of the throws type.
      */
-    protected abstract TagletOutput throwsTagOutput(Type throwsType);
+    protected abstract Content throwsTagOutput(Type throwsType);
 
     /**
      * Return the output for the value tag.
@@ -161,7 +186,7 @@ public abstract class TagletWriter {
      *                    constant field itself.
      * @return the output of the value tag.
      */
-    protected abstract TagletOutput valueTagOutput(FieldDoc field,
+    protected abstract Content valueTagOutput(FieldDoc field,
         String constantVal, boolean includeLink);
 
     /**
@@ -175,10 +200,10 @@ public abstract class TagletWriter {
      * @param output the output buffer to store the output in.
      */
     public static void genTagOuput(TagletManager tagletManager, Doc doc,
-            Taglet[] taglets, TagletWriter writer, TagletOutput output) {
+            Taglet[] taglets, TagletWriter writer, Content output) {
         tagletManager.checkTags(doc, doc.tags(), false);
         tagletManager.checkTags(doc, doc.inlineTags(), true);
-        TagletOutput currentOutput = null;
+        Content currentOutput = null;
         for (int i = 0; i < taglets.length; i++) {
             currentOutput = null;
             if (doc instanceof ClassDoc && taglets[i] instanceof ParamTaglet) {
@@ -203,7 +228,7 @@ public abstract class TagletWriter {
             }
             if (currentOutput != null) {
                 tagletManager.seenCustomTag(taglets[i].getName());
-                output.appendOutput(currentOutput);
+                output.addContent(currentOutput);
             }
         }
     }
@@ -217,16 +242,16 @@ public abstract class TagletWriter {
      * @param tagletWriter The taglet writer to write the output.
      * @return The output of the inline tag.
      */
-    public static TagletOutput getInlineTagOuput(TagletManager tagletManager,
+    public static Content getInlineTagOuput(TagletManager tagletManager,
             Tag holderTag, Tag inlineTag, TagletWriter tagletWriter) {
-        Taglet[] definedTags = tagletManager.getInlineCustomTags();
+        Taglet[] definedTags = tagletManager.getInlineCustomTaglets();
         //This is a custom inline tag.
         for (int j = 0; j < definedTags.length; j++) {
             if (("@"+definedTags[j].getName()).equals(inlineTag.name())) {
                 //Given a name of a seen custom tag, remove it from the
                 // set of unseen custom tags.
                 tagletManager.seenCustomTag(definedTags[j].getName());
-                TagletOutput output = definedTags[j].getTagletOutput(
+                Content output = definedTags[j].getTagletOutput(
                     holderTag != null &&
                         definedTags[j].getName().equals("inheritDoc") ?
                             holderTag : inlineTag, tagletWriter);
@@ -245,9 +270,9 @@ public abstract class TagletWriter {
      * @param holderTag the tag that holds the documentation.
      * @param tags   array of text tags and inline tags (often alternating)
      *               present in the text of interest for this doc.
-     * @return the {@link TagletOutput} representing the comments.
+     * @return the {@link Content} representing the comments.
      */
-    public abstract TagletOutput commentTagsToOutput(Tag holderTag, Tag[] tags);
+    public abstract Content commentTagsToOutput(Tag holderTag, Tag[] tags);
 
     /**
      * Converts inline tags and text to TagOutput, expanding the
@@ -258,9 +283,9 @@ public abstract class TagletWriter {
      * @param holderDoc specific doc where comment resides.
      * @param tags   array of text tags and inline tags (often alternating)
      *               present in the text of interest for this doc.
-     * @return the {@link TagletOutput} representing the comments.
+     * @return the {@link Content} representing the comments.
      */
-    public abstract TagletOutput commentTagsToOutput(Doc holderDoc, Tag[] tags);
+    public abstract Content commentTagsToOutput(Doc holderDoc, Tag[] tags);
 
     /**
      * Converts inline tags and text to TagOutput, expanding the
@@ -273,18 +298,13 @@ public abstract class TagletWriter {
      * @param tags   array of text tags and inline tags (often alternating)
      *               present in the text of interest for this doc.
      * @param isFirstSentence true if this is the first sentence.
-     * @return the {@link TagletOutput} representing the comments.
+     * @return the {@link Content} representing the comments.
      */
-    public abstract TagletOutput commentTagsToOutput(Tag holderTag,
+    public abstract Content commentTagsToOutput(Tag holderTag,
         Doc holderDoc, Tag[] tags, boolean isFirstSentence);
 
     /**
      * @return an instance of the configuration used for this doclet.
      */
     public abstract Configuration configuration();
-
-    /**
-     * @return an instance of the taglet output object.
-     */
-    public abstract TagletOutput getTagletOutputInstance();
 }

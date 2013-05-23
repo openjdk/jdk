@@ -517,6 +517,7 @@ jdk_other: $(call TestDirs, \
 	  javax/xml/soap \
 	  javax/xml/ws com/sun/internal/ws com/sun/org/glassfish \
 	  jdk/asm \
+	  jdk/lambda \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
 	  com/sun/tracing \

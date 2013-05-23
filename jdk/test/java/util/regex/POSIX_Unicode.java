@@ -125,6 +125,10 @@ final public class POSIX_Unicode {
         return (ch & 0xfffe) == 0xfffe || (ch >= 0xfdd0 && ch <= 0xfdef);
     }
 
+    public static boolean isJoinControl(int ch) {
+        return (ch == 0x200C || ch == 0x200D);
+    }
+
     //  \p{alpha}
     //  \p{gc=Mark}
     //  \p{digit}
@@ -136,6 +140,7 @@ final public class POSIX_Unicode {
                   (1 << Character.COMBINING_SPACING_MARK) |
                   (1 << Character.CONNECTOR_PUNCTUATION)) >> Character.getType(ch)) & 1)
                != 0 ||
-               isDigit(ch);
+               isDigit(ch) ||
+               isJoinControl(ch);
     }
 }

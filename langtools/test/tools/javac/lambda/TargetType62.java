@@ -26,7 +26,7 @@
  * @bug 8007464
  * @summary Add graph inference support
  *          check that new wildcards inference strategy doesn't run into 7190296
- * @ignore  awaits stream API: 800NNNN
+ * @ignore  8008682: Core stream API classes
  * @compile TargetType62.java
  */
 import java.util.*;

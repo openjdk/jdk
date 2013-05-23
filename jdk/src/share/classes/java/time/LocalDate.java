@@ -121,7 +121,7 @@ import java.util.Objects;
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -1489,19 +1489,19 @@ public final class LocalDate
     }
 
     /**
-     * Calculates the period between this date and another date in
-     * terms of the specified unit.
+     * Calculates the amount of time until another date in terms of the specified unit.
      * <p>
-     * This calculates the period between two dates in terms of a single unit.
+     * This calculates the amount of time between two {@code LocalDate}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method must be a {@code LocalDate}.
-     * For example, the period in days between two dates can be calculated
+     * For example, the amount in days between two dates can be calculated
      * using {@code startDate.periodUntil(endDate, DAYS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two dates.
-     * For example, the period in months between 2012-06-15 and 2012-08-14
+     * For example, the amount in months between 2012-06-15 and 2012-08-14
      * will only be one month as it is one day short of two months.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1527,9 +1527,9 @@ public final class LocalDate
      * This instance is immutable and unaffected by this method call.
      *
      * @param endDate  the end date, which must be a {@code LocalDate}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this date and the end date
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this date and the end date
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -1538,7 +1538,7 @@ public final class LocalDate
         Objects.requireNonNull(unit, "unit");
         if (endDate instanceof LocalDate == false) {
             Objects.requireNonNull(endDate, "endDate");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         LocalDate end = (LocalDate) endDate;
         if (unit instanceof ChronoUnit) {

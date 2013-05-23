@@ -50,7 +50,7 @@ void Klass::set_name(Symbol* n) {
   if (_name != NULL) _name->increment_refcount();
 }
 
-bool Klass::is_subclass_of(Klass* k) const {
+bool Klass::is_subclass_of(const Klass* k) const {
   // Run up the super chain and check
   if (this == k) return true;
 
