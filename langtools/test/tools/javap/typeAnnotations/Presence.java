@@ -91,16 +91,39 @@ public class Presence {
     // test the result of Attributes.getIndex according to expectations
     // encoded in the method's name
     void test(ClassFile cf, Method m, String name, boolean visible) {
+        Attribute attr = null;
+        Code_attribute cAttr = null;
+        RuntimeTypeAnnotations_attribute tAttr = null;
+
+        // collect annotations attributes on method
         int index = m.attributes.getIndex(cf.constant_pool, name);
         if (index != -1) {
-            Attribute attr = m.attributes.get(index);
+            attr = m.attributes.get(index);
             assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
+            tAttr = (RuntimeTypeAnnotations_attribute)attr;
             all += tAttr.annotations.length;
             if (visible)
                 visibles += tAttr.annotations.length;
             else
                 invisibles += tAttr.annotations.length;
+        }
+        // collect annotations from method's code attribute
+        index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
+        if(index!= -1) {
+            attr = m.attributes.get(index);
+            assert attr instanceof Code_attribute;
+            cAttr = (Code_attribute)attr;
+            index = cAttr.attributes.getIndex(cf.constant_pool, name);
+            if(index!= -1) {
+                attr = cAttr.attributes.get(index);
+                assert attr instanceof RuntimeTypeAnnotations_attribute;
+                tAttr = (RuntimeTypeAnnotations_attribute)attr;
+                all += tAttr.annotations.length;
+                if (visible)
+                    visibles += tAttr.annotations.length;
+                else
+                    invisibles += tAttr.annotations.length;
+               }
         }
     }
 
@@ -121,12 +144,12 @@ public class Presence {
     }
 
     File writeTestFile() throws IOException {
-        File f = new File("Test.java");
+        File f = new File("TestPresence.java");
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)));
         out.println("import java.util.*;");
         out.println("import java.lang.annotation.*;");
 
-        out.println("class Test<@Test.A T extends @Test.A List<@Test.A String>> { ");
+        out.println("class TestPresence<@TestPresence.A T extends @TestPresence.A List<@TestPresence.A String>> { ");
         out.println("  @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})");
         out.println("  @interface A { }");
 
@@ -134,7 +157,7 @@ public class Presence {
 
         out.println("  <@A TM extends @A List<@A String>>");
         out.println("  Map<@A String, @A List<@A String>>");
-        out.println("  method(@A Test<T> this, List<@A String> @A [] param1, String @A [] @A ... param2)");
+        out.println("  method(@A TestPresence<T> this, List<@A String> @A [] param1, String @A [] @A ... param2)");
         out.println("  throws @A Exception {");
         out.println("    @A String lc1 = null;");
         out.println("    @A List<@A String> lc2 = null;");

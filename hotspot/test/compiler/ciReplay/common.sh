@@ -182,8 +182,11 @@ echo "is_tiered=$is_tiered"
 # crash vm in compiler thread with generation replay data and 'small' dump-file
 # $@ - additional vm opts
 generate_replay() {
-    # enable core dump
-    ulimit -c unlimited
+    if [ $VM_OS != "windows" ]
+    then
+        # enable core dump
+        ulimit -c unlimited
+    fi
 
     cmd="${JAVA} ${TESTVMOPTS} $@ \
             -Xms8m \
@@ -206,29 +209,24 @@ generate_replay() {
     echo GENERATION OF REPLAY.TXT:
     echo $cmd
 
-    ${cmd} 2>&1 > crash.out
+    ${cmd} > crash.out 2>&1
     
     core_locations=`grep -i core crash.out | grep "location:" | \
             sed -e 's/.*location: //'`
     rm crash.out 
     # processing core locations for *nix
-    if [ $OS != "windows" ]
+    if [ $VM_OS != "windows" ]
     then
         # remove 'or' between '/core.<pid>' and 'core'
         core_locations=`echo $core_locations | \
                 sed -e 's/\([^ ]*\) or \([^ ]*\)/\1 \2/'`
         # add <core_path>/core.<pid> core.<pid>
-        core=`echo $core_locations | awk '{print $1}'`
-        dir=`dirname $core`
-        core=`basename $core`
-        if [ -n ${core} ]
+        core_with_dir=`echo $core_locations | awk '{print $1}'`
+        dir=`dirname $core_with_dir`
+        core_with_pid=`echo $core_locations | awk '{print $2}'`
+        if [ -n ${core_with_pid} ]
         then
-            core_locations="$core_locations $dir${FS}$core"
-        fi
-        core=`echo $core_locations | awk '{print $2}'`
-        if [ -n ${core} ]
-        then
-            core_locations="$core_locations $dir${FS}$core"
+            core_locations="$core_locations $dir${FS}$core_with_pid $core_with_pid"
         fi
     fi
 

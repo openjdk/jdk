@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,6 +227,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         }
         if (name == null) {
             throw new NullPointerException();
+        }
+        if (file.isInvalid()) {
+            throw new FileNotFoundException("Invalid file path");
         }
         fd = new FileDescriptor();
         fd.attach(this);

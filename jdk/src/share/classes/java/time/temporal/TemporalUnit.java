@@ -83,7 +83,7 @@ import java.time.Period;
  * If it is, then the date-time must handle it.
  * Otherwise, the method call is re-dispatched to the matching method in this interface.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
  * It is recommended to use an enum where possible.
@@ -197,19 +197,17 @@ public interface TemporalUnit {
 
     //-----------------------------------------------------------------------
     /**
-     * Calculates the period in terms of this unit between two temporal objects
-     * of the same type.
+     * Calculates the amount of time between two temporal objects.
      * <p>
-     * This calculates the period between two temporals in terms of this unit.
-     * The start and end points are supplied as temporal objects and must be
-     * of the same type.
+     * This calculates the amount in terms of this unit. The start and end
+     * points are supplied as temporal objects and must be of the same type.
      * The result will be negative if the end is before the start.
-     * For example, the period in hours between two temporal objects can be
+     * For example, the amount in hours between two temporal objects can be
      * calculated using {@code HOURS.between(startTime, endTime)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two temporals.
-     * For example, the period in hours between the times 11:30 and 13:29
+     * For example, the amount in hours between the times 11:30 and 13:29
      * will only be one hour as it is one minute short of two hours.
      * <p>
      * There are two equivalent ways of using this method.
@@ -237,9 +235,9 @@ public interface TemporalUnit {
      *
      * @param temporal1  the base temporal object, not null
      * @param temporal2  the other temporal object, not null
-     * @return the period between temporal1 and temporal2 in terms of this unit;
+     * @return the amount of time between temporal1 and temporal2 in terms of this unit;
      *  positive if temporal2 is later than temporal1, negative if earlier
-     * @throws DateTimeException if the period cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported by the temporal
      * @throws ArithmeticException if numeric overflow occurs
      */

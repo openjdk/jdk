@@ -225,6 +225,16 @@ public class TransformerFactoryImpl
     private boolean _useServicesMechanism;
 
     /**
+     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
+     */
+    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+     /**
+     * protocols allowed for external DTD references in source file and/or stylesheet.
+     */
+    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+
+
+    /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
     public TransformerFactoryImpl() {
@@ -238,10 +248,17 @@ public class TransformerFactoryImpl
     private TransformerFactoryImpl(boolean useServicesMechanism) {
         this.m_DTMManagerClass = XSLTCDTMManager.getDTMManagerClass(useServicesMechanism);
         this._useServicesMechanism = useServicesMechanism;
+
+        String defaultAccess = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
         if (System.getSecurityManager() != null) {
             _isSecureMode = true;
             _isNotSecureProcessing = false;
+            defaultAccess = XalanConstants.getExternalAccessDefault(true);
         }
+        _accessExternalStylesheet =  SecuritySupport.getDefaultAccessProperty(
+                XalanConstants.SP_ACCESS_EXTERNAL_STYLESHEET, defaultAccess);
+        _accessExternalDTD =  SecuritySupport.getDefaultAccessProperty(
+                XalanConstants.SP_ACCESS_EXTERNAL_DTD, defaultAccess);
     }
 
     /**
@@ -300,6 +317,12 @@ public class TransformerFactoryImpl
               return Boolean.TRUE;
             else
               return Boolean.FALSE;
+        }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
+            return _accessExternalStylesheet;
+        }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
+            return _accessExternalDTD;
         }
 
         // Throw an exception for all other attributes
@@ -401,6 +424,14 @@ public class TransformerFactoryImpl
                 return;
             }
         }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
+            _accessExternalStylesheet = (String)value;
+            return;
+        }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
+            _accessExternalDTD = (String)value;
+            return;
+        }
 
         // Throw an exception for all other attributes
         final ErrorMsg err
@@ -444,7 +475,12 @@ public class TransformerFactoryImpl
                 throw new TransformerConfigurationException(err.toString());
             }
             _isNotSecureProcessing = !value;
-            // all done processing feature
+
+            // set restriction, allowing no access to external stylesheet
+            if (value) {
+                _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT_FSP;
+                _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT_FSP;
+            }
             return;
         }
         else if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
@@ -799,6 +835,8 @@ public class TransformerFactoryImpl
                 xsltc.setTemplateInlining(false);
 
         if (!_isNotSecureProcessing) xsltc.setSecureProcessing(true);
+        xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, _accessExternalStylesheet);
+        xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         xsltc.init();
 
         // Set a document loader (for xsl:include/import) if defined
@@ -880,15 +918,20 @@ public class TransformerFactoryImpl
 
         // Check that the transformation went well before returning
     if (bytecodes == null) {
-
         Vector errs = xsltc.getErrors();
         ErrorMsg err = null;
         if (errs != null) {
-            err = (ErrorMsg)errs.get(errs.size()-1);
+            err = (ErrorMsg)errs.elementAt(errs.size()-1);
         } else {
             err = new ErrorMsg(ErrorMsg.JAXP_COMPILE_ERR);
         }
-        TransformerConfigurationException exc =  new TransformerConfigurationException(err.toString(), err.getCause());
+        Throwable cause = err.getCause();
+        TransformerConfigurationException exc;
+        if (cause != null) {
+            exc =  new TransformerConfigurationException(cause.getMessage(), cause);
+        } else {
+            exc =  new TransformerConfigurationException(err.toString());
+        }
 
         // Pass compiler errors to the error listener
         if (_errorListener != null) {

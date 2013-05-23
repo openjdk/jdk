@@ -27,6 +27,8 @@ package com.sun.tools.doclets.internal.toolkit;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.sym.Profiles;
@@ -824,6 +826,82 @@ public abstract class Configuration {
             return message.getText(key, a1, a2, a3);
         }
     }
+
+    public abstract Content newContent();
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @return a content tree for the text
+     */
+    public Content getResource(String key) {
+        Content c = newContent();
+        c.addContent(getText(key));
+        return c;
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o   string or content argument added to configuration text
+     * @return a content tree for the text
+     */
+    public Content getResource(String key, Object o) {
+        return getResource(key, o, null, null);
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o   string or content argument added to configuration text
+     * @return a content tree for the text
+     */
+    public Content getResource(String key, Object o1, Object o2) {
+        return getResource(key, o1, o2, null);
+    }
+
+    /**
+     * Get the configuration string as a content.
+     *
+     * @param key the key to look for in the configuration file
+     * @param o1  string or content argument added to configuration text
+     * @param o2  string or content argument added to configuration text
+     * @return a content tree for the text
+     */
+    public Content getResource(String key, Object o0, Object o1, Object o2) {
+        Content c = newContent();
+        Pattern p = Pattern.compile("\\{([012])\\}");
+        String text = getText(key);
+        Matcher m = p.matcher(text);
+        int start = 0;
+        while (m.find(start)) {
+            c.addContent(text.substring(start, m.start()));
+
+            Object o = null;
+            switch (m.group(1).charAt(0)) {
+                case '0': o = o0; break;
+                case '1': o = o1; break;
+                case '2': o = o2; break;
+            }
+
+            if (o == null) {
+                c.addContent("{" + m.group(1) + "}");
+            } else if (o instanceof String) {
+                c.addContent((String) o);
+            } else if (o instanceof Content) {
+                c.addContent((Content) o);
+            }
+
+            start = m.end();
+        }
+
+        c.addContent(text.substring(start));
+        return c;
+    }
+
 
     /**
      * Return true if the ClassDoc element is getting documented, depending upon

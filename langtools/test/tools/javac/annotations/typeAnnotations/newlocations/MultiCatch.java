@@ -25,7 +25,6 @@ import java.lang.annotation.*;
 
 /*
  * @test
- * @ignore // syntax not sure yet.
  * @bug 8006775
  * @summary new type annotation location: multicatch
  * @author Werner Dietl
@@ -40,6 +39,8 @@ class DefaultScope {
       e.toString();
     }
   }
+  /* Disabled: there is no syntax to annotate all components
+   * of the multicatch.
   void exception02() {
     try {
         System.out.println("Hello 2!");
@@ -47,18 +48,24 @@ class DefaultScope {
       e.toString();
     }
   }
+  */
 }
 
 class ModifiedVars {
-    /*
-  void exception() {
+  void exception01() {
     try {
-      arrays();
-    } catch (final @A Exception e) {
+        System.out.println("Hello 1!");
+    } catch (final @B NullPointerException | @C IllegalArgumentException e) {
       e.toString();
     }
   }
-    */
+  void exception02() {
+    try {
+        System.out.println("Hello 1!");
+    } catch (@Decl @B NullPointerException | @C IllegalArgumentException e) {
+      e.toString();
+    }
+  }
 }
 
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
@@ -67,5 +74,5 @@ class ModifiedVars {
 @interface B { }
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface C { }
-@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
-@interface D { }
+
+@interface Decl { }

@@ -65,10 +65,12 @@ public class MapCreator {
      * Constructs a property map based on a set of fields.
      *
      * @param hasArguments does the created object have an "arguments" property
+     * @param fieldCount    Number of fields in use.
+     * @param fieldMaximum Number of fields available.
      *
      * @return New map populated with accessor properties.
      */
-    PropertyMap makeMap(final boolean hasArguments) {
+    PropertyMap makeMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum) {
         final List<Property> properties = new ArrayList<>();
 
         assert keys != null;
@@ -82,7 +84,7 @@ public class MapCreator {
             }
         }
 
-        return PropertyMap.newMap(structure, properties);
+        return PropertyMap.newMap(structure, properties, fieldCount, fieldMaximum);
     }
 
     /**

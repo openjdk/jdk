@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,15 @@ public abstract class Content {
     }
 
     /**
+     * Return the number of characters of plain text content in this object
+     * (optional operation.)
+     * @return the number of characters of plain text content in this
+     */
+    public int charCount() {
+        return 0;
+    }
+
+    /**
      * Checks for null values.
      *
      * @param t reference type to check for null values
@@ -105,33 +114,5 @@ public abstract class Content {
     protected static <T> T nullCheck(T t) {
         t.getClass();
         return t;
-    }
-
-    /**
-     * Returns true if the content ends with a newline character. Empty content
-     * is considered as ending with new line.
-     *
-     * @param contentBuilder content to test for newline character at the end
-     * @return true if the content ends with newline.
-     */
-    protected boolean endsWithNewLine(StringBuilder contentBuilder) {
-        int contentLength = contentBuilder.length();
-        if (contentLength == 0) {
-            return true;
-        }
-        int nlLength = DocletConstants.NL.length();
-        if (contentLength < nlLength) {
-            return false;
-        }
-        int contentIndex = contentLength - 1;
-        int nlIndex = nlLength - 1;
-        while (nlIndex >= 0) {
-            if (contentBuilder.charAt(contentIndex) != DocletConstants.NL.charAt(nlIndex)) {
-                return false;
-            }
-            contentIndex--;
-            nlIndex--;
-        }
-        return true;
     }
 }

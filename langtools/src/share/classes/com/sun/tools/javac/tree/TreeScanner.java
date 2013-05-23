@@ -94,6 +94,7 @@ public class TreeScanner extends Visitor {
     public void visitVarDef(JCVariableDecl tree) {
         scan(tree.mods);
         scan(tree.vartype);
+        scan(tree.nameexpr);
         scan(tree.init);
     }
 

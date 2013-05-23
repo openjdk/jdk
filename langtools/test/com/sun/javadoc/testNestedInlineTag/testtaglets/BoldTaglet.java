@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class BoldTaglet extends BaseInlineTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Tag tag, TagletWriter writer) {
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
         ArrayList inlineTags = new ArrayList();
         inlineTags.add(new TextTag(tag.holder(), "<b>"));
         inlineTags.addAll(Arrays.asList(tag.inlineTags()));

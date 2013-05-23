@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 import java.text.DateFormatSymbols;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
@@ -55,7 +55,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     protected static DateTimeFormatter getFormatter(Locale locale, TextStyle style) {
         return new DateTimeFormatterBuilder().appendZoneText(style)
                                              .toFormatter(locale)
-                                             .withSymbols(DateTimeFormatSymbols.of(locale));
+                                             .withDecimalStyle(DecimalStyle.of(locale));
     }
 
     public void test_printText() {
@@ -148,7 +148,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     public void test_ParseText(String expected, String text, Set<ZoneId> preferred, Locale locale, TextStyle style) {
         DateTimeFormatter fmt = new DateTimeFormatterBuilder().appendZoneText(style, preferred)
                                                               .toFormatter(locale)
-                                                              .withSymbols(DateTimeFormatSymbols.of(locale));
+                                                              .withDecimalStyle(DecimalStyle.of(locale));
 
         String ret = fmt.parse(text, TemporalQuery.zone()).getId();
 
@@ -209,7 +209,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         }
         return db.appendZoneText(style)
                  .toFormatter(locale)
-                 .withSymbols(DateTimeFormatSymbols.of(locale));
+                 .withDecimalStyle(DecimalStyle.of(locale));
     }
 
 }

@@ -97,8 +97,9 @@ public abstract class Select extends BranchInstruction
     super(opcode, target);
 
     this.targets = targets;
-    for(int i=0; i < targets.length; i++)
-      notifyTarget(null, targets[i], this);
+    for(int i=0; i < targets.length; i++) {
+      BranchInstruction.notifyTargetChanged(targets[i], this);
+    }
 
     this.match = match;
 
@@ -121,6 +122,7 @@ public abstract class Select extends BranchInstruction
    * @param max_offset the maximum offset that may be caused by these instructions
    * @return additional offset caused by possible change of this instruction's length
    */
+  @Override
   protected int updatePosition(int offset, int max_offset) {
     position += offset; // Additional offset caused by preceding SWITCHs, GOTOs, etc.
 
@@ -138,6 +140,7 @@ public abstract class Select extends BranchInstruction
    * Dump instruction as byte code to stream out.
    * @param out Output stream
    */
+  @Override
   public void dump(DataOutputStream out) throws IOException {
     out.writeByte(opcode);
 
@@ -151,6 +154,7 @@ public abstract class Select extends BranchInstruction
   /**
    * Read needed data (e.g. index) from file.
    */
+  @Override
   protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
   {
     padding = (4 - (bytes.getIndex() % 4)) % 4; // Compute number of pad bytes
@@ -166,8 +170,9 @@ public abstract class Select extends BranchInstruction
   /**
    * @return mnemonic for instruction
    */
+  @Override
   public String toString(boolean verbose) {
-    StringBuffer buf = new StringBuffer(super.toString(verbose));
+    final StringBuilder buf = new StringBuilder(super.toString(verbose));
 
     if(verbose) {
       for(int i=0; i < match_length; i++) {
@@ -176,7 +181,8 @@ public abstract class Select extends BranchInstruction
         if(targets[i] != null)
           s = targets[i].getInstruction().toString();
 
-        buf.append("(" + match[i] + ", " + s + " = {" + indices[i] + "})");
+          buf.append("(").append(match[i]).append(", ")
+             .append(s).append(" = {").append(indices[i]).append("})");
       }
     }
     else
@@ -188,15 +194,17 @@ public abstract class Select extends BranchInstruction
   /**
    * Set branch target for `i'th case
    */
-  public void setTarget(int i, InstructionHandle target) {
-    notifyTarget(targets[i], target, this);
+  public final void setTarget(int i, InstructionHandle target) {
+    notifyTargetChanging(targets[i], this);
     targets[i] = target;
+    notifyTargetChanged(targets[i], this);
   }
 
   /**
    * @param old_ih old target
    * @param new_ih new target
    */
+  @Override
   public void updateTarget(InstructionHandle old_ih, InstructionHandle new_ih) {
     boolean targeted = false;
 
@@ -219,6 +227,7 @@ public abstract class Select extends BranchInstruction
   /**
    * @return true, if ih is target of this instruction
    */
+  @Override
   public boolean containsTarget(InstructionHandle ih) {
     if(target == ih)
       return true;
@@ -233,6 +242,7 @@ public abstract class Select extends BranchInstruction
   /**
    * Inform targets that they're not targeted anymore.
    */
+  @Override
   void dispose() {
     super.dispose();
 

@@ -204,6 +204,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCVariableDecl ReceiverVarDef(JCModifiers mods, JCExpression name, JCExpression vartype) {
+        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCSkip Skip() {
         JCSkip tree = new JCSkip();
         tree.pos = pos;
