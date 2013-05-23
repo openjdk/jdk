@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,9 +139,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param dlTree the content tree to which the description will be added
      */
     protected void addDescription(ClassDoc cd, Content dlTree) {
-        Content link = new RawHtml(
-                getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.CONTEXT_INDEX, cd, true)));
+        Content link = getLink(new LinkInfoImpl(configuration,
+                        LinkInfoImpl.Kind.INDEX, cd).strong(true));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         addClassInfo(cd, dt);
@@ -152,7 +151,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add the classkind(class, interface, exception, error of the class
+     * Add the classkind (class, interface, exception), error of the class
      * passed.
      *
      * @param cd the class being documented
@@ -161,8 +160,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addClassInfo(ClassDoc cd, Content contentTree) {
         contentTree.addContent(getResource("doclet.in",
                 Util.getTypeName(configuration, cd, false),
-                getPackageLinkString(cd.containingPackage(),
-                Util.getPackageName(cd.containingPackage()), false)));
+                getPackageLink(cd.containingPackage(),
+                    Util.getPackageName(cd.containingPackage()))
+                ));
     }
 
     /**
@@ -175,11 +175,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
-        if (name.indexOf("<") != -1 || name.indexOf(">") != -1) {
-                name = Util.escapeHtmlChars(name);
-        }
         Content span = HtmlTree.SPAN(HtmlStyle.strong,
-                getDocLink(LinkInfoImpl.CONTEXT_INDEX, member, name));
+                getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
         dt.addContent(" - ");
         addMemberDesc(member, dt);
@@ -253,7 +250,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                         getResource("doclet.Method_in", classdesc));
             }
         }
-        addPreQualifiedClassLink(LinkInfoImpl.CONTEXT_INDEX, containing,
+        addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, containing,
                 false, contentTree);
     }
 }

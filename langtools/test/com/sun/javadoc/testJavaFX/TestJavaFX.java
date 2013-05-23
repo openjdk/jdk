@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427
+ * @bug 7112427 8012295
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib/
@@ -38,27 +38,26 @@ public class TestJavaFX extends JavadocTester {
     private static final String[][] TEST =
         new String[][] {
             {"./" + BUG_ID + "/C.html",
-                "<dt><span class=\"strong\">See Also:</span></dt><dd><a href=\"C.html#getRate()\"><code>getRate()</code></a>, " + NL +
+                "<dt><span class=\"strong\">See Also:</span></dt>" + NL + "<dd><a href=\"C.html#getRate()\"><code>getRate()</code></a>, " + NL +
                 "<a href=\"C.html#setRate(double)\"><code>setRate(double)</code></a></dd>"},
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;void&nbsp;setRate(double&nbsp;value)</pre>" + NL +
                 "<div class=\"block\">Sets the value of the property rate.</div>" + NL +
-                "<dl><dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
                 "<pre>public final&nbsp;double&nbsp;getRate()</pre>" + NL +
                 "<div class=\"block\">Gets the value of the property rate.</div>" + NL +
-                "<dl><dt><span class=\"strong\">Property description:</span></dt>" },
+                "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
                 "<td class=\"colLast\"><code><strong><a href=\"C.html#rateProperty\">rate</a></strong></code>" + NL +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
-            {"./" + BUG_ID + "/C.html",
-                "<sub id=\"expert\">Expert tag text</sub>"},
+
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Default value:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<P>Sets the value of the property <CODE>Property</CODE>"},
+                "<p>Sets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
-                "<P>Gets the value of the property <CODE>Property</CODE>"},
+                "<p>Gets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Property description:</span>"},
             {"./" + BUG_ID + "/C.html",

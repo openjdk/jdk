@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.util;
+
+import java.util.function.Supplier;
 
 /**
  * This class consists of {@code static} utility methods for operating
@@ -224,6 +226,68 @@ public final class Objects {
     public static <T> T requireNonNull(T obj, String message) {
         if (obj == null)
             throw new NullPointerException(message);
+        return obj;
+    }
+
+    /**
+     * Returns {@code true} if the provided reference is {@code null} otherwise
+     * returns {@code false}.
+     *
+     * @apiNote This method exists to be used as a
+     * {@link java.util.function.Predicate}, {@code filter(Objects::isNull)}
+     *
+     * @param obj a reference to be checked against {@code null}
+     * @return {@code true} if the provided reference is {@code null} otherwise
+     * {@code false}
+     *
+     * @see java.util.function.Predicate
+     * @since 1.8
+     */
+    public static boolean isNull(Object obj) {
+        return obj == null;
+    }
+
+    /**
+     * Returns {@code true} if the provided reference is non-{@code null}
+     * otherwise returns {@code false}.
+     *
+     * @apiNote This method exists to be used as a
+     * {@link java.util.function.Predicate}, {@code filter(Objects::nonNull)}
+     *
+     * @param obj a reference to be checked against {@code null}
+     * @return {@code true} if the provided reference is non-{@code null}
+     * otherwise {@code false}
+     *
+     * @see java.util.function.Predicate
+     * @since 1.8
+     */
+    public static boolean nonNull(Object obj) {
+        return obj != null;
+    }
+
+    /**
+     * Checks that the specified object reference is not {@code null} and
+     * throws a customized {@link NullPointerException} if it is.
+     *
+     * <p>Unlike the method {@link #requireNonNull(Object, String)},
+     * this method allows creation of the message to be deferred until
+     * after the null check is made. While this may confer a
+     * performance advantage in the non-null case, when deciding to
+     * call this method care should be taken that the costs of
+     * creating the message supplier are less than the cost of just
+     * creating the string message directly.
+     *
+     * @param obj     the object reference to check for nullity
+     * @param messageSupplier supplier of the detail message to be
+     * used in the event that a {@code NullPointerException} is thrown
+     * @param <T> the type of the reference
+     * @return {@code obj} if not {@code null}
+     * @throws NullPointerException if {@code obj} is {@code null}
+     * @since 1.8
+     */
+    public static <T> T requireNonNull(T obj, Supplier<String> messageSupplier) {
+        if (obj == null)
+            throw new NullPointerException(messageSupplier.get());
         return obj;
     }
 }

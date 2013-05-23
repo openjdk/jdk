@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,19 @@
 
 package java.util.regex;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.text.CharacterIterator;
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 
 /**
@@ -612,6 +616,7 @@ import java.util.Arrays;
  *   <li> White_Space
  *   <li> Digit
  *   <li> Hex_Digit
+ *   <li> Join_Control
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
  * </ul>
@@ -662,7 +667,7 @@ import java.util.Arrays;
  * <tr><td><tt>\S</tt></td>
  *     <td>A non-whitespace character: <tt>[^\s]</tt></td></tr>
  * <tr><td><tt>\w</tt></td>
- *     <td>A word character: <tt>[\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}]</tt></td></tr>
+ *     <td>A word character: <tt>[\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}\p{IsJoin_Control}]</tt></td></tr>
  * <tr><td><tt>\W</tt></td>
  *     <td>A non-word character: <tt>[^\w]</tt></td></tr>
  * </table>
@@ -5740,5 +5745,84 @@ NEXT:       while (i <= last) {
                 boolean isSatisfiedBy(int ch) {
                     return Character.isMirrored(ch);}});
         }
+    }
+
+    /**
+     * Creates a predicate which can be used to match a string.
+     *
+     * @return  The predicate which can be used for matching on a string
+     * @since   1.8
+     */
+    public Predicate<String> asPredicate() {
+        return s -> matcher(s).find();
+    }
+
+    /**
+     * Creates a stream from the given input sequence around matches of this
+     * pattern.
+     *
+     * <p> The stream returned by this method contains each substring of the
+     * input sequence that is terminated by another subsequence that matches
+     * this pattern or is terminated by the end of the input sequence.  The
+     * substrings in the stream are in the order in which they occur in the
+     * input.
+     *
+     * <p> If this pattern does not match any subsequence of the input then
+     * the resulting stream has just one element, namely the input sequence in
+     * string form.
+     *
+     * <p> If the input sequence is mutable, it must remain constant during the
+     * execution of the terminal stream operation.  Otherwise, the result of the
+     * terminal stream operation is undefined.
+     *
+     * @param   input
+     *          The character sequence to be split
+     *
+     * @return  The stream of strings computed by splitting the input
+     *          around matches of this pattern
+     * @see     #split(CharSequence)
+     * @since   1.8
+     */
+    public Stream<String> splitAsStream(final CharSequence input) {
+        class MatcherIterator implements Iterator<String> {
+            private final Matcher matcher;
+            // The start position of the next sub-sequence of input
+            // when current == input.length there are no more elements
+            private int current;
+            // null if the next element, if any, needs to obtained
+            private String nextElement;
+
+            MatcherIterator() {
+                this.matcher = matcher(input);
+            }
+
+            public String next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+
+                String n = nextElement;
+                nextElement = null;
+                return n;
+            }
+
+            public boolean hasNext() {
+                if (nextElement != null)
+                    return true;
+
+                if (current == input.length())
+                    return false;
+
+                if (matcher.find()) {
+                    nextElement = input.subSequence(current, matcher.start()).toString();
+                    current = matcher.end();
+                } else {
+                    nextElement = input.subSequence(current, input.length()).toString();
+                    current = input.length();
+                }
+                return true;
+            }
+        }
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                new MatcherIterator(), Spliterator.ORDERED | Spliterator.NONNULL));
     }
 }

@@ -73,7 +73,7 @@ else
             grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
 
 $(all_phony_targets):
-	@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) $(VERBOSE) VERBOSE=$(VERBOSE) $@) &&) true
+	@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) $(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $@) &&) true
 
     endif
 endif

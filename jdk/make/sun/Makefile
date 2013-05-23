@@ -31,12 +31,6 @@ BUILDDIR = ..
 PRODUCT  = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-# Rhino/Mozilla java sources
-ORG_EXISTS := $(call DirExists,$(CLOSED_SRC)/share/classes/sun/org,,)
-ifneq ("$(ORG_EXISTS)", "")
-  ORG_SUBDIR = org
-endif
-
 # Non windows subdirs
 ifneq ($(PLATFORM), windows)
   ifndef OPENJDK
@@ -83,7 +77,7 @@ SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
                      $(LWAWT_PRE_SUBDIR) $(DISPLAY_LIBS) $(DGA_SUBDIR) $(LWAWT_SUBDIR) \
                      jawt font jpeg cmm $(DISPLAY_TOOLS)
 SUBDIRS_management = management
-SUBDIRS_misc       = $(ORG_SUBDIR) rmi tracing
+SUBDIRS_misc       = rmi tracing
 SUBDIRS_tools      = native2ascii serialver tools jconsole
 
 ifndef OPENJDK

@@ -84,9 +84,11 @@ public class LineNumberNode extends AbstractInsnNode {
     /**
      * Constructs a new {@link LineNumberNode}.
      *
-     * @param line a line number. This number refers to the source file from
-     *        which the class was compiled.
-     * @param start the first instruction corresponding to this line number.
+     * @param line
+     *            a line number. This number refers to the source file from
+     *            which the class was compiled.
+     * @param start
+     *            the first instruction corresponding to this line number.
      */
     public LineNumberNode(final int line, final LabelNode start) {
         super(-1);

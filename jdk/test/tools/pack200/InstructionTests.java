@@ -21,11 +21,8 @@
  * questions.
  */
 import java.io.File;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
@@ -59,8 +56,7 @@ public class InstructionTests {
         scratch.add("}");
         File cwd = new File(".");
         File javaFile = new File(cwd, javaFileName);
-        Files.write(javaFile.toPath(), scratch, Charset.defaultCharset(),
-                CREATE, TRUNCATE_EXISTING);
+        Utils.createFile(javaFile, scratch);
 
         // -g to compare LVT and LNT entries
         Utils.compiler("-g", javaFile.getName());
@@ -69,8 +65,7 @@ public class InstructionTests {
         scratch.clear();
         scratch.add("com.sun.java.util.jar.pack.class.format.error=error");
         scratch.add("pack.unknown.attribute=error");
-        Files.write(propsFile.toPath(), scratch, Charset.defaultCharset(),
-                CREATE, TRUNCATE_EXISTING);
+        Utils.createFile(propsFile, scratch);
         // jar the file up
         File testjarFile = new File(cwd, "test" + Utils.JAR_FILE_EXT);
         Utils.jar("cvf", testjarFile.getName(), ".");

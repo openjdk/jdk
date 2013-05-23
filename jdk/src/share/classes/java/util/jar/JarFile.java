@@ -29,6 +29,8 @@ import java.io.*;
 import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.*;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
@@ -235,20 +237,42 @@ class JarFile extends ZipFile {
         return null;
     }
 
+    private class JarEntryIterator implements Enumeration<JarEntry>,
+            Iterator<JarEntry>
+    {
+        final Enumeration<? extends ZipEntry> e = JarFile.super.entries();
+
+        public boolean hasNext() {
+            return e.hasMoreElements();
+        }
+
+        public JarEntry next() {
+            ZipEntry ze = e.nextElement();
+            return new JarFileEntry(ze);
+        }
+
+        public boolean hasMoreElements() {
+            return hasNext();
+        }
+
+        public JarEntry nextElement() {
+            return next();
+        }
+    }
+
     /**
      * Returns an enumeration of the zip file entries.
      */
     public Enumeration<JarEntry> entries() {
-        final Enumeration<? extends ZipEntry> enum_ = super.entries();
-        return new Enumeration<JarEntry>() {
-            public boolean hasMoreElements() {
-                return enum_.hasMoreElements();
-            }
-            public JarFileEntry nextElement() {
-                ZipEntry ze = enum_.nextElement();
-                return new JarFileEntry(ze);
-            }
-        };
+        return new JarEntryIterator();
+    }
+
+    @Override
+    public Stream<JarEntry> stream() {
+        return StreamSupport.stream(Spliterators.spliterator(
+                new JarEntryIterator(), size(),
+                Spliterator.ORDERED | Spliterator.DISTINCT |
+                        Spliterator.IMMUTABLE | Spliterator.NONNULL));
     }
 
     private class JarFileEntry extends JarEntry {

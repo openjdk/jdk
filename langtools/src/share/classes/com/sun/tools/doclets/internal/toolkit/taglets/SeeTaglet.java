@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Content;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -49,9 +50,9 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
      * {@inheritDoc}
      */
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        Tag[] tags = input.method.seeTags();
+        Tag[] tags = input.element.seeTags();
         if (tags.length > 0) {
-            output.holder = input.method;
+            output.holder = input.element;
             output.holderTag = tags[0];
             output.inlineTags = input.isFirstSentence ?
                 tags[0].firstSentenceTags() : tags[0].inlineTags();
@@ -61,7 +62,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * {@inheritDoc}
      */
-    public TagletOutput getTagletOutput(Doc holder, TagletWriter writer) {
+    public Content getTagletOutput(Doc holder, TagletWriter writer) {
         SeeTag[] tags = holder.seeTags();
         if (tags.length == 0 && holder instanceof MethodDoc) {
             DocFinder.Output inheritedDoc =

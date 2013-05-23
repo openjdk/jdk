@@ -102,7 +102,7 @@ import java.time.temporal.ValueRange;
  * to create new HijrahDate instances.
  * Alternatively, the {@link #withVariant} method can be used to convert
  * to a new HijrahChronology.
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
