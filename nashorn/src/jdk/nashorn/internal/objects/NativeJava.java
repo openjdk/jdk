@@ -30,6 +30,8 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.Deque;
+import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -37,6 +39,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
@@ -240,8 +243,8 @@ public final class NativeJava {
     }
 
     /**
-     * Given a script object and a Java type, converts the script object into the desired Java type. Currently it only
-     * performs shallow creation of Java arrays, but might be extended for other types in the future. Example:
+     * Given a script object and a Java type, converts the script object into the desired Java type. Currently it
+     * performs shallow creation of Java arrays, as well as wrapping of objects in Lists and Dequeues. Example:
      * <pre>
      * var anArray = [1, "13", false]
      * var javaIntArray = Java.to(anArray, "int[]")
@@ -250,42 +253,46 @@ public final class NativeJava {
      * print(javaIntArray[2]) // prints 0, as boolean false was converted to number 0 as per ECMAScript ToNumber conversion
      * </pre>
      * @param self not used
-     * @param objArray the script object. Can be null.
+     * @param obj the script object. Can be null.
      * @param objType either a {@link #type(Object, Object) type object} or a String describing the type of the Java
      * object to create. Can not be null. If undefined, a "default" conversion is presumed (allowing the argument to be
      * omitted).
      * @return a Java object whose value corresponds to the original script object's value. Specifically, for array
      * target types, returns a Java array of the same type with contents converted to the array's component type. Does
-     * not recursively convert for multidimensional arrays.
-     * type. Returns null if scriptObject is null.
+     * not recursively convert for multidimensional arrays. For {@link List} or {@link Deque}, returns a live wrapper
+     * around the object, see {@link ListAdapter} for details. Returns null if obj is null.
      * @throws ClassNotFoundException if the class described by objType is not found
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object to(final Object self, final Object objArray, final Object objType) throws ClassNotFoundException {
-        if (objArray == null) {
+    public static Object to(final Object self, final Object obj, final Object objType) throws ClassNotFoundException {
+        if (obj == null) {
             return null;
         }
 
-        final Class<?> componentType;
+        Global.checkObject(obj);
+
+        final Class<?> targetClass;
         if(objType == UNDEFINED) {
-            componentType = Object.class;
+            targetClass = Object[].class;
         } else {
-            final StaticClass arrayType;
+            final StaticClass targetType;
             if(objType instanceof StaticClass) {
-                arrayType = (StaticClass)objType;
+                targetType = (StaticClass)objType;
             } else {
-                arrayType = type(objType);
+                targetType = type(objType);
             }
-            final Class<?> arrayClass = arrayType.getRepresentedClass();
-            if(!arrayClass.isArray()) {
-                throw typeError("to.expects.array.type", arrayClass.getName());
-            }
-            componentType = arrayClass.getComponentType();
+            targetClass = targetType.getRepresentedClass();
         }
 
-        Global.checkObject(objArray);
+        if(targetClass.isArray()) {
+            return ((ScriptObject)obj).getArray().asArrayOfType(targetClass.getComponentType());
+        }
 
-        return ((ScriptObject)objArray).getArray().asArrayOfType(componentType);
+        if(targetClass == List.class || targetClass == Deque.class) {
+            return new ListAdapter((ScriptObject)obj);
+        }
+
+        throw typeError("unsupported.java.to.type", targetClass.getName());
     }
 
     /**
