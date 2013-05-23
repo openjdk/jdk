@@ -66,12 +66,15 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.Period;
 import java.time.Year;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
@@ -177,6 +180,15 @@ public class TCKThaiBuddhistChronology {
             {ThaiBuddhistChronology.INSTANCE.dateYearDay(400 + YDIFF, 60), LocalDate.of(400, 2, 29)},
             {ThaiBuddhistChronology.INSTANCE.dateYearDay(2000 + YDIFF, 60), LocalDate.of(2000, 2, 29)},
 
+            {ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BE, 1916 + YDIFF, 60), LocalDate.of(1916, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BEFORE_BE, -1907 - YDIFF, 60), LocalDate.of(1908, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BE, 2000 + YDIFF, 60), LocalDate.of(2000, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BE, 2400 + YDIFF, 60), LocalDate.of(2400, 2, 29)},
+
+            {ThaiBuddhistChronology.INSTANCE.date(ThaiBuddhistEra.BE, 1916 + YDIFF, 2, 29 ), LocalDate.of(1916, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.date(ThaiBuddhistEra.BEFORE_BE, -1907 - YDIFF, 2, 29), LocalDate.of(1908, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.date(ThaiBuddhistEra.BE, 2000 + YDIFF, 2, 29), LocalDate.of(2000, 2, 29)},
+            {ThaiBuddhistChronology.INSTANCE.date(ThaiBuddhistEra.BE, 2400 + YDIFF, 2, 29), LocalDate.of(2400, 2, 29)},
         };
     }
 
@@ -188,6 +200,26 @@ public class TCKThaiBuddhistChronology {
     @Test(dataProvider="samples")
     public void test_fromCalendrical(ThaiBuddhistDate jdate, LocalDate iso) {
         assertEquals(ThaiBuddhistChronology.INSTANCE.date(iso), jdate);
+    }
+
+    @Test
+    public void test_dateNow(){
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now()) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(ZoneId.systemDefault())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(Clock.systemDefaultZone())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistDate.now(Clock.systemDefaultZone().getZone())) ;
+
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+
+        ZoneId zoneId = ZoneId.of("Europe/Paris");
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistDate.now(Clock.system(zoneId))) ;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(zoneId), ThaiBuddhistDate.now(Clock.system(zoneId).getZone())) ;
+
+        assertEquals(ThaiBuddhistChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), ThaiBuddhistChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
     }
 
     @DataProvider(name="badDates")

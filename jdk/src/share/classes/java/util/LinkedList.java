@@ -954,10 +954,10 @@ public class LinkedList<E>
             Objects.requireNonNull(action);
             while (modCount == expectedModCount && nextIndex < size) {
                 action.accept(next.item);
+                lastReturned = next;
                 next = next.next;
                 nextIndex++;
             }
-            lastReturned = next;
             checkForComodification();
         }
 

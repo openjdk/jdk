@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -101,8 +100,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getCaption() {
-        return configuration.getText("doclet.Nested_Classes");
+    public Content getCaption() {
+        return configuration.getResource("doclet.Nested_Classes");
     }
 
     /**
@@ -148,8 +147,8 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
-        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(
-                LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+        Content classLink = writer.getPreQualifiedClassLink(
+                LinkInfoImpl.Kind.MEMBER, cd, false);
         Content label = new StringContent(cd.isInterface() ?
             configuration.getText("doclet.Nested_Classes_Interface_Inherited_From_Interface") :
             configuration.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
@@ -163,10 +162,10 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    protected void addSummaryLink(int context, ClassDoc cd, ProgramElementDoc member,
+    protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(new RawHtml(
-                writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member, false))));
+        Content strong = HtmlTree.STRONG(
+                writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member)));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
     }
@@ -176,9 +175,9 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected void addInheritedSummaryLink(ClassDoc cd,
             ProgramElementDoc member, Content linksTree) {
-        linksTree.addContent(new RawHtml(
-                writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.CONTEXT_MEMBER,
-                (ClassDoc)member, false))));
+        linksTree.addContent(
+                writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER,
+                (ClassDoc)member)));
     }
 
     /**
@@ -194,7 +193,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     protected Content getDeprecatedLink(ProgramElementDoc member) {
-        return writer.getQualifiedClassLink(LinkInfoImpl.CONTEXT_MEMBER,
+        return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER,
                 (ClassDoc)member);
     }
 

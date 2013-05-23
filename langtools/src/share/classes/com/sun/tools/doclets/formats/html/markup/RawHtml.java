@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Bhavesh Patel
  */
-public class RawHtml extends Content{
+public class RawHtml extends Content {
 
     private String rawHtmlContent;
 
@@ -90,8 +90,63 @@ public class RawHtml extends Content{
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString() {
         return rawHtmlContent;
+    }
+
+    private enum State { TEXT, ENTITY, TAG, STRING };
+
+    @Override
+    public int charCount() {
+        return charCount(rawHtmlContent);
+    }
+
+    static int charCount(String htmlText) {
+        State state = State.TEXT;
+        int count = 0;
+        for (int i = 0; i < htmlText.length(); i++) {
+            char c = htmlText.charAt(i);
+            switch (state) {
+                case TEXT:
+                    switch (c) {
+                        case '<':
+                            state = State.TAG;
+                            break;
+                        case '&':
+                            state = State.ENTITY;
+                            count++;
+                            break;
+                        default:
+                            count++;
+                    }
+                    break;
+
+                case ENTITY:
+                    if (!Character.isLetterOrDigit(c))
+                        state = State.TEXT;
+                    break;
+
+                case TAG:
+                    switch (c) {
+                        case '"':
+                            state = State.STRING;
+                            break;
+                        case '>':
+                            state = State.TEXT;
+                            break;
+                    }
+                    break;
+
+                case STRING:
+                    switch (c) {
+                        case '"':
+                            state = State.TAG;
+                            break;
+                    }
+            }
+        }
+        return count;
     }
 
     /**

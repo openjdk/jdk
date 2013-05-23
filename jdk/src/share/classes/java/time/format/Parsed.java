@@ -80,6 +80,7 @@ import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
@@ -105,7 +106,7 @@ import java.util.Set;
  * Once parsing is completed, this class can be used as the resultant {@code TemporalAccessor}.
  * In most cases, it is only exposed once the fields have been resolved.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is a mutable context intended for use from a single thread.
  * Usage of the class is thread-safe within standard parsing as a new instance of this class
  * is automatically created for each parse and parsing is single-threaded
@@ -128,6 +129,10 @@ final class Parsed implements TemporalAccessor {
      */
     Chronology chrono;
     /**
+     * Whether a leap-second is parsed.
+     */
+    boolean leapSecond;
+    /**
      * The effective chronology.
      */
     Chronology effectiveChrono;
@@ -143,6 +148,10 @@ final class Parsed implements TemporalAccessor {
      * The resolved time.
      */
     private LocalTime time;
+    /**
+     * The excess period from time-only parsing.
+     */
+    Period excessDays = Period.ZERO;
 
     /**
      * Creates an instance.
@@ -159,6 +168,7 @@ final class Parsed implements TemporalAccessor {
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
         cloned.chrono = this.chrono;
+        cloned.leapSecond = this.leapSecond;
         return cloned;
     }
 
@@ -232,6 +242,7 @@ final class Parsed implements TemporalAccessor {
         resolveFields();
         resolveTimeLenient();
         crossCheck();
+        resolvePeriod();
         return this;
     }
 
@@ -308,36 +319,72 @@ final class Parsed implements TemporalAccessor {
     private void resolveTimeFields() {
         // simplify fields
         if (fieldValues.containsKey(CLOCK_HOUR_OF_DAY)) {
+            // lenient allows anything, smart allows 0-24, strict allows 1-24
             long ch = fieldValues.remove(CLOCK_HOUR_OF_DAY);
+            if (resolverStyle == ResolverStyle.STRICT || (resolverStyle == ResolverStyle.SMART && ch != 0)) {
+                CLOCK_HOUR_OF_DAY.checkValidValue(ch);
+            }
             updateCheckConflict(CLOCK_HOUR_OF_DAY, HOUR_OF_DAY, ch == 24 ? 0 : ch);
         }
         if (fieldValues.containsKey(CLOCK_HOUR_OF_AMPM)) {
+            // lenient allows anything, smart allows 0-12, strict allows 1-12
             long ch = fieldValues.remove(CLOCK_HOUR_OF_AMPM);
+            if (resolverStyle == ResolverStyle.STRICT || (resolverStyle == ResolverStyle.SMART && ch != 0)) {
+                CLOCK_HOUR_OF_AMPM.checkValidValue(ch);
+            }
             updateCheckConflict(CLOCK_HOUR_OF_AMPM, HOUR_OF_AMPM, ch == 12 ? 0 : ch);
         }
         if (fieldValues.containsKey(AMPM_OF_DAY) && fieldValues.containsKey(HOUR_OF_AMPM)) {
             long ap = fieldValues.remove(AMPM_OF_DAY);
             long hap = fieldValues.remove(HOUR_OF_AMPM);
-            updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + hap);
+            if (resolverStyle == ResolverStyle.LENIENT) {
+                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), hap));
+            } else {  // STRICT or SMART
+                AMPM_OF_DAY.checkValidValue(ap);
+                HOUR_OF_AMPM.checkValidValue(ap);
+                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + hap);
+            }
+        }
+        if (fieldValues.containsKey(NANO_OF_DAY)) {
+            long nod = fieldValues.remove(NANO_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                NANO_OF_DAY.checkValidValue(nod);
+            }
+            updateCheckConflict(NANO_OF_DAY, HOUR_OF_DAY, nod / 3600_000_000_000L);
+            updateCheckConflict(NANO_OF_DAY, MINUTE_OF_HOUR, (nod / 60_000_000_000L) % 60);
+            updateCheckConflict(NANO_OF_DAY, SECOND_OF_MINUTE, (nod / 1_000_000_000L) % 60);
+            updateCheckConflict(NANO_OF_DAY, NANO_OF_SECOND, nod % 1_000_000_000L);
         }
         if (fieldValues.containsKey(MICRO_OF_DAY)) {
             long cod = fieldValues.remove(MICRO_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                MICRO_OF_DAY.checkValidValue(cod);
+            }
             updateCheckConflict(MICRO_OF_DAY, SECOND_OF_DAY, cod / 1_000_000L);
             updateCheckConflict(MICRO_OF_DAY, MICRO_OF_SECOND, cod % 1_000_000L);
         }
         if (fieldValues.containsKey(MILLI_OF_DAY)) {
             long lod = fieldValues.remove(MILLI_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                MILLI_OF_DAY.checkValidValue(lod);
+            }
             updateCheckConflict(MILLI_OF_DAY, SECOND_OF_DAY, lod / 1_000);
             updateCheckConflict(MILLI_OF_DAY, MILLI_OF_SECOND, lod % 1_000);
         }
         if (fieldValues.containsKey(SECOND_OF_DAY)) {
             long sod = fieldValues.remove(SECOND_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                SECOND_OF_DAY.checkValidValue(sod);
+            }
             updateCheckConflict(SECOND_OF_DAY, HOUR_OF_DAY, sod / 3600);
             updateCheckConflict(SECOND_OF_DAY, MINUTE_OF_HOUR, (sod / 60) % 60);
             updateCheckConflict(SECOND_OF_DAY, SECOND_OF_MINUTE, sod % 60);
         }
         if (fieldValues.containsKey(MINUTE_OF_DAY)) {
             long mod = fieldValues.remove(MINUTE_OF_DAY);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                MINUTE_OF_DAY.checkValidValue(mod);
+            }
             updateCheckConflict(MINUTE_OF_DAY, HOUR_OF_DAY, mod / 60);
             updateCheckConflict(MINUTE_OF_DAY, MINUTE_OF_HOUR, mod % 60);
         }
@@ -345,29 +392,34 @@ final class Parsed implements TemporalAccessor {
         // combine partial second fields strictly, leaving lenient expansion to later
         if (fieldValues.containsKey(NANO_OF_SECOND)) {
             long nos = fieldValues.get(NANO_OF_SECOND);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                NANO_OF_SECOND.checkValidValue(nos);
+            }
             if (fieldValues.containsKey(MICRO_OF_SECOND)) {
                 long cos = fieldValues.remove(MICRO_OF_SECOND);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    MICRO_OF_SECOND.checkValidValue(cos);
+                }
                 nos = cos * 1000 + (nos % 1000);
                 updateCheckConflict(MICRO_OF_SECOND, NANO_OF_SECOND, nos);
             }
             if (fieldValues.containsKey(MILLI_OF_SECOND)) {
                 long los = fieldValues.remove(MILLI_OF_SECOND);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    MILLI_OF_SECOND.checkValidValue(los);
+                }
                 updateCheckConflict(MILLI_OF_SECOND, NANO_OF_SECOND, los * 1_000_000L + (nos % 1_000_000L));
             }
         }
 
-        // convert to time if possible
-        if (fieldValues.containsKey(NANO_OF_DAY)) {
-            long nod = fieldValues.remove(NANO_OF_DAY);
-            updateCheckConflict(LocalTime.ofNanoOfDay(nod));
-        }
+        // convert to time if all four fields available (optimization)
         if (fieldValues.containsKey(HOUR_OF_DAY) && fieldValues.containsKey(MINUTE_OF_HOUR) &&
                 fieldValues.containsKey(SECOND_OF_MINUTE) && fieldValues.containsKey(NANO_OF_SECOND)) {
-            int hodVal = HOUR_OF_DAY.checkValidIntValue(fieldValues.remove(HOUR_OF_DAY));
-            int mohVal = MINUTE_OF_HOUR.checkValidIntValue(fieldValues.remove(MINUTE_OF_HOUR));
-            int somVal = SECOND_OF_MINUTE.checkValidIntValue(fieldValues.remove(SECOND_OF_MINUTE));
-            int nosVal = NANO_OF_SECOND.checkValidIntValue(fieldValues.remove(NANO_OF_SECOND));
-            updateCheckConflict(LocalTime.of(hodVal, mohVal, somVal, nosVal));
+            long hod = fieldValues.remove(HOUR_OF_DAY);
+            long moh = fieldValues.remove(MINUTE_OF_HOUR);
+            long som = fieldValues.remove(SECOND_OF_MINUTE);
+            long nos = fieldValues.remove(NANO_OF_SECOND);
+            resolveTime(hod, moh, som, nos);
         }
     }
 
@@ -377,7 +429,7 @@ final class Parsed implements TemporalAccessor {
         // which would break updateCheckConflict(field)
 
         if (time == null) {
-            // can only get here if NANO_OF_SECOND not present
+            // NANO_OF_SECOND merged with MILLI/MICRO above
             if (fieldValues.containsKey(MILLI_OF_SECOND)) {
                 long los = fieldValues.remove(MILLI_OF_SECOND);
                 if (fieldValues.containsKey(MICRO_OF_SECOND)) {
@@ -395,43 +447,87 @@ final class Parsed implements TemporalAccessor {
                 long cos = fieldValues.remove(MICRO_OF_SECOND);
                 fieldValues.put(NANO_OF_SECOND, cos * 1_000L);
             }
-        }
 
-        // merge hour/minute/second/nano leniently
-        Long hod = fieldValues.get(HOUR_OF_DAY);
-        if (hod != null) {
-            int hodVal = HOUR_OF_DAY.checkValidIntValue(hod);
-            Long moh = fieldValues.get(MINUTE_OF_HOUR);
-            Long som = fieldValues.get(SECOND_OF_MINUTE);
-            Long nos = fieldValues.get(NANO_OF_SECOND);
+            // merge hour/minute/second/nano leniently
+            Long hod = fieldValues.get(HOUR_OF_DAY);
+            if (hod != null) {
+                Long moh = fieldValues.get(MINUTE_OF_HOUR);
+                Long som = fieldValues.get(SECOND_OF_MINUTE);
+                Long nos = fieldValues.get(NANO_OF_SECOND);
 
-            // check for invalid combinations that cannot be defaulted
-            if (time == null) {
+                // check for invalid combinations that cannot be defaulted
                 if ((moh == null && (som != null || nos != null)) ||
                         (moh != null && som == null && nos != null)) {
                     return;
                 }
-            }
 
-            // default as necessary and build time
-            int mohVal = (moh != null ? MINUTE_OF_HOUR.checkValidIntValue(moh) : (time != null ? time.getMinute() : 0));
-            int somVal = (som != null ? SECOND_OF_MINUTE.checkValidIntValue(som) : (time != null ? time.getSecond() : 0));
-            int nosVal = (nos != null ? NANO_OF_SECOND.checkValidIntValue(nos) : (time != null ? time.getNano() : 0));
-            updateCheckConflict(LocalTime.of(hodVal, mohVal, somVal, nosVal));
-            fieldValues.remove(HOUR_OF_DAY);
-            fieldValues.remove(MINUTE_OF_HOUR);
-            fieldValues.remove(SECOND_OF_MINUTE);
-            fieldValues.remove(NANO_OF_SECOND);
+                // default as necessary and build time
+                long mohVal = (moh != null ? moh : 0);
+                long somVal = (som != null ? som : 0);
+                long nosVal = (nos != null ? nos : 0);
+                resolveTime(hod, mohVal, somVal, nosVal);
+                fieldValues.remove(HOUR_OF_DAY);
+                fieldValues.remove(MINUTE_OF_HOUR);
+                fieldValues.remove(SECOND_OF_MINUTE);
+                fieldValues.remove(NANO_OF_SECOND);
+            }
+        }
+
+        // validate remaining
+        if (resolverStyle != ResolverStyle.LENIENT && fieldValues.size() > 0) {
+            for (Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
+                TemporalField field = entry.getKey();
+                if (field instanceof ChronoField && field.isTimeBased()) {
+                    ((ChronoField) field).checkValidValue(entry.getValue());
+                }
+            }
         }
     }
 
-    private void updateCheckConflict(LocalTime lt) {
+    private void resolveTime(long hod, long moh, long som, long nos) {
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long totalNanos = Math.multiplyExact(hod, 3600_000_000_000L);
+            totalNanos = Math.addExact(totalNanos, Math.multiplyExact(moh, 60_000_000_000L));
+            totalNanos = Math.addExact(totalNanos, Math.multiplyExact(som, 1_000_000_000L));
+            totalNanos = Math.addExact(totalNanos, nos);
+            int excessDays = (int) Math.floorDiv(totalNanos, 86400_000_000_000L);  // safe int cast
+            long nod = Math.floorMod(totalNanos, 86400_000_000_000L);
+            updateCheckConflict(LocalTime.ofNanoOfDay(nod), Period.ofDays(excessDays));
+        } else {  // STRICT or SMART
+            int mohVal = MINUTE_OF_HOUR.checkValidIntValue(moh);
+            int nosVal = NANO_OF_SECOND.checkValidIntValue(nos);
+            // handle 24:00 end of day
+            if (resolverStyle == ResolverStyle.SMART && hod == 24 && mohVal == 0 && som == 0 && nosVal == 0) {
+                updateCheckConflict(LocalTime.MIDNIGHT, Period.ofDays(1));
+            } else {
+                int hodVal = HOUR_OF_DAY.checkValidIntValue(hod);
+                int somVal = SECOND_OF_MINUTE.checkValidIntValue(som);
+                updateCheckConflict(LocalTime.of(hodVal, mohVal, somVal, nosVal), Period.ZERO);
+            }
+        }
+    }
+
+    private void resolvePeriod() {
+        // add whole days if we have both date and time
+        if (date != null && time != null && excessDays.isZero() == false) {
+            date = date.plus(excessDays);
+            excessDays = Period.ZERO;
+        }
+    }
+
+    private void updateCheckConflict(LocalTime timeToSet, Period periodToSet) {
         if (time != null) {
-            if (lt != null && time.equals(lt) == false) {
-                throw new DateTimeException("Conflict found: Fields resolved to two different times: " + time + " " + lt);
+            if (time.equals(timeToSet) == false) {
+                throw new DateTimeException("Conflict found: Fields resolved to different times: " + time + " " + timeToSet);
+            }
+            if (excessDays.isZero() == false && periodToSet.isZero() == false && excessDays.equals(periodToSet) == false) {
+                throw new DateTimeException("Conflict found: Fields resolved to different excess periods: " + excessDays + " " + periodToSet);
+            } else {
+                excessDays = periodToSet;
             }
         } else {
-            time = lt;
+            time = timeToSet;
+            excessDays = periodToSet;
         }
     }
 

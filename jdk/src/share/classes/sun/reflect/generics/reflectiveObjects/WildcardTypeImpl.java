@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,10 +203,7 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
                 sb.append(" & ");
 
             first = false;
-            if (bound instanceof Class)
-                sb.append(((Class)bound).getName() );
-            else
-                sb.append(bound.toString());
+            sb.append(bound.getTypeName());
         }
         return sb.toString();
     }

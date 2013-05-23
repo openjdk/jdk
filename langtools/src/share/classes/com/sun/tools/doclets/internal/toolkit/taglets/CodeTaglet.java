@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package com.sun.tools.doclets.internal.toolkit.taglets;
 
 import java.util.Map;
 import com.sun.javadoc.Tag;
-import com.sun.tools.doclets.Taglet;
+import com.sun.tools.doclets.internal.toolkit.Content;
 
 /**
  * An inline Taglet used to denote literal code fragments.
@@ -49,23 +49,23 @@ import com.sun.tools.doclets.Taglet;
  * @since 1.5
  */
 
-public class CodeTaglet extends LiteralTaglet {
+public class CodeTaglet extends BaseInlineTaglet {
 
-        private static final String NAME = "code";
+    private static final String NAME = "code";
 
-        public static void register(Map<String, Taglet> map) {
-                map.remove(NAME);
-                map.put(NAME, new CodeTaglet());
-        }
+    public static void register(Map<String, Taglet> map) {
+        map.remove(NAME);
+        map.put(NAME, new CodeTaglet());
+    }
 
-        public String getName() {
-                return NAME;
-        }
+    public String getName() {
+        return NAME;
+    }
 
-        /*
-         * Wraps @literal's result in a <code> element.
-         */
-        public String toString(Tag tag) {
-                return "<code>" + super.toString(tag) + "</code>";
-        }
+    /**
+     * {@inheritDoc}
+     */
+    public Content getTagletOutput(Tag tag, TagletWriter writer) {
+        return writer.codeTagOutput(tag);
+    }
 }

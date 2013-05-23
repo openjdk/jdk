@@ -29,7 +29,7 @@
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
 # From Paul Eggert (1999-03-22):
 # A reliable and entertaining source about time zones is
@@ -1041,6 +1041,9 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 #	<a href="http://www.pettswoodvillage.co.uk/Daylight_Savings_William_Willett.pdf">
 #	William Willett, The Waste of Daylight, 19th edition
 #	</a> (1914-03)
+#
+#	Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+#	<http://www.jstor.org/stable/1774359>.
 #
 # See the `europe' file for Greenland.
 
@@ -2577,6 +2580,8 @@ Zone	America/Antigua	-4:07:12 -	LMT	1912 Mar 2
 
 # Bahamas
 #
+# For 1899 Milne gives -5:09:29.5; round that.
+#
 # From Sue Williams (2006-12-07):
 # The Bahamas announced about a month ago that they plan to change their DST
 # rules to sync with the U.S. starting in 2007....
@@ -2586,11 +2591,14 @@ Zone	America/Antigua	-4:07:12 -	LMT	1912 Mar 2
 Rule	Bahamas	1964	1975	-	Oct	lastSun	2:00	0	S
 Rule	Bahamas	1964	1975	-	Apr	lastSun	2:00	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Nassau	-5:09:24 -	LMT	1912 Mar 2
+Zone	America/Nassau	-5:09:30 -	LMT	1912 Mar 2
 			-5:00	Bahamas	E%sT	1976
 			-5:00	US	E%sT
 
 # Barbados
+
+# For 1899 Milne gives -3:58:29.2; round that.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Barb	1977	only	-	Jun	12	2:00	1:00	D
 Rule	Barb	1977	1978	-	Oct	Sun>=1	2:00	0	S
@@ -2598,8 +2606,8 @@ Rule	Barb	1978	1980	-	Apr	Sun>=15	2:00	1:00	D
 Rule	Barb	1979	only	-	Sep	30	2:00	0	S
 Rule	Barb	1980	only	-	Sep	25	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone America/Barbados	-3:58:28 -	LMT	1924		# Bridgetown
-			-3:58:28 -	BMT	1932	  # Bridgetown Mean Time
+Zone America/Barbados	-3:58:29 -	LMT	1924		# Bridgetown
+			-3:58:29 -	BMT	1932	  # Bridgetown Mean Time
 			-4:00	Barb	A%sT
 
 # Belize
@@ -2617,6 +2625,9 @@ Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
 
 # Bermuda
 
+# For 1899 Milne gives -4:19:18.3 as the meridian of the clock tower,
+# Bermuda dockyard, Ireland I; round that.
+
 # From Dan Jones, reporting in The Royal Gazette (2006-06-26):
 
 # Next year, however, clocks in the US will go forward on the second Sunday
@@ -2626,7 +2637,7 @@ Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
 # http://www.theroyalgazette.com/apps/pbcs.dll/article?AID=/20060529/NEWS/105290135
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/Bermuda	-4:19:04 -	LMT	1930 Jan  1 2:00    # Hamilton
+Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1 2:00    # Hamilton
 			-4:00	-	AST	1974 Apr 28 2:00
 			-4:00	Bahamas	A%sT	1976
 			-4:00	US	A%sT
@@ -2638,6 +2649,9 @@ Zone	America/Cayman	-5:25:32 -	LMT	1890		# Georgetown
 			-5:00	-	EST
 
 # Costa Rica
+
+# Milne gives -5:36:13.3 as San Jose mean time; round to nearest.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	CR	1979	1980	-	Feb	lastSun	0:00	1:00	D
 Rule	CR	1979	1980	-	Jun	Sun>=1	0:00	0	S
@@ -2648,13 +2662,18 @@ Rule	CR	1991	only	-	Jul	 1	0:00	0	S
 Rule	CR	1992	only	-	Mar	15	0:00	0	S
 # There are too many San Joses elsewhere, so we'll use `Costa Rica'.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
-			-5:36:20 -	SJMT	1921 Jan 15 # San Jose Mean Time
+Zone America/Costa_Rica	-5:36:13 -	LMT	1890		# San Jose
+			-5:36:13 -	SJMT	1921 Jan 15 # San Jose Mean Time
 			-6:00	CR	C%sT
 # Coco
 # no information; probably like America/Costa_Rica
 
 # Cuba
+
+# From Paul Eggert (2013-02-21):
+# Milne gives -5:28:50.45 for the observatory at Havana, -5:29:23.57
+# for the port, and -5:30 for meteorological observations.
+# For now, stick with Shanks & Pottenger.
 
 # From Arthur David Olson (1999-03-29):
 # The 1999-03-28 exhibition baseball game held in Havana, Cuba, between
@@ -3004,24 +3023,21 @@ Zone America/Guatemala	-6:02:04 -	LMT	1918 Oct 5
 # apparently using the same start and end date as USA/Canada.
 # So this means they have already changed their time.
 #
-# (Sources in French):
-# <a href="http://www.alterpresse.org/spip.php?article12510">
 # http://www.alterpresse.org/spip.php?article12510
-# </a>
-# <a href="http://radiovision2000haiti.net/home/?p=13253">
 # http://radiovision2000haiti.net/home/?p=13253
-# </a>
 #
-# Our coverage:
-# <a href="http://www.timeanddate.com/news/time/haiti-dst-2012.html">
-# http://www.timeanddate.com/news/time/haiti-dst-2012.html
-# </a>
-
 # From Arthur David Olson (2012-03-11):
 # The alterpresse.org source seems to show a US-style leap from 2:00 a.m. to
 # 3:00 a.m. rather than the traditional Haitian jump at midnight.
-# Assume a US-style fall back as well XXX.
-# Do not yet assume that the change carries forward past 2012 XXX.
+# Assume a US-style fall back as well.
+
+# From Steffen Thorsen (2013-03-10):
+# It appears that Haiti is observing DST this year as well, same rules
+# as US/Canada.  They did it last year as well, and it looks like they
+# are going to observe DST every year now...
+#
+# http://radiovision2000haiti.net/public/haiti-avis-changement-dheure-dimanche/
+# http://www.canalplushaiti.net/?p=6714
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Haiti	1983	only	-	May	8	0:00	1:00	D
@@ -3033,8 +3049,8 @@ Rule	Haiti	1988	1997	-	Apr	Sun>=1	1:00s	1:00	D
 Rule	Haiti	1988	1997	-	Oct	lastSun	1:00s	0	S
 Rule	Haiti	2005	2006	-	Apr	Sun>=1	0:00	1:00	D
 Rule	Haiti	2005	2006	-	Oct	lastSun	0:00	0	S
-Rule	Haiti	2012	only	-	Mar	Sun>=8	2:00	1:00	D
-Rule	Haiti	2012	only	-	Nov	Sun>=1	2:00	0	S
+Rule	Haiti	2012	max	-	Mar	Sun>=8	2:00	1:00	D
+Rule	Haiti	2012	max	-	Nov	Sun>=1	2:00	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Port-au-Prince -4:49:20 -	LMT	1890
 			-4:49	-	PPMT	1917 Jan 24 12:00 # P-a-P MT

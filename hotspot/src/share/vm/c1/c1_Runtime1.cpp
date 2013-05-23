@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1261,7 +1261,7 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
 
   if (length == 0) return ac_ok;
   if (src->is_typeArray()) {
-    Klass* const klass_oop = src->klass();
+    Klass* klass_oop = src->klass();
     if (klass_oop != dst->klass()) return ac_failed;
     TypeArrayKlass* klass = TypeArrayKlass::cast(klass_oop);
     const int l2es = klass->log2_element_size();

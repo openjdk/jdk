@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.model.JavacAnnoConstructs;
-import com.sun.tools.javac.model.JavacTypes;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -34,10 +32,10 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.model.JavacAnnoConstructs;
 import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
@@ -729,7 +727,7 @@ public class Type implements PrimitiveType {
                     return s.toString();
                 } else if (sym.name.isEmpty()) {
                     String s;
-                    ClassType norm = (ClassType) tsym.type;
+                    ClassType norm = (ClassType) tsym.type.unannotatedType();
                     if (norm == null) {
                         s = Log.getLocalizedString("anonymous.class", (Object)null);
                     } else if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
@@ -781,7 +779,7 @@ public class Type implements PrimitiveType {
             return
                 getEnclosingType().isErroneous() ||
                 isErroneous(getTypeArguments()) ||
-                this != tsym.type && tsym.type.isErroneous();
+                this != tsym.type.unannotatedType() && tsym.type.isErroneous();
         }
 
         public boolean isParameterized() {
@@ -1693,7 +1691,10 @@ public class Type implements PrimitiveType {
 
         @Override
         public String toString() {
-            // TODO more logic for arrays, etc.
+            // This method is only used for internal debugging output.
+            // See
+            // com.sun.tools.javac.code.Printer.visitAnnotatedType(AnnotatedType, Locale)
+            // for the user-visible logic.
             if (typeAnnotations != null &&
                     !typeAnnotations.isEmpty()) {
                 return "(" + typeAnnotations.toString() + " :: " + underlyingType.toString() + ")";
@@ -1705,9 +1706,13 @@ public class Type implements PrimitiveType {
         @Override
         public boolean contains(Type t)          { return underlyingType.contains(t); }
 
-        // TODO: attach annotations?
         @Override
-        public Type withTypeVar(Type t)          { return underlyingType.withTypeVar(t); }
+        public Type withTypeVar(Type t) {
+            // Don't create a new AnnotatedType, as 'this' will
+            // get its annotations set later.
+            underlyingType = underlyingType.withTypeVar(t);
+            return this;
+        }
 
         // TODO: attach annotations?
         @Override

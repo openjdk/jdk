@@ -25,6 +25,7 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.Objects;
 
 /**
  * @author Morten Jorgensen
@@ -97,13 +98,15 @@ class VariableRefBase extends Expression {
      * Two variable references are deemed equal if they refer to the
      * same variable.
      */
+    @Override
     public boolean equals(Object obj) {
-        try {
-            return (_variable == ((VariableRefBase) obj)._variable);
-        }
-        catch (ClassCastException e) {
-            return false;
-        }
+        return obj == this || (obj instanceof VariableRefBase)
+            && (_variable == ((VariableRefBase) obj)._variable);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(this._variable);
     }
 
     /**
@@ -111,10 +114,12 @@ class VariableRefBase extends Expression {
      * format 'variable-ref(<var-name>)'.
      * @return Variable reference description
      */
+    @Override
     public String toString() {
         return "variable-ref("+_variable.getName()+'/'+_variable.getType()+')';
     }
 
+    @Override
     public Type typeCheck(SymbolTable stable)
         throws TypeCheckError
     {
