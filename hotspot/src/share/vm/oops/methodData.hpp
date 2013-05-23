@@ -1338,9 +1338,9 @@ public:
   void set_would_profile(bool p)              { _would_profile = p;    }
   bool would_profile() const                  { return _would_profile; }
 
-  int highest_comp_level()                    { return _highest_comp_level;      }
+  int highest_comp_level() const              { return _highest_comp_level;      }
   void set_highest_comp_level(int level)      { _highest_comp_level = level;     }
-  int highest_osr_comp_level()                { return _highest_osr_comp_level;  }
+  int highest_osr_comp_level() const          { return _highest_osr_comp_level;  }
   void set_highest_osr_comp_level(int level)  { _highest_osr_comp_level = level; }
 
   int num_loops() const                       { return _num_loops;  }

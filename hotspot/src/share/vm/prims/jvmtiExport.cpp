@@ -619,6 +619,9 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
         *_cached_data_ptr = (unsigned char *)os::malloc(_curr_len, mtInternal);
+        if (*_cached_data_ptr == NULL) {
+          vm_exit_out_of_memory(_curr_len, OOM_MALLOC_ERROR, "unable to allocate cached copy of original class bytes");
+        }
         memcpy(*_cached_data_ptr, _curr_data, _curr_len);
         *_cached_length_ptr = _curr_len;
       }

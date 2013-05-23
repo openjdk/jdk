@@ -67,7 +67,7 @@
 // | ConstMethod*                   (oop)                 |
 // |------------------------------------------------------|
 // | methodData                     (oop)                 |
-// | interp_invocation_count                              |
+// | methodCounters                                       |
 // |------------------------------------------------------|
 // | access_flags                                         |
 // | vtable_index                                         |
@@ -75,16 +75,6 @@
 // | result_index (C++ interpreter only)                  |
 // |------------------------------------------------------|
 // | method_size             |   intrinsic_id|   flags    |
-// |------------------------------------------------------|
-// | throwout_count          |   num_breakpoints          |
-// |------------------------------------------------------|
-// | invocation_counter                                   |
-// | backedge_counter                                     |
-// |------------------------------------------------------|
-// |           prev_time (tiered only, 64 bit wide)       |
-// |                                                      |
-// |------------------------------------------------------|
-// |                  rate (tiered)                       |
 // |------------------------------------------------------|
 // | code                           (pointer)             |
 // | i2i                            (pointer)             |
@@ -996,7 +986,7 @@ class ExceptionTable : public StackObj {
   u2  _length;
 
  public:
-  ExceptionTable(Method* m) {
+  ExceptionTable(const Method* m) {
     if (m->has_exception_handler()) {
       _table = m->exception_table_start();
       _length = m->exception_table_length();

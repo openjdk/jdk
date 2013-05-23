@@ -41,7 +41,7 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import javax.crypto.*;
 
-import sun.security.ec.NamedCurve;
+import sun.security.util.ECUtil;
 
 public class TestECDH2 extends PKCS11Test {
 
@@ -79,8 +79,8 @@ public class TestECDH2 extends PKCS11Test {
     }
 
     private KeyPair genECKeyPair(String curvName, String privD, String pubX,
-                                 String pubY) throws Exception {
-        ECParameterSpec ecParams = NamedCurve.getECParameterSpec(curvName);
+                                 String pubY, Provider p) throws Exception {
+        ECParameterSpec ecParams = ECUtil.getECParameterSpec(p, curvName);
         ECPrivateKeySpec privKeySpec =
             new ECPrivateKeySpec(new BigInteger(privD, 16), ecParams);
         ECPublicKeySpec pubKeySpec =
@@ -112,12 +112,14 @@ public class TestECDH2 extends PKCS11Test {
         System.out.println("Testing against NIST P-256");
 
         long start = System.currentTimeMillis();
-        KeyPair kp256A = genECKeyPair("secp256r1", privD256, pubX256, pubY256);
+        KeyPair kp256A =
+            genECKeyPair("secp256r1", privD256, pubX256, pubY256, provider);
         KeyPair kp256B = genECKeyPair("secp256r1");
         testKeyAgreement(kp256A, kp256B, provider);
 
         System.out.println("Testing against NIST P-384");
-        KeyPair kp384A = genECKeyPair("secp384r1", privD384, pubX384, pubY384);
+        KeyPair kp384A =
+            genECKeyPair("secp384r1", privD384, pubX384, pubY384, provider);
         KeyPair kp384B = genECKeyPair("secp384r1");
         testKeyAgreement(kp384A, kp384B, provider);
 

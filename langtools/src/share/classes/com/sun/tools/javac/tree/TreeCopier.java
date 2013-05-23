@@ -422,8 +422,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCVariableDecl t = (JCVariableDecl) node;
         JCModifiers mods = copy(t.mods, p);
         JCExpression vartype = copy(t.vartype, p);
-        JCExpression init = copy(t.init, p);
-        return M.at(t.pos).VarDef(mods, t.name, vartype, init);
+        if (t.nameexpr == null) {
+            JCExpression init = copy(t.init, p);
+            return M.at(t.pos).VarDef(mods, t.name, vartype, init);
+        } else {
+            JCExpression nameexpr = copy(t.nameexpr, p);
+            return M.at(t.pos).ReceiverVarDef(mods, nameexpr, vartype);
+        }
     }
 
     public JCTree visitWhileLoop(WhileLoopTree node, P p) {

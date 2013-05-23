@@ -66,7 +66,7 @@ import java.io.StreamCorruptedException;
 /**
  * The shared serialization delegate for this package.
  *
- * <h3>Implementation notes</h3>
+ * @implNote
  * This class wraps the object being serialized, and takes a byte representing the type of the class to
  * be serialized.  This byte can also be used for versioning the serialization format.  In this case another
  * byte flag would be used in order to specify an alternative version of the type format.

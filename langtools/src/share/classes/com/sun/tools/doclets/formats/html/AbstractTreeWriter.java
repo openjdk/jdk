@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                     } else {
                         contentTree.addContent(", ");
                     }
-                    addPreQualifiedClassLink(LinkInfoImpl.CONTEXT_TREE,
+                    addPreQualifiedClassLink(LinkInfoImpl.Kind.TREE,
                             interfaces[i], contentTree);
                     counter++;
                 }
@@ -170,7 +170,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the information will be added
      */
     protected void addPartialInfo(ClassDoc cd, Content contentTree) {
-        addPreQualifiedStrongClassLink(LinkInfoImpl.CONTEXT_TREE, cd, contentTree);
+        addPreQualifiedStrongClassLink(LinkInfoImpl.Kind.TREE, cd, contentTree);
     }
 
     /**

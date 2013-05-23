@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8006735
- * @ignore
- * @summary  Smoke test for ensuring that annotations are emited to javadoc
+ * @summary  Smoke test for ensuring that annotations are emitted to javadoc
  *
  * @author   Mahmood Ali <mali>
  * @library  ../../lib/
@@ -37,7 +36,7 @@
 public class TestSmoke extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "NOT_SPECIFIED_YET";
+    private static final String BUG_ID = "8006735";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -52,8 +51,24 @@ public class TestSmoke extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "T0x06.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x0B.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x0F.html", "@DA"},
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x20.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        {BUG_ID + FS + "pkg" + FS + "T0x20A.html", "@DTPA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        {BUG_ID + FS + "pkg" + FS + "T0x20B.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
         {BUG_ID + FS + "pkg" + FS + "T0x22.html", "@DA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        {BUG_ID + FS + "pkg" + FS + "T0x22A.html", "@DTPA"},
+        */
+        /* @ignore 8013406: Test cases fail in javadoc test TestSmoke.java
+        {BUG_ID + FS + "pkg" + FS + "T0x22B.html", "@DA"},
+        */
         {BUG_ID + FS + "pkg" + FS + "T0x10.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x10A.html", "@DA"},
         {BUG_ID + FS + "pkg" + FS + "T0x12.html", "@DA"},
@@ -77,7 +92,11 @@ public class TestSmoke extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "T0x0B.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x0F.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x20.html", "@A"},
+        {BUG_ID + FS + "pkg" + FS + "T0x20A.html", "@A"},
+        {BUG_ID + FS + "pkg" + FS + "T0x20B.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x22.html", "@A"},
+        {BUG_ID + FS + "pkg" + FS + "T0x22A.html", "@A"},
+        {BUG_ID + FS + "pkg" + FS + "T0x22B.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x10.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x10A.html", "@A"},
         {BUG_ID + FS + "pkg" + FS + "T0x12.html", "@A"},

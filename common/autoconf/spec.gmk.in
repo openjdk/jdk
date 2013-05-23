@@ -54,9 +54,9 @@ MAKE_ARGS="SPEC=$(SPEC)"
 
 MAKE:=@MAKE@
 
-# Pass along the verbosity setting.
+# Pass along the verbosity and log level settings.
 ifeq (,$(findstring VERBOSE=,$(MAKE)))
-    MAKE:=$(MAKE) $(VERBOSE) VERBOSE="$(VERBOSE)"
+    MAKE:=$(MAKE) $(VERBOSE) VERBOSE="$(VERBOSE)" LOG_LEVEL="$(LOG_LEVEL)"
 endif
 
 # No implicit variables or rules!

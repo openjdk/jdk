@@ -25,6 +25,7 @@
 
 package java.util.regex;
 
+import java.util.Objects;
 
 /**
  * An engine that performs match operations on a {@link java.lang.CharSequence
@@ -370,9 +371,34 @@ public final class Matcher implements MatchResult {
     public int start(int group) {
         if (first < 0)
             throw new IllegalStateException("No match available");
-        if (group > groupCount())
+        if (group < 0 || group > groupCount())
             throw new IndexOutOfBoundsException("No group " + group);
         return groups[group * 2];
+    }
+
+    /**
+     * Returns the start index of the subsequence captured by the given
+     * <a href="Pattern.html#groupname">named-capturing group</a> during the
+     * previous match operation.
+     *
+     * @param  name
+     *         The name of a named-capturing group in this matcher's pattern
+     *
+     * @return  The index of the first character captured by the group,
+     *          or {@code -1} if the match was successful but the group
+     *          itself did not match anything
+     *
+     * @throws  IllegalStateException
+     *          If no match has yet been attempted,
+     *          or if the previous match operation failed
+     *
+     * @throws  IllegalArgumentException
+     *          If there is no capturing group in the pattern
+     *          with the given name
+     * @since 1.8
+     */
+    public int start(String name) {
+        return groups[getMatchedGroupIndex(name) * 2];
     }
 
     /**
@@ -417,9 +443,34 @@ public final class Matcher implements MatchResult {
     public int end(int group) {
         if (first < 0)
             throw new IllegalStateException("No match available");
-        if (group > groupCount())
+        if (group < 0 || group > groupCount())
             throw new IndexOutOfBoundsException("No group " + group);
         return groups[group * 2 + 1];
+    }
+
+    /**
+     * Returns the offset after the last character of the subsequence
+     * captured by the given <a href="Pattern.html#groupname">named-capturing
+     * group</a> during the previous match operation.
+     *
+     * @param  name
+     *         The name of a named-capturing group in this matcher's pattern
+     *
+     * @return  The offset after the last character captured by the group,
+     *          or {@code -1} if the match was successful
+     *          but the group itself did not match anything
+     *
+     * @throws  IllegalStateException
+     *          If no match has yet been attempted,
+     *          or if the previous match operation failed
+     *
+     * @throws  IllegalArgumentException
+     *          If there is no capturing group in the pattern
+     *          with the given name
+     * @since 1.8
+     */
+    public int end(String name) {
+        return groups[getMatchedGroupIndex(name) * 2 + 1];
     }
 
     /**
@@ -518,13 +569,7 @@ public final class Matcher implements MatchResult {
      * @since 1.7
      */
     public String group(String name) {
-        if (name == null)
-            throw new NullPointerException("Null group name");
-        if (first < 0)
-            throw new IllegalStateException("No match found");
-        if (!parentPattern.namedGroups().containsKey(name))
-            throw new IllegalArgumentException("No group with name <" + name + ">");
-        int group = parentPattern.namedGroups().get(name);
+        int group = getMatchedGroupIndex(name);
         if ((groups[group*2] == -1) || (groups[group*2+1] == -1))
             return null;
         return getSubSequence(groups[group * 2], groups[group * 2 + 1]).toString();
@@ -1257,4 +1302,17 @@ public final class Matcher implements MatchResult {
         return text.charAt(i);
     }
 
+    /**
+     * Returns the group index of the matched capturing group.
+     *
+     * @return the index of the named-capturing group
+     */
+    int getMatchedGroupIndex(String name) {
+        Objects.requireNonNull(name, "Group name");
+        if (first < 0)
+            throw new IllegalStateException("No match found");
+        if (!parentPattern.namedGroups().containsKey(name))
+            throw new IllegalArgumentException("No group with name <" + name + ">");
+        return parentPattern.namedGroups().get(name);
+    }
 }
