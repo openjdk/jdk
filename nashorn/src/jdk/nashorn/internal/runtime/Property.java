@@ -52,6 +52,8 @@ public abstract class Property {
      * we can use leave flag byte initialized with (the default) zero value.
      */
 
+    public static final int WRITABLE_ENUMERABLE_CONFIGURABLE = 0b0000_0000_0000;
+
     /** ECMA 8.6.1 - Is this property not writable? */
     public static final int NOT_WRITABLE     = 0b0000_0000_0001;
 

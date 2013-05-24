@@ -39,6 +39,9 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  */
 @ScriptClass("Int32Array")
 public final class NativeInt32Array extends ArrayBufferView {
+    /**
+     * The size in bytes of each element in the array.
+     */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE, where = Where.CONSTRUCTOR)
     public static final int BYTES_PER_ELEMENT = 4;
 
