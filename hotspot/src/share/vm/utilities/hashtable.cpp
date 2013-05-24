@@ -33,6 +33,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
+#include "utilities/numberSeq.hpp"
 
 
 // This is a generic hashtable, designed to be used for the symbol
@@ -235,6 +236,57 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
       *bucket_addr(i) = high_list;
     }
   }
+}
+
+template <class T, MEMFLAGS F> int Hashtable<T, F>::literal_size(Symbol *symbol) {
+  return symbol->size() * HeapWordSize;
+}
+
+template <class T, MEMFLAGS F> int Hashtable<T, F>::literal_size(oop oop) {
+  // NOTE: this would over-count if (pre-JDK8) java_lang_Class::has_offset_field() is true,
+  // and the String.value array is shared by several Strings. However, starting from JDK8,
+  // the String.value array is not shared anymore.
+  assert(oop != NULL && oop->klass() == SystemDictionary::String_klass(), "only strings are supported");
+  return (oop->size() + java_lang_String::value(oop)->size()) * HeapWordSize;
+}
+
+// Dump footprint and bucket length statistics
+//
+// Note: if you create a new subclass of Hashtable<MyNewType, F>, you will need to
+// add a new function Hashtable<T, F>::literal_size(MyNewType lit)
+
+template <class T, MEMFLAGS F> void Hashtable<T, F>::dump_table(outputStream* st, const char *table_name) {
+  NumberSeq summary;
+  int literal_bytes = 0;
+  for (int i = 0; i < this->table_size(); ++i) {
+    int count = 0;
+    for (HashtableEntry<T, F>* e = bucket(i);
+       e != NULL; e = e->next()) {
+      count++;
+      literal_bytes += literal_size(e->literal());
+    }
+    summary.add((double)count);
+  }
+  double num_buckets = summary.num();
+  double num_entries = summary.sum();
+
+  int bucket_bytes = (int)num_buckets * sizeof(bucket(0));
+  int entry_bytes  = (int)num_entries * sizeof(HashtableEntry<T, F>);
+  int total_bytes = literal_bytes +  bucket_bytes + entry_bytes;
+
+  double bucket_avg  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
+  double entry_avg   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
+  double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
+
+  st->print_cr("%s statistics:", table_name);
+  st->print_cr("Number of buckets       : %9d = %9d bytes, avg %7.3f", (int)num_buckets, bucket_bytes,  bucket_avg);
+  st->print_cr("Number of entries       : %9d = %9d bytes, avg %7.3f", (int)num_entries, entry_bytes,   entry_avg);
+  st->print_cr("Number of literals      : %9d = %9d bytes, avg %7.3f", (int)num_entries, literal_bytes, literal_avg);
+  st->print_cr("Total footprint         : %9s = %9d bytes", "", total_bytes);
+  st->print_cr("Average bucket size     : %9.3f", summary.avg());
+  st->print_cr("Variance of bucket size : %9.3f", summary.variance());
+  st->print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
+  st->print_cr("Maximum bucket size     : %9d", (int)summary.maximum());
 }
 
 
