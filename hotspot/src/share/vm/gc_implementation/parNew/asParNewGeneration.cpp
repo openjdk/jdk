@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,8 +585,7 @@ void ASParNewGeneration::compute_new_size() {
   size_policy->avg_young_live()->sample(used());
   size_policy->avg_eden_live()->sample(eden()->used());
 
-  size_policy->compute_young_generation_free_space(eden()->capacity(),
-                                                   max_gen_size());
+  size_policy->compute_eden_space_size(eden()->capacity(), max_gen_size());
 
   resize(size_policy->calculated_eden_size_in_bytes(),
          size_policy->calculated_survivor_size_in_bytes());
