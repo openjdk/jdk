@@ -252,7 +252,6 @@ uint ReferenceProcessor::count_jni_refs() {
   class AlwaysAliveClosure: public BoolObjectClosure {
   public:
     virtual bool do_object_b(oop obj) { return true; }
-    virtual void do_object(oop obj) { assert(false, "Don't call"); }
   };
 
   class CountHandleClosure: public OopClosure {
