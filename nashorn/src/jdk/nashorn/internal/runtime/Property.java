@@ -352,6 +352,26 @@ public abstract class Property {
     }
 
     /**
+     * Set the value of this property in {@code owner}. This allows to bypass creation of the
+     * setter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @param value the new property value
+     */
+    protected abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
+
+    /**
+     * Set the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @return  the property value
+     */
+    protected abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
+
+    /**
      * Abstract method for retrieving the setter for the property. We do not know
      * anything about the internal representation when we request the setter, we only
      * know that the setter will take the property as a parameter of the given type.
