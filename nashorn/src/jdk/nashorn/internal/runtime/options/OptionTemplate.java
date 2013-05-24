@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.options;
 
+import java.util.Locale;
 import java.util.TimeZone;
 import jdk.nashorn.internal.runtime.QuotedStringTokenizer;
 
@@ -263,7 +264,7 @@ public class OptionTemplate implements Comparable<OptionTemplate> {
                     this.params = arg;
                     break;
                 case "type":
-                    this.type = arg.toLowerCase();
+                    this.type = arg.toLowerCase(Locale.ROOT);
                     break;
                 case "default":
                     this.defaultValue = arg;
