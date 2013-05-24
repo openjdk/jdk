@@ -40,6 +40,9 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  */
 @ScriptClass("Uint8ClampedArray")
 public final class NativeUint8ClampedArray extends ArrayBufferView {
+    /**
+     * The size in bytes of each element in the array.
+     */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE, where = Where.CONSTRUCTOR)
     public static final int BYTES_PER_ELEMENT = 1;
 
