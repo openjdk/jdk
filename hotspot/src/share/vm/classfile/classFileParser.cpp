@@ -444,8 +444,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
             break;
           case JVM_REF_invokeStatic:
           case JVM_REF_invokeSpecial:
-            check_property(
-               tag.is_method() || tag.is_interface_method(),
+            check_property(tag.is_method() ||
+                           ((_major_version >= JAVA_8_VERSION) && tag.is_interface_method()),
                "Invalid constant pool index %u in class file %s (not a method)",
                ref_index, CHECK_(nullHandle));
              break;
@@ -4040,6 +4040,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       }
     }
 
+    // Allocate mirror and initialize static fields
+    java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
+
 
 #ifdef ASSERT
     if (ParseAllGenericSignatures) {
@@ -4054,17 +4057,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       DefaultMethods::generate_default_methods(
           this_klass(), &all_mirandas, CHECK_(nullHandle));
     }
-
-    // Allocate mirror and initialize static fields
-    java_lang_Class::create_mirror(this_klass, CHECK_(nullHandle));
-
-    // Allocate a simple java object for locking during class initialization.
-    // This needs to be a java object because it can be held across a java call.
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_NULL);
-    this_klass->set_init_lock(r);
-
-    // TODO: Move these oops to the mirror
-    this_klass->set_protection_domain(protection_domain());
 
     // Update the loader_data graph.
     record_defined_class_dependencies(this_klass, CHECK_NULL);
