@@ -1535,10 +1535,17 @@ public class JavacParser implements Parser {
         outer: for (int lookahead = 0 ; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
             switch (tk) {
-                case EXTENDS: case SUPER: case COMMA:
+                case COMMA:
                     type = true;
-                case QUES: case DOT: case AMP:
+                case EXTENDS: case SUPER: case DOT: case AMP:
                     //skip
+                    break;
+                case QUES:
+                    if (peekToken(lookahead, EXTENDS) ||
+                            peekToken(lookahead, SUPER)) {
+                        //wildcards
+                        type = true;
+                    }
                     break;
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR:
