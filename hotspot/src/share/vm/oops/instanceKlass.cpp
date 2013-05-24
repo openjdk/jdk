@@ -2754,15 +2754,28 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-void InstanceKlass::add_member_name(Handle mem_name) {
+void InstanceKlass::add_member_name(int index, Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
+  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
   DEBUG_ONLY(No_Safepoint_Verifier nsv);
 
   if (_member_names == NULL) {
-    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable();
+    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  _member_names->add_member_name(mem_name_wref);
+  _member_names->add_member_name(index, mem_name_wref);
+}
+
+oop InstanceKlass::get_member_name(int index) {
+  MutexLocker ml(MemberNameTable_lock);
+  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
+  DEBUG_ONLY(No_Safepoint_Verifier nsv);
+
+  if (_member_names == NULL) {
+    return NULL;
+  }
+  oop mem_name =_member_names->get_member_name(index);
+  return mem_name;
 }
 
 // -----------------------------------------------------------------------------------------------------
