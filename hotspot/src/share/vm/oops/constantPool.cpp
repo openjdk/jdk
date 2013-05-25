@@ -1063,9 +1063,10 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
     int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
     int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
     int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
-    bool match = compare_entry_to(k1, cp2, k2, CHECK_false) &&
-                 compare_operand_to(i1, cp2, i2, CHECK_false);
-    return match;
+    // separate statements and variables because CHECK_false is used
+    bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
+    bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
+    return (match_entry && match_operand);
   } break;
 
   case JVM_CONSTANT_String:
