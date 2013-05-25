@@ -2320,10 +2320,15 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  MemberNameTable* mnt = member_names();
-  if (mnt != NULL) {
-    delete mnt;
-    set_member_names(NULL);
+  // Deallocate MemberNameTable
+  {
+    Mutex* lock_or_null = SafepointSynchronize::is_at_safepoint() ? NULL : MemberNameTable_lock;
+    MutexLockerEx ml(lock_or_null, Mutex::_no_safepoint_check_flag);
+    MemberNameTable* mnt = member_names();
+    if (mnt != NULL) {
+      delete mnt;
+      set_member_names(NULL);
+    }
   }
 
   int* indices = methods_cached_itable_indices_acquire();
