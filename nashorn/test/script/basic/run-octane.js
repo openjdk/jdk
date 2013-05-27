@@ -89,47 +89,57 @@ function run_one_benchmark(arg, iters) {
     }
     
     var benchmarks = eval(arg.suite + ".benchmarks");
-    for (var x = 0; x < benchmarks.length ; x++) { 
-	benchmarks[x].Setup();
-    }
-    print_verbose("Running '" + arg.file + "' for " + iters + " iterations of no less than " + min_time + " seconds (" + runtime + ")");
-    
-    var scores = [];
-    
-    var min_time_ms = min_time * 1000;
-    var len = benchmarks.length;
-    
-    for (var it = 0; it < iters + 1; it++) {
-	//every iteration must take a minimum of 10 secs
-	var ops = 0;
-	var elapsed = 0;
-	var start = new Date;
-	do {
-	    for (var i = 0; i < len; i++) {
-		benchmarks[i].run();
-	    }	    
-	    ops += len;
-	    elapsed = new Date - start;
-	} while (elapsed < min_time * 1000);
-	
-	var score = ops / elapsed * 1000 * 60;
-	scores.push(score);
-	var name = it == 0 ? "warmup" : "iteration " + it;   
-	print_verbose("[" + arg.file + "] " + name + " finished " + score.toFixed(0) + " ops/minute");
-    }
-    for (var x = 0; x < benchmarks.length ; x++) { 
-	benchmarks[x].TearDown();
-    }
-
     var min_score  = 1e9;
     var max_score  = 0;
     var mean_score = 0;
-    for (var x = 1; x < iters + 1 ; x++) {
-	mean_score += scores[x];
-	min_score = Math.min(min_score, scores[x]);
-	max_score = Math.max(max_score, scores[x]);
+
+    try {
+	for (var x = 0; x < benchmarks.length ; x++) { 
+	    benchmarks[x].Setup();
+	}
+	print_verbose("Running '" + arg.file + "' for " + iters + " iterations of no less than " + min_time + " seconds (" + runtime + ")");
+	
+	var scores = [];
+	
+	var min_time_ms = min_time * 1000;
+	var len = benchmarks.length;    
+	
+	for (var it = 0; it < iters + 1; it++) {
+	    //every iteration must take a minimum of 10 secs
+	    var ops = 0;
+	    var elapsed = 0;
+	    var start = new Date;
+	    do {
+		for (var i = 0; i < len; i++) {
+		    benchmarks[i].run();
+		}	    
+		ops += len;
+		elapsed = new Date - start;
+	    } while (elapsed < min_time * 1000);
+	    
+	    var score = ops / elapsed * 1000 * 60;
+	    scores.push(score);
+	    var name = it == 0 ? "warmup" : "iteration " + it;   
+	    print_verbose("[" + arg.file + "] " + name + " finished " + score.toFixed(0) + " ops/minute");
+	}
+
+	for (var x = 0; x < benchmarks.length ; x++) { 
+	    benchmarks[x].TearDown();
+	}
+
+	for (var x = 1; x < iters + 1 ; x++) {
+	    mean_score += scores[x];
+	    min_score = Math.min(min_score, scores[x]);
+	    max_score = Math.max(max_score, scores[x]);
+	}
+	mean_score /= iters;    
+
+    } catch (e) {
+	print_always("*** Aborted and setting score to zero. Reason: " + e);
+	mean_score = min_score = max_score = 0;
+	scores = [0];
     }
-    mean_score /= iters;    
+
     var res = "[" + arg.file + "] " + mean_score.toFixed(0);
     if (verbose) {
 	res += " ops/minute (" + min_score.toFixed(0) + "-" + max_score.toFixed(0) + "), warmup=" + scores[0].toFixed(0);
@@ -156,6 +166,7 @@ function run_suite(tests, iters) {
 runtime = "command line";
 
 var args = [];
+
 if (typeof $ARGS !== 'undefined') {
     args = $ARGS;
 } else if (typeof arguments !== 'undefined' && arguments.length != 0) {
