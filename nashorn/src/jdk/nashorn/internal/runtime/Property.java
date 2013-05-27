@@ -52,6 +52,7 @@ public abstract class Property {
      * we can use leave flag byte initialized with (the default) zero value.
      */
 
+    /** Mask for property being both writable, enumerable and configurable */
     public static final int WRITABLE_ENUMERABLE_CONFIGURABLE = 0b0000_0000_0000;
 
     /** ECMA 8.6.1 - Is this property not writable? */
@@ -360,6 +361,7 @@ public abstract class Property {
      * @param self the this object
      * @param owner the owner object
      * @param value the new property value
+     * @param strict is this a strict setter?
      */
     protected abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
 

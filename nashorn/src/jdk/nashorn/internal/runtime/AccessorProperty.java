@@ -306,14 +306,14 @@ public class AccessorProperty extends Property {
     protected Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
         if (isSpill()) {
             return self.spill[getSlot()];
-        } else {
-            try {
-                return getGetter(Object.class).invokeExact((Object)self);
-            } catch (final Error|RuntimeException e) {
-                throw e;
-            } catch (final Throwable e) {
-                throw new RuntimeException(e);
-            }
+        }
+
+        try {
+            return getGetter(Object.class).invokeExact((Object)self);
+        } catch (final Error|RuntimeException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 

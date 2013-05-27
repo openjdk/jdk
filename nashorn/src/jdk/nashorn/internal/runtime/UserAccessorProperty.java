@@ -193,7 +193,6 @@ public final class UserAccessorProperty extends Property {
     // getter/setter may be inherited. If so, proto is bound during lookup. In either
     // inherited or self case, slot is also bound during lookup. Actual ScriptFunction
     // to be called is retrieved everytime and applied.
-    @SuppressWarnings("unused")
     static Object userAccessorGetter(final ScriptObject proto, final int slot, final Object self) {
         final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
         final Object       func      = container.getSpill(slot);
@@ -211,7 +210,6 @@ public final class UserAccessorProperty extends Property {
         return UNDEFINED;
     }
 
-    @SuppressWarnings("unused")
     static void userAccessorSetter(final ScriptObject proto, final int slot, final String name, final Object self, final Object value) {
         final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
         final Object       func      = container.getSpill(slot);
