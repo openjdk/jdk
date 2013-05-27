@@ -737,7 +737,7 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
   return result;
 }
 
-void StringTable::unlink(BoolObjectClosure* is_alive) {
+void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   // Readers of the table are unlocked, so we should only be removing
   // entries at a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -748,6 +748,9 @@ void StringTable::unlink(BoolObjectClosure* is_alive) {
       assert(!entry->is_shared(), "CDS not used for the StringTable");
 
       if (is_alive->do_object_b(entry->literal())) {
+        if (f != NULL) {
+          f->do_oop((oop*)entry->literal_addr());
+        }
         p = entry->next_addr();
       } else {
         *p = entry->next();
