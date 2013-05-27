@@ -2338,6 +2338,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::flat_profiler));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
+    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::class_loader_data));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
 
