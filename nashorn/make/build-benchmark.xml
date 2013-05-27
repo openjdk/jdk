@@ -24,14 +24,13 @@
 <project name="nashorn-benchmarks" default="all" basedir="..">
 
   <target name="octane-init" depends="jar">
-    <fileset id="octane-set"
-	     dir="${octane-test-sys-prop.test.js.roots}"
-	     excludes="${octane-test-sys-prop.test.js.exclude.list}">
-      <include name="*.js"/>
-    </fileset>
-    <pathconvert pathsep=" " property="octane-tests" refid="octane-set"/>
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes pdfjs raytrace regexp richards splay"/>
   </target>
-
+  
+  <!-- ignore benchmarks where rhino crashes -->
+  <target name="octane-init-rhino" depends="jar">
+    <property name="octane-tests" value="box2d code-load crypto deltablue earley-boyer gbemu navier-stokes raytrace regexp richards splay"/>
+  </target>
 
   <!-- box2d -->
   <target name="octane-box2d" depends="jar">
@@ -320,7 +319,7 @@
   </target>
 
   <!-- run octane benchmarks using Rhino as runtime -->
-  <target name="octane-rhino" depends="octane-init">
+  <target name="octane-rhino" depends="octane-init-rhino">
     <antcall target="run-octane-rhino"/>
   </target>
   
