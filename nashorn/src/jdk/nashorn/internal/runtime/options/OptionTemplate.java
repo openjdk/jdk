@@ -152,6 +152,9 @@ public class OptionTemplate implements Comparable<OptionTemplate> {
         case "timezone":
             this.defaultValue = TimeZone.getDefault().getID();
             break;
+        case "locale":
+            this.defaultValue = Locale.getDefault().toLanguageTag();
+            break;
         default:
             break;
         }

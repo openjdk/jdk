@@ -499,6 +499,8 @@ public final class Options {
         case "timezone":
             // default value "TimeZone.getDefault()"
             return new Option<>(TimeZone.getTimeZone(value));
+        case "locale":
+            return new Option<>(Locale.forLanguageTag(value));
         case "keyvalues":
             return new KeyValueOption(value);
         case "log":

@@ -262,14 +262,19 @@ public final class ScriptEnvironment {
         }
         this._callsite_flags = callSiteFlags;
 
-        final Option<?> option = options.get("timezone");
-        if (option != null) {
-            this._timezone = (TimeZone)option.getValue();
+        final Option<?> timezoneOption = options.get("timezone");
+        if (timezoneOption != null) {
+            this._timezone = (TimeZone)timezoneOption.getValue();
         } else {
             this._timezone  = TimeZone.getDefault();
         }
 
-        this._locale = Locale.getDefault();
+        final Option<?> localeOption = options.get("locale");
+        if (localeOption != null) {
+            this._locale = (Locale)localeOption.getValue();
+        } else {
+            this._locale = Locale.getDefault();
+        }
     }
 
     /**
