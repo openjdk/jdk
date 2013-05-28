@@ -58,6 +58,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.TreeMap;
 
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
@@ -2220,7 +2221,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 method.convert(Type.OBJECT);
             } else if (value instanceof Boolean) {
-                method.getField(staticField(Boolean.class, value.toString().toUpperCase(), Boolean.class));
+                method.getField(staticField(Boolean.class, value.toString().toUpperCase(Locale.ENGLISH), Boolean.class));
             } else {
                 load(rhs);
                 method.convert(unaryNode.getType());
