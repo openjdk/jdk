@@ -267,7 +267,7 @@ public class OptionTemplate implements Comparable<OptionTemplate> {
                     this.params = arg;
                     break;
                 case "type":
-                    this.type = arg.toLowerCase(Locale.ROOT);
+                    this.type = arg.toLowerCase(Locale.ENGLISH);
                     break;
                 case "default":
                     this.defaultValue = arg;

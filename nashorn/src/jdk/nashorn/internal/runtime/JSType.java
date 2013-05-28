@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import java.util.Locale;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
@@ -111,7 +112,7 @@ public enum JSType {
      */
     public final String typeName() {
         // For NULL, "object" has to be returned!
-        return ((this == NULL) ? OBJECT : this).name().toLowerCase();
+        return ((this == NULL) ? OBJECT : this).name().toLowerCase(Locale.ENGLISH);
     }
 
     /**
