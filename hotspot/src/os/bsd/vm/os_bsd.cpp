@@ -935,10 +935,10 @@ jlong os::elapsed_frequency() {
   return (1000 * 1000);
 }
 
-// XXX: For now, code this as if BSD does not support vtime.
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime()   { return false; }
 bool os::vtime_enabled()  { return false; }
+
 double os::elapsedVTime() {
   // better than nothing, but not much
   return elapsedTime();

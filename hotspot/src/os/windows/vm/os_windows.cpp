@@ -813,15 +813,21 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-// For now, we say that Windows does not support vtime.  I have no idea
-// whether it can actually be made to (DLD, 9/13/05).
-
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime() { return false; }
 bool os::vtime_enabled() { return false; }
+
 double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
+    // the resolution of windows_to_java_time() should be sufficient (ms)
+    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
+  } else {
+    return elapsedTime();
+  }
 }
 
 jlong os::javaTimeMillis() {
