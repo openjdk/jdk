@@ -151,9 +151,6 @@ sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java	macosx-all
 # 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 
-# 8005472
-com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.sh windows-all
-
 ############################################################################
 
 # jdk_math
