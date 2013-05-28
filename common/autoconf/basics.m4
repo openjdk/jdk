@@ -60,16 +60,19 @@ AC_DEFUN([BASIC_FIXUP_PATH],
   else
     # We're on a posix platform. Hooray! :)
     path="[$]$1"
-    
-    if test ! -f "$path" && test ! -d "$path"; then
-      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
       AC_MSG_ERROR([Spaces are not allowed in this path.])
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
+    fi
+
+    $1="`cd "$path"; $THEPWDCMD`" 
   fi
 ])
 
