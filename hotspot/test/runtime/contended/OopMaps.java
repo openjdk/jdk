@@ -41,11 +41,14 @@ import sun.misc.Contended;
 /*
  * @test
  * @bug     8015270
+ * @bug     8015493
  * @summary \@Contended: fix multiple issues in the layout code
  *
- * @run main/othervm -XX:-RestrictContended OopMaps
+ * @run main/othervm -XX:-RestrictContended -XX:ContendedPaddingWidth=128 -Xmx128m OopMaps
  */
 public class OopMaps {
+
+    public static final int COUNT = 10000;
 
     public static void main(String[] args) throws Exception {
         Object o01 = new Object();
@@ -63,7 +66,6 @@ public class OopMaps {
         Object o13 = new Object();
         Object o14 = new Object();
 
-        final int COUNT = 100000;
         R1[] rs = new R1[COUNT];
 
         for (int i = 0; i < COUNT; i++) {
