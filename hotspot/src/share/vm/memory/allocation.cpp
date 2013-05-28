@@ -60,10 +60,11 @@ void* _ValueObj::operator new [](size_t size)   { ShouldNotCallThis(); return 0;
 void  _ValueObj::operator delete [](void* p)    { ShouldNotCallThis(); }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
-                                size_t word_size, bool read_only, TRAPS) {
+                                 size_t word_size, bool read_only,
+                                 MetaspaceObj::Type type, TRAPS) {
   // Klass has it's own operator new
   return Metaspace::allocate(loader_data, word_size, read_only,
-                             Metaspace::NonClassType, CHECK_NULL);
+                             type, CHECK_NULL);
 }
 
 bool MetaspaceObj::is_shared() const {
