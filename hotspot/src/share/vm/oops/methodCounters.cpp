@@ -26,7 +26,7 @@
 #include "runtime/thread.inline.hpp"
 
 MethodCounters* MethodCounters::allocate(ClassLoaderData* loader_data, TRAPS) {
-  return new(loader_data, size(), false, THREAD) MethodCounters();
+  return new(loader_data, size(), false, MetaspaceObj::MethodCountersType, THREAD) MethodCounters();
 }
 
 void MethodCounters::clear_counters() {
