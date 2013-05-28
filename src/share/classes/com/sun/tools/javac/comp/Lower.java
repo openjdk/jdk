@@ -2931,7 +2931,7 @@ public class Lower extends TreeTranslator {
             }
             result =
                 make.If(cond,
-                        make_at(detailPos).
+                        make_at(tree).
                            Throw(makeNewClass(syms.assertionErrorType, exnArgs)),
                         null);
         } else {
