@@ -55,7 +55,7 @@ public class ContinueNode extends Statement {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterContinueNode(this)) {
             return visitor.leaveContinueNode(this);
         }

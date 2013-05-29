@@ -40,7 +40,7 @@ print(a[0]);
 
 // convert a script array to Java array
 var anArray = [1, "13", false];
-var javaIntArray = Java.toJavaArray(anArray, "int");
+var javaIntArray = Java.to(anArray, "int[]");
 print(javaIntArray[0]);// prints 1
 print(javaIntArray[1]); // prints 13, as string "13" was converted to number 13 as per ECMAScript ToNumber conversion
 print(javaIntArray[2]);// prints 0, as boolean false was converted to number 0 as per ECMAScript ToNumber conversion
@@ -48,5 +48,5 @@ print(javaIntArray[2]);// prints 0, as boolean false was converted to number 0 a
 // convert a Java array to a JavaScript array
 var File = Java.type("java.io.File");
 var listCurDir = new File(".").listFiles();
-var jsList = Java.toJavaScriptArray(listCurDir);
+var jsList = Java.from(listCurDir);
 print(jsList);

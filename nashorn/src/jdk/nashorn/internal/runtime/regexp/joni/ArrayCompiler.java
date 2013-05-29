@@ -28,8 +28,6 @@ import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.isRepe
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnchorNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.BackRefNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
-import jdk.nashorn.internal.runtime.regexp.joni.ast.CTypeNode;
-import jdk.nashorn.internal.runtime.regexp.joni.ast.CallNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.EncloseNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.Node;
@@ -71,11 +69,6 @@ final class ArrayCompiler extends Compiler {
         regex.templates = templates;
         regex.templateNum = templateNum;
         regex.factory = MatcherFactory.DEFAULT;
-
-        if (Config.USE_SUBEXP_CALL && analyser.env.unsetAddrList != null) {
-            analyser.env.unsetAddrList.fix(regex);
-            analyser.env.unsetAddrList = null;
-        }
     }
 
     @Override
@@ -119,7 +112,7 @@ final class ArrayCompiler extends Compiler {
         return isNeedStrLenOpExact(op);
     }
 
-    private int selectStrOpcode(int mbLength, int strLength, boolean ignoreCase) {
+    private int selectStrOpcode(int strLength, boolean ignoreCase) {
         int op;
 
         if (ignoreCase) {
@@ -128,31 +121,14 @@ final class ArrayCompiler extends Compiler {
             default:op = OPCode.EXACTN_IC; break;
             } // switch
         } else {
-            switch (mbLength) {
-            case 1:
-                switch (strLength) {
-                case 1: op = OPCode.EXACT1; break;
-                case 2: op = OPCode.EXACT2; break;
-                case 3: op = OPCode.EXACT3; break;
-                case 4: op = OPCode.EXACT4; break;
-                case 5: op = OPCode.EXACT5; break;
-                default:op = OPCode.EXACTN; break;
-                } // inner switch
-                break;
-            case 2:
-                switch (strLength) {
-                case 1: op = OPCode.EXACTMB2N1; break;
-                case 2: op = OPCode.EXACTMB2N2; break;
-                case 3: op = OPCode.EXACTMB2N3; break;
-                default:op = OPCode.EXACTMB2N;  break;
-                } // inner switch
-                break;
-            case 3:
-                op = OPCode.EXACTMB3N;
-                break;
-            default:
-                op = OPCode.EXACTMBN;
-            } // switch
+            switch (strLength) {
+            case 1: op = OPCode.EXACT1; break;
+            case 2: op = OPCode.EXACT2; break;
+            case 3: op = OPCode.EXACT3; break;
+            case 4: op = OPCode.EXACT4; break;
+            case 5: op = OPCode.EXACT5; break;
+            default:op = OPCode.EXACTN; break;
+            } // inner switch
         }
         return op;
     }
@@ -185,8 +161,8 @@ final class ArrayCompiler extends Compiler {
         }
     }
 
-    private int addCompileStringlength(char[] chars, int p, int mbLength, int strLength, boolean ignoreCase) {
-        int op = selectStrOpcode(mbLength, strLength, ignoreCase);
+    private int addCompileStringlength(char[] chars, int p, int strLength, boolean ignoreCase) {
+        int op = selectStrOpcode(strLength, ignoreCase);
         int len = OPSize.OPCODE;
 
         if (Config.USE_STRING_TEMPLATES && opTemplated(op)) {
@@ -194,25 +170,21 @@ final class ArrayCompiler extends Compiler {
             len += OPSize.LENGTH + OPSize.INDEX + OPSize.INDEX;
         } else {
             if (isNeedStrLenOpExact(op)) len += OPSize.LENGTH;
-            len += mbLength * strLength;
+            len += strLength;
         }
         if (op == OPCode.EXACTMBN) len += OPSize.LENGTH;
         return len;
     }
 
     @Override
-    protected final void addCompileString(char[] chars, int p, int mbLength, int strLength, boolean ignoreCase) {
-        int op = selectStrOpcode(mbLength, strLength, ignoreCase);
+    protected final void addCompileString(char[] chars, int p, int strLength, boolean ignoreCase) {
+        int op = selectStrOpcode(strLength, ignoreCase);
         addOpcode(op);
 
-        if (op == OPCode.EXACTMBN) addLength(mbLength);
+        if (op == OPCode.EXACTMBN) addLength(1);
 
         if (isNeedStrLenOpExact(op)) {
-            if (op == OPCode.EXACTN_IC || op == OPCode.EXACTN_IC_SB) {
-                addLength(mbLength * strLength);
-            } else {
-                addLength(strLength);
-            }
+            addLength(strLength);
         }
 
         if (Config.USE_STRING_TEMPLATES && opTemplated(op)) {
@@ -220,7 +192,7 @@ final class ArrayCompiler extends Compiler {
             addInt(p);
             addTemplate(chars);
         } else {
-            addChars(chars, p, mbLength * strLength);
+            addChars(chars, p, strLength);
         }
     }
 
@@ -242,14 +214,14 @@ final class ArrayCompiler extends Compiler {
             slen++;
             p++;
         }
-        int r = addCompileStringlength(chars, prev, 1, slen, ambig);
+        int r = addCompileStringlength(chars, prev, slen, ambig);
         rlen += r;
         return rlen;
     }
 
     private int compileLengthStringRawNode(StringNode sn) {
         if (sn.length() <= 0) return 0;
-        return addCompileStringlength(sn.chars, sn.p, 1 /*sb*/, sn.length(), false);
+        return addCompileStringlength(sn.chars, sn.p, sn.length(), false);
     }
 
     private void addMultiByteCClass(CodeRangeBuffer mbuf) {
@@ -312,26 +284,6 @@ final class ArrayCompiler extends Compiler {
     }
 
     @Override
-    protected void compileCTypeNode(CTypeNode node) {
-        CTypeNode cn = node;
-        int op;
-        switch (cn.ctype) {
-        case CharacterType.WORD:
-            if (cn.not) {
-                op = OPCode.NOT_WORD;
-            } else {
-                op = OPCode.WORD;
-            }
-            break;
-
-        default:
-            newInternalException(ERR_PARSER_BUG);
-            return; // not reached
-        } // inner switch
-        addOpcode(op);
-    }
-
-    @Override
     protected void compileAnyCharNode() {
         if (isMultiline(regex.options)) {
             addOpcode(OPCode.ANYCHAR_ML);
@@ -341,30 +293,15 @@ final class ArrayCompiler extends Compiler {
     }
 
     @Override
-    protected void compileCallNode(CallNode node) {
-        addOpcode(OPCode.CALL);
-        node.unsetAddrList.add(codeLength, node.target);
-        addAbsAddr(0); /*dummy addr.*/
-    }
-
-    @Override
     protected void compileBackrefNode(BackRefNode node) {
         BackRefNode br = node;
-        if (Config.USE_BACKREF_WITH_LEVEL && br.isNestLevel()) {
-            addOpcode(OPCode.BACKREF_WITH_LEVEL);
-            addOption(regex.options & Option.IGNORECASE);
-            addLength(br.nestLevel);
-            // !goto add_bacref_mems;!
-            addLength(br.backNum);
-            for (int i=br.backNum-1; i>=0; i--) addMemNum(br.back[i]);
-            return;
-        } else { // USE_BACKREF_AT_LEVEL
-            if (br.backNum == 1) {
-                if (isIgnoreCase(regex.options)) {
-                    addOpcode(OPCode.BACKREFN_IC);
-                    addMemNum(br.back[0]);
-                } else {
-                    switch (br.back[0]) {
+        // USE_BACKREF_AT_LEVEL
+        if (br.backNum == 1) {
+            if (isIgnoreCase(regex.options)) {
+                addOpcode(OPCode.BACKREFN_IC);
+                addMemNum(br.back[0]);
+            } else {
+                switch (br.back[0]) {
                     case 1:
                         addOpcode(OPCode.BACKREF1);
                         break;
@@ -375,18 +312,17 @@ final class ArrayCompiler extends Compiler {
                         addOpcode(OPCode.BACKREFN);
                         addOpcode(br.back[0]);
                         break;
-                    } // switch
-                }
-            } else {
-                if (isIgnoreCase(regex.options)) {
-                    addOpcode(OPCode.BACKREF_MULTI_IC);
-                } else {
-                    addOpcode(OPCode.BACKREF_MULTI);
-                }
-                // !add_bacref_mems:!
-                addLength(br.backNum);
-                for (int i=br.backNum-1; i>=0; i--) addMemNum(br.back[i]);
+                } // switch
             }
+        } else {
+            if (isIgnoreCase(regex.options)) {
+                addOpcode(OPCode.BACKREF_MULTI_IC);
+            } else {
+                addOpcode(OPCode.BACKREF_MULTI);
+            }
+            // !add_bacref_mems:!
+            addLength(br.backNum);
+            for (int i=br.backNum-1; i>=0; i--) addMemNum(br.back[i]);
         }
     }
 
@@ -419,7 +355,7 @@ final class ArrayCompiler extends Compiler {
 
         compileTreeEmptyCheck(qn.target, emptyInfo);
 
-        if ((Config.USE_SUBEXP_CALL && regex.numCall > 0) || qn.isInRepeat()) {
+        if (qn.isInRepeat()) {
             addOpcode(qn.greedy ? OPCode.REPEAT_INC_SG : OPCode.REPEAT_INC_NG_SG);
         } else {
             addOpcode(qn.greedy ? OPCode.REPEAT_INC : OPCode.REPEAT_INC_NG);
@@ -432,193 +368,6 @@ final class ArrayCompiler extends Compiler {
 
     private static boolean cknOn(int ckn) {
         return ckn > 0;
-    }
-
-    private int compileCECLengthQuantifierNode(QuantifierNode qn) {
-        boolean infinite = isRepeatInfinite(qn.upper);
-        int emptyInfo = qn.targetEmptyInfo;
-
-        int tlen = compileLengthTree(qn.target);
-        int ckn = regex.numCombExpCheck > 0 ? qn.combExpCheckNum : 0;
-        int cklen = cknOn(ckn) ? OPSize.STATE_CHECK_NUM : 0;
-
-        /* anychar repeat */
-        if (qn.target.getType() == NodeType.CANY) {
-            if (qn.greedy && infinite) {
-                if (qn.nextHeadExact != null && !cknOn(ckn)) {
-                    return OPSize.ANYCHAR_STAR_PEEK_NEXT + tlen * qn.lower + cklen;
-                } else {
-                    return OPSize.ANYCHAR_STAR + tlen * qn.lower + cklen;
-                }
-            }
-        }
-
-        int modTLen;
-        if (emptyInfo != 0) {
-            modTLen = tlen + (OPSize.NULL_CHECK_START + OPSize.NULL_CHECK_END);
-        } else {
-            modTLen = tlen;
-        }
-
-        int len;
-        if (infinite && qn.lower <= 1) {
-            if (qn.greedy) {
-                if (qn.lower == 1) {
-                    len = OPSize.JUMP;
-                } else {
-                    len = 0;
-                }
-                len += OPSize.PUSH + cklen + modTLen + OPSize.JUMP;
-            } else {
-                if (qn.lower == 0) {
-                    len = OPSize.JUMP;
-                } else {
-                    len = 0;
-                }
-                len += modTLen + OPSize.PUSH + cklen;
-            }
-        } else if (qn.upper == 0) {
-            if (qn.isRefered) { /* /(?<n>..){0}/ */
-                len = OPSize.JUMP + tlen;
-            } else {
-                len = 0;
-            }
-        } else if (qn.upper == 1 && qn.greedy) {
-            if (qn.lower == 0) {
-                if (cknOn(ckn)) {
-                    len = OPSize.STATE_CHECK_PUSH + tlen;
-                } else {
-                    len = OPSize.PUSH + tlen;
-                }
-            } else {
-                len = tlen;
-            }
-        } else if (!qn.greedy && qn.upper == 1 && qn.lower == 0) { /* '??' */
-            len = OPSize.PUSH + cklen + OPSize.JUMP + tlen;
-        } else {
-            len = OPSize.REPEAT_INC + modTLen + OPSize.OPCODE + OPSize.RELADDR + OPSize.MEMNUM;
-
-            if (cknOn(ckn)) {
-                len += OPSize.STATE_CHECK;
-            }
-        }
-        return len;
-    }
-
-    @Override
-    protected void compileCECQuantifierNode(QuantifierNode qn) {
-        boolean infinite = isRepeatInfinite(qn.upper);
-        int emptyInfo = qn.targetEmptyInfo;
-
-        int tlen = compileLengthTree(qn.target);
-
-        int ckn = regex.numCombExpCheck > 0 ? qn.combExpCheckNum : 0;
-
-        if (qn.isAnyCharStar()) {
-            compileTreeNTimes(qn.target, qn.lower);
-            if (qn.nextHeadExact != null && !cknOn(ckn)) {
-                if (isMultiline(regex.options)) {
-                    addOpcode(OPCode.ANYCHAR_ML_STAR_PEEK_NEXT);
-                } else {
-                    addOpcode(OPCode.ANYCHAR_STAR_PEEK_NEXT);
-                }
-                if (cknOn(ckn)) {
-                    addStateCheckNum(ckn);
-                }
-                StringNode sn = (StringNode)qn.nextHeadExact;
-                addChars(sn.chars, sn.p, 1);
-                return;
-            } else {
-                if (isMultiline(regex.options)) {
-                    if (cknOn(ckn)) {
-                        addOpcode(OPCode.STATE_CHECK_ANYCHAR_ML_STAR);
-                    } else {
-                        addOpcode(OPCode.ANYCHAR_ML_STAR);
-                    }
-                } else {
-                    if (cknOn(ckn)) {
-                        addOpcode(OPCode.STATE_CHECK_ANYCHAR_STAR);
-                    } else {
-                        addOpcode(OPCode.ANYCHAR_STAR);
-                    }
-                }
-                if (cknOn(ckn)) {
-                    addStateCheckNum(ckn);
-                }
-                return;
-            }
-        }
-
-        int modTLen;
-        if (emptyInfo != 0) {
-            modTLen = tlen + (OPSize.NULL_CHECK_START + OPSize.NULL_CHECK_END);
-        } else {
-            modTLen = tlen;
-        }
-        if (infinite && qn.lower <= 1) {
-            if (qn.greedy) {
-                if (qn.lower == 1) {
-                    addOpcodeRelAddr(OPCode.JUMP, cknOn(ckn) ? OPSize.STATE_CHECK_PUSH :
-                                                                     OPSize.PUSH);
-                }
-                if (cknOn(ckn)) {
-                    addOpcode(OPCode.STATE_CHECK_PUSH);
-                    addStateCheckNum(ckn);
-                    addRelAddr(modTLen + OPSize.JUMP);
-                } else {
-                    addOpcodeRelAddr(OPCode.PUSH, modTLen + OPSize.JUMP);
-                }
-                compileTreeEmptyCheck(qn.target, emptyInfo);
-                addOpcodeRelAddr(OPCode.JUMP, -(modTLen + OPSize.JUMP + (cknOn(ckn) ?
-                                                                               OPSize.STATE_CHECK_PUSH :
-                                                                               OPSize.PUSH)));
-            } else {
-                if (qn.lower == 0) {
-                    addOpcodeRelAddr(OPCode.JUMP, modTLen);
-                }
-                compileTreeEmptyCheck(qn.target, emptyInfo);
-                if (cknOn(ckn)) {
-                    addOpcode(OPCode.STATE_CHECK_PUSH_OR_JUMP);
-                    addStateCheckNum(ckn);
-                    addRelAddr(-(modTLen + OPSize.STATE_CHECK_PUSH_OR_JUMP));
-                } else {
-                    addOpcodeRelAddr(OPCode.PUSH, -(modTLen + OPSize.PUSH));
-                }
-            }
-        } else if (qn.upper == 0) {
-            if (qn.isRefered) { /* /(?<n>..){0}/ */
-                addOpcodeRelAddr(OPCode.JUMP, tlen);
-                compileTree(qn.target);
-            } // else r=0 ???
-        } else if (qn.upper == 1 && qn.greedy) {
-            if (qn.lower == 0) {
-                if (cknOn(ckn)) {
-                    addOpcode(OPCode.STATE_CHECK_PUSH);
-                    addStateCheckNum(ckn);
-                    addRelAddr(tlen);
-                } else {
-                    addOpcodeRelAddr(OPCode.PUSH, tlen);
-                }
-            }
-            compileTree(qn.target);
-        } else if (!qn.greedy && qn.upper == 1 && qn.lower == 0){ /* '??' */
-            if (cknOn(ckn)) {
-                addOpcode(OPCode.STATE_CHECK_PUSH);
-                addStateCheckNum(ckn);
-                addRelAddr(OPSize.JUMP);
-            } else {
-                addOpcodeRelAddr(OPCode.PUSH, OPSize.JUMP);
-            }
-
-            addOpcodeRelAddr(OPCode.JUMP, tlen);
-            compileTree(qn.target);
-        } else {
-            compileRangeRepeatNode(qn, modTLen, emptyInfo);
-            if (cknOn(ckn)) {
-                addOpcode(OPCode.STATE_CHECK);
-                addStateCheckNum(ckn);
-            }
-        }
     }
 
     private int compileNonCECLengthQuantifierNode(QuantifierNode qn) {
@@ -821,21 +570,12 @@ final class ArrayCompiler extends Compiler {
         int len;
         switch (node.type) {
         case EncloseType.MEMORY:
-            if (Config.USE_SUBEXP_CALL && node.isCalled()) {
-                len = OPSize.MEMORY_START_PUSH + tlen + OPSize.CALL + OPSize.JUMP + OPSize.RETURN;
-                if (bsAt(regex.btMemEnd, node.regNum)) {
-                    len += node.isRecursion() ? OPSize.MEMORY_END_PUSH_REC : OPSize.MEMORY_END_PUSH;
-                } else {
-                    len += node.isRecursion() ? OPSize.MEMORY_END_REC : OPSize.MEMORY_END;
-                }
-            } else { // USE_SUBEXP_CALL
-                if (bsAt(regex.btMemStart, node.regNum)) {
-                    len = OPSize.MEMORY_START_PUSH;
-                } else {
-                    len = OPSize.MEMORY_START;
-                }
-                len += tlen + (bsAt(regex.btMemEnd, node.regNum) ? OPSize.MEMORY_END_PUSH : OPSize.MEMORY_END);
+            if (bsAt(regex.btMemStart, node.regNum)) {
+                len = OPSize.MEMORY_START_PUSH;
+            } else {
+                len = OPSize.MEMORY_START;
             }
+            len += tlen + (bsAt(regex.btMemEnd, node.regNum) ? OPSize.MEMORY_END_PUSH : OPSize.MEMORY_END);
             break;
 
         case EncloseType.STOP_BACKTRACK:
@@ -860,23 +600,6 @@ final class ArrayCompiler extends Compiler {
         int len;
         switch (node.type) {
         case EncloseType.MEMORY:
-            if (Config.USE_SUBEXP_CALL) {
-                if (node.isCalled()) {
-                    addOpcode(OPCode.CALL);
-                    node.callAddr = codeLength + OPSize.ABSADDR + OPSize.JUMP;
-                    node.setAddrFixed();
-                    addAbsAddr(node.callAddr);
-                    len = compileLengthTree(node.target);
-                    len += OPSize.MEMORY_START_PUSH + OPSize.RETURN;
-                    if (bsAt(regex.btMemEnd, node.regNum)) {
-                        len += node.isRecursion() ? OPSize.MEMORY_END_PUSH_REC : OPSize.MEMORY_END_PUSH;
-                    } else {
-                        len += node.isRecursion() ? OPSize.MEMORY_END_REC : OPSize.MEMORY_END;
-                    }
-                    addOpcodeRelAddr(OPCode.JUMP, len);
-                }
-            } // USE_SUBEXP_CALL
-
             if (bsAt(regex.btMemStart, node.regNum)) {
                 addOpcode(OPCode.MEMORY_START_PUSH);
             } else {
@@ -886,22 +609,12 @@ final class ArrayCompiler extends Compiler {
             addMemNum(node.regNum);
             compileTree(node.target);
 
-            if (Config.USE_SUBEXP_CALL && node.isCalled()) {
-                if (bsAt(regex.btMemEnd, node.regNum)) {
-                    addOpcode(node.isRecursion() ? OPCode.MEMORY_END_PUSH_REC : OPCode.MEMORY_END_PUSH);
-                } else {
-                    addOpcode(node.isRecursion() ? OPCode.MEMORY_END_REC : OPCode.MEMORY_END);
-                }
-                addMemNum(node.regNum);
-                addOpcode(OPCode.RETURN);
-            } else { // USE_SUBEXP_CALL
-                if (bsAt(regex.btMemEnd, node.regNum)) {
-                    addOpcode(OPCode.MEMORY_END_PUSH);
-                } else {
-                    addOpcode(OPCode.MEMORY_END);
-                }
-                addMemNum(node.regNum);
+            if (bsAt(regex.btMemEnd, node.regNum)) {
+                addOpcode(OPCode.MEMORY_END_PUSH);
+            } else {
+                addOpcode(OPCode.MEMORY_END);
             }
+            addMemNum(node.regNum);
             break;
 
         case EncloseType.STOP_BACKTRACK:
@@ -1078,32 +791,17 @@ final class ArrayCompiler extends Compiler {
         case NodeType.BREF:
             BackRefNode br = (BackRefNode)node;
 
-            if (Config.USE_BACKREF_WITH_LEVEL && br.isNestLevel()) {
-                len = OPSize.OPCODE + OPSize.OPTION + OPSize.LENGTH +
-                      OPSize.LENGTH + (OPSize.MEMNUM * br.backNum);
-            } else { // USE_BACKREF_AT_LEVEL
-                if (br.backNum == 1) {
-                    len = ((!isIgnoreCase(regex.options) && br.back[0] <= 2)
-                            ? OPSize.OPCODE : (OPSize.OPCODE + OPSize.MEMNUM));
-                } else {
-                    len = OPSize.OPCODE + OPSize.LENGTH + (OPSize.MEMNUM * br.backNum);
-                }
+            // USE_BACKREF_AT_LEVEL
+            if (br.backNum == 1) {
+                len = ((!isIgnoreCase(regex.options) && br.back[0] <= 2)
+                        ? OPSize.OPCODE : (OPSize.OPCODE + OPSize.MEMNUM));
+            } else {
+                len = OPSize.OPCODE + OPSize.LENGTH + (OPSize.MEMNUM * br.backNum);
             }
-            break;
-
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                len = OPSize.CALL;
-                break;
-            } // USE_SUBEXP_CALL
             break;
 
         case NodeType.QTFR:
-            if (Config.USE_COMBINATION_EXPLOSION_CHECK) {
-                len = compileCECLengthQuantifierNode((QuantifierNode)node);
-            } else {
-                len = compileNonCECLengthQuantifierNode((QuantifierNode)node);
-            }
+            len = compileNonCECLengthQuantifierNode((QuantifierNode)node);
             break;
 
         case NodeType.ENCLOSE:
