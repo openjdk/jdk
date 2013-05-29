@@ -78,7 +78,7 @@ public class KeyTab implements KeyTabConstants {
 
     private final String tabName;
     private long lastModified;
-    private int kt_vno;
+    private int kt_vno = KRB5_KT_VNO;
 
     private Vector<KeyTabEntry> entries = new Vector<>();
 
