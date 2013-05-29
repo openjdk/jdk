@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,31 @@
  * questions.
  */
 
-package two;
+/*
+ * @test
+ * @bug 7053059
+ * @summary VerifyError with double Assignment using a Generic Member of a Superclass
+ * @run main VerifyErrorWithDoubleAssignmentTest
+ */
 
-interface I {
-    int i = 11;
-}
+public class VerifyErrorWithDoubleAssignmentTest {
 
-public class Child2 extends one.Parent2 implements I {
-    void method() {
-        System.out.println(i);
+    static class A<D> {
+        D d;
+
+        D getD() {
+            return null;
+        }
+    }
+
+    static class B extends A<Integer> {
+        Integer y;
+        B() {
+            y = d = getD();
+        }
+    }
+
+    public static void main(String[] args) {
+        new B();
     }
 }

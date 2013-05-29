@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,19 @@
  * questions.
  */
 
-package two;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-interface I {
-    int i = 11;
-}
+/*
+ * @test
+ * @bug 8013180
+ * @summary Qualified type annotation name used to crash javac
+ * @compile QualifiedName.java
+ */
 
-public class Child2 extends one.Parent2 implements I {
-    void method() {
-        System.out.println(i);
-    }
+public class QualifiedName {
+    @Target(ElementType.TYPE_USE) @interface TA { }
+    class E extends Exception { }
+
+    void m() throws @TA QualifiedName.@TA E { }
 }
