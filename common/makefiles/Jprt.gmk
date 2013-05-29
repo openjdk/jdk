@@ -127,6 +127,9 @@ else
   ifdef ALT_JAVAFX_ZIP_DIR
 	@$(ECHO) " --with-javafx-zip-dir=$(call UnixPath,$(ALT_JAVAFX_ZIP_DIR)) " >> $@.tmp
   endif
+  ifdef ALT_JMC_ZIP_DIR
+	@$(ECHO) " --with-jmc-zip-dir=$(call UnixPath,$(ALT_JMC_ZIP_DIR)) " >> $@.tmp
+  endif
   ifdef ALT_WIXDIR
 	@$(ECHO) " --with-wix=$(call UnixPath,$(ALT_WIXDIR)) " >> $@.tmp
   endif
