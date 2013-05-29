@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,21 @@
  * questions.
  */
 
-package two;
+/*
+ * @test
+ * @bug 8014643
+ * @summary Parser regression in JDK 8 when compiling super.x
+ * @compile T8014643.java
+ */
+class T8014643 {
 
-interface I {
-    int i = 11;
-}
+    static class A {
+        int b = 1;
+    }
 
-public class Child2 extends one.Parent2 implements I {
-    void method() {
-        System.out.println(i);
+    static class B extends A {
+        int b = 12;
+
+        int m() { return (super.b); }
     }
 }
