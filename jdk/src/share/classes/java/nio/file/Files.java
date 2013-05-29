@@ -25,9 +25,11 @@
 
 package java.nio.file;
 
+import java.nio.ByteBuffer;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.nio.file.spi.FileTypeDetector;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.io.Closeable;
 import java.io.InputStream;
@@ -2945,40 +2947,6 @@ public final class Files {
     }
 
     /**
-     * Read all the bytes from an input stream. The {@code initialSize}
-     * parameter indicates the initial size of the byte[] to allocate.
-     */
-    private static byte[] read(InputStream source, int initialSize)
-        throws IOException
-    {
-        int capacity = initialSize;
-        byte[] buf = new byte[capacity];
-        int nread = 0;
-        int rem = buf.length;
-        int n;
-        // read to EOF which may read more or less than initialSize (eg: file
-        // is truncated while we are reading)
-        while ((n = source.read(buf, nread, rem)) > 0) {
-            nread += n;
-            rem -= n;
-            assert rem >= 0;
-            if (rem == 0) {
-                // need larger buffer
-                int newCapacity = capacity << 1;
-                if (newCapacity < 0) {
-                    if (capacity == Integer.MAX_VALUE)
-                        throw new OutOfMemoryError("Required array size too large");
-                    newCapacity = Integer.MAX_VALUE;
-                }
-                rem = newCapacity - capacity;
-                buf = Arrays.copyOf(buf, newCapacity);
-                capacity = newCapacity;
-            }
-        }
-        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
-    }
-
-    /**
      * Read all the bytes from a file. The method ensures that the file is
      * closed when all bytes have been read or an I/O error, or other runtime
      * exception, is thrown.
@@ -3003,12 +2971,22 @@ public final class Files {
      *          method is invoked to check read access to the file.
      */
     public static byte[] readAllBytes(Path path) throws IOException {
-        long size = size(path);
-        if (size > (long)Integer.MAX_VALUE)
-            throw new OutOfMemoryError("Required array size too large");
+        try (FileChannel fc = FileChannel.open(path)) {
+            long size = fc.size();
+            if (size > (long)Integer.MAX_VALUE)
+                throw new OutOfMemoryError("Required array size too large");
 
-        try (InputStream in = newInputStream(path)) {
-             return read(in, (int)size);
+            byte[] arr = new byte[(int)size];
+            ByteBuffer bb = ByteBuffer.wrap(arr);
+            while (bb.hasRemaining()) {
+                if (fc.read(bb) < 0) {
+                    // truncated
+                    break;
+                }
+            }
+
+            int nread = bb.position();
+            return (nread == size) ? arr : Arrays.copyOf(arr, nread);
         }
     }
 
