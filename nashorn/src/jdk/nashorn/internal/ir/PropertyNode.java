@@ -81,7 +81,7 @@ public final class PropertyNode extends Node {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterPropertyNode(this)) {
             return visitor.leavePropertyNode(
                 setKey((PropertyKey)((Node)key).accept(visitor)).

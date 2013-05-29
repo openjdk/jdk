@@ -27,6 +27,7 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.List;
 import java.util.Map;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -41,6 +42,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
@@ -63,7 +65,7 @@ import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
  * Computes the "byte code" weight of an AST segment. This is used
  * for Splitting too large class files
  */
-final class WeighNodes extends NodeOperatorVisitor {
+final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     /*
      * Weight constants.
      */
@@ -100,7 +102,7 @@ final class WeighNodes extends NodeOperatorVisitor {
      * @param weightCache cache of already calculated block weights
      */
     private WeighNodes(FunctionNode topFunction, final Map<Node, Long> weightCache) {
-        super();
+        super(new LexicalContext());
         this.topFunction = topFunction;
         this.weightCache = weightCache;
     }
