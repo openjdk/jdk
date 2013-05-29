@@ -3780,7 +3780,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1369723814
+DATE_WHEN_GENERATED=1369828684
 
 ###############################################################################
 #
@@ -32932,6 +32932,9 @@ $as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6;
     # Cap number of jobs to 16
     if test "$JOBS" -gt "16"; then
       JOBS=16
+    fi
+    if test "$JOBS" -eq "0"; then
+      JOBS=1
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JOBS" >&5
 $as_echo "$JOBS" >&6; }
