@@ -172,10 +172,13 @@ public class TransTypes extends TreeTranslator {
     JCExpression retype(JCExpression tree, Type erasedType, Type target) {
 //      System.err.println("retype " + tree + " to " + erasedType);//DEBUG
         if (!erasedType.isPrimitive()) {
-            if (target != null && target.isPrimitive())
+            if (target != null && target.isPrimitive()) {
                 target = erasure(tree.type);
+            }
             tree.type = erasedType;
-            if (target != null) return coerce(tree, target);
+            if (target != null) {
+                return coerce(tree, target);
+            }
         }
         return tree;
     }
@@ -686,8 +689,8 @@ public class TransTypes extends TreeTranslator {
     public void visitAssign(JCAssign tree) {
         tree.lhs = translate(tree.lhs, null);
         tree.rhs = translate(tree.rhs, erasure(tree.lhs.type));
-        tree.type = erasure(tree.type);
-        result = tree;
+        tree.type = erasure(tree.lhs.type);
+        result = retype(tree, tree.type, pt);
     }
 
     public void visitAssignop(JCAssignOp tree) {
