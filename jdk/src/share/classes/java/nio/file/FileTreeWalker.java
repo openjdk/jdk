@@ -29,8 +29,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Set;
 import sun.nio.fs.BasicFileAttributesHolder;
 
 /**
@@ -164,8 +164,17 @@ class FileTreeWalker implements Closeable {
 
     /**
      * Creates a {@code FileTreeWalker}.
+     *
+     * @throws  IllegalArgumentException
+     *          if {@code maxDepth} is negative
+     * @throws  ClassCastException
+     *          if (@code options} contains an element that is not a
+     *          {@code FileVisitOption}
+     * @throws  NullPointerException
+     *          if {@code options} is {@ocde null} or the options
+     *          array contains a {@code null} element
      */
-    FileTreeWalker(Set<FileVisitOption> options, int maxDepth) {
+    FileTreeWalker(Collection<FileVisitOption> options, int maxDepth) {
         boolean fl = false;
         for (FileVisitOption option: options) {
             // will throw NPE if options contains null
@@ -175,6 +184,9 @@ class FileTreeWalker implements Closeable {
                     throw new AssertionError("Should not get here");
             }
         }
+        if (maxDepth < 0)
+            throw new IllegalArgumentException("'maxDepth' is negative");
+
         this.followLinks = fl;
         this.linkOptions = (fl) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };

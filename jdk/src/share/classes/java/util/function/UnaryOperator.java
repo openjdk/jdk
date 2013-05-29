@@ -36,4 +36,13 @@ package java.util.function;
  */
 @FunctionalInterface
 public interface UnaryOperator<T> extends Function<T, T> {
+
+    /**
+     * Returns a unary operator that provides its input value as the result.
+     *
+     * @return a unary operator that provides its input value as the result
+     */
+    static <T> UnaryOperator<T> identity() {
+        return t -> t;
+    }
 }
