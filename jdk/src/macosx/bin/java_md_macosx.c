@@ -44,7 +44,6 @@
 #include <Cocoa/Cocoa.h>
 #include <objc/objc-runtime.h>
 #include <objc/objc-auto.h>
-#include <dispatch/dispatch.h>
 
 #include <errno.h>
 #include <spawn.h>
@@ -1001,6 +1000,32 @@ SetXStartOnFirstThreadArg()
     setenv(envVar, "1", 1);
 }
 
+/* This class is made for performSelectorOnMainThread when java main
+ * should be launched on main thread.
+ * We cannot use dispatch_sync here, because it blocks the main dispatch queue
+ * which is used inside Cocoa
+ */
+@interface JavaLaunchHelper : NSObject {
+    int _returnValue;
+}
+- (void) launchJava:(NSValue*)argsValue;
+- (int) getReturnValue;
+@end
+
+@implementation JavaLaunchHelper
+
+- (void) launchJava:(NSValue*)argsValue
+{
+    _returnValue = JavaMain([argsValue pointerValue]);
+}
+
+- (int) getReturnValue
+{
+    return _returnValue;
+}
+
+@end
+
 // MacOSX we may continue in the same thread
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
@@ -1010,16 +1035,22 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         JLI_TraceLauncher("In same thread\n");
         // need to block this thread against the main thread
         // so signals get caught correctly
-        __block int rslt;
-        dispatch_sync(dispatch_get_main_queue(), ^(void) {
-            JavaMainArgs args;
-            args.argc = argc;
-            args.argv = argv;
-            args.mode = mode;
-            args.what = what;
-            args.ifn  = *ifn;
-            rslt = JavaMain((void*)&args);
-        });
+        JavaMainArgs args;
+        args.argc = argc;
+        args.argv = argv;
+        args.mode = mode;
+        args.what = what;
+        args.ifn  = *ifn;
+        int rslt;
+        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+        {
+            JavaLaunchHelper* launcher = [[[JavaLaunchHelper alloc] init] autorelease];
+            [launcher performSelectorOnMainThread:@selector(launchJava:)
+                                       withObject:[NSValue valueWithPointer:(void*)&args]
+                                    waitUntilDone:YES];
+            rslt = [launcher getReturnValue];
+        }
+        [pool drain];
         return rslt;
     } else {
         return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
