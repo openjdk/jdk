@@ -617,6 +617,20 @@ fi
 
 if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
   BASIC_REQUIRE_PROG(XATTR, xattr)
+  AC_PATH_PROG(CODESIGN, codesign)
+  if test "x$CODESIGN" != "x"; then
+    # Verify that the openjdk_codesign certificate is present
+    AC_MSG_CHECKING([if openjdk_codesign certificate is present])
+    rm -f codesign-testfile
+    touch codesign-testfile
+    codesign -s openjdk_codesign codesign-testfile 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
+    rm -f codesign-testfile
+    if test "x$CODESIGN" = x; then
+      AC_MSG_RESULT([no])
+    else
+      AC_MSG_RESULT([yes])
+    fi
+  fi
 fi
 ])
 

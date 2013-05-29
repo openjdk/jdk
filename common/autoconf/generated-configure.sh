@@ -797,6 +797,7 @@ OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
+CODESIGN
 XATTR
 TIME
 STAT
@@ -3780,7 +3781,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1369828684
+DATE_WHEN_GENERATED=1369828849
 
 ###############################################################################
 #
@@ -10493,6 +10494,62 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
     fi
 
 
+  # Extract the first word of "codesign", so it can be a program name with args.
+set dummy codesign; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CODESIGN+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CODESIGN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CODESIGN="$CODESIGN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CODESIGN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CODESIGN=$ac_cv_path_CODESIGN
+if test -n "$CODESIGN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CODESIGN" >&5
+$as_echo "$CODESIGN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "x$CODESIGN" != "x"; then
+    # Verify that the openjdk_codesign certificate is present
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if openjdk_codesign certificate is present" >&5
+$as_echo_n "checking if openjdk_codesign certificate is present... " >&6; }
+    rm -f codesign-testfile
+    touch codesign-testfile
+    codesign -s openjdk_codesign codesign-testfile 2>&5 >&5 || CODESIGN=
+    rm -f codesign-testfile
+    if test "x$CODESIGN" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+  fi
 fi
 
 
