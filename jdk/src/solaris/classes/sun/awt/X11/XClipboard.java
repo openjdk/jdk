@@ -179,6 +179,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
             }
             synchronized (XClipboard.classLock) {
                 if (targetsAtom2Clipboard != null && !targetsAtom2Clipboard.isEmpty()) {
+                    // The viewer is still registered, schedule next poll.
                     XToolkit.schedule(this, XClipboard.getPollInterval());
                 }
             }
@@ -191,7 +192,8 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
                 final XSelectionEvent xse = ev.get_xselection();
                 XClipboard clipboard = null;
                 synchronized (XClipboard.classLock) {
-                    if (targetsAtom2Clipboard != null && !targetsAtom2Clipboard.isEmpty()) {
+                    if (targetsAtom2Clipboard != null && targetsAtom2Clipboard.isEmpty()) {
+                        // The viewer was unregistered, remove the dispatcher.
                         XToolkit.removeEventDispatcher(XWindow.getXAWTRootWindow().getWindow(), this);
                         return;
                     }
