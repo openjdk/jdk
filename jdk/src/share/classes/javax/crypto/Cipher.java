@@ -1158,6 +1158,9 @@ public class Cipher {
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key) throws InvalidKeyException {
         init(opmode, key, JceSecurity.RANDOM);
@@ -1208,6 +1211,9 @@ public class Cipher {
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException
@@ -1285,6 +1291,9 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1343,6 +1352,9 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params,
                            SecureRandom random)
@@ -1416,6 +1428,9 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key, AlgorithmParameters params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1474,6 +1489,9 @@ public class Cipher {
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
      * policy files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Key key, AlgorithmParameters params,
                            SecureRandom random)
@@ -1552,6 +1570,9 @@ public class Cipher {
      * in the given certificate has a keysize that exceeds the maximum
      * allowable keysize (as determined by the configured jurisdiction policy
      * files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Certificate certificate)
             throws InvalidKeyException
@@ -1619,6 +1640,9 @@ public class Cipher {
      * in the given certificate has a keysize that exceeds the maximum
      * allowable keysize (as determined by the configured jurisdiction policy
      * files).
+     * @throws UnsupportedOperationException if (@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
+     * by the underlying {@code CipherSpi}.
      */
     public final void init(int opmode, Certificate certificate,
                            SecureRandom random)
@@ -2410,6 +2434,9 @@ public class Cipher {
      * @exception InvalidKeyException if it is impossible or unsafe to
      * wrap the key with this cipher (e.g., a hardware protected key is
      * being passed to a software-only cipher).
+     *
+     * @throws UnsupportedOperationException if the corresponding method in the
+     * {@code CipherSpi} is not supported.
      */
     public final byte[] wrap(Key key)
             throws IllegalBlockSizeException, InvalidKeyException {
@@ -2451,6 +2478,9 @@ public class Cipher {
      * @exception InvalidKeyException if <code>wrappedKey</code> does not
      * represent a wrapped key of type <code>wrappedKeyType</code> for
      * the <code>wrappedKeyAlgorithm</code>.
+     *
+     * @throws UnsupportedOperationException if the corresponding method in the
+     * {@code CipherSpi} is not supported.
      */
     public final Key unwrap(byte[] wrappedKey,
                             String wrappedKeyAlgorithm,
