@@ -649,9 +649,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                         && (dmpath == NULL) /* data model specific variables not set  */
 #endif /* __solaris__ */
                         ) {
-
+                    JLI_MemFree(newargv);
+                    JLI_MemFree(new_runpath);
                     return;
-
                 }
             }
 
@@ -935,7 +935,7 @@ SetExecname(char **argv)
         char buf[PATH_MAX+1];
         int len = readlink(self, buf, PATH_MAX);
         if (len >= 0) {
-            buf[len] = '\0';            /* readlink doesn't nul terminate */
+            buf[len] = '\0';            /* readlink(2) doesn't NUL terminate */
             exec_path = JLI_StringDup(buf);
         }
     }
