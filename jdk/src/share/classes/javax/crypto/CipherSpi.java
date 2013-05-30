@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,6 +347,9 @@ public abstract class CipherSpi {
      * initializing this cipher, or requires
      * algorithm parameters that cannot be
      * determined from the given key.
+     * @throws UnsupportedOperationException if {@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} is not implemented
+     * by the cipher.
      */
     protected abstract void engineInit(int opmode, Key key,
                                        SecureRandom random)
@@ -399,6 +402,9 @@ public abstract class CipherSpi {
      * parameters are inappropriate for this cipher,
      * or if this cipher requires
      * algorithm parameters and <code>params</code> is null.
+     * @throws UnsupportedOperationException if {@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} is not implemented
+     * by the cipher.
      */
     protected abstract void engineInit(int opmode, Key key,
                                        AlgorithmParameterSpec params,
@@ -452,6 +458,9 @@ public abstract class CipherSpi {
      * parameters are inappropriate for this cipher,
      * or if this cipher requires
      * algorithm parameters and <code>params</code> is null.
+     * @throws UnsupportedOperationException if {@code opmode} is
+     * {@code WRAP_MODE} or {@code UNWRAP_MODE} is not implemented
+     * by the cipher.
      */
     protected abstract void engineInit(int opmode, Key key,
                                        AlgorithmParameters params,
@@ -863,6 +872,8 @@ public abstract class CipherSpi {
      * @exception InvalidKeyException if it is impossible or unsafe to
      * wrap the key with this cipher (e.g., a hardware protected key is
      * being passed to a software-only cipher).
+     *
+     * @throws UnsupportedOperationException if this method is not supported.
      */
     protected byte[] engineWrap(Key key)
         throws IllegalBlockSizeException, InvalidKeyException
@@ -899,6 +910,8 @@ public abstract class CipherSpi {
      * @exception InvalidKeyException if <code>wrappedKey</code> does not
      * represent a wrapped key of type <code>wrappedKeyType</code> for
      * the <code>wrappedKeyAlgorithm</code>.
+     *
+     * @throws UnsupportedOperationException if this method is not supported.
      */
     protected Key engineUnwrap(byte[] wrappedKey,
                                String wrappedKeyAlgorithm,
