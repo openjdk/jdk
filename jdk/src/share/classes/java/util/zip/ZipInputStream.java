@@ -32,6 +32,7 @@ import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import static java.util.zip.ZipConstants64.*;
+import static java.util.zip.ZipUtils.*;
 
 /**
  * This class implements an input stream filter for reading files in the
@@ -302,7 +303,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             throw new ZipException("encrypted ZIP entry not supported");
         }
         e.method = get16(tmpbuf, LOCHOW);
-        e.time = get32(tmpbuf, LOCTIM);
+        e.mtime = dosToJavaTime(get32(tmpbuf, LOCTIM));
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
             if (e.method != DEFLATED) {
@@ -316,32 +317,51 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         }
         len = get16(tmpbuf, LOCEXT);
         if (len > 0) {
-            byte[] bb = new byte[len];
-            readFully(bb, 0, len);
-            e.setExtra(bb);
+            byte[] extra = new byte[len];
+            readFully(extra, 0, len);
+            e.setExtra(extra);
             // extra fields are in "HeaderID(2)DataSize(2)Data... format
-            if (e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL) {
-                int off = 0;
-                while (off + 4 < len) {
-                    int sz = get16(bb, off + 2);
-                    if (get16(bb, off) == ZIP64_EXTID) {
-                        off += 4;
-                        // LOC extra zip64 entry MUST include BOTH original and
-                        // compressed file size fields
-                        if (sz < 16 || (off + sz) > len ) {
-                            // Invalid zip64 extra fields, simply skip. Even it's
-                            // rare, it's possible the entry size happens to be
-                            // the magic value and it "accidnetly" has some bytes
-                            // in extra match the id.
-                            return e;
-                        }
-                        e.size = get64(bb, off);
-                        e.csize = get64(bb, off + 8);
-                        break;
+            int off = 0;
+            while (off + 4 < len) {
+                int pos = off;
+                int tag = get16(extra, pos);
+                int sz = get16(extra, pos + 2);
+                pos += 4;
+                if (pos + sz > len)         // invalid data
+                    break;
+                switch (tag) {
+                case EXTID_ZIP64 :
+                    // LOC extra zip64 entry MUST include BOTH original and
+                    // compressed file size fields.
+                    //
+                    // If invalid zip64 extra fields, simply skip. Even it's
+                    // rare, it's possible the entry size happens to be
+                    // the magic value and it "accidently" has some bytes
+                    // in extra match the id.
+                    if (sz >= 16 && (pos + sz) <= len ) {
+                        e.size = get64(extra, pos);
+                        e.csize = get64(extra, pos + 8);
                     }
-                    off += (sz + 4);
+                    break;
+                case EXTID_NTFS:
+                    pos += 4;    // reserved 4 bytes
+                    if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
+                        break;
+                    // override the loc field, NTFS time has 'microsecond' granularity
+                    e.mtime  = winToJavaTime(get64(extra, pos + 4));
+                    break;
+                case EXTID_EXTT:
+                    int flag = Byte.toUnsignedInt(extra[pos++]);
+                    if ((flag & 0x1) != 0) {
+                        e.mtime = unixToJavaTime(get32(extra, pos));
+                        pos += 4;
+                    }
+                    break;
+                default:    // unknown tag
                 }
+                off += (sz + 4);
             }
+
         }
         return e;
     }
@@ -430,27 +450,4 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         }
     }
 
-    /*
-     * Fetches unsigned 16-bit value from byte array at specified offset.
-     * The bytes are assumed to be in Intel (little-endian) byte order.
-     */
-    private static final int get16(byte b[], int off) {
-        return Byte.toUnsignedInt(b[off]) | (Byte.toUnsignedInt(b[off+1]) << 8);
-    }
-
-    /*
-     * Fetches unsigned 32-bit value from byte array at specified offset.
-     * The bytes are assumed to be in Intel (little-endian) byte order.
-     */
-    private static final long get32(byte b[], int off) {
-        return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
-    }
-
-    /*
-     * Fetches signed 64-bit value from byte array at specified offset.
-     * The bytes are assumed to be in Intel (little-endian) byte order.
-     */
-    private static final long get64(byte b[], int off) {
-        return get32(b, off) | (get32(b, off+4) << 32);
-    }
 }
