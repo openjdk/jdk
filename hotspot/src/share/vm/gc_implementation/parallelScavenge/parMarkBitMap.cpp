@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,18 +54,18 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t raw_bytes = words * sizeof(idx_t);
   const size_t page_sz = os::page_size_for_region(raw_bytes, raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t bytes = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(bytes, rs_align, rs_align > 0);
+  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
   os::trace_page_sizes("par bitmap", raw_bytes, raw_bytes, page_sz,
                        rs.base(), rs.size());
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != NULL && _virtual_space->expand_by(bytes)) {
+  if (_virtual_space != NULL && _virtual_space->expand_by(_reserved_byte_size)) {
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
     idx_t* map = (idx_t*)_virtual_space->reserved_low_addr();

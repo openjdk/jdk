@@ -166,7 +166,6 @@ void MarkSweep::restore_marks() {
 
 MarkSweep::IsAliveClosure   MarkSweep::is_alive;
 
-void MarkSweep::IsAliveClosure::do_object(oop p)   { ShouldNotReachHere(); }
 bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked(); }
 
 MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
