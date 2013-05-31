@@ -88,7 +88,7 @@ Object.defineProperty(this, "sprintf", {
             }
         }
 
-        array = Java.toJavaArray(array);
+        array = Java.to(array);
         return Packages.jdk.nashorn.api.scripting.ScriptUtils.format(format, array);
     }
 });

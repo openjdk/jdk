@@ -36,6 +36,7 @@ import java.security.PrivilegedAction;
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.PageRanges;
 
 import sun.java2d.*;
 import sun.print.*;
@@ -173,6 +174,19 @@ public class CPrinterJob extends RasterPrinterJob {
         if (nsPrintInfo != null) {
             fNSPrintInfo = nsPrintInfo.getValue();
         }
+
+        PageRanges pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
+        if (isSupportedValue(pageRangesAttr, attributes)) {
+            SunPageSelection rangeSelect = (SunPageSelection)attributes.get(SunPageSelection.class);
+            // If rangeSelect is not null, we are using AWT's print dialog that has
+            // All, Selection, and Range radio buttons
+            if (rangeSelect == null || rangeSelect == SunPageSelection.RANGE) {
+                int[][] range = pageRangesAttr.getMembers();
+                // setPageRange will set firstPage and lastPage as called in getFirstPage
+                // and getLastPage
+                setPageRange(range[0][0] - 1, range[0][1] - 1);
+            }
+        }
     }
 
     volatile boolean onEventThread;
@@ -225,7 +239,6 @@ public class CPrinterJob extends RasterPrinterJob {
          * the end of the document. Note that firstPage
          * and lastPage are 0 based page indices.
          */
-        int numPages = mDocument.getNumberOfPages();
 
         int firstPage = getFirstPage();
         int lastPage = getLastPage();
@@ -242,42 +255,53 @@ public class CPrinterJob extends RasterPrinterJob {
                 userCancelled = false;
             }
 
-            if (EventQueue.isDispatchThread()) {
-                // This is an AWT EventQueue, and this print rendering loop needs to block it.
+            //Add support for PageRange
+            PageRanges pr = (attributes == null) ?  null
+                                                 : (PageRanges)attributes.get(PageRanges.class);
+            int[][] prMembers = (pr == null) ? new int[0][0] : pr.getMembers();
+            int loopi = 0;
+            do {
+                if (EventQueue.isDispatchThread()) {
+                    // This is an AWT EventQueue, and this print rendering loop needs to block it.
 
-                onEventThread = true;
+                    onEventThread = true;
 
-                printingLoop = AccessController.doPrivileged(new PrivilegedAction<SecondaryLoop>() {
-                    @Override
-                    public SecondaryLoop run() {
-                        return Toolkit.getDefaultToolkit()
-                                .getSystemEventQueue()
-                                .createSecondaryLoop();
+                    printingLoop = AccessController.doPrivileged(new PrivilegedAction<SecondaryLoop>() {
+                        @Override
+                        public SecondaryLoop run() {
+                            return Toolkit.getDefaultToolkit()
+                                    .getSystemEventQueue()
+                                    .createSecondaryLoop();
+                        }
+                    });
+
+                    try {
+                        // Fire off the print rendering loop on the AppKit thread, and don't have
+                        //  it wait and block this thread.
+                        if (printLoop(false, firstPage, lastPage)) {
+                            // Start a secondary loop on EDT until printing operation is finished or cancelled
+                            printingLoop.enter();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
+              } else {
+                    // Fire off the print rendering loop on the AppKit, and block this thread
+                    //  until it is done.
+                    // But don't actually block... we need to come back here!
+                    onEventThread = false;
 
-                try {
-                    // Fire off the print rendering loop on the AppKit thread, and don't have
-                    //  it wait and block this thread.
-                    if (printLoop(false, firstPage, lastPage)) {
-                        // Start a secondary loop on EDT until printing operation is finished or cancelled
-                        printingLoop.enter();
+                    try {
+                        printLoop(true, firstPage, lastPage);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            } else {
-                // Fire off the print rendering loop on the AppKit, and block this thread
-                //  until it is done.
-                // But don't actually block... we need to come back here!
-                onEventThread = false;
-
-                try {
-                    printLoop(true, firstPage, lastPage);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (++loopi < prMembers.length) {
+                     firstPage = prMembers[loopi][0]-1;
+                     lastPage = prMembers[loopi][1] -1;
                 }
-            }
+            }  while (loopi < prMembers.length);
         } finally {
             synchronized (this) {
                 // NOTE: Native code shouldn't allow exceptions out while
