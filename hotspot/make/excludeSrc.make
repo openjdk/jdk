@@ -25,7 +25,7 @@ ifeq ($(INCLUDE_JVMTI), false)
       CXXFLAGS += -DINCLUDE_JVMTI=0
       CFLAGS += -DINCLUDE_JVMTI=0
 
-      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp forte.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
+      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
 	jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
 	jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
 	jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
