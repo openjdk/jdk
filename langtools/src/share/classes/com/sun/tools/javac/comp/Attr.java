@@ -3732,7 +3732,7 @@ public class Attr extends JCTree.Visitor {
                     noteWarner);
 
             return chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
-                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED));
+                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED), resultInfo.checkContext.inferenceContext());
         } catch (Infer.InferenceException ex) {
             //invalid target type - propagate exception outwards or report error
             //depending on the current check context

@@ -32,21 +32,15 @@ import jdk.nashorn.internal.ir.UnaryNode;
 
 /**
  * Like NodeVisitor but navigating further into operators.
+ * @param <T> Lexical context class for this NodeOperatorVisitor
  */
-public class NodeOperatorVisitor extends NodeVisitor {
-    /**
-     * Constructor
-     */
-    public NodeOperatorVisitor() {
-        super();
-    }
-
+public class NodeOperatorVisitor<T extends LexicalContext> extends NodeVisitor<T> {
     /**
      * Constructor
      *
      * @param lc a custom lexical context
      */
-    public NodeOperatorVisitor(final LexicalContext lc) {
+    public NodeOperatorVisitor(final T lc) {
         super(lc);
     }
 

@@ -23,14 +23,23 @@
 # questions.
 #
 
+# Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
+# If so, then append $1 to $2\
+# Also set JVM_ARG_OK to true/false depending on outcome.
 AC_DEFUN([ADD_JVM_ARG_IF_OK],
 [
-    # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
-    # If so, then append $1 to $2
-    FOUND_WARN=`$3 $1 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$3 $1 -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: $1" >&AS_MESSAGE_LOG_FD
+    $ECHO "Command: $3 $1 -version" >&AS_MESSAGE_LOG_FD
+    OUTPUT=`$3 $1 -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         $2="[$]$2 $1"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&AS_MESSAGE_LOG_FD
+	$ECHO "$OUTPUT" >&AS_MESSAGE_LOG_FD
+	JVM_ARG_OK=false
     fi
 ])
 
@@ -51,16 +60,19 @@ AC_DEFUN([BASIC_FIXUP_PATH],
   else
     # We're on a posix platform. Hooray! :)
     path="[$]$1"
-    
-    if test ! -f "$path" && test ! -d "$path"; then
-      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
       AC_MSG_ERROR([Spaces are not allowed in this path.])
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
+    fi
+
+    $1="`cd "$path"; $THEPWDCMD -L`" 
   fi
 ])
 
@@ -157,10 +169,10 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
             COUNTER=0
             sym_link_dir=`$DIRNAME [$]$1`
             sym_link_file=`$BASENAME [$]$1`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -171,7 +183,7 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -252,7 +264,6 @@ BASIC_REQUIRE_PROG(MKDIR, mkdir)
 BASIC_REQUIRE_PROG(MKTEMP, mktemp)
 BASIC_REQUIRE_PROG(MV, mv)
 BASIC_REQUIRE_PROG(PRINTF, printf)
-BASIC_REQUIRE_PROG(THEPWDCMD, pwd)
 BASIC_REQUIRE_PROG(RM, rm)
 BASIC_REQUIRE_PROG(SH, sh)
 BASIC_REQUIRE_PROG(SORT, sort)
@@ -285,6 +296,10 @@ BASIC_CHECK_NONEMPTY(NAWK)
 # Always force rm.
 RM="$RM -f"
 
+# pwd behaves differently on various platforms and some don't support the -L flag.
+# Always use the bash builtin pwd to get uniform behavior.
+THEPWDCMD=pwd
+
 # These are not required on all platforms
 AC_PATH_PROG(CYGPATH, cygpath)
 AC_PATH_PROG(READLINK, readlink)
@@ -297,13 +312,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
 # Locate the directory of this script.
 SCRIPT="[$]0"
-BASIC_REMOVE_SYMBOLIC_LINKS(SCRIPT)
-AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
+AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD -L`
 
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`$THEPWDCMD`"
+SRC_ROOT="`$THEPWDCMD -L`"
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   PATH_SEP=";"
@@ -362,13 +376,9 @@ AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
         [ CONF_NAME=${with_conf_name} ])
 
 # Test from where we are running configure, in or outside of src root.
-# To enable comparison of directories, CURDIR needs to be symlink free
-# just like SRC_ROOT already is
-NOSYM_CURDIR="$CURDIR"
-BASIC_REMOVE_SYMBOLIC_LINKS(NOSYM_CURDIR)
-if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
-        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
-        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -605,6 +615,20 @@ fi
 
 if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
   BASIC_REQUIRE_PROG(XATTR, xattr)
+  AC_PATH_PROG(CODESIGN, codesign)
+  if test "x$CODESIGN" != "x"; then
+    # Verify that the openjdk_codesign certificate is present
+    AC_MSG_CHECKING([if openjdk_codesign certificate is present])
+    rm -f codesign-testfile
+    touch codesign-testfile
+    codesign -s openjdk_codesign codesign-testfile 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
+    rm -f codesign-testfile
+    if test "x$CODESIGN" = x; then
+      AC_MSG_RESULT([no])
+    else
+      AC_MSG_RESULT([yes])
+    fi
+  fi
 fi
 ])
 

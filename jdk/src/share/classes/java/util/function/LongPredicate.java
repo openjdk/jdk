@@ -39,11 +39,11 @@ public interface LongPredicate {
     /**
      * Returns {@code true} if the input value matches some criteria.
      *
-     * @param value the value to be tested.
+     * @param value the value to be tested
      * @return {@code true} if the input value matches some criteria, otherwise
-     * {@code false}.
+     * {@code false}
      */
-    public boolean test(long value);
+    boolean test(long value);
 
     /**
      * Returns a predicate which evaluates to {@code true} only if this
@@ -51,11 +51,15 @@ public interface LongPredicate {
      * this predicate returns {@code false} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ANDed with this predicate.
+     * <p>Any exceptions thrown by either {@code test} method are relayed
+     * to the caller; if performing first operation throws an exception, the
+     * second operation will not be performed.
+     *
+     * @param p a predicate which will be logically-ANDed with this predicate
      * @return a new predicate which returns {@code true} only if both
-     * predicates return {@code true}.
+     * predicates return {@code true}
      */
-    public default LongPredicate and(LongPredicate p) {
+    default LongPredicate and(LongPredicate p) {
         Objects.requireNonNull(p);
         return (value) -> test(value) && p.test(value);
     }
@@ -64,9 +68,9 @@ public interface LongPredicate {
      * Returns a predicate which negates the result of this predicate.
      *
      * @return a new predicate who's result is always the opposite of this
-     * predicate.
+     * predicate
      */
-    public default LongPredicate negate() {
+    default LongPredicate negate() {
         return (value) -> !test(value);
     }
 
@@ -76,25 +80,17 @@ public interface LongPredicate {
      * predicate returns {@code true} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ORed with this predicate.
+     * <p>Any exceptions thrown by either {@code test} method are relayed
+     * to the caller; if performing first operation throws an exception, the
+     * second operation will not be performed.
+     *
+     * @param p a predicate which will be logically-ORed with this predicate
      * @return a new predicate which returns {@code true} if either predicate
-     * returns {@code true}.
+     * returns {@code true}
+     * @throws NullPointerException if p is null
      */
-    public default LongPredicate or(LongPredicate p) {
+    default LongPredicate or(LongPredicate p) {
         Objects.requireNonNull(p);
         return (value) -> test(value) || p.test(value);
-    }
-
-    /**
-     * Returns a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
-     *
-     * @param p a predicate which will be logically-XORed with this predicate.
-     * @return a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
-     */
-    public default LongPredicate xor(LongPredicate p) {
-        Objects.requireNonNull(p);
-        return (value) -> test(value) ^ p.test(value);
     }
 }

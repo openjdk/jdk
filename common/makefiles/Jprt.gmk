@@ -127,8 +127,20 @@ else
   ifdef ALT_JAVAFX_ZIP_DIR
 	@$(ECHO) " --with-javafx-zip-dir=$(call UnixPath,$(ALT_JAVAFX_ZIP_DIR)) " >> $@.tmp
   endif
+  ifdef ALT_JMC_ZIP_DIR
+	@$(ECHO) " --with-jmc-zip-dir=$(call UnixPath,$(ALT_JMC_ZIP_DIR)) " >> $@.tmp
+  endif
   ifdef ALT_WIXDIR
 	@$(ECHO) " --with-wix=$(call UnixPath,$(ALT_WIXDIR)) " >> $@.tmp
+  endif
+  ifdef ALT_INSTALL_LZMA_PATH
+	@$(ECHO) " --with-lzma-path=$(call UnixPath,$(ALT_INSTALL_LZMA_PATH)) " >> $@.tmp
+  endif
+  ifdef ALT_INSTALL_UPX_PATH
+	@$(ECHO) " --with-upx-path=$(call UnixPath,$(ALT_INSTALL_UPX_PATH)) " >> $@.tmp
+  endif
+  ifdef ALT_INSTALL_UPX_FILENAME
+	@$(ECHO) " --with-upx-filename=$(call UnixPath,$(ALT_INSTALL_UPX_FILENAME)) " >> $@.tmp
   endif
   ifdef ALT_CCSS_SIGNING_DIR
 	@$(ECHO) " --with-ccss-signing=$(call UnixPath,$(ALT_CCSS_SIGNING_DIR)) " >> $@.tmp
