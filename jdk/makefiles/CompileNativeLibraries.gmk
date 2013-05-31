@@ -1143,7 +1143,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 			  -D "JDK_INTERNAL_NAME=jdwp" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjdwp,\
-		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
+		DEBUG_SYMBOLS:=true))
 
 $(BUILD_LIBJDWP) : $(BUILD_LIBJAVA)
 
