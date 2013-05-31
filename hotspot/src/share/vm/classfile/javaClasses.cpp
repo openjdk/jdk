@@ -512,22 +512,22 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
 
   // If the offset was read from the shared archive, it was fixed up already
   if (!k->is_shared()) {
-  if (k->oop_is_instance()) {
-    // During bootstrap, java.lang.Class wasn't loaded so static field
-    // offsets were computed without the size added it.  Go back and
-    // update all the static field offsets to included the size.
-      for (JavaFieldStream fs(InstanceKlass::cast(k())); !fs.done(); fs.next()) {
-      if (fs.access_flags().is_static()) {
-        int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
-        fs.set_offset(real_offset);
+    if (k->oop_is_instance()) {
+      // During bootstrap, java.lang.Class wasn't loaded so static field
+      // offsets were computed without the size added it.  Go back and
+      // update all the static field offsets to included the size.
+        for (JavaFieldStream fs(InstanceKlass::cast(k())); !fs.done(); fs.next()) {
+        if (fs.access_flags().is_static()) {
+          int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
+          fs.set_offset(real_offset);
+        }
       }
     }
   }
-  }
-  create_mirror(k, CHECK);
+  create_mirror(k, Handle(NULL), CHECK);
 }
 
-oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
+oop java_lang_Class::create_mirror(KlassHandle k, Handle protection_domain, TRAPS) {
   assert(k->java_mirror() == NULL, "should only assign mirror once");
   // Use this moment of initialization to cache modifier_flags also,
   // to support Class.getModifiers().  Instance classes recalculate
@@ -563,6 +563,16 @@ oop java_lang_Class::create_mirror(KlassHandle k, TRAPS) {
       set_array_klass(comp_mirror(), k());
     } else {
       assert(k->oop_is_instance(), "Must be");
+
+      // Allocate a simple java object for a lock.
+      // This needs to be a java object because during class initialization
+      // it can be held across a java call.
+      typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_NULL);
+      set_init_lock(mirror(), r);
+
+      // Set protection domain also
+      set_protection_domain(mirror(), protection_domain());
+
       // Initialize static fields
       InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, CHECK_NULL);
     }
@@ -596,6 +606,34 @@ void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   java_class->int_field_put(_static_oop_field_count_offset, size);
 }
+
+oop java_lang_Class::protection_domain(oop java_class) {
+  assert(_protection_domain_offset != 0, "must be set");
+  return java_class->obj_field(_protection_domain_offset);
+}
+void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
+  assert(_protection_domain_offset != 0, "must be set");
+  java_class->obj_field_put(_protection_domain_offset, pd);
+}
+
+oop java_lang_Class::init_lock(oop java_class) {
+  assert(_init_lock_offset != 0, "must be set");
+  return java_class->obj_field(_init_lock_offset);
+}
+void java_lang_Class::set_init_lock(oop java_class, oop init_lock) {
+  assert(_init_lock_offset != 0, "must be set");
+  java_class->obj_field_put(_init_lock_offset, init_lock);
+}
+
+objArrayOop java_lang_Class::signers(oop java_class) {
+  assert(_signers_offset != 0, "must be set");
+  return (objArrayOop)java_class->obj_field(_signers_offset);
+}
+void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
+  assert(_signers_offset != 0, "must be set");
+  java_class->obj_field_put(_signers_offset, (oop)signers);
+}
+
 
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
@@ -2934,6 +2972,9 @@ int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
 int java_lang_Class::_oop_size_offset;
 int java_lang_Class::_static_oop_field_count_offset;
+int java_lang_Class::_protection_domain_offset;
+int java_lang_Class::_init_lock_offset;
+int java_lang_Class::_signers_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;
 int java_lang_Throwable::backtrace_offset;
 int java_lang_Throwable::detailMessage_offset;

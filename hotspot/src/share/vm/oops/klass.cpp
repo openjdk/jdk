@@ -511,8 +511,9 @@ void Klass::restore_unshareable_info(TRAPS) {
   // (same order as class file parsing)
   loader_data->add_class(this);
 
-  // Recreate the class mirror
-  java_lang_Class::create_mirror(this, CHECK);
+  // Recreate the class mirror.  The protection_domain is always null for
+  // boot loader, for now.
+  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
 }
 
 Klass* Klass::array_klass_or_null(int rank) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,8 @@
  * questions.
  */
 
+package test;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-
-/**
- * @author Robert Field
- */
-
-@Test
-public class MethodReferenceTestSueCase1 {
-
-    public interface Sam2<T> { public String get(T target, String s); }
-
-    String instanceMethod(String s) { return "2"; }
-    Sam2<MethodReferenceTestSueCase1> var = MethodReferenceTestSueCase1::instanceMethod;
-
-    String m() {  return var.get(new MethodReferenceTestSueCase1(), ""); }
-
-    public void testSueCase1() {
-        assertEquals(m(), "2");
-    }
+public class Empty {
+public String toString() { return "nothing"; }
 }
