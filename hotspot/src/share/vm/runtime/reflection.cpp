@@ -817,6 +817,10 @@ oop Reflection::new_constructor(methodHandle method, TRAPS) {
     typeArrayOop an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
     java_lang_reflect_Constructor::set_parameter_annotations(ch(), an_oop);
   }
+  if (java_lang_reflect_Constructor::has_type_annotations_field()) {
+    typeArrayOop an_oop = Annotations::make_java_array(method->type_annotations(), CHECK_NULL);
+    java_lang_reflect_Constructor::set_type_annotations(ch(), an_oop);
+  }
   return ch();
 }
 
