@@ -24,14 +24,16 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation which accepts two input arguments and returns no result. This is
  * the two-arity specialization of {@link Consumer}. Unlike most other
  * functional interfaces, {@code BiConsumer} is expected to operate via
  * side-effects.
  *
- * @param <T> the type of the first argument to the {@code accept} operation.
- * @param <U> the type of the second argument to the {@code accept} operation.
+ * @param <T> the type of the first argument to the {@code accept} operation
+ * @param <U> the type of the second argument to the {@code accept} operation
  *
  * @see Consumer
  * @since 1.8
@@ -47,4 +49,28 @@ public interface BiConsumer<T, U> {
      * @param u an input object
      */
     void accept(T t, U u);
+
+    /**
+     * Returns a {@code BiConsumer} which performs, in sequence, the operation
+     * represented by this object followed by the operation represented by
+     * the other {@code BiConsumer}.
+     *
+     * <p>Any exceptions thrown by either {@code accept} method are relayed
+     * to the caller; if performing this operation throws an exception, the
+     * other operation will not be performed.
+     *
+     * @param other a BiConsumer which will be chained after this BiConsumer
+     * @return a BiConsumer which performs in sequence the {@code accept} method
+     * of this BiConsumer and the {@code accept} method of the specified
+     * BiConsumer operation
+     * @throws NullPointerException if other is null
+     */
+    default BiConsumer<T, U> chain(BiConsumer<? super T, ? super U> other) {
+        Objects.requireNonNull(other);
+
+        return (l, r) -> {
+            accept(l, r);
+            other.accept(l, r);
+        };
+    }
 }

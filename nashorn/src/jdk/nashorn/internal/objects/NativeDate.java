@@ -770,7 +770,7 @@ public final class NativeDate extends ScriptObject {
             nd.setTime(NaN);
             return nd.getTime();
         }
-        int yearInt = JSType.toInteger(yearNum);
+        int yearInt = (int)yearNum;
         if (0 <= yearInt && yearInt <= 99) {
             yearInt += 1900;
         }

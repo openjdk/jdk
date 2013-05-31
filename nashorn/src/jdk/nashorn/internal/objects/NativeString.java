@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -630,17 +631,24 @@ public final class NativeString extends ScriptObject {
 
         final String str       = checkObjectToString(self);
         final String searchStr = JSType.toString(search);
+        final int length       = str.length();
 
-        int from;
+        int end;
 
         if (pos == UNDEFINED) {
-            from = str.length();
+            end = length;
         } else {
             final double numPos = JSType.toNumber(pos);
-            from = !Double.isNaN(numPos) ? (int)numPos : (int)Double.POSITIVE_INFINITY;
+            end = Double.isNaN(numPos) ? length : (int)numPos;
+            if (end < 0) {
+                end = 0;
+            } else if (end > length) {
+                end = length;
+            }
         }
 
-        return str.lastIndexOf(searchStr, from);
+
+        return str.lastIndexOf(searchStr, end);
     }
 
     /**
@@ -997,7 +1005,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toLowerCase(final Object self) {
-        return checkObjectToString(self).toLowerCase();
+        return checkObjectToString(self).toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -1017,7 +1025,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toUpperCase(final Object self) {
-        return checkObjectToString(self).toUpperCase();
+        return checkObjectToString(self).toUpperCase(Locale.ROOT);
     }
 
     /**
