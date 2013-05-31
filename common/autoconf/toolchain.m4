@@ -479,6 +479,8 @@ if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
    BASIC_FIXUP_EXECUTABLE(LIPO)
 fi
 
+TOOLCHAIN_SETUP_JTREG
+
 # Restore old path without tools dir
 PATH="$OLD_PATH"
 ])
@@ -1088,4 +1090,30 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+])
+
+# Setup the JTREG paths 
+AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG], 
+[ 
+  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg], 
+  [Regression Test Harness @<:@probed@:>@])]) 
+ 
+  AC_MSG_CHECKING([for JTReg Regression Test Harness]) 
+ 
+  if test "x$with_jtreg" != x; then 
+    JT_HOME="$with_jtreg"
+    BASIC_FIXUP_PATH([JT_HOME])
+    AC_MSG_RESULT($JT_HOME)
+ 
+    # jtreg win32 script works for everybody 
+    JTREGEXE="$JT_HOME/win32/bin/jtreg"
+    if test ! -f "$JTREGEXE"; then
+      AC_MSG_ERROR([JTReg executable does not exist: $JTREGEXE])
+    fi
+  else 
+    AC_MSG_RESULT(no)
+  fi 
+ 
+  AC_SUBST(JT_HOME) 
+  AC_SUBST(JTREGEXE) 
 ])

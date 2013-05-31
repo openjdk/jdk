@@ -188,7 +188,6 @@ long JNIHandles::weak_global_handle_memory_usage() {
 class AlwaysAliveClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop obj) { return true; }
-  void do_object(oop obj) { assert(false, "Don't call"); }
 };
 
 class CountHandleClosure: public OopClosure {

@@ -150,7 +150,6 @@ protected:
     Generation* _g;
   public:
     IsAliveClosure(Generation* g);
-    void do_object(oop p);
     bool do_object_b(oop p);
   };
 
