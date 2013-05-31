@@ -77,30 +77,42 @@ void Compiler::initialize() {
 }
 
 
-BufferBlob* Compiler::build_buffer_blob() {
+BufferBlob* Compiler::get_buffer_blob(ciEnv* env) {
+  // Allocate buffer blob once at startup since allocation for each
+  // compilation seems to be too expensive (at least on Intel win32).
+  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  if (buffer_blob != NULL) {
+    return buffer_blob;
+  }
+
   // setup CodeBuffer.  Preallocate a BufferBlob of size
   // NMethodSizeLimit plus some extra space for constants.
   int code_buffer_size = Compilation::desired_max_code_buffer_size() +
     Compilation::desired_max_constant_size();
-  BufferBlob* blob = BufferBlob::create("Compiler1 temporary CodeBuffer",
-                                        code_buffer_size);
-  guarantee(blob != NULL, "must create initial code buffer");
-  return blob;
+
+  buffer_blob = BufferBlob::create("Compiler1 temporary CodeBuffer",
+                                   code_buffer_size);
+  if (buffer_blob == NULL) {
+    CompileBroker::handle_full_code_cache();
+    env->record_failure("CodeCache is full");
+  } else {
+    CompilerThread::current()->set_buffer_blob(buffer_blob);
+  }
+
+  return buffer_blob;
 }
 
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
-  // Allocate buffer blob once at startup since allocation for each
-  // compilation seems to be too expensive (at least on Intel win32).
-  BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  BufferBlob* buffer_blob = Compiler::get_buffer_blob(env);
   if (buffer_blob == NULL) {
-    buffer_blob = build_buffer_blob();
-    CompilerThread::current()->set_buffer_blob(buffer_blob);
+    return;
   }
 
   if (!is_initialized()) {
     initialize();
   }
+
   // invoke compilation
   {
     // We are nested here because we need for the destructor

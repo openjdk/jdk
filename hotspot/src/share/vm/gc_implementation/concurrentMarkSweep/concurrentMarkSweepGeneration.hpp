@@ -485,10 +485,6 @@ class CMSIsAliveClosure: public BoolObjectClosure {
     assert(!span.is_empty(), "Empty span could spell trouble");
   }
 
-  void do_object(oop obj) {
-    assert(false, "not to be invoked");
-  }
-
   bool do_object_b(oop obj);
 };
 
@@ -1536,9 +1532,6 @@ class ScanMarkedObjectsAgainClosure: public UpwardsObjectClosure {
     _bit_map(bit_map),
     _par_scan_closure(cl) { }
 
-  void do_object(oop obj) {
-    guarantee(false, "Call do_object_b(oop, MemRegion) instead");
-  }
   bool do_object_b(oop obj) {
     guarantee(false, "Call do_object_b(oop, MemRegion) form instead");
     return false;
