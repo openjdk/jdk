@@ -808,9 +808,10 @@ public class Flow {
          */
         void markThrown(JCTree tree, Type exc) {
             if (!chk.isUnchecked(tree.pos(), exc)) {
-                if (!chk.isHandled(exc, caught))
+                if (!chk.isHandled(exc, caught)) {
                     pendingExits.append(new FlowPendingExit(tree, exc));
-                    thrown = chk.incl(exc, thrown);
+                }
+                thrown = chk.incl(exc, thrown);
             }
         }
 
@@ -1066,8 +1067,9 @@ public class Flow {
                                 names.close,
                                 List.<Type>nil(),
                                 List.<Type>nil());
+                        Type mt = types.memberType(resource.type, closeMethod);
                         if (closeMethod.kind == MTH) {
-                            for (Type t : ((MethodSymbol)closeMethod).getThrownTypes()) {
+                            for (Type t : mt.getThrownTypes()) {
                                 markThrown(resource, t);
                             }
                         }
