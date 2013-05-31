@@ -456,17 +456,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void initSymbols(final LinkedList<Symbol> symbols, final Type type) {
-        if (symbols.isEmpty()) {
-            return;
-        }
-
-        method.loadUndefined(type);
-        while (!symbols.isEmpty()) {
-            final Symbol symbol = symbols.removeFirst();
-            if (!symbols.isEmpty()) {
-                method.dup();
-            }
-            method.store(symbol);
+        final Iterator<Symbol> it = symbols.iterator();
+        if(it.hasNext()) {
+            method.loadUndefined(type);
+            boolean hasNext;
+            do {
+                final Symbol symbol = it.next();
+                hasNext = it.hasNext();
+                if(hasNext) {
+                    method.dup();
+                }
+                method.store(symbol);
+            } while(hasNext);
         }
     }
 
