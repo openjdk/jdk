@@ -1100,9 +1100,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];
@@ -1179,9 +1180,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];
@@ -1256,9 +1258,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];

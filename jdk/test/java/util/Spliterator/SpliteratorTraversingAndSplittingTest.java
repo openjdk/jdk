@@ -128,6 +128,10 @@ public class SpliteratorTraversingAndSplittingTest {
 
         void addMap(Function<Map<T, T>, ? extends Map<T, T>> m) {
             String description = "new " + m.apply(Collections.<T, T>emptyMap()).getClass().getName();
+            addMap(m, description);
+        }
+
+        void addMap(Function<Map<T, T>, ? extends Map<T, T>> m, String description) {
             add(description + ".keySet().spliterator()", () -> m.apply(mExp).keySet().spliterator());
             add(description + ".values().spliterator()", () -> m.apply(mExp).values().spliterator());
             add(description + ".entrySet().spliterator()", mExp.entrySet(), () -> m.apply(mExp).entrySet().spliterator());
@@ -399,11 +403,35 @@ public class SpliteratorTraversingAndSplittingTest {
 
             db.addMap(HashMap::new);
 
+            db.addMap(m -> {
+                // Create a Map ensuring that for large sizes
+                // buckets will contain 2 or more entries
+                HashMap<Integer, Integer> cm = new HashMap<>(1, m.size() + 1);
+                // Don't use putAll which inflates the table by
+                // m.size() * loadFactor, thus creating a very sparse
+                // map for 1000 entries defeating the purpose of this test,
+                // in addition it will cause the split until null test to fail
+                // because the number of valid splits is larger than the
+                // threshold
+                for (Map.Entry<Integer, Integer> e : m.entrySet())
+                    cm.put(e.getKey(), e.getValue());
+                return cm;
+            }, "new java.util.HashMap(1, size + 1)");
+
             db.addMap(LinkedHashMap::new);
 
             db.addMap(IdentityHashMap::new);
 
             db.addMap(WeakHashMap::new);
+
+            db.addMap(m -> {
+                // Create a Map ensuring that for large sizes
+                // buckets will be consist of 2 or more entries
+                WeakHashMap<Integer, Integer> cm = new WeakHashMap<>(1, m.size() + 1);
+                for (Map.Entry<Integer, Integer> e : m.entrySet())
+                    cm.put(e.getKey(), e.getValue());
+                return cm;
+            }, "new java.util.WeakHashMap(1, size + 1)");
 
             // @@@  Descending maps etc
             db.addMap(TreeMap::new);

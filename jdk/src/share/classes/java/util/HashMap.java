@@ -2701,8 +2701,10 @@ public class HashMap<K,V>
                     action.accept(m.nullKeyEntry.key);
                 }
             }
-            if (tab.length >= hi && (i = index) >= 0 && i < (index = hi)) {
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 Object p = current;
+                current = null;
                 do {
                     if (p == null) {
                         p = tab[i++];
@@ -2815,8 +2817,10 @@ public class HashMap<K,V>
                     action.accept(m.nullKeyEntry.value);
                 }
             }
-            if (tab.length >= hi && (i = index) >= 0 && i < (index = hi)) {
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 Object p = current;
+                current = null;
                 do {
                     if (p == null) {
                         p = tab[i++];
@@ -2928,8 +2932,10 @@ public class HashMap<K,V>
                     action.accept(m.nullKeyEntry);
                 }
             }
-            if (tab.length >= hi && (i = index) >= 0 && i < (index = hi)) {
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 Object p = current;
+                current = null;
                 do {
                     if (p == null) {
                         p = tab[i++];
