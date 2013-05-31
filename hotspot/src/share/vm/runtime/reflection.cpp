@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,7 +375,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     }
   }
   klass = klass->array_klass(dim, CHECK_NULL);
-  oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, THREAD);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, CHECK_NULL);
   assert(obj->is_array(), "just checking");
   return arrayOop(obj);
 }
