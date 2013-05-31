@@ -171,7 +171,7 @@ public class LongSummaryStatistics implements LongConsumer, IntConsumer {
      */
     public String toString() {
         return String.format(
-            "%s{count=%d, sum=%d, min=%d, average=%d, max=%d}",
+            "%s{count=%d, sum=%d, min=%d, average=%f, max=%d}",
             this.getClass().getSimpleName(),
             getCount(),
             getSum(),
