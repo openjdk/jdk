@@ -262,7 +262,7 @@ public enum CompilerConstants {
      * @return the internal descriptor for this type
      */
     public static String typeDescriptor(final Class<?> clazz) {
-        return Type.getDescriptor(clazz);
+        return Type.typeFor(clazz).getDescriptor();
     }
 
     /**

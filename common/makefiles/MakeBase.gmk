@@ -361,8 +361,8 @@ $(eval $(call SetupLogging))
 
 # This is to be called by all SetupFoo macros
 define LogSetupMacroEntry
-    $(if $(26),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
-    $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
+    $(if $(27),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
+    $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $($i),$(NEWLINE) $(strip [$i] $($i))))))
 endef
 
 # Make directory without forking mkdir if not needed

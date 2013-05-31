@@ -338,6 +338,7 @@ public:
 
   // Run unit tests.
 #ifndef PRODUCT
+  static void test_prt();
   static void test();
 #endif
 };

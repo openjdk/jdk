@@ -478,6 +478,7 @@ CCACHE:=@CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
 CD:=cd
 CHMOD:=@CHMOD@
+CODESIGN:=@CODESIGN@
 COMM:=@COMM@
 CP:=@CP@
 CPIO:=@CPIO@
@@ -528,6 +529,8 @@ HG:=@HG@
 OBJCOPY:=@OBJCOPY@
 SETFILE:=@SETFILE@
 XATTR:=@XATTR@
+JT_HOME:=@JT_HOME@
+JTREGEXE:=@JTREGEXE@
 
 FIXPATH:=@FIXPATH@
 

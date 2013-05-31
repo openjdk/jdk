@@ -43,7 +43,7 @@ public interface Predicate<T> {
      * @return {@code true} if the input object matches some criteria, otherwise
      * {@code false}
      */
-    public boolean test(T t);
+    boolean test(T t);
 
     /**
      * Returns a predicate which evaluates to {@code true} only if this
@@ -51,11 +51,16 @@ public interface Predicate<T> {
      * this predicate returns {@code false} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ANDed with this predicate.
+     * <p>Any exceptions thrown by either {@code test} method are relayed
+     * to the caller; if performing first operation throws an exception, the
+     * second operation will not be performed.
+     *
+     * @param p a predicate which will be logically-ANDed with this predicate
      * @return a new predicate which returns {@code true} only if both
-     * predicates return {@code true}.
+     * predicates return {@code true}
+     * @throws NullPointerException if p is null
      */
-    public default Predicate<T> and(Predicate<? super T> p) {
+    default Predicate<T> and(Predicate<? super T> p) {
         Objects.requireNonNull(p);
         return (t) -> test(t) && p.test(t);
     }
@@ -66,7 +71,7 @@ public interface Predicate<T> {
      * @return a new predicate who's result is always the opposite of this
      * predicate.
      */
-    public default Predicate<T> negate() {
+    default Predicate<T> negate() {
         return (t) -> !test(t);
     }
 
@@ -76,25 +81,32 @@ public interface Predicate<T> {
      * predicate returns {@code true} then the remaining predicate is not
      * evaluated.
      *
-     * @param p a predicate which will be logically-ORed with this predicate.
+     * <p>Any exceptions thrown by either {@code test} method are relayed
+     * to the caller; if performing first operation throws an exception, the
+     * second operation will not be performed.
+     *
+     * @param p a predicate which will be logically-ORed with this predicate
      * @return a new predicate which returns {@code true} if either predicate
-     * returns {@code true}.
+     * returns {@code true}
+     * @throws NullPointerException if p is null
      */
-    public default Predicate<T> or(Predicate<? super T> p) {
+    default Predicate<T> or(Predicate<? super T> p) {
         Objects.requireNonNull(p);
         return (t) -> test(t) || p.test(t);
     }
 
     /**
-     * Returns a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
+     * Returns a predicate who's result matches
+     * {@code Objects.equals(target, t)}.
      *
-     * @param p a predicate which will be logically-XORed with this predicte.
-     * @return a predicate that evaluates to {@code true} if both or neither of
-     * the component predicates evaluate to {@code true}.
+     * @param <T> the type of values evaluated by the predicate
+     * @param target the target value to be compared for equality
+     * @return a predicate who's result matches
+     * {@code Objects.equals(target, t)}
      */
-    public default Predicate<T> xor(Predicate<? super T> p) {
-        Objects.requireNonNull(p);
-        return (t) -> test(t) ^ p.test(t);
+    static <T> Predicate<T> isEqual(Object target) {
+        return (null == target)
+                ? Objects::isNull
+                : object -> target.equals(object);
     }
 }

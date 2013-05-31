@@ -145,6 +145,9 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
     if test "$JOBS" -gt "16"; then
       JOBS=16
     fi
+    if test "$JOBS" -eq "0"; then
+      JOBS=1
+    fi
     AC_MSG_RESULT([$JOBS])
   else
     JOBS=$with_jobs
@@ -278,60 +281,37 @@ else
 fi                    
 AC_SUBST(SJAVAC_SERVER_JAVA)
 
-AC_ARG_WITH(sjavac-server-cores, [AS_HELP_STRING([--with-sjavac-server-cores],
-	[use at most this number of concurrent threads on the sjavac server @<:@probed@:>@])])
-if test "x$with_sjavac_server_cores" != x; then
-    SJAVAC_SERVER_CORES="$with_sjavac_server_cores"
-else
-    if test "$NUM_CORES" -gt 16; then
-        # We set this arbitrary limit because we want to limit the heap
-        # size of the javac server.
-        # In the future we will make the javac compilers in the server
-        # share more and more state, thus enabling us to use more and
-        # more concurrent threads in the server.
-        SJAVAC_SERVER_CORES="16"
-    else
-        SJAVAC_SERVER_CORES="$NUM_CORES"
+if test "$MEMORY_SIZE" -gt "2500"; then
+    ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    if test "$JVM_ARG_OK" = true; then
+        JVM_64BIT=true
+	JVM_ARG_OK=false
+    fi
     fi
 
+if test "$JVM_64BIT" = true; then
     if test "$MEMORY_SIZE" -gt "17000"; then
-        MAX_HEAP_MEM=10000
-        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
         ADD_JVM_ARG_IF_OK([-Xms10G -Xmx10G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    elif test "$MEMORY_SIZE" -gt "10000"; then
-        MAX_HEAP_MEM=6000
-        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    fi
+    if test "$MEMORY_SIZE" -gt "10000" && test "$JVM_ARG_OK" = false; then
         ADD_JVM_ARG_IF_OK([-Xms6G -Xmx6G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    elif test "$MEMORY_SIZE" -gt "5000"; then
-        MAX_HEAP_MEM=3000
-        ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    fi
+    if test "$MEMORY_SIZE" -gt "5000" && test "$JVM_ARG_OK" = false; then
         ADD_JVM_ARG_IF_OK([-Xms1G -Xmx3G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    elif test "$MEMORY_SIZE" -gt "3800"; then
-        MAX_HEAP_MEM=2500
+    fi
+    if test "$MEMORY_SIZE" -gt "3800" && test "$JVM_ARG_OK" = false; then
         ADD_JVM_ARG_IF_OK([-Xms1G -Xmx2500M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    elif test "$MEMORY_SIZE" -gt "1900"; then
-        MAX_HEAP_MEM=1200
-        ADD_JVM_ARG_IF_OK([-Xms700M -Xmx1400M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    elif test "$MEMORY_SIZE" -gt "1000"; then
-        MAX_HEAP_MEM=900
-        ADD_JVM_ARG_IF_OK([-Xms400M -Xmx1100M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    else
-        MAX_HEAP_MEM=512
-        ADD_JVM_ARG_IF_OK([-Xms256M -Xmx512M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     fi
-
-    ADD_JVM_ARG_IF_OK([-XX:PermSize=32m],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    ADD_JVM_ARG_IF_OK([-XX:MaxPermSize=160m],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-
-    MAX_COMPILERS_IN_HEAP=`expr $MAX_HEAP_MEM / 501`
-    if test "$SJAVAC_SERVER_CORES" -gt "$MAX_COMPILERS_IN_HEAP"; then
-        AC_MSG_CHECKING([if number of server cores must be reduced])
-        SJAVAC_SERVER_CORES="$MAX_COMPILERS_IN_HEAP"
-        AC_MSG_RESULT([yes, to $SJAVAC_SERVER_CORES with max heap size $MAX_HEAP_MEM MB])
-    fi
-fi                    
-AC_SUBST(SJAVAC_SERVER_CORES)
+fi
+if test "$MEMORY_SIZE" -gt "2500" && test "$JVM_ARG_OK" = false; then
+    ADD_JVM_ARG_IF_OK([-Xms1000M -Xmx1500M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+fi
+if test "$MEMORY_SIZE" -gt "1000" && test "$JVM_ARG_OK" = false; then
+    ADD_JVM_ARG_IF_OK([-Xms400M -Xmx1100M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+fi
+if test "$JVM_ARG_OK" = false; then
+    ADD_JVM_ARG_IF_OK([-Xms256M -Xmx512M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+fi
 
 AC_MSG_CHECKING([whether to use sjavac])
 AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],

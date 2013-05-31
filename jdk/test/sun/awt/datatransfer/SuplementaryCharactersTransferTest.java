@@ -146,12 +146,6 @@ public class SuplementaryCharactersTransferTest {
         }
 
         @Override
-        protected Image platformImageBytesOrStreamToImage(InputStream str,
-                byte[] bytes, long format) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         protected byte[] imageToPlatformBytes(Image image, long format)
                 throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -159,6 +153,11 @@ public class SuplementaryCharactersTransferTest {
 
         @Override
         public ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        protected Image platformImageBytesToImage(byte[] bytes, long format) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

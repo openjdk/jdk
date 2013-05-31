@@ -95,6 +95,9 @@ define SetupLauncher
         $1_PLIST_FILE:=Info-cmdline.plist
         ifneq ($(11),)
             $1_PLIST_FILE:=$(11)
+            ifneq ($$(findstring privileged,$$($1_PLIST_FILE)),)
+                $1_CODESIGN:=true
+            endif
         endif
 
         $1_LDFLAGS += -Wl,-all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
@@ -174,7 +177,8 @@ define SetupLauncher
 		  -D "JDK_INTERNAL_NAME=$1" \
 		  -D "JDK_FTYPE=0x1L" \
 		  $7,\
-	MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/java.manifest)
+	MANIFEST:=$(JDK_TOPDIR)/src/windows/resource/java.manifest,\
+	CODESIGN:=$$($1_CODESIGN))
 
     BUILD_LAUNCHERS += $$(BUILD_LAUNCHER_$1)
 
