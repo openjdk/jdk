@@ -45,6 +45,7 @@ enum SH_process_strong_roots_tasks {
   SH_PS_FlatProfiler_oops_do,
   SH_PS_Management_oops_do,
   SH_PS_SystemDictionary_oops_do,
+  SH_PS_ClassLoaderDataGraph_oops_do,
   SH_PS_jvmti_oops_do,
   SH_PS_StringTable_oops_do,
   SH_PS_CodeCache_oops_do,
@@ -173,12 +174,18 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   if (!_process_strong_tasks->is_task_claimed(SH_PS_SystemDictionary_oops_do)) {
     if (so & SO_AllClasses) {
       SystemDictionary::oops_do(roots);
-      ClassLoaderDataGraph::oops_do(roots, klass_closure, !is_scavenging);
     } else if (so & SO_SystemClasses) {
       SystemDictionary::always_strong_oops_do(roots);
-      ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, !is_scavenging);
     } else {
       fatal("We should always have selected either SO_AllClasses or SO_SystemClasses");
+    }
+  }
+
+  if (!_process_strong_tasks->is_task_claimed(SH_PS_ClassLoaderDataGraph_oops_do)) {
+    if (so & SO_AllClasses) {
+      ClassLoaderDataGraph::oops_do(roots, klass_closure, !is_scavenging);
+    } else if (so & SO_SystemClasses) {
+      ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, !is_scavenging);
     }
   }
 

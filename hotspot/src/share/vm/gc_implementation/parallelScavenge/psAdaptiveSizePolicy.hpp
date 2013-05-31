@@ -344,13 +344,13 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Takes current used space in all generations as input, as well
   // as an indication if a full gc has just been performed, for use
   // in deciding if an OOM error should be thrown.
-  void compute_generation_free_space(size_t young_live,
-                                     size_t eden_live,
-                                     size_t old_live,
-                                     size_t cur_eden,  // current eden in bytes
-                                     size_t max_old_gen_size,
-                                     size_t max_eden_size,
-                                     bool   is_full_gc);
+  void compute_generations_free_space(size_t young_live,
+                                      size_t eden_live,
+                                      size_t old_live,
+                                      size_t cur_eden,  // current eden in bytes
+                                      size_t max_old_gen_size,
+                                      size_t max_eden_size,
+                                      bool   is_full_gc);
 
   void compute_eden_space_size(size_t young_live,
                                size_t eden_live,

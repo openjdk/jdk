@@ -737,7 +737,7 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
   return result;
 }
 
-void StringTable::unlink(BoolObjectClosure* is_alive) {
+void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   // Readers of the table are unlocked, so we should only be removing
   // entries at a safepoint.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -745,41 +745,31 @@ void StringTable::unlink(BoolObjectClosure* is_alive) {
     HashtableEntry<oop, mtSymbol>** p = the_table()->bucket_addr(i);
     HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
-      // Shared entries are normally at the end of the bucket and if we run into
-      // a shared entry, then there is nothing more to remove. However, if we
-      // have rehashed the table, then the shared entries are no longer at the
-      // end of the bucket.
-      if (entry->is_shared() && !use_alternate_hashcode()) {
-        break;
-      }
-      assert(entry->literal() != NULL, "just checking");
-      if (entry->is_shared() || is_alive->do_object_b(entry->literal())) {
+      assert(!entry->is_shared(), "CDS not used for the StringTable");
+
+      if (is_alive->do_object_b(entry->literal())) {
+        if (f != NULL) {
+          f->do_oop((oop*)entry->literal_addr());
+        }
         p = entry->next_addr();
       } else {
         *p = entry->next();
         the_table()->free_entry(entry);
       }
-      entry = (HashtableEntry<oop, mtSymbol>*)HashtableEntry<oop, mtSymbol>::make_ptr(*p);
+      entry = *p;
     }
   }
 }
 
 void StringTable::oops_do(OopClosure* f) {
   for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop, mtSymbol>** p = the_table()->bucket_addr(i);
     HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
+      assert(!entry->is_shared(), "CDS not used for the StringTable");
+
       f->do_oop((oop*)entry->literal_addr());
 
-      // Did the closure remove the literal from the table?
-      if (entry->literal() == NULL) {
-        assert(!entry->is_shared(), "immutable hashtable entry?");
-        *p = entry->next();
-        the_table()->free_entry(entry);
-      } else {
-        p = entry->next_addr();
-      }
-      entry = (HashtableEntry<oop, mtSymbol>*)HashtableEntry<oop, mtSymbol>::make_ptr(*p);
+      entry = entry->next();
     }
   }
 }
