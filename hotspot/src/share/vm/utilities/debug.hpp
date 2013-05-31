@@ -225,6 +225,22 @@ void report_untested(const char* file, int line, const char* message);
 
 void warning(const char* format, ...);
 
+#ifdef ASSERT
+// Compile-time asserts.
+template <bool> struct StaticAssert;
+template <> struct StaticAssert<true> {};
+
+// Only StaticAssert<true> is defined, so if cond evaluates to false we get
+// a compile time exception when trying to use StaticAssert<false>.
+#define STATIC_ASSERT(cond)                   \
+  do {                                        \
+    StaticAssert<(cond)> DUMMY_STATIC_ASSERT; \
+    (void)DUMMY_STATIC_ASSERT; /* ignore */   \
+  } while (false)
+#else
+#define STATIC_ASSERT(cond)
+#endif
+
 // out of shared space reporting
 enum SharedSpaceType {
   SharedPermGen,
