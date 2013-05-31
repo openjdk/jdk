@@ -272,7 +272,10 @@ public:
 
   // GC support
   //   Delete pointers to otherwise-unreachable objects.
-  static void unlink(BoolObjectClosure* cl);
+  static void unlink_or_oops_do(BoolObjectClosure* cl, OopClosure* f);
+  static void unlink(BoolObjectClosure* cl) {
+    unlink_or_oops_do(cl, NULL);
+  }
 
   // Invoke "f->do_oop" on the locations of all oops in the table.
   static void oops_do(OopClosure* f);

@@ -408,6 +408,7 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::flat_profiler));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
+      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
@@ -449,11 +450,9 @@ bool PSScavenge::invoke_no_policy() {
       reference_processor()->enqueue_discovered_references(NULL);
     }
 
-      // Unlink any dead interned Strings
-      StringTable::unlink(&_is_alive_closure);
-      // Process the remaining live ones
-      PSScavengeRootsClosure root_closure(promotion_manager);
-      StringTable::oops_do(&root_closure);
+    // Unlink any dead interned Strings and process the remaining live ones.
+    PSScavengeRootsClosure root_closure(promotion_manager);
+    StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     PSPromotionManager::post_scavenge();
