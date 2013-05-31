@@ -139,6 +139,12 @@ class Heap$Type$Buffer$RW$
         return hb[ix(checkIndex(i))];
     }
 
+#if[streamableType]
+    $type$ getUnchecked(int i) {
+	return hb[ix(i)];
+    }
+#end[streamableType]
+
     public $Type$Buffer get($type$[] dst, int offset, int length) {
         checkBounds(offset, length, dst.length);
         if (length > remaining())
