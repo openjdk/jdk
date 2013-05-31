@@ -32,10 +32,10 @@ import com.oracle.java.testlibrary.*;
  * @library /testlibrary
  * @build Agent
  * @run main ClassFileInstaller Agent
- * @run main Test
+ * @run main TestRedefineObject
  * @run main/othervm -javaagent:agent.jar Agent
  */
-public class Test {
+public class TestRedefineObject {
     public static void main(String[] args) throws Exception  {
 
       PrintWriter pw = new PrintWriter("MANIFEST.MF");

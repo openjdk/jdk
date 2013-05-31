@@ -56,7 +56,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
 # The compileprops tools compiles a properties file into a resource bundle.
 TOOL_COMPILEPROPS_CMD:=$(JAVA) -cp $(LANGTOOLS_OUTPUTDIR)/btclasses compileproperties.CompileProperties -quiet
 # Lookup the properties that need to be compiled into resource bundles.
-PROPSOURCES:=$(shell find $(LANGTOOLS_TOPDIR)/src/share/classes -name "*.properties")
+PROPSOURCES:=$(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/share/classes -name "*.properties")
 # Strip away prefix and suffix, leaving for example only: "com/sun/tools/javac/resources/javac_zh_CN"
 PROPPATHS:=$(patsubst $(LANGTOOLS_TOPDIR)/src/share/classes/%.properties,%,$(PROPSOURCES))
 # Generate the list of java files to be created.
@@ -70,13 +70,13 @@ PROPCMDLINE:=$(subst _SPACE_,$(SPACE),$(join $(addprefix -compile_SPACE_,$(PROPS
 
 # Now setup the rule for the generation of the resource bundles.
 $(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props.d : $(PROPSOURCES) $(BUILD_TOOLS)
-	rm -rf $(@D)/*
-	mkdir -p $(@D) $(PROPDIRS)
-	printf "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties
-	printf "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties
-	printf "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties
-	printf "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties
-	echo Compiling $(words $(PROPSOURCES) v1 v2 v3) properties into resource bundles
+	$(RM) -r $(@D)/*
+	$(MKDIR) -p $(@D) $(PROPDIRS)
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties
+	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties
+	$(ECHO) Compiling $(words $(PROPSOURCES) v1 v2 v3) properties into resource bundles
 	$(TOOL_COMPILEPROPS_CMD) $(PROPCMDLINE) \
 		-compile 	$(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties \
 				$(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.java \
@@ -90,7 +90,7 @@ $(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props.d : $(PROPSOURCES) $(BUILD_TOOLS)
 		-compile	$(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties \
 				$(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.java \
 				java.util.ListResourceBundle
-	echo PROPS_ARE_CREATED=yes > $@
+	$(ECHO) PROPS_ARE_CREATED=yes > $@
 
 # Trigger the generation of the resource bundles. After the resource bundles have
 # been compiled, then the makefile will restart and the newly created java files
@@ -134,19 +134,19 @@ ifeq ($(PROPS_ARE_CREATED),yes)
         $(LANGTOOLS_OUTPUTDIR)/genstubs/_the_stubs.d : $(STUBSOURCES) $(BUILD_TOOLS) \
 				$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
 				$(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props.d
-	       	mkdir -p $(@D)
-		mkdir -p $(LANGTOOLS_OUTPUTDIR)/tmpstubs
-	       	echo $(LOG_INFO) Generating stubs from JDK sources.
-	       	($(TOOL_GENSTUBS_CMD) -s $(LANGTOOLS_OUTPUTDIR)/tmpstubs -sourcepath $(JDKS) $(STUBCLASSES) && echo STUBS_ARE_CREATED=yes > $@)
+	       	$(MKDIR) -p $(@D)
+		$(MKDIR) -p $(LANGTOOLS_OUTPUTDIR)/tmpstubs
+	       	$(ECHO) $(LOG_INFO) Generating stubs from JDK sources.
+	       	($(TOOL_GENSTUBS_CMD) -s $(LANGTOOLS_OUTPUTDIR)/tmpstubs -sourcepath $(JDKS) $(STUBCLASSES) && $(ECHO) STUBS_ARE_CREATED=yes > $@)
 		if $(DIFF) -x "_the*" -rq $(LANGTOOLS_OUTPUTDIR)/tmpstubs $(LANGTOOLS_OUTPUTDIR)/genstubs > /dev/null 2>&1; then \
-			echo $(LOG_INFO) No changes in the stubs!; \
-			rm -rf $(LANGTOOLS_OUTPUTDIR)/tmpstubs; \
+			$(ECHO) $(LOG_INFO) No changes in the stubs!; \
+			$(RM) -r $(LANGTOOLS_OUTPUTDIR)/tmpstubs; \
 		else \
-			echo $(LOG_INFO) Changes in stubs detected!; \
-			rm -rf $(@D); \
-			mv $(LANGTOOLS_OUTPUTDIR)/tmpstubs $(@D); \
+			$(ECHO) $(LOG_INFO) Changes in stubs detected!; \
+			$(RM) -r $(@D); \
+			$(MV) $(LANGTOOLS_OUTPUTDIR)/tmpstubs $(@D); \
 		fi
-		echo STUBS_ARE_CREATED=yes > $@
+		$(ECHO) STUBS_ARE_CREATED=yes > $@
 
         # Trigger a generation of the genstubs java source code and a restart
         # of the makefile to make sure that the following build setup use the 

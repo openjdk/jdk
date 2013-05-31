@@ -92,6 +92,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           $(SASRCFILES)                                        \
 	           $(SA_LFLAGS)                                         \
 	           $(SA_DEBUG_CFLAGS)                                   \
+	           $(EXTRA_CFLAGS)                                      \
 	           -o $@                                                \
 	           -lthread_db
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
