@@ -60,7 +60,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
-
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
@@ -80,11 +79,11 @@ import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -942,11 +941,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              */
             final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
                 @Override
-                protected Type getValueType(final Symbol value) {
-                    return value.getSymbolType();
-                }
-
-                @Override
                 protected void loadValue(final Symbol value) {
                     method.load(value);
                 }
@@ -1356,11 +1350,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         new FieldObjectCreator<Node>(this, keys, symbols, values) {
-            @Override
-            protected Type getValueType(final Node node) {
-                return node.getType();
-            }
-
             @Override
             protected void loadValue(final Node node) {
                 load(node);
