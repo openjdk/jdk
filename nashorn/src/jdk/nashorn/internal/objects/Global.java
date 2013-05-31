@@ -1628,20 +1628,21 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @SuppressWarnings("resource")
     private static Object printImpl(final boolean newLine, final Object... objects) {
         final PrintWriter out = Global.getEnv().getOut();
+        final StringBuilder sb = new StringBuilder();
 
-        boolean first = true;
         for (final Object object : objects) {
-            if (first) {
-                first = false;
-            } else {
-                out.print(' ');
+            if (sb.length() != 0) {
+                sb.append(' ');
             }
 
-            out.print(JSType.toString(object));
+            sb.append(JSType.toString(object));
         }
 
+        // Print all at once to ensure thread friendly result.
         if (newLine) {
-            out.println();
+            out.println(sb.toString());
+        } else {
+            out.print(sb.toString());
         }
 
         out.flush();
