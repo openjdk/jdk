@@ -61,6 +61,7 @@ CardTableExtension*        PSScavenge::_card_table = NULL;
 bool                       PSScavenge::_survivor_overflow = false;
 uint                       PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
+uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0;
 elapsedTimer               PSScavenge::_accumulated_time;
 Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
 Stack<oop, mtGC>           PSScavenge::_preserved_oop_stack;
@@ -71,7 +72,7 @@ bool                       PSScavenge::_promotion_failed = false;
 class PSIsAliveClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop p) {
-    return (!PSScavenge::is_obj_in_young((HeapWord*) p)) || p->is_forwarded();
+    return (!PSScavenge::is_obj_in_young(p)) || p->is_forwarded();
   }
 };
 
@@ -815,7 +816,7 @@ void PSScavenge::initialize() {
   // Set boundary between young_gen and old_gen
   assert(old_gen->reserved().end() <= young_gen->eden_space()->bottom(),
          "old above young");
-  _young_generation_boundary = young_gen->eden_space()->bottom();
+  set_young_generation_boundary(young_gen->eden_space()->bottom());
 
   // Initialize ref handling object for scavenging.
   MemRegion mr = young_gen->reserved();
