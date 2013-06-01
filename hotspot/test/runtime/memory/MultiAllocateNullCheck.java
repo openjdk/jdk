@@ -19,19 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-#include "precompiled.hpp"
-#include "oops/methodCounters.hpp"
-#include "runtime/thread.inline.hpp"
 
-MethodCounters* MethodCounters::allocate(ClassLoaderData* loader_data, TRAPS) {
-  return new(loader_data, size(), false, MetaspaceObj::MethodCountersType, THREAD) MethodCounters();
-}
+/*
+ * @test MultiAllocateNullCheck
+ * @bug 6726963
+ * @summary multi_allocate() call does not CHECK_NULL and causes crash in fastdebug bits
+ * @run main/othervm -Xmx32m MultiAllocateNullCheck
+ */
 
-void MethodCounters::clear_counters() {
-  invocation_counter()->reset();
-  backedge_counter()->reset();
-  set_interpreter_throwout_count(0);
-  set_interpreter_invocation_count(0);
+import java.lang.reflect.Array;
+
+public class MultiAllocateNullCheck {
+      public static void main(String[] args) throws Exception {
+        Object x = null;
+        try
+        {
+            x = Array.newInstance(String.class, new int[]
+                {Integer.MAX_VALUE, Integer.MAX_VALUE});
+            System.out.println("Array was created");
+        } catch (OutOfMemoryError e) {
+            System.out.println("Out of memory occured, which is OK in this case");
+        }
+    }
 }
