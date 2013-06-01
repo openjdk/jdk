@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
-import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileManager;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -39,9 +38,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
-import static com.sun.tools.javac.code.BoundKind.EXTENDS;
-import static com.sun.tools.javac.code.BoundKind.SUPER;
-import static com.sun.tools.javac.code.BoundKind.UNBOUND;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types.UniqueType;
@@ -674,13 +670,15 @@ public class ClassWriter extends ClassFile {
     int writeParameterAttrs(MethodSymbol m) {
         boolean hasVisible = false;
         boolean hasInvisible = false;
-        if (m.params != null) for (VarSymbol s : m.params) {
-            for (Attribute.Compound a : s.getRawAttributes()) {
-                switch (types.getRetention(a)) {
-                case SOURCE: break;
-                case CLASS: hasInvisible = true; break;
-                case RUNTIME: hasVisible = true; break;
-                default: ;// /* fail soft */ throw new AssertionError(vis);
+        if (m.params != null) {
+            for (VarSymbol s : m.params) {
+                for (Attribute.Compound a : s.getRawAttributes()) {
+                    switch (types.getRetention(a)) {
+                    case SOURCE: break;
+                    case CLASS: hasInvisible = true; break;
+                    case RUNTIME: hasVisible = true; break;
+                    default: ;// /* fail soft */ throw new AssertionError(vis);
+                    }
                 }
             }
         }

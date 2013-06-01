@@ -258,6 +258,14 @@ public class TransTypes extends TreeTranslator {
                                                meth.name,
                                                bridgeType,
                                                origin);
+        /* once JDK-6996415 is solved it should be checked if this approach can
+         * be applied to method addOverrideBridgesIfNeeded
+         */
+        bridge.params = createBridgeParams(impl, bridge, bridgeType);
+        if (impl.annotations != null) {
+            bridge.annotations.setAttributes(impl.annotations);
+        }
+
         if (!hypothetical) {
             JCMethodDecl md = make.MethodDef(bridge, null);
 
@@ -290,6 +298,28 @@ public class TransTypes extends TreeTranslator {
         // Add bridge to scope of enclosing class and `overridden' table.
         origin.members().enter(bridge);
         overridden.put(bridge, meth);
+    }
+
+    private List<VarSymbol> createBridgeParams(MethodSymbol impl, MethodSymbol bridge,
+            Type bridgeType) {
+        List<VarSymbol> bridgeParams = null;
+        if (impl.params != null) {
+            bridgeParams = List.nil();
+            List<VarSymbol> implParams = impl.params;
+            Type.MethodType mType = (Type.MethodType)bridgeType;
+            List<Type> argTypes = mType.argtypes;
+            while (implParams.nonEmpty() && argTypes.nonEmpty()) {
+                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC,
+                        implParams.head.name, argTypes.head, bridge);
+                if (implParams.head.annotations != null) {
+                    param.annotations.setAttributes(implParams.head.annotations);
+                }
+                bridgeParams = bridgeParams.append(param);
+                implParams = implParams.tail;
+                argTypes = argTypes.tail;
+            }
+        }
+        return bridgeParams;
     }
 
     /** Add bridge if given symbol is a non-private, non-static member
