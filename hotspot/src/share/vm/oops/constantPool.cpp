@@ -55,7 +55,7 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   // the resolved_references array, which is recreated at startup time.
   // But that could be moved to InstanceKlass (although a pain to access from
   // assembly code).  Maybe it could be moved to the cpCache which is RW.
-  return new (loader_data, size, false, THREAD) ConstantPool(tags);
+  return new (loader_data, size, false, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
 ConstantPool::ConstantPool(Array<u1>* tags) {
