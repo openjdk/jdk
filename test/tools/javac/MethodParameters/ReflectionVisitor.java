@@ -151,9 +151,6 @@ public class ReflectionVisitor extends Tester.Visitor {
                     }
                     expect = "this\\$[0-n]*";
                 }
-            } else if (isAnon) {
-                // not an implementation gurantee, but okay for now
-                expect = "x[0-n]*";
             }
 
             // Check expected flags
