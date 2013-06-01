@@ -316,9 +316,6 @@ class ClassFileVisitor extends Tester.Visitor {
                         }
                         expect = "this\\$[0-n]*";
                     }
-                } else if (isAnon) {
-                    // not an implementation gurantee, but okay for now
-                    expect = "x[0-n]*";
                 }
             } else if (isEnum && mNumParams == 1 && index == 0 && mName.equals("valueOf")) {
                 expect = "name";
