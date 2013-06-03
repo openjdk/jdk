@@ -1624,15 +1624,19 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
     }
   }
 
+  assert(sig_type != '[', "array should have sig_type == 'L'");
+  bool handle_created = false;
+
   // convert oop to JNI handle.
-  if (sig_type == 'L' || sig_type == '[') {
+  if (sig_type == 'L') {
+    handle_created = true;
     value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);
 
   // Destroy the JNI handle allocated above.
-  if (sig_type == 'L') {
+  if (handle_created) {
     JNIHandles::destroy_local(value->l);
   }
 }

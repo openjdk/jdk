@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,35 @@
  * questions.
  */
 
-
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-
-/**
- * @author Robert Field
+/*
+ * @test ConfigFileParsing
+ * @bug 7158804
+ * @summary Improve config file parsing
+ * @library /testlibrary
  */
 
-@Test
-public class MethodReferenceTestSueCase1 {
+import java.io.PrintWriter;
+import com.oracle.java.testlibrary.*;
 
-    public interface Sam2<T> { public String get(T target, String s); }
+public class ConfigFileParsing {
+  public static void main(String[] args) throws Exception {
+    String testFileName = ".hotspotrc";
 
-    String instanceMethod(String s) { return "2"; }
-    Sam2<MethodReferenceTestSueCase1> var = MethodReferenceTestSueCase1::instanceMethod;
+    // Create really long invalid option
+    String reallyLongInvalidOption = "";
+    for (int i=0; i<5000; i++)
+      reallyLongInvalidOption+='a';
 
-    String m() {  return var.get(new MethodReferenceTestSueCase1(), ""); }
+    // Populate the options file with really long string
+    PrintWriter pw = new PrintWriter(testFileName);
+    pw.println("-XX:+" + reallyLongInvalidOption);
+    pw.close();
 
-    public void testSueCase1() {
-        assertEquals(m(), "2");
-    }
+    // start VM
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:Flags=.hotspotrc", "-version");
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
+  }
 }
