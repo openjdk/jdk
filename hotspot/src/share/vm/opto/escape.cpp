@@ -2202,7 +2202,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
     int opcode = uncast_base->Opcode();
     assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
            opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
-           (uncast_base->is_Mem() && uncast_base->bottom_type() == TypeRawPtr::NOTNULL) ||
+           (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
            (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
   }
   return base;

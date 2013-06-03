@@ -2217,6 +2217,13 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize: %dK. Should be greater than InitialCodeCacheSize=%dK\n",
+                ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
+    status = false;
+  }
+
   return status;
 }
 
@@ -2619,13 +2626,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize,
-                                            (size_t)InitialCodeCacheSize);
+      ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum code cache size: %s. Should be greater than InitialCodeCacheSize=%dK\n",
-                    option->optionString, InitialCodeCacheSize/K);
-        describe_range_error(errcode);
+                    "Invalid maximum code cache size: %s.\n", option->optionString);
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize);
