@@ -3436,6 +3436,10 @@ class CommandLineFlags {
           "Start profiling in interpreter if the counters exceed tier 3"    \
           "thresholds by the specified percentage")                         \
                                                                             \
+  product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
+          "Increase the compile threshold for C1 compilation if the code"   \
+          "cache is filled by the specified percentage.")                   \
+                                                                            \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
                                                                             \
