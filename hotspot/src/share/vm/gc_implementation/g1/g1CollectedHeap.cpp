@@ -5090,7 +5090,6 @@ class G1AlwaysAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1;
 public:
   G1AlwaysAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
-  void do_object(oop p) { assert(false, "Do not call."); }
   bool do_object_b(oop p) {
     if (p != NULL) {
       return true;

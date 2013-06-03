@@ -2629,6 +2629,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize);
+      //-XX:IncreaseFirstTierCompileThresholdAt=
+      } else if (match_option(option, "-XX:IncreaseFirstTierCompileThresholdAt=", &tail)) {
+        uintx uint_IncreaseFirstTierCompileThresholdAt = 0;
+        if (!parse_uintx(tail, &uint_IncreaseFirstTierCompileThresholdAt, 0) || uint_IncreaseFirstTierCompileThresholdAt > 99) {
+          jio_fprintf(defaultStream::error_stream(),
+                      "Invalid value for IncreaseFirstTierCompileThresholdAt: %s. Should be between 0 and 99.\n",
+                      option->optionString);
+          return JNI_EINVAL;
+        }
+        FLAG_SET_CMDLINE(uintx, IncreaseFirstTierCompileThresholdAt, (uintx)uint_IncreaseFirstTierCompileThresholdAt);
     // -green
     } else if (match_option(option, "-green", &tail)) {
       jio_fprintf(defaultStream::error_stream(),
