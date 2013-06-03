@@ -580,7 +580,6 @@ void PSMarkSweep::mark_sweep_phase2() {
 // This should be moved to the shared markSweep code!
 class PSAlwaysTrueClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) { ShouldNotReachHere(); }
   bool do_object_b(oop p) { return true; }
 };
 static PSAlwaysTrueClosure always_true;

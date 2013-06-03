@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,8 @@ public:
   inline size_t    region_size() const;
   inline size_t    size() const;
 
+  size_t reserved_byte_size() const { return _reserved_byte_size; }
+
   // Convert a heap address to/from a bit index.
   inline idx_t     addr_to_bit(HeapWord* addr) const;
   inline HeapWord* bit_to_addr(idx_t bit) const;
@@ -176,10 +178,11 @@ private:
   BitMap          _beg_bits;
   BitMap          _end_bits;
   PSVirtualSpace* _virtual_space;
+  size_t          _reserved_byte_size;
 };
 
 inline ParMarkBitMap::ParMarkBitMap():
-  _beg_bits(), _end_bits(), _region_start(NULL), _region_size(0), _virtual_space(NULL)
+  _beg_bits(), _end_bits(), _region_start(NULL), _region_size(0), _virtual_space(NULL), _reserved_byte_size(0)
 { }
 
 inline void ParMarkBitMap::clear_range(idx_t beg, idx_t end)
