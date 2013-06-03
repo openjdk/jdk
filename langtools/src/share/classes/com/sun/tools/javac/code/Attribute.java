@@ -230,6 +230,42 @@ public abstract class Attribute implements AnnotationValue {
             this.position = position;
         }
 
+        public boolean hasUnknownPosition() {
+            return position == null || position.type == TargetType.UNKNOWN;
+        }
+
+        public boolean isContainerTypeCompound() {
+            if (isSynthesized() && values.size() == 1)
+                return getFirstEmbeddedTC() != null;
+            return false;
+        }
+
+        private TypeCompound getFirstEmbeddedTC() {
+            if (values.size() == 1) {
+                Pair<MethodSymbol, Attribute> val = values.get(0);
+                if (val.fst.getSimpleName().contentEquals("value")
+                        && val.snd instanceof Array) {
+                    Array arr = (Array) val.snd;
+                    if (arr.values.length != 0
+                            && arr.values[0] instanceof Attribute.TypeCompound)
+                        return (Attribute.TypeCompound) arr.values[0];
+                }
+            }
+            return null;
+        }
+
+        public boolean tryFixPosition() {
+            if (!isContainerTypeCompound())
+                return false;
+
+            TypeCompound from = getFirstEmbeddedTC();
+            if (from != null && from.position != null &&
+                    from.position.type != TargetType.UNKNOWN) {
+                position = from.position;
+                return true;
+            }
+            return false;
+        }
     }
 
     /** The value for an annotation element of an array type.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
-#include "gc_implementation/parallelScavenge/parMarkBitMap.inline.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
@@ -55,18 +54,18 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t raw_bytes = words * sizeof(idx_t);
   const size_t page_sz = os::page_size_for_region(raw_bytes, raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t bytes = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(bytes, rs_align, rs_align > 0);
+  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
   os::trace_page_sizes("par bitmap", raw_bytes, raw_bytes, page_sz,
                        rs.base(), rs.size());
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != NULL && _virtual_space->expand_by(bytes)) {
+  if (_virtual_space != NULL && _virtual_space->expand_by(_reserved_byte_size)) {
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
     idx_t* map = (idx_t*)_virtual_space->reserved_low_addr();
@@ -106,31 +105,6 @@ ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
     return true;
   }
   return false;
-}
-
-size_t
-ParMarkBitMap::live_words_in_range(HeapWord* beg_addr, HeapWord* end_addr) const
-{
-  assert(beg_addr <= end_addr, "bad range");
-
-  idx_t live_bits = 0;
-
-  // The bitmap routines require the right boundary to be word-aligned.
-  const idx_t end_bit = addr_to_bit(end_addr);
-  const idx_t range_end = BitMap::word_align_up(end_bit);
-
-  idx_t beg_bit = find_obj_beg(addr_to_bit(beg_addr), range_end);
-  while (beg_bit < end_bit) {
-    idx_t tmp_end = find_obj_end(beg_bit, range_end);
-    if (tmp_end < end_bit) {
-      live_bits += tmp_end - beg_bit + 1;
-      beg_bit = find_obj_beg(tmp_end + 1, range_end);
-    } else {
-      live_bits += end_bit - beg_bit;  // No + 1 here; end_bit is not counted.
-      return bits_to_words(live_bits);
-    }
-  }
-  return bits_to_words(live_bits);
 }
 
 size_t ParMarkBitMap::live_words_in_range(HeapWord* beg_addr, oop end_obj) const
@@ -243,13 +217,6 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   live_closure->set_source(bit_to_addr(range_end));
   return complete;
 }
-
-#ifndef PRODUCT
-void ParMarkBitMap::reset_counters()
-{
-  _cas_tries = _cas_retries = _cas_by_another = 0;
-}
-#endif  // #ifndef PRODUCT
 
 #ifdef ASSERT
 void ParMarkBitMap::verify_clear() const

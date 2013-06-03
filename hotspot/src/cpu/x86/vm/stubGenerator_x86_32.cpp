@@ -1498,27 +1498,29 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(elem_klass, elem_klass_addr); // query the object klass
     generate_type_check(elem_klass, ckoff_arg, ckval_arg, temp,
                         &L_store_element, NULL);
-      // (On fall-through, we have failed the element type check.)
+    // (On fall-through, we have failed the element type check.)
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
     // Register "count" = -1 * number of *remaining* oops, length_arg = *total* oops.
     // Emit GC store barriers for the oops we have copied (length_arg + count),
     // and report their number to the caller.
+    assert_different_registers(to, count, rax);
+    Label L_post_barrier;
     __ addl(count, length_arg);         // transfers = (length - remaining)
     __ movl2ptr(rax, count);            // save the value
-    __ notptr(rax);                     // report (-1^K) to caller
-    __ movptr(to, to_arg);              // reload
-    assert_different_registers(to, count, rax);
-    gen_write_ref_array_post_barrier(to, count);
-    __ jmpb(L_done);
+    __ notptr(rax);                     // report (-1^K) to caller (does not affect flags)
+    __ jccb(Assembler::notZero, L_post_barrier);
+    __ jmp(L_done); // K == 0, nothing was copied, skip post barrier
 
     // Come here on success only.
     __ BIND(L_do_card_marks);
+    __ xorptr(rax, rax);                // return 0 on success
     __ movl2ptr(count, length_arg);
-    __ movptr(to, to_arg);                // reload
+
+    __ BIND(L_post_barrier);
+    __ movptr(to, to_arg);              // reload
     gen_write_ref_array_post_barrier(to, count);
-    __ xorptr(rax, rax);                  // return 0 on success
 
     // Common exit point (success or failure).
     __ BIND(L_done);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,24 @@ package javax.lang.model.element;
  * @since 1.6
  */
 public enum NestingKind {
+    /**
+     * A top-level type, not contained within another type.
+     */
     TOP_LEVEL,
+
+    /**
+     * A type that is a named member of another type.
+     */
     MEMBER,
+
+    /**
+     * A named type declared within a construct other than a type.
+     */
     LOCAL,
+
+    /**
+     * A type without a name.
+     */
     ANONYMOUS;
 
     /**
@@ -92,6 +107,7 @@ public enum NestingKind {
      * A <i>nested</i> type element is any that is not top-level.
      * An <i>inner</i> type element is any nested type element that
      * is not {@linkplain Modifier#STATIC static}.
+     * @return whether or not the constant is nested
      */
     public boolean isNested() {
         return this != TOP_LEVEL;

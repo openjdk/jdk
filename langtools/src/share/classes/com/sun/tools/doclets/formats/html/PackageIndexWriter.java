@@ -123,7 +123,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addProfilesList(String profileSummary, String profilesTableSummary,
+    protected void addProfilesList(Content profileSummary, String profilesTableSummary,
             Content body) {
         Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, profilesTableSummary,
                 getTableCaption(profileSummary));
@@ -141,7 +141,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addPackagesList(PackageDoc[] packages, String text,
             String tableSummary, Content body) {
         Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, tableSummary,
-                getTableCaption(text));
+                getTableCaption(new RawHtml(text)));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addPackagesList(packages, tbody);

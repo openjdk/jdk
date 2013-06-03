@@ -32,13 +32,12 @@ import java.util.List;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a TRY statement.
  */
 @Immutable
-public final class TryNode extends Node {
+public final class TryNode extends Statement {
     /** Try statements. */
     private final Block body;
 
@@ -60,27 +59,27 @@ public final class TryNode extends Node {
     /**
      * Constructor
      *
-     * @param source      the source
+     * @param lineNumber  lineNumber
      * @param token       token
      * @param finish      finish
      * @param body        try node body
      * @param catchBlocks list of catch blocks in order
      * @param finallyBody body of finally block or null if none
      */
-    public TryNode(final Source source, final long token, final int finish, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
-        super(source, token, finish);
-        this.body = body;
+    public TryNode(final int lineNumber, final long token, final int finish, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
+        super(lineNumber, token, finish);
+        this.body        = body;
         this.catchBlocks = catchBlocks;
         this.finallyBody = finallyBody;
-        this.exit = new Label("exit");
+        this.exit        = new Label("exit");
     }
 
     private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
         super(tryNode);
-        this.body = body;
+        this.body        = body;
         this.catchBlocks = catchBlocks;
         this.finallyBody = finallyBody;
-        this.exit = new Label(tryNode.exit);
+        this.exit        = new Label(tryNode.exit);
     }
 
     @Override

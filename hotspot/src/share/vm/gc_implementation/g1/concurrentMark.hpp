@@ -44,9 +44,6 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
  public:
   G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
 
-  void do_object(oop obj) {
-    ShouldNotCallThis();
-  }
   bool do_object_b(oop obj);
 };
 
@@ -1256,6 +1253,9 @@ private:
   size_t _hum_capacity_bytes;
   size_t _hum_prev_live_bytes;
   size_t _hum_next_live_bytes;
+
+  // Accumulator for the remembered set size
+  size_t _total_remset_bytes;
 
   static double perc(size_t val, size_t total) {
     if (total == 0) {

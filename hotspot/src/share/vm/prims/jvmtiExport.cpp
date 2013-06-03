@@ -619,6 +619,9 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
         *_cached_data_ptr = (unsigned char *)os::malloc(_curr_len, mtInternal);
+        if (*_cached_data_ptr == NULL) {
+          vm_exit_out_of_memory(_curr_len, OOM_MALLOC_ERROR, "unable to allocate cached copy of original class bytes");
+        }
         memcpy(*_cached_data_ptr, _curr_data, _curr_len);
         *_cached_length_ptr = _curr_len;
       }
@@ -1621,15 +1624,19 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
     }
   }
 
+  assert(sig_type != '[', "array should have sig_type == 'L'");
+  bool handle_created = false;
+
   // convert oop to JNI handle.
-  if (sig_type == 'L' || sig_type == '[') {
+  if (sig_type == 'L') {
+    handle_created = true;
     value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);
 
   // Destroy the JNI handle allocated above.
-  if (sig_type == 'L') {
+  if (handle_created) {
     JNIHandles::destroy_local(value->l);
   }
 }

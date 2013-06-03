@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class SourceToHTMLConverter {
     /**
      * New line to be added to the documentation.
      */
-    private static final Content NEW_LINE = new RawHtml(DocletConstants.NL);
+    private static final String NEW_LINE = DocletConstants.NL;
 
     private final ConfigurationImpl configuration;
 
@@ -269,10 +269,7 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            StringBuilder lineBuffer = new StringBuilder(line);
-            Util.replaceTabs(configuration, lineBuffer);
-            Util.escapeHtmlChars(lineBuffer);
-            pre.addContent(new RawHtml(lineBuffer.toString()));
+            pre.addContent(Util.replaceTabs(configuration, line));
             Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
             pre.addContent(anchor);
             pre.addContent(NEW_LINE);

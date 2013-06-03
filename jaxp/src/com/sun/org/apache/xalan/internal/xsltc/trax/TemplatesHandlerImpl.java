@@ -99,6 +99,12 @@ public class TemplatesHandlerImpl
         if (tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING))
             xsltc.setSecureProcessing(true);
 
+        xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
+                (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET));
+        xsltc.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                (String)tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD));
+
+
         if ("true".equals(tfactory.getAttribute(TransformerFactoryImpl.ENABLE_INLINING)))
             xsltc.setTemplateInlining(true);
         else

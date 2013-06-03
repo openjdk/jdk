@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an indexed access (brackets operator.)
@@ -41,14 +40,13 @@ public final class IndexNode extends BaseNode {
     /**
      * Constructors
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param base    base node for access
      * @param index   index for access
      */
-    public IndexNode(final Source source, final long token, final int finish, final Node base, final Node index) {
-        super(source, token, finish, base, false, false);
+    public IndexNode(final long token, final int finish, final Node base, final Node index) {
+        super(token, finish, base, false, false);
         this.index = index;
     }
 
@@ -108,6 +106,18 @@ public final class IndexNode extends BaseNode {
         return index;
     }
 
+    /**
+     * Set the index expression for this node
+     * @param index new index expression
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public IndexNode setIndex(Node index) {
+        if(this.index == index) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), hasCallSiteType());
+    }
+
     @Override
     public BaseNode setIsFunction() {
         if (isFunction()) {
@@ -117,10 +127,10 @@ public final class IndexNode extends BaseNode {
     }
 
     @Override
-    public IndexNode setType(final Type type) {
+    public IndexNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         logTypeChange(type);
-        getSymbol().setTypeOverride(type); //always a temp so this is fine.
-        return new IndexNode(this, base, index, isFunction(), true);
+        final IndexNode newIndexNode = (IndexNode)setSymbol(lc, getSymbol().setTypeOverrideShared(type, ts));
+        return new IndexNode(newIndexNode, base, index, isFunction(), true);
     }
 
 }

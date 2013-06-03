@@ -303,6 +303,18 @@ public:
  public:
   static int Knob_Verbose;
   static int Knob_SpinLimit;
+  void* operator new (size_t size) {
+    return AllocateHeap(size, mtInternal);
+  }
+  void* operator new[] (size_t size) {
+    return operator new (size);
+  }
+  void operator delete(void* p) {
+    FreeHeap(p, mtInternal);
+  }
+  void operator delete[] (void *p) {
+    operator delete(p);
+  }
 };
 
 #undef TEVENT

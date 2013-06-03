@@ -70,9 +70,6 @@ bool                       PSScavenge::_promotion_failed = false;
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) {
-    assert(false, "Do not call.");
-  }
   bool do_object_b(oop p) {
     return (!PSScavenge::is_obj_in_young((HeapWord*) p)) || p->is_forwarded();
   }
@@ -552,19 +549,33 @@ bool PSScavenge::invoke_no_policy() {
             young_gen->from_space()->capacity_in_bytes() +
             young_gen->to_space()->capacity_in_bytes(),
             "Sizes of space in young gen are out-of-bounds");
+
+          size_t young_live = young_gen->used_in_bytes();
+          size_t eden_live = young_gen->eden_space()->used_in_bytes();
+          size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
+          size_t max_old_gen_size = old_gen->max_gen_size();
           size_t max_eden_size = young_gen->max_size() -
             young_gen->from_space()->capacity_in_bytes() -
             young_gen->to_space()->capacity_in_bytes();
-          size_policy->compute_generation_free_space(young_gen->used_in_bytes(),
-                                   young_gen->eden_space()->used_in_bytes(),
-                                   old_gen->used_in_bytes(),
-                                   young_gen->eden_space()->capacity_in_bytes(),
-                                   old_gen->max_gen_size(),
-                                   max_eden_size,
-                                   false  /* full gc*/,
-                                   gc_cause,
-                                   heap->collector_policy());
 
+          // Used for diagnostics
+          size_policy->clear_generation_free_space_flags();
+
+          size_policy->compute_eden_space_size(young_live,
+                                               eden_live,
+                                               cur_eden,
+                                               max_eden_size,
+                                               false /* not full gc*/);
+
+          size_policy->check_gc_overhead_limit(young_live,
+                                               eden_live,
+                                               max_old_gen_size,
+                                               max_eden_size,
+                                               false /* not full gc*/,
+                                               gc_cause,
+                                               heap->collector_policy());
+
+          size_policy->decay_supplemental_growth(false /* not full gc*/);
         }
         // Resize the young generation at every collection
         // even if new sizes have not been calculated.  This is
