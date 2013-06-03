@@ -119,6 +119,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Property(attributes = Attribute.NOT_ENUMERABLE)
     public Object load;
 
+    /** Nashorn extension: global.loadWithNewGlobal */
+    @Property(attributes = Attribute.NOT_ENUMERABLE)
+    public Object loadWithNewGlobal;
+
     /** Nashorn extension: global.exit */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
     public Object exit;
@@ -364,11 +368,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
-    private static final MethodHandle EVAL    = findOwnMH("eval",    Object.class, Object.class, Object.class);
-    private static final MethodHandle PRINT   = findOwnMH("print",   Object.class, Object.class, Object[].class);
-    private static final MethodHandle PRINTLN = findOwnMH("println", Object.class, Object.class, Object[].class);
-    private static final MethodHandle LOAD    = findOwnMH("load",    Object.class, Object.class, Object.class);
-    private static final MethodHandle EXIT    = findOwnMH("exit",    Object.class, Object.class, Object.class);
+    private static final MethodHandle EVAL              = findOwnMH("eval",              Object.class, Object.class, Object.class);
+    private static final MethodHandle PRINT             = findOwnMH("print",             Object.class, Object.class, Object[].class);
+    private static final MethodHandle PRINTLN           = findOwnMH("println",           Object.class, Object.class, Object[].class);
+    private static final MethodHandle LOAD              = findOwnMH("load",              Object.class, Object.class, Object.class);
+    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object.class);
+    private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
 
     private final Context context;
 
@@ -740,6 +745,21 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
         return global.context.load(scope, source);
+    }
+
+    /**
+     * Global loadWithNewGlobal implementation - Nashorn extension
+     *
+     * @param self    scope
+     * @param source  source to load
+     *
+     * @return result of load (undefined)
+     *
+     * @throws IOException if source could not be read
+     */
+    public static Object loadWithNewGlobal(final Object self, final Object source) throws IOException {
+        final Global global = Global.instance();
+        return global.context.loadWithNewGlobal(source);
     }
 
     /**
@@ -1387,6 +1407,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.unescape           = ScriptFunctionImpl.makeFunction("unescape",   GlobalFunctions.UNESCAPE);
         this.print              = ScriptFunctionImpl.makeFunction("print",      env._print_no_newline ? PRINT : PRINTLN);
         this.load               = ScriptFunctionImpl.makeFunction("load",       LOAD);
+        this.loadWithNewGlobal  = ScriptFunctionImpl.makeFunction("loadWithNewGlobal", LOADWITHNEWGLOBAL);
         this.exit               = ScriptFunctionImpl.makeFunction("exit",       EXIT);
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
 

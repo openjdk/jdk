@@ -491,6 +491,28 @@ public final class Context {
     }
 
     /**
+     * Implementation of {@code loadWithNewGlobal} Nashorn extension. Load a script file from a source
+     * expression, after creating a new global scope.
+     *
+     * @param from source expression for script
+     *
+     * @return return value for load call (undefined)
+     *
+     * @throws IOException if source cannot be found or loaded
+     */
+    public Object loadWithNewGlobal(final Object from) throws IOException {
+        final ScriptObject oldGlobal = getGlobalTrusted();
+        final ScriptObject newGlobal = createGlobal();
+        setGlobalTrusted(newGlobal);
+
+        try {
+            return load(newGlobal, from);
+        } finally {
+            setGlobalTrusted(oldGlobal);
+        }
+    }
+
+    /**
      * Load or get a structure class. Structure class names are based on the number of parameter fields
      * and {@link AccessorProperty} fields in them. Structure classes are used to represent ScriptObjects
      *
