@@ -189,15 +189,15 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
     _klass(k), _instance_count(0), _instance_words(0), _next(next), _index(-1)
   {}
-  KlassInfoEntry* next()     { return _next; }
-  bool is_equal(Klass* k)  { return k == _klass; }
-  Klass* klass()           { return _klass; }
-  long count()               { return _instance_count; }
+  KlassInfoEntry* next() const   { return _next; }
+  bool is_equal(const Klass* k)  { return k == _klass; }
+  Klass* klass()  const      { return _klass; }
+  long count()    const      { return _instance_count; }
   void set_count(long ct)    { _instance_count = ct; }
-  size_t words()             { return _instance_words; }
+  size_t words()  const      { return _instance_words; }
   void set_words(size_t wds) { _instance_words = wds; }
   void set_index(long index) { _index = index; }
-  long index()               { return _index; }
+  long index()    const      { return _index; }
   int compare(KlassInfoEntry* e1, KlassInfoEntry* e2);
   void print_on(outputStream* st) const;
   const char* name() const;
@@ -215,7 +215,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* list()           { return _list; }
   void set_list(KlassInfoEntry* l) { _list = l; }
  public:
-  KlassInfoEntry* lookup(Klass* const k);
+  KlassInfoEntry* lookup(Klass* k);
   void initialize() { _list = NULL; }
   void empty();
   void iterate(KlassInfoClosure* cic);
@@ -231,8 +231,8 @@ class KlassInfoTable: public StackObj {
   HeapWord* _ref;
 
   KlassInfoBucket* _buckets;
-  uint hash(Klass* p);
-  KlassInfoEntry* lookup(Klass* const k); // allocates if not found!
+  uint hash(const Klass* p);
+  KlassInfoEntry* lookup(Klass* k); // allocates if not found!
 
   class AllClassesFinder : public KlassClosure {
     KlassInfoTable *_table;

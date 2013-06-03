@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "oops/oop.hpp"
+#include "utilities/bitMap.hpp"
 
-class oopDesc;
 class ParMarkBitMapClosure;
+class PSVirtualSpace;
 
 class ParMarkBitMap: public CHeapObj<mtGC>
 {
@@ -41,13 +41,11 @@ public:
   enum IterationStatus { incomplete, complete, full, would_overflow };
 
   inline ParMarkBitMap();
-  inline ParMarkBitMap(MemRegion covered_region);
   bool initialize(MemRegion covered_region);
 
   // Atomically mark an object as live.
   bool mark_obj(HeapWord* addr, size_t size);
   inline bool mark_obj(oop obj, int size);
-  inline bool mark_obj(oop obj);
 
   // Return whether the specified begin or end bit is set.
   inline bool is_obj_beg(idx_t bit) const;
@@ -77,11 +75,6 @@ public:
   // Return the size in words of the object (a search is done for the end bit).
   inline size_t obj_size(idx_t beg_bit)  const;
   inline size_t obj_size(HeapWord* addr) const;
-  inline size_t obj_size(oop obj)        const;
-
-  // Synonyms for the above.
-  size_t obj_size_in_words(oop obj) const { return obj_size((HeapWord*)obj); }
-  size_t obj_size_in_words(HeapWord* addr) const { return obj_size(addr); }
 
   // Apply live_closure to each live object that lies completely within the
   // range [live_range_beg, live_range_end).  This is used to iterate over the
@@ -124,15 +117,12 @@ public:
                                  HeapWord* range_end,
                                  HeapWord* dead_range_end) const;
 
-  // Return the number of live words in the range [beg_addr, end_addr) due to
+  // Return the number of live words in the range [beg_addr, end_obj) due to
   // objects that start in the range.  If a live object extends onto the range,
   // the caller must detect and account for any live words due to that object.
   // If a live object extends beyond the end of the range, only the words within
-  // the range are included in the result.
-  size_t live_words_in_range(HeapWord* beg_addr, HeapWord* end_addr) const;
-
-  // Same as the above, except the end of the range must be a live object, which
-  // is the case when updating pointers.  This allows a branch to be removed
+  // the range are included in the result. The end of the range must be a live object,
+  // which is the case when updating pointers.  This allows a branch to be removed
   // from inside the loop.
   size_t live_words_in_range(HeapWord* beg_addr, oop end_obj) const;
 
@@ -140,6 +130,8 @@ public:
   inline HeapWord* region_end() const;
   inline size_t    region_size() const;
   inline size_t    size() const;
+
+  size_t reserved_byte_size() const { return _reserved_byte_size; }
 
   // Convert a heap address to/from a bit index.
   inline idx_t     addr_to_bit(HeapWord* addr) const;
@@ -156,22 +148,11 @@ public:
   // Clear a range of bits or the entire bitmap (both begin and end bits are
   // cleared).
   inline void clear_range(idx_t beg, idx_t end);
-  inline void clear() { clear_range(0, size()); }
 
   // Return the number of bits required to represent the specified number of
   // HeapWords, or the specified region.
   static inline idx_t bits_required(size_t words);
   static inline idx_t bits_required(MemRegion covered_region);
-  static inline idx_t words_required(MemRegion covered_region);
-
-#ifndef PRODUCT
-  // CAS statistics.
-  size_t cas_tries() { return _cas_tries; }
-  size_t cas_retries() { return _cas_retries; }
-  size_t cas_by_another() { return _cas_by_another; }
-
-  void reset_counters();
-#endif  // #ifndef PRODUCT
 
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, this);
@@ -197,28 +178,12 @@ private:
   BitMap          _beg_bits;
   BitMap          _end_bits;
   PSVirtualSpace* _virtual_space;
-
-#ifndef PRODUCT
-  size_t _cas_tries;
-  size_t _cas_retries;
-  size_t _cas_by_another;
-#endif  // #ifndef PRODUCT
+  size_t          _reserved_byte_size;
 };
 
 inline ParMarkBitMap::ParMarkBitMap():
-  _beg_bits(),
-  _end_bits()
-{
-  _region_start = 0;
-  _virtual_space = 0;
-}
-
-inline ParMarkBitMap::ParMarkBitMap(MemRegion covered_region):
-  _beg_bits(),
-  _end_bits()
-{
-  initialize(covered_region);
-}
+  _beg_bits(), _end_bits(), _region_start(NULL), _region_size(0), _virtual_space(NULL), _reserved_byte_size(0)
+{ }
 
 inline void ParMarkBitMap::clear_range(idx_t beg, idx_t end)
 {
@@ -238,12 +203,6 @@ inline ParMarkBitMap::idx_t
 ParMarkBitMap::bits_required(MemRegion covered_region)
 {
   return bits_required(covered_region.word_size());
-}
-
-inline ParMarkBitMap::idx_t
-ParMarkBitMap::words_required(MemRegion covered_region)
-{
-  return bits_required(covered_region) / BitsPerWord;
 }
 
 inline HeapWord*
@@ -350,11 +309,6 @@ inline size_t ParMarkBitMap::obj_size(HeapWord* addr) const
   return obj_size(addr_to_bit(addr));
 }
 
-inline size_t ParMarkBitMap::obj_size(oop obj) const
-{
-  return obj_size((HeapWord*)obj);
-}
-
 inline ParMarkBitMap::IterationStatus
 ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
                        HeapWord* range_beg,
@@ -435,8 +389,10 @@ inline void ParMarkBitMap::verify_bit(idx_t bit) const {
 
 inline void ParMarkBitMap::verify_addr(HeapWord* addr) const {
   // Allow one past the last valid address; useful for loop bounds.
-  assert(addr >= region_start(), "addr too small");
-  assert(addr <= region_start() + region_size(), "addr too big");
+  assert(addr >= region_start(),
+      err_msg("addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, addr, region_start()));
+  assert(addr <= region_end(),
+      err_msg("addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, addr, region_end()));
 }
 #endif  // #ifdef ASSERT
 

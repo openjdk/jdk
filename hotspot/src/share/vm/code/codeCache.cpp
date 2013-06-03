@@ -622,6 +622,15 @@ address CodeCache::last_address() {
   return (address)_heap->high();
 }
 
+/**
+ * Returns the reverse free ratio. E.g., if 25% (1/4) of the code cache
+ * is free, reverse_free_ratio() returns 4.
+ */
+double CodeCache::reverse_free_ratio() {
+  double unallocated_capacity = (double)(CodeCache::unallocated_capacity() - CodeCacheMinimumFreeSpace);
+  double max_capacity = (double)CodeCache::max_capacity();
+  return max_capacity / unallocated_capacity;
+}
 
 void icache_init();
 

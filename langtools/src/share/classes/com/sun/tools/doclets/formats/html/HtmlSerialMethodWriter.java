@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,19 +146,15 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param methodsContentTree the tree to which the member tags info will be added
      */
     public void addMemberTags(MethodDoc member, Content methodsContentTree) {
-        TagletOutputImpl output = new TagletOutputImpl("");
+        Content tagContent = new ContentBuilder();
         TagletManager tagletManager =
             configuration.tagletManager;
         TagletWriter.genTagOuput(tagletManager, member,
-            tagletManager.getSerializedFormTags(),
-            writer.getTagletWriterInstance(false), output);
-        String outputString = output.toString().trim();
+            tagletManager.getSerializedFormTaglets(),
+            writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
-        if (!outputString.isEmpty()) {
-            Content tagContent = new RawHtml(outputString);
-            dlTags.addContent(tagContent);
-        }
-        methodsContentTree.addContent(dlTags);
+        dlTags.addContent(tagContent);
+        methodsContentTree.addContent(dlTags);  // TODO: what if empty?
         MethodDoc method = member;
         if (method.name().compareTo("writeExternal") == 0
                 && method.tags("serialData").length == 0) {

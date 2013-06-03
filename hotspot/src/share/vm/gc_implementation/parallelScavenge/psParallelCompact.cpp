@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,6 +356,7 @@ ParallelCompactData::ParallelCompactData()
   _region_start = 0;
 
   _region_vspace = 0;
+  _reserved_byte_size = 0;
   _region_data = 0;
   _region_count = 0;
 }
@@ -382,11 +383,11 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region(raw_bytes, raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t bytes = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(bytes, rs_align, rs_align > 0);
+  ReservedSpace rs(_reserved_byte_size, rs_align, rs_align > 0);
   os::trace_page_sizes("par compact", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
 
@@ -394,7 +395,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
   if (vspace != 0) {
-    if (vspace->expand_by(bytes)) {
+    if (vspace->expand_by(_reserved_byte_size)) {
       return vspace;
     }
     delete vspace;
@@ -781,7 +782,6 @@ ParallelCompactData PSParallelCompact::_summary_data;
 
 PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
-void PSParallelCompact::IsAliveClosure::do_object(oop p)   { ShouldNotReachHere(); }
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
 void PSParallelCompact::KeepAliveClosure::do_oop(oop* p)       { PSParallelCompact::KeepAliveClosure::do_oop_work(p); }
@@ -841,14 +841,18 @@ bool PSParallelCompact::initialize() {
   initialize_dead_wood_limiter();
 
   if (!_mark_bitmap.initialize(mr)) {
-    vm_shutdown_during_initialization("Unable to allocate bit map for "
-      "parallel garbage collection for the requested heap size.");
+    vm_shutdown_during_initialization(
+      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
+      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
-    vm_shutdown_during_initialization("Unable to allocate tables for "
-      "parallel garbage collection for the requested heap size.");
+    vm_shutdown_during_initialization(
+      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
+      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
@@ -948,7 +952,6 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
 
   pre_gc_values->fill(heap);
 
-  NOT_PRODUCT(_mark_bitmap.reset_counters());
   DEBUG_ONLY(add_obj_count = add_obj_size = 0;)
   DEBUG_ONLY(mark_bitmap_count = mark_bitmap_size = 0;)
 
@@ -2042,15 +2045,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     marking_start.update();
     marking_phase(vmthread_cm, maximum_heap_compaction);
 
-#ifndef PRODUCT
-    if (TraceParallelOldGCMarkingPhase) {
-      gclog_or_tty->print_cr("marking_phase: cas_tries %d  cas_retries %d "
-        "cas_by_another %d",
-        mark_bitmap()->cas_tries(), mark_bitmap()->cas_retries(),
-        mark_bitmap()->cas_by_another());
-    }
-#endif  // #ifndef PRODUCT
-
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && gc_cause == GCCause::_java_lang_system_gc;
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
@@ -2094,19 +2088,36 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
           young_gen->from_space()->capacity_in_bytes() +
           young_gen->to_space()->capacity_in_bytes(),
           "Sizes of space in young gen are out-of-bounds");
+
+        size_t young_live = young_gen->used_in_bytes();
+        size_t eden_live = young_gen->eden_space()->used_in_bytes();
+        size_t old_live = old_gen->used_in_bytes();
+        size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
+        size_t max_old_gen_size = old_gen->max_gen_size();
         size_t max_eden_size = young_gen->max_size() -
           young_gen->from_space()->capacity_in_bytes() -
           young_gen->to_space()->capacity_in_bytes();
-        size_policy->compute_generation_free_space(
-                              young_gen->used_in_bytes(),
-                              young_gen->eden_space()->used_in_bytes(),
-                              old_gen->used_in_bytes(),
-                              young_gen->eden_space()->capacity_in_bytes(),
-                              old_gen->max_gen_size(),
-                              max_eden_size,
-                              true /* full gc*/,
-                              gc_cause,
-                              heap->collector_policy());
+
+        // Used for diagnostics
+        size_policy->clear_generation_free_space_flags();
+
+        size_policy->compute_generation_free_space(young_live,
+                                                   eden_live,
+                                                   old_live,
+                                                   cur_eden,
+                                                   max_old_gen_size,
+                                                   max_eden_size,
+                                                   true /* full gc*/);
+
+        size_policy->check_gc_overhead_limit(young_live,
+                                             eden_live,
+                                             max_old_gen_size,
+                                             max_eden_size,
+                                             true /* full gc*/,
+                                             gc_cause,
+                                             heap->collector_policy());
+
+        size_policy->decay_supplemental_growth(true /* full gc*/);
 
         heap->resize_old_gen(
           size_policy->calculated_old_free_size_in_bytes());
@@ -2406,7 +2417,6 @@ void PSParallelCompact::adjust_class_loader(ParCompactionManager* cm,
 // This should be moved to the shared markSweep code!
 class PSAlwaysTrueClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) { ShouldNotReachHere(); }
   bool do_object_b(oop p) { return true; }
 };
 static PSAlwaysTrueClosure always_true;

@@ -50,9 +50,6 @@
 DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* g) : _g(g) {
   assert(g->level() == 0, "Optimized for youngest gen.");
 }
-void DefNewGeneration::IsAliveClosure::do_object(oop p) {
-  assert(false, "Do not call.");
-}
 bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
   return (HeapWord*)p >= _g->reserved().end() || p->is_forwarded();
 }

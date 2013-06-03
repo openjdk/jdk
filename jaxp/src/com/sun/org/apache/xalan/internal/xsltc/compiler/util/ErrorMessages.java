@@ -446,6 +446,12 @@ public class ErrorMessages extends ListResourceBundle {
         "Could not find stylesheet target ''{0}''."},
 
         /*
+         * Note to translators:  access to the stylesheet target is denied
+         */
+        {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+        "Could not read stylesheet target ''{0}'', because ''{1}'' access is not allowed."},
+
+        /*
          * Note to translators:  This message represents an internal error in
          * condition in XSLTC.  The substitution text is the class name in XSLTC
          * that is missing some functionality.
