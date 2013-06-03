@@ -44,8 +44,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 
-#define JAVA_1_5_VERSION                  49
-
 static void trace_class_resolution(Klass* to_class) {
   ResourceMark rm;
   int line_number = -1;
@@ -507,9 +505,11 @@ bool Reflection::can_relax_access_check_for(
       under_host_klass(accessee_ik, accessor))
     return true;
 
-  if (RelaxAccessControlCheck ||
-      (accessor_ik->major_version() < JAVA_1_5_VERSION &&
-       accessee_ik->major_version() < JAVA_1_5_VERSION)) {
+  if ((RelaxAccessControlCheck &&
+        accessor_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION &&
+        accessee_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION) ||
+      (accessor_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION &&
+       accessee_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION)) {
     return classloader_only &&
       Verifier::relax_verify_for(accessor_ik->class_loader()) &&
       accessor_ik->protection_domain() == accessee_ik->protection_domain() &&
