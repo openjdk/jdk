@@ -692,9 +692,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
      */
     protected void installComponents() {
         arrowButton = createArrowButton();
-        comboBox.add( arrowButton );
 
         if (arrowButton != null)  {
+            comboBox.add(arrowButton);
             configureArrowButton();
         }
 
