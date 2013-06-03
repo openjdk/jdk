@@ -33,10 +33,14 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.parser.Parser;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.Source;
 
 /**
  * ECMA 15.3 Function Objects
@@ -187,16 +191,25 @@ public final class NativeFunction {
 
         sb.append("(function (");
         if (args.length > 0) {
+            final StringBuilder paramListBuf = new StringBuilder();
             for (int i = 0; i < args.length - 1; i++) {
-                sb.append(JSType.toString(args[i]));
+                paramListBuf.append(JSType.toString(args[i]));
                 if (i < args.length - 2) {
-                    sb.append(",");
+                    paramListBuf.append(",");
                 }
+            }
+
+            final String paramList = paramListBuf.toString();
+            if (! paramList.isEmpty()) {
+                checkFunctionParameters(paramList);
+                sb.append(paramList);
             }
         }
         sb.append(") {\n");
         if (args.length > 0) {
-            sb.append(JSType.toString(args[args.length - 1]));
+            final String funcBody = JSType.toString(args[args.length - 1]);
+            checkFunctionBody(funcBody);
+            sb.append(funcBody);
             sb.append('\n');
         }
         sb.append("})");
@@ -204,5 +217,25 @@ public final class NativeFunction {
         final Global global = Global.instance();
 
         return Global.directEval(global, sb.toString(), global, "<function>", Global.isStrict());
+    }
+
+    private static void checkFunctionParameters(final String params) {
+        final Source src = new Source("<function>", params);
+        final Parser parser = new Parser(Global.getEnv(), src, new Context.ThrowErrorManager());
+        try {
+            parser.parseFormalParameterList();
+        } catch (final ParserException pe) {
+            pe.throwAsEcmaException();
+        }
+    }
+
+    private static void checkFunctionBody(final String funcBody) {
+        final Source src = new Source("<function>", funcBody);
+        final Parser parser = new Parser(Global.getEnv(), src, new Context.ThrowErrorManager());
+        try {
+            parser.parseFunctionBody();
+        } catch (final ParserException pe) {
+            pe.throwAsEcmaException();
+        }
     }
 }
