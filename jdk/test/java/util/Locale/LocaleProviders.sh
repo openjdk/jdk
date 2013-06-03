@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -20,7 +21,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-#!/bin/sh
 #
 # @test
 # @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8010666
