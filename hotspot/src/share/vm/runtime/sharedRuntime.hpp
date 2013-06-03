@@ -410,7 +410,7 @@ class SharedRuntime: AllStatic {
 
   // Convert a sig into a calling convention register layout
   // and find interesting things about it.
-  static VMRegPair* find_callee_arguments(Symbol* sig, bool has_receiver, int *arg_size);
+  static VMRegPair* find_callee_arguments(Symbol* sig, bool has_receiver, bool has_appendix, int *arg_size);
   static VMReg     name_for_receiver();
 
   // "Top of Stack" slots that may be unused by the calling convention but must

@@ -1976,11 +1976,10 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke call(ssd.method(), ssd.bci());
-    // compiled invokedynamic call sites have an implicit receiver at
-    // resolution time, so make sure it gets GC'ed.
-    bool has_receiver = !call.is_invokestatic();
+    bool has_receiver = call.has_receiver();
+    bool has_appendix = call.has_appendix();
     Symbol* signature = call.signature();
-    fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
+    fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
 #endif // !SHARK
 }
