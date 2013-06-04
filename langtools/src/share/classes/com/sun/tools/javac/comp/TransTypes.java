@@ -262,9 +262,7 @@ public class TransTypes extends TreeTranslator {
          * be applied to method addOverrideBridgesIfNeeded
          */
         bridge.params = createBridgeParams(impl, bridge, bridgeType);
-        if (impl.annotations != null) {
-            bridge.annotations.setAttributes(impl.annotations);
-        }
+        bridge.setAttributes(impl);
 
         if (!hypothetical) {
             JCMethodDecl md = make.MethodDef(bridge, null);
@@ -311,9 +309,7 @@ public class TransTypes extends TreeTranslator {
             while (implParams.nonEmpty() && argTypes.nonEmpty()) {
                 VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC,
                         implParams.head.name, argTypes.head, bridge);
-                if (implParams.head.annotations != null) {
-                    param.annotations.setAttributes(implParams.head.annotations);
-                }
+                param.setAttributes(implParams.head);
                 bridgeParams = bridgeParams.append(param);
                 implParams = implParams.tail;
                 argTypes = argTypes.tail;
