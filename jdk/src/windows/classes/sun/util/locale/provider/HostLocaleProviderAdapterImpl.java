@@ -48,7 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.spi.CalendarDataProvider;
-import java.util.spi.CalendarNameProvider;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import sun.util.spi.CalendarProvider;
@@ -360,32 +359,6 @@ public class HostLocaleProviderAdapterImpl {
             @Override
             public int getMinimalDaysInFirstWeek(Locale locale) {
                 return 0;
-            }
-        };
-    }
-
-    public static CalendarNameProvider getCalendarNameProvider() {
-        return new CalendarNameProvider() {
-            @Override
-            public Locale[] getAvailableLocales() {
-                return getSupportedCalendarLocales();
-            }
-
-            @Override
-            public boolean isSupportedLocale(Locale locale) {
-                return isSupportedCalendarLocale(locale);
-            }
-
-            @Override
-            public String getDisplayName(String calType, int field, int value,
-                                         int style, Locale locale) {
-                return null;
-            }
-
-            @Override
-            public Map<String, Integer> getDisplayNames(String calType,
-                                         int field, int style, Locale locale) {
-                return null;
             }
         };
     }
