@@ -122,9 +122,6 @@
 
 # jdk_lang
 
-# 8009615
-java/lang/instrument/IsModifiableClassAgent.java                generic-all
-
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
