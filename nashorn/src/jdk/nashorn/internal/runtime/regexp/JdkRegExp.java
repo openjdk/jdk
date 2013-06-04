@@ -41,7 +41,7 @@ import java.util.regex.PatternSyntaxException;
  * Note that this class is not thread-safe as it stores the current match result
  * and the string being matched in instance fields.
  */
-public class DefaultRegExp extends RegExp {
+public class JdkRegExp extends RegExp {
 
     /** Java regexp pattern to use for match. We compile to one of these */
     private Pattern pattern;
@@ -56,7 +56,7 @@ public class DefaultRegExp extends RegExp {
      * @param flags RegExp flag string
      * @throws ParserException if flags is invalid or source string has syntax error.
      */
-    public DefaultRegExp(final String source, final String flags) throws ParserException {
+    public JdkRegExp(final String source, final String flags) throws ParserException {
         super(source, flags);
 
         int intFlags = 0;

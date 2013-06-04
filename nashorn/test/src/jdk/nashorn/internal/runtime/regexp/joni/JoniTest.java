@@ -23,37 +23,30 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.options;
+package jdk.nashorn.internal.runtime.regexp.joni;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.StringTokenizer;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Test;
 
 /**
- * This option represents a collection of comma separated values
+ * Joni coverage tests
+ *
+ * @test
+ * @run testng jdk.nashorn.internal.runtime.regexp.joni.JoniTest
  */
-public class ValueOption extends Option<String> {
+public class JoniTest {
 
-    private Collection<String> values;
-
-    ValueOption(final String value) {
-        super(value);
-        if (value != null) {
-            values = new LinkedHashSet<>();
-            final StringTokenizer st = new StringTokenizer(getValue(), ",");
-            while (st.hasMoreElements()) {
-                values.add(st.nextToken());
-            }
-        }
+    @Test
+    public void testDump() {
+        new Regex("^a{3,}(.*)[z]++\\s\\1x$").dumpTree();
+        new Regex("^a{3,}(.*)[z]++\\s\\1x$").dumpByteCode();
+        new Regex("(abc){4,}{2,5}").dumpTree();
+        new Regex("(abc){4,}{2,5}").dumpByteCode();
+        new Regex("aaa|aa|bbbb|ccc").dumpTree();
+        new Regex("aaa|aa|bbbb|ccc").dumpByteCode();
+        new Regex("(?:ZFVR.(\\d+\\.\\d+))|(?:(?:Sversbk|TenaCnenqvfb|Vprjrnfry).(\\d+\\.\\d+))|(?:Bcren.(\\d+\\.\\d+))|(?:NccyrJroXvg.(\\d+(?:\\.\\d+)?))").dumpTree();
+        new Regex("(?:ZFVR.(\\d+\\.\\d+))|(?:(?:Sversbk|TenaCnenqvfb|Vprjrnfry).(\\d+\\.\\d+))|(?:Bcren.(\\d+\\.\\d+))|(?:NccyrJroXvg.(\\d+(?:\\.\\d+)?))").dumpByteCode();
     }
-
-    /**
-     * Get the values in the option
-     * @return collection of strings
-     */
-    public Collection<String> getValues() {
-        return Collections.unmodifiableCollection(values);
-    }
-
 }

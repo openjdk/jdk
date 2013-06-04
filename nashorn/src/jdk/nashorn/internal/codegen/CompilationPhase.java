@@ -11,20 +11,27 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.ReturnNode;
+import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -66,7 +73,7 @@ enum CompilationPhase {
 
             FunctionNode newFunctionNode = outermostFunctionNode;
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor() {
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 // self references are done with invokestatic and thus cannot
                 // have trampolines - never lazy
                 @Override
@@ -99,10 +106,9 @@ enum CompilationPhase {
                 lazy.remove(node);
             }
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeOperatorVisitor() {
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode functionNode) {
-                    final LexicalContext lc = getLexicalContext();
                     if (lazy.contains(functionNode)) {
                         Compiler.LOG.fine(
                                 "Marking ",
@@ -174,7 +180,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final TemporarySymbols ts = compiler.getTemporarySymbols();
             final FunctionNode newFunctionNode = (FunctionNode)enterAttr(fn, ts).accept(new Attr(ts));
-            if(compiler.getEnv()._print_mem_usage) {
+            if (compiler.getEnv()._print_mem_usage) {
                 Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
             }
             return newFunctionNode;
@@ -186,12 +192,11 @@ enum CompilationPhase {
          * @param functionNode node where to start iterating
          */
         private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
-            return (FunctionNode)functionNode.accept(new NodeVisitor() {
+            return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode node) {
-                    final LexicalContext lc = getLexicalContext();
                     if (node.isLazy()) {
-                        FunctionNode newNode = node.setReturnType(getLexicalContext(), Type.OBJECT);
+                        FunctionNode newNode = node.setReturnType(lc, Type.OBJECT);
                         return ts.ensureSymbol(lc, Type.OBJECT, newNode);
                     }
                     //node may have a reference here that needs to be nulled if it was referred to by
@@ -208,6 +213,89 @@ enum CompilationPhase {
     },
 
     /*
+     * Range analysis
+     *    Conservatively prove that certain variables can be narrower than
+     *    the most generic number type
+     */
+    RANGE_ANALYSIS_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
+            if (!compiler.getEnv()._range_analysis) {
+                return fn;
+            }
+
+            FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer());
+            final List<ReturnNode> returns = new ArrayList<>();
+
+            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                private final Deque<ArrayList<ReturnNode>> returnStack = new ArrayDeque<>();
+
+                @Override
+                public boolean enterFunctionNode(final FunctionNode functionNode) {
+                    returnStack.push(new ArrayList<ReturnNode>());
+                    return true;
+                }
+
+                @Override
+                public Node leaveFunctionNode(final FunctionNode functionNode) {
+                    Type returnType = Type.UNKNOWN;
+                    for (final ReturnNode ret : returnStack.pop()) {
+                        if (ret.getExpression() == null) {
+                            returnType = Type.OBJECT;
+                            break;
+                        }
+                        returnType = Type.widest(returnType, ret.getExpression().getType());
+                    }
+                    return functionNode.setReturnType(lc, returnType);
+                }
+
+                @Override
+                public Node leaveReturnNode(final ReturnNode returnNode) {
+                    final ReturnNode result = (ReturnNode)leaveDefault(returnNode);
+                    returns.add(result);
+                    return result;
+                }
+
+                @Override
+                public Node leaveDefault(final Node node) {
+                    final Symbol symbol = node.getSymbol();
+                    if (symbol != null) {
+                        final Range range  = symbol.getRange();
+                        final Type  symbolType = symbol.getSymbolType();
+                        if (!symbolType.isNumeric()) {
+                            return node;
+                        }
+                        final Type  rangeType  = range.getType();
+                        if (!Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
+                            RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
+                            return node.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
+                        }
+                    }
+                    return node;
+                }
+            });
+
+            Type returnType = Type.UNKNOWN;
+            for (final ReturnNode node : returns) {
+                if (node.getExpression() != null) {
+                    returnType = Type.widest(returnType, node.getExpression().getType());
+                } else {
+                    returnType = Type.OBJECT;
+                    break;
+                }
+            }
+
+            return newFunctionNode.setReturnType(null, returnType);
+        }
+
+        @Override
+        public String toString() {
+            return "[Range Analysis]";
+        }
+    },
+
+
+    /*
      * Splitter Split the AST into several compile units based on a size
      * heuristic Splitter needs attributed AST for weight calculations (e.g. is
      * a + b a ScriptRuntime.ADD with call overhead or a dadd with much less).
@@ -218,7 +306,6 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final CompileUnit outermostCompileUnit = compiler.addCompileUnit(compiler.firstCompileUnitName());
 
-//            assert fn.isProgram() ;
             final FunctionNode newFunctionNode = new Splitter(compiler, fn, outermostCompileUnit).split(fn);
 
             assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
