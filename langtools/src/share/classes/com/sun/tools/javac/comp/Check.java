@@ -853,7 +853,8 @@ public class Check {
                             final List<JCExpression> argtrees,
                             List<Type> argtypes,
                             boolean useVarargs,
-                            boolean unchecked) {
+                            boolean unchecked,
+                            InferenceContext inferenceContext) {
         // System.out.println("call   : " + env.tree);
         // System.out.println("method : " + owntype);
         // System.out.println("actuals: " + argtypes);
@@ -917,7 +918,7 @@ public class Check {
                                   argtype);
             }
             if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
-                TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
+                setVarargsElement(env, types.elemtype(argtype), inferenceContext);
             }
          }
          PolyKind pkind = (sym.type.hasTag(FORALL) &&
@@ -927,6 +928,17 @@ public class Check {
          return owntype;
     }
     //where
+        private void setVarargsElement(final Env<AttrContext> env, final Type elemtype, InferenceContext inferenceContext) {
+            if (inferenceContext.free(elemtype)) {
+                inferenceContext.addFreeTypeListener(List.of(elemtype), new FreeTypeListener() {
+                    public void typesInferred(InferenceContext inferenceContext) {
+                        setVarargsElement(env, inferenceContext.asInstType(elemtype), inferenceContext);
+                    }
+                });
+            }
+            TreeInfo.setVarargsElement(env.tree, elemtype);
+        }
+
         private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
             if (types.isConvertible(actual, formal, warn))
                 return;
