@@ -53,8 +53,7 @@ function runScriptEngine(opts, name) {
             // set new standard err
             System.setErr(newErr);
             System.setOut(newOut);
-            var strType = Java.type("java.lang.String");
-            var engine = fac.getScriptEngine(Java.toJavaArray(opts, strType));
+            var engine = fac.getScriptEngine(Java.to(opts, "java.lang.String[]"));
 	    var reader = new java.io.FileReader(name);
             engine.eval(reader);
             newErr.flush();

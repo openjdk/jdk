@@ -59,11 +59,6 @@ abstract class ArrayBufferView extends ScriptObject {
     }
 
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
-    public static Object BYTES_PER_ELEMENT(final Object self) {
-        return ((ArrayBufferView)self).bytesPerElement();
-    }
-
-    @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
     public static Object buffer(final Object self) {
         return ((ArrayDataImpl)((ArrayBufferView)self).getArray()).buffer;
     }
