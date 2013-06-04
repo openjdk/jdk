@@ -196,12 +196,6 @@ java/net/MulticastSocket/Test.java                               macosx-all
 # 7143960
 java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
-# 8014720
-java/net/ResponseCache/B6181108.java                             generic-all
-
-# 8014723
-sun/misc/URLClassPath/ClassnameCharTest.java                     generic-all
-
 # 8014719
 sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
 
