@@ -1024,6 +1024,7 @@ public class ClassWriter extends ClassFile {
             char flags = (char) adjustFlags(inner.flags_field);
             if ((flags & INTERFACE) != 0) flags |= ABSTRACT; // Interfaces are always ABSTRACT
             if (inner.name.isEmpty()) flags &= ~FINAL; // Anonymous class: unset FINAL flag
+            flags &= ~STRICTFP; //inner classes should not have the strictfp flag set.
             if (dumpInnerClassModifiers) {
                 PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
                 pw.println("INNERCLASS  " + inner.name);
