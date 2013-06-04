@@ -42,5 +42,5 @@ public interface ToDoubleFunction<T> {
      * @param t the input object
      * @return the function result value
      */
-    public double applyAsDouble(T t);
+    double applyAsDouble(T t);
 }

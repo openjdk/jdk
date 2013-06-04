@@ -1010,13 +1010,14 @@ public final class String
     private boolean nonSyncContentEquals(AbstractStringBuilder sb) {
         char v1[] = value;
         char v2[] = sb.getValue();
-        int i = 0;
-        int n = value.length;
-        while (n-- != 0) {
+        int n = v1.length;
+        if (n != sb.length()) {
+            return false;
+        }
+        for (int i = 0; i < n; i++) {
             if (v1[i] != v2[i]) {
                 return false;
             }
-            i++;
         }
         return true;
     }
@@ -1038,8 +1039,6 @@ public final class String
      * @since  1.5
      */
     public boolean contentEquals(CharSequence cs) {
-        if (value.length != cs.length())
-            return false;
         // Argument is a StringBuffer, StringBuilder
         if (cs instanceof AbstractStringBuilder) {
             if (cs instanceof StringBuffer) {
@@ -1055,12 +1054,14 @@ public final class String
             return true;
         // Argument is a generic CharSequence
         char v1[] = value;
-        int i = 0;
-        int n = value.length;
-        while (n-- != 0) {
-            if (v1[i] != cs.charAt(i))
+        int n = v1.length;
+        if (n != cs.length()) {
+            return false;
+        }
+        for (int i = 0; i < n; i++) {
+            if (v1[i] != cs.charAt(i)) {
                 return false;
-            i++;
+            }
         }
         return true;
     }

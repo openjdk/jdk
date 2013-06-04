@@ -973,19 +973,19 @@ class WindowsNativeDispatcher {
      * HANDLE CreateIoCompletionPort (
      *   HANDLE FileHandle,
      *   HANDLE ExistingCompletionPort,
-     *   DWORD CompletionKey,
+     *   ULONG_PTR CompletionKey,
      *   DWORD NumberOfConcurrentThreads
      * )
      */
     static native long CreateIoCompletionPort(long fileHandle, long existingPort,
-        int completionKey) throws WindowsException;
+        long completionKey) throws WindowsException;
 
 
     /**
      * GetQueuedCompletionStatus(
      *   HANDLE CompletionPort,
      *   LPDWORD lpNumberOfBytesTransferred,
-     *   LPDWORD lpCompletionKey,
+     *   PULONG_PTR lpCompletionKey,
      *   LPOVERLAPPED *lpOverlapped,
      *   DWORD dwMilliseconds
      */
@@ -999,12 +999,12 @@ class WindowsNativeDispatcher {
     static class CompletionStatus {
         private int error;
         private int bytesTransferred;
-        private int completionKey;
+        private long completionKey;
         private CompletionStatus() { }
 
         int error() { return error; }
         int bytesTransferred() { return bytesTransferred; }
-        int completionKey() { return completionKey; }
+        long completionKey() { return completionKey; }
     }
     private static native void GetQueuedCompletionStatus0(long completionPort,
         CompletionStatus status) throws WindowsException;
@@ -1013,12 +1013,12 @@ class WindowsNativeDispatcher {
      * PostQueuedCompletionStatus(
      *   HANDLE CompletionPort,
      *   DWORD dwNumberOfBytesTransferred,
-     *   DWORD dwCompletionKey,
+     *   ULONG_PTR dwCompletionKey,
      *   LPOVERLAPPED lpOverlapped
      * )
      */
     static native void PostQueuedCompletionStatus(long completionPort,
-        int completionKey) throws WindowsException;
+        long completionKey) throws WindowsException;
 
     /**
      * ReadDirectoryChangesW(
