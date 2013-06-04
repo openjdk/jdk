@@ -681,8 +681,8 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
-JTREGEXE
 JT_HOME
+JTREGEXE
 LIPO
 ac_ct_OBJDUMP
 OBJDUMP
@@ -3782,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1370333982
+DATE_WHEN_GENERATED=1370334570
 
 ###############################################################################
 #
@@ -16177,14 +16177,28 @@ AR_OUT_OPTION='rcs$(SPACE)'
 # Check whether --with-jtreg was given.
 if test "${with_jtreg+set}" = set; then :
   withval=$with_jtreg;
+else
+  with_jtreg=no
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTReg Regression Test Harness" >&5
-$as_echo_n "checking for JTReg Regression Test Harness... " >&6; }
+  if test "x$with_jtreg" = xno; then
+    # jtreg disabled
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
+$as_echo_n "checking for jtreg... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    if test "x$with_jtreg" != xyes; then
+      # with path specified.
+      JT_HOME="$with_jtreg"
+    fi
 
-  if test "x$with_jtreg" != x; then
-    JT_HOME="$with_jtreg"
+    if test "x$JT_HOME" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
+$as_echo_n "checking for jtreg... " >&6; }
+
+      # use JT_HOME enviroment var.
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -16307,17 +16321,79 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
     JT_HOME="`cd "$path"; $THEPWDCMD -L`"
   fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JT_HOME" >&5
-$as_echo "$JT_HOME" >&6; }
 
-    # jtreg win32 script works for everybody
-    JTREGEXE="$JT_HOME/win32/bin/jtreg"
-    if test ! -f "$JTREGEXE"; then
-      as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
-    fi
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      # jtreg win32 script works for everybody
+      JTREGEXE="$JT_HOME/win32/bin/jtreg"
+
+      if test ! -f "$JTREGEXE"; then
+        as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
+      fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+    else
+      # try to find jtreg on path
+
+    for ac_prog in jtreg
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_JTREGEXE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JTREGEXE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JTREGEXE="$JTREGEXE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_JTREGEXE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JTREGEXE=$ac_cv_path_JTREGEXE
+if test -n "$JTREGEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+fi
+
+
+  test -n "$JTREGEXE" && break
+done
+
+
+    if test "x$JTREGEXE" = x; then
+        if test "xjtreg" = x; then
+          PROG_NAME=jtregexe
+        else
+          PROG_NAME=jtreg
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+      JT_HOME="`$DIRNAME $JTREGEXE`"
+    fi
   fi
 
 
