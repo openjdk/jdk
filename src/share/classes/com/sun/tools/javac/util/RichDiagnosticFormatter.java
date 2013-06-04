@@ -125,6 +125,13 @@ public class RichDiagnosticFormatter extends
         return sb.toString();
     }
 
+    @Override
+    public String formatMessage(JCDiagnostic diag, Locale l) {
+        nameSimplifier = new ClassNameSimplifier();
+        preprocessDiagnostic(diag);
+        return super.formatMessage(diag, l);
+    }
+
     /**
      * Sets the type/symbol printer used by this formatter.
      * @param printer the rich printer to be set
