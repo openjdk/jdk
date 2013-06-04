@@ -46,5 +46,5 @@ public interface ToDoubleBiFunction<T, U> {
      * @param u an input object
      * @return the function result value
      */
-    public double applyAsDouble(T t, U u);
+    double applyAsDouble(T t, U u);
 }
