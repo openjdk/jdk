@@ -1417,8 +1417,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       MemoryService::track_memory_usage();
 
-      verify_after_gc();
-
       assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
       ref_processor_stw()->verify_no_references_recorded();
 
@@ -1520,6 +1518,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       _hrs.verify_optional();
       verify_region_sets_optional();
+
+      verify_after_gc();
 
       // Start a new incremental collection set for the next pause
       assert(g1_policy()->collection_set() == NULL, "must be");
