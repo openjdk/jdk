@@ -38,9 +38,18 @@ function error() {
       throw new Error('foo');
   } catch (e) {
       for (i in e.stack) {
-          print(e.stack[i]);
+          printFrame(e.stack[i]);
       }
   }
 }
 
 func();
+
+// See JDK-8015855: test/script/basic/JDK-8012164.js fails on Windows 
+// Replace '\' to '/' in class and file names of StackFrameElement objects
+function printFrame(stack) {
+   var fileName = stack.fileName.replace(/\\/g, '/');
+   var className = stack.className.replace(/\\/g, '/');
+   print(className + '.' + stack.methodName + '(' +
+         fileName + ':' + stack.lineNumber + ')'); 
+}
