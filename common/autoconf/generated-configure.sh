@@ -681,8 +681,8 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
-JTREGEXE
 JT_HOME
+JTREGEXE
 LIPO
 ac_ct_OBJDUMP
 OBJDUMP
@@ -797,6 +797,7 @@ OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
+CODESIGN
 XATTR
 TIME
 STAT
@@ -900,7 +901,6 @@ TAIL
 SORT
 SH
 RM
-THEPWDCMD
 PRINTF
 MV
 MKTEMP
@@ -988,6 +988,7 @@ enable_hotspot_test_in_build
 with_cacerts_file
 enable_unlimited_crypto
 with_milestone
+with_update_version
 with_build_number
 with_user_release_suffix
 with_boot_jdk
@@ -1727,6 +1728,7 @@ Optional Packages:
                           group
   --with-cacerts-file     specify alternative cacerts file
   --with-milestone        Set milestone value for build [internal]
+  --with-update-version   Set update version value for build [b00]
   --with-build-number     Set build number value for build [b00]
   --with-user-release-suffix
                           Add a custom string to the version string if build
@@ -3780,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1369764185
+DATE_WHEN_GENERATED=1370334570
 
 ###############################################################################
 #
@@ -5169,65 +5171,6 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
 
 
 
-    for ac_prog in pwd
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_THEPWDCMD+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $THEPWDCMD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_THEPWDCMD="$THEPWDCMD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_THEPWDCMD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-THEPWDCMD=$ac_cv_path_THEPWDCMD
-if test -n "$THEPWDCMD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $THEPWDCMD" >&5
-$as_echo "$THEPWDCMD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$THEPWDCMD" && break
-done
-
-
-    if test "x$THEPWDCMD" = x; then
-        if test "xpwd" = x; then
-          PROG_NAME=thepwdcmd
-        else
-          PROG_NAME=pwd
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-        as_fn_error $? "Cannot continue" "$LINENO" 5
-    fi
-
-
-
     for ac_prog in rm
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -6426,6 +6369,10 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
 # Always force rm.
 RM="$RM -f"
 
+# pwd behaves differently on various platforms and some don't support the -L flag.
+# Always use the bash builtin pwd to get uniform behavior.
+THEPWDCMD=pwd
+
 # These are not required on all platforms
 # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
@@ -7133,65 +7080,17 @@ $as_echo "$COMPILE_TYPE" >&6; }
 
 # Locate the directory of this script.
 SCRIPT="$0"
-
-    if test "x$OPENJDK_BUILD_OS" != xwindows; then
-        # Follow a chain of symbolic links. Use readlink
-        # where it exists, else fall back to horribly
-        # complicated shell code.
-        if test "x$READLINK_TESTED" != yes; then
-            # On MacOSX there is a readlink tool with a different
-            # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-            if test "x$ISGNU" = x; then
-                 # A readlink that we do not know how to use.
-                 # Are there other non-GNU readlinks out there?
-                 READLINK_TESTED=yes
-                 READLINK=
-            fi
-        fi
-
-        if test "x$READLINK" != x; then
-            SCRIPT=`$READLINK -f $SCRIPT`
-        else
-            # Save the current directory for restoring afterwards
-            STARTDIR=$PWD
-            COUNTER=0
-            sym_link_dir=`$DIRNAME $SCRIPT`
-            sym_link_file=`$BASENAME $SCRIPT`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
-            cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
-            # Resolve file symlinks
-            while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
-                if test "x$ISLINK" == x; then
-                    # This is not a symbolic link! We are done!
-                    break
-                fi
-                # Again resolve directory symlinks since the target of the just found
-                # link could be in a different directory
-                cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
-                sym_link_file=`$BASENAME $ISLINK`
-                let COUNTER=COUNTER+1
-            done
-            cd $STARTDIR
-            SCRIPT=$sym_link_dir/$sym_link_file
-        fi
-    fi
-
-AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
+AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD -L`
 
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`$THEPWDCMD`"
+SRC_ROOT="`$THEPWDCMD -L`"
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   PATH_SEP=";"
 
-  SRC_ROOT_LENGTH=`$THEPWDCMD|$WC -m`
+  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
   if test $SRC_ROOT_LENGTH -gt 100; then
       as_fn_error $? "Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported" "$LINENO" 5
   fi
@@ -7407,7 +7306,7 @@ $as_echo "$as_me: The path of SRC_ROOT, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of SRC_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    SRC_ROOT="`cd "$path"; $THEPWDCMD`"
+    SRC_ROOT="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -7529,7 +7428,7 @@ $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." 
       as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    CURDIR="`cd "$path"; $THEPWDCMD`"
+    CURDIR="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -7900,60 +7799,9 @@ fi
 
 
 # Test from where we are running configure, in or outside of src root.
-# To enable comparison of directories, CURDIR needs to be symlink free
-# just like SRC_ROOT already is
-NOSYM_CURDIR="$CURDIR"
-
-    if test "x$OPENJDK_BUILD_OS" != xwindows; then
-        # Follow a chain of symbolic links. Use readlink
-        # where it exists, else fall back to horribly
-        # complicated shell code.
-        if test "x$READLINK_TESTED" != yes; then
-            # On MacOSX there is a readlink tool with a different
-            # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-            if test "x$ISGNU" = x; then
-                 # A readlink that we do not know how to use.
-                 # Are there other non-GNU readlinks out there?
-                 READLINK_TESTED=yes
-                 READLINK=
-            fi
-        fi
-
-        if test "x$READLINK" != x; then
-            NOSYM_CURDIR=`$READLINK -f $NOSYM_CURDIR`
-        else
-            # Save the current directory for restoring afterwards
-            STARTDIR=$PWD
-            COUNTER=0
-            sym_link_dir=`$DIRNAME $NOSYM_CURDIR`
-            sym_link_file=`$BASENAME $NOSYM_CURDIR`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
-            cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
-            # Resolve file symlinks
-            while test $COUNTER -lt 20; do
-                ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
-                if test "x$ISLINK" == x; then
-                    # This is not a symbolic link! We are done!
-                    break
-                fi
-                # Again resolve directory symlinks since the target of the just found
-                # link could be in a different directory
-                cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
-                sym_link_file=`$BASENAME $ISLINK`
-                let COUNTER=COUNTER+1
-            done
-            cd $STARTDIR
-            NOSYM_CURDIR=$sym_link_dir/$sym_link_file
-        fi
-    fi
-
-if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
-        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
-        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -8128,7 +7976,7 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
       as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    OUTPUT_ROOT="`cd "$path"; $THEPWDCMD`"
+    OUTPUT_ROOT="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -10493,6 +10341,62 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
     fi
 
 
+  # Extract the first word of "codesign", so it can be a program name with args.
+set dummy codesign; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_CODESIGN+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CODESIGN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CODESIGN="$CODESIGN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_CODESIGN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CODESIGN=$ac_cv_path_CODESIGN
+if test -n "$CODESIGN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CODESIGN" >&5
+$as_echo "$CODESIGN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "x$CODESIGN" != "x"; then
+    # Verify that the openjdk_codesign certificate is present
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if openjdk_codesign certificate is present" >&5
+$as_echo_n "checking if openjdk_codesign certificate is present... " >&6; }
+    rm -f codesign-testfile
+    touch codesign-testfile
+    codesign -s openjdk_codesign codesign-testfile 2>&5 >&5 || CODESIGN=
+    rm -f codesign-testfile
+    if test "x$CODESIGN" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+  fi
 fi
 
 
@@ -10939,6 +10843,18 @@ if test "x$MILESTONE" = x; then
 fi
 
 
+# Check whether --with-update-version was given.
+if test "${with_update_version+set}" = set; then :
+  withval=$with_update_version;
+fi
+
+if test "x$with_update_version" = xyes; then
+  as_fn_error $? "Update version must have a value" "$LINENO" 5
+elif test "x$with_update_version" != x; then
+  JDK_UPDATE_VERSION="$with_update_version"
+fi
+
+
 # Check whether --with-build-number was given.
 if test "${with_build_number+set}" = set; then :
   withval=$with_build_number;
@@ -11188,7 +11104,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -11520,7 +11436,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -11666,7 +11582,7 @@ $as_echo "$as_me: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", 
       as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD`"
+    JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD -L`"
   fi
 
         if test ! -d "$JAVA_HOME_PROCESSED"; then
@@ -11838,7 +11754,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12026,7 +11942,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12165,10 +12081,10 @@ fi
             COUNTER=0
             sym_link_dir=`$DIRNAME $BINARY`
             sym_link_file=`$BASENAME $BINARY`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -12179,7 +12095,7 @@ fi
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -12354,7 +12270,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12569,7 +12485,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12749,7 +12665,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -12957,7 +12873,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13137,7 +13053,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13345,7 +13261,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13525,7 +13441,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13733,7 +13649,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -13913,7 +13829,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14108,7 +14024,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14286,7 +14202,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14482,7 +14398,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14660,7 +14576,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -14855,7 +14771,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15033,7 +14949,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15229,7 +15145,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15407,7 +15323,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -15584,7 +15500,7 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
       as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    BOOT_JDK="`cd "$path"; $THEPWDCMD`"
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
   fi
 
               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
@@ -16261,14 +16177,28 @@ AR_OUT_OPTION='rcs$(SPACE)'
 # Check whether --with-jtreg was given.
 if test "${with_jtreg+set}" = set; then :
   withval=$with_jtreg;
+else
+  with_jtreg=no
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTReg Regression Test Harness" >&5
-$as_echo_n "checking for JTReg Regression Test Harness... " >&6; }
+  if test "x$with_jtreg" = xno; then
+    # jtreg disabled
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
+$as_echo_n "checking for jtreg... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    if test "x$with_jtreg" != xyes; then
+      # with path specified.
+      JT_HOME="$with_jtreg"
+    fi
 
-  if test "x$with_jtreg" != x; then
-    JT_HOME="$with_jtreg"
+    if test "x$JT_HOME" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
+$as_echo_n "checking for jtreg... " >&6; }
+
+      # use JT_HOME enviroment var.
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -16388,20 +16318,82 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
       as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    JT_HOME="`cd "$path"; $THEPWDCMD`"
+    JT_HOME="`cd "$path"; $THEPWDCMD -L`"
   fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JT_HOME" >&5
-$as_echo "$JT_HOME" >&6; }
 
-    # jtreg win32 script works for everybody
-    JTREGEXE="$JT_HOME/win32/bin/jtreg"
-    if test ! -f "$JTREGEXE"; then
-      as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
-    fi
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      # jtreg win32 script works for everybody
+      JTREGEXE="$JT_HOME/win32/bin/jtreg"
+
+      if test ! -f "$JTREGEXE"; then
+        as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
+      fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+    else
+      # try to find jtreg on path
+
+    for ac_prog in jtreg
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_JTREGEXE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JTREGEXE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JTREGEXE="$JTREGEXE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_JTREGEXE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JTREGEXE=$ac_cv_path_JTREGEXE
+if test -n "$JTREGEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+fi
+
+
+  test -n "$JTREGEXE" && break
+done
+
+
+    if test "x$JTREGEXE" = x; then
+        if test "xjtreg" = x; then
+          PROG_NAME=jtregexe
+        else
+          PROG_NAME=jtreg
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
+$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
+        as_fn_error $? "Cannot continue" "$LINENO" 5
+    fi
+
+
+      JT_HOME="`$DIRNAME $JTREGEXE`"
+    fi
   fi
 
 
@@ -17377,7 +17369,7 @@ $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid
       as_fn_error $? "The path of MSVCR_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    MSVCR_DLL="`cd "$path"; $THEPWDCMD`"
+    MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -17534,7 +17526,7 @@ $as_echo "$as_me: The path of dxsdk_path, which resolves as \"$path\", is invali
       as_fn_error $? "The path of dxsdk_path, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    dxsdk_path="`cd "$path"; $THEPWDCMD`"
+    dxsdk_path="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -17672,7 +17664,7 @@ $as_echo "$as_me: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is in
       as_fn_error $? "The path of DXSDK_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    DXSDK_LIB_PATH="`cd "$path"; $THEPWDCMD`"
+    DXSDK_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -17808,7 +17800,7 @@ $as_echo "$as_me: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", i
       as_fn_error $? "The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    DXSDK_INCLUDE_PATH="`cd "$path"; $THEPWDCMD`"
+    DXSDK_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 
@@ -19395,10 +19387,10 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -19409,7 +19401,7 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -19832,10 +19824,10 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CC`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CC`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -19846,7 +19838,7 @@ $as_echo_n "checking for resolved symbolic links for CC... " >&6; }
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -20968,10 +20960,10 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
             COUNTER=0
             sym_link_dir=`$DIRNAME $TEST_COMPILER`
             sym_link_file=`$BASENAME $TEST_COMPILER`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -20982,7 +20974,7 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -21405,10 +21397,10 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
             COUNTER=0
             sym_link_dir=`$DIRNAME $PROPER_COMPILER_CXX`
             sym_link_file=`$BASENAME $PROPER_COMPILER_CXX`
-            # Use the system pwd and not the shell builtin to resolve directory symlinks
             cd $sym_link_dir
-            cd `$THEPWDCMD`
-            sym_link_dir=`$THEPWDCMD`
+            # Use -P flag to resolve symlinks in directories.
+            cd `$THEPWDCMD -P`
+            sym_link_dir=`$THEPWDCMD -P`
             # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
@@ -21419,7 +21411,7 @@ $as_echo_n "checking for resolved symbolic links for CXX... " >&6; }
                 # Again resolve directory symlinks since the target of the just found
                 # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
-                sym_link_dir=`$THEPWDCMD`
+                sym_link_dir=`$THEPWDCMD -P`
                 sym_link_file=`$BASENAME $ISLINK`
                 let COUNTER=COUNTER+1
             done
@@ -31131,7 +31123,7 @@ $as_echo "$as_me: The path of with_freetype, which resolves as \"$path\", is inv
       as_fn_error $? "The path of with_freetype, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    with_freetype="`cd "$path"; $THEPWDCMD`"
+    with_freetype="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 	    FREETYPE2_LIBS="-L$with_freetype/lib -lfreetype"
@@ -31433,7 +31425,7 @@ $as_echo "$as_me: The path of FREETYPELOCATION, which resolves as \"$path\", is 
       as_fn_error $? "The path of FREETYPELOCATION, which resolves as \"$path\", is not found." "$LINENO" 5
     fi
 
-    FREETYPELOCATION="`cd "$path"; $THEPWDCMD`"
+    FREETYPELOCATION="`cd "$path"; $THEPWDCMD -L`"
   fi
 
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype in some standard windows locations" >&5
@@ -32932,6 +32924,9 @@ $as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6;
     # Cap number of jobs to 16
     if test "$JOBS" -gt "16"; then
       JOBS=16
+    fi
+    if test "$JOBS" -eq "0"; then
+      JOBS=1
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JOBS" >&5
 $as_echo "$JOBS" >&6; }
