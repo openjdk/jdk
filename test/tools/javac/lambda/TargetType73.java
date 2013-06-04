@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,27 @@
  * questions.
  */
 
-package two;
+/*
+ * @test
+ * @bug 8014494
+ * @summary javac crashes when varargs element of a method reference is inferred from the context
+ * @compile TargetType73.java
+ */
+import java.util.List;
 
-interface I {
-    int i = 11;
-}
+class TargetType73 {
 
-public class Child2 extends one.Parent2 implements I {
-    void method() {
-        System.out.println(i);
+    interface Function<X,Y> {
+        Y m(X x);
     }
+
+    static void test() {
+        m(TargetType73::g);
+    }
+
+    public static <T> List<T> g(T... a) {
+        return null;
+    }
+
+    public static <C> void m(Function<String, C> zipper) {  }
 }
