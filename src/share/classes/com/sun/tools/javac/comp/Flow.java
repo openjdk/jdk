@@ -434,7 +434,7 @@ public class Flow {
             Lint lintPrev = lint;
 
             pendingExits = new ListBuffer<PendingExit>();
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // process all the static initializers
@@ -470,7 +470,7 @@ public class Flow {
             if (tree.body == null) return;
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -496,7 +496,7 @@ public class Flow {
         public void visitVarDef(JCVariableDecl tree) {
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scan(tree.init);
                 } finally {
@@ -836,7 +836,7 @@ public class Flow {
             }
             classDef = tree;
             thrown = List.nil();
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // process all the static initializers
@@ -916,7 +916,7 @@ public class Flow {
             List<Type> mthrown = tree.sym.type.getThrownTypes();
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -955,7 +955,7 @@ public class Flow {
         public void visitVarDef(JCVariableDecl tree) {
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scan(tree.init);
                 } finally {
@@ -1580,7 +1580,7 @@ public class Flow {
                 firstadr = nextadr;
             }
             classDef = tree;
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // define all the static fields
@@ -1648,7 +1648,7 @@ public class Flow {
             int returnadrPrev = returnadr;
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -1700,7 +1700,7 @@ public class Flow {
             if (track && tree.sym.owner.kind == MTH) newVar(tree.sym);
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scanExpr(tree.init);
                     if (track) letInit(tree.pos(), tree.sym);

@@ -712,7 +712,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     public Env<AttrContext> getMethodEnv(JCMethodDecl tree, Env<AttrContext> env) {
         Env<AttrContext> mEnv = methodEnv(tree, env);
-        mEnv.info.lint = mEnv.info.lint.augment(tree.sym.annotations, tree.sym.flags());
+        mEnv.info.lint = mEnv.info.lint.augment(tree.sym);
         for (List<JCTypeParameter> l = tree.typarams; l.nonEmpty(); l = l.tail)
             mEnv.info.scope.enterIfAbsent(l.head.type.tsym);
         for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail)
@@ -753,7 +753,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             return;
         }
         if (s.kind != PCK) {
-            s.annotations.reset(); // mark Annotations as incomplete for now
+            s.resetAnnotations(); // mark Annotations as incomplete for now
         }
         annotate.normal(new Annotate.Annotator() {
                 @Override
@@ -763,10 +763,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
                 @Override
                 public void enterAnnotation() {
-                    Assert.check(s.kind == PCK || s.annotations.pendingCompletion());
+                    Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
                     JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
                     try {
-                        if (!s.annotations.isEmpty() &&
+                        if (s.hasAnnotations() &&
                             annotations.nonEmpty())
                             log.error(annotations.head.pos,
                                       "already.annotated",
@@ -832,7 +832,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
         }
 
-        s.annotations.setDeclarationAttributesWithCompletion(
+        s.setDeclarationAttributesWithCompletion(
                 annotate.new AnnotateRepeatedContext<Attribute.Compound>(env, annotated, pos, log, false));
     }
 
@@ -1107,7 +1107,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
 
         if (s != null) {
-            s.annotations.appendTypeAttributesWithCompletion(
+            s.appendTypeAttributesWithCompletion(
                     annotate.new AnnotateRepeatedContext<Attribute.TypeCompound>(env, annotated, pos, log, true));
         }
     }
