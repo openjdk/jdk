@@ -31,7 +31,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * access ScriptObject via the javax.script.Bindings interface or
  * netscape.javascript.JSObject interface.
  */
-final class ScriptObjectMirror extends JSObject implements Bindings {
+public final class ScriptObjectMirror extends JSObject implements Bindings {
     private final ScriptObject sobj;
     private final ScriptObject global;
 
@@ -217,7 +217,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Set<Map.Entry<String, Object>>>() {
             @Override public Set<Map.Entry<String, Object>> call() {
                 final Iterator<String>               iter    = sobj.propertyIterator();
-                final Set<Map.Entry<String, Object>> entries = new HashSet<>();
+                final Set<Map.Entry<String, Object>> entries = new LinkedHashSet<>();
 
                 while (iter.hasNext()) {
                     final String key   = iter.next();
@@ -253,7 +253,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Set<String>>() {
             @Override public Set<String> call() {
                 final Iterator<String> iter   = sobj.propertyIterator();
-                final Set<String>      keySet = new HashSet<>();
+                final Set<String>      keySet = new LinkedHashSet<>();
 
                 while (iter.hasNext()) {
                     keySet.add(iter.next());
@@ -298,6 +298,21 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 return wrap(sobj.remove(unwrap(key, global)), global);
+            }
+        });
+    }
+
+    /**
+     * Delete a property from this object.
+     *
+     * @param key the property to be deleted
+     *
+     * @return if the delete was successful or not
+     */
+    public boolean delete(final Object key) {
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return sobj.delete(unwrap(key, global));
             }
         });
     }
