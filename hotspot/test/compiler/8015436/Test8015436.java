@@ -48,7 +48,7 @@ interface InterfaceWithDefaultMethod {
     }
 }
 
-class Test8015436 implements InterfaceWithDefaultMethod {
+public class Test8015436 implements InterfaceWithDefaultMethod {
     @Override
     public void someMethod() {
         System.out.println("someMethod() invoked");
