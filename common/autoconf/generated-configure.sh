@@ -988,6 +988,7 @@ enable_hotspot_test_in_build
 with_cacerts_file
 enable_unlimited_crypto
 with_milestone
+with_update_version
 with_build_number
 with_user_release_suffix
 with_boot_jdk
@@ -1727,6 +1728,7 @@ Optional Packages:
                           group
   --with-cacerts-file     specify alternative cacerts file
   --with-milestone        Set milestone value for build [internal]
+  --with-update-version   Set update version value for build [b00]
   --with-build-number     Set build number value for build [b00]
   --with-user-release-suffix
                           Add a custom string to the version string if build
@@ -3780,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1370001995
+DATE_WHEN_GENERATED=1370333982
 
 ###############################################################################
 #
@@ -10838,6 +10840,18 @@ elif test "x$with_milestone" != x; then
 fi
 if test "x$MILESTONE" = x; then
   MILESTONE=internal
+fi
+
+
+# Check whether --with-update-version was given.
+if test "${with_update_version+set}" = set; then :
+  withval=$with_update_version;
+fi
+
+if test "x$with_update_version" = xyes; then
+  as_fn_error $? "Update version must have a value" "$LINENO" 5
+elif test "x$with_update_version" != x; then
+  JDK_UPDATE_VERSION="$with_update_version"
 fi
 
 
