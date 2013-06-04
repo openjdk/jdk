@@ -145,6 +145,9 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
     if test "$JOBS" -gt "16"; then
       JOBS=16
     fi
+    if test "$JOBS" -eq "0"; then
+      JOBS=1
+    fi
     AC_MSG_RESULT([$JOBS])
   else
     JOBS=$with_jobs
