@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ public class TestHelpOption extends JavadocTester {
         {STANDARD_OUTPUT, "-tag "},
         {STANDARD_OUTPUT, "-taglet "},
         {STANDARD_OUTPUT, "-tagletpath "},
-        {STANDARD_OUTPUT, "-Xdocrootparent "},
         {STANDARD_OUTPUT, "-charset "},
         {STANDARD_OUTPUT, "-helpfile "},
         {STANDARD_OUTPUT, "-linksource "},
