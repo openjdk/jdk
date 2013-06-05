@@ -140,7 +140,7 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) {
   return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             Metaspace::ClassType, CHECK_NULL);
+                             MetaspaceObj::ClassType, CHECK_NULL);
 }
 
 Klass::Klass() {
