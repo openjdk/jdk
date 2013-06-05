@@ -50,11 +50,11 @@ public class ParallelSorting {
 
     // Array lengths used in a long run (default)
     private static final int[] LONG_RUN_LENGTHS = {
-        1, 2, 3, 5, 8, 13, 21, 34, 55, 100, 1000, 10000, 100000, 1000000 };
+        1000, 10000, 100000, 1000000 };
 
     // Array lengths used in a short run
     private static final int[] SHORT_RUN_LENGTHS = {
-        1, 2, 3, 21, 55, 1000, 10000 };
+        5000, 9000, 10000, 12000 };
 
     // Random initial values used in a long run (default)
     private static final long[] LONG_RUN_RANDOMS = { 666, 0xC0FFEE, 999 };

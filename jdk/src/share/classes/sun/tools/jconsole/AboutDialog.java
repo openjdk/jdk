@@ -34,6 +34,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
+import static sun.misc.Version.jdkMinorVersion;
 
 import static java.awt.BorderLayout.*;
 import static sun.tools.jconsole.Utilities.*;
@@ -73,7 +74,7 @@ public class AboutDialog extends InternalDialog {
         String jConsoleVersion = Version.getVersion();
         String vmName = System.getProperty("java.vm.name");
         String vmVersion = System.getProperty("java.vm.version");
-        String urlStr = Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL;
+        String urlStr = getOnlineDocUrl();
         if (isBrowseSupported()) {
             urlStr = "<a style='color:#35556b' href=\"" + urlStr + "\">" + urlStr + "</a>";
         }
@@ -86,8 +87,7 @@ public class AboutDialog extends InternalDialog {
                                 "<html><font color=#"+ colorStr + ">" +
                         Resources.format(Messages.HELP_ABOUT_DIALOG_JCONSOLE_VERSION, jConsoleVersion) +
                 "<p>" + Resources.format(Messages.HELP_ABOUT_DIALOG_JAVA_VERSION, (vmName +", "+ vmVersion)) +
-                "<p>" + Resources.format(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK, urlStr) +
-                                                 "</html>");
+                "<p>" + urlStr + "</html>");
         helpLink.setOpaque(false);
         helpLink.setEditable(false);
         helpLink.setForeground(textColor);
@@ -153,7 +153,7 @@ public class AboutDialog extends InternalDialog {
     }
 
     static void browseUserGuide(JConsole jConsole) {
-        getAboutDialog(jConsole).browse(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL);
+        getAboutDialog(jConsole).browse(getOnlineDocUrl());
     }
 
     static boolean isBrowseSupported() {
@@ -180,6 +180,12 @@ public class AboutDialog extends InternalDialog {
                 statusBar.setText("");
             }
         };
+    }
+
+    private static String getOnlineDocUrl() {
+        String version = Integer.toString(jdkMinorVersion());
+        return Resources.format(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL,
+                                version);
     }
 
     private static class TPanel extends JPanel {
