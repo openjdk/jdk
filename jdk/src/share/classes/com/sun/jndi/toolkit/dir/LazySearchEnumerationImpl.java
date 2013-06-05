@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ final public class LazySearchEnumerationImpl
             }
     }
 
+    @SuppressWarnings("unchecked")      // For Hashtable clone: env.clone()
     public LazySearchEnumerationImpl(NamingEnumeration<Binding> candidates,
         AttrFilter filter, SearchControls cons,
         Context ctx, Hashtable<String, Object> env, boolean useFactory)
@@ -76,7 +77,8 @@ final public class LazySearchEnumerationImpl
 
             this.candidates = candidates;
             this.filter = filter;
-            this.env = env;
+            this.env = (Hashtable<String, Object>)
+                    ((env == null) ? null : env.clone());
             this.context = ctx;
             this.useFactory = useFactory;
 

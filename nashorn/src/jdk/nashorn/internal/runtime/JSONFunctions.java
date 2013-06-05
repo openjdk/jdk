@@ -36,6 +36,8 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.parser.JSONParser;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 /**
  * Utilities used by "JSON" object implementation.
@@ -94,7 +96,7 @@ public final class JSONFunctions {
         if (reviver instanceof ScriptFunction) {
             assert global instanceof GlobalObject;
             final ScriptObject root = ((GlobalObject)global).newObject();
-            root.set("", unfiltered, root.isStrictContext());
+            root.addOwnProperty("", Property.WRITABLE_ENUMERABLE_CONFIGURABLE, unfiltered);
             return walk(root, "", (ScriptFunction)reviver);
         }
         return unfiltered;
@@ -115,7 +117,7 @@ public final class JSONFunctions {
                 if (newElement == ScriptRuntime.UNDEFINED) {
                     valueObj.delete(key, strict);
                 } else {
-                    valueObj.set(key, newElement, strict);
+                    setPropertyValue(valueObj, key, newElement, strict);
                 }
             }
         }
@@ -175,7 +177,9 @@ public final class JSONFunctions {
                 final PropertyNode pNode     = (PropertyNode) elem;
                 final Node         valueNode = pNode.getValue();
 
-                object.set(pNode.getKeyName(), convertNode(global, valueNode), strict);
+                final String name = pNode.getKeyName();
+                final Object value = convertNode(global, valueNode);
+                setPropertyValue(object, name, value, strict);
             }
 
             return object;
@@ -185,6 +189,21 @@ public final class JSONFunctions {
             return -((LiteralNode<?>)unaryNode.rhs()).getNumber();
         } else {
             return null;
+        }
+    }
+
+    // add a new property if does not exist already, or else set old property
+    private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value, final boolean strict) {
+        final int index = getArrayIndexNoThrow(name);
+        if (isValidArrayIndex(index)) {
+            // array index key
+            sobj.defineOwnProperty(index, value);
+        } else if (sobj.getMap().findProperty(name) != null) {
+            // pre-existing non-inherited property, call set
+            sobj.set(name, value, strict);
+        } else {
+            // add new property
+            sobj.addOwnProperty(name, Property.WRITABLE_ENUMERABLE_CONFIGURABLE, value);
         }
     }
 

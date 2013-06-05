@@ -611,13 +611,11 @@ public final class NativeMath extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object round(final Object self, final Object x) {
-        if (GlobalFunctions.isNaN(self, x)) {
-            return Double.NaN;
-        } else if (!GlobalFunctions.isFinite(self, x)) {
-            return x;
+        final double d = JSType.toNumber(x);
+        if (Math.getExponent(d) >= 52) {
+            return d;
         }
-
-        return Math.round(JSType.toNumber(x));
+        return Math.copySign(Math.floor(d + 0.5), d);
     }
 
     /**
