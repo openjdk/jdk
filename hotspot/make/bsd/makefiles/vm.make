@@ -126,7 +126,11 @@ ifneq ($(OS_VENDOR), Darwin)
 LFLAGS += -Xlinker -z -Xlinker noexecstack
 endif
 
-LIBS += -lm -pthread
+LIBS += -lm
+
+ifeq ($(USE_CLANG),)
+  LIBS += -pthread
+endif
 
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
