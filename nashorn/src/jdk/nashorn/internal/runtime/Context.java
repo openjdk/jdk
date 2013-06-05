@@ -48,6 +48,7 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -518,7 +519,7 @@ public final class Context {
         setGlobalTrusted(newGlobal);
 
         try {
-            return load(newGlobal, from);
+            return ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal);
         } finally {
             setGlobalTrusted(oldGlobal);
         }
