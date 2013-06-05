@@ -23,14 +23,23 @@
 # questions.
 #
 
+# Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
+# If so, then append $1 to $2\
+# Also set JVM_ARG_OK to true/false depending on outcome.
 AC_DEFUN([ADD_JVM_ARG_IF_OK],
 [
-    # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
-    # If so, then append $1 to $2
-    FOUND_WARN=`$3 $1 -version 2>&1 | grep -i warn`
-    FOUND_VERSION=`$3 $1 -version 2>&1 | grep " version \""`
+    $ECHO "Check if jvm arg is ok: $1" >&AS_MESSAGE_LOG_FD
+    $ECHO "Command: $3 $1 -version" >&AS_MESSAGE_LOG_FD
+    OUTPUT=`$3 $1 -version 2>&1`
+    FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+    FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
     if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
         $2="[$]$2 $1"
+	JVM_ARG_OK=true
+    else
+	$ECHO "Arg failed:" >&AS_MESSAGE_LOG_FD
+	$ECHO "$OUTPUT" >&AS_MESSAGE_LOG_FD
+	JVM_ARG_OK=false
     fi
 ])
 
@@ -51,16 +60,19 @@ AC_DEFUN([BASIC_FIXUP_PATH],
   else
     # We're on a posix platform. Hooray! :)
     path="[$]$1"
-    
-    if test ! -f "$path" && test ! -d "$path"; then
-      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
-    fi
-
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
       AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
       AC_MSG_ERROR([Spaces are not allowed in this path.])
     fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
+    fi
+
+    $1="`cd "$path"; $THEPWDCMD`" 
   fi
 ])
 
