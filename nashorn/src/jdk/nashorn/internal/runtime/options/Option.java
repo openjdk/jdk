@@ -42,10 +42,6 @@ public class Option<T> {
        this.value = value;
     }
 
-    void setValue(final T value) {
-        this.value = value;
-    }
-
     /**
      * Return the value of an option
      * @return the option value

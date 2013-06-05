@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation which accepts a single double argument and returns no result.
  * This is the primitive type specialization of {@link Consumer} for
@@ -41,5 +43,26 @@ public interface DoubleConsumer {
      *
      * @param value the input value
      */
-    public void accept(double value);
+    void accept(double value);
+
+    /**
+     * Returns a {@code DoubleConsumer} which performs, in sequence, the operation
+     * represented by this object followed by the operation represented by
+     * another {@code DoubleConsumer}.
+     *
+     * <p>Any exceptions thrown by either {@code accept} method are relayed
+     * to the caller; if performing this operation throws an exception, the
+     * other operation will not be performed.
+     *
+     * @param other a DoubleConsumer which will be chained after this
+     * DoubleConsumer
+     * @return an DoubleConsumer which performs in sequence the {@code accept} method
+     * of this DoubleConsumer and the {@code accept} method of the specified IntConsumer
+     * operation
+     * @throws NullPointerException if other is null
+     */
+    default DoubleConsumer chain(DoubleConsumer other) {
+        Objects.requireNonNull(other);
+        return (double t) -> { accept(t); other.accept(t); };
+    }
 }

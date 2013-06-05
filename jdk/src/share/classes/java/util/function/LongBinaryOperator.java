@@ -44,5 +44,5 @@ public interface LongBinaryOperator {
      * @param right  the right operand value
      * @return the result of the operation
      */
-    public long applyAsLong(long left, long right);
+    long applyAsLong(long left, long right);
 }
