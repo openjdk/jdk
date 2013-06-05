@@ -59,11 +59,9 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
 public final class RuntimeCallSite extends MutableCallSite {
     static final Call BOOTSTRAP = staticCallNoLookup(Bootstrap.class, "runtimeBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
 
-    private static final MethodHandle NEXT = findOwnMH("next",  MethodHandle.class);
+    private static final MethodHandle NEXT = findOwnMH("next",  MethodHandle.class, String.class);
 
     private final RuntimeNode.Request request;
-
-    private String name;
 
     /**
      * A specialized runtime node, i.e. on where we know at least one more specific type than object
@@ -203,7 +201,6 @@ public final class RuntimeCallSite extends MutableCallSite {
      */
     public RuntimeCallSite(final MethodType type, final String name) {
         super(type);
-        this.name    = name;
         this.request = Request.valueOf(name.substring(0, name.indexOf(SpecializedRuntimeNode.REQUEST_SEPARATOR)));
         setTarget(makeMethod(name));
     }
@@ -292,7 +289,7 @@ public final class RuntimeCallSite extends MutableCallSite {
                 mh = MH.explicitCastArguments(mh, type());
             }
 
-            final MethodHandle fallback = MH.foldArguments(MethodHandles.exactInvoker(type()), MH.bindTo(NEXT, this));
+            final MethodHandle fallback = MH.foldArguments(MethodHandles.exactInvoker(type()), MH.insertArguments(NEXT, 0, this, requestName));
 
             MethodHandle guard;
             if (type().parameterType(0).isPrimitive()) {
@@ -338,16 +335,10 @@ public final class RuntimeCallSite extends MutableCallSite {
      *
      * @return next wider specialization method for this RuntimeCallSite
      */
-    public MethodHandle next() {
-        this.name = nextName(name);
-        final MethodHandle next = makeMethod(name);
+   public MethodHandle next(final String name) {
+        final MethodHandle next = makeMethod(nextName(name));
         setTarget(next);
         return next;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + " " + name;
     }
 
     /** Method cache */

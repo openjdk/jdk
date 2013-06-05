@@ -60,7 +60,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
-
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite.SpecializedRuntimeNode;
@@ -80,11 +79,11 @@ import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -457,17 +456,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void initSymbols(final LinkedList<Symbol> symbols, final Type type) {
-        if (symbols.isEmpty()) {
-            return;
-        }
-
-        method.loadUndefined(type);
-        while (!symbols.isEmpty()) {
-            final Symbol symbol = symbols.removeFirst();
-            if (!symbols.isEmpty()) {
-                method.dup();
-            }
-            method.store(symbol);
+        final Iterator<Symbol> it = symbols.iterator();
+        if(it.hasNext()) {
+            method.loadUndefined(type);
+            boolean hasNext;
+            do {
+                final Symbol symbol = it.next();
+                hasNext = it.hasNext();
+                if(hasNext) {
+                    method.dup();
+                }
+                method.store(symbol);
+            } while(hasNext);
         }
     }
 
@@ -942,11 +942,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              */
             final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
                 @Override
-                protected Type getValueType(final Symbol value) {
-                    return value.getSymbolType();
-                }
-
-                @Override
                 protected void loadValue(final Symbol value) {
                     method.load(value);
                 }
@@ -1356,11 +1351,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         new FieldObjectCreator<Node>(this, keys, symbols, values) {
-            @Override
-            protected Type getValueType(final Node node) {
-                return node.getType();
-            }
-
             @Override
             protected void loadValue(final Node node) {
                 load(node);
