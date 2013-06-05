@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ enum {
   JMM_VERSION_1_1 = 0x20010100, // JDK 6
   JMM_VERSION_1_2 = 0x20010200, // JDK 7
   JMM_VERSION_1_2_1 = 0x20010201, // JDK 7 GA
-  JMM_VERSION     = 0x20010202
+  JMM_VERSION_1_2_2 = 0x20010202,
+  JMM_VERSION     = 0x20010203
 };
 
 typedef struct {
@@ -62,7 +63,8 @@ typedef struct {
   unsigned int isObjectMonitorUsageSupported : 1;
   unsigned int isSynchronizerUsageSupported : 1;
   unsigned int isThreadAllocatedMemorySupported : 1;
-  unsigned int : 23;
+  unsigned int isRemoteDiagnosticCommandsSupported : 1;
+  unsigned int : 22;
 } jmmOptionalSupport;
 
 typedef enum {
@@ -190,21 +192,27 @@ typedef struct {
 } jmmGCStat;
 
 typedef struct {
-  const char* name;
-  const char* description;
-  const char* impact;
-  int         num_arguments;
-  jboolean    enabled;
+  const char* name;                /* Name of the diagnostic command */
+  const char* description;         /* Short description */
+  const char* impact;              /* Impact on the JVM */
+  const char* permission_class;    /* Class name of the required permission if any */
+  const char* permission_name;     /* Permission name of the required permission if any */
+  const char* permission_action;   /* Action name of the required permission if any*/
+  int         num_arguments;       /* Number of supported options or arguments */
+  jboolean    enabled;             /* True if the diagnostic command can be invoked, false otherwise*/
 } dcmdInfo;
 
 typedef struct {
-  const char* name;
-  const char* description;
-  const char* type;
-  const char* default_string;
-  jboolean    mandatory;
-  jboolean    option;
-  int         position;
+  const char* name;                /* Option/Argument name*/
+  const char* description;         /* Short description */
+  const char* type;                /* Type: STRING, BOOLEAN, etc. */
+  const char* default_string;      /* Default value in a parsable string */
+  jboolean    mandatory;           /* True if the option/argument is mandatory */
+  jboolean    option;              /* True if it is an option, false if it is an argument */
+                                   /* (see diagnosticFramework.hpp for option/argument definitions) */
+  jboolean    multiple;            /* True is the option can be specified several time */
+  int         position;            /* Expected position for this argument (this field is */
+                                   /* meaningless for options) */
 } dcmdArgInfo;
 
 typedef struct jmmInterface_1_ {
@@ -327,6 +335,9 @@ typedef struct jmmInterface_1_ {
   jstring      (JNICALL *ExecuteDiagnosticCommand)
                                                  (JNIEnv *env,
                                                   jstring command);
+  void         (JNICALL *SetDiagnosticFrameworkNotificationEnabled)
+                                                 (JNIEnv *env,
+                                                  jboolean enabled);
 } JmmInterface;
 
 #ifdef __cplusplus
