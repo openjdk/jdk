@@ -342,20 +342,28 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
-    // package-privates below this.
-    ScriptObject getScriptObject() {
-        return sobj;
-    }
 
-    static Object translateUndefined(Object obj) {
-        return (obj == ScriptRuntime.UNDEFINED)? null : obj;
-    }
+    // These are public only so that Context can access these.
 
-    static Object wrap(final Object obj, final ScriptObject homeGlobal) {
+    /**
+     * Make a script object mirror on given object if needed.
+     *
+     * @param obj object to be wrapped
+     * @param homeGlobal global to which this object belongs
+     * @return wrapped object
+     */
+    public static Object wrap(final Object obj, final ScriptObject homeGlobal) {
         return (obj instanceof ScriptObject) ? new ScriptObjectMirror((ScriptObject)obj, homeGlobal) : obj;
     }
 
-    static Object unwrap(final Object obj, final ScriptObject homeGlobal) {
+    /**
+     * Unwrap a script object mirror if needed.
+     *
+     * @param obj object to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return unwrapped object
+     */
+    public static Object unwrap(final Object obj, final ScriptObject homeGlobal) {
         if (obj instanceof ScriptObjectMirror) {
             final ScriptObjectMirror mirror = (ScriptObjectMirror)obj;
             return (mirror.global == homeGlobal)? mirror.sobj : obj;
@@ -364,7 +372,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         return obj;
     }
 
-    static Object[] wrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    /**
+     * Wrap an array of object to script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return wrapped array
+     */
+    public static Object[] wrapArray(final Object[] args, final ScriptObject homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -378,7 +393,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         return newArgs;
     }
 
-    static Object[] unwrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    /**
+     * Unwrap an array of script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return unwrapped array
+     */
+    public static Object[] unwrapArray(final Object[] args, final ScriptObject homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -390,5 +412,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             index++;
         }
         return newArgs;
+    }
+
+    // package-privates below this.
+    ScriptObject getScriptObject() {
+        return sobj;
+    }
+
+    static Object translateUndefined(Object obj) {
+        return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }
 }
