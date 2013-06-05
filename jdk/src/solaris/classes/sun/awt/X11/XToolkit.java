@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             initIDs();
             setBackingStoreType();
         }
-        noisyAwtHandler = AccessController.doPrivileged(new GetBooleanAction("sun.awt.noisyerrorhandler"));
     }
 
     /*
@@ -136,78 +135,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * tray icon
      */
     static native long getTrayIconDisplayTimeout();
-
-    //---- ERROR HANDLER CODE ----//
-
-    /*
-     * Error handler at the moment of XToolkit initialization
-     */
-    private static long saved_error_handler;
-
-    /*
-     * XErrorEvent being handled
-     */
-    static volatile XErrorEvent saved_error;
-
-    /*
-     * Current error handler or null if no error handler is set
-     */
-    private static XErrorHandler current_error_handler;
-
-    /*
-     * Value of sun.awt.noisyerrorhandler system property
-     */
-    private static boolean noisyAwtHandler;
-
-    public static void WITH_XERROR_HANDLER(XErrorHandler handler) {
-        saved_error = null;
-        current_error_handler = handler;
-    }
-
-    public static void RESTORE_XERROR_HANDLER() {
-        // wait until all requests are processed by the X server
-        // and only then uninstall the error handler
-        XSync();
-        current_error_handler = null;
-    }
-
-    // Should be called under LOCK
-    public static int SAVED_ERROR_HANDLER(long display, XErrorEvent error) {
-        if (saved_error_handler != 0) {
-            // Default XErrorHandler may just terminate the process. Don't call it.
-            // return XlibWrapper.CallErrorHandler(saved_error_handler, display, error.pData);
-        }
-        if (log.isLoggable(PlatformLogger.FINE)) {
-            log.fine("Unhandled XErrorEvent: " +
-                     "id=" + error.get_resourceid() + ", " +
-                     "serial=" + error.get_serial() + ", " +
-                     "ec=" + error.get_error_code() + ", " +
-                     "rc=" + error.get_request_code() + ", " +
-                     "mc=" + error.get_minor_code());
-        }
-        return 0;
-    }
-
-    // Called from the native code when an error occurs
-    private static int globalErrorHandler(long display, long event_ptr) {
-        if (noisyAwtHandler) {
-            XlibWrapper.PrintXErrorEvent(display, event_ptr);
-        }
-        XErrorEvent event = new XErrorEvent(event_ptr);
-        saved_error = event;
-        try {
-            if (current_error_handler != null) {
-                return current_error_handler.handleError(display, event);
-            } else {
-                return SAVED_ERROR_HANDLER(display, event);
-            }
-        } catch (Throwable z) {
-            log.fine("Error in GlobalErrorHandler", z);
-        }
-        return 0;
-    }
-
-    //---- END OF ERROR HANDLER CODE ----//
 
     private native static void initIDs();
     native static void waitForEvents(long nextTaskTime);
@@ -305,8 +232,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
             //set system property if not yet assigned
             System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
-
-            saved_error_handler = XlibWrapper.SetToolkitErrorHandler();
 
             // Detect display mode changes
             XlibWrapper.XSelectInput(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), XConstants.StructureNotifyMask);

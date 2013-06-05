@@ -44,5 +44,5 @@ public interface ObjDoubleConsumer<T> {
      * @param t an input object
      * @param value an input value
      */
-    public void accept(T t, double value);
+    void accept(T t, double value);
 }

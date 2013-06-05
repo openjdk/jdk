@@ -28,10 +28,10 @@ package java.util.function;
  * Apply a function to the input arguments, yielding an appropriate result.
  * This is the {@code int}-bearing specialization for {@link BiFunction}.
  *
- * @param <T> the type of the first argument to the {@code applyAsLong}
- * operation.
- * @param <U> the type of the second argument to the {@code applyAsLong}
- * operation.
+ * @param <T> the type of the first argument to the {@code applyAsInt}
+ * operation
+ * @param <U> the type of the second argument to the {@code applyAsInt}
+ * operation
  *
  * @see BiFunction
  * @since 1.8
@@ -46,5 +46,5 @@ public interface ToIntBiFunction<T, U> {
      * @param u an input object
      * @return the function result value
      */
-    public int applyAsInt(T t, U u);
+    int applyAsInt(T t, U u);
 }

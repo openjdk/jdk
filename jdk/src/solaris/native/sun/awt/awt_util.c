@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,6 @@
 
 
 #include "java_awt_event_MouseWheelEvent.h"
-
-/*
- * Since X reports protocol errors asynchronously, we often need to
- * install an error handler that acts like a callback.  While that
- * specialized handler is installed we save original handler here.
- */
-XErrorHandler xerror_saved_handler;
-
-/*
- * A place for error handler to report the error code.
- */
-unsigned char xerror_code;
 
 extern jint getModifiers(uint32_t state, jint button, jint keyCode);
 extern jint getButton(uint32_t button);
