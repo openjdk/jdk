@@ -8,5 +8,5 @@
  *          the method has the same name, it does not override.
  * @author turnidge
  *
- * @compile/fail -nowrite one/Parent.java two/Child.java
+ * @compile/fail one/Parent.java two/Child.java
  */

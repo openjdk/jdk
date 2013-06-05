@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -758,6 +758,8 @@ awt_init_Display(JNIEnv *env, jobject this)
     }
 
     XSetIOErrorHandler(xioerror_handler);
+    JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil", "init", "(J)V",
+        ptr_to_jlong(awt_display));
 
     /* set awt_numScreens, and whether or not we're using Xinerama */
     xineramaInit();
@@ -904,28 +906,12 @@ Java_sun_awt_X11GraphicsDevice_getDisplay(JNIEnv *env, jobject this)
 
 static jint canUseShmExt = UNSET_MITSHM;
 static jint canUseShmExtPixmaps = UNSET_MITSHM;
-static jboolean xshmAttachFailed = JNI_FALSE;
-
-int J2DXErrHandler(Display *display, XErrorEvent *xerr) {
-    int ret = 0;
-    if (xerr->minor_code == X_ShmAttach) {
-        xshmAttachFailed = JNI_TRUE;
-    } else {
-        ret = (*xerror_saved_handler)(display, xerr);
-    }
-    return ret;
-}
-jboolean isXShmAttachFailed() {
-    return xshmAttachFailed;
-}
-void resetXShmAttachFailed() {
-    xshmAttachFailed = JNI_FALSE;
-}
 
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     XShmSegmentInfo shminfo;
     int XShmMajor, XShmMinor;
     int a, b, c;
+    jboolean xShmAttachResult;
 
     AWT_LOCK();
     if (canUseShmExt != UNSET_MITSHM) {
@@ -963,21 +949,14 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         }
         shminfo.readOnly = True;
 
-        resetXShmAttachFailed();
-        /**
-         * The J2DXErrHandler handler will set xshmAttachFailed
-         * to JNI_TRUE if any Shm error has occured.
-         */
-        EXEC_WITH_XERROR_HANDLER(J2DXErrHandler,
-                                 XShmAttach(awt_display, &shminfo));
-
+        xShmAttachResult = TryXShmAttach(env, awt_display, &shminfo);
         /**
          * Get rid of the id now to reduce chances of leaking
          * system resources.
          */
         shmctl(shminfo.shmid, IPC_RMID, 0);
 
-        if (isXShmAttachFailed() == JNI_FALSE) {
+        if (xShmAttachResult == JNI_TRUE) {
             canUseShmExt = CAN_USE_MITSHM;
             /* check if we can use shared pixmaps */
             XShmQueryVersion(awt_display, &XShmMajor, &XShmMinor,
@@ -991,6 +970,23 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         *shmPixmaps = canUseShmExtPixmaps;
     }
     AWT_UNLOCK();
+}
+
+/*
+ * Must be called with the acquired AWT lock.
+ */
+jboolean TryXShmAttach(JNIEnv *env, Display *display, XShmSegmentInfo *shminfo) {
+    jboolean errorOccurredFlag = JNI_FALSE;
+    jobject errorHandlerRef;
+
+    /*
+     * XShmAttachHandler will set its internal flag to JNI_TRUE, if any Shm error occurs.
+     */
+    EXEC_WITH_XERROR_HANDLER(env, "sun/awt/X11/XErrorHandler$XShmAttachHandler",
+        "()Lsun/awt/X11/XErrorHandler$XShmAttachHandler;", JNI_TRUE,
+        errorHandlerRef, errorOccurredFlag,
+        XShmAttach(display, shminfo));
+    return errorOccurredFlag == JNI_FALSE ? JNI_TRUE : JNI_FALSE;
 }
 #endif /* MITSHM */
 

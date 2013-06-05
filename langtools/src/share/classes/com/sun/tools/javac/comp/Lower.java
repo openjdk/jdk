@@ -2002,7 +2002,7 @@ public class Lower extends TreeTranslator {
         JCStatement rethrow;
         if (target.hasInitCause()) {
             // rethrow = "throw new NoClassDefFoundError().initCause(e);
-            JCTree throwExpr =
+            JCExpression throwExpr =
                 makeCall(makeNewClass(syms.noClassDefFoundErrorType,
                                       List.<JCExpression>nil()),
                          names.initCause,
@@ -2931,7 +2931,7 @@ public class Lower extends TreeTranslator {
             }
             result =
                 make.If(cond,
-                        make_at(detailPos).
+                        make_at(tree).
                            Throw(makeNewClass(syms.assertionErrorType, exnArgs)),
                         null);
         } else {

@@ -5,6 +5,6 @@
  *          compiler as ambigous.
  * @author turnidge
  *
- * @compile -nowrite one/Parent.java two/Child.java
- * @compile -nowrite one/Parent2.java two/Child2.java
+ * @compile one/Parent.java two/Child.java
+ * @compile/fail one/Parent2.java two/Child2.java
  */

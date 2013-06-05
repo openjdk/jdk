@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 import static com.sun.tools.classfile.AccessFlags.*;
 
@@ -44,6 +45,11 @@ public class ClassFile {
     public static ClassFile read(File file)
             throws IOException, ConstantPoolException {
         return read(file, new Attribute.Factory());
+    }
+
+    public static ClassFile read(Path path)
+            throws IOException, ConstantPoolException {
+        return read(path.toFile(), new Attribute.Factory());
     }
 
     public static ClassFile read(File file, Attribute.Factory attributeFactory)
