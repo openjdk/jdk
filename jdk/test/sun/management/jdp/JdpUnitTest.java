@@ -32,6 +32,12 @@ import sun.management.jdp.JdpException;
 
 public class JdpUnitTest {
 
+
+    static byte[] russian_name = {(byte)0xd0,(byte)0xbf,(byte)0xd1,(byte)0x80,(byte)0xd0,(byte)0xbe,(byte)0xd0,(byte)0xb2,
+                                  (byte)0xd0,(byte)0xb5,(byte)0xd1,(byte)0x80,(byte)0xd0,(byte)0xba,(byte)0xd0,(byte)0xb0,
+                                  (byte)0x20,(byte)0xd1,(byte)0x81,(byte)0xd0,(byte)0xb2,(byte)0xd1,(byte)0x8f,(byte)0xd0,
+                                  (byte)0xb7,(byte)0xd0,(byte)0xb8,(byte)0x0a};
+
     /**
      * This test tests that complete packet is build correctly
      */
@@ -42,7 +48,7 @@ public class JdpUnitTest {
         {
             JdpJmxPacket p1 = new JdpJmxPacket(UUID.randomUUID(), "fake://unit-test");
             p1.setMainClass("FakeUnitTest");
-            p1.setInstanceName("Fake");
+            p1.setInstanceName( new String(russian_name,"UTF-8"));
             byte[] b = p1.getPacketData();
 
             JdpJmxPacket p2 = new JdpJmxPacket(b);
