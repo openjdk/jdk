@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Member;
 import java.lang.reflect.Field;
 import java.lang.reflect.Executable;
@@ -115,9 +116,9 @@ import sun.reflect.misc.ReflectUtil;
  * @since   JDK1.0
  */
 public final class Class<T> implements java.io.Serializable,
-                              java.lang.reflect.GenericDeclaration,
-                              java.lang.reflect.Type,
-                              java.lang.reflect.AnnotatedElement {
+                              GenericDeclaration,
+                              Type,
+                              AnnotatedElement {
     private static final int ANNOTATION= 0x00002000;
     private static final int ENUM      = 0x00004000;
     private static final int SYNTHETIC = 0x00001000;
@@ -3182,7 +3183,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     @Override
     public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-        return AnnotatedElement.super.isAnnotationPresent(annotationClass);
+        return GenericDeclaration.super.isAnnotationPresent(annotationClass);
     }
 
     /**

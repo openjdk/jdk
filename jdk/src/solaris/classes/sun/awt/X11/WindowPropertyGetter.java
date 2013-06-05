@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class WindowPropertyGetter {
             }
 
             if (errorHandler != null) {
-                XToolkit.WITH_XERROR_HANDLER(errorHandler);
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(errorHandler);
             }
             Native.putLong(data, 0);
             int status = XlibWrapper.XGetWindowProperty(XToolkit.getDisplay(), window, property.getAtom(),
@@ -112,7 +112,7 @@ public class WindowPropertyGetter {
             }
 
             if (errorHandler != null) {
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
             }
             return status;
         } finally {

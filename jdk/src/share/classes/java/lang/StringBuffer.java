@@ -335,10 +335,8 @@ import java.util.Arrays;
      * @since 1.5
      */
     @Override
-    public StringBuffer append(CharSequence s) {
-        // Note, synchronization achieved via invocations of other StringBuffer methods after
-        // narrowing of s to specific type
-        // Ditto for toStringCache clearing
+    public synchronized StringBuffer append(CharSequence s) {
+        toStringCache = null;
         super.append(s);
         return this;
     }
