@@ -1818,7 +1818,7 @@ public class ZipFileSystem extends FileSystem {
 
         Entry(byte[] name) {
             name(name);
-            this.mtime  = System.currentTimeMillis();
+            this.mtime  = this.ctime = this.atime = System.currentTimeMillis();
             this.crc    = 0;
             this.size   = 0;
             this.csize  = 0;
@@ -1912,17 +1912,18 @@ public class ZipFileSystem extends FileSystem {
         {
             int written  = CENHDR;
             int version0 = version();
-
             long csize0  = csize;
             long size0   = size;
             long locoff0 = locoff;
             int elen64   = 0;                // extra for ZIP64
             int elenNTFS = 0;                // extra for NTFS (a/c/mtime)
             int elenEXTT = 0;                // extra for Extended Timestamp
+            boolean foundExtraTime = false;  // if time stamp NTFS, EXTT present
 
             // confirm size/length
             int nlen = (name != null) ? name.length : 0;
             int elen = (extra != null) ? extra.length : 0;
+            int eoff = 0;
             int clen = (comment != null) ? comment.length : 0;
             if (csize >= ZIP64_MINVAL) {
                 csize0 = ZIP64_MINVAL;
@@ -1936,14 +1937,24 @@ public class ZipFileSystem extends FileSystem {
                 locoff0 = ZIP64_MINVAL;
                 elen64 += 8;                 // offset(8)
             }
-            if (elen64 != 0)
+            if (elen64 != 0) {
                 elen64 += 4;                 // header and data sz 4 bytes
+            }
 
-            if (atime != -1) {
-                if (isWindows)               // use NTFS
+            while (eoff + 4 < elen) {
+                int tag = SH(extra, eoff);
+                int sz = SH(extra, eoff + 2);
+                if (tag == EXTID_EXTT || tag == EXTID_NTFS) {
+                    foundExtraTime = true;
+                }
+                eoff += (4 + sz);
+            }
+            if (!foundExtraTime) {
+                if (isWindows) {             // use NTFS
                     elenNTFS = 36;           // total 36 bytes
-                else                         // Extended Timestamp otherwise
+                } else {                     // Extended Timestamp otherwise
                     elenEXTT = 9;            // only mtime in cen
+                }
             }
             writeInt(os, CENSIG);            // CEN header signature
             if (elen64 != 0) {
@@ -2092,11 +2103,13 @@ public class ZipFileSystem extends FileSystem {
         {
             writeInt(os, LOCSIG);               // LOC header signature
             int version = version();
-
             int nlen = (name != null) ? name.length : 0;
             int elen = (extra != null) ? extra.length : 0;
+            boolean foundExtraTime = false;     // if extra timestamp present
+            int eoff = 0;
             int elen64 = 0;
             int elenEXTT = 0;
+            int elenNTFS = 0;
             if ((flag & FLAG_DATADESCR) != 0) {
                 writeShort(os, version());      // version needed to extract
                 writeShort(os, flag);           // general purpose bit flag
@@ -2128,14 +2141,27 @@ public class ZipFileSystem extends FileSystem {
                     writeInt(os, size);         // uncompressed size
                 }
             }
-            if (atime != -1 && !isWindows) {    // on unix use "ext time"
-                if (ctime == -1)
-                    elenEXTT = 13;
-                else
-                    elenEXTT = 17;
+            while (eoff + 4 < elen) {
+                int tag = SH(extra, eoff);
+                int sz = SH(extra, eoff + 2);
+                if (tag == EXTID_EXTT || tag == EXTID_NTFS) {
+                    foundExtraTime = true;
+                }
+                eoff += (4 + sz);
+            }
+            if (!foundExtraTime) {
+                if (isWindows) {
+                    elenNTFS = 36;              // NTFS, total 36 bytes
+                } else {                        // on unix use "ext time"
+                    elenEXTT = 9;
+                    if (atime != -1)
+                        elenEXTT += 4;
+                    if (ctime != -1)
+                        elenEXTT += 4;
+                }
             }
             writeShort(os, name.length);
-            writeShort(os, elen + elen64 + elenEXTT);
+            writeShort(os, elen + elen64 + elenNTFS + elenEXTT);
             writeBytes(os, name);
             if (elen64 != 0) {
                 writeShort(os, EXTID_ZIP64);
@@ -2143,15 +2169,28 @@ public class ZipFileSystem extends FileSystem {
                 writeLong(os, size);
                 writeLong(os, csize);
             }
+            if (elenNTFS != 0) {
+                writeShort(os, EXTID_NTFS);
+                writeShort(os, elenNTFS - 4);
+                writeInt(os, 0);            // reserved
+                writeShort(os, 0x0001);     // NTFS attr tag
+                writeShort(os, 24);
+                writeLong(os, javaToWinTime(mtime));
+                writeLong(os, javaToWinTime(atime));
+                writeLong(os, javaToWinTime(ctime));
+            }
             if (elenEXTT != 0) {
                 writeShort(os, EXTID_EXTT);
                 writeShort(os, elenEXTT - 4);// size for the folowing data block
-                if (ctime == -1)
-                    os.write(0x3);           // mtime and atime
-                else
-                    os.write(0x7);           // mtime, atime and ctime
+                int fbyte = 0x1;
+                if (atime != -1)           // mtime and atime
+                    fbyte |= 0x2;
+                if (ctime != -1)           // mtime, atime and ctime
+                    fbyte |= 0x4;
+                os.write(fbyte);           // flags byte
                 writeInt(os, javaToUnixTime(mtime));
-                writeInt(os, javaToUnixTime(atime));
+                if (atime != -1)
+                    writeInt(os, javaToUnixTime(atime));
                 if (ctime != -1)
                     writeInt(os, javaToUnixTime(ctime));
             }

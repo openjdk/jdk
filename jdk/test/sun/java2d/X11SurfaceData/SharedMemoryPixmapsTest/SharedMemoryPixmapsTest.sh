@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,7 +22,6 @@
 # questions.
 #
 
-#!/bin/sh
 # @test
 # @bug 6363434 6588884
 # @summary Verify that shared memory pixmaps are not broken

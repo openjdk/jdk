@@ -603,7 +603,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
     /**
      * Returns an {@link OptionalDouble} describing the first element of this
      * stream (in the encounter order), or an empty {@code OptionalDouble} if
-     * the stream is empty.  If the stream has no encounter order, than any
+     * the stream is empty.  If the stream has no encounter order, then any
      * element may be returned.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
