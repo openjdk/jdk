@@ -22,15 +22,33 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
-#define SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
 
-class KlassInfoEntry;
+#include "precompiled.hpp"
+#include "gc_implementation/shared/objectCountEventSender.hpp"
+#include "memory/heapInspection.hpp"
+#include "trace/tracing.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class KlassInfoClosure : public StackObj {
- public:
-  // Called for each KlassInfoEntry.
-  virtual void do_cinfo(KlassInfoEntry* cie) = 0;
-};
+#if INCLUDE_SERVICES
 
-#endif // SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
+void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id) {
+  assert(Tracing::is_event_enabled(EventObjectCountAfterGC::eventId),
+         "Only call this method if the event is enabled");
+
+  EventObjectCountAfterGC event;
+  event.set_gcId(gc_id);
+  event.set_class(entry->klass());
+  event.set_count(entry->count());
+  event.set_totalSize(entry->words() * BytesPerWord);
+  event.commit();
+}
+
+bool ObjectCountEventSender::should_send_event() {
+#if INCLUDE_TRACE
+  return Tracing::is_event_enabled(EventObjectCountAfterGC::eventId);
+#else
+  return false;
+#endif // INCLUDE_TRACE
+}
+
+#endif // INCLUDE_SERVICES
