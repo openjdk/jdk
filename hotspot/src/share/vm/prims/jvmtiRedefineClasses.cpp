@@ -1349,12 +1349,11 @@ bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
         CHECK_0);
     }
 
-    finalize_operands_merge(*merge_cp_p, THREAD);
-
     RC_TRACE_WITH_THREAD(0x00020000, THREAD,
       ("after pass 1b: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
       *merge_cp_length_p, scratch_i, _index_map_count));
   }
+  finalize_operands_merge(*merge_cp_p, THREAD);
 
   return true;
 } // end merge_constant_pools()
