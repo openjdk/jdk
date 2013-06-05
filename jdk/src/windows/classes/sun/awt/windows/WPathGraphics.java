@@ -549,6 +549,8 @@ class WPathGraphics extends PathGraphics {
                 userx += xAdvance;
                 userpos.x += xAdvance;
                 deviceTransform.transform(userpos, devpos);
+                devx = devpos.x;
+                devy = devpos.y;
             }
         } else {
             super.drawString(str, x, y, font, frc, targetW);
