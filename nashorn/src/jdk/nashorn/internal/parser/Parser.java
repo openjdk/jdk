@@ -59,7 +59,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -2028,7 +2027,7 @@ loop:
             }
         }
 
-        return new ObjectNode(objectToken, finish, new ArrayList<Node>(map.values()));
+        return new ObjectNode(objectToken, finish, new ArrayList<>(map.values()));
     }
 
     /**
