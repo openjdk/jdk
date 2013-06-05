@@ -26,7 +26,6 @@
 #define SHARE_VM_MEMORY_HEAPINSPECTION_HPP
 
 #include "memory/allocation.inline.hpp"
-#include "memory/klassInfoClosure.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
@@ -202,6 +201,12 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   int compare(KlassInfoEntry* e1, KlassInfoEntry* e2);
   void print_on(outputStream* st) const;
   const char* name() const;
+};
+
+class KlassInfoClosure : public StackObj {
+ public:
+  // Called for each KlassInfoEntry.
+  virtual void do_cinfo(KlassInfoEntry* cie) = 0;
 };
 
 class KlassInfoBucket: public CHeapObj<mtInternal> {

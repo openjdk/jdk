@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
-#include "gc_implementation/shared/copyFailedInfo.hpp"
+#include "gc_implementation/shared/objectCountEventSender.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/referenceProcessorStats.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -91,26 +92,36 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 }
 
 #if INCLUDE_SERVICES
-void ObjectCountEventSenderClosure::do_cinfo(KlassInfoEntry* entry) {
-  if (should_send_event(entry)) {
-    send_event(entry);
+class ObjectCountEventSenderClosure : public KlassInfoClosure {
+  const GCId _gc_id;
+  const double _size_threshold_percentage;
+  const size_t _total_size_in_words;
+
+ public:
+  ObjectCountEventSenderClosure(GCId gc_id, size_t total_size_in_words) :
+    _gc_id(gc_id),
+    _size_threshold_percentage(ObjectCountCutOffPercent / 100),
+    _total_size_in_words(total_size_in_words)
+  {}
+
+  virtual void do_cinfo(KlassInfoEntry* entry) {
+    if (should_send_event(entry)) {
+      ObjectCountEventSender::send(entry, _gc_id);
+    }
   }
-}
 
-void ObjectCountEventSenderClosure::send_event(KlassInfoEntry* entry) {
-  _gc_tracer->send_object_count_after_gc_event(entry->klass(), entry->count(),
-                                               entry->words() * BytesPerWord);
-}
-
-bool ObjectCountEventSenderClosure::should_send_event(KlassInfoEntry* entry) const {
-  double percentage_of_heap = ((double) entry->words()) / _total_size_in_words;
-  return percentage_of_heap > _size_threshold_percentage;
-}
+ private:
+  bool should_send_event(const KlassInfoEntry* entry) const {
+    double percentage_of_heap = ((double) entry->words()) / _total_size_in_words;
+    return percentage_of_heap >= _size_threshold_percentage;
+  }
+};
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
   assert_set_gc_id();
+  assert(is_alive_cl != NULL, "Must supply function to check liveness");
 
-  if (should_send_object_count_after_gc_event()) {
+  if (ObjectCountEventSender::should_send_event()) {
     ResourceMark rm;
 
     KlassInfoTable cit(false);
@@ -118,12 +129,12 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
       HeapInspection hi(false, false, false, NULL);
       hi.populate_table(&cit, is_alive_cl);
 
-      ObjectCountEventSenderClosure event_sender(this, cit.size_of_instances_in_words());
+      ObjectCountEventSenderClosure event_sender(_shared_gc_info.id(), cit.size_of_instances_in_words());
       cit.iterate(&event_sender);
     }
   }
 }
-#endif
+#endif // INCLUDE_SERVICES
 
 void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary, const MetaspaceSummary& meta_space_summary) const {
   assert_set_gc_id();
