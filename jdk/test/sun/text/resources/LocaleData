@@ -7663,3 +7663,7 @@ CurrencyNames//ZMW=ZMW
 
 # bug 7114053
 LocaleNames/sq/sq=shqip
+
+# bug 7074882
+FormatData/mt/MonthNames/7=Awwissu
+FormatData/mt/MonthAbbreviations/7=Aww

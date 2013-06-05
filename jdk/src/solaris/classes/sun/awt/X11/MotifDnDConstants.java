@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ class MotifDnDConstants {
                 try {
                     Native.putLong(data, motifWindow);
 
-                    XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+                    XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                     XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                                 defaultRootWindow,
                                                 XA_MOTIF_DRAG_WINDOW.getAtom(),
@@ -198,10 +198,10 @@ class MotifDnDConstants {
                                                 XConstants.PropModeReplace,
                                                 data, 1);
 
-                    XToolkit.RESTORE_XERROR_HANDLER();
+                    XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                    if (XToolkit.saved_error != null &&
-                        XToolkit.saved_error.get_error_code() != XConstants.Success) {
+                    if ((XErrorHandlerUtil.saved_error != null) &&
+                        (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                         throw new XException("Cannot write motif drag window handle.");
                     }
 
@@ -394,7 +394,7 @@ class MotifDnDConstants {
                 }
             }
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                         motifWindow,
                                         XA_MOTIF_DRAG_TARGETS.getAtom(),
@@ -402,15 +402,15 @@ class MotifDnDConstants {
                                         XConstants.PropModeReplace,
                                         data, tableSize);
 
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
 
                 // Create a new motif window and retry.
                 motifWindow = createMotifWindow();
 
-                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+                XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                 XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                             motifWindow,
                                             XA_MOTIF_DRAG_TARGETS.getAtom(),
@@ -418,10 +418,10 @@ class MotifDnDConstants {
                                             XConstants.PropModeReplace,
                                             data, tableSize);
 
-                XToolkit.RESTORE_XERROR_HANDLER();
+                XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-                if (XToolkit.saved_error != null &&
-                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
+                if ((XErrorHandlerUtil.saved_error != null) &&
+                    (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                     throw new XException("Cannot write motif drag targets property.");
                 }
             }
@@ -534,16 +534,16 @@ class MotifDnDConstants {
             // CARD32 icc_handle
             unsafe.putInt(structData + 4, (int)XA_MOTIF_ATOM_0.getAtom());
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
                                         XA_MOTIF_ATOM_0.getAtom(),
                                         XA_MOTIF_DRAG_INITIATOR_INFO.getAtom(),
                                         8, XConstants.PropModeReplace,
                                         structData, MOTIF_INITIATOR_INFO_SIZE);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("Cannot write drag initiator info");
             }
         } finally {
@@ -567,16 +567,16 @@ class MotifDnDConstants {
             unsafe.putShort(data + 10, (short)0); /* pad */
             unsafe.putInt(data + 12, dataSize);
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
                                         XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         8, XConstants.PropModeReplace,
                                         data, dataSize);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("Cannot write Motif receiver info property");
             }
         } finally {

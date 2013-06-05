@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,14 +96,14 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                 action_count++;
             }
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndActionList.setAtomData(window,
                                                         XAtom.XA_ATOM,
                                                         data, action_count);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error) != null &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                 cleanup();
                 throw new XException("Cannot write XdndActionList property");
             }
@@ -117,14 +117,14 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         try {
             Native.put(data, formats);
 
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndTypeList.setAtomData(window,
                                                       XAtom.XA_ATOM,
                                                       data, formats.length);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XConstants.Success) {
+            if ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
                 cleanup();
                 throw new XException("Cannot write XdndActionList property");
             }

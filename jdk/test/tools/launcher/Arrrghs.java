@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053 7151434 7146424
+ *      6894719 6968053 7151434 7146424 8007333
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java
  * @run main/othervm Arrrghs
@@ -310,6 +310,20 @@ public class Arrrghs extends TestHelper {
         checkArgumentParsing("..\\..\\", "..\\..\\");
         checkArgumentParsing("../../", "../../");
         checkArgumentParsing("a b\\ c", "a", "b\\", "c");
+        // 2 back-slashes
+        checkArgumentParsing("\\\\?", "\\\\?");
+        // 3 back-slashes
+        checkArgumentParsing("\\\\\\?", "\\\\\\?");
+        // 4 back-slashes
+        checkArgumentParsing("\\\\\\\\?", "\\\\\\\\?");
+        // 5 back-slashes
+        checkArgumentParsing("\\\\\\\\\\?", "\\\\\\\\\\?");
+        // 6 back-slashes
+        checkArgumentParsing("\\\\\\\\\\\\?", "\\\\\\\\\\\\?");
+
+        // more treatment of  mixed slashes
+        checkArgumentParsing("f1/ f3\\ f4/", "f1/", "f3\\", "f4/");
+        checkArgumentParsing("f1/ f2\' ' f3/ f4/", "f1/", "f2\'", "'", "f3/", "f4/");
     }
 
     private void initEmptyDir(File emptyDir) throws IOException {

@@ -1085,13 +1085,13 @@ public class ZipFileSystem extends FileSystem {
     }
 
     // Creates a new empty temporary file in the same directory as the
-    // specified file.  A variant of File.createTempFile.
+    // specified file.  A variant of Files.createTempFile.
     private Path createTempFileInSameDirectoryAs(Path path)
         throws IOException
     {
         Path parent = path.toAbsolutePath().getParent();
-        String dir = (parent == null)? "." : parent.toString();
-        Path tmpPath = File.createTempFile("zipfstmp", null, new File(dir)).toPath();
+        Path dir = (parent == null) ? path.getFileSystem().getPath(".") : parent;
+        Path tmpPath = Files.createTempFile(dir, "zipfstmp", null);
         tmppaths.add(tmpPath);
         return tmpPath;
     }
