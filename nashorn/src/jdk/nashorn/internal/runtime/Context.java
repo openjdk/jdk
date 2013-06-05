@@ -501,7 +501,7 @@ public final class Context {
      *
      * @throws IOException if source cannot be found or loaded
      */
-    public Object loadWithNewGlobal(final Object from) throws IOException, RuntimeException {
+    public Object loadWithNewGlobal(final Object from) throws IOException {
         final ScriptObject oldGlobal = getGlobalTrusted();
         final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
            @Override
