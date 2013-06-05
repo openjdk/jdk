@@ -41,10 +41,10 @@ import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * Optimistic call site that assumes its Object arguments to be of a boxed type.
@@ -333,6 +333,7 @@ public final class RuntimeCallSite extends MutableCallSite {
      *
      * Do not call directly
      *
+     * @param name current name (with type) of runtime call at the call site
      * @return next wider specialization method for this RuntimeCallSite
      */
    public MethodHandle next(final String name) {

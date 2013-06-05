@@ -1326,8 +1326,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterObjectNode(final ObjectNode objectNode) {
-        final List<Node> elements = objectNode.getElements();
-        final int        size     = elements.size();
+        final List<PropertyNode> elements = objectNode.getElements();
 
         final List<String> keys    = new ArrayList<>();
         final List<Symbol> symbols = new ArrayList<>();
@@ -1335,8 +1334,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         boolean hasGettersSetters = false;
 
-        for (int i = 0; i < size; i++) {
-            final PropertyNode propertyNode = (PropertyNode)elements.get(i);
+        for (PropertyNode propertyNode: elements) {
             final Node         value        = propertyNode.getValue();
             final String       key          = propertyNode.getKeyName();
             final Symbol       symbol       = value == null ? null : propertyNode.getSymbol();
