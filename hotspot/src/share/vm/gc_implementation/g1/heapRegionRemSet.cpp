@@ -242,11 +242,13 @@ public:
     PerRegionTable* cur = _free_list;
     size_t res = 0;
     while (cur != NULL) {
-      res += sizeof(PerRegionTable);
+      res += cur->mem_size();
       cur = cur->next();
     }
     return res;
   }
+
+  static void test_fl_mem_size();
 };
 
 PerRegionTable* PerRegionTable::_free_list = NULL;
@@ -1149,6 +1151,19 @@ HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
 }
 
 #ifndef PRODUCT
+void PerRegionTable::test_fl_mem_size() {
+  PerRegionTable* dummy = alloc(NULL);
+  free(dummy);
+  guarantee(dummy->mem_size() == fl_mem_size(), "fl_mem_size() does not return the correct element size");
+  // try to reset the state
+  _free_list = NULL;
+  delete dummy;
+}
+
+void HeapRegionRemSet::test_prt() {
+  PerRegionTable::test_fl_mem_size();
+}
+
 void HeapRegionRemSet::test() {
   os::sleep(Thread::current(), (jlong)5000, false);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();

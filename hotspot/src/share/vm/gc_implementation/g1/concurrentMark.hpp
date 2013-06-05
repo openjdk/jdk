@@ -44,9 +44,6 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
  public:
   G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
 
-  void do_object(oop obj) {
-    ShouldNotCallThis();
-  }
   bool do_object_b(oop obj);
 };
 

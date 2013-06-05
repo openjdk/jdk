@@ -42,5 +42,5 @@ public interface ToLongFunction<T> {
      * @param t the input object
      * @return the function result value
      */
-    public long applyAsLong(T t);
+    long applyAsLong(T t);
 }

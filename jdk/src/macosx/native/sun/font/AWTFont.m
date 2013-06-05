@@ -395,6 +395,7 @@ JNF_COCOA_EXIT(env);
 
 #pragma mark --- Miscellaneous JNI ---
 
+#ifndef HEADLESS
 /*
  * Class:     sun_awt_PlatformFont
  * Method:    initIDs
@@ -416,3 +417,4 @@ Java_sun_awt_FontDescriptor_initIDs
     (JNIEnv *env, jclass cls)
 {
 }
+#endif
