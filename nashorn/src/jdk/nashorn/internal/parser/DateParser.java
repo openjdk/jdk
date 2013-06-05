@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.nashorn.internal.objects;
+package jdk.nashorn.internal.parser;
 
 import static java.lang.Character.DECIMAL_DIGIT_NUMBER;
 import static java.lang.Character.LOWERCASE_LETTER;
@@ -196,6 +196,11 @@ public class DateParser {
                     break;
 
                 case SIGN:
+                    if (peek() == -1) {
+                        // END after sign - wrong!
+                        return false;
+                    }
+
                     if (currentField == YEAR) {
                         yearSign = numValue;
                     } else if (currentField < SECOND || !setTimezone(readTimeZoneOffset(), true)) {
@@ -297,6 +302,11 @@ public class DateParser {
                     break;
 
                 case SIGN:
+                    if (peek() == -1) {
+                        // END after sign - wrong!
+                        return false;
+                    }
+
                     if (!setTimezone(readTimeZoneOffset(), true)) {
                         return false;
                     }

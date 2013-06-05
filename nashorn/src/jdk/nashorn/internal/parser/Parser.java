@@ -192,36 +192,110 @@ public class Parser extends AbstractParser {
             // Begin parse.
             return program(scriptName);
         } catch (final Exception e) {
-            // Extract message from exception.  The message will be in error
-            // message format.
-            String message = e.getMessage();
-
-            // If empty message.
-            if (message == null) {
-                message = e.toString();
-            }
-
-            // Issue message.
-            if (e instanceof ParserException) {
-                errors.error((ParserException)e);
-            } else {
-                errors.error(message);
-            }
-
-            if (env._dump_on_error) {
-                e.printStackTrace(env.getErr());
-            }
+            handleParseException(e);
 
             return null;
-         } finally {
-             final String end = this + " end '" + scriptName + "'";
-             if (Timing.isEnabled()) {
-                 Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                 LOG.info(end, "' in ", (System.currentTimeMillis() - t0), " ms");
-             } else {
-                 LOG.info(end);
-             }
-         }
+        } finally {
+            final String end = this + " end '" + scriptName + "'";
+            if (Timing.isEnabled()) {
+                Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
+                LOG.info(end, "' in ", (System.currentTimeMillis() - t0), " ms");
+            } else {
+                LOG.info(end);
+            }
+        }
+    }
+
+    /**
+     * Parse and return the list of function parameter list. A comma
+     * separated list of function parameter identifiers is expected to be parsed.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail. This method is used to check if parameter Strings
+     * passed to "Function" constructor is a valid or not.
+     *
+     * @return the list of IdentNodes representing the formal parameter list
+     */
+    public List<IdentNode> parseFormalParameterList() {
+        try {
+            stream = new TokenStream();
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+
+            // Set up first token (skips opening EOL.)
+            k = -1;
+            next();
+
+            return formalParameterList(TokenType.EOF);
+        } catch (final Exception e) {
+            handleParseException(e);
+            return null;
+        }
+    }
+
+    /**
+     * Execute parse and return the resulting function node.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail. This method is used to check if code String
+     * passed to "Function" constructor is a valid function body or not.
+     *
+     * @return function node resulting from successful parse
+     */
+    public FunctionNode parseFunctionBody() {
+        try {
+            stream = new TokenStream();
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+
+            // Set up first token (skips opening EOL.)
+            k = -1;
+            next();
+
+            // Make a fake token for the function.
+            final long functionToken = Token.toDesc(FUNCTION, 0, source.getLength());
+            // Set up the function to append elements.
+
+            FunctionNode function = newFunctionNode(
+                functionToken,
+                new IdentNode(functionToken, Token.descPosition(functionToken), RUN_SCRIPT.symbolName()),
+                new ArrayList<IdentNode>(),
+                FunctionNode.Kind.NORMAL);
+
+            functionDeclarations = new ArrayList<>();
+            sourceElements();
+            addFunctionDeclarations(function);
+            functionDeclarations = null;
+
+            expect(EOF);
+
+            function.setFinish(source.getLength() - 1);
+
+            function = restoreFunctionNode(function, token); //commit code
+            function = function.setBody(lc, function.getBody().setNeedsScope(lc));
+            return function;
+        } catch (final Exception e) {
+            handleParseException(e);
+            return null;
+        }
+    }
+
+    private void handleParseException(final Exception e) {
+        // Extract message from exception.  The message will be in error
+        // message format.
+        String message = e.getMessage();
+
+        // If empty message.
+        if (message == null) {
+            message = e.toString();
+        }
+
+        // Issue message.
+        if (e instanceof ParserException) {
+            errors.error((ParserException)e);
+        } else {
+            errors.error(message);
+        }
+
+        if (env._dump_on_error) {
+            e.printStackTrace(env.getErr());
+        }
     }
 
     /**
@@ -2424,12 +2498,29 @@ loop:
      * @return List of parameter nodes.
      */
     private List<IdentNode> formalParameterList() {
+        return formalParameterList(RPAREN);
+    }
+
+    /**
+     * Same as the other method of the same name - except that the end
+     * token type expected is passed as argument to this method.
+     *
+     * FormalParameterList :
+     *      Identifier
+     *      FormalParameterList , Identifier
+     *
+     * See 13
+     *
+     * Parse function parameter list.
+     * @return List of parameter nodes.
+     */
+    private List<IdentNode> formalParameterList(final TokenType endType) {
         // Prepare to gather parameters.
         final List<IdentNode> parameters = new ArrayList<>();
         // Track commas.
         boolean first = true;
 
-        while (type != RPAREN) {
+        while (type != endType) {
             // Comma prior to every argument except the first.
             if (!first) {
                 expect(COMMARIGHT);

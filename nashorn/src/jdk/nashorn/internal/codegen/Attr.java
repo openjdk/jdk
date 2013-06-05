@@ -84,13 +84,12 @@ import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.DebugLogger;
-import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -1323,7 +1322,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     @Override
     public Node leaveForNode(final ForNode forNode) {
         if (forNode.isForIn()) {
-            forNode.setIterator(newInternal(lc.getCurrentFunction().uniqueName(ITERATOR_PREFIX.symbolName()), Type.OBJECT)); //NASHORN-73
+            forNode.setIterator(newInternal(lc.getCurrentFunction().uniqueName(ITERATOR_PREFIX.symbolName()), Type.typeFor(ITERATOR_PREFIX.type()))); //NASHORN-73
             /*
              * Iterators return objects, so we need to widen the scope of the
              * init variable if it, for example, has been assigned double type
@@ -1500,7 +1499,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private Symbol exceptionSymbol() {
-        return newInternal(lc.getCurrentFunction().uniqueName(EXCEPTION_PREFIX.symbolName()), Type.typeFor(ECMAException.class));
+        return newInternal(lc.getCurrentFunction().uniqueName(EXCEPTION_PREFIX.symbolName()), Type.typeFor(EXCEPTION_PREFIX.type()));
     }
 
     /**
