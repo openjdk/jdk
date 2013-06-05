@@ -241,7 +241,7 @@ acb_CopyLeft:
         jbe      2f                   # <= 32 dwords
         rep;     smovl
         jmp      4f
-	.=.+8
+	.space 8
 2:      subl     %esi,%edi
         .p2align 4,,15
 3:      movl     (%esi),%edx
@@ -378,7 +378,7 @@ acs_CopyRight:
         rep;     smovl
         jmp      4f 
         # copy aligned dwords
-        .=.+5
+        .space 5
 2:      subl     %esi,%edi 
         .p2align 4,,15
 3:      movl     (%esi),%edx
@@ -454,7 +454,7 @@ ci_CopyRight:
         popl     %edi
         popl     %esi
         ret
-        .=.+10
+        .space 10
 2:      subl     %esi,%edi
         jmp      4f
         .p2align 4,,15
