@@ -77,7 +77,7 @@ public class Agent {
     private static final String SNMP_ADAPTOR_BOOTSTRAP_CLASS_NAME =
             "sun.management.snmp.AdaptorBootstrap";
 
-    private static final String JDP_DEFAULT_ADDRESS = "239.255.255.225";
+    private static final String JDP_DEFAULT_ADDRESS = "224.0.23.178";
     private static final int JDP_DEFAULT_PORT = 7095;
 
     // The only active agent allowed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class XQueryTree {
                         }
                         __executed = true;
                         if (errorHandler != null) {
-                            XToolkit.WITH_XERROR_HANDLER(errorHandler);
+                            XErrorHandlerUtil.WITH_XERROR_HANDLER(errorHandler);
                         }
                         Native.putLong(children_ptr, 0);
                         int status =
@@ -72,7 +72,7 @@ public class XQueryTree {
                                 children_ptr,
                                 nchildren_ptr                   );
                         if (errorHandler != null) {
-                            XToolkit.RESTORE_XERROR_HANDLER();
+                            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
                         }
                         return status;
                 } finally {
