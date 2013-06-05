@@ -25,9 +25,11 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
+
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
-import java.util.List;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -36,8 +38,6 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.parser.JSONParser;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
-import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 
 /**
  * Utilities used by "JSON" object implementation.
@@ -171,10 +171,8 @@ public final class JSONFunctions {
             final ObjectNode   objNode  = (ObjectNode) node;
             final ScriptObject object   = ((GlobalObject)global).newObject();
             final boolean      strict   = global.isStrictContext();
-            final List<Node>   elements = objNode.getElements();
 
-            for (final Node elem : elements) {
-                final PropertyNode pNode     = (PropertyNode) elem;
+            for (final PropertyNode pNode: objNode.getElements()) {
                 final Node         valueNode = pNode.getValue();
 
                 final String name = pNode.getKeyName();
