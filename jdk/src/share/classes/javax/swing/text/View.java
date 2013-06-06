@@ -1174,7 +1174,7 @@ public abstract class View implements SwingConstants {
         // formed by added elements (i.e. they will be updated
         // by initialization.
         index0 = Math.max(index0, 0);
-        index1 = getViewIndex(elem.getDocument().getLength(), Position.Bias.Forward);
+        index1 = Math.max((getViewCount() - 1), 0);
         for (int i = index0; i <= index1; i++) {
             if (! ((i >= hole0) && (i <= hole1))) {
                 v = getView(i);
