@@ -2609,7 +2609,7 @@ public class Attr extends JCTree.Visitor {
                 //field initializer
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared()));
                 lambdaEnv.info.scope.owner =
-                    new MethodSymbol(0, names.empty, null,
+                    new MethodSymbol((owner.flags() & STATIC) | BLOCK, names.empty, null,
                                      env.info.scope.owner);
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
