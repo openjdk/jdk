@@ -66,13 +66,9 @@ public final class JSONFunctions {
      */
     public static Object parse(final Object text, final Object reviver) {
         final String     str     = JSType.toString(text);
-        final Context    context = Context.getContextTrusted();
         final JSONParser parser  = new JSONParser(
                 new Source("<json>", str),
-                new Context.ThrowErrorManager(),
-                (context != null) ?
-                    context.getEnv()._strict :
-                    false);
+                new Context.ThrowErrorManager());
 
         Node node;
 
