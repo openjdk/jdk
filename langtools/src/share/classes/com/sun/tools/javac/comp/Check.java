@@ -1924,24 +1924,11 @@ public class Check {
                 Symbol s3 = e.sym;
                 if (s3 == s1 || s3 == s2 || s3.kind != MTH || (s3.flags() & (BRIDGE|SYNTHETIC)) != 0) continue;
                 Type st3 = types.memberType(site,s3);
-                if (types.overrideEquivalent(st3, st1) && types.overrideEquivalent(st3, st2)) {
-                    if (s3.owner == site.tsym) {
-                        return true;
-                    }
-                    List<Type> tvars1 = st1.getTypeArguments();
-                    List<Type> tvars2 = st2.getTypeArguments();
-                    List<Type> tvars3 = st3.getTypeArguments();
-                    Type rt1 = st1.getReturnType();
-                    Type rt2 = st2.getReturnType();
-                    Type rt13 = types.subst(st3.getReturnType(), tvars3, tvars1);
-                    Type rt23 = types.subst(st3.getReturnType(), tvars3, tvars2);
-                    boolean compat =
-                        !rt13.isPrimitiveOrVoid() &&
-                        !rt23.isPrimitiveOrVoid() &&
-                        (types.covariantReturnType(rt13, rt1, types.noWarnings) &&
-                         types.covariantReturnType(rt23, rt2, types.noWarnings));
-                    if (compat)
-                        return true;
+                if (types.overrideEquivalent(st3, st1) &&
+                        types.overrideEquivalent(st3, st2) &&
+                        types.returnTypeSubstitutable(st3, st1) &&
+                        types.returnTypeSubstitutable(st3, st2)) {
+                    return true;
                 }
             }
         }
