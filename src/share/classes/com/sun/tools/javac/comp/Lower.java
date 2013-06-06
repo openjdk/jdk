@@ -2711,9 +2711,14 @@ public class Lower extends TreeTranslator {
             if (fvs.nonEmpty()) {
                 List<Type> addedargtypes = List.nil();
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    if (TreeInfo.isInitialConstructor(tree))
+                    if (TreeInfo.isInitialConstructor(tree)) {
+                        final Name pName = proxyName(l.head.name);
+                        m.extraParams =
+                            m.extraParams.append((VarSymbol)
+                                                 (proxies.lookup(pName).sym));
                         added = added.prepend(
-                            initField(tree.body.pos, proxyName(l.head.name)));
+                          initField(tree.body.pos, pName));
+                    }
                     addedargtypes = addedargtypes.prepend(l.head.erasure(types));
                 }
                 Type olderasure = m.erasure(types);
