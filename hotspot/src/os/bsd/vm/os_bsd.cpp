@@ -626,8 +626,6 @@ void os::Bsd::hotspot_sigmask(Thread* thread) {
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
 
-static address highest_vm_reserved_address();
-
 // check if it's safe to start a new thread
 static bool _thread_safety_check(Thread* thread) {
   return true;
@@ -2112,10 +2110,6 @@ bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
-static address highest_vm_reserved_address() {
-  return _highest_vm_reserved_address;
-}
-
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
   char* bottom = (char*)align_size_down((intptr_t)addr, os::Bsd::page_size());
@@ -2157,43 +2151,6 @@ bool os::unguard_memory(char* addr, size_t size) {
 
 bool os::Bsd::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return false;
-}
-
-/*
-* Set the coredump_filter bits to include largepages in core dump (bit 6)
-*
-* From the coredump_filter documentation:
-*
-* - (bit 0) anonymous private memory
-* - (bit 1) anonymous shared memory
-* - (bit 2) file-backed private memory
-* - (bit 3) file-backed shared memory
-* - (bit 4) ELF header pages in file-backed private memory areas (it is
-*           effective only if the bit 2 is cleared)
-* - (bit 5) hugetlb private memory
-* - (bit 6) hugetlb shared memory
-*/
-static void set_coredump_filter(void) {
-  FILE *f;
-  long cdm;
-
-  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
-    return;
-  }
-
-  if (fscanf(f, "%lx", &cdm) != 1) {
-    fclose(f);
-    return;
-  }
-
-  rewind(f);
-
-  if ((cdm & LARGEPAGES_BIT) == 0) {
-    cdm |= LARGEPAGES_BIT;
-    fprintf(f, "%#lx", cdm);
-  }
-
-  fclose(f);
 }
 
 // Large page support

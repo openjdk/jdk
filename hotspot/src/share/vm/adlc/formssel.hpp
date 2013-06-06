@@ -106,7 +106,7 @@ public:
   const char    *_ins_pipe;        // Instruction Scheduling description class
 
   uint          *_uniq_idx;        // Indexes of unique operands
-  int            _uniq_idx_length; // Length of _uniq_idx array
+  uint           _uniq_idx_length; // Length of _uniq_idx array
   uint           _num_uniq;        // Number  of unique operands
   ComponentList  _components;      // List of Components matches MachNode's
                                    // operand structure
@@ -272,14 +272,14 @@ public:
   void                set_unique_opnds();
   uint                num_unique_opnds() { return _num_uniq; }
   uint                unique_opnds_idx(int idx) {
-                        if( _uniq_idx != NULL && idx > 0 ) {
-                          assert(idx < _uniq_idx_length, "out of bounds");
-                          return _uniq_idx[idx];
-                        } else {
-                          return idx;
-                        }
+    if (_uniq_idx != NULL && idx > 0) {
+      assert((uint)idx < _uniq_idx_length, "out of bounds");
+      return _uniq_idx[idx];
+    } else {
+      return idx;
+    }
   }
-  const char         *unique_opnd_ident(int idx);  // Name of operand at unique idx.
+  const char         *unique_opnd_ident(uint idx);  // Name of operand at unique idx.
 
   // Operands which are only KILLs aren't part of the input array and
   // require special handling in some cases.  Their position in this
