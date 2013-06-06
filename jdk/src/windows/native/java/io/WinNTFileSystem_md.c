@@ -230,7 +230,7 @@ DWORD getFinalAttributes(WCHAR *path)
     } else if (GetLastError() == ERROR_SHARING_VIOLATION &&
                (h = FindFirstFileW(path, &wfd)) != INVALID_HANDLE_VALUE) {
         attr = getFinalAttributesIfReparsePoint(path, wfd.dwFileAttributes);
-        CloseHandle(h);
+        FindClose(h);
     }
     return attr;
 }
