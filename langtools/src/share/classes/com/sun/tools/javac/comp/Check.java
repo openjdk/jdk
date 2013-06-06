@@ -847,25 +847,31 @@ public class Check {
                     (s.flags() & (STATIC | FINAL)) != 0);
         }
 
-    Type checkMethod(Type owntype,
-                            Symbol sym,
-                            Env<AttrContext> env,
-                            final List<JCExpression> argtrees,
-                            List<Type> argtypes,
-                            boolean useVarargs,
-                            boolean unchecked,
-                            InferenceContext inferenceContext) {
+    Type checkMethod(final Type mtype,
+            final Symbol sym,
+            final Env<AttrContext> env,
+            final List<JCExpression> argtrees,
+            final List<Type> argtypes,
+            final boolean useVarargs,
+            InferenceContext inferenceContext) {
         // System.out.println("call   : " + env.tree);
         // System.out.println("method : " + owntype);
         // System.out.println("actuals: " + argtypes);
+        if (inferenceContext.free(mtype)) {
+            inferenceContext.addFreeTypeListener(List.of(mtype), new FreeTypeListener() {
+                public void typesInferred(InferenceContext inferenceContext) {
+                    checkMethod(inferenceContext.asInstType(mtype), sym, env, argtrees, argtypes, useVarargs, inferenceContext);
+                }
+            });
+            return mtype;
+        }
+        Type owntype = mtype;
         List<Type> formals = owntype.getParameterTypes();
         Type last = useVarargs ? formals.last() : null;
         if (sym.name == names.init &&
                 sym.owner == syms.enumSym)
                 formals = formals.tail.tail;
         List<JCExpression> args = argtrees;
-        DeferredAttr.DeferredTypeMap checkDeferredMap =
-                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
         if (args != null) {
             //this is null when type-checking a method reference
             while (formals.head != last) {
@@ -886,26 +892,12 @@ public class Check {
             } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
                 // non-varargs call to varargs method
                 Type varParam = owntype.getParameterTypes().last();
-                Type lastArg = checkDeferredMap.apply(argtypes.last());
+                Type lastArg = argtypes.last();
                 if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
                         !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
                     log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
                             types.elemtype(varParam), varParam);
             }
-        }
-        if (unchecked) {
-            warnUnchecked(env.tree.pos(),
-                    "unchecked.meth.invocation.applied",
-                    kindName(sym),
-                    sym.name,
-                    rs.methodArguments(sym.type.getParameterTypes()),
-                    rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
-                    kindName(sym.location()),
-                    sym.location());
-           owntype = new MethodType(owntype.getParameterTypes(),
-                   types.erasure(owntype.getReturnType()),
-                   types.erasure(owntype.getThrownTypes()),
-                   syms.methodClass);
         }
         if (useVarargs) {
             Type argtype = owntype.getParameterTypes().last();
@@ -918,7 +910,7 @@ public class Check {
                                   argtype);
             }
             if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
-                setVarargsElement(env, types.elemtype(argtype), inferenceContext);
+                TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
             }
          }
          PolyKind pkind = (sym.type.hasTag(FORALL) &&
@@ -928,17 +920,6 @@ public class Check {
          return owntype;
     }
     //where
-        private void setVarargsElement(final Env<AttrContext> env, final Type elemtype, InferenceContext inferenceContext) {
-            if (inferenceContext.free(elemtype)) {
-                inferenceContext.addFreeTypeListener(List.of(elemtype), new FreeTypeListener() {
-                    public void typesInferred(InferenceContext inferenceContext) {
-                        setVarargsElement(env, inferenceContext.asInstType(elemtype), inferenceContext);
-                    }
-                });
-            }
-            TreeInfo.setVarargsElement(env.tree, elemtype);
-        }
-
         private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
             if (types.isConvertible(actual, formal, warn))
                 return;
