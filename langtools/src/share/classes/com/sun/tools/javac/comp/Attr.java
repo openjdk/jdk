@@ -1172,8 +1172,11 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
         try {
-            attribStat(tree.var, loopEnv);
+            //the Formal Parameter of a for-each loop is not in the scope when
+            //attributing the for-each expression; we mimick this by attributing
+            //the for-each expression first (against original scope).
             Type exprType = types.upperBound(attribExpr(tree.expr, loopEnv));
+            attribStat(tree.var, loopEnv);
             chk.checkNonVoid(tree.pos(), exprType);
             Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
             if (elemtype == null) {
