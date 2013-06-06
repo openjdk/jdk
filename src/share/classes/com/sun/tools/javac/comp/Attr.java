@@ -1833,9 +1833,6 @@ public class Attr extends JCTree.Visitor {
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, resultInfo);
-
-            if (localEnv.info.lastResolveVarargs())
-                Assert.check(result.isErroneous() || tree.varargsElement != null);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -3733,8 +3730,28 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes,
                     noteWarner);
 
+            DeferredAttr.DeferredTypeMap checkDeferredMap =
+                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+
+            argtypes = Type.map(argtypes, checkDeferredMap);
+
+            if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
+                chk.warnUnchecked(env.tree.pos(),
+                        "unchecked.meth.invocation.applied",
+                        kindName(sym),
+                        sym.name,
+                        rs.methodArguments(sym.type.getParameterTypes()),
+                        rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
+                        kindName(sym.location()),
+                        sym.location());
+               owntype = new MethodType(owntype.getParameterTypes(),
+                       types.erasure(owntype.getReturnType()),
+                       types.erasure(owntype.getThrownTypes()),
+                       syms.methodClass);
+            }
+
             return chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
-                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED), resultInfo.checkContext.inferenceContext());
+                    resultInfo.checkContext.inferenceContext());
         } catch (Infer.InferenceException ex) {
             //invalid target type - propagate exception outwards or report error
             //depending on the current check context
