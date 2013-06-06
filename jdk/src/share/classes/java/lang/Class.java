@@ -2212,14 +2212,6 @@ public final class Class<T> implements java.io.Serializable,
      */
     private native java.security.ProtectionDomain getProtectionDomain0();
 
-
-    /**
-     * Set the ProtectionDomain for this class. Called by
-     * ClassLoader.defineClass.
-     */
-    native void setProtectionDomain0(java.security.ProtectionDomain pd);
-
-
     /*
      * Return the Virtual Machine's Class object for the named
      * primitive type.
