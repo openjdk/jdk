@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
-  @test %W% %E%
+  @test
   @bug 6829858
   @summary Mixing should work inside heavyweight containers
   @author anthony.petrov@sun.com: area=awt.mixing
@@ -104,7 +104,7 @@ public class MixingInHwPanel
 
         // And click the part of the button that has been previously hidden
         Point bLoc = button.getLocationOnScreen();
-        robot.mouseMove(bLoc.x + button.getWidth() - 6, bLoc.y + button.getHeight() / 2);
+        robot.mouseMove(bLoc.x + button.getWidth() - 15, bLoc.y + button.getHeight() / 2);
 
         Util.waitForIdle(robot);
 
