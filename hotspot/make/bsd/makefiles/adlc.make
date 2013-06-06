@@ -69,7 +69,7 @@ CXXFLAGS += -DASSERT
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
 ifneq ($(COMPILER_WARNINGS_FATAL),false)
-  CFLAGS_WARN = -Werror
+  CFLAGS_WARN = $(WARNINGS_ARE_ERRORS)
 endif
 CFLAGS += $(CFLAGS_WARN)
 
