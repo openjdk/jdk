@@ -179,10 +179,25 @@ public interface CharSequence {
 
             @Override
             public void forEachRemaining(IntConsumer block) {
-                while (cur < length()) {
-                    int cp = Character.codePointAt(CharSequence.this, cur);
-                    cur += Character.charCount(cp);
-                    block.accept(cp);
+                final int length = length();
+                int i = cur;
+                try {
+                    while (i < length) {
+                        char c1 = charAt(i++);
+                        if (!Character.isHighSurrogate(c1) || i >= length) {
+                            block.accept(c1);
+                        } else {
+                            char c2 = charAt(i);
+                            if (Character.isLowSurrogate(c2)) {
+                                i++;
+                                block.accept(Character.toCodePoint(c1, c2));
+                            } else {
+                                block.accept(c1);
+                            }
+                        }
+                    }
+                } finally {
+                    cur = i;
                 }
             }
 
@@ -191,12 +206,20 @@ public interface CharSequence {
             }
 
             public int nextInt() {
-                if (!hasNext()) {
+                final int length = length();
+
+                if (cur >= length) {
                     throw new NoSuchElementException();
                 }
-                int cp = Character.codePointAt(CharSequence.this, cur);
-                cur += Character.charCount(cp);
-                return cp;
+                char c1 = charAt(cur++);
+                if (Character.isHighSurrogate(c1) && cur < length) {
+                    char c2 = charAt(cur);
+                    if (Character.isLowSurrogate(c2)) {
+                        cur++;
+                        return Character.toCodePoint(c1, c2);
+                    }
+                }
+                return c1;
             }
         }
 
