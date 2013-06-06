@@ -22,17 +22,6 @@
  */
 package com.sun.org.apache.xpath.internal;
 
-import java.lang.reflect.Method;
-import java.util.Stack;
-import java.util.Vector;
-import java.util.HashMap;
-import java.util.Iterator;
-
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.SourceLocator;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
-
 import com.sun.org.apache.xalan.internal.extensions.ExpressionContext;
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.Axis;
@@ -46,14 +35,21 @@ import com.sun.org.apache.xml.internal.utils.IntStack;
 import com.sun.org.apache.xml.internal.utils.NodeVector;
 import com.sun.org.apache.xml.internal.utils.ObjectStack;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
-import com.sun.org.apache.xml.internal.utils.SAXSourceLocator;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xpath.internal.axes.SubContextList;
-import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.objects.DTMXRTreeFrag;
+import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.objects.XString;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Stack;
+import java.util.Vector;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.SourceLocator;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
 import org.xml.sax.XMLReader;
 
 /**
@@ -339,8 +335,8 @@ public class XPathContext extends DTMManager // implements ExpressionContext
     m_saxLocations.push(null);
     m_useServicesMechanism = useServicesMechanism;
     m_dtmManager = DTMManager.newInstance(
-                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory(),
-                   m_useServicesMechanism);
+                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory()
+                   );
   }
 
   /**
@@ -363,8 +359,8 @@ public class XPathContext extends DTMManager // implements ExpressionContext
 
 
     m_dtmManager = DTMManager.newInstance(
-                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory(),
-                   m_useServicesMechanism);
+                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory()
+                   );
 
     m_saxLocations.removeAllElements();
         m_axesIteratorStack.removeAllElements();
@@ -622,32 +618,6 @@ public class XPathContext extends DTMManager // implements ExpressionContext
   /** Misnamed string manager for XPath messages.  */
   // private static XSLMessages m_XSLMessages = new XSLMessages();
 
-  /**
-   * Tell the user of an assertion error, and probably throw an
-   * exception.
-   *
-   * @param b  If false, a TransformerException will be thrown.
-   * @param msg The assertion message, which should be informative.
-   *
-   * @throws javax.xml.transform.TransformerException if b is false.
-   */
-  private void assertion(boolean b, String msg) throws javax.xml.transform.TransformerException
-  {
-    if (!b)
-    {
-      ErrorListener errorHandler = getErrorListener();
-
-      if (errorHandler != null)
-      {
-        errorHandler.fatalError(
-          new TransformerException(
-            XSLMessages.createMessage(
-              XPATHErrorResources.ER_INCORRECT_PROGRAMMER_ASSERTION,
-              new Object[]{ msg }), (SAXSourceLocator)this.getSAXLocator()));
-      }
-    }
-  }
-
   //==========================================================
   // SECTION: Execution context state tracking
   //==========================================================
@@ -664,7 +634,7 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    * Get the current context node list.
    *
    * @return  the <a href="http://www.w3.org/TR/xslt#dt-current-node-list">current node list</a>,
-   * also refered to here as a <term>context node list</term>.
+   * also referred to here as a <term>context node list</term>.
    */
   public final DTMIterator getContextNodeList()
   {
@@ -679,7 +649,7 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    * Set the current context node list.
    *
    * @param nl the <a href="http://www.w3.org/TR/xslt#dt-current-node-list">current node list</a>,
-   * also refered to here as a <term>context node list</term>.
+   * also referred to here as a <term>context node list</term>.
    * @xsl.usage internal
    */
   public final void pushContextNodeList(DTMIterator nl)
@@ -700,7 +670,7 @@ public class XPathContext extends DTMManager // implements ExpressionContext
   }
 
   /**
-   * The ammount to use for stacks that record information during the
+   * The amount to use for stacks that record information during the
    * recursive execution.
    */
   public static final int RECURSIONLIMIT = (1024*4);

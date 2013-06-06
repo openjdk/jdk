@@ -23,33 +23,29 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.cmdline;
 
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.util.Vector;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.sax.SAXSource;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
+import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
-import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
+import com.sun.org.apache.xalan.internal.xsltc.dom.DOMWSFilter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.XSLTCDTMManager;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Constants;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Parameter;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.output.TransletOutputHandlerFactory;
+import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
-
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
+import java.util.Vector;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
-import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
-import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
-import com.sun.org.apache.xalan.internal.xsltc.dom.DOMWSFilter;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * @author Jacek Ambroziak
@@ -115,8 +111,7 @@ final public class Transform {
 
             // Set the DOM's DOM builder as the XMLReader's SAX2 content handler
             XSLTCDTMManager dtmManager =
-                (XSLTCDTMManager)XSLTCDTMManager.getDTMManagerClass()
-                                                .newInstance();
+                XSLTCDTMManager.createNewDTMManagerInstance();
 
             DTMWSFilter wsfilter;
             if (translet != null && translet instanceof StripFilter) {
