@@ -352,7 +352,7 @@ public class Utils {
             result = new Character(value.charAt(0));
         } else if (Number.class.isAssignableFrom(Utils.getClass(type))) {
             result = createNumberFromStringValue(value);
-        } else if (value == null || value.toString().equals("null")) {
+        } else if (value == null || value.equals("null")) {
             // hack for null value
             result = null;
         } else {
