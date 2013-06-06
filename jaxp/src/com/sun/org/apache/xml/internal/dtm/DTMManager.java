@@ -52,14 +52,6 @@ import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 public abstract class DTMManager
 {
 
-  /** The default property name to load the manager. */
-  private static final String defaultPropName =
-    "com.sun.org.apache.xml.internal.dtm.DTMManager";
-
-  /** The default class name to use as the manager. */
-  private static String defaultClassName =
-    "com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault";
-
   /**
    * Factory for creating XMLString objects.
    *  %TBD% Make this set by the caller.
@@ -97,29 +89,7 @@ public abstract class DTMManager
   /**
    * Obtain a new instance of a <code>DTMManager</code>.
    * This static method creates a new factory instance
-   * This method uses the following ordered lookup procedure to determine
-   * the <code>DTMManager</code> implementation class to
-   * load:
-   * <ul>
-   * <li>
-   * Use the <code>com.sun.org.apache.xml.internal.dtm.DTMManager</code> system
-   * property.
-   * </li>
-   * <li>
-   * Use the JAVA_HOME(the parent directory where jdk is
-   * installed)/lib/xalan.properties for a property file that contains the
-   * name of the implementation class keyed on the same value as the
-   * system property defined above.
-   * </li>
-   * <li>
-   * Use the Services API (as detailed in the JAR specification), if
-   * available, to determine the classname. The Services API will look
-   * for a classname in the file
-   * <code>META-INF/services/com.sun.org.apache.xml.internal.dtm.DTMManager</code>
-   * in jars available to the runtime.
-   * </li>
-   * <li>
-   * Use the default <code>DTMManager</code> classname, which is
+   * using the default <code>DTMManager</code> implementation, which is
    * <code>com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault</code>.
    * </li>
    * </ul>
@@ -136,39 +106,10 @@ public abstract class DTMManager
   public static DTMManager newInstance(XMLStringFactory xsf)
            throws DTMConfigurationException
   {
-    return newInstance(xsf, true);
-  }
+      final DTMManager factoryImpl = new com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault();
+      factoryImpl.setXMLStringFactory(xsf);
 
-  public static DTMManager newInstance(XMLStringFactory xsf, boolean useServicesMechanism)
-           throws DTMConfigurationException
-  {
-    DTMManager factoryImpl = null;
-    try
-    {
-        if (useServicesMechanism) {
-            factoryImpl = (DTMManager) ObjectFactory
-                .createObject(defaultPropName, defaultClassName);
-        } else {
-            factoryImpl = new com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault();
-        }
-    }
-    catch (ConfigurationError e)
-    {
-      throw new DTMConfigurationException(XMLMessages.createXMLMessage(
-        XMLErrorResources.ER_NO_DEFAULT_IMPL, null), e.getException());
-        //"No default implementation found");
-    }
-
-    if (factoryImpl == null)
-    {
-      throw new DTMConfigurationException(XMLMessages.createXMLMessage(
-        XMLErrorResources.ER_NO_DEFAULT_IMPL, null));
-        //"No default implementation found");
-    }
-
-    factoryImpl.setXMLStringFactory(xsf);
-
-    return factoryImpl;
+      return factoryImpl;
   }
 
   /**
