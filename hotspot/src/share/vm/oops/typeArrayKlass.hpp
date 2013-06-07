@@ -67,6 +67,8 @@ class TypeArrayKlass : public ArrayKlass {
   typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
+  oop protection_domain() const { return NULL; }
+
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 

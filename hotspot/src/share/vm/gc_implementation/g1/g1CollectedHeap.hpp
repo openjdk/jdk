@@ -593,11 +593,6 @@ protected:
   // may not be a humongous - it must fit into a single heap region.
   HeapWord* par_allocate_during_gc(GCAllocPurpose purpose, size_t word_size);
 
-  HeapWord* allocate_during_gc_slow(GCAllocPurpose purpose,
-                                    HeapRegion*    alloc_region,
-                                    bool           par,
-                                    size_t         word_size);
-
   // Ensure that no further allocations can happen in "r", bearing in mind
   // that parallel threads might be attempting allocations.
   void par_allocate_remaining_space(HeapRegion* r);
@@ -1733,6 +1728,95 @@ public:
     ParGCAllocBuffer::retire(end_of_gc, retain);
     _retired = true;
   }
+
+  bool is_retired() {
+    return _retired;
+  }
+};
+
+class G1ParGCAllocBufferContainer {
+protected:
+  static int const _priority_max = 2;
+  G1ParGCAllocBuffer* _priority_buffer[_priority_max];
+
+public:
+  G1ParGCAllocBufferContainer(size_t gclab_word_size) {
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      _priority_buffer[pr] = new G1ParGCAllocBuffer(gclab_word_size);
+    }
+  }
+
+  ~G1ParGCAllocBufferContainer() {
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      assert(_priority_buffer[pr]->is_retired(), "alloc buffers should all retire at this point.");
+      delete _priority_buffer[pr];
+    }
+  }
+
+  HeapWord* allocate(size_t word_sz) {
+    HeapWord* obj;
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      obj = _priority_buffer[pr]->allocate(word_sz);
+      if (obj != NULL) return obj;
+    }
+    return obj;
+  }
+
+  bool contains(void* addr) {
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      if (_priority_buffer[pr]->contains(addr)) return true;
+    }
+    return false;
+  }
+
+  void undo_allocation(HeapWord* obj, size_t word_sz) {
+    bool finish_undo;
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      if (_priority_buffer[pr]->contains(obj)) {
+        _priority_buffer[pr]->undo_allocation(obj, word_sz);
+        finish_undo = true;
+      }
+    }
+    if (!finish_undo) ShouldNotReachHere();
+  }
+
+  size_t words_remaining() {
+    size_t result = 0;
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      result += _priority_buffer[pr]->words_remaining();
+    }
+    return result;
+  }
+
+  size_t words_remaining_in_retired_buffer() {
+    G1ParGCAllocBuffer* retired = _priority_buffer[0];
+    return retired->words_remaining();
+  }
+
+  void flush_stats_and_retire(PLABStats* stats, bool end_of_gc, bool retain) {
+    for (int pr = 0; pr < _priority_max; ++pr) {
+      _priority_buffer[pr]->flush_stats_and_retire(stats, end_of_gc, retain);
+    }
+  }
+
+  void update(bool end_of_gc, bool retain, HeapWord* buf, size_t word_sz) {
+    G1ParGCAllocBuffer* retired_and_set = _priority_buffer[0];
+    retired_and_set->retire(end_of_gc, retain);
+    retired_and_set->set_buf(buf);
+    retired_and_set->set_word_size(word_sz);
+    adjust_priority_order();
+  }
+
+private:
+  void adjust_priority_order() {
+    G1ParGCAllocBuffer* retired_and_set = _priority_buffer[0];
+
+    int last = _priority_max - 1;
+    for (int pr = 0; pr < last; ++pr) {
+      _priority_buffer[pr] = _priority_buffer[pr + 1];
+    }
+    _priority_buffer[last] = retired_and_set;
+  }
 };
 
 class G1ParScanThreadState : public StackObj {
@@ -1743,9 +1827,9 @@ protected:
   CardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  G1ParGCAllocBuffer  _surviving_alloc_buffer;
-  G1ParGCAllocBuffer  _tenured_alloc_buffer;
-  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  G1ParGCAllocBufferContainer  _surviving_alloc_buffer;
+  G1ParGCAllocBufferContainer  _tenured_alloc_buffer;
+  G1ParGCAllocBufferContainer* _alloc_buffers[GCAllocPurposeCount];
   ageTable            _age_table;
 
   size_t           _alloc_buffer_waste;
@@ -1809,7 +1893,7 @@ public:
   RefToScanQueue*   refs()            { return _refs;             }
   ageTable*         age_table()       { return &_age_table;       }
 
-  G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
+  G1ParGCAllocBufferContainer* alloc_buffer(GCAllocPurpose purpose) {
     return _alloc_buffers[purpose];
   }
 
@@ -1839,15 +1923,13 @@ public:
     HeapWord* obj = NULL;
     size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
     if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
-      G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
-      add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-      alloc_buf->retire(false /* end_of_gc */, false /* retain */);
+      G1ParGCAllocBufferContainer* alloc_buf = alloc_buffer(purpose);
 
       HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
-      // Otherwise.
-      alloc_buf->set_word_size(gclab_word_size);
-      alloc_buf->set_buf(buf);
+
+      add_to_alloc_buffer_waste(alloc_buf->words_remaining_in_retired_buffer());
+      alloc_buf->update(false /* end_of_gc */, false /* retain */, buf, gclab_word_size);
 
       obj = alloc_buf->allocate(word_sz);
       assert(obj != NULL, "buffer was definitely big enough...");
@@ -1959,7 +2041,6 @@ public:
     }
   }
 
-public:
   void trim_queue();
 };
 

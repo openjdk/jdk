@@ -101,6 +101,12 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 
+// if RUSAGE_THREAD for getrusage() has not been defined, do it here. The code calling
+// getrusage() is prepared to handle the associated failure.
+#ifndef RUSAGE_THREAD
+#define RUSAGE_THREAD   (1)               /* only the calling thread */
+#endif
+
 #define MAX_PATH    (2 * K)
 
 // for timer info max values which include all bits
@@ -1336,15 +1342,19 @@ jlong os::elapsed_frequency() {
   return (1000 * 1000);
 }
 
-// For now, we say that linux does not support vtime.  I have no idea
-// whether it can actually be made to (DLD, 9/13/05).
-
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime()   { return false; }
 bool os::vtime_enabled()  { return false; }
+
 double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_THREAD, &usage);
+  if (retval == 0) {
+    return (double) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (double) (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000 * 1000);
+  } else {
+    // better than nothing, but not much
+    return elapsedTime();
+  }
 }
 
 jlong os::javaTimeMillis() {

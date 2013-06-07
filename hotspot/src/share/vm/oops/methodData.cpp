@@ -388,7 +388,8 @@ void ArgInfoData::print_data_on(outputStream* st) {
 MethodData* MethodData::allocate(ClassLoaderData* loader_data, methodHandle method, TRAPS) {
   int size = MethodData::compute_allocation_size_in_words(method);
 
-  return new (loader_data, size, false, THREAD) MethodData(method(), size, CHECK_NULL);
+  return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
+    MethodData(method(), size, CHECK_NULL);
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {

@@ -392,6 +392,9 @@
   template(array_klass_name,                          "array_klass")                              \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
+  template(protection_domain_name,                    "protection_domain")                        \
+  template(init_lock_name,                            "init_lock")                                \
+  template(signers_name,                              "signers_name")                             \
   template(loader_data_name,                          "loader_data")                              \
   template(dependencies_name,                         "dependencies")                             \
                                                                                                   \
