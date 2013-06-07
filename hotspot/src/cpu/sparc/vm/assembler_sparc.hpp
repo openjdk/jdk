@@ -57,7 +57,6 @@ class Assembler : public AbstractAssembler  {
     fbp_op2   = 5,
     br_op2    = 2,
     bp_op2    = 1,
-    cb_op2    = 7, // V8
     sethi_op2 = 4
   };
 
@@ -145,7 +144,6 @@ class Assembler : public AbstractAssembler  {
     ldsh_op3     = 0x0a,
     ldx_op3      = 0x0b,
 
-    ldstub_op3   = 0x0d,
     stx_op3      = 0x0e,
     swap_op3     = 0x0f,
 
@@ -162,15 +160,6 @@ class Assembler : public AbstractAssembler  {
     stdf_op3     = 0x27,
 
     prefetch_op3 = 0x2d,
-
-
-    ldc_op3      = 0x30,
-    ldcsr_op3    = 0x31,
-    lddc_op3     = 0x33,
-    stc_op3      = 0x34,
-    stcsr_op3    = 0x35,
-    stdcq_op3    = 0x36,
-    stdc_op3     = 0x37,
 
     casa_op3     = 0x3c,
     casxa_op3    = 0x3e,
@@ -574,16 +563,10 @@ class Assembler : public AbstractAssembler  {
   static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
   // instruction only in v9
-  static void v9_only() { assert( VM_Version::v9_instructions_work(), "This instruction only works on SPARC V9"); }
-
-  // instruction only in v8
-  static void v8_only() { assert( VM_Version::v8_instructions_work(), "This instruction only works on SPARC V8"); }
+  static void v9_only() { } // do nothing
 
   // instruction deprecated in v9
   static void v9_dep()  { } // do nothing for now
-
-  // some float instructions only exist for single prec. on v8
-  static void v8_s_only(FloatRegisterImpl::Width w)  { if (w != FloatRegisterImpl::S)  v9_only(); }
 
   // v8 has no CC field
   static void v8_no_cc(CC cc)  { if (cc)  v9_only(); }
@@ -730,11 +713,6 @@ public:
   inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
 
-  // pp 121 (V8)
-
-  inline void cb( Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void cb( Condition c, bool a, Label& L );
-
   // pp 149
 
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
@@ -775,8 +753,8 @@ public:
 
   // pp 157
 
-  void fcmp(  FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x50 + w) | fs2(s2, w)); }
-  void fcmpe( FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x54 + w) | fs2(s2, w)); }
+  void fcmp(  FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x50 + w) | fs2(s2, w)); }
+  void fcmpe( FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x54 + w) | fs2(s2, w)); }
 
   // pp 159
 
@@ -794,21 +772,11 @@ public:
 
   // pp 162
 
-  void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x00 + w) | fs2(s, w)); }
+  void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x00 + w) | fs2(s, w)); }
 
-  void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(s, w)); }
+  void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(s, w)); }
 
-  // page 144 sparc v8 architecture (double prec works on v8 if the source and destination registers are the same). fnegs is the only instruction available
-  // on v8 to do negation of single, double and quad precision floats.
-
-  void fneg( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(sd, w)); else emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) |  opf(0x05) | fs2(sd, w)); }
-
-  void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(s, w)); }
-
-  // page 144 sparc v8 architecture (double prec works on v8 if the source and destination registers are the same). fabss is the only instruction available
-  // on v8 to do abs operation on single/double/quad precision floats.
-
-  void fabs( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(sd, w)); else emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x09) | fs2(sd, w)); }
+  void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(s, w)); }
 
   // pp 163
 
@@ -839,11 +807,6 @@ public:
   void impdep1( int id1, int const19a ) { v9_only();  emit_int32( op(arith_op) | fcn(id1) | op3(impdep1_op3) | u_field(const19a, 18, 0)); }
   void impdep2( int id1, int const19a ) { v9_only();  emit_int32( op(arith_op) | fcn(id1) | op3(impdep2_op3) | u_field(const19a, 18, 0)); }
 
-  // pp 149 (v8)
-
-  void cpop1( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_int32( op(arith_op) | fcn(crd) | op3(impdep1_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
-  void cpop2( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_int32( op(arith_op) | fcn(crd) | op3(impdep2_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
-
   // pp 170
 
   void jmpl( Register s1, Register s2, Register d );
@@ -859,16 +822,6 @@ public:
   inline void ldfsr(  Register s1, int simm13a);
   inline void ldxfsr( Register s1, Register s2 );
   inline void ldxfsr( Register s1, int simm13a);
-
-  // pp 94 (v8)
-
-  inline void ldc(   Register s1, Register s2, int crd );
-  inline void ldc(   Register s1, int simm13a, int crd);
-  inline void lddc(  Register s1, Register s2, int crd );
-  inline void lddc(  Register s1, int simm13a, int crd);
-  inline void ldcsr( Register s1, Register s2, int crd );
-  inline void ldcsr( Register s1, int simm13a, int crd);
-
 
   // 173
 
@@ -910,18 +863,6 @@ public:
   void lduwa(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(lduw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
   void ldxa(   Register s1, Register s2, int ia, Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
   void ldxa(   Register s1, int simm13a,         Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void ldda(   Register s1, Register s2, int ia, Register d ) { v9_dep();   emit_int32( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldda(   Register s1, int simm13a,         Register d ) { v9_dep();   emit_int32( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-
-  // pp 179
-
-  inline void ldstub(  Register s1, Register s2, Register d );
-  inline void ldstub(  Register s1, int simm13a, Register d);
-
-  // pp 180
-
-  void ldstuba( Register s1, Register s2, int ia, Register d ) { emit_int32( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldstuba( Register s1, int simm13a,         Register d ) { emit_int32( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 181
 
@@ -991,11 +932,6 @@ public:
   void umulcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(umul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
   void smulcc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void smulcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-
-  // pp 199
-
-  void mulscc(   Register s1, Register s2, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | rs2(s2) ); }
-  void mulscc(   Register s1, int simm13a, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 201
 
@@ -1116,17 +1052,6 @@ public:
   void stda(  Register d, Register s1, Register s2, int ia ) {             emit_int32( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
   void stda(  Register d, Register s1, int simm13a         ) {             emit_int32( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
-  // pp 97 (v8)
-
-  inline void stc(   int crd, Register s1, Register s2 );
-  inline void stc(   int crd, Register s1, int simm13a);
-  inline void stdc(  int crd, Register s1, Register s2 );
-  inline void stdc(  int crd, Register s1, int simm13a);
-  inline void stcsr( int crd, Register s1, Register s2 );
-  inline void stcsr( int crd, Register s1, int simm13a);
-  inline void stdcq( int crd, Register s1, Register s2 );
-  inline void stdcq( int crd, Register s1, int simm13a);
-
   // pp 230
 
   void sub(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | rs2(s2) ); }
@@ -1153,20 +1078,16 @@ public:
 
   void taddcc(    Register s1, Register s2, Register d ) {            emit_int32( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | rs2(s2) ); }
   void taddcc(    Register s1, int simm13a, Register d ) {            emit_int32( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void taddcctv(  Register s1, Register s2, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | rs2(s2) ); }
-  void taddcctv(  Register s1, int simm13a, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 235
 
   void tsubcc(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | rs2(s2) ); }
   void tsubcc(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void tsubcctv(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | rs2(s2) ); }
-  void tsubcctv(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 237
 
-  void trap( Condition c, CC cc, Register s1, Register s2 ) { v8_no_cc(cc);  emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | rs2(s2)); }
-  void trap( Condition c, CC cc, Register s1, int trapa   ) { v8_no_cc(cc);  emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | immed(true) | u_field(trapa, 6, 0)); }
+  void trap( Condition c, CC cc, Register s1, Register s2 ) { emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | rs2(s2)); }
+  void trap( Condition c, CC cc, Register s1, int trapa   ) { emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | immed(true) | u_field(trapa, 6, 0)); }
   // simple uncond. trap
   void trap( int trapa ) { trap( always, icc, G0, trapa ); }
 

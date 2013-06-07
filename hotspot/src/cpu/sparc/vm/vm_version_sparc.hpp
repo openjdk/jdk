@@ -177,10 +177,6 @@ public:
     return AllocatePrefetchDistance > 0 ? AllocatePrefetchStyle : 0;
   }
 
-  // Legacy
-  static bool v8_instructions_work() { return has_v8() && !has_v9(); }
-  static bool v9_instructions_work() { return has_v9(); }
-
   // Assembler testing
   static void allow_all();
   static void revert();

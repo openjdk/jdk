@@ -108,7 +108,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   // compare object markOop with Rmark and if equal exchange Rscratch with object markOop
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-  casx_under_lock(mark_addr.base(), Rmark, Rscratch, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+  cas_ptr(mark_addr.base(), Rmark, Rscratch);
   // if compare/exchange succeeded we found an unlocked object and we now have locked it
   // hence we are done
   cmp(Rmark, Rscratch);
@@ -149,7 +149,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
 
   // Check if it is still a light weight lock, this is is true if we see
   // the stack address of the basicLock in the markOop of the object
-  casx_under_lock(mark_addr.base(), Rbox, Rmark, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+  cas_ptr(mark_addr.base(), Rbox, Rmark);
   cmp(Rbox, Rmark);
 
   brx(Assembler::notEqual, false, Assembler::pn, slow_case);
@@ -276,7 +276,7 @@ void C1_MacroAssembler::initialize_object(
     sub(var_size_in_bytes, hdr_size_in_bytes, t2); // compute size of body
     initialize_body(t1, t2);
 #ifndef _LP64
-  } else if (VM_Version::v9_instructions_work() && con_size_in_bytes < threshold * 2) {
+  } else if (con_size_in_bytes < threshold * 2) {
     // on v9 we can do double word stores to fill twice as much space.
     assert(hdr_size_in_bytes % 8 == 0, "double word aligned");
     assert(con_size_in_bytes % 8 == 0, "double word aligned");

@@ -2778,10 +2778,7 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register Rold = reg_to_register_object($old$$reg);
     Register Rnew = reg_to_register_object($new$$reg);
 
-    // casx_under_lock picks 1 of 3 encodings:
-    // For 32-bit pointers you get a 32-bit CAS
-    // For 64-bit pointers you get a 64-bit CASX
-    __ casn(Rmem, Rold, Rnew); // Swap(*Rmem,Rnew) if *Rmem == Rold
+    __ cas_ptr(Rmem, Rold, Rnew); // Swap(*Rmem,Rnew) if *Rmem == Rold
     __ cmp( Rold, Rnew );
   %}
 
@@ -3067,7 +3064,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
     AddressLiteral last_rethrow_addrlit(&last_rethrow);
     __ sethi(last_rethrow_addrlit, L1);
     Address addr(L1, last_rethrow_addrlit.low10());
-    __ get_pc(L2);
+    __ rdpc(L2);
     __ inc(L2, 3 * BytesPerInstWord);  // skip this & 2 more insns to point at jump_to
     __ st_ptr(L2, addr);
     __ restore();
