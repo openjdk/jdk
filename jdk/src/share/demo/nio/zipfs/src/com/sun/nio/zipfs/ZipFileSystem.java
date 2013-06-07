@@ -1940,7 +1940,6 @@ public class ZipFileSystem extends FileSystem {
             if (elen64 != 0) {
                 elen64 += 4;                 // header and data sz 4 bytes
             }
-
             while (eoff + 4 < elen) {
                 int tag = SH(extra, eoff);
                 int sz = SH(extra, eoff + 2);
@@ -1995,7 +1994,6 @@ public class ZipFileSystem extends FileSystem {
                     writeLong(os, locoff);
             }
             if (elenNTFS != 0) {
-                // System.out.println("writing NTFS:" + elenNTFS);
                 writeShort(os, EXTID_NTFS);
                 writeShort(os, elenNTFS - 4);
                 writeInt(os, 0);            // reserved
@@ -2197,7 +2195,7 @@ public class ZipFileSystem extends FileSystem {
             if (extra != null) {
                 writeBytes(os, extra);
             }
-            return LOCHDR + name.length + elen + elen64 + elenEXTT;
+            return LOCHDR + name.length + elen + elen64 + elenNTFS + elenEXTT;
         }
 
         // Data Descriptior
