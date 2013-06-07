@@ -3540,7 +3540,8 @@ void MacroAssembler::eden_allocate(
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    ba_short(slow_case);
+    ba(slow_case);
+    delayed()->nop();
   } else {
     // get eden boundaries
     // note: we need both top & top_addr!
