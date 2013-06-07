@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
-import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -37,6 +34,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.parser.JSONParser;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -188,8 +186,8 @@ public final class JSONFunctions {
 
     // add a new property if does not exist already, or else set old property
     private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value, final boolean strict) {
-        final int index = getArrayIndexNoThrow(name);
-        if (isValidArrayIndex(index)) {
+        final int index = ArrayIndex.getArrayIndex(name);
+        if (ArrayIndex.isValidArrayIndex(index)) {
             // array index key
             sobj.defineOwnProperty(index, value);
         } else if (sobj.getMap().findProperty(name) != null) {

@@ -79,7 +79,7 @@ public class MapCreator {
             final String key    = keys[i];
             final Symbol symbol = symbols[i];
 
-            if (symbol != null && !ArrayIndex.isIndexKey(key)) {
+            if (symbol != null && !ArrayIndex.isIntArrayIndex(key)) {
                 properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), structure, symbol.getFieldIndex()));
             }
         }

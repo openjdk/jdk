@@ -126,7 +126,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
             final T      value  = valueIter.next();
 
             if (symbol != null && value != null) {
-                final int index = ArrayIndex.getArrayIndexNoThrow(key);
+                final int index = ArrayIndex.getArrayIndex(key);
 
                 if (index < 0) {
                     putField(method, key, symbol.getFieldIndex(), value);
