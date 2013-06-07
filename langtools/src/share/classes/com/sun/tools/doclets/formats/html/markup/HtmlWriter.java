@@ -314,7 +314,8 @@ public class HtmlWriter {
                 "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + DocletConstants.NL +
                 "        targetPage = \"undefined\";" + DocletConstants.NL +
                 "    function validURL(url) {" + DocletConstants.NL +
-                "        if (!(url.indexOf(\".html\") == url.length - 5))" + DocletConstants.NL +
+                "        var pos = url.indexOf(\".html\");" + DocletConstants.NL +
+                "        if (pos == -1 || pos != url.length - 5)" + DocletConstants.NL +
                 "            return false;" + DocletConstants.NL +
                 "        var allowNumber = false;" + DocletConstants.NL +
                 "        var allowSep = false;" + DocletConstants.NL +
