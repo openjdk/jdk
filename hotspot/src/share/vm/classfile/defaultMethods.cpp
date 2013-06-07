@@ -1349,6 +1349,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
 
   // Replace klass methods with new merged lists
   klass->set_methods(merged_methods);
+  klass->set_initial_method_idnum(new_size);
 
   ClassLoaderData* cld = klass->class_loader_data();
   MetadataFactory::free_array(cld, original_methods);

@@ -445,7 +445,7 @@ class Klass : public Metadata {
   Klass* array_klass_or_null(int rank);
   Klass* array_klass_or_null();
 
-  virtual oop protection_domain()       { return NULL; }
+  virtual oop protection_domain() const = 0;
 
   oop class_loader() const;
 

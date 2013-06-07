@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8007320
+ * @bug 8007320 8014709
  * @summary Test all optional fields in ConstMethod
  * @compile -g -parameters ConstMethodTest.java
  * @run main ConstMethodTest
@@ -74,6 +74,11 @@ class OkException extends RuntimeException {};
 
 @MyAnnotation(name="someName", value = "Hello World")
 public class ConstMethodTest {
+    public @TypeAnno("constructor") ConstMethodTest() { }
+
+    public ConstMethodTest(int i) {
+        // needs a second unannotated constructor
+    }
 
     private static void check(boolean b) {
         if (!b)
@@ -139,10 +144,26 @@ public class ConstMethodTest {
         }
     }
 
+    private static void testConstructor() throws Exception {
+        for (Constructor c : ConstMethodTest.class.getDeclaredConstructors()) {
+            Annotation[] aa = c.getAnnotatedReturnType().getAnnotations();
+            if (c.getParameterTypes().length == 1) { // should be un-annotated
+                check(aa.length == 0);
+            } else if (c.getParameterTypes().length == 0) { //should be annotated
+                check(aa.length == 1);
+                check(((TypeAnno)aa[0]).value().equals("constructor"));
+            } else {
+                //should not happen
+                check(false);
+            }
+        }
+    }
+
     public static void main(java.lang.String[] unused) throws Throwable {
         // pass 5 so kitchenSinkFunc is instantiated with an int
         kitchenSinkFunc("parameter", "param2", 5);
         test1();
+        testConstructor();
     }
 };
 
