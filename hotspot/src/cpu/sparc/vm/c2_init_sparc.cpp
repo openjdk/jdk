@@ -30,5 +30,4 @@
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
-  guarantee( VM_Version::v9_instructions_work(), "Server compiler does not run on V8 systems" );
 }

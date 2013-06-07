@@ -47,46 +47,14 @@ enum /* platform_dependent_constants */ {
 class Sparc {
  friend class StubGenerator;
 
- public:
-  enum { nof_instance_allocators = 10 };
-
-  // allocator lock values
-  enum {
-    unlocked = 0,
-    locked   = 1
-  };
-
-  enum {
-    v8_oop_lock_ignore_bits = 2,
-    v8_oop_lock_bits = 4,
-    nof_v8_oop_lock_cache_entries = 1 << (v8_oop_lock_bits+v8_oop_lock_ignore_bits),
-    v8_oop_lock_mask = right_n_bits(v8_oop_lock_bits),
-    v8_oop_lock_mask_in_place = v8_oop_lock_mask << v8_oop_lock_ignore_bits
-  };
-
-  static int _v8_oop_lock_cache[nof_v8_oop_lock_cache_entries];
-
  private:
   static address _test_stop_entry;
   static address _stop_subroutine_entry;
   static address _flush_callers_register_windows_entry;
 
-  static int _atomic_memory_operation_lock;
-
   static address _partial_subtype_check;
 
  public:
-  // %%% global lock for everyone who needs to use atomic_compare_and_exchange
-  // %%% or atomic_increment -- should probably use more locks for more
-  // %%% scalability-- for instance one for each eden space or group of
-
-  // address of the lock for atomic_compare_and_exchange
-  static int* atomic_memory_operation_lock_addr() { return &_atomic_memory_operation_lock; }
-
-  // accessor and mutator for _atomic_memory_operation_lock
-  static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
-  static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
-
   // test assembler stop routine by setting registers
   static void (*test_stop_entry()) ()                     { return CAST_TO_FN_PTR(void (*)(void), _test_stop_entry); }
 

@@ -60,21 +60,10 @@ inline jlong Atomic::load(volatile jlong* src) { return *src; }
 
 #else
 
-extern "C" void _Atomic_move_long_v8(volatile jlong* src, volatile jlong* dst);
 extern "C" void _Atomic_move_long_v9(volatile jlong* src, volatile jlong* dst);
 
 inline void Atomic_move_long(volatile jlong* src, volatile jlong* dst) {
-#ifdef COMPILER2
-  // Compiler2 does not support v8, it is used only for v9.
   _Atomic_move_long_v9(src, dst);
-#else
-  // The branch is cheaper then emulated LDD.
-  if (VM_Version::v9_instructions_work()) {
-    _Atomic_move_long_v9(src, dst);
-  } else {
-    _Atomic_move_long_v8(src, dst);
-  }
-#endif
 }
 
 inline jlong Atomic::load(volatile jlong* src) {
@@ -209,7 +198,6 @@ inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    
     : "memory");
   return rv;
 #else  //_LP64
-  assert(VM_Version::v9_instructions_work(), "cas only supported on v9");
   volatile jlong_accessor evl, cvl, rv;
   evl.long_value = exchange_value;
   cvl.long_value = compare_value;
@@ -318,7 +306,6 @@ inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    
   // Return 64 bit value in %o0
   return _Atomic_cas64((intptr_t)exchange_value, (intptr_t *)dest, (intptr_t)compare_value);
 #else  // _LP64
-  assert (VM_Version::v9_instructions_work(), "only supported on v9");
   // Return 64 bit value in %o0,%o1 by hand
   return _Atomic_casl(exchange_value, dest, compare_value);
 #endif // _LP64

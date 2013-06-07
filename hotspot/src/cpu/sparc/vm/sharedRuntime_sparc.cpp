@@ -2459,7 +2459,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Finally just about ready to make the JNI call
 
-  __ flush_windows();
+  __ flushw();
   if (inner_frame_created) {
     __ restore();
   } else {
