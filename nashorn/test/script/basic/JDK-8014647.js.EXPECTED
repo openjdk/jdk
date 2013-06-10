@@ -1,0 +1,5 @@
+I'm runnable 1!
+I'm runnable 2!
+I'm runnable 3!
+r1.class === r2.class: false
+r2.class === r3.class: true

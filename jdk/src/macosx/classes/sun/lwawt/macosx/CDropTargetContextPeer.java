@@ -38,7 +38,7 @@ final class CDropTargetContextPeer extends SunDropTargetContextPeer {
     private long    fNativeDropTransfer = 0;
     private long    fNativeDataAvailable = 0;
     private Object  fNativeData    = null;
-    private boolean insideTarget = false;
+    private boolean insideTarget = true;
 
     Object awtLockAccess = new Object();
 

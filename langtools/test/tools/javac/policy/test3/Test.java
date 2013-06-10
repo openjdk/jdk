@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,47 +123,3 @@ public class Test {
 
     int errors;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-// These tests test the ability of the compiler to continue in the face of
-// errors, accordining to the shouldStopPolicy
-
-/* @ test /nodynamiccopyright/
- * @bug 6813059
- * @summary
- * @compile/fail/ref=flow.out       -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=FLOW       Test.java
-
- * @compile/fail/ref=default.out    -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy                                Test.java
- * @compile/fail/ref=enter.out      -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=ENTER      Test.java
- * @compile/fail/ref=attr.out       -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=ATTR       Test.java
- * @compile/fail/ref=transtypes.out -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=TRANSTYPES Test.java
- * @compile/fail/ref=lower.out      -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=LOWER      Test.java
- * @compile/fail/ref=generate.out   -XDrawDiagnostics -XDcompilePolicy=byfile -XDverboseCompilePolicy -XDshouldStopPolicy=GENERATE   Test.java
- */
-
-/*
-class Test {
-    void m1() {
-        System.err.println("hello");
-        0 // syntax error
-        System.err.println("world");
-    }
-
-    void m2() {
-    }
-}
-
-class Test2 {
-}
-*/
-

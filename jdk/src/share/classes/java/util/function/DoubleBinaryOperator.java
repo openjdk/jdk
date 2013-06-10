@@ -43,5 +43,5 @@ public interface DoubleBinaryOperator {
      * @param right the right operand value
      * @return the result of the operation
      */
-    public double applyAsDouble(double left, double right);
+    double applyAsDouble(double left, double right);
 }
