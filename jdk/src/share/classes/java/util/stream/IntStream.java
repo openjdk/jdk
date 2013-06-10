@@ -625,7 +625,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return a {@code LongStream} consisting of the elements of this stream,
      * converted to {@code long}
      */
-    LongStream longs();
+    LongStream asLongStream();
 
     /**
      * Returns a {@code DoubleStream} consisting of the elements of this stream,
@@ -634,7 +634,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return a {@code DoubleStream} consisting of the elements of this stream,
      * converted to {@code double}
      */
-    DoubleStream doubles();
+    DoubleStream asDoubleStream();
 
     /**
      * Returns a {@code Stream} consisting of the elements of this stream,

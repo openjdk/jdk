@@ -300,7 +300,7 @@ public class SpinedBufferTest {
 
         for (int size : sizes) {
             // @@@ replace with double range when implemented
-            double[] array = LongStream.range(0, size).doubles().toArray();
+            double[] array = LongStream.range(0, size).asDoubleStream().toArray();
             SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
             Arrays.stream(array).forEach(sb);
 

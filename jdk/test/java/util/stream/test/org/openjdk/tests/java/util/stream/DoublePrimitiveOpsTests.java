@@ -44,12 +44,12 @@ public class DoublePrimitiveOpsTests {
 
     public void testToArray() {
         {
-            double[] array =  LongStream.range(1, 10).doubles().map(i -> i * 2).toArray();
+            double[] array =  LongStream.range(1, 10).asDoubleStream().map(i -> i * 2).toArray();
             assertEquals(array, new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
         }
 
         {
-            double[] array =  LongStream.range(1, 10).parallel().doubles().map(i -> i * 2).toArray();
+            double[] array =  LongStream.range(1, 10).parallel().asDoubleStream().map(i -> i * 2).toArray();
             assertEquals(array, new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
         }
     }
@@ -99,7 +99,7 @@ public class DoublePrimitiveOpsTests {
         }
 
         {
-            double[] actual = LongStream.range(1, 100).parallel().doubles().limit(9).toArray();
+            double[] actual = LongStream.range(1, 100).parallel().asDoubleStream().limit(9).toArray();
             Assert.assertTrue(Arrays.equals(expected, actual));
         }
     }

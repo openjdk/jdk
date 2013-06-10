@@ -625,7 +625,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return a {@code DoubleStream} consisting of the elements of this stream,
      * converted to {@code double}
      */
-    DoubleStream doubles();
+    DoubleStream asDoubleStream();
 
     /**
      * Returns a {@code Stream} consisting of the elements of this stream,

@@ -183,7 +183,7 @@ abstract class IntPipeline<E_IN>
     // Stateless intermediate ops from IntStream
 
     @Override
-    public final LongStream longs() {
+    public final LongStream asLongStream() {
         return new LongPipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE,
                                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -199,7 +199,7 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final DoubleStream doubles() {
+    public final DoubleStream asDoubleStream() {
         return new DoublePipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE,
                                                        StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -424,7 +424,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final long count() {
-        return longs().map(e -> 1L).sum();
+        return asLongStream().map(e -> 1L).sum();
     }
 
     @Override
