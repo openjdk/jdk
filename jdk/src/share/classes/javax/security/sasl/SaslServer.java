@@ -47,7 +47,7 @@ package javax.security.sasl;
  * For example, suppose the LDAP server received an LDAP BIND request
  * containing the name of the SASL mechanism and an (optional) initial
  * response. It then might use the server as follows:
- *<blockquote><pre>
+ *<blockquote><pre>{@code
  * while (!ss.isComplete()) {
  *     try {
  *         byte[] challenge = ss.evaluateResponse(response);
@@ -75,7 +75,7 @@ package javax.security.sasl;
  *      ldap.out = new SecureOutputStream(ss, ldap.out);
  *    }
  * }
- *</pre></blockquote>
+ *}</pre></blockquote>
  *
  * @since 1.5
  *

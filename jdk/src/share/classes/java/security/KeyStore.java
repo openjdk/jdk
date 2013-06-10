@@ -317,7 +317,7 @@ public class KeyStore {
          *     been specified by properties in the domain configuration data.
          *     It is cloned to prevent subsequent modification.
          *
-         * @exception NullPointerExcetion if {@code configuration} or
+         * @exception NullPointerException if {@code configuration} or
          *     {@code protectionParams} is {@code null}
          */
         public DomainLoadStoreParameter(URI configuration,

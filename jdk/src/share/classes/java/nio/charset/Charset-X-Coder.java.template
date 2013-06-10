@@ -260,7 +260,7 @@ public abstract class Charset$Coder$ {
      * method, passing the new replacement, after checking that the new
      * replacement is acceptable.  </p>
      *
-     * @param  newReplacement
+     * @param  newReplacement  The replacement value
      *
 #if[decoder]
      *         The new replacement; must not be <tt>null</tt>
@@ -305,7 +305,7 @@ public abstract class Charset$Coder$ {
      * should be overridden by $coder$s that require notification of changes to
      * the replacement.  </p>
      *
-     * @param  newReplacement
+     * @param  newReplacement    The replacement value
      */
     protected void implReplaceWith($replType$ newReplacement) {
     }

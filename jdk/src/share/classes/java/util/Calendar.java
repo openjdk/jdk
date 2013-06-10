@@ -2681,9 +2681,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Returns whether this <code>Calendar</code> represents a time
      * before the time represented by the specified
      * <code>Object</code>. This method is equivalent to:
-     * <pre><blockquote>
+     * <pre>{@code
      *         compareTo(when) < 0
-     * </blockquote></pre>
+     * }</pre>
      * if and only if <code>when</code> is a <code>Calendar</code>
      * instance. Otherwise, the method returns <code>false</code>.
      *
@@ -2702,9 +2702,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Returns whether this <code>Calendar</code> represents a time
      * after the time represented by the specified
      * <code>Object</code>. This method is equivalent to:
-     * <pre><blockquote>
+     * <pre>{@code
      *         compareTo(when) > 0
-     * </blockquote></pre>
+     * }</pre>
      * if and only if <code>when</code> is a <code>Calendar</code>
      * instance. Otherwise, the method returns <code>false</code>.
      *

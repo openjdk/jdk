@@ -41,7 +41,7 @@ import sun.util.logging.PlatformLogger;
  *
  * <p> The HTTP cookie management in java.net package looks like:
  * <blockquote>
- * <pre>
+ * <pre>{@code
  *                  use
  * CookieHandler <------- HttpURLConnection
  *       ^
@@ -58,7 +58,7 @@ import sun.util.logging.PlatformLogger;
  *                            | impl
  *                            |
  *                  Internal in-memory implementation
- * </pre>
+ * }</pre>
  * <ul>
  *   <li>
  *     CookieHandler is at the core of cookie management. User can call

@@ -36,7 +36,7 @@ import sun.reflect.Reflection;
 
 /**
  * <P>The basic service for managing a set of JDBC drivers.<br>
- * <B>NOTE:</B> The {@link <code>DataSource</code>} interface, new in the
+ * <B>NOTE:</B> The {@link javax.sql.DataSource} interface, new in the
  * JDBC 2.0 API, provides another way to connect to a data source.
  * The use of a <code>DataSource</code> object is the preferred means of
  * connecting to a data source.

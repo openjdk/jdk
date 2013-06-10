@@ -95,7 +95,7 @@ public class BufferedWriter extends Writer {
      * @param  out  A Writer
      * @param  sz   Output-buffer size, a positive integer
      *
-     * @exception  IllegalArgumentException  If sz is <= 0
+     * @exception  IllegalArgumentException  If {@code sz <= 0}
      */
     public BufferedWriter(Writer out, int sz) {
         super(out);

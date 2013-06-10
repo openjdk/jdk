@@ -75,7 +75,7 @@ class InflaterInputStream extends FilterInputStream {
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      * @param size the input buffer size
-     * @exception IllegalArgumentException if size is <= 0
+     * @exception IllegalArgumentException if {@code size <= 0}
      */
     public InflaterInputStream(InputStream in, Inflater inf, int size) {
         super(in);
@@ -191,7 +191,7 @@ class InflaterInputStream extends FilterInputStream {
      * @param n the number of bytes to skip
      * @return the actual number of bytes skipped.
      * @exception IOException if an I/O error has occurred
-     * @exception IllegalArgumentException if n < 0
+     * @exception IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {
         if (n < 0) {

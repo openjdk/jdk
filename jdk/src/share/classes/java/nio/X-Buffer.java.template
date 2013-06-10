@@ -652,9 +652,10 @@ public abstract class $Type$Buffer
      * <tt>src.get(dst,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
      * the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst[i] = src.get(); </pre>
+     *         dst[i] = src.get():
+     * }</pre>
      *
      * except that it first checks that there are sufficient $type$s in
      * this buffer and it is potentially much more efficient. </p>
@@ -788,9 +789,10 @@ public abstract class $Type$Buffer
      * <tt>dst.put(src,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
      * the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst.put(a[i]); </pre>
+     *         dst.put(a[i]);
+     * }</pre>
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient. </p>
@@ -874,9 +876,10 @@ public abstract class $Type$Buffer
      * <tt>dst.put(src,&nbsp;start,&nbsp;end)</tt> has exactly the same effect
      * as the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = start; i < end; i++)
-     *         dst.put(src.charAt(i)); </pre>
+     *         dst.put(src.charAt(i));
+     * }</pre>
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient. </p>
@@ -1038,12 +1041,13 @@ public abstract class $Type$Buffer
      * write was incomplete.  The following loop, for example, copies bytes
      * from one channel to another via the buffer <tt>buf</tt>:
      *
-     * <blockquote><pre>
-     * buf.clear();          // Prepare buffer for use
-     * while (in.read(buf) >= 0 || buf.position != 0) {
-     *     buf.flip();
-     *     out.write(buf);
-     *     buf.compact();    // In case of partial write
+     * <blockquote><pre>{@code
+     *   buf.clear();          // Prepare buffer for use
+     *   while (in.read(buf) >= 0 || buf.position != 0) {
+     *       buf.flip();
+     *       out.write(buf);
+     *       buf.compact();    // In case of partial write
+     *   }
      * }</pre></blockquote>
      *
 #end[byte]

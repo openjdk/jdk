@@ -72,14 +72,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * The following example shows how to compare two strings using
  * the <code>Collator</code> for the default locale.
  * <blockquote>
- * <pre>
+ * <pre>{@code
  * // Compare two strings in the default locale
  * Collator myCollator = Collator.getInstance();
  * if( myCollator.compare("abc", "ABC") < 0 )
  *     System.out.println("abc is less than ABC");
  * else
  *     System.out.println("abc is greater than or equal to ABC");
- * </pre>
+ * }</pre>
  * </blockquote>
  *
  * <p>

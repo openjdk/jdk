@@ -208,7 +208,7 @@ public abstract class SelectableChannel
      * @throws  IllegalArgumentException
      *          If a bit in the <tt>ops</tt> set does not correspond to an
      *          operation that is supported by this channel, that is, if
-     *          <tt>set & ~validOps() != 0</tt>
+     *          {@code set & ~validOps() != 0}
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
@@ -265,8 +265,8 @@ public abstract class SelectableChannel
      *
      * @throws  IllegalArgumentException
      *          If a bit in <tt>ops</tt> does not correspond to an operation
-     *          that is supported by this channel, that is, if <tt>set &
-     *          ~validOps() != 0</tt>
+     *          that is supported by this channel, that is, if {@code set &
+     *          ~validOps() != 0}
      *
      * @return  A key representing the registration of this channel with
      *          the given selector

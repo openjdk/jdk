@@ -265,7 +265,7 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * If the attribute values are unordered,
      * this method returns the value that happens to be at that index.
      * @param ix The index of the value in the ordered list of attribute values.
-     * 0 <= <tt>ix</tt> < <tt>size()</tt>.
+     * {@code 0 <= ix < size()}.
      * @return The possibly null attribute value at index <tt>ix</tt>;
      *   null if the attribute value is null.
      * @exception NamingException If a naming exception was encountered while
@@ -284,7 +284,7 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * the front of the list (and their indices decremented by one).
      *
      * @param ix The index of the value to remove.
-     * 0 <= <tt>ix</tt> < <tt>size()</tt>.
+     * {@code 0 <= ix < size()}.
      * @return The possibly null attribute value at index <tt>ix</tt> that was removed;
      *   null if the attribute value is null.
      * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
@@ -302,7 +302,7 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * <tt>IllegalStateException</tt> is thrown.
      *
      * @param ix The index in the ordered list of attribute values to add the new value.
-     * 0 <= <tt>ix</tt> <= <tt>size()</tt>.
+     * {@code 0 <= ix <= size()}.
      * @param attrVal The possibly null attribute value to add; if null, null is
      * the value added.
      * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
@@ -322,7 +322,7 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * In that case, <tt>IllegalStateException</tt> is thrown.
      *
      * @param ix The index of the value in the ordered list of attribute values.
-     * 0 <= <tt>ix</tt> < <tt>size()</tt>.
+     * {@code 0 <= ix < size()}.
      * @param attrVal The possibly null attribute value to use.
      * If null, 'null' replaces the old value.
      * @return The possibly null attribute value at index ix that was replaced.

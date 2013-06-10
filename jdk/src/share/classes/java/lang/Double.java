@@ -917,13 +917,13 @@ public final class Double extends Number implements Comparable<Double> {
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>
-     * int s = ((bits &gt;&gt; 63) == 0) ? 1 : -1;
-     * int e = (int)((bits &gt;&gt; 52) & 0x7ffL);
+     * <blockquote><pre>{@code
+     * int s = ((bits >> 63) == 0) ? 1 : -1;
+     * int e = (int)((bits >> 52) & 0x7ffL);
      * long m = (e == 0) ?
-     *                 (bits & 0xfffffffffffffL) &lt;&lt; 1 :
+     *                 (bits & 0xfffffffffffffL) << 1 :
      *                 (bits & 0xfffffffffffffL) | 0x10000000000000L;
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-1075</sup>.

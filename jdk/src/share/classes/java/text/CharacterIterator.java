@@ -62,27 +62,27 @@ package java.text;
  * <P>Examples:<P>
  *
  * Traverse the text from start to finish
- * <pre>
+ * <pre>{@code
  * public void traverseForward(CharacterIterator iter) {
  *     for(char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
  *         processChar(c);
  *     }
  * }
- * </pre>
+ * }</pre>
  *
  * Traverse the text backwards, from end to start
- * <pre>
+ * <pre>{@code
  * public void traverseBackward(CharacterIterator iter) {
  *     for(char c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
  *         processChar(c);
  *     }
  * }
- * </pre>
+ * }</pre>
  *
  * Traverse both forward and backward from a given position in the text.
  * Calls to notBoundary() in this example represents some
  * additional stopping criteria.
- * <pre>
+ * <pre>{@code
  * public void traverseOut(CharacterIterator iter, int pos) {
  *     for (char c = iter.setIndex(pos);
  *              c != CharacterIterator.DONE && notBoundary(c);
@@ -96,7 +96,7 @@ package java.text;
  *     int start = iter.getIndex();
  *     processSection(start, end);
  * }
- * </pre>
+ * }</pre>
  *
  * @see StringCharacterIterator
  * @see AttributedCharacterIterator

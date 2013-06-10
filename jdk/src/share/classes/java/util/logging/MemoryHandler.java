@@ -64,7 +64,7 @@ package java.util.logging;
  *        (defaults to no <tt>Filter</tt>). </li>
  * <li>   &lt;handler-name&gt;.size
  *        defines the buffer size (defaults to 1000). </li>
- * <li>   &lt;handler-name>.push
+ * <li>   &lt;handler-name&gt;.push
  *        defines the <tt>pushLevel</tt> (defaults to <tt>level.SEVERE</tt>). </li>
  * <li>   &lt;handler-name&gt;.target
  *        specifies the name of the target <tt>Handler </tt> class.
@@ -155,7 +155,7 @@ public class MemoryHandler extends Handler {
      * @param size    the number of log records to buffer (must be greater than zero)
      * @param pushLevel  message level to push on
      *
-     * @throws IllegalArgumentException if size is <= 0
+     * @throws IllegalArgumentException if {@code size is <= 0}
      */
     public MemoryHandler(Handler target, int size, Level pushLevel) {
         if (target == null || pushLevel == null) {
