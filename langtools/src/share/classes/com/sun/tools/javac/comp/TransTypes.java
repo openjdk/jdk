@@ -172,10 +172,13 @@ public class TransTypes extends TreeTranslator {
     JCExpression retype(JCExpression tree, Type erasedType, Type target) {
 //      System.err.println("retype " + tree + " to " + erasedType);//DEBUG
         if (!erasedType.isPrimitive()) {
-            if (target != null && target.isPrimitive())
+            if (target != null && target.isPrimitive()) {
                 target = erasure(tree.type);
+            }
             tree.type = erasedType;
-            if (target != null) return coerce(tree, target);
+            if (target != null) {
+                return coerce(tree, target);
+            }
         }
         return tree;
     }
@@ -255,6 +258,12 @@ public class TransTypes extends TreeTranslator {
                                                meth.name,
                                                bridgeType,
                                                origin);
+        /* once JDK-6996415 is solved it should be checked if this approach can
+         * be applied to method addOverrideBridgesIfNeeded
+         */
+        bridge.params = createBridgeParams(impl, bridge, bridgeType);
+        bridge.setAttributes(impl);
+
         if (!hypothetical) {
             JCMethodDecl md = make.MethodDef(bridge, null);
 
@@ -287,6 +296,26 @@ public class TransTypes extends TreeTranslator {
         // Add bridge to scope of enclosing class and `overridden' table.
         origin.members().enter(bridge);
         overridden.put(bridge, meth);
+    }
+
+    private List<VarSymbol> createBridgeParams(MethodSymbol impl, MethodSymbol bridge,
+            Type bridgeType) {
+        List<VarSymbol> bridgeParams = null;
+        if (impl.params != null) {
+            bridgeParams = List.nil();
+            List<VarSymbol> implParams = impl.params;
+            Type.MethodType mType = (Type.MethodType)bridgeType;
+            List<Type> argTypes = mType.argtypes;
+            while (implParams.nonEmpty() && argTypes.nonEmpty()) {
+                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC,
+                        implParams.head.name, argTypes.head, bridge);
+                param.setAttributes(implParams.head);
+                bridgeParams = bridgeParams.append(param);
+                implParams = implParams.tail;
+                argTypes = argTypes.tail;
+            }
+        }
+        return bridgeParams;
     }
 
     /** Add bridge if given symbol is a non-private, non-static member
@@ -686,8 +715,8 @@ public class TransTypes extends TreeTranslator {
     public void visitAssign(JCAssign tree) {
         tree.lhs = translate(tree.lhs, null);
         tree.rhs = translate(tree.rhs, erasure(tree.lhs.type));
-        tree.type = erasure(tree.type);
-        result = tree;
+        tree.type = erasure(tree.lhs.type);
+        result = retype(tree, tree.type, pt);
     }
 
     public void visitAssignop(JCAssignOp tree) {

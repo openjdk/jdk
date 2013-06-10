@@ -124,6 +124,8 @@ public class PropertyResourceBundle extends ResourceBundle {
      *        to read from.
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if <code>stream</code> is null
+     * @throws IllegalArgumentException if {@code stream} contains a
+     *     malformed Unicode escape sequence.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (InputStream stream) throws IOException {
@@ -142,6 +144,8 @@ public class PropertyResourceBundle extends ResourceBundle {
      *        read from.
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if <code>reader</code> is null
+     * @throws IllegalArgumentException if a malformed Unicode escape sequence appears
+     *     from {@code reader}.
      * @since 1.6
      */
     @SuppressWarnings({"unchecked", "rawtypes"})

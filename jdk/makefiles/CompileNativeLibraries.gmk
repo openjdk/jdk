@@ -1143,7 +1143,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 			  -D "JDK_INTERNAL_NAME=jdwp" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjdwp,\
-		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
+		DEBUG_SYMBOLS:=true))
 
 $(BUILD_LIBJDWP) : $(BUILD_LIBJAVA)
 
@@ -2314,6 +2314,10 @@ LIBAWT_HEADLESS_DIRS:=$(JDK_TOPDIR)/src/share/native/sun/font \
 			$(JDK_TOPDIR)/src/solaris/native/sun/java2d/opengl \
 			$(JDK_TOPDIR)/src/solaris/native/sun/java2d/x11
 
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+	LIBAWT_HEADLESS_DIRS+=$(JDK_TOPDIR)/src/macosx/native/sun/font
+endif
+
 LIBAWT_HEADLESS_CFLAGS:=-DHEADLESS=true \
                           -DX11_PATH=\"$(X11_PATH)\" -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
 			  $(CUPS_CFLAGS) \
@@ -2327,6 +2331,12 @@ LIBAWT_HEADLESS_CFLAGS:=-DHEADLESS=true \
 			  -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
 			  -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/jdga \
                           $(foreach dir,$(LIBAWT_HEADLESS_DIRS),-I$(dir))
+
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+	LIBAWT_HEADLESS_CFLAGS+=\
+		-F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+		-F/System/Library/Frameworks/ApplicationServices.framework/Frameworks
+endif
 
 LIBAWT_HEADLESS_FILES:=\
 	awt_Font.c \
@@ -2356,6 +2366,16 @@ LIBAWT_HEADLESS_FILES:=\
         AccelGlyphCache.c \
 	CUPSfuncs.c
 
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+	LIBAWT_HEADLESS_FILES+=\
+		AWTFont.m \
+		AWTStrike.m \
+		CCharToGlyphMapper.m \
+		CGGlyphImages.m \
+		CGGlyphOutlines.m \
+		CoreTextSupport.m
+endif
+
 LIBAWT_HEADLESS_REORDER:=
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 	ifneq ($(OPENJDK_TARGET_CPU), x86_64)
@@ -2382,7 +2402,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		REORDER:=$(LIBAWT_HEADLESS_REORDER), \
 		LDFLAGS_SUFFIX_linux:=-ljvm -lawt -lm $(LIBDL) -ljava,\
 		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc,\
-		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava,\
+		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava \
+				 -framework Accelerate \
+				 -framework ApplicationServices \
+				 -framework Cocoa \
+				 -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
+				 -framework JavaNativeFoundation \
+				 -framework JavaRuntimeSupport,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_headless,\
 		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 

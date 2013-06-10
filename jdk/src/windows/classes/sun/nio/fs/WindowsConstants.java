@@ -100,6 +100,7 @@ class WindowsConstants {
     public static final int ERROR_INVALID_LEVEL         = 124;
     public static final int ERROR_DIR_NOT_EMPTY         = 145;
     public static final int ERROR_ALREADY_EXISTS        = 183;
+    public static final int ERROR_MORE_DATA             = 234;
     public static final int ERROR_DIRECTORY             = 267;
     public static final int ERROR_NOTIFY_ENUM_DIR       = 1022;
     public static final int ERROR_NONE_MAPPED           = 1332;

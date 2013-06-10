@@ -24,3 +24,4 @@ jcov2/*
 .idea/*
 test/lib/testng.jar
 test/script/external/*
+.project

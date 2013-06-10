@@ -610,6 +610,11 @@ public class DoubleByte {
                 return encodeBufferLoop(src, dst);
         }
 
+        protected byte[] repl = replacement();
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement;
+        }
+
         public int encode(char[] src, int sp, int len, byte[] dst) {
             int dp = 0;
             int sl = sp + len;
@@ -622,7 +627,6 @@ public class DoubleByte {
                         Character.isLowSurrogate(src[sp])) {
                         sp++;
                     }
-                    byte[] repl = replacement();
                     dst[dp++] = repl[0];
                     if (repl.length > 1)
                         dst[dp++] = repl[1];
@@ -877,7 +881,6 @@ public class DoubleByte {
                         Character.isLowSurrogate(src[sp])) {
                         sp++;
                     }
-                    byte[] repl = replacement();
                     dst[dp++] = repl[0];
                     if (repl.length > 1)
                         dst[dp++] = repl[1];

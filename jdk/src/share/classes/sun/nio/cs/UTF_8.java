@@ -682,6 +682,11 @@ class UTF_8 extends Unicode
                 return encodeBufferLoop(src, dst);
         }
 
+        private byte repl = (byte)'?';
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement[0];
+        }
+
         // returns -1 if there is malformed char(s) and the
         // "action" for malformed input is not REPLACE.
         public int encode(char[] sa, int sp, int len, byte[] da) {
@@ -709,7 +714,7 @@ class UTF_8 extends Unicode
                     if (uc < 0) {
                         if (malformedInputAction() != CodingErrorAction.REPLACE)
                             return -1;
-                        da[dp++] = replacement()[0];
+                        da[dp++] = repl;
                     } else {
                         da[dp++] = (byte)(0xf0 | ((uc >> 18)));
                         da[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
