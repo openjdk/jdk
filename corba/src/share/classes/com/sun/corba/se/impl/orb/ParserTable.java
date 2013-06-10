@@ -455,6 +455,10 @@ public class ParserTable {
             return other instanceof TestBadServerIdHandler ;
         }
 
+        public int hashCode() {
+            return 1;
+        }
+
         public void handle( ObjectKey objectKey )
         {
         }
@@ -518,6 +522,10 @@ public class ParserTable {
             return other instanceof TestLegacyORBSocketFactory ;
         }
 
+        public int hashCode() {
+            return 1;
+        }
+
         public ServerSocket createServerSocket( String type, int port )
         {
             return null ;
@@ -541,6 +549,10 @@ public class ParserTable {
         public boolean equals( Object other )
         {
             return other instanceof TestORBSocketFactory ;
+        }
+
+        public int hashCode() {
+            return 1;
         }
 
         public void setORB(ORB orb)
@@ -570,6 +582,10 @@ public class ParserTable {
         public boolean equals( Object other )
         {
             return other instanceof TestIORToSocketInfo;
+        }
+
+        public int hashCode() {
+            return 1;
         }
 
         public List getSocketInfo(IOR ior)
@@ -606,6 +622,10 @@ public class ParserTable {
         public boolean equals( Object other )
         {
             return other instanceof TestContactInfoListFactory;
+        }
+
+        public int hashCode() {
+            return 1;
         }
 
         public void setORB(ORB orb) { }
@@ -865,6 +885,10 @@ public class ParserTable {
             return other instanceof TestORBInitializer1 ;
         }
 
+        public int hashCode() {
+            return 1;
+        }
+
         public void pre_init( ORBInitInfo info )
         {
         }
@@ -880,6 +904,10 @@ public class ParserTable {
         public boolean equals( Object other )
         {
             return other instanceof TestORBInitializer2 ;
+        }
+
+        public int hashCode() {
+            return 1;
         }
 
         public void pre_init( ORBInitInfo info )
@@ -950,6 +978,8 @@ public class ParserTable {
         {
             return other instanceof TestAcceptor1 ;
         }
+
+        public int hashCode() { return 1; }
         public boolean initialize() { return true; }
         public boolean initialized() { return true; }
         public String getConnectionCacheType() { return "FOO"; }
@@ -981,6 +1011,7 @@ public class ParserTable {
         {
             return other instanceof TestAcceptor2 ;
         }
+        public int hashCode() { return 1; }
         public boolean initialize() { return true; }
         public boolean initialized() { return true; }
         public String getConnectionCacheType() { return "FOO"; }
