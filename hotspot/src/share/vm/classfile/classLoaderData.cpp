@@ -64,6 +64,11 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
+#if INCLUDE_TRACE
+ #include "trace/tracing.hpp"
+#endif
+
+
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies) :
@@ -117,6 +122,12 @@ void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     klass_closure->do_klass(k);
     assert(k != k->next_link(), "no loops!");
+  }
+}
+
+void ClassLoaderData::classes_do(void f(Klass * const)) {
+  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+    f(k);
   }
 }
 
@@ -583,6 +594,19 @@ void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
   }
 }
 
+void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->classes_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
+    cld->classes_do(f);
+  }
+}
+
 GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   assert(_head == NULL || _saved_head != NULL, "remember_new_clds(true) not called?");
 
@@ -687,6 +711,11 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
     dead->set_next(_unloading);
     _unloading = dead;
   }
+
+  if (seen_dead_loader) {
+    post_class_unload_events();
+  }
+
   return seen_dead_loader;
 }
 
@@ -700,6 +729,20 @@ void ClassLoaderDataGraph::purge() {
     delete purge_me;
   }
   Metaspace::purge();
+}
+
+void ClassLoaderDataGraph::post_class_unload_events(void) {
+#if INCLUDE_TRACE
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  if (Tracing::enabled()) {
+    if (Tracing::is_event_enabled(TraceClassUnloadEvent)) {
+      assert(_unloading != NULL, "need class loader data unload list!");
+      _class_unload_time = Tracing::time();
+      classes_unloading_do(&class_unload_event);
+    }
+    Tracing::on_unloading_classes();
+  }
+#endif
 }
 
 // CDS support
@@ -769,3 +812,21 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
     class_loader()->print_value_on(out);
   }
 }
+
+#if INCLUDE_TRACE
+
+TracingTime ClassLoaderDataGraph::_class_unload_time;
+
+void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
+
+  // post class unload event
+  EventClassUnload event(UNTIMED);
+  event.set_endtime(_class_unload_time);
+  event.set_unloadedClass(k);
+  oop defining_class_loader = k->class_loader();
+  event.set_definingClassLoader(defining_class_loader != NULL ?
+                                defining_class_loader->klass() : (Klass*)NULL);
+  event.commit();
+}
+
+#endif /* INCLUDE_TRACE */

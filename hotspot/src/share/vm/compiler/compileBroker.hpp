@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,17 +299,17 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_osr_compilation;
   static elapsedTimer _t_standard_compilation;
 
+  static int _total_compile_count;
   static int _total_bailout_count;
   static int _total_invalidated_count;
-  static int _total_compile_count;
   static int _total_native_compile_count;
   static int _total_osr_compile_count;
   static int _total_standard_compile_count;
-
   static int _sum_osr_bytes_compiled;
   static int _sum_standard_bytes_compiled;
   static int _sum_nmethod_size;
   static int _sum_nmethod_code_size;
+  static long _peak_compilation_time;
 
   static CompilerThread* make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, TRAPS);
   static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
@@ -421,6 +421,19 @@ class CompileBroker: AllStatic {
 
   // compiler name for debugging
   static const char* compiler_name(int comp_level);
+
+  static int get_total_compile_count() {          return _total_compile_count; }
+  static int get_total_bailout_count() {          return _total_bailout_count; }
+  static int get_total_invalidated_count() {      return _total_invalidated_count; }
+  static int get_total_native_compile_count() {   return _total_native_compile_count; }
+  static int get_total_osr_compile_count() {      return _total_osr_compile_count; }
+  static int get_total_standard_compile_count() { return _total_standard_compile_count; }
+  static int get_sum_osr_bytes_compiled() {       return _sum_osr_bytes_compiled; }
+  static int get_sum_standard_bytes_compiled() {  return _sum_standard_bytes_compiled; }
+  static int get_sum_nmethod_size() {             return _sum_nmethod_size;}
+  static int get_sum_nmethod_code_size() {        return _sum_nmethod_code_size; }
+  static long get_peak_compilation_time() {       return _peak_compilation_time; }
+  static long get_total_compilation_time() {      return _t_total_compilation.milliseconds(); }
 };
 
 #endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP

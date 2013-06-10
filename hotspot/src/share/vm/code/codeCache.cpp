@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/memoryService.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Helper class for printing in CodeCache
@@ -114,7 +115,6 @@ class CodeBlob_sizes {
   }
 };
 
-
 // CodeCache implementation
 
 CodeHeap * CodeCache::_heap = new CodeHeap();
@@ -126,6 +126,7 @@ bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
 nmethod* CodeCache::_saved_nmethods = NULL;
 
+int CodeCache::_codemem_full_count = 0;
 
 CodeBlob* CodeCache::first() {
   assert_locked_or_safepoint(CodeCache_lock);
@@ -826,6 +827,22 @@ void CodeCache::verify() {
   _heap->verify();
   FOR_ALL_ALIVE_BLOBS(p) {
     p->verify();
+  }
+}
+
+void CodeCache::report_codemem_full() {
+  _codemem_full_count++;
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_startAddress((u8)low_bound());
+    event.set_commitedTopAddress((u8)high());
+    event.set_reservedTopAddress((u8)high_bound());
+    event.set_entryCount(nof_blobs());
+    event.set_methodCount(nof_nmethods());
+    event.set_adaptorCount(nof_adapters());
+    event.set_unallocatedCapacity(unallocated_capacity()/K);
+    event.set_fullCount(_codemem_full_count);
+    event.commit();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #ifdef TARGET_ARCH_MODEL_x86_32
 # include "adfiles/ad_x86_32.hpp"
@@ -786,7 +787,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
     if (failing())  return;
 
-    print_method("Before RemoveUseless", 3);
+    print_method(PHASE_BEFORE_REMOVEUSELESS, 3);
 
     // Remove clutter produced by parsing.
     if (!failing()) {
@@ -1801,9 +1802,9 @@ void Compile::inline_string_calls(bool parse_time) {
 
   {
     ResourceMark rm;
-    print_method("Before StringOpts", 3);
+    print_method(PHASE_BEFORE_STRINGOPTS, 3);
     PhaseStringOpts pso(initial_gvn(), for_igvn());
-    print_method("After StringOpts", 3);
+    print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
   // now inline anything that we skipped the first time around
@@ -1958,7 +1959,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method("After Parsing");
+  print_method(PHASE_AFTER_PARSING);
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -1969,7 +1970,7 @@ void Compile::Optimize() {
     igvn.optimize();
   }
 
-  print_method("Iter GVN 1", 2);
+  print_method(PHASE_ITER_GVN1, 2);
 
   if (failing())  return;
 
@@ -1978,7 +1979,7 @@ void Compile::Optimize() {
     inline_incrementally(igvn);
   }
 
-  print_method("Incremental Inline", 2);
+  print_method(PHASE_INCREMENTAL_INLINE, 2);
 
   if (failing())  return;
 
@@ -1987,7 +1988,7 @@ void Compile::Optimize() {
     // Inline valueOf() methods now.
     inline_boxing_calls(igvn);
 
-    print_method("Incremental Boxing Inline", 2);
+    print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
 
     if (failing())  return;
   }
@@ -2002,7 +2003,7 @@ void Compile::Optimize() {
       // Cleanup graph (remove dead nodes).
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       PhaseIdealLoop ideal_loop( igvn, false, true );
-      if (major_progress()) print_method("PhaseIdealLoop before EA", 2);
+      if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
     ConnectionGraph::do_analysis(this, &igvn);
@@ -2011,7 +2012,7 @@ void Compile::Optimize() {
 
     // Optimize out fields loads from scalar replaceable allocations.
     igvn.optimize();
-    print_method("Iter GVN after EA", 2);
+    print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
     if (failing())  return;
 
@@ -2022,7 +2023,7 @@ void Compile::Optimize() {
       igvn.set_delay_transform(false);
 
       igvn.optimize();
-      print_method("Iter GVN after eliminating allocations and locks", 2);
+      print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
 
       if (failing())  return;
     }
@@ -2038,7 +2039,7 @@ void Compile::Optimize() {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
-      if (major_progress()) print_method("PhaseIdealLoop 1", 2);
+      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
     }
     // Loop opts pass if partial peeling occurred in previous pass
@@ -2046,7 +2047,7 @@ void Compile::Optimize() {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
       PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
-      if (major_progress()) print_method("PhaseIdealLoop 2", 2);
+      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
       if (failing())  return;
     }
     // Loop opts pass for loop-unrolling before CCP
@@ -2054,7 +2055,7 @@ void Compile::Optimize() {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
       PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
-      if (major_progress()) print_method("PhaseIdealLoop 3", 2);
+      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
@@ -2071,7 +2072,7 @@ void Compile::Optimize() {
     TracePhase t2("ccp", &_t_ccp, true);
     ccp.do_transform();
   }
-  print_method("PhaseCPP 1", 2);
+  print_method(PHASE_CPP1, 2);
 
   assert( true, "Break here to ccp.dump_old2new_map()");
 
@@ -2082,7 +2083,7 @@ void Compile::Optimize() {
     igvn.optimize();
   }
 
-  print_method("Iter GVN 2", 2);
+  print_method(PHASE_ITER_GVN2, 2);
 
   if (failing())  return;
 
@@ -2095,7 +2096,7 @@ void Compile::Optimize() {
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
       PhaseIdealLoop ideal_loop( igvn, true);
       loop_opts_cnt--;
-      if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
+      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
       if (failing())  return;
     }
   }
@@ -2128,7 +2129,7 @@ void Compile::Optimize() {
     }
   }
 
-  print_method("Optimize finished", 2);
+  print_method(PHASE_OPTIMIZE_FINISHED, 2);
 }
 
 
@@ -2176,7 +2177,7 @@ void Compile::Code_Gen() {
     cfg.GlobalCodeMotion(m,unique(),proj_list);
     if (failing())  return;
 
-    print_method("Global code motion", 2);
+    print_method(PHASE_GLOBAL_CODE_MOTION, 2);
 
     NOT_PRODUCT( verify_graph_edges(); )
 
@@ -2229,7 +2230,7 @@ void Compile::Code_Gen() {
     Output();
   }
 
-  print_method("Final Code");
+  print_method(PHASE_FINAL_CODE);
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)0xdeadbeef;
@@ -3316,8 +3317,16 @@ void Compile::record_failure(const char* reason) {
     // Record the first failure reason.
     _failure_reason = reason;
   }
+
+  EventCompilerFailure event;
+  if (event.should_commit()) {
+    event.set_compileID(Compile::compile_id());
+    event.set_failure(reason);
+    event.commit();
+  }
+
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-    C->print_method(_failure_reason);
+    C->print_method(PHASE_FAILURE);
   }
   _root = NULL;  // flush the graph, too
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,7 +440,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
   assert(x->Opcode() == Op_Loop, "regular loops only");
-  C->print_method("Before CountedLoop", 3);
+  C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
   Node *hook = new (C) Node(6);
 
@@ -791,7 +791,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   }
 #endif
 
-  C->print_method("After CountedLoop", 3);
+  C->print_method(PHASE_AFTER_CLOOPS, 3);
 
   return true;
 }
@@ -2164,7 +2164,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   // Split shared headers and insert loop landing pads.
   // Do not bother doing this on the Root loop of course.
   if( !_verify_me && !_verify_only && _ltree_root->_child ) {
-    C->print_method("Before beautify loops", 3);
+    C->print_method(PHASE_BEFORE_BEAUTIFY_LOOPS, 3);
     if( _ltree_root->_child->beautify_loops( this ) ) {
       // Re-build loop tree!
       _ltree_root->_child = NULL;
@@ -2178,7 +2178,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
       // Reset loop nesting depth
       _ltree_root->set_nest( 0 );
 
-      C->print_method("After beautify loops", 3);
+      C->print_method(PHASE_AFTER_BEAUTIFY_LOOPS, 3);
     }
   }
 

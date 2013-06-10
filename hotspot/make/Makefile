@@ -486,7 +486,7 @@ $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/services/%
 JFR_EXISTS=$(shell if [ -d $(HS_ALT_SRC) ]; then echo 1; else echo 0; fi)
 # export jfr.h
 ifeq ($JFR_EXISTS,1)
-$(EXPORT_INCLUDE_DIR)/%: $(HS_ALT_SRC)/share/vm/jfr/agent/%
+$(EXPORT_INCLUDE_DIR)/%: $(HS_ALT_SRC)/share/vm/jfr/%
 	$(install-file)
 else
 $(EXPORT_INCLUDE_DIR)/jfr.h:

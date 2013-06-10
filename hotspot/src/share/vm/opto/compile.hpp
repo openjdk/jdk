@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,12 @@
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vmThread.hpp"
+#include "trace/tracing.hpp"
 
 class Block;
 class Bundle;
@@ -322,6 +324,7 @@ class Compile : public Phase {
   IdealGraphPrinter*    _printer;
 #endif
 
+
   // Node management
   uint                  _unique;                // Counter for unique Node indices
   VectorSet             _dead_node_list;        // Set of dead nodes
@@ -573,17 +576,43 @@ class Compile : public Phase {
   bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
   void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
+  jlong _latest_stage_start_counter;
+
   void begin_method() {
 #ifndef PRODUCT
     if (_printer) _printer->begin_method(this);
 #endif
+    C->_latest_stage_start_counter = os::elapsed_counter();
   }
-  void print_method(const char * name, int level = 1) {
+
+  void print_method(CompilerPhaseType cpt, int level = 1) {
+    EventCompilerPhase event(UNTIMED);
+    if (event.should_commit()) {
+      event.set_starttime(C->_latest_stage_start_counter);
+      event.set_endtime(os::elapsed_counter());
+      event.set_phase((u1) cpt);
+      event.set_compileID(C->_compile_id);
+      event.set_phaseLevel(level);
+      event.commit();
+    }
+
+
 #ifndef PRODUCT
-    if (_printer) _printer->print_method(this, name, level);
+    if (_printer) _printer->print_method(this, CompilerPhaseTypeHelper::to_string(cpt), level);
 #endif
+    C->_latest_stage_start_counter = os::elapsed_counter();
   }
-  void end_method() {
+
+  void end_method(int level = 1) {
+    EventCompilerPhase event(UNTIMED);
+    if (event.should_commit()) {
+      event.set_starttime(C->_latest_stage_start_counter);
+      event.set_endtime(os::elapsed_counter());
+      event.set_phase((u1) PHASE_END);
+      event.set_compileID(C->_compile_id);
+      event.set_phaseLevel(level);
+      event.commit();
+    }
 #ifndef PRODUCT
     if (_printer) _printer->end_method();
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,12 @@
 //
 
 class NMethodSweeper : public AllStatic {
-  static long      _traversals;   // Stack traversal count
-  static nmethod*  _current;      // Current nmethod
-  static int       _seen;         // Nof. nmethod we have currently processed in current pass of CodeCache
+  static long      _traversals;      // Stack scan count, also sweep ID.
+  static nmethod*  _current;         // Current nmethod
+  static int       _seen;            // Nof. nmethod we have currently processed in current pass of CodeCache
+  static int       _flushed_count;   // Nof. nmethods flushed in current sweep
+  static int       _zombified_count; // Nof. nmethods made zombie in current sweep
+  static int       _marked_count;    // Nof. nmethods marked for reclaim in current sweep
 
   static volatile int  _invocations;   // No. of invocations left until we are completed with this pass
   static volatile int  _sweep_started; // Flag to control conc sweeper
@@ -53,6 +56,16 @@ class NMethodSweeper : public AllStatic {
   static int       _highest_marked;   // highest compile id dumped at last emergency unloading
   static int       _dead_compile_ids; // number of compile ids that where not in the cache last flush
 
+  // Stat counters
+  static int       _number_of_flushes;            // Total of full traversals caused by full cache
+  static int       _total_nof_methods_reclaimed;  // Accumulated nof methods flushed
+  static jlong     _total_time_sweeping;          // Accumulated time sweeping
+  static jlong     _total_time_this_sweep;        // Total time this sweep
+  static jlong     _peak_sweep_time;              // Peak time for a full sweep
+  static jlong     _peak_sweep_fraction_time;     // Peak time sweeping one fraction
+  static jlong     _total_disconnect_time;        // Total time cleaning code mem
+  static jlong     _peak_disconnect_time;         // Peak time cleaning code mem
+
   static void process_nmethod(nmethod *nm);
   static void release_nmethod(nmethod* nm);
 
@@ -60,7 +73,14 @@ class NMethodSweeper : public AllStatic {
   static bool sweep_in_progress();
 
  public:
-  static long traversal_count() { return _traversals; }
+  static long traversal_count()              { return _traversals; }
+  static int  number_of_flushes()            { return _number_of_flushes; }
+  static int  total_nof_methods_reclaimed()  { return _total_nof_methods_reclaimed; }
+  static jlong total_time_sweeping()         { return _total_time_sweeping; }
+  static jlong peak_sweep_time()             { return _peak_sweep_time; }
+  static jlong peak_sweep_fraction_time()    { return _peak_sweep_fraction_time; }
+  static jlong total_disconnect_time()       { return _total_disconnect_time; }
+  static jlong peak_disconnect_time()        { return _peak_disconnect_time; }
 
 #ifdef ASSERT
   // Keep track of sweeper activity in the ring buffer
