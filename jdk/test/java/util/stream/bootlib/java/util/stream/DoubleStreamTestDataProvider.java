@@ -92,15 +92,6 @@ public class DoubleStreamTestDataProvider {
                 }
                 list.add(new Object[]{"SpinedList:" + name,
                         TestData.Factory.ofSpinedBuffer("SpinedList:" + name, isl)});
-
-                list.add(streamDataDescr("Primitives.range(0,l): " + doubles.length,
-                                         () -> DoubleStream.range(0, doubles.length)));
-                list.add(streamDataDescr("Primitives.range(0,l,2): " + doubles.length,
-                                         () -> DoubleStream.range(0, doubles.length, 2)));
-                list.add(streamDataDescr("Primitives.range(0,l,3): " + doubles.length,
-                                         () -> DoubleStream.range(0, doubles.length, 3)));
-                list.add(streamDataDescr("Primitives.range(0,l,7): " + doubles.length,
-                                         () -> DoubleStream.range(0, doubles.length, 7)));
             }
             testData = list.toArray(new Object[0][]);
         }
@@ -128,24 +119,11 @@ public class DoubleStreamTestDataProvider {
                                             () -> Spliterators.spliterator(isl.iterator(), doubles.length, 0)));
                 spliterators.add(splitDescr("Primitives.s(SpinedBuffer.iterator()):" + name,
                                             () -> Spliterators.spliteratorUnknownSize(isl.iterator(), 0)));
-
-                spliterators.add(splitDescr("Primitives.range(0,l):" + name,
-                                            () -> DoubleStream.range(0, doubles.length).spliterator()));
-                spliterators.add(splitDescr("Primitives.range(0,l,2):" + name,
-                                            () -> DoubleStream.range(0, doubles.length, 2).spliterator()));
-                spliterators.add(splitDescr("Primitives.range(0,l,3):" + name,
-                                            () -> DoubleStream.range(0, doubles.length, 3).spliterator()));
-                spliterators.add(splitDescr("Primitives.range(0,l,7):" + name,
-                                            () -> DoubleStream.range(0, doubles.length, 7).spliterator()));
                 // Need more!
             }
             spliteratorTestData = spliterators.toArray(new Object[0][]);
         }
 
-    }
-
-    static <T> Object[] streamDataDescr(String description, Supplier<DoubleStream> s) {
-        return new Object[] { description, TestData.Factory.ofDoubleSupplier(description, s) };
     }
 
     static <T> Object[] splitDescr(String description, Supplier<Spliterator.OfDouble> s) {
