@@ -173,7 +173,7 @@ public class RunTest {
         pw.close();
         String out = sw.toString();
 
-        String expect = "no files given";
+        String expect = "No files given";
         if (!Objects.equals(out.trim(), expect)) {
             error("unexpected output");
             System.err.println("EXPECT>>" + expect + "<<");

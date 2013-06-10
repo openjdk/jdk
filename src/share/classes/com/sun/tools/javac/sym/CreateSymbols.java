@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,11 +225,11 @@ public class CreateSymbols extends AbstractProcessor {
             }
             ClassSymbol cs = (ClassSymbol) sym;
             if (addLegacyAnnotation) {
-                cs.annotations.prepend(List.of(proprietaryAnno));
+                cs.prependAttributes(List.of(proprietaryAnno));
             }
             int p = profiles.getProfile(cs.fullname.toString().replace(".", "/"));
             if (0 < p && p < profileAnnos.length)
-                cs.annotations.prepend(List.of(profileAnnos[p]));
+                cs.prependAttributes(List.of(profileAnnos[p]));
             writeClass(pool, cs, writer);
         }
 

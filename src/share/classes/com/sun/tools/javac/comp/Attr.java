@@ -757,11 +757,10 @@ public class Attr extends JCTree.Visitor {
         // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
         // null. In that case, calling augment will throw an NPE. To avoid this, for now we
         // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
-        if (env.info.enclVar.annotations.pendingCompletion()) {
+        if (env.info.enclVar.annotationsPendingCompletion()) {
             env.info.lint = lintEnv.info.lint;
         } else {
-            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.annotations,
-                                                      env.info.enclVar.flags());
+            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar);
         }
 
         Lint prevLint = chk.setLint(env.info.lint);
@@ -881,7 +880,7 @@ public class Attr extends JCTree.Visitor {
         MethodSymbol m = tree.sym;
         boolean isDefaultMethod = (m.flags() & DEFAULT) != 0;
 
-        Lint lint = env.info.lint.augment(m.annotations, m.flags());
+        Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
@@ -1052,7 +1051,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         VarSymbol v = tree.sym;
-        Lint lint = env.info.lint.augment(v.annotations, v.flags());
+        Lint lint = env.info.lint.augment(v);
         Lint prevLint = chk.setLint(lint);
 
         // Check that the variable's declared type is well-formed.
@@ -1121,9 +1120,9 @@ public class Attr extends JCTree.Visitor {
                 ClassSymbol cs = (ClassSymbol)env.info.scope.owner;
                 List<Attribute.TypeCompound> tas = localEnv.info.scope.owner.getRawTypeAttributes();
                 if ((tree.flags & STATIC) != 0) {
-                    cs.annotations.appendClassInitTypeAttributes(tas);
+                    cs.appendClassInitTypeAttributes(tas);
                 } else {
-                    cs.annotations.appendInitTypeAttributes(tas);
+                    cs.appendInitTypeAttributes(tas);
                 }
             }
 
@@ -1173,8 +1172,11 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
         try {
-            attribStat(tree.var, loopEnv);
+            //the Formal Parameter of a for-each loop is not in the scope when
+            //attributing the for-each expression; we mimick this by attributing
+            //the for-each expression first (against original scope).
             Type exprType = types.upperBound(attribExpr(tree.expr, loopEnv));
+            attribStat(tree.var, loopEnv);
             chk.checkNonVoid(tree.pos(), exprType);
             Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
             if (elemtype == null) {
@@ -1831,9 +1833,6 @@ public class Attr extends JCTree.Visitor {
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, resultInfo);
-
-            if (localEnv.info.lastResolveVarargs())
-                Assert.check(result.isErroneous() || tree.varargsElement != null);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -2610,7 +2609,7 @@ public class Attr extends JCTree.Visitor {
                 //field initializer
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared()));
                 lambdaEnv.info.scope.owner =
-                    new MethodSymbol(0, names.empty, null,
+                    new MethodSymbol((owner.flags() & STATIC) | BLOCK, names.empty, null,
                                      env.info.scope.owner);
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
@@ -3731,8 +3730,28 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes,
                     noteWarner);
 
+            DeferredAttr.DeferredTypeMap checkDeferredMap =
+                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+
+            argtypes = Type.map(argtypes, checkDeferredMap);
+
+            if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
+                chk.warnUnchecked(env.tree.pos(),
+                        "unchecked.meth.invocation.applied",
+                        kindName(sym),
+                        sym.name,
+                        rs.methodArguments(sym.type.getParameterTypes()),
+                        rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
+                        kindName(sym.location()),
+                        sym.location());
+               owntype = new MethodType(owntype.getParameterTypes(),
+                       types.erasure(owntype.getReturnType()),
+                       types.erasure(owntype.getThrownTypes()),
+                       syms.methodClass);
+            }
+
             return chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
-                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED));
+                    resultInfo.checkContext.inferenceContext());
         } catch (Infer.InferenceException ex) {
             //invalid target type - propagate exception outwards or report error
             //depending on the current check context
@@ -4118,7 +4137,7 @@ public class Attr extends JCTree.Visitor {
                 lintEnv = lintEnv.next;
 
             // Having found the enclosing lint value, we can initialize the lint value for this class
-            env.info.lint = lintEnv.info.lint.augment(c.annotations, c.flags());
+            env.info.lint = lintEnv.info.lint.augment(c);
 
             Lint prevLint = chk.setLint(env.info.lint);
             JavaFileObject prev = log.useSource(c.sourcefile);

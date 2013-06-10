@@ -349,7 +349,7 @@ public class Resolve {
             : isAccessible(env, t.tsym, checkInner);
     }
 
-    /** Is symbol accessible as a member of given type in given evironment?
+    /** Is symbol accessible as a member of given type in given environment?
      *  @param env    The current environment.
      *  @param site   The type of which the tested symbol is regarded
      *                as a member.
@@ -490,11 +490,11 @@ public class Resolve {
     };
 
     /** Try to instantiate the type of a method so that it fits
-     *  given type arguments and argument types. If succesful, return
+     *  given type arguments and argument types. If successful, return
      *  the method's instantiated type, else return null.
      *  The instantiation will take into account an additional leading
      *  formal parameter if the method is an instance method seen as a member
-     *  of un underdetermined site In this case, we treat site as an additional
+     *  of an under determined site. In this case, we treat site as an additional
      *  parameter and the parameters of the class containing the method as
      *  additional type variables that get instantiated.
      *
@@ -1207,7 +1207,7 @@ public class Resolve {
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
              l = l.tail) {
             sym = findField(env, site, name, l.head.tsym);
-            if (bestSoFar.kind < AMBIGUOUS && sym.kind < AMBIGUOUS &&
+            if (bestSoFar.exists() && sym.exists() &&
                 sym.owner != bestSoFar.owner)
                 bestSoFar = new AmbiguityError(bestSoFar, sym);
             else if (sym.kind < bestSoFar.kind)
@@ -1343,7 +1343,7 @@ public class Resolve {
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, types.noWarnings);
-            if (!operator)
+            if (!operator || verboseResolutionMode.contains(VerboseResolutionMode.PREDEF))
                 currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
             if (!operator)
@@ -2500,17 +2500,21 @@ public class Resolve {
         try {
             currentResolutionContext = new MethodResolutionContext();
             Name name = treeinfo.operatorName(optag);
-            env.info.pendingResolutionPhase = currentResolutionContext.step = BASIC;
-            Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                                    null, false, false, true);
-            if (boxingEnabled && sym.kind >= WRONG_MTHS)
-                env.info.pendingResolutionPhase = currentResolutionContext.step = BOX;
-                sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                                 null, true, false, true);
-            return accessMethod(sym, pos, env.enclClass.sym.type, name,
+            return lookupMethod(env, pos, syms.predefClass, currentResolutionContext,
+                    new BasicLookupHelper(name, syms.predefClass.type, argtypes, null, BOX) {
+                @Override
+                Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    return findMethod(env, site, name, argtypes, typeargtypes,
+                            phase.isBoxingRequired(),
+                            phase.isVarargsRequired(), true);
+                }
+                @Override
+                Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+                    return accessMethod(sym, pos, env.enclClass.sym.type, name,
                           false, argtypes, null);
-        }
-        finally {
+                }
+            });
+        } finally {
             currentResolutionContext = prevResolutionContext;
         }
     }
@@ -2673,7 +2677,11 @@ public class Resolve {
     abstract class BasicLookupHelper extends LookupHelper {
 
         BasicLookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes) {
-            super(name, site, argtypes, typeargtypes, MethodResolutionPhase.VARARITY);
+            this(name, site, argtypes, typeargtypes, MethodResolutionPhase.VARARITY);
+        }
+
+        BasicLookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(name, site, argtypes, typeargtypes, maxPhase);
         }
 
         @Override
