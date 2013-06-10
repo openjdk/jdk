@@ -1,11 +1,6 @@
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
-import java.nio.charset.Charset;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.ExportException;
 import java.util.Random;
@@ -16,7 +11,7 @@ import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
 public class Server {
-    public static void main(String[] argv) throws Exception {
+    public static String start() throws Exception {
         int serverPort = 12345;
         ObjectName name = new ObjectName("test", "foo", "bar");
         MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
@@ -40,7 +35,7 @@ public class Server {
         JMXServiceURL serverUrl = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + serverPort + "/test");
         JMXConnectorServer jmxConnector = JMXConnectorServerFactory.newJMXConnectorServer(serverUrl, null, jmxServer);
         jmxConnector.start();
-        System.out.println(serverUrl);
-        System.err.println("server listening on " + serverUrl);
+
+        return serverUrl.toString();
     }
 }

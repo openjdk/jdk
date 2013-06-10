@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 7115052
- * @bug 8003280 8006694
+ * @bug 7115052 8003280 8006694
  * @summary Add lambda tests
  *  Add parser support for method references
  *  temporarily workaround combo tests are causing time out in several platforms
