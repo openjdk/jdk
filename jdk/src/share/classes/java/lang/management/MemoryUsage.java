@@ -72,8 +72,8 @@ import sun.management.MemoryUsageCompositeData;
  *      The amount of used and committed memory will always be less than
  *      or equal to <tt>max</tt> if <tt>max</tt> is defined.
  *      A memory allocation may fail if it attempts to increase the
- *      used memory such that <tt>used &gt committed</tt> even
- *      if <tt>used &lt= max</tt> would still be true (for example,
+ *      used memory such that <tt>used &gt; committed</tt> even
+ *      if <tt>used &lt;= max</tt> would still be true (for example,
  *      when the system is low on virtual memory).
  * </td>
  * </tr>

@@ -333,7 +333,7 @@ public class FileHandler extends StreamHandler {
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
-     * @exception IllegalArgumentException if limit < 0, or count < 1.
+     * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @exception  IllegalArgumentException if pattern is an empty string
      */
     public FileHandler(String pattern, int limit, int count)
@@ -371,7 +371,7 @@ public class FileHandler extends StreamHandler {
      * @exception  IOException if there are IO problems opening the files.
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have <tt>LoggingPermission("control")</tt>.
-     * @exception IllegalArgumentException if limit < 0, or count < 1.
+     * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @exception  IllegalArgumentException if pattern is an empty string
      *
      */

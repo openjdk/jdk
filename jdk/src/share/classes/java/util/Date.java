@@ -984,8 +984,9 @@ public class Date
      * exclusive OR of the two halves of the primitive <tt>long</tt>
      * value returned by the {@link Date#getTime}
      * method. That is, the hash code is the value of the expression:
-     * <blockquote><pre>
-     * (int)(this.getTime()^(this.getTime() >>> 32))</pre></blockquote>
+     * <blockquote><pre>{@code
+     * (int)(this.getTime()^(this.getTime() >>> 32))
+     * }</pre></blockquote>
      *
      * @return  a hash code value for this object.
      */
@@ -1085,7 +1086,7 @@ public class Date
     /**
      * Creates a string representation of this <tt>Date</tt> object of
      * the form:
-     * <blockquote<pre>
+     * <blockquote><pre>
      * d mon yyyy hh:mm:ss GMT</pre></blockquote>
      * where:<ul>
      * <li><i>d</i> is the day of the month (<tt>1</tt> through <tt>31</tt>),

@@ -4782,9 +4782,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Unicode surrogate pair</a>.
 
      * <p>This method is equivalent to the expression:
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      * isHighSurrogate(high) && isLowSurrogate(low)
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * @param  high the high-surrogate code value to be tested
      * @param  low the low-surrogate code value to be tested

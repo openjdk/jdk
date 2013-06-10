@@ -97,7 +97,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
      * @param bufLen compression buffer size
-     * @throws IllegalArgumentException if {@code bufLen} is <= 0
+     * @throws IllegalArgumentException if {@code bufLen <= 0}
      * @throws NullPointerException if {@code in} or {@code defl} is null
      */
     public DeflaterInputStream(InputStream in, Deflater defl, int bufLen) {
@@ -163,8 +163,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @param len maximum number of compressed bytes to read into {@code b}
      * @return the actual number of bytes read, or -1 if the end of the
      * uncompressed input stream is reached
-     * @throws IndexOutOfBoundsException  if {@code len} > {@code b.length -
-     * off}
+     * @throws IndexOutOfBoundsException  if {@code len > b.length - off}
      * @throws IOException if an I/O error occurs or if this input stream is
      * already closed
      */

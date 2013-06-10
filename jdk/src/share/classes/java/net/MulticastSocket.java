@@ -201,7 +201,7 @@ class MulticastSocket extends DatagramSocket {
      * scope of the multicasts.
      *
      * <p>The ttl is an <b>unsigned</b> 8-bit quantity, and so <B>must</B> be
-     * in the range <code> 0 <= ttl <= 0xFF </code>.
+     * in the range {@code 0 <= ttl <= 0xFF }.
      *
      * @param ttl the time-to-live
      * @exception IOException if an I/O exception occurs

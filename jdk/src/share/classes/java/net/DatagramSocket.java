@@ -334,12 +334,12 @@ class DatagramSocket implements java.io.Closeable {
     }
 
     /**
-     * Binds this DatagramSocket to a specific address & port.
+     * Binds this DatagramSocket to a specific address and port.
      * <p>
      * If the address is <code>null</code>, then the system will pick up
      * an ephemeral port and a valid local address to bind the socket.
      *<p>
-     * @param   addr The address & port to bind to.
+     * @param   addr The address and port to bind to.
      * @throws  SocketException if any error happens during the bind, or if the
      *          socket is already bound.
      * @throws  SecurityException  if a security manager exists and its
@@ -844,7 +844,7 @@ class DatagramSocket implements java.io.Closeable {
      *  a <B>java.net.SocketTimeoutException</B> is raised, though the
      *  DatagramSocket is still valid.  The option <B>must</B> be enabled
      *  prior to entering the blocking operation to have effect.  The
-     *  timeout must be > 0.
+     *  timeout must be {@code > 0}.
      *  A timeout of zero is interpreted as an infinite timeout.
      *
      * @param timeout the specified timeout in milliseconds.
@@ -1101,8 +1101,8 @@ class DatagramSocket implements java.io.Closeable {
      * As the underlying network implementation may ignore this
      * value applications should consider it a hint.
      *
-     * <P> The tc <B>must</B> be in the range <code> 0 <= tc <=
-     * 255</code> or an IllegalArgumentException will be thrown.
+     * <P> The tc <B>must</B> be in the range {@code 0 <= tc <=
+     * 255} or an IllegalArgumentException will be thrown.
      * <p>Notes:
      * <p>For Internet Protocol v4 the value consists of an
      * <code>integer</code>, the least significant 8 bits of which

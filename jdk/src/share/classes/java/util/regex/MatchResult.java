@@ -79,7 +79,7 @@ public interface MatchResult {
     /**
      * Returns the offset after the last character matched.  </p>
      *
-     * @return  @return  The offset after the last character matched
+     * @return  The offset after the last character matched
      *
      * @throws  IllegalStateException
      *          If no match has yet been attempted,

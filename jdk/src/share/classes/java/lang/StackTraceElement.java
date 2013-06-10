@@ -181,12 +181,12 @@ public final class StackTraceElement implements java.io.Serializable {
      * {@code StackTraceElement} instance representing the same execution
      * point as this instance.  Two stack trace elements {@code a} and
      * {@code b} are equal if and only if:
-     * <pre>
+     * <pre>{@code
      *     equals(a.getFileName(), b.getFileName()) &&
      *     a.getLineNumber() == b.getLineNumber()) &&
      *     equals(a.getClassName(), b.getClassName()) &&
      *     equals(a.getMethodName(), b.getMethodName())
-     * </pre>
+     * }</pre>
      * where {@code equals} has the semantics of {@link
      * java.util.Objects#equals(Object, Object) Objects.equals}.
      *

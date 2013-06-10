@@ -109,10 +109,10 @@ import javax.sql.rowset.serial.*;
  * <code>CachedRowSet</code><sup><font size=-2>TM</font></sup>
  * object <code>crs</code> might have its command property set.  Note that if a
  * tool is used to set properties, this is the code that the tool would use.
- * <PRE>
+ * <PRE>{@code
  *    crs.setCommand("SELECT FIRST_NAME, LAST_NAME, ADDRESS FROM CUSTOMERS" +
  *                   "WHERE CREDIT_LIMIT > ? AND REGION = ?");
- * </PRE>
+ * }</PRE>
  * <P>
  * In this example, the values for <code>CREDIT_LIMIT</code> and
  * <code>REGION</code> are placeholder parameters, which are indicated with a
@@ -129,16 +129,16 @@ import javax.sql.rowset.serial.*;
  * <P>
  * The following code fragment demonstrates
  * setting the two parameters in the query from the previous example.
- * <PRE>
+ * <PRE>{@code
  *    crs.setInt(1, 5000);
  *    crs.setString(2, "West");
- * </PRE>
+ * }</PRE>
  * If the <code>execute</code> method is called at this point, the query
  * sent to the DBMS will be:
- * <PRE>
+ * <PRE>{@code
  *    "SELECT FIRST_NAME, LAST_NAME, ADDRESS FROM CUSTOMERS" +
  *                   "WHERE CREDIT_LIMIT > 5000 AND REGION = 'West'"
- * </PRE>
+ * }</PRE>
  * NOTE: Setting <code>Array</code>, <code>Clob</code>, <code>Blob</code> and
  * <code>Ref</code> objects as a command parameter, stores these values as
  * <code>SerialArray</code>, <code>SerialClob</code>, <code>SerialBlob</code>
@@ -158,7 +158,7 @@ import javax.sql.rowset.serial.*;
  * When the method <code>execute</code> is called, the values in the
  * <code>Hashtable</code> object are substituted for the appropriate placeholder
  * parameters in the command.
- * <P)>
+ * <P>
  * A call to the method <code>getParams</code> returns the values stored in the
  * <code>Hashtable</code> object as an array of <code>Object</code> instances.
  * An element in this array may be a simple <code>Object</code> instance or an
@@ -2535,7 +2535,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * specific abstract data types.
      * <P>
      * The parameter value set by this method is stored internally and
-     * will be supplied as the appropriate parameter in this <code>RowSet</code
+     * will be supplied as the appropriate parameter in this <code>RowSet</code>
      * object's command when the method <code>execute</code> is called.
      * Methods such as <code>execute</code> and <code>populate</code> must be
      * provided in any class that extends this class and implements one or
