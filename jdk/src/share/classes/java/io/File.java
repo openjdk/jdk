@@ -1899,14 +1899,20 @@ public class File
 
         // file name generation
         private static final SecureRandom random = new SecureRandom();
-        static File generateFile(String prefix, String suffix, File dir) {
+        static File generateFile(String prefix, String suffix, File dir)
+            throws IOException
+        {
             long n = random.nextLong();
             if (n == Long.MIN_VALUE) {
                 n = 0;      // corner case
             } else {
                 n = Math.abs(n);
             }
-            return new File(dir, prefix + Long.toString(n) + suffix);
+            String name = prefix + Long.toString(n) + suffix;
+            File f = new File(dir, name);
+            if (!name.equals(f.getName()))
+                throw new IOException("Unable to create temporary file");
+            return f;
         }
     }
 
@@ -1988,25 +1994,21 @@ public class File
         if (suffix == null)
             suffix = ".tmp";
 
-        File tmpdir = (directory != null) ? directory : TempDirectory.location();
-        SecurityManager sm = System.getSecurityManager();
+        File tmpdir = (directory != null) ? directory
+                                          : TempDirectory.location();
         File f;
-        do {
-            f = TempDirectory.generateFile(prefix, suffix, tmpdir);
-            if (sm != null) {
-                try {
-                    sm.checkWrite(f.getPath());
-                } catch (SecurityException se) {
-                    // don't reveal temporary directory location
-                    if (directory == null)
-                        throw new SecurityException("Unable to create temporary file");
-                    throw se;
-                }
-            }
-            if (f.isInvalid()) {
+        try {
+            do {
+                f = TempDirectory.generateFile(prefix, suffix, tmpdir);
+            } while (f.exists());
+            if (!f.createNewFile())
                 throw new IOException("Unable to create temporary file");
-            }
-        } while (!fs.createFileExclusively(f.getPath()));
+        } catch (SecurityException se) {
+            // don't reveal temporary directory location
+            if (directory == null)
+                throw new SecurityException("Unable to create temporary file");
+            throw se;
+        }
         return f;
     }
 
