@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,11 @@ public class IsHidden {
         Files.getFileAttributeView(f.toPath(), DosFileAttributeView.class).setHidden(value);
     }
 
+    private static void checkHidden(File f) {
+        if (!f.isHidden())
+            throw new RuntimeException(f + " should be hidden");
+    }
+
     private static void testWin32() throws Exception {
         File f = new File(dir, "test");
         f.deleteOnExit();
@@ -58,6 +63,11 @@ public class IsHidden {
         }
         ck(".foo", false);
         ck("foo", false);
+
+        File pagefile = new File("C:\\pagefile.sys");
+        File hiberfil = new File("C:\\hiberfil.sys");
+        if (pagefile.exists()) checkHidden(pagefile);
+        if (hiberfil.exists()) checkHidden(hiberfil);
     }
 
     private static void testUnix() throws Exception {
