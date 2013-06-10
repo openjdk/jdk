@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class VersionOpt {
             javaHome = javaHome.getParentFile();
         File toolsJar = new File(new File(javaHome, "lib"), "tools.jar");
 
-        if (!javacHome.equals(toolsJar.toURI().toString())){
+        if (!javacHome.equalsIgnoreCase(toolsJar.toURI().toString())) {
             System.err.println("javac not found in tools.jar: " + javacHome);
             System.err.println("rest of test skipped");
             return;
