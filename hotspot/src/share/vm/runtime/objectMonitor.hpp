@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
 
-
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
 // ParkEvent instead.  Beware, however, that the JVMTI code
@@ -43,6 +42,7 @@ class ObjectWaiter : public StackObj {
   ObjectWaiter * volatile _next;
   ObjectWaiter * volatile _prev;
   Thread*       _thread;
+  jlong         _notifier_tid;
   ParkEvent *   _event;
   volatile int  _notified ;
   volatile TStates TState ;
@@ -54,6 +54,9 @@ class ObjectWaiter : public StackObj {
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 };
+
+// forward declaration to avoid include tracing.hpp
+class EventJavaMonitorWait;
 
 // WARNING:
 //   This is a very sensitive and fragile class. DO NOT make any
@@ -151,6 +154,7 @@ class ObjectMonitor {
     _SpinFreq     = 0 ;
     _SpinClock    = 0 ;
     OwnerIsThread = 0 ;
+    _previous_owner_tid = 0;
   }
 
   ~ObjectMonitor() {
@@ -192,7 +196,7 @@ public:
 
   bool      try_enter (TRAPS) ;
   void      enter(TRAPS);
-  void      exit(TRAPS);
+  void      exit(bool not_suspended, TRAPS);
   void      wait(jlong millis, bool interruptable, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
@@ -218,6 +222,10 @@ public:
   void      ctAsserts () ;
   void      ExitEpilog (Thread * Self, ObjectWaiter * Wakee) ;
   bool      ExitSuspendEquivalent (JavaThread * Self) ;
+  void      post_monitor_wait_event(EventJavaMonitorWait * event,
+                                                   jlong notifier_tid,
+                                                   jlong timeout,
+                                                   bool timedout);
 
  private:
   friend class ObjectSynchronizer;
@@ -240,6 +248,7 @@ public:
 
  protected:                         // protected for jvmtiRawMonitor
   void *  volatile _owner;          // pointer to owning thread OR BasicLock
+  volatile jlong _previous_owner_tid; // thread id of the previous owner of the monitor
   volatile intptr_t  _recursions;   // recursion count, 0 for first entry
  private:
   int OwnerIsThread ;               // _owner is (Thread *) vs SP/BasicLock

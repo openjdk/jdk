@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/os.hpp"
 #include "utilities/dtrace.hpp"
 
 
@@ -60,6 +63,7 @@ void VM_CMS_Operation::release_and_notify_pending_list_lock() {
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
+    GCTraceTime tm("Verify Before", false, false, _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -71,6 +75,7 @@ void VM_CMS_Operation::verify_before_gc() {
 void VM_CMS_Operation::verify_after_gc() {
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
+    GCTraceTime tm("Verify After", false, false, _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -140,6 +145,8 @@ void VM_CMS_Initial_Mark::doit() {
                                 );
 #endif /* USDT2 */
 
+  _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark", os::elapsed_counter());
+
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, GCCause::_cms_initial_mark);
 
@@ -149,6 +156,9 @@ void VM_CMS_Initial_Mark::doit() {
   _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsInitial, gch->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
+
+  _collector->_gc_timer_cm->register_gc_pause_end(os::elapsed_counter());
+
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__initmark__end);
 #else /* USDT2 */
@@ -172,6 +182,8 @@ void VM_CMS_Final_Remark::doit() {
                                 );
 #endif /* USDT2 */
 
+  _collector->_gc_timer_cm->register_gc_pause_start("Final Mark", os::elapsed_counter());
+
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, GCCause::_cms_final_remark);
 
@@ -181,6 +193,10 @@ void VM_CMS_Final_Remark::doit() {
   _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsFinal, gch->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
+
+  _collector->save_heap_summary();
+  _collector->_gc_timer_cm->register_gc_pause_end(os::elapsed_counter());
+
 #ifndef USDT2
   HS_DTRACE_PROBE(hs_private, cms__remark__end);
 #else /* USDT2 */
@@ -225,7 +241,7 @@ void VM_GenCollectFullConcurrent::doit() {
     // In case CMS thread was in icms_wait(), wake it up.
     CMSCollector::start_icms();
     // Nudge the CMS thread to start a concurrent collection.
-    CMSCollector::request_full_gc(_full_gc_count_before);
+    CMSCollector::request_full_gc(_full_gc_count_before, _gc_cause);
   } else {
     assert(_full_gc_count_before < gch->total_full_collections(), "Error");
     FullGCCount_lock->notify_all();  // Inform the Java thread its work is done

@@ -265,8 +265,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */,
-                                   true /* need_prologue */);
+          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -1444,10 +1443,15 @@ int os::get_line_chars(int fd, char* buf, const size_t bsize){
   return (int) i;
 }
 
+void os::SuspendedThreadTask::run() {
+  assert(Threads_lock->owned_by_self() || (_thread == VMThread::vm_thread()), "must have threads lock to call this");
+  internal_do_task();
+  _done = true;
+}
+
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
-
 
 char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
@@ -1551,3 +1555,19 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   pd_realign_memory(addr, bytes, alignment_hint);
 }
 
+#ifndef TARGET_OS_FAMILY_windows
+/* try to switch state from state "from" to state "to"
+ * returns the state set after the method is complete
+ */
+os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
+                                                         os::SuspendResume::State to)
+{
+  os::SuspendResume::State result =
+    (os::SuspendResume::State) Atomic::cmpxchg((jint) to, (jint *) &_state, (jint) from);
+  if (result == from) {
+    // success
+    return to;
+  }
+  return result;
+}
+#endif

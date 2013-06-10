@@ -35,6 +35,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/runtimeService.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
@@ -365,7 +366,23 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      (char *) op->name(), strlen(op->name()),
                      op->evaluation_mode());
 #endif /* USDT2 */
+
+    EventExecuteVMOperation event;
+
     op->evaluate();
+
+    if (event.should_commit()) {
+      bool is_concurrent = op->evaluate_concurrently();
+      event.set_operation(op->type());
+      event.set_safepoint(op->evaluate_at_safepoint());
+      event.set_blocking(!is_concurrent);
+      // Only write caller thread information for non-concurrent vm operations.
+      // For concurrent vm operations, the thread id is set to 0 indicating thread is unknown.
+      // This is because the caller thread could have exited already.
+      event.set_caller(is_concurrent ? 0 : op->calling_thread()->osthread()->thread_id());
+      event.commit();
+    }
+
 #ifndef USDT2
     HS_DTRACE_PROBE3(hotspot, vmops__end, op->name(), strlen(op->name()),
                      op->evaluation_mode());
@@ -601,7 +618,7 @@ void VMThread::execute(VM_Operation* op) {
     {
       VMOperationQueue_lock->lock_without_safepoint_check();
       bool ok = _vm_queue->add(op);
-      op->set_timestamp(os::javaTimeMillis());
+    op->set_timestamp(os::javaTimeMillis());
       VMOperationQueue_lock->notify();
       VMOperationQueue_lock->unlock();
       // VM_Operation got skipped

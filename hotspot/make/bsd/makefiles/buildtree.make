@@ -47,6 +47,7 @@
 # flags.make	- with macro settings
 # vm.make	- to support making "$(MAKE) -v vm.make" in makefiles
 # adlc.make	-
+# trace.make	- generate tracing event and type definitions
 # jvmti.make	- generate JVMTI bindings from the spec (JSR-163)
 # sa.make	- generate SA jar file and natives
 #
@@ -119,6 +120,7 @@ SIMPLE_DIRS	= \
 	$(PLATFORM_DIR)/generated/dependencies \
 	$(PLATFORM_DIR)/generated/adfiles \
 	$(PLATFORM_DIR)/generated/jvmtifiles \
+	$(PLATFORM_DIR)/generated/tracefiles \
 	$(PLATFORM_DIR)/generated/dtracefiles
 
 TARGETS      = debug fastdebug optimized product
@@ -128,7 +130,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
 # dtrace.make is used on BSD versions that implement Dtrace (like MacOS X)
-BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make sa.make dtrace.make
+BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make trace.make sa.make dtrace.make
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -322,6 +324,16 @@ adlc.make: $(BUILDTREE_MAKE)
 	) > $@
 
 jvmti.make: $(BUILDTREE_MAKE)
+	@echo Creating $@ ...
+	$(QUIETLY) ( \
+	$(BUILDTREE_COMMENT); \
+	echo; \
+	echo include flags.make; \
+	echo; \
+	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(@F)"; \
+	) > $@
+
+trace.make: $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \

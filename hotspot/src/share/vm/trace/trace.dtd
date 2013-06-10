@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+  
+-->
+
+<!ELEMENT trace (xi:include, relation_decls, events*, xi:include, xi:include)>
+<!ELEMENT types (content_types, primary_types)>
+<!ELEMENT content_types (content_type|struct_type)*>
+<!ELEMENT content_type (value|structvalue|structarray|array)*>
+<!ELEMENT struct_type (value*)>
+<!ELEMENT primary_types (primary_type*)>
+<!ELEMENT primary_type EMPTY>
+<!ELEMENT relation_decls (relation_decl*)>
+<!ELEMENT relation_decl EMPTY>
+<!ELEMENT events (event|struct)*>
+<!ELEMENT event (value|structvalue)*>
+<!ELEMENT struct (value|structvalue)*>
+<!ELEMENT value EMPTY>
+<!ELEMENT structvalue EMPTY>
+<!ELEMENT structarray EMPTY>
+<!ELEMENT array EMPTY>
+<!ATTLIST content_type  id             CDATA #REQUIRED
+                        hr_name        CDATA #REQUIRED
+                        type           CDATA #REQUIRED
+                        jvm_type       CDATA #IMPLIED
+                        builtin_type   CDATA #IMPLIED>
+<!ATTLIST struct_type   id             CDATA #REQUIRED>
+<!ATTLIST structarray   type           CDATA #REQUIRED
+                        field          CDATA #REQUIRED
+                        label          CDATA #REQUIRED>
+<!ATTLIST primary_type  symbol         CDATA #REQUIRED
+                        datatype       CDATA #REQUIRED
+                        contenttype    CDATA #REQUIRED
+                        type           CDATA #REQUIRED
+                        sizeop         CDATA #REQUIRED>
+<!ATTLIST relation_decl id             CDATA #REQUIRED
+                        uri            CDATA #REQUIRED>
+<!ATTLIST event         id             CDATA #REQUIRED
+                        path           CDATA #REQUIRED
+                        label          CDATA #REQUIRED
+                        description    CDATA #IMPLIED
+                        has_thread     CDATA "false"
+                        ignore_check   CDATA "false"
+                        has_stacktrace CDATA "false"
+                        is_instant     CDATA "false"
+                        is_constant    CDATA "false"
+                        is_requestable CDATA "false">
+<!ATTLIST struct        id             CDATA #REQUIRED>
+<!ATTLIST value         type           CDATA #REQUIRED
+                        field          CDATA #REQUIRED
+                        label          CDATA #REQUIRED
+                        description    CDATA #IMPLIED
+                        relation       CDATA "NOT_AVAILABLE"
+                        transition     CDATA "NONE">
+<!ATTLIST array         type           CDATA #REQUIRED
+                        field          CDATA #REQUIRED
+                        label          CDATA #REQUIRED
+                        description    CDATA #IMPLIED>
+<!ATTLIST structarray   type           CDATA #REQUIRED
+                        field          CDATA #REQUIRED
+                        label          CDATA #REQUIRED
+                        description    CDATA #IMPLIED>
+<!ATTLIST structvalue   type           CDATA #REQUIRED
+                        field          CDATA #REQUIRED
+                        label          CDATA #REQUIRED
+                        description    CDATA #IMPLIED>

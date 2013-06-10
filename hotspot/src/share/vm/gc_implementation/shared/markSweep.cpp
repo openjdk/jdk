@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "oops/methodData.hpp"
@@ -41,6 +43,8 @@ size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = NULL;
 ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
+STWGCTimer*             MarkSweep::_gc_timer        = NULL;
+SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 CodeBlobToOopClosure MarkSweep::follow_code_root_closure(&MarkSweep::follow_root_closure, /*do_marking=*/ true);
@@ -173,7 +177,10 @@ MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
 void MarkSweep::KeepAliveClosure::do_oop(oop* p)       { MarkSweep::KeepAliveClosure::do_oop_work(p); }
 void MarkSweep::KeepAliveClosure::do_oop(narrowOop* p) { MarkSweep::KeepAliveClosure::do_oop_work(p); }
 
-void marksweep_init() { /* empty */ }
+void marksweep_init() {
+  MarkSweep::_gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
+  MarkSweep::_gc_tracer = new (ResourceObj::C_HEAP, mtGC) SerialOldTracer();
+}
 
 #ifndef PRODUCT
 

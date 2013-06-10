@@ -2311,6 +2311,10 @@ class CommandLineFlags {
           "Print diagnostic message when GC is stalled"                     \
           "by JNI critical section")                                        \
                                                                             \
+  experimental(double, ObjectCountCutOffPercent, 0.5,                       \
+          "The percentage of the used heap that the instances of a class "  \
+          "must occupy for the class to generate a trace event.")           \
+                                                                            \
   /* GC log rotation setting */                                             \
                                                                             \
   product(bool, UseGCLogFileRotation, false,                                \
@@ -3688,7 +3692,13 @@ class CommandLineFlags {
   experimental(uintx, ArrayAllocatorMallocLimit,                            \
           SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
           "Allocation less than this value will be allocated "              \
-          "using malloc. Larger allocations will use mmap.")
+          "using malloc. Larger allocations will use mmap.")                \
+                                                                            \
+  product(bool, EnableTracing, false,                                       \
+          "Enable event-based tracing")                                     \
+  product(bool, UseLockedTracing, false,                                    \
+          "Use locked-tracing when doing event-based tracing")
+
 
 /*
  *  Macros for factoring of globals

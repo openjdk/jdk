@@ -693,6 +693,9 @@ class PerfDataManager : AllStatic {
     // the given name.
     static bool exists(const char* name) { return _all->contains(name); }
 
+    // method to search for a instrumentation object by name
+    static PerfData* find_by_name(const char* name);
+
     // method to map a CounterNS enumeration to a namespace string
     static const char* ns_to_string(CounterNS ns) {
       return _name_spaces[ns];

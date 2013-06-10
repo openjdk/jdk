@@ -25,7 +25,9 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "utilities/taskqueue.hpp"
 
@@ -105,7 +107,7 @@ class ParScanThreadState {
 #endif // TASKQUEUE_STATS
 
   // Stats for promotion failure
-  size_t _promotion_failure_size;
+  PromotionFailedInfo _promotion_failed_info;
 
   // Timing numbers.
   double _start;
@@ -180,13 +182,16 @@ class ParScanThreadState {
   void undo_alloc_in_to_space(HeapWord* obj, size_t word_sz);
 
   // Promotion failure stats
-  size_t promotion_failure_size() { return promotion_failure_size(); }
-  void log_promotion_failure(size_t sz) {
-    if (_promotion_failure_size == 0) {
-      _promotion_failure_size = sz;
-    }
+  void register_promotion_failure(size_t sz) {
+    _promotion_failed_info.register_copy_failure(sz);
   }
-  void print_and_clear_promotion_failure_size();
+  PromotionFailedInfo& promotion_failed_info() {
+    return _promotion_failed_info;
+  }
+  bool promotion_failed() {
+    return _promotion_failed_info.has_failed();
+  }
+  void print_promotion_failure_size();
 
 #if TASKQUEUE_STATS
   TaskQueueStats & taskqueue_stats() const { return _work_queue->stats; }
@@ -336,6 +341,8 @@ class ParNewGeneration: public DefNewGeneration {
   // Preserve the mark of "obj", if necessary, in preparation for its mark
   // word being overwritten with a self-forwarding-pointer.
   void preserve_mark_if_necessary(oop obj, markOop m);
+
+  void handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set, ParNewTracer& gc_tracer);
 
  protected:
 
