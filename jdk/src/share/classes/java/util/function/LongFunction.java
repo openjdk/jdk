@@ -43,5 +43,5 @@ public interface LongFunction<R> {
      * @param value the input value
      * @return the function result
      */
-    public R apply(long value);
+    R apply(long value);
 }

@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -80,7 +79,7 @@ import jdk.nashorn.internal.runtime.Source;
  * finalized.
  */
 
-final class Lower extends NodeOperatorVisitor {
+final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("lower");
 
@@ -105,7 +104,7 @@ final class Lower extends NodeOperatorVisitor {
                             terminated = true;
                         }
                     } else {
-                        statement.accept(new NodeVisitor() {
+                        statement.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                             @Override
                             public boolean enterVarNode(final VarNode varNode) {
                                 newStatements.add(varNode.setInit(null));
@@ -121,7 +120,6 @@ final class Lower extends NodeOperatorVisitor {
 
     @Override
     public boolean enterBlock(final Block block) {
-        final LexicalContext lc = getLexicalContext();
         final FunctionNode   function = lc.getCurrentFunction();
         if (lc.isFunctionBody() && function.isProgram() && !function.hasDeclaredFunctions()) {
             new ExecuteNode(block.getLineNumber(), block.getToken(), block.getFinish(), LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED)).accept(this);
@@ -134,12 +132,10 @@ final class Lower extends NodeOperatorVisitor {
         //now we have committed the entire statement list to the block, but we need to truncate
         //whatever is after the last terminal. block append won't append past it
 
-        final BlockLexicalContext lc = (BlockLexicalContext)getLexicalContext();
-
         Statement last = lc.getLastStatement();
 
         if (lc.isFunctionBody()) {
-            final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+            final FunctionNode currentFunction = lc.getCurrentFunction();
             final boolean isProgram = currentFunction.isProgram();
             final ReturnNode returnNode = new ReturnNode(
                 last == null ? block.getLineNumber() : last.getLineNumber(), //TODO?
@@ -191,7 +187,7 @@ final class Lower extends NodeOperatorVisitor {
         final Node expr = executeNode.getExpression();
         ExecuteNode node = executeNode;
 
-        final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+        final FunctionNode currentFunction = lc.getCurrentFunction();
 
         if (currentFunction.isProgram()) {
             if (!(expr instanceof Block) || expr instanceof FunctionNode) { // it's not a block, but can be a function
@@ -216,7 +212,7 @@ final class Lower extends NodeOperatorVisitor {
 
         final Node  test = forNode.getTest();
         if (!forNode.isForIn() && conservativeAlwaysTrue(test)) {
-            newForNode = forNode.setTest(getLexicalContext(), null);
+            newForNode = forNode.setTest(lc, null);
         }
 
         return addStatement(checkEscape(newForNode));
@@ -230,7 +226,7 @@ final class Lower extends NodeOperatorVisitor {
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         LOG.info("END FunctionNode: ", functionNode.getName());
-        return functionNode.setState(getLexicalContext(), CompilationState.LOWERED);
+        return functionNode.setState(lc, CompilationState.LOWERED);
     }
 
     @Override
@@ -261,19 +257,25 @@ final class Lower extends NodeOperatorVisitor {
         return throwNode;
     }
 
-    private static Node ensureUniqueLabelsIn(final Node node) {
-        return node.accept(new NodeVisitor() {
-           @Override
-           public Node leaveDefault(final Node labelledNode) {
-               return labelledNode.ensureUniqueLabels(getLexicalContext());
-           }
+    private static Node ensureUniqueNamesIn(final Node node) {
+        return node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            @Override
+            public Node leaveFunctionNode(final FunctionNode functionNode) {
+                final String name = functionNode.getName();
+                return functionNode.setName(lc, lc.getCurrentFunction().uniqueName(name));
+            }
+
+            @Override
+            public Node leaveDefault(final Node labelledNode) {
+                return labelledNode.ensureUniqueLabels(lc);
+            }
         });
     }
 
     private static List<Statement> copyFinally(final Block finallyBody) {
         final List<Statement> newStatements = new ArrayList<>();
         for (final Statement statement : finallyBody.getStatements()) {
-            newStatements.add((Statement)ensureUniqueLabelsIn(statement));
+            newStatements.add((Statement)ensureUniqueNamesIn(statement));
             if (statement.hasTerminalFlags()) {
                 return newStatements;
             }
@@ -286,12 +288,12 @@ final class Lower extends NodeOperatorVisitor {
         final long token      = tryNode.getToken();
         final int  finish     = tryNode.getFinish();
 
-        final IdentNode exception = new IdentNode(token, finish, getLexicalContext().getCurrentFunction().uniqueName("catch_all"));
+        final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName("catch_all"));
 
-        final Block catchBody = new Block(lineNumber, token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception))).
-                setIsTerminal(getLexicalContext(), true); //ends with throw, so terminal
+        final Block catchBody = new Block(lineNumber, token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW)).
+                setIsTerminal(lc, true); //ends with throw, so terminal
 
-        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody);
+        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody, CatchNode.IS_SYNTHETIC_RETHROW);
         final Block     catchAllBlock = new Block(lineNumber, token, finish, catchAllNode);
 
         //catchallblock -> catchallnode (catchnode) -> exception -> throw
@@ -300,7 +302,7 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     private IdentNode compilerConstant(final CompilerConstants cc) {
-        final FunctionNode functionNode = getLexicalContext().getCurrentFunction();
+        final FunctionNode functionNode = lc.getCurrentFunction();
         return new IdentNode(functionNode.getToken(), functionNode.getFinish(), cc.symbolName());
     }
 
@@ -316,11 +318,10 @@ final class Lower extends NodeOperatorVisitor {
      * @return new try node after splicing finally code (same if nop)
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
-        final int finish = tryNode.getFinish();
-
         assert tryNode.getFinallyBody() == null;
+        final int            finish = tryNode.getFinish();
 
-        final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor() {
+        final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             final List<Node> insideTry = new ArrayList<>();
 
             @Override
@@ -349,12 +350,12 @@ final class Lower extends NodeOperatorVisitor {
 
             @Override
             public Node leaveBreakNode(final BreakNode breakNode) {
-                return copy(breakNode, Lower.this.getLexicalContext().getBreakable(breakNode.getLabel()));
+                return copy(breakNode, Lower.this.lc.getBreakable(breakNode.getLabel()));
             }
 
             @Override
             public Node leaveContinueNode(final ContinueNode continueNode) {
-                return copy(continueNode, Lower.this.getLexicalContext().getContinueTo(continueNode.getLabel()));
+                return copy(continueNode, Lower.this.lc.getContinueTo(continueNode.getLabel()));
             }
 
             @Override
@@ -377,7 +378,7 @@ final class Lower extends NodeOperatorVisitor {
                     newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
                 }
 
-                return new ExecuteNode(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new Block(returnNode.getLineNumber(), returnNode.getToken(), getLexicalContext().getCurrentBlock().getFinish(), newStatements));
+                return new ExecuteNode(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new Block(returnNode.getLineNumber(), returnNode.getToken(), lc.getCurrentBlock().getFinish(), newStatements));
             }
 
             private Node copy(final Statement endpoint, final Node targetNode) {
@@ -436,7 +437,7 @@ final class Lower extends NodeOperatorVisitor {
         final Block catchAll = catchAllBlock(tryNode);
 
         final List<ThrowNode> rethrows = new ArrayList<>();
-        catchAll.accept(new NodeVisitor() {
+        catchAll.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public boolean enterThrowNode(final ThrowNode throwNode) {
                 rethrows.add(throwNode);
@@ -464,7 +465,7 @@ final class Lower extends NodeOperatorVisitor {
     @Override
     public Node leaveVarNode(final VarNode varNode) {
         addStatement(varNode);
-        if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION) && getLexicalContext().getCurrentFunction().isProgram()) {
+        if (varNode.getFlag(VarNode.IS_LAST_FUNCTION_DECLARATION) && lc.getCurrentFunction().isProgram()) {
             new ExecuteNode(varNode.getLineNumber(), varNode.getToken(), varNode.getFinish(), new IdentNode(varNode.getName())).accept(this);
         }
         return varNode;
@@ -478,7 +479,7 @@ final class Lower extends NodeOperatorVisitor {
         if (conservativeAlwaysTrue(test)) {
             //turn it into a for node without a test.
             final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), null, null, body, null, ForNode.IS_FOR).accept(this);
-            getLexicalContext().replace(whileNode, forNode);
+            lc.replace(whileNode, forNode);
             return forNode;
         }
 
@@ -513,7 +514,7 @@ final class Lower extends NodeOperatorVisitor {
      * @return eval location
      */
     private String evalLocation(final IdentNode node) {
-        final Source source = getLexicalContext().getCurrentFunction().getSource();
+        final Source source = lc.getCurrentFunction().getSource();
         return new StringBuilder().
             append(source.getName()).
             append('#').
@@ -545,10 +546,10 @@ final class Lower extends NodeOperatorVisitor {
 
             // 'eval' call with at least one argument
             if (args.size() >= 1 && EVAL.symbolName().equals(callee.getName())) {
-                final FunctionNode currentFunction = getLexicalContext().getCurrentFunction();
+                final FunctionNode currentFunction = lc.getCurrentFunction();
                 return callNode.setEvalArgs(
                     new CallNode.EvalArgs(
-                        ensureUniqueLabelsIn(args.get(0)).accept(this),
+                        ensureUniqueNamesIn(args.get(0)).accept(this),
                         compilerConstant(THIS),
                         evalLocation(callee),
                         currentFunction.isStrict()));
@@ -574,7 +575,7 @@ final class Lower extends NodeOperatorVisitor {
     private static boolean controlFlowEscapes(final LexicalContext lex, final Block loopBody) {
         final List<Node> escapes = new ArrayList<>();
 
-        loopBody.accept(new NodeVisitor() {
+        loopBody.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveBreakNode(final BreakNode node) {
                 escapes.add(node);
@@ -595,7 +596,6 @@ final class Lower extends NodeOperatorVisitor {
     }
 
     private LoopNode checkEscape(final LoopNode loopNode) {
-        final LexicalContext lc = getLexicalContext();
         final boolean escapes = controlFlowEscapes(lc, loopNode.getBody());
         if (escapes) {
             return loopNode.
@@ -607,7 +607,7 @@ final class Lower extends NodeOperatorVisitor {
 
 
     private Node addStatement(final Statement statement) {
-        ((BlockLexicalContext)getLexicalContext()).appendStatement(statement);
+        lc.appendStatement(statement);
         return statement;
     }
 

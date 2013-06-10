@@ -39,5 +39,5 @@ public interface DoubleSupplier {
      *
      * @return a {@code double} value
      */
-    public double getAsDouble();
+    double getAsDouble();
 }

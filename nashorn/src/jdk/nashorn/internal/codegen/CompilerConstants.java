@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.Iterator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -105,13 +106,13 @@ public enum CompilerConstants {
     ARGUMENTS("arguments", Object.class, 2),
 
     /** prefix for iterators for for (x in ...) */
-    ITERATOR_PREFIX(":i"),
+    ITERATOR_PREFIX(":i", Iterator.class),
 
     /** prefix for tag variable used for switch evaluation */
     SWITCH_TAG_PREFIX(":s"),
 
     /** prefix for all exceptions */
-    EXCEPTION_PREFIX(":e"),
+    EXCEPTION_PREFIX(":e", Throwable.class),
 
     /** prefix for quick slots generated in Store */
     QUICK_PREFIX(":q"),
@@ -262,7 +263,7 @@ public enum CompilerConstants {
      * @return the internal descriptor for this type
      */
     public static String typeDescriptor(final Class<?> clazz) {
-        return Type.getDescriptor(clazz);
+        return Type.typeFor(clazz).getDescriptor();
     }
 
     /**

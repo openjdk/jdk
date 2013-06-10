@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
@@ -150,17 +149,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /** Method handle for setting the user accessors of a ScriptObject */
     public static final Call SET_USER_ACCESSORS = virtualCall(ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
-
-    /** Method handle for getter for {@link UserAccessorProperty}, given a slot */
-    static final Call USER_ACCESSOR_GETTER = staticCall(MethodHandles.lookup(), ScriptObject.class, "userAccessorGetter", Object.class, ScriptObject.class, int.class, Object.class);
-
-    /** Method handle for setter for {@link UserAccessorProperty}, given a slot */
-    static final Call USER_ACCESSOR_SETTER = staticCall(MethodHandles.lookup(), ScriptObject.class, "userAccessorSetter", void.class, ScriptObject.class, int.class, String.class, Object.class, Object.class);
-
-    private static final MethodHandle INVOKE_UA_GETTER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-            Object.class, Object.class);
-    private static final MethodHandle INVOKE_UA_SETTER = Bootstrap.createDynamicInvoker("dyn:call", void.class,
-            Object.class, Object.class, Object.class);
 
     /**
      * Constructor
@@ -699,17 +687,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return New property.
      */
     public final Property addOwnProperty(final String key, final int propertyFlags, final Object value) {
-        final MethodHandle setter = addSpill(key, propertyFlags);
-
-        try {
-            setter.invokeExact((Object)this, value);
-        } catch (final Error|RuntimeException e) {
-            throw e;
-        } catch (final Throwable e) {
-            throw new RuntimeException(e);
-        }
-
-        return getMap().findProperty(key);
+        final Property property = addSpillProperty(key, propertyFlags);
+        property.setObjectValue(this, this, value, false);
+        return property;
     }
 
     /**
@@ -744,15 +724,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         // Erase the property field value with undefined. If the property is defined
         // by user-defined accessors, we don't want to call the setter!!
         if (!(property instanceof UserAccessorProperty)) {
-            try {
-                // make the property value to be undefined
-                //TODO specproperties
-                property.getSetter(Object.class, getMap()).invokeExact((Object)this, (Object)UNDEFINED);
-            } catch (final RuntimeException | Error e) {
-                throw e;
-            } catch (final Throwable t) {
-                throw new RuntimeException(t);
-            }
+            property.setObjectValue(this, this, UNDEFINED, false);
         }
     }
 
@@ -948,18 +920,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
       * @return the value of the property
       */
     protected static Object getObjectValue(final FindProperty find) {
-        final MethodHandle getter = find.getGetter(Object.class);
-        if (getter != null) {
-            try {
-                return getter.invokeExact((Object)find.getGetterReceiver());
-            } catch (final Error|RuntimeException e) {
-                throw e;
-            } catch (final Throwable e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return UNDEFINED;
+        return find.getObjectValue();
     }
 
     /**
@@ -1551,6 +1512,17 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Delete a property from the ScriptObject.
+     * (to help ScriptObjectMirror implementation)
+     *
+     * @param key the key of the property
+     * @return if the delete was successful or not
+     */
+    public boolean delete(final Object key) {
+        return delete(key, getContext()._strict);
+    }
+
+    /**
      * Return the size of the ScriptObject - i.e. the number of properties
      * it contains
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
@@ -2087,11 +2059,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             property = addOwnProperty(property);
         } else {
             int i = getMap().getSpillLength();
-            MethodHandle getter = MH.arrayElementGetter(Object[].class);
-            MethodHandle setter = MH.arrayElementSetter(Object[].class);
-            getter = MH.asType(MH.insertArguments(getter, 1, i), Lookup.GET_OBJECT_TYPE);
-            setter = MH.asType(MH.insertArguments(setter, 1, i), Lookup.SET_OBJECT_TYPE);
-            property = new AccessorProperty(key, propertyFlags | Property.IS_SPILL, i, getter, setter);
+            property = new AccessorProperty(key, propertyFlags | Property.IS_SPILL, i);
             notifyPropertyAdded(this, property);
             property = addOwnProperty(property);
             i = property.getSlot();
@@ -2115,18 +2083,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /**
      * Add a spill entry for the given key.
-     * @param key           Property key.
-     * @param propertyFlags Property flags.
+     * @param key Property key.
      * @return Setter method handle.
      */
-    private MethodHandle addSpill(final String key, final int propertyFlags) {
-        final Property spillProperty = addSpillProperty(key, propertyFlags);
+    MethodHandle addSpill(final String key) {
+        final Property spillProperty = addSpillProperty(key, 0);
         final Class<?> type = Object.class;
         return spillProperty.getSetter(type, getMap()); //TODO specfields
-    }
-
-    MethodHandle addSpill(final String key) {
-        return addSpill(key, 0);
     }
 
     /**
@@ -2659,14 +2622,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 return;
             }
 
-            try {
-                final MethodHandle setter = f.getSetter(Object.class, strict); //TODO specfields
-                setter.invokeExact((Object)f.getSetterReceiver(), value);
-            } catch (final Error|RuntimeException e) {
-                throw e;
-            } catch (final Throwable e) {
-                throw new RuntimeException(e);
-            }
+            f.setObjectValue(value, strict);
+
         } else if (!isExtensible()) {
             if (strict) {
                 throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
@@ -2677,13 +2634,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private void spill(final String key, final Object value) {
-        try {
-            addSpill(key).invokeExact((Object)this, value);
-        } catch (final Error|RuntimeException e) {
-            throw e;
-        } catch (final Throwable e) {
-            throw new RuntimeException(e);
-        }
+        addSpillProperty(key, 0).setObjectValue(this, this, value, false);
     }
 
 
@@ -3215,46 +3166,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     Object getSpill(final int slot) {
         final int index = slot;
         return (index < 0 || (index >= spill.length)) ? null : spill[index];
-    }
-
-    // User defined getter and setter are always called by "dyn:call". Note that the user
-    // getter/setter may be inherited. If so, proto is bound during lookup. In either
-    // inherited or self case, slot is also bound during lookup. Actual ScriptFunction
-    // to be called is retrieved everytime and applied.
-    @SuppressWarnings("unused")
-    private static Object userAccessorGetter(final ScriptObject proto, final int slot, final Object self) {
-        final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
-        final Object       func      = container.getSpill(slot);
-
-        if (func instanceof ScriptFunction) {
-            try {
-                return INVOKE_UA_GETTER.invokeExact(func, self);
-            } catch(final Error|RuntimeException t) {
-                throw t;
-            } catch(final Throwable t) {
-                throw new RuntimeException(t);
-            }
-        }
-
-        return UNDEFINED;
-    }
-
-    @SuppressWarnings("unused")
-    private static void userAccessorSetter(final ScriptObject proto, final int slot, final String name, final Object self, final Object value) {
-        final ScriptObject container = (proto != null) ? proto : (ScriptObject)self;
-        final Object       func      = container.getSpill(slot);
-
-        if (func instanceof ScriptFunction) {
-            try {
-                INVOKE_UA_SETTER.invokeExact(func, self, value);
-            } catch(final Error|RuntimeException t) {
-                throw t;
-            } catch(final Throwable t) {
-                throw new RuntimeException(t);
-            }
-        }  else if (name != null) {
-            throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
-        }
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

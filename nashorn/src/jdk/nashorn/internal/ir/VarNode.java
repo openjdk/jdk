@@ -121,7 +121,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterVarNode(this)) {
             final IdentNode newName = (IdentNode)name.accept(visitor);
             final Node      newInit = init == null ? null : init.accept(visitor);

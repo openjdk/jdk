@@ -78,7 +78,7 @@ public final class CaseNode extends Node {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterCaseNode(this)) {
             final Node  newTest = test == null ? null : test.accept(visitor);
             final Block newBody = body == null ? null : (Block)body.accept(visitor);

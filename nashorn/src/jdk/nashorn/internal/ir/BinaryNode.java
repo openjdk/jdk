@@ -59,6 +59,23 @@ public final class BinaryNode extends Node implements Assignment<Node> {
         this.rhs = rhs;
     }
 
+    @Override
+    public boolean isComparison() {
+        switch (tokenType()) {
+        case EQ:
+        case EQ_STRICT:
+        case NE:
+        case NE_STRICT:
+        case LE:
+        case LT:
+        case GE:
+        case GT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     /**
      * Return the widest possible type for this operation. This is used for compile time
      * static type inference
@@ -143,7 +160,7 @@ public final class BinaryNode extends Node implements Assignment<Node> {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterBinaryNode(this)) {
             return visitor.leaveBinaryNode(setLHS(lhs.accept(visitor)).setRHS(rhs.accept(visitor)));
         }

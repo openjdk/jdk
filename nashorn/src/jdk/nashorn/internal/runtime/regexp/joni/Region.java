@@ -25,7 +25,6 @@ public final class Region {
     public final int numRegs;
     public final int[]beg;
     public final int[]end;
-    public CaptureTreeNode historyRoot;
 
     public Region(int num) {
         this.numRegs = num;
@@ -33,29 +32,11 @@ public final class Region {
         this.end = new int[num];
     }
 
-    public Region(int begin, int end) {
-        this.numRegs = 1;
-        this.beg = new int[]{begin};
-        this.end = new int[]{end};
-    }
-
-    public Region clone() {
-        Region region = new Region(numRegs);
-        System.arraycopy(beg, 0, region.beg, 0, beg.length);
-        System.arraycopy(end, 0, region.end, 0, end.length);
-        if (historyRoot != null) region.historyRoot = historyRoot.cloneTree();
-        return region;
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Region: \n");
         for (int i=0; i<beg.length; i++) sb.append(" " + i + ": (" + beg[i] + "-" + end[i] + ")");
         return sb.toString();
-    }
-
-    CaptureTreeNode getCaptureTree() {
-        return historyRoot;
     }
 
     void clear() {
