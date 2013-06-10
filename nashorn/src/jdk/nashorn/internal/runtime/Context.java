@@ -496,12 +496,13 @@ public final class Context {
      * expression, after creating a new global scope.
      *
      * @param from source expression for script
+     * @param args (optional) arguments to be passed to the loaded script
      *
      * @return return value for load call (undefined)
      *
      * @throws IOException if source cannot be found or loaded
      */
-    public Object loadWithNewGlobal(final Object from) throws IOException {
+    public Object loadWithNewGlobal(final Object from, final Object...args) throws IOException {
         final ScriptObject oldGlobal = getGlobalTrusted();
         final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
            @Override
@@ -517,6 +518,9 @@ public final class Context {
            }
         });
         setGlobalTrusted(newGlobal);
+
+        final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, newGlobal);
+        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped));
 
         try {
             return ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal);
