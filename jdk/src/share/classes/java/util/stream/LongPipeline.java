@@ -169,7 +169,7 @@ abstract class LongPipeline<E_IN>
 
     @Override
     public final PrimitiveIterator.OfLong iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override

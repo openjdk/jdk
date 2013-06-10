@@ -48,7 +48,7 @@ public class LongNodeTest extends OpTestCase {
             List<Node<Long>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toLongArray(l))));
             nodes.add(fill(array, Nodes.longBuilder(array.length)));
             nodes.add(fill(array, Nodes.longBuilder()));

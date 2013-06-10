@@ -170,7 +170,7 @@ public class SpliteratorTraversingAndSplittingTest {
                    () -> Spliterators.spliteratorUnknownSize(exp.iterator(), 0));
 
             db.add("Spliterators.spliterator(Spliterators.iteratorFromSpliterator(Spliterator ), ...)",
-                   () -> Spliterators.spliterator(Spliterators.iteratorFromSpliterator(exp.spliterator()), exp.size(), 0));
+                   () -> Spliterators.spliterator(Spliterators.iterator(exp.spliterator()), exp.size(), 0));
 
             db.add("Spliterators.spliterator(T[], ...)",
                    () -> Spliterators.spliterator(exp.toArray(new Integer[0]), 0));
@@ -549,10 +549,10 @@ public class SpliteratorTraversingAndSplittingTest {
                    () -> Arrays.spliterator(exp));
 
             db.add("Spliterators.spliterator(PrimitiveIterator.OfInt, ...)",
-                   () -> Spliterators.spliterator(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), exp.length, 0));
+                   () -> Spliterators.spliterator(Spliterators.iterator(Arrays.spliterator(exp)), exp.length, 0));
 
             db.add("Spliterators.spliteratorUnknownSize(PrimitiveIterator.OfInt, ...)",
-                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), 0));
+                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(exp)), 0));
 
             class IntSpliteratorFromArray extends Spliterators.AbstractIntSpliterator {
                 int[] a;
@@ -702,10 +702,10 @@ public class SpliteratorTraversingAndSplittingTest {
                    () -> Arrays.spliterator(exp));
 
             db.add("Spliterators.spliterator(PrimitiveIterator.OfLong, ...)",
-                   () -> Spliterators.spliterator(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), exp.length, 0));
+                   () -> Spliterators.spliterator(Spliterators.iterator(Arrays.spliterator(exp)), exp.length, 0));
 
             db.add("Spliterators.spliteratorUnknownSize(PrimitiveIterator.OfLong, ...)",
-                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), 0));
+                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(exp)), 0));
 
             class LongSpliteratorFromArray extends Spliterators.AbstractLongSpliterator {
                 long[] a;
@@ -862,10 +862,10 @@ public class SpliteratorTraversingAndSplittingTest {
                    () -> Arrays.spliterator(exp));
 
             db.add("Spliterators.spliterator(PrimitiveIterator.OfDouble, ...)",
-                   () -> Spliterators.spliterator(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), exp.length, 0));
+                   () -> Spliterators.spliterator(Spliterators.iterator(Arrays.spliterator(exp)), exp.length, 0));
 
             db.add("Spliterators.spliteratorUnknownSize(PrimitiveIterator.OfDouble, ...)",
-                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(exp)), 0));
+                   () -> Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(exp)), 0));
 
             class DoubleSpliteratorFromArray extends Spliterators.AbstractDoubleSpliterator {
                 double[] a;

@@ -48,7 +48,7 @@ public class DoubleNodeTest extends OpTestCase {
             List<Node<Double>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toDoubleArray(l))));
             nodes.add(fill(array, Nodes.doubleBuilder(array.length)));
             nodes.add(fill(array, Nodes.doubleBuilder()));

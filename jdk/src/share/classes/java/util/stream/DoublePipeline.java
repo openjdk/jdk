@@ -168,7 +168,7 @@ abstract class DoublePipeline<E_IN>
 
     @Override
     public final PrimitiveIterator.OfDouble iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override

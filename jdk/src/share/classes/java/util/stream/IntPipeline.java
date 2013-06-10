@@ -172,7 +172,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final PrimitiveIterator.OfInt iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override
