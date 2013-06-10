@@ -462,7 +462,7 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setCanBeUndefined() {
         assert type.isObject() : type;
-        if(!canBeUndefined()) {
+        if (!isParam() && !canBeUndefined()) {//parameters are never undefined
             assert !isShared();
             flags |= CAN_BE_UNDEFINED;
         }
