@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ public class CipherInputStream extends FilterInputStream {
     private int ostart = 0;
     // the offset pointing to the last "new" byte
     private int ofinish = 0;
+    // stream status
+    private boolean closed = false;
 
     /**
      * private convenience function.
@@ -293,14 +295,17 @@ public class CipherInputStream extends FilterInputStream {
      * @since JCE1.2
      */
     public void close() throws IOException {
+        if (closed) {
+            return;
+        }
+
+        closed = true;
         input.close();
         try {
             // throw away the unprocessed data
             cipher.doFinal();
         }
-        catch (BadPaddingException ex) {
-        }
-        catch (IllegalBlockSizeException ex) {
+        catch (BadPaddingException | IllegalBlockSizeException ex) {
         }
         ostart = 0;
         ofinish = 0;

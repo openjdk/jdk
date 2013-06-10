@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include <jni.h>
+#include <stdlib.h>
 #include "jvm.h"
 #include "management.h"
 #include "sun_management_VMManagementImpl.h"
@@ -95,6 +96,9 @@ Java_sun_management_VMManagementImpl_initOptionalSupportFields
 
     value = mos.isThreadAllocatedMemorySupported;
     setStaticBooleanField(env, cls, "threadAllocatedMemorySupport", value);
+
+    value = mos.isRemoteDiagnosticCommandsSupported;
+    setStaticBooleanField(env, cls, "remoteDiagnosticCommandsSupport", value);
 
     if ((jmm_version > JMM_VERSION_1_2) ||
         (jmm_version == JMM_VERSION_1_2 && ((jmm_version&0xFF) >= 1))) {

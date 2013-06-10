@@ -115,6 +115,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     static final int RESIZABLE = 1 << 9; // both a style bit and prop bit
     static final int NONACTIVATING = 1 << 24;
+    static final int IS_DIALOG = 1 << 25;
+    static final int IS_MODAL = 1 << 26;
 
     static final int _STYLE_PROP_BITMASK = DECORATED | TEXTURED | UNIFIED | UTILITY | HUD | SHEET | CLOSEABLE | MINIMIZABLE | RESIZABLE;
 
@@ -373,6 +375,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             prop = rootpane.getClientProperty(WINDOW_DRAGGABLE_BACKGROUND);
             if (prop != null) {
                 styleBits = SET(styleBits, DRAGGABLE_BACKGROUND, Boolean.parseBoolean(prop.toString()));
+            }
+        }
+
+        if (isDialog) {
+            styleBits = SET(styleBits, IS_DIALOG, true);
+            if (((Dialog) target).isModal()) {
+                styleBits = SET(styleBits, IS_MODAL, true);
             }
         }
 

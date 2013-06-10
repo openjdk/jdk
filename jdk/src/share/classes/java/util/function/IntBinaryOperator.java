@@ -44,5 +44,5 @@ public interface IntBinaryOperator {
      * @param right  the right operand value
      * @return the result of the operation
      */
-    public int applyAsInt(int left, int right);
+    int applyAsInt(int left, int right);
 }

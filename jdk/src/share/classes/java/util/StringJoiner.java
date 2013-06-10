@@ -29,14 +29,6 @@ package java.util;
  * by a delimiter and optionally starting with a supplied prefix
  * and ending with a supplied suffix.
  * <p>
- * For example, the String {@code "[George:Sally:Fred]"} may
- * be constructed as follows:
- * <pre> {@code
- *     StringJoiner sj = new StringJoiner(":", "[", "]");
- *     sj.add("George").add("Sally").add("Fred");
- *     String desiredString = sj.toString();
- * }</pre>
- * <p>
  * Prior to adding something to the {@code StringJoiner}, its
  * {@code sj.toString()} method will, by default, return {@code prefix + suffix}.
  * However, if the {@code setEmptyValue} method is called, the {@code emptyValue}
@@ -45,17 +37,28 @@ package java.util;
  * <code>"{}"</code>, where the {@code prefix} is <code>"{"</code>, the
  * {@code suffix} is <code>"}"</code> and nothing has been added to the
  * {@code StringJoiner}.
- * <p>
- * A {@code StringJoiner} may be employed to create formatted output from a
- * collection using lambda expressions as shown in the following example.
+ *
+ * @apiNote
+ * <p>The String {@code "[George:Sally:Fred]"} may be constructed as follows:
  *
  * <pre> {@code
- *     List<Person> people = ...
- *     String commaSeparatedNames =
- *         people.map(p -> p.getName()).into(new StringJoiner(", ")).toString();
+ * StringJoiner sj = new StringJoiner(":", "[", "]");
+ * sj.add("George").add("Sally").add("Fred");
+ * String desiredString = sj.toString();
+ * }</pre>
+ * <p>
+ * A {@code StringJoiner} may be employed to create formatted output from a
+ * {@link java.util.stream.Stream} using
+ * {@link java.util.stream.Collectors#toStringJoiner}. For example:
+ *
+ * <pre> {@code
+ * List<Integer> numbers = Arrays.asList(1, 2, 3, 4);
+ * String commaSeparatedNumbers = numbers.stream()
+ *     .map(i -> i.toString())
+ *     .collect(Collectors.toStringJoiner(", ")).toString();
  * }</pre>
  *
- * @author Jim Gish
+ * @see java.util.stream.Collectors#toStringJoiner
  * @since  1.8
 */
 public final class StringJoiner {

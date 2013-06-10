@@ -256,8 +256,8 @@ class MemberDefinition implements Constants {
         }
         String name = this.name.toString();
         return name.startsWith(prefixVal)
-            || name.toString().startsWith(prefixLoc)
-            || name.toString().startsWith(prefixThis);
+            || name.startsWith(prefixLoc)
+            || name.startsWith(prefixThis);
     }
 
     public boolean isAccessMethod() {

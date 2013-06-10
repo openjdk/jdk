@@ -55,6 +55,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     private VMInternalFrame vmIF = null;
     private static ArrayList<TabInfo> tabInfos = new ArrayList<TabInfo>();
     private boolean wasConnected = false;
+    private boolean userDisconnected = false;
     private boolean shouldUseSSL = true;
 
     // The everConnected flag keeps track of whether the window can be
@@ -126,6 +127,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
                 if (connectedIconBounds != null && (e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && connectedIconBounds.contains(e.getPoint())) {
 
                     if (isConnected()) {
+                        userDisconnected = true;
                         disconnect();
                         wasConnected = false;
                     } else {
@@ -452,6 +454,11 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     // Call on EDT
     private void vmPanelDied() {
         disconnect();
+
+        if (userDisconnected) {
+            userDisconnected = false;
+            return;
+        }
 
         JOptionPane optionPane;
         String msgTitle, msgExplanation, buttonStr;
