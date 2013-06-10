@@ -663,7 +663,7 @@ public final class Spliterators {
      * @return An iterator
      * @throws NullPointerException if the given spliterator is {@code null}
      */
-    public static<T> Iterator<T> iteratorFromSpliterator(Spliterator<? extends T> spliterator) {
+    public static<T> Iterator<T> iterator(Spliterator<? extends T> spliterator) {
         Objects.requireNonNull(spliterator);
         class Adapter implements Iterator<T>, Consumer<T> {
             boolean valueReady = false;
@@ -708,7 +708,7 @@ public final class Spliterators {
      * @return An iterator
      * @throws NullPointerException if the given spliterator is {@code null}
      */
-    public static PrimitiveIterator.OfInt iteratorFromSpliterator(Spliterator.OfInt spliterator) {
+    public static PrimitiveIterator.OfInt iterator(Spliterator.OfInt spliterator) {
         Objects.requireNonNull(spliterator);
         class Adapter implements PrimitiveIterator.OfInt, IntConsumer {
             boolean valueReady = false;
@@ -753,7 +753,7 @@ public final class Spliterators {
      * @return An iterator
      * @throws NullPointerException if the given spliterator is {@code null}
      */
-    public static PrimitiveIterator.OfLong iteratorFromSpliterator(Spliterator.OfLong spliterator) {
+    public static PrimitiveIterator.OfLong iterator(Spliterator.OfLong spliterator) {
         Objects.requireNonNull(spliterator);
         class Adapter implements PrimitiveIterator.OfLong, LongConsumer {
             boolean valueReady = false;
@@ -798,7 +798,7 @@ public final class Spliterators {
      * @return An iterator
      * @throws NullPointerException if the given spliterator is {@code null}
      */
-    public static PrimitiveIterator.OfDouble iteratorFromSpliterator(Spliterator.OfDouble spliterator) {
+    public static PrimitiveIterator.OfDouble iterator(Spliterator.OfDouble spliterator) {
         Objects.requireNonNull(spliterator);
         class Adapter implements PrimitiveIterator.OfDouble, DoubleConsumer {
             boolean valueReady = false;

@@ -48,7 +48,7 @@ public class IntNodeTest extends OpTestCase {
             List<Node<Integer>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toIntArray(l))));
             nodes.add(fill(array, Nodes.intBuilder(array.length)));
             nodes.add(fill(array, Nodes.intBuilder()));

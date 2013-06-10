@@ -227,7 +227,7 @@ class SpinedBuffer<E>
 
     @Override
     public Iterator<E> iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override
@@ -712,7 +712,7 @@ class SpinedBuffer<E>
 
         @Override
         public PrimitiveIterator.OfInt iterator() {
-            return Spliterators.iteratorFromSpliterator(spliterator());
+            return Spliterators.iterator(spliterator());
         }
 
         public Spliterator.OfInt spliterator() {
@@ -815,7 +815,7 @@ class SpinedBuffer<E>
 
         @Override
         public PrimitiveIterator.OfLong iterator() {
-            return Spliterators.iteratorFromSpliterator(spliterator());
+            return Spliterators.iterator(spliterator());
         }
 
 
@@ -919,7 +919,7 @@ class SpinedBuffer<E>
 
         @Override
         public PrimitiveIterator.OfDouble iterator() {
-            return Spliterators.iteratorFromSpliterator(spliterator());
+            return Spliterators.iterator(spliterator());
         }
 
         public Spliterator.OfDouble spliterator() {
