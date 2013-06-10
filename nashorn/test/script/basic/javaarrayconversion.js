@@ -34,7 +34,7 @@ var x; // used for undefined
 var testCount = 0;
 
 function testF(inputValue, type, testFn) {
-  var x = Java.toJavaArray([inputValue], type)[0];
+  var x = Java.to([inputValue], type + "[]")[0];
   if(!testFn(x)) {
     throw ("unexpected value: " + x)
   }
@@ -130,7 +130,7 @@ test({ valueOf: function() { return "42"; },  toString: function() { return "43"
 
 function assertCantConvert(sourceType, targetType) {
   try {
-    Java.toJavaArray([new Java.type(sourceType)()], targetType)
+    Java.to([new Java.type(sourceType)()], targetType + "[]")
     throw "no TypeError encountered"
   } catch(e) {
       if(!(e instanceof TypeError)) {
@@ -164,7 +164,7 @@ var intArray = new (Java.type("int[]"))(3)
 intArray[0] = 1234;
 intArray[1] = 42;
 intArray[2] = 5;
-var jsIntArray = Java.toJavaScriptArray(intArray)
+var jsIntArray = Java.from(intArray)
 assert(jsIntArray instanceof Array);
 assert(jsIntArray[0] === 1234);
 assert(jsIntArray[1] === 42);
@@ -179,7 +179,7 @@ assert(intArray[2] === 6);
 var byteArray = new (Java.type("byte[]"))(2)
 byteArray[0] = -128;
 byteArray[1] = 127;
-var jsByteArray = Java.toJavaScriptArray(byteArray)
+var jsByteArray = Java.from(byteArray)
 assert(jsByteArray instanceof Array);
 assert(jsByteArray[0] === -128);
 assert(jsByteArray[1] === 127);
@@ -187,7 +187,7 @@ assert(jsByteArray[1] === 127);
 var shortArray = new (Java.type("short[]"))(2)
 shortArray[0] = -32768;
 shortArray[1] = 32767;
-var jsShortArray = Java.toJavaScriptArray(shortArray)
+var jsShortArray = Java.from(shortArray)
 assert(jsShortArray instanceof Array);
 assert(jsShortArray[0] === -32768);
 assert(jsShortArray[1] === 32767);
@@ -195,7 +195,7 @@ assert(jsShortArray[1] === 32767);
 var floatArray = new (Java.type("float[]"))(2)
 floatArray[0] = java.lang.Float.MIN_VALUE;
 floatArray[1] = java.lang.Float.MAX_VALUE;
-var jsFloatArray = Java.toJavaScriptArray(floatArray)
+var jsFloatArray = Java.from(floatArray)
 assert(jsFloatArray instanceof Array);
 assert(jsFloatArray[0] == java.lang.Float.MIN_VALUE);
 assert(jsFloatArray[1] == java.lang.Float.MAX_VALUE);
@@ -204,7 +204,7 @@ var charArray = new (Java.type("char[]"))(3)
 charArray[0] = "a";
 charArray[1] = "b";
 charArray[2] = "1";
-var jsCharArray = Java.toJavaScriptArray(charArray)
+var jsCharArray = Java.from(charArray)
 assert(jsCharArray instanceof Array);
 assert(jsCharArray[0] === 97);
 assert(jsCharArray[1] === 98);
@@ -213,7 +213,7 @@ assert(jsCharArray[2] === 49);
 var booleanArray = new (Java.type("boolean[]"))(2)
 booleanArray[0] = true;
 booleanArray[1] = false;
-var jsBooleanArray = Java.toJavaScriptArray(booleanArray)
+var jsBooleanArray = Java.from(booleanArray)
 assert(jsBooleanArray instanceof Array);
 assert(jsBooleanArray[0] === true);
 assert(jsBooleanArray[1] === false);

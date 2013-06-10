@@ -63,7 +63,7 @@ public final class TernaryNode extends Node {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterTernaryNode(this)) {
             final Node newLhs = lhs().accept(visitor);
             final Node newRhs = rhs().accept(visitor);

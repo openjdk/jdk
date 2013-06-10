@@ -43,5 +43,5 @@ public interface DoubleFunction<R> {
      * @param value the input value
      * @return the function result
      */
-    public R apply(double value);
+    R apply(double value);
 }

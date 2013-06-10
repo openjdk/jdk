@@ -27,10 +27,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.AnchorType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.MetaChar;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TokenType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.PosixBracket;
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.Ptr;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.JOniException;
 
 class Lexer extends ScannerSupport {
     protected final ScanEnvironment env;
@@ -215,198 +212,6 @@ class Lexer extends ScannerSupport {
         \k<-num+n>, \k<-num-n>
      */
 
-    // value implicit (rnameEnd)
-    private boolean fetchNameWithLevel(int startCode, Ptr rbackNum, Ptr rlevel) {
-        int src = p;
-        boolean existLevel = false;
-        int isNum = 0;
-        int sign = 1;
-
-        int endCode = nameEndCodePoint(startCode);
-        int pnumHead = p;
-        int nameEnd = stop;
-
-        String err = null;
-        if (!left()) {
-            newValueException(ERR_EMPTY_GROUP_NAME);
-        } else {
-            fetch();
-            if (c == endCode) newValueException(ERR_EMPTY_GROUP_NAME);
-            if (Character.isDigit(c)) {
-                isNum = 1;
-            } else if (c == '-') {
-                isNum = 2;
-                sign = -1;
-                pnumHead = p;
-            } else if (!EncodingHelper.isWord(c)) {
-                err = ERR_INVALID_GROUP_NAME;
-            }
-        }
-
-        while (left()) {
-            nameEnd = p;
-            fetch();
-            if (c == endCode || c == ')' || c == '+' || c == '-') {
-                if (isNum == 2) err = ERR_INVALID_GROUP_NAME;
-                break;
-            }
-
-            if (isNum != 0) {
-                if (EncodingHelper.isDigit(c)) {
-                    isNum = 1;
-                } else {
-                    err = ERR_INVALID_GROUP_NAME;
-                    // isNum = 0;
-                }
-            } else if (!EncodingHelper.isWord(c)) {
-                err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-            }
-        }
-
-        boolean isEndCode = false;
-        if (err == null && c != endCode) {
-            if (c == '+' || c == '-') {
-                int flag = c == '-' ? -1 : 1;
-
-                fetch();
-                if (!EncodingHelper.isDigit(c)) newValueException(ERR_INVALID_GROUP_NAME, src, stop);
-                unfetch();
-                int level = scanUnsignedNumber();
-                if (level < 0) newValueException(ERR_TOO_BIG_NUMBER);
-                rlevel.p = level * flag;
-                existLevel = true;
-
-                fetch();
-                isEndCode = c == endCode;
-            }
-
-            if (!isEndCode) {
-                err = ERR_INVALID_GROUP_NAME;
-                nameEnd = stop;
-            }
-        }
-
-        if (err == null) {
-            if (isNum != 0) {
-                mark();
-                p = pnumHead;
-                int backNum = scanUnsignedNumber();
-                restore();
-                if (backNum < 0) {
-                    newValueException(ERR_TOO_BIG_NUMBER);
-                } else if (backNum == 0) {
-                    newValueException(ERR_INVALID_GROUP_NAME, src, stop);
-                }
-                rbackNum.p = backNum * sign;
-            }
-            value = nameEnd;
-            return existLevel;
-        } else {
-            newValueException(ERR_INVALID_GROUP_NAME, src, nameEnd);
-            return false; // not reached
-        }
-    }
-
-    // USE_NAMED_GROUP
-    // ref: 0 -> define name    (don't allow number name)
-    //      1 -> reference name (allow number name)
-    private int fetchNameForNamedGroup(int startCode, boolean ref) {
-        int src = p;
-        value = 0;
-
-        int isNum = 0;
-        int sign = 1;
-
-        int endCode = nameEndCodePoint(startCode);
-        int pnumHead = p;
-        int nameEnd = stop;
-
-        String err = null;
-        if (!left()) {
-            newValueException(ERR_EMPTY_GROUP_NAME);
-        } else {
-            fetch();
-            if (c == endCode) newValueException(ERR_EMPTY_GROUP_NAME);
-            if (EncodingHelper.isDigit(c)) {
-                if (ref) {
-                    isNum = 1;
-                } else {
-                    err = ERR_INVALID_GROUP_NAME;
-                    // isNum = 0;
-                }
-            } else if (c == '-') {
-                if (ref) {
-                    isNum = 2;
-                    sign = -1;
-                    pnumHead = p;
-                } else {
-                    err = ERR_INVALID_GROUP_NAME;
-                    // isNum = 0;
-                }
-            } else if (!EncodingHelper.isWord(c)) {
-                err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-            }
-        }
-
-        if (err == null) {
-            while (left()) {
-                nameEnd = p;
-                fetch();
-                if (c == endCode || c == ')') {
-                    if (isNum == 2) err = ERR_INVALID_GROUP_NAME;
-                    break;
-                }
-
-                if (isNum != 0) {
-                    if (EncodingHelper.isDigit(c)) {
-                        isNum = 1;
-                    } else {
-                        if (!EncodingHelper.isWord(c)) {
-                            err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-                        } else {
-                            err = ERR_INVALID_GROUP_NAME;
-                        }
-                        // isNum = 0;
-                    }
-                } else {
-                    if (!EncodingHelper.isWord(c)) {
-                        err = ERR_INVALID_CHAR_IN_GROUP_NAME;
-                    }
-                }
-            }
-
-            if (c != endCode) {
-                err = ERR_INVALID_GROUP_NAME;
-                nameEnd = stop;
-            }
-
-            int backNum = 0;
-            if (isNum != 0) {
-                mark();
-                p = pnumHead;
-                backNum = scanUnsignedNumber();
-                restore();
-                if (backNum < 0) {
-                    newValueException(ERR_TOO_BIG_NUMBER);
-                } else if (backNum == 0) {
-                    newValueException(ERR_INVALID_GROUP_NAME, src, nameEnd);
-                }
-                backNum *= sign;
-            }
-            value = nameEnd;
-            return backNum;
-        } else {
-            while (left()) {
-                nameEnd = p;
-                fetch();
-                if (c == endCode || c == ')') break;
-            }
-            if (!left()) nameEnd = stop;
-            newValueException(err, src, nameEnd);
-            return 0; // not reached
-        }
-    }
-
     // #else USE_NAMED_GROUP
     // make it return nameEnd!
     private final int fetchNameForNoNamedGroup(int startCode, boolean ref) {
@@ -472,11 +277,7 @@ class Lexer extends ScannerSupport {
     }
 
     protected final int fetchName(int startCode, boolean ref) {
-        if (Config.USE_NAMED_GROUP) {
-            return fetchNameForNamedGroup(startCode, ref);
-        } else {
-            return fetchNameForNoNamedGroup(startCode, ref);
-        }
+        return fetchNameForNoNamedGroup(startCode, ref);
     }
 
     private boolean strExistCheckWithEsc(int[]s, int n, int bad) {
@@ -517,26 +318,6 @@ class Lexer extends ScannerSupport {
         token.type = TokenType.CHAR_TYPE;
         token.setPropCType(type);
         token.setPropNot(flag);
-    }
-
-    private void fetchTokenInCCFor_p() {
-        int c2 = peek(); // !!! migrate to peekIs
-        if (c2 == '{' && syntax.op2EscPBraceCharProperty()) {
-            inc();
-            token.type = TokenType.CHAR_PROPERTY;
-            token.setPropNot(c == 'P');
-
-            if (syntax.op2EscPBraceCircumflexNot()) {
-                c2 = fetchTo();
-                if (c2 == '^') {
-                    token.setPropNot(!token.getPropNot());
-                } else {
-                    unfetch();
-                }
-            }
-        } else {
-            syntaxWarn(Warnings.INVALID_UNICODE_PROPERTY, (char)c);
-        }
     }
 
     private void fetchTokenInCCFor_x() {
@@ -604,30 +385,6 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    private void fetchTokenInCCFor_posixBracket() {
-        if (syntax.opPosixBracket() && peekIs(':')) {
-            token.backP = p; /* point at '[' is readed */
-            inc();
-            if (strExistCheckWithEsc(send, send.length, ']')) {
-                token.type = TokenType.POSIX_BRACKET_OPEN;
-            } else {
-                unfetch();
-                // remove duplication, goto cc_in_cc;
-                if (syntax.op2CClassSetOp()) {
-                    token.type = TokenType.CC_CC_OPEN;
-                } else {
-                    env.ccEscWarn("[");
-                }
-            }
-        } else { // cc_in_cc:
-            if (syntax.op2CClassSetOp()) {
-                token.type = TokenType.CC_CC_OPEN;
-            } else {
-                env.ccEscWarn("[");
-            }
-        }
-    }
-
     private void fetchTokenInCCFor_and() {
         if (syntax.op2CClassSetOp() && left() && peekIs('&')) {
             inc();
@@ -683,10 +440,6 @@ class Lexer extends ScannerSupport {
             case 'H':
                 if (syntax.op2EscHXDigit()) fetchTokenInCCFor_charType(true, CharacterType.XDIGIT);
                 break;
-            case 'p':
-            case 'P':
-                fetchTokenInCCFor_p();
-                break;
             case 'x':
                 fetchTokenInCCFor_x();
                 break;
@@ -714,16 +467,10 @@ class Lexer extends ScannerSupport {
                 break;
             } // switch
 
-        } else if (c == '[') {
-            fetchTokenInCCFor_posixBracket();
         } else if (c == '&') {
             fetchTokenInCCFor_and();
         }
         return token.type;
-    }
-
-    protected final int backrefRelToAbs(int relNo) {
-        return env.numMem + 1 + relNo;
     }
 
     private void fetchTokenFor_repeat(int lower, int upper) {
@@ -815,7 +562,6 @@ class Lexer extends ScannerSupport {
             token.setBackrefNum(1);
             token.setBackrefRef1(num);
             token.setBackrefByName(false);
-            if (Config.USE_BACKREF_WITH_LEVEL) token.setBackrefExistLevel(false);
             return;
         }
 
@@ -845,76 +591,6 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    private void fetchTokenFor_namedBackref() {
-        if (syntax.op2EscKNamedBackref()) {
-            if (left()) {
-                fetch();
-                if (c =='<' || c == '\'') {
-                    int last = p;
-                    int backNum;
-                    if (Config.USE_BACKREF_WITH_LEVEL) {
-                        Ptr rbackNum = new Ptr();
-                        Ptr rlevel = new Ptr();
-                        token.setBackrefExistLevel(fetchNameWithLevel(c, rbackNum, rlevel));
-                        token.setBackrefLevel(rlevel.p);
-                        backNum = rbackNum.p;
-                    } else {
-                        backNum = fetchName(c, true);
-                    } // USE_BACKREF_AT_LEVEL
-                    int nameEnd = value; // set by fetchNameWithLevel/fetchName
-
-                    if (backNum != 0) {
-                        if (backNum < 0) {
-                            backNum = backrefRelToAbs(backNum);
-                            if (backNum <= 0) newValueException(ERR_INVALID_BACKREF);
-                        }
-
-                        if (syntax.strictCheckBackref() && (backNum > env.numMem || env.memNodes == null)) {
-                            newValueException(ERR_INVALID_BACKREF);
-                        }
-                        token.type = TokenType.BACKREF;
-                        token.setBackrefByName(false);
-                        token.setBackrefNum(1);
-                        token.setBackrefRef1(backNum);
-                    } else {
-                        NameEntry e = env.reg.nameToGroupNumbers(chars, last, nameEnd);
-                        if (e == null) newValueException(ERR_UNDEFINED_NAME_REFERENCE, last, nameEnd);
-
-                        if (syntax.strictCheckBackref()) {
-                            if (e.backNum == 1) {
-                                if (e.backRef1 > env.numMem ||
-                                    env.memNodes == null ||
-                                    env.memNodes[e.backRef1] == null) newValueException(ERR_INVALID_BACKREF);
-                            } else {
-                                for (int i=0; i<e.backNum; i++) {
-                                    if (e.backRefs[i] > env.numMem ||
-                                        env.memNodes == null ||
-                                        env.memNodes[e.backRefs[i]] == null) newValueException(ERR_INVALID_BACKREF);
-                                }
-                            }
-                        }
-
-                        token.type = TokenType.BACKREF;
-                        token.setBackrefByName(true);
-
-                        if (e.backNum == 1) {
-                            token.setBackrefNum(1);
-                            token.setBackrefRef1(e.backRef1);
-                        } else {
-                            token.setBackrefNum(e.backNum);
-                            token.setBackrefRefs(e.backRefs);
-                        }
-                    }
-                } else {
-                    unfetch();
-                    syntaxWarn(Warnings.INVALID_BACKREFERENCE);
-                }
-            } else {
-                syntaxWarn(Warnings.INVALID_BACKREFERENCE);
-            }
-        }
-    }
-
     private void fetchTokenFor_subexpCall() {
         if (syntax.op2EscGSubexpCall()) {
             if (left()) {
@@ -934,25 +610,6 @@ class Lexer extends ScannerSupport {
             } else {
                 syntaxWarn(Warnings.INVALID_SUBEXP_CALL);
             }
-        }
-    }
-
-    private void fetchTokenFor_charProperty() {
-        if (peekIs('{') && syntax.op2EscPBraceCharProperty()) {
-            inc();
-            token.type = TokenType.CHAR_PROPERTY;
-            token.setPropNot(c == 'P');
-
-            if (syntax.op2EscPBraceCircumflexNot()) {
-                fetch();
-                if (c == '^') {
-                    token.setPropNot(!token.getPropNot());
-                } else {
-                    unfetch();
-                }
-            }
-        } else {
-            syntaxWarn(Warnings.INVALID_UNICODE_PROPERTY, (char)c);
         }
     }
 
@@ -1090,19 +747,6 @@ class Lexer extends ScannerSupport {
                     break;
                 case '0':
                     fetchTokenFor_zero();
-                    break;
-                case 'k':
-                    if (Config.USE_NAMED_GROUP) fetchTokenFor_namedBackref();
-                    break;
-                case 'g':
-                    if (Config.USE_SUBEXP_CALL) fetchTokenFor_subexpCall();
-                    break;
-                case 'Q':
-                    if (syntax.op2EscCapitalQQuote()) token.type = TokenType.QUOTE_OPEN;
-                    break;
-                case 'p':
-                case 'P':
-                    fetchTokenFor_charProperty();
                     break;
 
                 default:
@@ -1242,24 +886,6 @@ class Lexer extends ScannerSupport {
             token.setRepeatGreedy(true);
             token.setRepeatPossessive(false);
         }
-    }
-
-    protected final int fetchCharPropertyToCType() {
-        mark();
-
-        while (left()) {
-            int last = p;
-            fetch();
-            if (c == '}') {
-                String name = new String(chars, _p, last - _p);
-                return PosixBracket.propertyNameToCType(name);
-            } else if (c == '(' || c == ')' || c == '{' || c == '|') {
-                String name = new String(chars, _p, last - _p);
-                throw new JOniException(ERR_INVALID_CHAR_PROPERTY_NAME.replaceAll("%n", name));
-            }
-        }
-        newInternalException(ERR_PARSER_BUG);
-        return 0; // not reached
     }
 
     protected final void syntaxWarn(String message, char c) {
