@@ -21,10 +21,8 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
 import java.io.*;
-import javax.lang.model.element.*;
-import java.util.*;
+import com.sun.tools.classfile.*;
 
 /**
  * The {@code ClassFileVisitor} reads a class file using the
@@ -150,6 +148,7 @@ class ClassFileVisitor extends Tester.Visitor {
         public int mNumParams;
         public boolean mSynthetic;
         public boolean mIsConstructor;
+        public boolean mIsBridge;
         public String prefix;
 
         void visitMethod(Method method, StringBuilder sb) throws Exception {
@@ -162,6 +161,7 @@ class ClassFileVisitor extends Tester.Visitor {
             mSynthetic = method.access_flags.is(AccessFlags.ACC_SYNTHETIC);
             mIsConstructor = mName.equals("<init>");
             prefix = cname + "." + mName + "() - ";
+            mIsBridge = method.access_flags.is(AccessFlags.ACC_BRIDGE);
 
             sb.append(cname).append(".").append(mName).append("(");
 
@@ -316,13 +316,16 @@ class ClassFileVisitor extends Tester.Visitor {
                         }
                         expect = "this\\$[0-n]*";
                     }
-                } else if (isAnon) {
-                    // not an implementation gurantee, but okay for now
-                    expect = "x[0-n]*";
                 }
             } else if (isEnum && mNumParams == 1 && index == 0 && mName.equals("valueOf")) {
                 expect = "name";
                 allowMandated = true;
+            } else if (mIsBridge) {
+                allowSynthetic = true;
+                /*  you can't expect an special name for bridges' parameters.
+                 *  The name of the original parameters are now copied.
+                 */
+                expect = null;
             }
             if (mandated) sb.append("!");
             if (synthetic) sb.append("!!");

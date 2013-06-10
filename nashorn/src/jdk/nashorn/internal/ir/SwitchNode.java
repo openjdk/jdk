@@ -100,11 +100,11 @@ public final class SwitchNode extends BreakableNode {
     }
 
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterSwitchNode(this)) {
             return visitor.leaveSwitchNode(
-                setExpression(visitor.getLexicalContext(), expression.accept(visitor)).
-                setCases(visitor.getLexicalContext(), Node.accept(visitor, CaseNode.class, cases), defaultCaseIndex));
+                setExpression(lc, expression.accept(visitor)).
+                setCases(lc, Node.accept(visitor, CaseNode.class, cases), defaultCaseIndex));
         }
 
         return this;

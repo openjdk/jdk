@@ -249,8 +249,8 @@ public class LambdaToMethod extends TreeTranslator {
                 }
             }
             if (lambdaTypeAnnos.nonEmpty()) {
-                owner.annotations.setTypeAttributes(ownerTypeAnnos.toList());
-                sym.annotations.setTypeAttributes(lambdaTypeAnnos.toList());
+                owner.setTypeAttributes(ownerTypeAnnos.toList());
+                sym.setTypeAttributes(lambdaTypeAnnos.toList());
             }
         }
 
@@ -389,15 +389,15 @@ public class LambdaToMethod extends TreeTranslator {
             if (lambdaContext.getSymbolMap(PARAM).containsKey(tree.sym)) {
                 Symbol translatedSym = lambdaContext.getSymbolMap(PARAM).get(tree.sym);
                 result = make.Ident(translatedSym).setType(tree.type);
-                translatedSym.annotations.setTypeAttributes(tree.sym.getRawTypeAttributes());
+                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
             } else if (lambdaContext.getSymbolMap(LOCAL_VAR).containsKey(tree.sym)) {
                 Symbol translatedSym = lambdaContext.getSymbolMap(LOCAL_VAR).get(tree.sym);
                 result = make.Ident(translatedSym).setType(tree.type);
-                translatedSym.annotations.setTypeAttributes(tree.sym.getRawTypeAttributes());
+                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
             } else if (lambdaContext.getSymbolMap(TYPE_VAR).containsKey(tree.sym)) {
                 Symbol translatedSym = lambdaContext.getSymbolMap(TYPE_VAR).get(tree.sym);
                 result = make.Ident(translatedSym).setType(translatedSym.type);
-                translatedSym.annotations.setTypeAttributes(tree.sym.getRawTypeAttributes());
+                translatedSym.setTypeAttributes(tree.sym.getRawTypeAttributes());
             } else if (lambdaContext.getSymbolMap(CAPTURED_VAR).containsKey(tree.sym)) {
                 Symbol translatedSym = lambdaContext.getSymbolMap(CAPTURED_VAR).get(tree.sym);
                 result = make.Ident(translatedSym).setType(tree.type);
@@ -1715,8 +1715,8 @@ public class LambdaToMethod extends TreeTranslator {
                         ret = makeSyntheticVar(FINAL, name, types.erasure(sym.type), translatedSym);
                 }
                 if (ret != sym) {
-                    ret.annotations.setDeclarationAttributes(sym.getRawAttributes());
-                    ret.annotations.setTypeAttributes(sym.getRawTypeAttributes());
+                    ret.setDeclarationAttributes(sym.getRawAttributes());
+                    ret.setTypeAttributes(sym.getRawTypeAttributes());
                 }
                 return ret;
             }

@@ -38,7 +38,7 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.runtime.JSType;
-import netscape.javascript.JSObject;
+import jdk.nashorn.api.scripting.JSObject;
 
 /**
  * A Dynalink linker to handle web browser built-in JS (DOM etc.) objects as well

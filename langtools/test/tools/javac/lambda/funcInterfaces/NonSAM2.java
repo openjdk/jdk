@@ -13,7 +13,7 @@ interface Bar1 { Integer getAge(String s);}
 interface Foo1Bar1 extends Foo1, Bar1 {} //types Bar1 and Foo1 are incompatible; both define getAge(String), but with unrelated return types
 
 interface AC extends A, C {} //name clash: getOldest(List<?>) in C and getOldest(List<Number>) in A have the same erasure, yet neither overrides the other
-interface ABC extends A, B, C {} //name clash: getOldest(List<?>) in C and getOldest(List<Number>) in A have the same erasure, yet neither overrides the other
+interface ABC extends A, B, C {} //ok - raw override
 interface AD extends A, D {} //name clash: getOldest(List<Integer>) in D and getOldest(List<Number>) in A have the same erasure, yet neither overrides the other
 
 interface Foo2<T> { void m(T arg);}

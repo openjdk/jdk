@@ -40,5 +40,5 @@ public interface BooleanSupplier {
      *
      * @return a {@code boolean} value
      */
-    public boolean getAsBoolean();
+    boolean getAsBoolean();
 }

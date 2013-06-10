@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
@@ -788,7 +789,7 @@ public final class ScriptRuntime {
             return false;
         }
 
-        throw typeError("in.with.non.object", rvalType.toString().toLowerCase());
+        throw typeError("in.with.non.object", rvalType.toString().toLowerCase(Locale.ENGLISH));
     }
 
     /**

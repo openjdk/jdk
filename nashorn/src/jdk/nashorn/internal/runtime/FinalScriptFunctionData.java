@@ -78,9 +78,9 @@ public final class FinalScriptFunctionData extends ScriptFunctionData {
             //only nasgen constructors: (boolean, self, args) are subject to binding a boolean newObj. isConstructor
             //is too conservative a check. However, isConstructor(mh) always implies isConstructor param
             assert isConstructor();
-            code.add(new CompiledFunction(MH.insertArguments(mh, 0, false), composeConstructor(MH.insertArguments(mh, 0, true), needsCallee))); //make sure callee state can be determined when we reach constructor
+            code.add(new CompiledFunction(mh.type(), MH.insertArguments(mh, 0, false), composeConstructor(MH.insertArguments(mh, 0, true), needsCallee))); //make sure callee state can be determined when we reach constructor
         } else {
-            code.add(new CompiledFunction(mh));
+            code.add(new CompiledFunction(mh.type(), mh));
         }
     }
 

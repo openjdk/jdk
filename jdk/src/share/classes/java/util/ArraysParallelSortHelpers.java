@@ -25,6 +25,7 @@
 package java.util;
 
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.CountedCompleter;
 
 /**
  * Helper utilities for the parallel sort methods in Arrays.parallelSort.
@@ -44,1180 +45,966 @@ import java.util.concurrent.RecursiveAction;
  *             c. merge them together
  *         3. merge together the two halves.
  *
- * One reason for splitting in quarters is that this guarantees
- * that the final sort is in the main array, not the workspace
- * array.  (workspace and main swap roles on each subsort step.)
- * Leaf-level sorts use a Sequential quicksort, that in turn uses
- * insertion sort if under threshold.  Otherwise it uses median of
- * three to pick pivot, and loops rather than recurses along left
- * path.
+ * One reason for splitting in quarters is that this guarantees that
+ * the final sort is in the main array, not the workspace array.
+ * (workspace and main swap roles on each subsort step.)  Leaf-level
+ * sorts use the associated sequential sort.
  *
+ * Merger classes perform merging for Sorter.  They are structured
+ * such that if the underlying sort is stable (as is true for
+ * TimSort), then so is the full sort.  If big enough, they split the
+ * largest of the two partitions in half, find the greatest point in
+ * smaller partition less than the beginning of the second half of
+ * larger via binary search; and then merge in parallel the two
+ * partitions.  In part to ensure tasks are triggered in
+ * stability-preserving order, the current CountedCompleter design
+ * requires some little tasks to serve as place holders for triggering
+ * completion tasks.  These classes (EmptyCompleter and Relay) don't
+ * need to keep track of the arrays, and are never themselves forked,
+ * so don't hold any task state.
  *
- * Merger classes perform merging for Sorter. If big enough, splits Left
- * partition in half; finds the greatest point in Right partition
- * less than the beginning of the second half of Left via binary
- * search; and then, in parallel, merges left half of Left with
- * elements of Right up to split point, and merges right half of
- * Left with elements of R past split point. At leaf, it just
- * sequentially merges. This is all messy to code; sadly we need
- * distinct versions for each type.
+ * The primitive class versions (FJByte... FJDouble) are
+ * identical to each other except for type declarations.
  *
+ * The base sequential sorts rely on non-public versions of TimSort,
+ * ComparableTimSort, and DualPivotQuicksort sort methods that accept
+ * temp workspace array slices that we will have already allocated, so
+ * avoids redundant allocation. (Except for DualPivotQuicksort byte[]
+ * sort, that does not ever use a workspace array.)
  */
 /*package*/ class ArraysParallelSortHelpers {
 
-    // RFE: we should only need a working array as large as the subarray
-    //      to be sorted, but the logic assumes that indices in the two
-    //      arrays always line-up
+    /*
+     * Style note: The task classes have a lot of parameters, that are
+     * stored as task fields and copied to local variables and used in
+     * compute() methods, We pack these into as few lines as possible,
+     * and hoist consistency checks among them before main loops, to
+     * reduce distraction.
+     */
 
-    /** byte support class */
-    static final class FJByte {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = 749471161188027634L;
-            final byte[] a;     // array to be sorted.
-            final byte[] w;     // workspace for merge
-            final int origin;   // origin of the part of array we deal with
-            final int n;        // Number of elements in (sub)arrays.
-            final int gran;     // split control
+    /**
+     * A placeholder task for Sorters, used for the lowest
+     * quartile task, that does not need to maintain array state.
+     */
+    static final class EmptyCompleter extends CountedCompleter<Void> {
+        static final long serialVersionUID = 2446542900576103244L;
+        EmptyCompleter(CountedCompleter<?> p) { super(p); }
+        public final void compute() { }
+    }
 
-            Sorter(byte[] a, byte[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+    /**
+     * A trigger for secondary merge of two merges
+     */
+    static final class Relay extends CountedCompleter<Void> {
+        static final long serialVersionUID = 2446542900576103244L;
+        final CountedCompleter<?> task;
+        Relay(CountedCompleter<?> task) {
+            super(null, 1);
+            this.task = task;
+        }
+        public final void compute() { }
+        public final void onCompletion(CountedCompleter<?> t) {
+            task.compute();
+        }
+    }
+
+    /** Object + Comparator support class */
+    static final class FJObject {
+        static final class Sorter<T> extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final T[] a, w;
+            final int base, size, wbase, gran;
+            Comparator<? super T> comparator;
+            Sorter(CountedCompleter<?> par, T[] a, T[] w, int base, int size,
+                   int wbase, int gran,
+                   Comparator<? super T> comparator) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
+                this.comparator = comparator;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final byte[] a = this.a;
-                final byte[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,  g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l+h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h,
-                               l+h, n-h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   //skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                Comparator<? super T> c = this.comparator;
+                T[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger<T>(s, w, a, wb, h,
+                                                       wb+h, n-h, b, g, c));
+                    Relay rc = new Relay(new Merger<T>(fc, a, w, b+h, q,
+                                                       b+u, n-u, wb+h, g, c));
+                    new Sorter<T>(rc, a, w, b+u, n-u, wb+u, g, c).fork();
+                    new Sorter<T>(rc, a, w, b+h, q, wb+h, g, c).fork();;
+                    Relay bc = new Relay(new Merger<T>(fc, a, w, b, q,
+                                                       b+q, h-q, wb, g, c));
+                    new Sorter<T>(bc, a, w, b+q, h-q, wb+q, g, c).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                TimSort.sort(a, b, b + n, c, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = -9090258248781844470L;
-            final byte[] a;
-            final byte[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(byte[] a, byte[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger<T> extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final T[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Comparator<? super T> comparator;
+            Merger(CountedCompleter<?> par, T[] a, T[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran,
+                   Comparator<? super T> comparator) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
+                this.comparator = comparator;
             }
 
-            public void compute() {
-                final byte[] a = this.a;
-                final byte[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    byte split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split <= a[ro + mid])
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                Comparator<? super T> c = this.comparator;
+                T[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0 ||
+                    c == null)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        T split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (c.compare(split, a[rm + rb]) <= 0)
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        T split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (c.compare(split, a[lm + lb]) <= 0)
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger<T> m = new Merger<T>(this, a, w, lb + lh, ln - lh,
+                                                rb + rh, rn - rh,
+                                                k + lh + rh, g, c);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    byte al = a[l];
-                    byte ar = a[r];
-                    byte t;
-                    if (al <= ar) {++l; t=al;} else {++r; t = ar;}
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    T t, al, ar;
+                    if (c.compare((al = a[lb]), (ar = a[rb])) <= 0) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+
+                tryComplete();
+            }
+
+        }
+    } // FJObject
+
+    /** byte support class */
+    static final class FJByte {
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final byte[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, byte[] a, byte[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
+            }
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                byte[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1);
+                s.tryComplete();
+            }
+        }
+
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final byte[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, byte[] a, byte[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
+            }
+
+            public final void compute() {
+                byte[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        byte split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
+                    }
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        byte split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
+                }
+
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    byte t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
+                    w[k++] = t;
+                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJByte
 
     /** char support class */
     static final class FJChar {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = 8723376019074596641L;
-            final char[] a;     // array to be sorted.
-            final char[] w;     // workspace for merge
-            final int origin;   // origin of the part of array we deal with
-            final int n;        // Number of elements in (sub)arrays.
-            final int gran;     // split control
-
-            Sorter(char[] a, char[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final char[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, char[] a, char[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final char[] a = this.a;
-                final char[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                char[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = -1383975444621698926L;
-            final char[] a;
-            final char[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(char[] a, char[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final char[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, char[] a, char[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final char[] a = this.a;
-                final char[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    char split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split <= a[ro + mid])
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                char[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        char split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        char split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    char al = a[l];
-                    char ar = a[r];
-                    char t;
-                    if (al <= ar) {++l; t=al;} else {++r; t = ar;}
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    char t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJChar
 
     /** short support class */
     static final class FJShort {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = -7886754793730583084L;
-            final short[] a;    // array to be sorted.
-            final short[] w;    // workspace for merge
-            final int origin;   // origin of the part of array we deal with
-            final int n;        // Number of elements in (sub)arrays.
-            final int gran;     // split control
-
-            Sorter(short[] a, short[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final short[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, short[] a, short[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final short[] a = this.a;
-                final short[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                short[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = 3895749408536700048L;
-            final short[] a;
-            final short[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(short[] a, short[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final short[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, short[] a, short[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final short[] a = this.a;
-                final short[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    short split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split <= a[ro + mid])
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                short[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        short split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        short split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    short al = a[l];
-                    short ar = a[r];
-                    short t;
-                    if (al <= ar) {++l; t=al;} else {++r; t = ar;}
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    short t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJShort
 
     /** int support class */
     static final class FJInt {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = 4263311808957292729L;
-            final int[] a;     // array to be sorted.
-            final int[] w;     // workspace for merge
-            final int origin;  // origin of the part of array we deal with
-            final int n;       // Number of elements in (sub)arrays.
-            final int gran;    // split control
-
-            Sorter(int[] a, int[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final int[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, int[] a, int[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final int[] a = this.a;
-                final int[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                int[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = -8727507284219982792L;
-            final int[] a;
-            final int[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(int[] a, int[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final int[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, int[] a, int[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final int[] a = this.a;
-                final int[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    int split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split <= a[ro + mid])
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                int[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        int split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        int split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    int al = a[l];
-                    int ar = a[r];
-                    int t;
-                    if (al <= ar) {++l; t=al;} else {++r; t = ar;}
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    int t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJInt
 
     /** long support class */
     static final class FJLong {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = 6553695007444392455L;
-            final long[] a;     // array to be sorted.
-            final long[] w;     // workspace for merge
-            final int origin;   // origin of the part of array we deal with
-            final int n;        // Number of elements in (sub)arrays.
-            final int gran;     // split control
-
-            Sorter(long[] a, long[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final long[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, long[] a, long[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final long[] a = this.a;
-                final long[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                long[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = 8843567516333283861L;
-            final long[] a;
-            final long[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(long[] a, long[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final long[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, long[] a, long[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final long[] a = this.a;
-                final long[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    long split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split <= a[ro + mid])
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                long[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        long split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                      nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        long split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    long al = a[l];
-                    long ar = a[r];
-                    long t;
-                    if (al <= ar) {++l; t=al;} else {++r; t = ar;}
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    long t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
+                    }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJLong
 
     /** float support class */
     static final class FJFloat {
-        static final class Sorter extends RecursiveAction {
-            static final long serialVersionUID = 1602600178202763377L;
-            final float[] a;    // array to be sorted.
-            final float[] w;    // workspace for merge
-            final int origin;   // origin of the part of array we deal with
-            final int n;        // Number of elements in (sub)arrays.
-            final int gran;     // split control
-
-            Sorter(float[] a, float[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+        static final class Sorter extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final float[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, float[] a, float[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final float[] a = this.a;
-                final float[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                float[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = 1518176433845397426L;
-            final float[] a;
-            final float[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(float[] a, float[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final float[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, float[] a, float[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final float[] a = this.a;
-                final float[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    float split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (Float.compare(split, a[ro+mid]) <= 0)
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                float[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        float split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        float split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    float al = a[l];
-                    float ar = a[r];
-                    float t;
-                    if (Float.compare(al, ar) <= 0) {
-                        ++l;
-                        t = al;
-                    } else {
-                        ++r;
-                        t = ar;
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    float t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
                     }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJFloat
 
     /** double support class */
     static final class FJDouble {
-        static final class Sorter extends RecursiveAction {
+        static final class Sorter extends CountedCompleter<Void> {
             static final long serialVersionUID = 2446542900576103244L;
-            final double[] a;    // array to be sorted.
-            final double[] w;    // workspace for merge
-            final int origin;    // origin of the part of array we deal with
-            final int n;         // Number of elements in (sub)arrays.
-            final int gran;      // split control
-
-            Sorter(double[] a, double[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
+            final double[] a, w;
+            final int base, size, wbase, gran;
+            Sorter(CountedCompleter<?> par, double[] a, double[] w, int base,
+                   int size, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w; this.base = base; this.size = size;
+                this.wbase = wbase; this.gran = gran;
             }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final double[] a = this.a;
-                final double[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter(a, w, l, q,   g),
-                                                     new Sorter(a, w, l+q, h-q, g),
-                                                     new Merger(a, w, l,   q,
-                                                                l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter(a, w, l + h, q,   g),
-                                                     new Sorter(a, w, l+u, n-u, g),
-                                                     new Merger(a, w, l+h, q,
-                                                                l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    DualPivotQuicksort.sort(a, l, l+n-1);   // skip rangeCheck
+            public final void compute() {
+                CountedCompleter<?> s = this;
+                double[] a = this.a, w = this.w; // localize all params
+                int b = this.base, n = this.size, wb = this.wbase, g = this.gran;
+                while (n > g) {
+                    int h = n >>> 1, q = h >>> 1, u = h + q; // quartiles
+                    Relay fc = new Relay(new Merger(s, w, a, wb, h,
+                                                    wb+h, n-h, b, g));
+                    Relay rc = new Relay(new Merger(fc, a, w, b+h, q,
+                                                    b+u, n-u, wb+h, g));
+                    new Sorter(rc, a, w, b+u, n-u, wb+u, g).fork();
+                    new Sorter(rc, a, w, b+h, q, wb+h, g).fork();;
+                    Relay bc = new Relay(new Merger(fc, a, w, b, q,
+                                                    b+q, h-q, wb, g));
+                    new Sorter(bc, a, w, b+q, h-q, wb+q, g).fork();
+                    s = new EmptyCompleter(bc);
+                    n = q;
                 }
+                DualPivotQuicksort.sort(a, b, b + n - 1, w, wb, n);
+                s.tryComplete();
             }
         }
 
-        static final class Merger extends RecursiveAction {
-            static final long serialVersionUID = 8076242187166127592L;
-            final double[] a;
-            final double[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger next;
-
-            Merger(double[] a, double[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
+        static final class Merger extends CountedCompleter<Void> {
+            static final long serialVersionUID = 2446542900576103244L;
+            final double[] a, w; // main and workspace arrays
+            final int lbase, lsize, rbase, rsize, wbase, gran;
+            Merger(CountedCompleter<?> par, double[] a, double[] w,
+                   int lbase, int lsize, int rbase,
+                   int rsize, int wbase, int gran) {
+                super(par);
+                this.a = a; this.w = w;
+                this.lbase = lbase; this.lsize = lsize;
+                this.rbase = rbase; this.rsize = rsize;
+                this.wbase = wbase; this.gran = gran;
             }
 
-            public void compute() {
-                final double[] a = this.a;
-                final double[] w = this.w;
-                Merger rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    double split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (Double.compare(split, a[ro+mid]) <= 0)
-                            rh = mid;
-                        else
-                            rl = mid + 1;
+            public final void compute() {
+                double[] a = this.a, w = this.w; // localize all params
+                int lb = this.lbase, ln = this.lsize, rb = this.rbase,
+                    rn = this.rsize, k = this.wbase, g = this.gran;
+                if (a == null || w == null || lb < 0 || rb < 0 || k < 0)
+                    throw new IllegalStateException(); // hoist checks
+                for (int lh, rh;;) {  // split larger, find point in smaller
+                    if (ln >= rn) {
+                        if (ln <= g)
+                            break;
+                        rh = rn;
+                        double split = a[(lh = ln >>> 1) + lb];
+                        for (int lo = 0; lo < rh; ) {
+                            int rm = (lo + rh) >>> 1;
+                            if (split <= a[rm + rb])
+                                rh = rm;
+                            else
+                                lo = rm + 1;
+                        }
                     }
-                    (rights = new Merger(a, w, splitIndex, nleft-lh, ro+rh,
-                                         nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
+                    else {
+                        if (rn <= g)
+                            break;
+                        lh = ln;
+                        double split = a[(rh = rn >>> 1) + rb];
+                        for (int lo = 0; lo < lh; ) {
+                            int lm = (lo + lh) >>> 1;
+                            if (split <= a[lm + lb])
+                                lh = lm;
+                            else
+                                lo = lm + 1;
+                        }
+                    }
+                    Merger m = new Merger(this, a, w, lb + lh, ln - lh,
+                                          rb + rh, rn - rh,
+                                          k + lh + rh, g);
+                    rn = rh;
+                    ln = lh;
+                    addToPendingCount(1);
+                    m.fork();
                 }
 
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    double al = a[l];
-                    double ar = a[r];
-                    double t;
-                    if (Double.compare(al, ar) <= 0) {
-                        ++l;
-                        t = al;
-                    } else {
-                        ++r;
-                        t = ar;
+                int lf = lb + ln, rf = rb + rn; // index bounds
+                while (lb < lf && rb < rf) {
+                    double t, al, ar;
+                    if ((al = a[lb]) <= (ar = a[rb])) {
+                        lb++; t = al;
+                    }
+                    else {
+                        rb++; t = ar;
                     }
                     w[k++] = t;
                 }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
+                if (rb < rf)
+                    System.arraycopy(a, rb, w, k, rf - rb);
+                else if (lb < lf)
+                    System.arraycopy(a, lb, w, k, lf - lb);
+                tryComplete();
             }
         }
     } // FJDouble
 
-    /** Comparable support class */
-    static final class FJComparable {
-        static final class Sorter<T extends Comparable<? super T>> extends RecursiveAction {
-            static final long serialVersionUID = -1024003289463302522L;
-            final T[] a;
-            final T[] w;
-            final int origin;
-            final int n;
-            final int gran;
-
-            Sorter(T[] a, T[] w, int origin, int n, int gran) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.gran = gran;
-            }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final T[] a = this.a;
-                final T[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1;
-                    int q = n >>> 2;
-                    int u = h + q;
-                    FJSubSorter ls = new FJSubSorter(new Sorter<>(a, w, l, q,   g),
-                                                     new Sorter<>(a, w, l+q, h-q, g),
-                                                     new Merger<>(a, w, l,   q,
-                                                                  l+q, h-q, l, g, null));
-                    FJSubSorter rs = new FJSubSorter(new Sorter<>(a, w, l+h, q,   g),
-                                                     new Sorter<>(a, w, l+u, n-u, g),
-                                                     new Merger<>(a, w, l+h, q,
-                                                                  l+u, n-u, l+h, g, null));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger<>(w, a, l, h, l + h, n - h, l, g, null).compute();
-                } else {
-                    Arrays.sort(a, l, l+n);
-                }
-            }
-        }
-
-        static final class Merger<T extends Comparable<? super T>> extends RecursiveAction {
-            static final long serialVersionUID = -3989771675258379302L;
-            final T[] a;
-            final T[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger<T> next;
-
-            Merger(T[] a, T[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger<T> next) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
-            }
-
-            public void compute() {
-                final T[] a = this.a;
-                final T[] w = this.w;
-                Merger<T> rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    T split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (split.compareTo(a[ro + mid]) <= 0)
-                            rh = mid;
-                        else
-                            rl = mid + 1;
-                    }
-                    (rights = new Merger<>(a, w, splitIndex, nleft-lh, ro+rh,
-                                           nright-rh, wo+lh+rh, gran, rights)).fork();
-                    nleft = lh;
-                    nright = rh;
-                }
-
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    T al = a[l];
-                    T ar = a[r];
-                    T t;
-                    if (al.compareTo(ar) <= 0) {++l; t=al;} else {++r; t=ar; }
-                    w[k++] = t;
-                }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
-            }
-        }
-    } // FJComparable
-
-    /** Object + Comparator support class */
-    static final class FJComparator {
-        static final class Sorter<T> extends RecursiveAction {
-            static final long serialVersionUID = 9191600840025808581L;
-            final T[] a;       // array to be sorted.
-            final T[] w;       // workspace for merge
-            final int origin;  // origin of the part of array we deal with
-            final int n;       // Number of elements in (sub)arrays.
-            final int gran;    // split control
-            final Comparator<? super T> cmp; // Comparator to use
-
-            Sorter(T[] a, T[] w, int origin, int n, int gran, Comparator<? super T> cmp) {
-                this.a = a;
-                this.w = w;
-                this.origin = origin;
-                this.n = n;
-                this.cmp = cmp;
-                this.gran = gran;
-            }
-
-            public void compute() {
-                final int l = origin;
-                final int g = gran;
-                final int n = this.n;
-                final T[] a = this.a;
-                final T[] w = this.w;
-                if (n > g) {
-                    int h = n >>> 1; // half
-                    int q = n >>> 2; // lower quarter index
-                    int u = h + q;   // upper quarter
-                    FJSubSorter ls = new FJSubSorter(new Sorter<>(a, w, l, q,   g, cmp),
-                                                     new Sorter<>(a, w, l+q, h-q, g, cmp),
-                                                     new Merger<>(a, w, l,   q,
-                                                                  l+q, h-q, l, g, null, cmp));
-                    FJSubSorter rs = new FJSubSorter(new Sorter<>(a, w, l + h, q,   g, cmp),
-                                                     new Sorter<>(a, w, l+u, n-u, g, cmp),
-                                                     new Merger<>(a, w, l+h, q,
-                                                                  l+u, n-u, l+h, g, null, cmp));
-                    rs.fork();
-                    ls.compute();
-                    if (rs.tryUnfork()) rs.compute(); else rs.join();
-                    new Merger<>(w, a, l, h, l + h, n - h, l, g, null, cmp).compute();
-                } else {
-                    Arrays.sort(a, l, l+n, cmp);
-                }
-            }
-        }
-
-        static final class Merger<T> extends RecursiveAction {
-            static final long serialVersionUID = -2679539040379156203L;
-            final T[] a;
-            final T[] w;
-            final int lo;
-            final int ln;
-            final int ro;
-            final int rn;
-            final int wo;
-            final int gran;
-            final Merger<T> next;
-            final Comparator<? super T> cmp;
-
-            Merger(T[] a, T[] w, int lo, int ln, int ro, int rn, int wo,
-                   int gran, Merger<T> next, Comparator<? super T> cmp) {
-                this.a = a;
-                this.w = w;
-                this.lo = lo;
-                this.ln = ln;
-                this.ro = ro;
-                this.rn = rn;
-                this.wo = wo;
-                this.gran = gran;
-                this.next = next;
-                this.cmp = cmp;
-            }
-
-            public void compute() {
-                final T[] a = this.a;
-                final T[] w = this.w;
-                Merger<T> rights = null;
-                int nleft = ln;
-                int nright = rn;
-                while (nleft > gran) {
-                    int lh = nleft >>> 1;
-                    int splitIndex = lo + lh;
-                    T split = a[splitIndex];
-                    int rl = 0;
-                    int rh = nright;
-                    while (rl < rh) {
-                        int mid = (rl + rh) >>> 1;
-                        if (cmp.compare(split, a[ro+mid]) <= 0)
-                            rh = mid;
-                        else
-                            rl = mid + 1;
-                    }
-                    (rights = new Merger<>(a, w, splitIndex, nleft-lh, ro+rh,
-                                           nright-rh, wo+lh+rh, gran, rights, cmp)).fork();
-                    nleft = lh;
-                    nright = rh;
-                }
-
-                int l = lo;
-                int lFence = l + nleft;
-                int r = ro;
-                int rFence = r + nright;
-                int k = wo;
-                while (l < lFence && r < rFence) {
-                    T al = a[l];
-                    T ar = a[r];
-                    T t;
-                    if (cmp.compare(al, ar) <= 0) {
-                        ++l;
-                        t = al;
-                    } else {
-                        ++r;
-                        t = ar;
-                    }
-                    w[k++] = t;
-                }
-                while (l < lFence)
-                    w[k++] = a[l++];
-                while (r < rFence)
-                    w[k++] = a[r++];
-                while (rights != null) {
-                    if (rights.tryUnfork())
-                        rights.compute();
-                    else
-                        rights.join();
-                    rights = rights.next;
-                }
-            }
-        }
-    } // FJComparator
-
-    /** Utility class to sort half a partitioned array */
-    private static final class FJSubSorter extends RecursiveAction {
-        static final long serialVersionUID = 9159249695527935512L;
-        final RecursiveAction left;
-        final RecursiveAction right;
-        final RecursiveAction merger;
-
-        FJSubSorter(RecursiveAction left, RecursiveAction right,
-                    RecursiveAction merger) {
-            this.left = left;
-            this.right = right;
-            this.merger = merger;
-        }
-
-        public void compute() {
-            right.fork();
-            left.invoke();
-            right.join();
-            merger.invoke();
-        }
-    }
 }
