@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1980,11 +1980,12 @@ class Parser implements DTDConstants {
 
     void parseScript() throws IOException {
         char[] charsToAdd = new char[SCRIPT_END_TAG.length];
+        boolean insideComment = false;
 
         /* Here, ch should be the first character after <script> */
         while (true) {
             int i = 0;
-            while (i < SCRIPT_END_TAG.length
+            while (!insideComment && i < SCRIPT_END_TAG.length
                        && (SCRIPT_END_TAG[i] == ch
                            || SCRIPT_END_TAG_UPPER_CASE[i] == ch)) {
                 charsToAdd[i] = (char) ch;
@@ -2025,6 +2026,13 @@ class Parser implements DTDConstants {
                     break;
                 default:
                     addString(ch);
+                    String str = new String(getChars(0, strpos));
+                    if (!insideComment && str.endsWith(START_COMMENT)) {
+                        insideComment = true;
+                    }
+                    if (insideComment && str.endsWith(END_COMMENT)) {
+                        insideComment = false;
+                    }
                     ch = readCh();
                     break;
                 } // switch

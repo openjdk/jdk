@@ -1022,6 +1022,7 @@ cmsStage* _cmsStageAllocLabV2ToV4curves(cmsContext ContextID)
     cmsFreeToneCurveTriple(LabTable);
 
     if (mpe == NULL) return mpe;
+
     mpe ->Implements = cmsSigLabV2toV4;
     return mpe;
 }

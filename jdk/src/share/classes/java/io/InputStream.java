@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,8 +193,10 @@ public abstract class InputStream implements Closeable {
      * up skipping over some smaller number of bytes, possibly <code>0</code>.
      * This may result from any of a number of conditions; reaching end of file
      * before <code>n</code> bytes have been skipped is only one possibility.
-     * The actual number of bytes skipped is returned.  If <code>n</code> is
-     * negative, no bytes are skipped.
+     * The actual number of bytes skipped is returned. If {@code n} is
+     * negative, the {@code skip} method for class {@code InputStream} always
+     * returns 0, and no bytes are skipped. Subclasses may handle the negative
+     * value differently.
      *
      * <p> The <code>skip</code> method of this class creates a
      * byte array and then repeatedly reads into it until <code>n</code> bytes

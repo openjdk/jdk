@@ -201,7 +201,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return a string representation of the argument.
      */
     public static String toString(double d) {
-        return new FloatingDecimal(d).toJavaFormatString();
+        return FloatingDecimal.toJavaFormatString(d);
     }
 
     /**
@@ -509,7 +509,7 @@ public final class Double extends Number implements Comparable<Double> {
      *             parsable number.
      */
     public static Double valueOf(String s) throws NumberFormatException {
-        return new Double(FloatingDecimal.readJavaFormatString(s).doubleValue());
+        return new Double(parseDouble(s));
     }
 
     /**
@@ -545,7 +545,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @since 1.2
      */
     public static double parseDouble(String s) throws NumberFormatException {
-        return FloatingDecimal.readJavaFormatString(s).doubleValue();
+        return FloatingDecimal.parseDouble(s);
     }
 
     /**

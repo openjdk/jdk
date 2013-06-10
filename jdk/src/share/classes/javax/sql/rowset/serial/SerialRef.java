@@ -202,7 +202,7 @@ public class SerialRef implements Ref, Serializable, Cloneable {
     }
 
     /**
-     * Returns a clone of this {@code SerialRef}. .
+     * Returns a clone of this {@code SerialRef}.
      * The underlying {@code Ref} object will be set to null.
      *
      * @return  a clone of this SerialRef

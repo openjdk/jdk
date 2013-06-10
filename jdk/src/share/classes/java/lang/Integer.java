@@ -26,7 +26,6 @@
 package java.lang;
 
 import java.lang.annotation.Native;
-import java.util.Properties;
 
 /**
  * The {@code Integer} class wraps a value of the primitive type
@@ -185,7 +184,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since 1.8
      */
     public static String toUnsignedString(int i, int radix) {
-        return Long.toString(toUnsignedLong(i), radix);
+        return Long.toUnsignedString(toUnsignedLong(i), radix);
     }
 
     /**
@@ -307,19 +306,38 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * Convert the integer to an unsigned number.
      */
-    private static String toUnsignedString0(int i, int shift) {
-        char[] buf = new char[32];
-        int charPos = 32;
+    private static String toUnsignedString0(int val, int shift) {
+        // assert shift > 0 && shift <=5 : "Illegal shift value";
+        int mag = Integer.SIZE - Integer.numberOfLeadingZeros(val);
+        int chars = Math.max(((mag + (shift - 1)) / shift), 1);
+        char[] buf = new char[chars];
+
+        formatUnsignedInt(val, shift, buf, 0, chars);
+
+        // Use special constructor which takes over "buf".
+        return new String(buf, true);
+    }
+
+    /**
+     * Format a long (treated as unsigned) into a character buffer.
+     * @param val the unsigned int to format
+     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
+     * @param buf the character buffer to write to
+     * @param offset the offset in the destination buffer to start at
+     * @param len the number of characters to write
+     * @return the lowest character  location used
+     */
+     static int formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
+        int charPos = len;
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = digits[i & mask];
-            i >>>= shift;
-        } while (i != 0);
+            buf[offset + --charPos] = Integer.digits[val & mask];
+            val >>>= shift;
+        } while (val != 0 && charPos > 0);
 
-        return new String(buf, charPos, (32 - charPos));
+        return charPos;
     }
-
 
     final static char [] DigitTens = {
         '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
@@ -875,6 +893,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Returns the value of this {@code Integer} as a {@code long}
      * after a widening primitive conversion.
      * @jls 5.1.2 Widening Primitive Conversions
+     * @see Integer#toUnsignedLong(int)
      */
     public long longValue() {
         return (long)value;

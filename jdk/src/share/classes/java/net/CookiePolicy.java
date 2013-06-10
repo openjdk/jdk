@@ -59,6 +59,8 @@ public interface CookiePolicy {
      */
     public static final CookiePolicy ACCEPT_ORIGINAL_SERVER  = new CookiePolicy(){
         public boolean shouldAccept(URI uri, HttpCookie cookie) {
+            if (uri == null || cookie == null)
+                return false;
             return HttpCookie.domainMatches(cookie.getDomain(), uri.getHost());
         }
     };

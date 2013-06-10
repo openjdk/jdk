@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return a string representation of the argument.
      */
     public static String toString(float f) {
-        return new FloatingDecimal(f).toJavaFormatString();
+        return FloatingDecimal.toJavaFormatString(f);
     }
 
     /**
@@ -421,7 +421,7 @@ public final class Float extends Number implements Comparable<Float> {
      *          parsable number.
      */
     public static Float valueOf(String s) throws NumberFormatException {
-        return new Float(FloatingDecimal.readJavaFormatString(s).floatValue());
+        return new Float(parseFloat(s));
     }
 
     /**
@@ -456,7 +456,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @since 1.2
      */
     public static float parseFloat(String s) throws NumberFormatException {
-        return FloatingDecimal.readJavaFormatString(s).floatValue();
+        return FloatingDecimal.parseFloat(s);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6402006 7030573
+ * @bug 6402006 7030573 8011136
  * @summary Test if available returns correct value when reading
  *          a large file.
  */
@@ -61,9 +61,12 @@ public class LargeFileAvailable {
             remaining -= skipBytes(fis, bigSkip, remaining);
             remaining -= skipBytes(fis, 10L, remaining);
             remaining -= skipBytes(fis, bigSkip, remaining);
-            if (fis.available() != (int) remaining) {
-                 throw new RuntimeException("available() returns "
-                     + fis.available() + " but expected " + remaining);
+            int expected = (remaining >= Integer.MAX_VALUE)
+                           ? Integer.MAX_VALUE
+                           : (remaining > 0 ? (int) remaining : 0);
+            if (fis.available() != expected) {
+                throw new RuntimeException("available() returns "
+                        + fis.available() + " but expected " + expected);
             }
         } finally {
             file.delete();
@@ -77,19 +80,18 @@ public class LargeFileAvailable {
         long skip = is.skip(toSkip);
         if (skip != toSkip) {
             throw new RuntimeException("skip() returns " + skip
-                + " but expected " + toSkip);
+                                       + " but expected " + toSkip);
         }
         long remaining = avail - skip;
-        int expected = remaining >= Integer.MAX_VALUE
-                           ? Integer.MAX_VALUE
-                           : (int) remaining;
+        int expected = (remaining >= Integer.MAX_VALUE)
+                       ? Integer.MAX_VALUE
+                       : (remaining > 0 ? (int) remaining : 0);
 
-        System.out.println("Skipped " + skip + " bytes "
-            + " available() returns " + expected +
-            " remaining=" + remaining);
+        System.out.println("Skipped " + skip + " bytes, available() returns "
+                           + expected + ", remaining " + remaining);
         if (is.available() != expected) {
             throw new RuntimeException("available() returns "
-                + is.available() + " but expected " + expected);
+                    + is.available() + " but expected " + expected);
         }
         return skip;
     }

@@ -214,7 +214,7 @@ public class ZipInfo {
                       winToJavaTime(LL(extra, off + 24)));
                 break;
             case EXTID_EXTT:
-                print("         ->Inof-ZIP Extended Timestamp: flag=%x%n",extra[off]);
+                print("         ->Info-ZIP Extended Timestamp: flag=%x%n",extra[off]);
                 pos = off + 1 ;
                 while (pos + 4 <= off + sz) {
                     print("            *%tc%n",
@@ -223,6 +223,7 @@ public class ZipInfo {
                 }
                 break;
             default:
+                print("         ->[tag=%x, size=%d]%n", tag, sz);
             }
             off += sz;
         }

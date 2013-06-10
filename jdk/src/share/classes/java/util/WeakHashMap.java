@@ -187,11 +187,37 @@ public class WeakHashMap<K,V>
      */
     int modCount;
 
+    private static class Holder {
+        static final boolean USE_HASHSEED;
+
+        static {
+            String hashSeedProp = java.security.AccessController.doPrivileged(
+                    new sun.security.action.GetPropertyAction(
+                        "jdk.map.useRandomSeed"));
+            boolean localBool = (null != hashSeedProp)
+                    ? Boolean.parseBoolean(hashSeedProp) : false;
+            USE_HASHSEED = localBool;
+        }
+    }
+
     /**
      * A randomizing value associated with this instance that is applied to
      * hash code of keys to make hash collisions harder to find.
+     *
+     * Non-final so it can be set lazily, but be sure not to set more than once.
      */
-    transient final int hashSeed = sun.misc.Hashing.randomHashSeed(this);
+    transient int hashSeed;
+
+    /**
+     * Initialize the hashing mask value.
+     */
+    final void initHashSeed() {
+        if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
+            // Do not set hashSeed more than once!
+            // assert hashSeed == 0;
+            hashSeed = sun.misc.Hashing.randomHashSeed(this);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     private Entry<K,V>[] newTable(int n) {
@@ -223,6 +249,7 @@ public class WeakHashMap<K,V>
         table = newTable(capacity);
         this.loadFactor = loadFactor;
         threshold = (int)(capacity * loadFactor);
+        initHashSeed();
     }
 
     /**
@@ -298,10 +325,7 @@ public class WeakHashMap<K,V>
      * in lower bits.
      */
     final int hash(Object k) {
-        if (k instanceof String) {
-            return ((String) k).hash32();
-        }
-        int  h = hashSeed ^ k.hashCode();
+        int h = hashSeed ^ k.hashCode();
 
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded
@@ -1076,9 +1100,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];
@@ -1155,9 +1180,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];
@@ -1232,9 +1258,10 @@ public class WeakHashMap<K,V>
             }
             else
                 mc = expectedModCount;
-            if (tab.length >= hi && (i = index) >= 0 && i < hi) {
-                index = hi;
+            if (tab.length >= hi && (i = index) >= 0 &&
+                (i < (index = hi) || current != null)) {
                 WeakHashMap.Entry<K,V> p = current;
+                current = null; // exhaust
                 do {
                     if (p == null)
                         p = tab[i++];
