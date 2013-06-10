@@ -110,7 +110,7 @@ public class ExplodeOpTest extends OpTestCase {
         result = exerciseOps(data, s -> DoubleStream.empty());
         assertEquals(0, result.size());
 
-        exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).doubles()));
-        exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).limit(10).doubles()));
+        exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).asDoubleStream()));
+        exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).limit(10).asDoubleStream()));
     }
 }

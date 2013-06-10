@@ -180,7 +180,7 @@ abstract class LongPipeline<E_IN>
     // Stateless intermediate ops from LongStream
 
     @Override
-    public final DoubleStream doubles() {
+    public final DoubleStream asDoubleStream() {
         return new DoublePipeline.StatelessOp<Long>(this, StreamShape.LONG_VALUE,
                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
