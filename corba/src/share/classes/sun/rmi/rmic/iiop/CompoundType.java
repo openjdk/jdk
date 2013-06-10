@@ -32,6 +32,7 @@
 
 package sun.rmi.rmic.iiop;
 
+import java.util.Arrays;
 import java.util.Vector;
 import sun.tools.java.Identifier;
 import sun.tools.java.ClassNotFound;
@@ -1849,6 +1850,10 @@ public abstract class CompoundType extends Type {
                 return true;
             }
             return false;
+        }
+
+        public int hashCode() {
+            return getName().hashCode() ^ Arrays.hashCode(arguments);
         }
 
         /**
