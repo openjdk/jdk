@@ -42,7 +42,7 @@ COPY_FILES += \
   $(JSTAT_RESOURCEDIR)/jstat_options \
   $(JSTAT_RESOURCEDIR)/jstat_unsupported_options
 
-# Extra jhat files 
+# Extra jhat files
 JHAT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/hat/resources
 COPY_FILES += \
   $(JHAT_RESOURCEDIR)/hat.js \
@@ -53,7 +53,7 @@ COPY_FILES += \
 JRUNSCRIPT_RESOURCEDIR = $(JDK_TOPDIR)/src/share/classes/com/sun/tools/script/shell
 COPY_FILES += \
   $(JRUNSCRIPT_RESOURCEDIR)/init.js \
-  $(JRUNSCRIPT_RESOURCEDIR)/messages.properties 
+  $(JRUNSCRIPT_RESOURCEDIR)/messages.properties
 
 # Extra jvmstat files
 COPY_FILES += \
@@ -89,6 +89,12 @@ ifndef OPENJDK
   # Alter JavaCup32.png from ClosedJDK
   COPY_FILES += \
     $(SWING_PLAF_WINDOWS_RESOURCES_DIR_CLOSED)/icons/JavaCup32.png
+endif
+
+ifndef OPENJDK
+  JFR_CONFIGURATION_DIR_CLOSED = $(JDK_TOPDIR)/src/closed/share/classes/oracle/jrockit/jfr/settings
+  COPY_FILES += \
+    $(JFR_CONFIGURATION_DIR_CLOSED)/jfc.xsd
 endif
 
 SWING_PLAF_BASIC_RESOURCES_DIR = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/basic
@@ -154,7 +160,7 @@ COPY_FILES += \
 # Copy the META-INF/services configuration files that are scattered around the source tree
 # into classes/META-INF/services. Be aware that META-INF directories that are located at a
 # source root (.../classes/META-INF) are automatically copied verbatim by the
-# SetupJavaCompilation macro. 
+# SetupJavaCompilation macro.
 #
 # Any other META-INF/services configuration file is found here and platform specific comments
 # are uncommented and the configuration file is stored in the output META-INF directory.
@@ -207,7 +213,7 @@ META-INF_RULES_SERVICES:=$(RULES_SERVICES_PRINT) $(join $(OUT_SERVICES_FILES_COL
 # Eval the newly created rules to incorporate them into the make tree.
 define addto_meta-inf_services
 $1
-	echo $(LOG_INFO) Installing META-INF/services/$$(@F) 
+	echo $(LOG_INFO) Installing META-INF/services/$$(@F)
 	$(CAT) $$< | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $$@
 endef
 $(foreach i,$(META-INF_RULES_SERVICES),$(eval $(call addto_meta-inf_services,$i)))
