@@ -52,6 +52,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
@@ -476,8 +477,15 @@ public class Parser implements Constants, ContentHandler {
                 factory.setNamespaceAware(true);
             }
             final SAXParser parser = factory.newSAXParser();
-            parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
-                    _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
+            try {
+                parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                        _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
+            } catch (SAXNotRecognizedException e) {
+                ErrorMsg err = new ErrorMsg(ErrorMsg.WARNING_MSG,
+                        parser.getClass().getName() + ": " + e.getMessage());
+                reportError(WARNING, err);
+            }
+
             final XMLReader reader = parser.getXMLReader();
             return(parse(reader, input));
         }
