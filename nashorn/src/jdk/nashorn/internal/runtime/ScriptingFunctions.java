@@ -46,7 +46,7 @@ import java.util.StringTokenizer;
 public final class ScriptingFunctions {
 
     /** Handle to implementation of {@link ScriptingFunctions#readLine} - Nashorn extension */
-    public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class);
+    public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#readFully} - Nashorn extension */
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
@@ -78,13 +78,17 @@ public final class ScriptingFunctions {
      * Nashorn extension: global.readLine (scripting-mode-only)
      * Read one line of input from the standard input.
      *
-     * @param self self reference
+     * @param self   self reference
+     * @param prompt String used as input prompt
      *
      * @return line that was read
      *
      * @throws IOException if an exception occurs
      */
-    public static Object readLine(final Object self) throws IOException {
+    public static Object readLine(final Object self, final Object prompt) throws IOException {
+        if (prompt != UNDEFINED) {
+            System.out.print(JSType.toString(prompt));
+        }
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         return reader.readLine();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,10 @@ class Example implements Comparable<Example> {
     private Set<String> actualKeys;
     private Set<String> declaredKeys;
 
-    static File tempDir = new File(System.getProperty("java.io.tmpdir"));
+    static File tempDir = (System.getProperty("test.src") != null) ?
+            new File(System.getProperty("user.dir")):
+            new File(System.getProperty("java.io.tmpdir"));
+
     static void setTempDir(File tempDir) {
         Example.tempDir = tempDir;
     }
