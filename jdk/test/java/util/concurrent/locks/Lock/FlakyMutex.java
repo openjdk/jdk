@@ -37,7 +37,7 @@ import java.util.concurrent.locks.*;
  * tryAcquire method that randomly throws various Throwable
  * subclasses.
  */
-@SuppressWarnings({"deprecation", "serial"})
+@SuppressWarnings("serial")
 public class FlakyMutex implements Lock {
     static class MyError extends Error {}
     static class MyException extends Exception {}
@@ -49,7 +49,7 @@ public class FlakyMutex implements Lock {
         switch (rnd.nextInt(10)) {
         case 0: throw new MyError();
         case 1: throw new MyRuntimeException();
-        case 2: Thread.currentThread().stop(new MyException()); break;
+        case 2: FlakyMutex.<RuntimeException>uncheckedThrow(new MyException());
         default: /* Do nothing */ break;
         }
     }
@@ -146,4 +146,8 @@ public class FlakyMutex implements Lock {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
+    @SuppressWarnings("unchecked") static <T extends Throwable>
+        void uncheckedThrow(Throwable t) throws T {
+        throw (T)t; // rely on vacuous cast
+    }
 }

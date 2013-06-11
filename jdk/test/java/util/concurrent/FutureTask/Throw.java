@@ -31,10 +31,9 @@ import java.util.concurrent.*;
 
 public class Throw {
 
-    @SuppressWarnings("deprecation")
     static void THROW(final Throwable t) {
         if (t != null)
-            Thread.currentThread().stop(t);
+            Throw.<RuntimeException>uncheckedThrow(t);
     }
 
     Callable<Void> thrower(final Throwable t) {
@@ -138,4 +137,8 @@ public class Throw {
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
+    @SuppressWarnings("unchecked") static <T extends Throwable>
+        void uncheckedThrow(Throwable t) throws T {
+        throw (T)t; // rely on vacuous cast
+    }
 }
