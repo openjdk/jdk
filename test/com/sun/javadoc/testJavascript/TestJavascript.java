@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4665566 4855876 7025314 8012375
+ * @bug      4665566 4855876 7025314 8012375 8015997
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib/
@@ -56,7 +56,8 @@ public class TestJavascript extends JavadocTester {
             "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + NL +
             "        targetPage = \"undefined\";" + NL +
             "    function validURL(url) {" + NL +
-            "        if (!(url.indexOf(\".html\") == url.length - 5))" + NL +
+            "        var pos = url.indexOf(\".html\");" + NL +
+            "        if (pos == -1 || pos != url.length - 5)" + NL +
             "            return false;" + NL +
             "        var allowNumber = false;" + NL +
             "        var allowSep = false;" + NL +
