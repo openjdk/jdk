@@ -3782,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1370948811
+DATE_WHEN_GENERATED=1370949244
 
 ###############################################################################
 #
@@ -10782,11 +10782,7 @@ fi
 if test "x$with_cacerts_file" != x; then
     CACERTS_FILE=$with_cacerts_file
 else
-    if test "x$OPENJDK" = "xtrue"; then
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
-    else
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/closed/share/lib/security/cacerts.internal
-    fi
+    CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
 fi
 
 

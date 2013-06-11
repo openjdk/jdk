@@ -351,11 +351,7 @@ AC_ARG_WITH(cacerts-file, [AS_HELP_STRING([--with-cacerts-file],
 if test "x$with_cacerts_file" != x; then
     CACERTS_FILE=$with_cacerts_file
 else
-    if test "x$OPENJDK" = "xtrue"; then
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
-    else
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/closed/share/lib/security/cacerts.internal
-    fi
+    CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
 fi
 AC_SUBST(CACERTS_FILE)
 
