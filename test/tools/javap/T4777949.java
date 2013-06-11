@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,11 @@ public class T4777949 {
         PrintWriter pw = new PrintWriter(sw);
         JavaFileManager fm = JavapFileManager.create(dc, pw);
         JavapTask t = new JavapTask(pw, fm, dc, args, classes);
-        boolean ok = t.run();
+        int ok = t.run();
 
         List<Diagnostic<? extends JavaFileObject>> diags = dc.getDiagnostics();
 
-        if (!ok)
+        if (ok != 0)
             error("javap failed unexpectedly");
 
         System.err.println("args=" + args + " classes=" + classes + "\n"
