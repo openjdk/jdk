@@ -372,7 +372,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle PRINT             = findOwnMH("print",             Object.class, Object.class, Object[].class);
     private static final MethodHandle PRINTLN           = findOwnMH("println",           Object.class, Object.class, Object[].class);
     private static final MethodHandle LOAD              = findOwnMH("load",              Object.class, Object.class, Object.class);
-    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object.class);
+    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object.class, Object[].class);
     private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
 
     private final Context context;
@@ -752,14 +752,15 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      *
      * @param self    scope
      * @param source  source to load
+     * @param args (optional) arguments to be passed to the loaded script
      *
      * @return result of load (undefined)
      *
      * @throws IOException if source could not be read
      */
-    public static Object loadWithNewGlobal(final Object self, final Object source) throws IOException {
+    public static Object loadWithNewGlobal(final Object self, final Object source, final Object...args) throws IOException {
         final Global global = Global.instance();
-        return global.context.loadWithNewGlobal(source);
+        return global.context.loadWithNewGlobal(source, args);
     }
 
     /**
