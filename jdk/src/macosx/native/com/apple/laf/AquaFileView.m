@@ -187,13 +187,13 @@ JNIEXPORT jstring JNICALL Java_com_apple_laf_AquaFileView_getNativePathForResolv
 JNF_COCOA_ENTER(env);
 
     UInt8 pathCString[MAXPATHLEN + 1];
-    size_t pathSize = sizeof(pathCString);
+    size_t maxPathLen = sizeof(pathCString) - 1;
 
     jbyte *byteArray = (*env)->GetByteArrayElements(env, pathToAlias, NULL);
     jsize length = (*env)->GetArrayLength(env, pathToAlias);
 
-    if (length > pathSize) {
-        length = pathSize;
+    if (length > maxPathLen) {
+        length = maxPathLen;
     }
     strncpy((char *)pathCString, (char *)byteArray, length);
     // make sure it's null terminated
