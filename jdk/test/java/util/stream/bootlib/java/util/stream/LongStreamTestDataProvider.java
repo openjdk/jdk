@@ -95,12 +95,8 @@ public class LongStreamTestDataProvider {
 
                 list.add(streamDataDescr("LongStream.longRange(0,l): " + longs.length,
                                          () -> LongStream.range(0, longs.length)));
-                list.add(streamDataDescr("LongStream.longRange(0,l,2): " + longs.length,
-                                         () -> LongStream.range(0, longs.length, 2)));
-                list.add(streamDataDescr("LongStream.longRange(0,l,3): " + longs.length,
-                                         () -> LongStream.range(0, longs.length, 3)));
-                list.add(streamDataDescr("LongStream.longRange(0,l,7): " + longs.length,
-                                         () -> LongStream.range(0, longs.length, 7)));
+                list.add(streamDataDescr("LongStream.longRangeClosed(0,l): " + longs.length,
+                                         () -> LongStream.rangeClosed(0, longs.length)));
             }
             testData = list.toArray(new Object[0][]);
         }
@@ -131,12 +127,8 @@ public class LongStreamTestDataProvider {
 
                 spliterators.add(splitDescr("LongStream.longRange(0,l):" + name,
                                             () -> LongStream.range(0, longs.length).spliterator()));
-                spliterators.add(splitDescr("LongStream.longRange(0,l,2):" + name,
-                                            () -> LongStream.range(0, longs.length, 2).spliterator()));
-                spliterators.add(splitDescr("LongStream.longRange(0,l,3):" + name,
-                                            () -> LongStream.range(0, longs.length, 3).spliterator()));
-                spliterators.add(splitDescr("LongStream.longRange(0,l,7):" + name,
-                                            () -> LongStream.range(0, longs.length, 7).spliterator()));
+                spliterators.add(splitDescr("LongStream.longRangeClosed(0,l):" + name,
+                                            () -> LongStream.rangeClosed(0, longs.length).spliterator()));
                 // Need more!
             }
             spliteratorTestData = spliterators.toArray(new Object[0][]);
