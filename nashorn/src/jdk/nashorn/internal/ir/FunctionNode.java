@@ -30,7 +30,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -385,7 +384,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      * @return function node or a new one if state was changed
      */
     public FunctionNode setState(final LexicalContext lc, final CompilationState state) {
-        if (this.compilationState.equals(state)) {
+        if (this.compilationState.contains(state)) {
             return this;
         }
         final EnumSet<CompilationState> newState = EnumSet.copyOf(this.compilationState);
