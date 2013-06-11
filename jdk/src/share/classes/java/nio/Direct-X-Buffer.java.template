@@ -253,6 +253,12 @@ class Direct$Type$Buffer$RW$$BO$
         return $fromBits$($swap$(unsafe.get$Swaptype$(ix(checkIndex(i)))));
     }
 
+#if[streamableType]
+    $type$ getUnchecked(int i) {
+        return $fromBits$($swap$(unsafe.get$Swaptype$(ix(i))));
+    }
+#end[streamableType]
+
     public $Type$Buffer get($type$[] dst, int offset, int length) {
 #if[rw]
         if ((length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {

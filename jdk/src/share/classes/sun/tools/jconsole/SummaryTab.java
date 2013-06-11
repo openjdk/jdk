@@ -360,6 +360,8 @@ class SummaryTab extends Tab {
                     Math.min(99F,
                              elapsedCpu / (elapsedTime * 10000F * result.nCPUs));
 
+                cpuUsage = Math.max(0F, cpuUsage);
+
                 getPlotter().addValues(result.timeStamp,
                                 Math.round(cpuUsage * Math.pow(10.0, CPU_DECIMALS)));
                 getInfoLabel().setText(Resources.format(Messages.CPU_USAGE_FORMAT,

@@ -484,6 +484,11 @@ public final class AWTAccessor {
          */
         void invokeAndWait(Object source, Runnable r)
             throws InterruptedException, InvocationTargetException;
+
+        /**
+         * Sets the delegate for the EventQueue used by FX/AWT single threaded mode
+         */
+        public void setFwDispatcher(EventQueue eventQueue, FwDispatcher dispatcher);
     }
 
     /*

@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.zip.ZipConstants64.*;
+import static java.util.zip.ZipUtils.*;
 
 /**
  * This class is used to read entries from a zip file.
@@ -564,12 +565,44 @@ class ZipFile implements ZipConstants, Closeable {
                 e.name = zc.toString(bname, bname.length);
             }
         }
-        e.time = getEntryTime(jzentry);
         e.crc = getEntryCrc(jzentry);
         e.size = getEntrySize(jzentry);
         e. csize = getEntryCSize(jzentry);
         e.method = getEntryMethod(jzentry);
         e.extra = getEntryBytes(jzentry, JZENTRY_EXTRA);
+        if (e.extra != null) {
+            byte[] extra = e.extra;
+            int len = e.extra.length;
+            int off = 0;
+            while (off + 4 < len) {
+                int pos = off;
+                int tag = get16(extra, pos);
+                int sz = get16(extra, pos + 2);
+                pos += 4;
+                if (pos + sz > len)         // invalid data
+                    break;
+                switch (tag) {
+                case EXTID_NTFS:
+                    pos += 4;    // reserved 4 bytes
+                    if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
+                        break;
+                    e.mtime  = winToJavaTime(get64(extra, pos + 4));
+                    break;
+                case EXTID_EXTT:
+                    int flag = Byte.toUnsignedInt(extra[pos++]);
+                    if ((flag & 0x1) != 0) {
+                        e.mtime = unixToJavaTime(get32(extra, pos));
+                        pos += 4;
+                    }
+                    break;
+                default:    // unknown tag
+                }
+                off += (sz + 4);
+            }
+        }
+        if (e.mtime == -1) {
+            e.mtime = dosToJavaTime(getEntryTime(jzentry));
+        }
         byte[] bcomm = getEntryBytes(jzentry, JZENTRY_COMMENT);
         if (bcomm == null) {
             e.comment = null;

@@ -69,6 +69,9 @@ define typesAndBits
 		$1_fulltype := character
 		$1_Fulltype := Character
 		$1_category := integralType
+                $1_streams  := streamableType
+                $1_streamtype := int
+                $1_Streamtype := Int
 		$1_LBPV     := 1
 	endif
 
@@ -97,7 +100,7 @@ define typesAndBits
 		$1_Type     := Long
 		$1_fulltype := long
 		$1_Fulltype := Long
-		$1_category := integralType
+		$1_category := integralType	
 		$1_LBPV     := 3
 	endif
 
@@ -231,10 +234,13 @@ $$($1_DST) : $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.buffer.dir
 	$(TOOL_SPP) < $$($1_SRC) > $$($1_OUT).tmp \
 		-K$$($1_type) \
 		-K$$($1_category) \
+		-K$$($1_streams) \
 		-Dtype=$$($1_type) \
 		-DType=$$($1_Type) \
 		-Dfulltype=$$($1_fulltype) \
 		-DFulltype=$$($1_Fulltype) \
+                -Dstreamtype=$$($1_streamtype) \
+                -DStreamtype=$$($1_Streamtype) \
 		-Dx=$$($1_x) \
 		-Dmemtype=$$($1_memtype) \
 		-DMemtype=$$($1_Memtype) \

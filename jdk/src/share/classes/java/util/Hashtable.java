@@ -180,13 +180,27 @@ public class Hashtable<K,V>
          */
         static final long HASHSEED_OFFSET;
 
+        static final boolean USE_HASHSEED;
+
         static {
-            try {
-                UNSAFE = sun.misc.Unsafe.getUnsafe();
-                HASHSEED_OFFSET = UNSAFE.objectFieldOffset(
-                    Hashtable.class.getDeclaredField("hashSeed"));
-            } catch (NoSuchFieldException | SecurityException e) {
-                throw new InternalError("Failed to record hashSeed offset", e);
+            String hashSeedProp = java.security.AccessController.doPrivileged(
+                    new sun.security.action.GetPropertyAction(
+                        "jdk.map.useRandomSeed"));
+            boolean localBool = (null != hashSeedProp)
+                    ? Boolean.parseBoolean(hashSeedProp) : false;
+            USE_HASHSEED = localBool;
+
+            if (USE_HASHSEED) {
+                try {
+                    UNSAFE = sun.misc.Unsafe.getUnsafe();
+                    HASHSEED_OFFSET = UNSAFE.objectFieldOffset(
+                        Hashtable.class.getDeclaredField("hashSeed"));
+                } catch (NoSuchFieldException | SecurityException e) {
+                    throw new InternalError("Failed to record hashSeed offset", e);
+                }
+            } else {
+                UNSAFE = null;
+                HASHSEED_OFFSET = 0;
             }
         }
     }
@@ -194,21 +208,24 @@ public class Hashtable<K,V>
     /**
      * A randomizing value associated with this instance that is applied to
      * hash code of keys to make hash collisions harder to find.
+     *
+     * Non-final so it can be set lazily, but be sure not to set more than once.
      */
-    transient final int hashSeed = sun.misc.Hashing.randomHashSeed(this);
+    transient final int hashSeed;
+
+    /**
+     * Return an initial value for the hashSeed, or 0 if the random seed is not
+     * enabled.
+     */
+    final int initHashSeed() {
+        if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
+            return sun.misc.Hashing.randomHashSeed(this);
+        }
+        return 0;
+    }
 
     private int hash(Object k) {
-        if (k instanceof String) {
-            return ((String)k).hash32();
-        }
-
-        int h = hashSeed ^ k.hashCode();
-
-        // This function ensures that hashCodes that differ only by
-        // constant multiples at each bit position have a bounded
-        // number of collisions (approximately 8 at default load factor).
-        h ^= (h >>> 20) ^ (h >>> 12);
-        return h ^ (h >>> 7) ^ (h >>> 4);
+        return hashSeed ^ k.hashCode();
     }
 
     /**
@@ -232,6 +249,7 @@ public class Hashtable<K,V>
         this.loadFactor = loadFactor;
         table = new Entry<?,?>[initialCapacity];
         threshold = (int)Math.min(initialCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
+        hashSeed = initHashSeed();
     }
 
     /**
@@ -1187,8 +1205,10 @@ public class Hashtable<K,V>
         s.defaultReadObject();
 
         // set hashMask
-        Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
-                sun.misc.Hashing.randomHashSeed(this));
+        if (Holder.USE_HASHSEED) {
+            Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
+                    sun.misc.Hashing.randomHashSeed(this));
+        }
 
         // Read the original length of the array and number of elements
         int origlength = s.readInt();
