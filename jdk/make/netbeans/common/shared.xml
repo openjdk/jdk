@@ -77,7 +77,7 @@
         <echo level="verbose">System configuration claims architecture is ${platform}-${arch}</echo>
         <property name="build.dir" location="${root}/build/${platform}-${arch}"/>
         <property name="bin.dir" location="${build.dir}/bin"/>
-        <property name="make.dir" location="${root}/make"/>
+        <property name="make.dir" location="${root}/make"/> <!-- this is old build make files! -->
         <property name="gensrc.dir" location="${build.dir}/gensrc"/>
         <property name="classes.dir" location="${build.dir}/classes"/>
         <property name="jtreg.dir" location="${build.dir}/jtreg/${ant.project.name}"/>
@@ -126,7 +126,7 @@
             <attribute name="classesdir" default="${classes.dir}"/>
             <sequential>
                 <mkdir dir="@{classesdir}"/>
-                <javac srcdir="@{srcdir}" includes="@{includes}" excludes="@{excludes}" sourcepath="" 
+                <javac srcdir="@{srcdir}" includes="@{includes}" excludes="@{excludes}" sourcepath=""
                     destdir="@{classesdir}" fork="true" executable="${bootstrap.javac}"
                     debug="${javac.debug}" debuglevel="${javac.debuglevel}">
                     <!-- Mandatory for compiling partial JDK sources against a snapshot; should NEVER be used for any other purpose: -->
@@ -146,7 +146,7 @@
         <!-- Empty placeholder for easier customization. -->
         <!-- You can override this target in the ../build.xml file. -->
     </target>
-    
+
     <target name="build" depends="-init,-pre-compile,-build-ant,-build-make,-post-compile" description="Build sources."/>
     <target name="-do-build-ant">
         <depend srcdir="${share.src.dir}:${platform.src.dir}:${root}/src/closed/share/classes:${gensrc.dir}" destdir="${classes.dir}" cache="${build.dir}/depcache" includes="${includes}" excludes="${excludes}"/>
@@ -312,7 +312,7 @@
             <param name="jtreg.vm.options" value="-Xdebug -Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
         </antcall>
     </target>
-    
+
     <target name="debug" depends="-init" if="netbeans.home">
         <!-- No package decls -> "source root" is immediately containing dir -->
         <dirname file="${root}/test/${jtreg.tests}" property="test.dir"/>
