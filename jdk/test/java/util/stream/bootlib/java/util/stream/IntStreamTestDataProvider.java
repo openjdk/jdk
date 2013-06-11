@@ -95,12 +95,8 @@ public class IntStreamTestDataProvider {
 
                 list.add(streamDataDescr("IntStream.intRange(0,l): " + ints.length,
                                          () -> IntStream.range(0, ints.length)));
-                list.add(streamDataDescr("IntStream.intRange(0,l,2): " + ints.length,
-                                         () -> IntStream.range(0, ints.length, 2)));
-                list.add(streamDataDescr("IntStream.intRange(0,l,3): " + ints.length,
-                                         () -> IntStream.range(0, ints.length, 3)));
-                list.add(streamDataDescr("IntStream.intRange(0,l,7): " + ints.length,
-                                         () -> IntStream.range(0, ints.length, 7)));
+                list.add(streamDataDescr("IntStream.rangeClosed(0,l): " + ints.length,
+                                         () -> IntStream.rangeClosed(0, ints.length)));
             }
             testData = list.toArray(new Object[0][]);
         }
@@ -131,12 +127,8 @@ public class IntStreamTestDataProvider {
 
                 spliterators.add(splitDescr("IntStream.intRange(0,l):" + name,
                                             () -> IntStream.range(0, ints.length).spliterator()));
-                spliterators.add(splitDescr("IntStream.intRange(0,l,2):" + name,
-                                            () -> IntStream.range(0, ints.length, 2).spliterator()));
-                spliterators.add(splitDescr("IntStream.intRange(0,l,3):" + name,
-                                            () -> IntStream.range(0, ints.length, 3).spliterator()));
-                spliterators.add(splitDescr("IntStream.intRange(0,l,7):" + name,
-                                            () -> IntStream.range(0, ints.length, 7).spliterator()));
+                spliterators.add(splitDescr("IntStream.intRangeClosed(0,l):" + name,
+                                            () -> IntStream.rangeClosed(0, ints.length).spliterator()));
 
                 // Need more!
             }
