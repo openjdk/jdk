@@ -218,8 +218,8 @@ public class Infer {
         //we need to skip capture?
         Warner retWarn = new Warner();
         if (!resultInfo.checkContext.compatible(qtype1, resultInfo.checkContext.inferenceContext().asFree(to), retWarn) ||
-                //unchecked conversion is not allowed
-                retWarn.hasLint(Lint.LintCategory.UNCHECKED)) {
+                //unchecked conversion is not allowed in source 7 mode
+                (!allowGraphInference && retWarn.hasLint(Lint.LintCategory.UNCHECKED))) {
             throw inferenceException
                     .setMessage("infer.no.conforming.instance.exists",
                     inferenceContext.restvars(), mt.getReturnType(), to);

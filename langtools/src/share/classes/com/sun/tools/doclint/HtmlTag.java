@@ -131,7 +131,8 @@ public enum HtmlTag {
             attrs(AttrKind.USE_CSS, ALIGN, HSPACE, VSPACE, BORDER)),
 
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
-            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
+            attrs(AttrKind.OK, VALUE)),
 
     LINK(BlockType.OTHER, EndKind.NONE),
 
@@ -339,6 +340,7 @@ public enum HtmlTag {
         TARGET,
         TYPE,
         VALIGN,
+        VALUE,
         VSPACE,
         WIDTH;
 
