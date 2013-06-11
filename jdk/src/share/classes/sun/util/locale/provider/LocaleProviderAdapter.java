@@ -120,6 +120,12 @@ public abstract class LocaleProviderAdapter {
     private static LocaleProviderAdapter fallbackLocaleProviderAdapter = null;
 
     /**
+     * Default fallback adapter type, which should return something meaningful in any case.
+     * This is either JRE or FALLBACK.
+     */
+    static LocaleProviderAdapter.Type defaultLocaleProviderAdapter = null;
+
+    /**
      * Adapter lookup cache.
      */
     private static ConcurrentMap<Class<? extends LocaleServiceProvider>, ConcurrentMap<Locale, LocaleProviderAdapter>>
@@ -140,13 +146,19 @@ public abstract class LocaleProviderAdapter {
                     // load adapter if necessary
                     switch (aType) {
                         case CLDR:
-                            cldrLocaleProviderAdapter = new CLDRLocaleProviderAdapter();
+                            if (cldrLocaleProviderAdapter == null) {
+                                cldrLocaleProviderAdapter = new CLDRLocaleProviderAdapter();
+                            }
                             break;
                         case HOST:
-                            hostLocaleProviderAdapter = new HostLocaleProviderAdapter();
+                            if (hostLocaleProviderAdapter == null) {
+                                hostLocaleProviderAdapter = new HostLocaleProviderAdapter();
+                            }
                             break;
                     }
-                    typeList.add(aType);
+                    if (!typeList.contains(aType)) {
+                        typeList.add(aType);
+                    }
                 } catch (IllegalArgumentException | UnsupportedOperationException e) {
                     // could be caused by the user specifying wrong
                     // provider name or format in the system property
@@ -160,11 +172,15 @@ public abstract class LocaleProviderAdapter {
                 // Append FALLBACK as the last resort.
                 fallbackLocaleProviderAdapter = new FallbackLocaleProviderAdapter();
                 typeList.add(Type.FALLBACK);
+                defaultLocaleProviderAdapter = Type.FALLBACK;
+            } else {
+                defaultLocaleProviderAdapter = Type.JRE;
             }
         } else {
             // Default preference list
             typeList.add(Type.JRE);
             typeList.add(Type.SPI);
+            defaultLocaleProviderAdapter = Type.JRE;
         }
 
         adapterPreference = Collections.unmodifiableList(typeList);
