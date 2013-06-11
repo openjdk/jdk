@@ -22,7 +22,6 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import java.util.Comparators;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.StreamTestDataProvider;
@@ -109,9 +108,9 @@ public class SequentialOpTest extends OpTestCase {
                 = new UnaryOperator[] {
                 (UnaryOperator<Stream<Integer>>) s -> s,
                 (UnaryOperator<Stream<Integer>>) s -> s.map(id),
-                (UnaryOperator<Stream<Integer>>) s -> s.sorted(Comparators.naturalOrder()),
-                (UnaryOperator<Stream<Integer>>) s -> s.map(id).sorted(Comparators.naturalOrder()).map(id),
-                (UnaryOperator<Stream<Integer>>) s -> s.filter(LambdaTestHelpers.pEven).sorted(Comparators.naturalOrder()).map(id),
+                (UnaryOperator<Stream<Integer>>) s -> s.sorted(Comparator.naturalOrder()),
+                (UnaryOperator<Stream<Integer>>) s -> s.map(id).sorted(Comparator.naturalOrder()).map(id),
+                (UnaryOperator<Stream<Integer>>) s -> s.filter(LambdaTestHelpers.pEven).sorted(Comparator.naturalOrder()).map(id),
         };
 
         for (int c1Index = 0; c1Index < changers.length; c1Index++) {

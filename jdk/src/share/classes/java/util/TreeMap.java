@@ -2938,13 +2938,13 @@ public class TreeMap<K,V>
 
         public int characteristics() {
             return (side == 0 ? Spliterator.SIZED : 0) |
-                   Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED;
+                    Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED;
         }
 
         @Override
         public Comparator<? super Map.Entry<K, V>> getComparator() {
             return tree.comparator != null ?
-                   Comparators.byKey(tree.comparator) : null;
+                    Map.Entry.comparingByKey(tree.comparator) : null;
         }
     }
 }
