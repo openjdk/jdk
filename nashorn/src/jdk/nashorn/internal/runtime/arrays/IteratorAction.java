@@ -49,7 +49,7 @@ public abstract class IteratorAction<T> {
     protected T result;
 
     /** Current array index of iterator */
-    protected int index;
+    protected long index;
 
     /** Iterator object */
     private final ArrayLikeIterator<Object> iter;
@@ -134,6 +134,6 @@ public abstract class IteratorAction<T> {
      *
      * @throws Throwable if invocation throws an exception/error
      */
-    protected abstract boolean forEach(final Object val, final int i) throws Throwable;
+    protected abstract boolean forEach(final Object val, final long i) throws Throwable;
 
 }
