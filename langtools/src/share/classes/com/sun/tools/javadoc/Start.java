@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,21 +156,8 @@ public class Start extends ToolOption.Helper {
         usage(true);
     }
 
-
-    /**
-     * Usage
-     */
-    private void usage(boolean exit) {
-        // RFE: it would be better to replace the following with code to
-        // write a header, then help for each option, then a footer.
-        messager.notice("main.usage");
-
-        // let doclet print usage information (does nothing on error)
-        if (docletInvoker != null) {
-            docletInvoker.optionLength("-help");
-        }
-
-        if (exit) exit();
+    void usage(boolean exit) {
+        usage("main.usage", "-help", null, exit);
     }
 
     @Override
@@ -178,11 +165,28 @@ public class Start extends ToolOption.Helper {
         Xusage(true);
     }
 
-    /**
-     * Usage
-     */
-    private void Xusage(boolean exit) {
-        messager.notice("main.Xusage");
+    void Xusage(boolean exit) {
+        usage("main.Xusage", "-X", "main.Xusage.foot", exit);
+    }
+
+    private void usage(String main, String doclet, String foot, boolean exit) {
+        // RFE: it would be better to replace the following with code to
+        // write a header, then help for each option, then a footer.
+        messager.notice(main);
+
+        // let doclet print usage information (does nothing on error)
+        if (docletInvoker != null) {
+            // RFE: this is a pretty bad way to get the doclet to show
+            // help info. Moreover, the output appears on stdout,
+            // and <i>not</i> on any of the standard streams passed
+            // to javadoc, and in particular, not to the noticeWriter
+            // But, to fix this, we need to fix the Doclet API.
+            docletInvoker.optionLength(doclet);
+        }
+
+        if (foot != null)
+            messager.notice(foot);
+
         if (exit) exit();
     }
 

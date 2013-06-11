@@ -23,24 +23,20 @@
 
 /*
  * @test
- * @bug 8007464
- * @summary Add graph inference support
- *          smoke test for graph inference
- * @compile TargetType53.java
+ * @bug 7179353
+ * @summary try-with-resources fails to compile with generic exception parameters
+ * @compile GenericsAndTWRCompileErrorTest.java
  */
-import java.util.*;
-import java.util.stream.*;
-import java.util.function.*;
 
-class TargetType53 {
+public class GenericsAndTWRCompileErrorTest {
 
-    <P> List<List<P>> perm(List<P> l) { return null; }
+    public static class Resource<E extends Exception> implements AutoCloseable {
+        public void close() throws E { }
+    }
 
-    void g(List<List<UnaryOperator<IntStream>>> l) { }
+    public <E extends Exception> void test() throws E {
+        try (Resource<E> r = new Resource<E>()) {
 
-    void test() {
-        List<List<UnaryOperator<IntStream>>> l =
-            perm(Arrays.asList(s -> s.sorted()));
-        g(perm(Arrays.asList(s -> s.sorted())));
+        }
     }
 }
