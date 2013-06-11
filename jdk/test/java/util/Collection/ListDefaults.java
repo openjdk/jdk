@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -337,23 +336,23 @@ public class ListDefaults {
 
             CollectionSupplier.shuffle(list);
             list.sort(null);
-            CollectionAsserts.assertSorted(list, Comparators.<Integer>naturalOrder());
+            CollectionAsserts.assertSorted(list, Comparator.<Integer>naturalOrder());
             if (test.name.startsWith("reverse")) {
                 Collections.reverse(list);
             }
             CollectionAsserts.assertContents(list, original);
 
             CollectionSupplier.shuffle(list);
-            list.sort(Comparators.<Integer>naturalOrder());
-            CollectionAsserts.assertSorted(list, Comparators.<Integer>naturalOrder());
+            list.sort(Comparator.<Integer>naturalOrder());
+            CollectionAsserts.assertSorted(list, Comparator.<Integer>naturalOrder());
             if (test.name.startsWith("reverse")) {
                 Collections.reverse(list);
             }
             CollectionAsserts.assertContents(list, original);
 
             CollectionSupplier.shuffle(list);
-            list.sort(Comparators.<Integer>reverseOrder());
-            CollectionAsserts.assertSorted(list, Comparators.<Integer>reverseOrder());
+            list.sort(Comparator.<Integer>reverseOrder());
+            CollectionAsserts.assertSorted(list, Comparator.<Integer>reverseOrder());
             if (!test.name.startsWith("reverse")) {
                 Collections.reverse(list);
             }
@@ -390,8 +389,8 @@ public class ListDefaults {
                 final List<Integer> copy = new ArrayList<>(list);
                 final List<Integer> subList = list.subList(SUBLIST_FROM, SUBLIST_TO);
                 CollectionSupplier.shuffle(subList);
-                subList.sort(Comparators.<Integer>naturalOrder());
-                CollectionAsserts.assertSorted(subList, Comparators.<Integer>naturalOrder());
+                subList.sort(Comparator.<Integer>naturalOrder());
+                CollectionAsserts.assertSorted(subList, Comparator.<Integer>naturalOrder());
                 // verify that elements [0, from) remain unmodified
                 for (int i = 0; i < SUBLIST_FROM; i++) {
                     assertTrue(list.get(i) == copy.get(i),
@@ -412,8 +411,8 @@ public class ListDefaults {
                 public void call(final List<Integer> list) {
                     final List<Integer> copy = new ArrayList<>(list);
                     CollectionSupplier.shuffle(list);
-                    list.sort(Comparators.<Integer>naturalOrder());
-                    CollectionAsserts.assertSorted(list, Comparators.<Integer>naturalOrder());
+                    list.sort(Comparator.<Integer>naturalOrder());
+                    CollectionAsserts.assertSorted(list, Comparator.<Integer>naturalOrder());
                 }
             });
         }

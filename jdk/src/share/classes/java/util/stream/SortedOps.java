@@ -27,7 +27,6 @@ package java.util.stream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.ForkJoinTask;
@@ -114,7 +113,7 @@ final class SortedOps {
                   StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SORTED);
             this.isNaturalSort = true;
             // Will throw CCE when we try to sort if T is not Comparable
-            this.comparator = (Comparator<? super T>) Comparators.naturalOrder();
+            this.comparator = (Comparator<? super T>) Comparator.naturalOrder();
         }
 
         /**

@@ -270,7 +270,7 @@ public class SliceOpTest extends OpTestCase {
     public void testLimitSort() {
         List<Integer> l = countTo(100);
         Collections.reverse(l);
-        exerciseOps(l, s -> s.limit(10).sorted(Comparators.naturalOrder()));
+        exerciseOps(l, s -> s.limit(10).sorted(Comparator.naturalOrder()));
     }
 
     @Test(groups = { "serialization-hostile" })
