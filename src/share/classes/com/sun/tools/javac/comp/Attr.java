@@ -757,11 +757,10 @@ public class Attr extends JCTree.Visitor {
         // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
         // null. In that case, calling augment will throw an NPE. To avoid this, for now we
         // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
-        if (env.info.enclVar.annotations.pendingCompletion()) {
+        if (env.info.enclVar.annotationsPendingCompletion()) {
             env.info.lint = lintEnv.info.lint;
         } else {
-            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.annotations,
-                                                      env.info.enclVar.flags());
+            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar);
         }
 
         Lint prevLint = chk.setLint(env.info.lint);
@@ -881,7 +880,7 @@ public class Attr extends JCTree.Visitor {
         MethodSymbol m = tree.sym;
         boolean isDefaultMethod = (m.flags() & DEFAULT) != 0;
 
-        Lint lint = env.info.lint.augment(m.annotations, m.flags());
+        Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
@@ -1052,7 +1051,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         VarSymbol v = tree.sym;
-        Lint lint = env.info.lint.augment(v.annotations, v.flags());
+        Lint lint = env.info.lint.augment(v);
         Lint prevLint = chk.setLint(lint);
 
         // Check that the variable's declared type is well-formed.
@@ -1121,9 +1120,9 @@ public class Attr extends JCTree.Visitor {
                 ClassSymbol cs = (ClassSymbol)env.info.scope.owner;
                 List<Attribute.TypeCompound> tas = localEnv.info.scope.owner.getRawTypeAttributes();
                 if ((tree.flags & STATIC) != 0) {
-                    cs.annotations.appendClassInitTypeAttributes(tas);
+                    cs.appendClassInitTypeAttributes(tas);
                 } else {
-                    cs.annotations.appendInitTypeAttributes(tas);
+                    cs.appendInitTypeAttributes(tas);
                 }
             }
 
@@ -4118,7 +4117,7 @@ public class Attr extends JCTree.Visitor {
                 lintEnv = lintEnv.next;
 
             // Having found the enclosing lint value, we can initialize the lint value for this class
-            env.info.lint = lintEnv.info.lint.augment(c.annotations, c.flags());
+            env.info.lint = lintEnv.info.lint.augment(c);
 
             Lint prevLint = chk.setLint(env.info.lint);
             JavaFileObject prev = log.useSource(c.sourcefile);
