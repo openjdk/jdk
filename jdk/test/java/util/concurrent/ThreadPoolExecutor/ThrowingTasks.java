@@ -101,8 +101,10 @@ public class ThrowingTasks {
     static class Thrower implements Runnable {
         Throwable t;
         Thrower(Throwable t) { this.t = t; }
-        @SuppressWarnings("deprecation")
-        public void run() { if (t != null) Thread.currentThread().stop(t); }
+        public void run() {
+            if (t != null)
+                ThrowingTasks.<RuntimeException>uncheckedThrow(t);
+        }
     }
 
     static final Thrower noThrower      = new Thrower(null);
@@ -265,4 +267,8 @@ public class ThrowingTasks {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
+    @SuppressWarnings("unchecked") static <T extends Throwable>
+        void uncheckedThrow(Throwable t) throws T {
+        throw (T)t; // rely on vacuous cast
+    }
 }
