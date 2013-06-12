@@ -132,6 +132,7 @@ class TestKFM extends DefaultKeyboardFocusManager {
     }
     protected synchronized void enqueueKeyEvents(long after, Component untilFocused) {
         super.enqueueKeyEvents(after, untilFocused);
+        robot.delay(1);
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.delay(50);
         robot.keyRelease(KeyEvent.VK_SPACE);
