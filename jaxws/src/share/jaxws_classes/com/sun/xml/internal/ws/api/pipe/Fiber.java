@@ -1027,12 +1027,12 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
             }
 
             try {
-                boolean needsToReenter = false;
+                boolean needsToReenter;
                 do {
                     // if interceptors are set, go through the interceptors.
                     if (ints == null) {
                         this.next = next;
-                        if (__doRun(isRequireUnlock, ints)) {
+                        if (__doRun(isRequireUnlock, null /*ints*/)) {
                             return true;
                         }
                     } else {
@@ -1357,6 +1357,7 @@ public final class Fiber implements Runnable, Cancelable, ComponentRegistry {
      */
     public static
     @NotNull
+    @SuppressWarnings({"null", "ConstantConditions"})
     Fiber current() {
         Fiber fiber = CURRENT_FIBER.get();
         if (fiber == null)
