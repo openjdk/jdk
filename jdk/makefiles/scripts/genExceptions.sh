@@ -70,7 +70,7 @@ __END__
     private $ARG_TYPE $ARG_ID;
 
     /**
-     * Constructs an instance of this class. </p>
+     * Constructs an instance of this class.
      *
      * @param  $ARG_ID
      *         The $ARG_PHRASE
@@ -81,7 +81,7 @@ __END__
     }
 
     /**
-     * Retrieves the $ARG_PHRASE. </p>
+     * Retrieves the $ARG_PHRASE.
      *
      * @return  The $ARG_PHRASE
      */

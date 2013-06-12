@@ -71,7 +71,7 @@ import java.util.HashMap;
  *
  * </ul>
  *
- * For convenience, the {@link #isError() isError} method returns <tt>true</tt>
+ * <p> For convenience, the {@link #isError() isError} method returns <tt>true</tt>
  * for result objects that describe malformed-input and unmappable-character
  * errors but <tt>false</tt> for those that describe underflow or overflow
  * conditions.  </p>
@@ -112,7 +112,7 @@ public class CoderResult {
     }
 
     /**
-     * Tells whether or not this object describes an underflow condition.  </p>
+     * Tells whether or not this object describes an underflow condition.
      *
      * @return  <tt>true</tt> if, and only if, this object denotes underflow
      */
@@ -121,7 +121,7 @@ public class CoderResult {
     }
 
     /**
-     * Tells whether or not this object describes an overflow condition.  </p>
+     * Tells whether or not this object describes an overflow condition.
      *
      * @return  <tt>true</tt> if, and only if, this object denotes overflow
      */
@@ -130,7 +130,7 @@ public class CoderResult {
     }
 
     /**
-     * Tells whether or not this object describes an error condition.  </p>
+     * Tells whether or not this object describes an error condition.
      *
      * @return  <tt>true</tt> if, and only if, this object denotes either a
      *          malformed-input error or an unmappable-character error
@@ -141,7 +141,6 @@ public class CoderResult {
 
     /**
      * Tells whether or not this object describes a malformed-input error.
-     * </p>
      *
      * @return  <tt>true</tt> if, and only if, this object denotes a
      *          malformed-input error
@@ -152,7 +151,7 @@ public class CoderResult {
 
     /**
      * Tells whether or not this object describes an unmappable-character
-     * error.  </p>
+     * error.
      *
      * @return  <tt>true</tt> if, and only if, this object denotes an
      *          unmappable-character error
@@ -163,7 +162,7 @@ public class CoderResult {
 
     /**
      * Returns the length of the erroneous input described by this
-     * object&nbsp;&nbsp;<i>(optional operation)</i>.  </p>
+     * object&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * @return  The length of the erroneous input, a positive integer
      *
@@ -180,14 +179,14 @@ public class CoderResult {
     /**
      * Result object indicating underflow, meaning that either the input buffer
      * has been completely consumed or, if the input buffer is not yet empty,
-     * that additional input is required.  </p>
+     * that additional input is required.
      */
     public static final CoderResult UNDERFLOW
         = new CoderResult(CR_UNDERFLOW, 0);
 
     /**
      * Result object indicating overflow, meaning that there is insufficient
-     * room in the output buffer.  </p>
+     * room in the output buffer.
      */
     public static final CoderResult OVERFLOW
         = new CoderResult(CR_OVERFLOW, 0);
@@ -226,7 +225,7 @@ public class CoderResult {
 
     /**
      * Static factory method that returns the unique object describing a
-     * malformed-input error of the given length.  </p>
+     * malformed-input error of the given length.
      *
      * @return  The requested coder-result object
      */
@@ -242,7 +241,7 @@ public class CoderResult {
 
     /**
      * Static factory method that returns the unique result object describing
-     * an unmappable-character error of the given length.  </p>
+     * an unmappable-character error of the given length.
      *
      * @return  The requested coder-result object
      */
@@ -252,7 +251,6 @@ public class CoderResult {
 
     /**
      * Throws an exception appropriate to the result described by this object.
-     * </p>
      *
      * @throws  BufferUnderflowException
      *          If this object is {@link #UNDERFLOW}

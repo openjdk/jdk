@@ -50,7 +50,7 @@ public class CodingErrorAction {
 
     /**
      * Action indicating that a coding error is to be handled by dropping the
-     * erroneous input and resuming the coding operation.  </p>
+     * erroneous input and resuming the coding operation.
      */
     public static final CodingErrorAction IGNORE
         = new CodingErrorAction("IGNORE");
@@ -58,7 +58,7 @@ public class CodingErrorAction {
     /**
      * Action indicating that a coding error is to be handled by dropping the
      * erroneous input, appending the coder's replacement value to the output
-     * buffer, and resuming the coding operation.  </p>
+     * buffer, and resuming the coding operation.
      */
     public static final CodingErrorAction REPLACE
         = new CodingErrorAction("REPLACE");
@@ -73,7 +73,7 @@ public class CodingErrorAction {
         = new CodingErrorAction("REPORT");
 
     /**
-     * Returns a string describing this action.  </p>
+     * Returns a string describing this action.
      *
      * @return  A descriptive string
      */

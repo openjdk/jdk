@@ -43,7 +43,7 @@ public abstract class AbstractSelectionKey
 {
 
     /**
-     * Initializes a new instance of this class.  </p>
+     * Initializes a new instance of this class.
      */
     protected AbstractSelectionKey() { }
 

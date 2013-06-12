@@ -551,7 +551,7 @@ public abstract class $Type$Buffer
 
     /**
      * Relative <i>get</i> method.  Reads the $type$ at this buffer's
-     * current position, and then increments the position. </p>
+     * current position, and then increments the position.
      *
      * @return  The $type$ at the buffer's current position
      *
@@ -581,7 +581,7 @@ public abstract class $Type$Buffer
 
     /**
      * Absolute <i>get</i> method.  Reads the $type$ at the given
-     * index. </p>
+     * index.
      *
      * @param  index
      *         The index from which the $type$ will be read
@@ -658,7 +658,7 @@ public abstract class $Type$Buffer
      * }</pre>
      *
      * except that it first checks that there are sufficient $type$s in
-     * this buffer and it is potentially much more efficient. </p>
+     * this buffer and it is potentially much more efficient.
      *
      * @param  dst
      *         The array into which $type$s are to be written
@@ -739,7 +739,7 @@ public abstract class $Type$Buffer
      *         dst.put(src.get()); </pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The source buffer from which $type$s are to be read;
@@ -795,7 +795,7 @@ public abstract class $Type$Buffer
      * }</pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The array from which $type$s are to be read
@@ -882,7 +882,7 @@ public abstract class $Type$Buffer
      * }</pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The string from which $type$s are to be read
@@ -1060,7 +1060,7 @@ public abstract class $Type$Buffer
     public abstract $Type$Buffer compact();
 
     /**
-     * Tells whether or not this $type$ buffer is direct. </p>
+     * Tells whether or not this $type$ buffer is direct.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is direct
      */
@@ -1069,7 +1069,7 @@ public abstract class $Type$Buffer
 #if[!char]
 
     /**
-     * Returns a string summarizing the state of this buffer.  </p>
+     * Returns a string summarizing the state of this buffer.
      *
      * @return  A summary string
      */
@@ -1254,7 +1254,7 @@ public abstract class $Type$Buffer
 
     /**
      * Reads the character at the given index relative to the current
-     * position. </p>
+     * position.
      *
      * @param  index
      *         The index of the character to be read, relative to the position;
@@ -1452,7 +1452,7 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Modifies this buffer's byte order.  </p>
+     * Modifies this buffer's byte order.
      *
      * @param  bo
      *         The new byte order,

@@ -53,7 +53,7 @@ import java.nio.channels.spi.*;
 public abstract class Pipe {
 
     /**
-     * A channel representing the readable end of a {@link Pipe}.  </p>
+     * A channel representing the readable end of a {@link Pipe}.
      *
      * @since 1.4
      */
@@ -84,7 +84,7 @@ public abstract class Pipe {
     }
 
     /**
-     * A channel representing the writable end of a {@link Pipe}.  </p>
+     * A channel representing the writable end of a {@link Pipe}.
      *
      * @since 1.4
      */
@@ -120,14 +120,14 @@ public abstract class Pipe {
     protected Pipe() { }
 
     /**
-     * Returns this pipe's source channel.  </p>
+     * Returns this pipe's source channel.
      *
      * @return  This pipe's source channel
      */
     public abstract SourceChannel source();
 
     /**
-     * Returns this pipe's sink channel.  </p>
+     * Returns this pipe's sink channel.
      *
      * @return  This pipe's sink channel
      */
