@@ -954,6 +954,14 @@ bool Thread::is_in_stack(address adr) const {
 }
 
 
+bool Thread::is_in_usable_stack(address adr) const {
+  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
+  size_t usable_stack_size = _stack_size - stack_guard_size;
+
+  return ((adr < stack_base()) && (adr >= stack_base() - usable_stack_size));
+}
+
+
 // We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
 // However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
 // used for compilation in the future. If that change is made, the need for these methods

@@ -521,6 +521,9 @@ public:
   // Check if address is in the stack of the thread (not just for locks).
   // Warning: the method can only be used on the running thread
   bool is_in_stack(address adr) const;
+  // Check if address is in the usable part of the stack (excludes protected
+  // guard pages)
+  bool is_in_usable_stack(address adr) const;
 
   // Sets this thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
