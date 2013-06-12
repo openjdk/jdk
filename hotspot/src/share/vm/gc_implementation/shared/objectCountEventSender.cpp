@@ -31,15 +31,16 @@
 
 #if INCLUDE_SERVICES
 
-void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id) {
+void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, jlong timestamp) {
   assert(Tracing::is_event_enabled(EventObjectCountAfterGC::eventId),
          "Only call this method if the event is enabled");
 
-  EventObjectCountAfterGC event;
+  EventObjectCountAfterGC event(UNTIMED);
   event.set_gcId(gc_id);
   event.set_class(entry->klass());
   event.set_count(entry->count());
   event.set_totalSize(entry->words() * BytesPerWord);
+  event.set_endtime(timestamp);
   event.commit();
 }
 

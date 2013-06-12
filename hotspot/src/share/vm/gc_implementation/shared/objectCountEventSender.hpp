@@ -35,7 +35,7 @@ class KlassInfoEntry;
 
 class ObjectCountEventSender : public AllStatic {
  public:
-  static void send(const KlassInfoEntry* entry, GCId gc_id);
+  static void send(const KlassInfoEntry* entry, GCId gc_id, jlong timestamp);
   static bool should_send_event();
 };
 
