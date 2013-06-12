@@ -39,7 +39,7 @@
 #define assert_unset_gc_id() assert(_shared_gc_info.id() == SharedGCInfo::UNSET_GCID, "GC already started?")
 #define assert_set_gc_id() assert(_shared_gc_info.id() != SharedGCInfo::UNSET_GCID, "GC not started?")
 
-static jlong GCTracer_next_gc_id = 0;
+static GCId GCTracer_next_gc_id = 0;
 static GCId create_new_gc_id() {
   return GCTracer_next_gc_id++;
 }
