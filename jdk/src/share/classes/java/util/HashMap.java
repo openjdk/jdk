@@ -28,6 +28,7 @@ package java.util;
 import java.io.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -912,7 +913,8 @@ public class HashMap<K,V>
      */
     final int initHashSeed() {
         if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
-            return sun.misc.Hashing.randomHashSeed(this);
+            int seed = ThreadLocalRandom.current().nextInt();
+            return (seed != 0) ? seed : 1;
         }
         return 0;
     }
@@ -2572,8 +2574,9 @@ public class HashMap<K,V>
 
         // set other fields that need values
         if (Holder.USE_HASHSEED) {
+            int seed = ThreadLocalRandom.current().nextInt();
             Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
-                    sun.misc.Hashing.randomHashSeed(this));
+                                         (seed != 0) ? seed : 1);
         }
         table = EMPTY_TABLE;
 
