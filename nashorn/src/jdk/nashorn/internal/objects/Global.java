@@ -37,6 +37,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -372,7 +373,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle PRINT             = findOwnMH("print",             Object.class, Object.class, Object[].class);
     private static final MethodHandle PRINTLN           = findOwnMH("println",           Object.class, Object.class, Object[].class);
     private static final MethodHandle LOAD              = findOwnMH("load",              Object.class, Object.class, Object.class);
-    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object.class, Object[].class);
+    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object[].class);
     private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
 
     private final Context context;
@@ -750,17 +751,21 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     /**
      * Global loadWithNewGlobal implementation - Nashorn extension
      *
-     * @param self    scope
-     * @param source  source to load
-     * @param args (optional) arguments to be passed to the loaded script
+     * @param self scope
+     * @param args from plus (optional) arguments to be passed to the loaded script
      *
-     * @return result of load (undefined)
+     * @return result of load (may be undefined)
      *
      * @throws IOException if source could not be read
      */
-    public static Object loadWithNewGlobal(final Object self, final Object source, final Object...args) throws IOException {
+    public static Object loadWithNewGlobal(final Object self, final Object...args) throws IOException {
         final Global global = Global.instance();
-        return global.context.loadWithNewGlobal(source, args);
+        final int length = args.length;
+        final boolean hasArgs = 0 < length;
+        final Object from = hasArgs ? args[0] : UNDEFINED;
+        final Object[] arguments = hasArgs ? Arrays.copyOfRange(args, 1, length) : args;
+
+        return global.context.loadWithNewGlobal(from, arguments);
     }
 
     /**
