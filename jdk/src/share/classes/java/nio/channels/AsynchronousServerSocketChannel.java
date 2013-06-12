@@ -253,7 +253,7 @@ public abstract class AsynchronousServerSocketChannel
      * <p> To allow for concurrent handling of new connections, the completion
      * handler is not invoked directly by the initiating thread when a new
      * connection is accepted immediately (see <a
-     * href="AsynchronousChannelGroup.html#threading">Threading<a>).
+     * href="AsynchronousChannelGroup.html#threading">Threading</a>).
      *
      * <p> If a security manager has been installed then it verifies that the
      * address and port number of the connection's remote endpoint are permitted

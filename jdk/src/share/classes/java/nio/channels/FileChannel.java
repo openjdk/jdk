@@ -418,7 +418,7 @@ public abstract class FileChannel
     // -- Other operations --
 
     /**
-     * Returns this channel's file position.  </p>
+     * Returns this channel's file position.
      *
      * @return  This channel's file position,
      *          a non-negative integer counting the number of bytes
@@ -461,7 +461,7 @@ public abstract class FileChannel
     public abstract FileChannel position(long newPosition) throws IOException;
 
     /**
-     * Returns the current size of this channel's file.  </p>
+     * Returns the current size of this channel's file.
      *
      * @return  The current size of this channel's file,
      *          measured in bytes

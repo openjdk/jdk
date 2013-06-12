@@ -302,7 +302,7 @@ public abstract class SocketChannel
 
     /**
      * Tells whether or not a connection operation is in progress on this
-     * channel.  </p>
+     * channel.
      *
      * @return  <tt>true</tt> if, and only if, a connection operation has been
      *          initiated on this channel but not yet completed by invoking the
