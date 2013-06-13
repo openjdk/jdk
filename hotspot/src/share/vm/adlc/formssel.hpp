@@ -147,6 +147,7 @@ public:
   virtual int         is_empty_encoding() const; // _size=0 and/or _insencode empty
   virtual int         is_tls_instruction() const; // tlsLoadP rule or ideal ThreadLocal
   virtual int         is_ideal_copy() const;    // node matches ideal 'Copy*'
+  virtual bool        is_ideal_negD() const;    // node matches ideal 'NegD'
   virtual bool        is_ideal_if()   const;    // node matches ideal 'If'
   virtual bool        is_ideal_fastlock() const; // node matches 'FastLock'
   virtual bool        is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
