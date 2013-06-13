@@ -341,6 +341,15 @@ class Thread implements Runnable {
     }
 
     /**
+     * Initializes a Thread with the current AccessControlContext.
+     * @see #init(ThreadGroup,Runnable,String,long,AccessControlContext)
+     */
+    private void init(ThreadGroup g, Runnable target, String name,
+                      long stackSize) {
+        init(g, target, name, stackSize, null);
+    }
+
+    /**
      * Initializes a Thread.
      *
      * @param g the Thread group
@@ -348,9 +357,11 @@ class Thread implements Runnable {
      * @param name the name of the new Thread
      * @param stackSize the desired stack size for the new thread, or
      *        zero to indicate that this parameter is to be ignored.
+     * @param acc the AccessControlContext to inherit, or
+     *            AccessController.getContext() if null
      */
     private void init(ThreadGroup g, Runnable target, String name,
-                      long stackSize) {
+                      long stackSize, AccessControlContext acc) {
         if (name == null) {
             throw new NullPointerException("name cannot be null");
         }
@@ -396,7 +407,8 @@ class Thread implements Runnable {
             this.contextClassLoader = parent.getContextClassLoader();
         else
             this.contextClassLoader = parent.contextClassLoader;
-        this.inheritedAccessControlContext = AccessController.getContext();
+        this.inheritedAccessControlContext =
+                acc != null ? acc : AccessController.getContext();
         this.target = target;
         setPriority(priority);
         if (parent.inheritableThreadLocals != null)
@@ -446,6 +458,14 @@ class Thread implements Runnable {
      */
     public Thread(Runnable target) {
         init(null, target, "Thread-" + nextThreadNum(), 0);
+    }
+
+    /**
+     * Creates a new Thread that inherits the given AccessControlContext.
+     * This is not a public constructor.
+     */
+    Thread(Runnable target, AccessControlContext acc) {
+        init(null, target, "Thread-" + nextThreadNum(), 0, acc);
     }
 
     /**
