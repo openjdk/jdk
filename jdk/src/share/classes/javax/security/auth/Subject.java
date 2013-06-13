@@ -1297,8 +1297,14 @@ public final class Subject implements java.io.Serializable {
         {
             ObjectInputStream.GetField fields = ois.readFields();
             subject = (Subject) fields.get("this$0", null);
-            elements = (LinkedList<E>) fields.get("elements", null);
             which = fields.get("which", 0);
+
+            LinkedList<E> tmp = (LinkedList<E>) fields.get("elements", null);
+            if (tmp.getClass() != LinkedList.class) {
+                elements = new LinkedList<E>(tmp);
+            } else {
+                elements = tmp;
+            }
         }
     }
 
