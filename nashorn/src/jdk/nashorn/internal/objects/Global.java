@@ -430,15 +430,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return instance().context;
     }
 
-    /**
-     * Script access check for strict mode
-     *
-     * @return true if strict mode enabled in {@link Global#getThisContext()}
-     */
-    static boolean isStrict() {
-        return getEnv()._strict;
-    }
-
     // GlobalObject interface implementation
 
     @Override
@@ -616,14 +607,12 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public PropertyDescriptor newAccessorDescriptor(final Object get, final Object set, final boolean configurable, final boolean enumerable) {
         final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set);
 
-        final boolean strict = context.getEnv()._strict;
-
         if (get == null) {
-            desc.delete(PropertyDescriptor.GET, strict);
+            desc.delete(PropertyDescriptor.GET, false);
         }
 
         if (set == null) {
-            desc.delete(PropertyDescriptor.SET, strict);
+            desc.delete(PropertyDescriptor.SET, false);
         }
 
         return desc;
@@ -1485,7 +1474,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // Error objects
         this.builtinError = (ScriptFunction)initConstructor("Error");
         final ScriptObject errorProto = getErrorPrototype();
-        final boolean strict = Global.isStrict();
 
         // Nashorn specific accessors on Error.prototype - stack, lineNumber, columnNumber and fileName
         final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", NativeError.GET_STACK);
@@ -1503,10 +1491,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // ECMA 15.11.4.2 Error.prototype.name
         // Error.prototype.name = "Error";
-        errorProto.set(NativeError.NAME, "Error", strict);
+        errorProto.set(NativeError.NAME, "Error", false);
         // ECMA 15.11.4.3 Error.prototype.message
         // Error.prototype.message = "";
-        errorProto.set(NativeError.MESSAGE, "", strict);
+        errorProto.set(NativeError.MESSAGE, "", false);
 
         this.builtinEvalError = initErrorSubtype("EvalError", errorProto);
         this.builtinRangeError = initErrorSubtype("RangeError", errorProto);
@@ -1519,9 +1507,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ScriptFunction initErrorSubtype(final String name, final ScriptObject errorProto) {
         final ScriptObject cons = initConstructor(name);
         final ScriptObject prototype = ScriptFunction.getPrototype(cons);
-        final boolean strict = Global.isStrict();
-        prototype.set(NativeError.NAME, name, strict);
-        prototype.set(NativeError.MESSAGE, "", strict);
+        prototype.set(NativeError.NAME, name, false);
+        prototype.set(NativeError.MESSAGE, "", false);
         prototype.setProto(errorProto);
         return (ScriptFunction)cons;
     }
@@ -1730,7 +1717,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // <anon-function>
         builtinFunction.setProto(anon);
         builtinFunction.setPrototype(anon);
-        anon.set("constructor", builtinFunction, anon.isStrict());
+        anon.set("constructor", builtinFunction, false);
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
 
         // now initialize Object
