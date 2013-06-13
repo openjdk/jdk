@@ -2784,7 +2784,42 @@ int os::vm_allocation_granularity() {
   return page_size;
 }
 
-bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
+static bool recoverable_mmap_error(int err) {
+  // See if the error is one we can let the caller handle. This
+  // list of errno values comes from the Solaris mmap(2) man page.
+  switch (err) {
+  case EBADF:
+  case EINVAL:
+  case ENOTSUP:
+    // let the caller deal with these errors
+    return true;
+
+  default:
+    // Any remaining errors on this OS can cause our reserved mapping
+    // to be lost. That can cause confusion where different data
+    // structures think they have the same memory mapped. The worst
+    // scenario is if both the VM and a library think they have the
+    // same memory mapped.
+    return false;
+  }
+}
+
+static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", addr, bytes, exec,
+          strerror(err), err);
+}
+
+static void warn_fail_commit_memory(char* addr, size_t bytes,
+                                    size_t alignment_hint, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", addr, bytes,
+          alignment_hint, exec, strerror(err), err);
+}
+
+int os::Solaris::commit_memory_impl(char* addr, size_t bytes, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
   char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
@@ -2792,14 +2827,38 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
     if (UseNUMAInterleaving) {
       numa_make_global(addr, bytes);
     }
-    return true;
+    return 0;
   }
-  return false;
+
+  int err = errno;  // save errno from mmap() call in mmap_chunk()
+
+  if (!recoverable_mmap_error(err)) {
+    warn_fail_commit_memory(addr, bytes, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "committing reserved memory.");
+  }
+
+  return err;
 }
 
-bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
-                       bool exec) {
-  if (commit_memory(addr, bytes, exec)) {
+bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
+  return Solaris::commit_memory_impl(addr, bytes, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t bytes, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Solaris::commit_memory_impl(addr, bytes, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, bytes, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+  }
+}
+
+int os::Solaris::commit_memory_impl(char* addr, size_t bytes,
+                                    size_t alignment_hint, bool exec) {
+  int err = Solaris::commit_memory_impl(addr, bytes, exec);
+  if (err == 0) {
     if (UseMPSS && alignment_hint > (size_t)vm_page_size()) {
       // If the large page size has been set and the VM
       // is using large pages, use the large page size
@@ -2821,9 +2880,25 @@ bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
       // Since this is a hint, ignore any failures.
       (void)Solaris::set_mpss_range(addr, bytes, page_size);
     }
-    return true;
   }
-  return false;
+  return err;
+}
+
+bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
+                          bool exec) {
+  return Solaris::commit_memory_impl(addr, bytes, alignment_hint, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t bytes,
+                                  size_t alignment_hint, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Solaris::commit_memory_impl(addr, bytes, alignment_hint, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, bytes, alignment_hint, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+  }
 }
 
 // Uncommit the pages in a specified region.
@@ -2835,7 +2910,7 @@ void os::pd_free_memory(char* addr, size_t bytes, size_t alignment_hint) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
