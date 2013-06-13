@@ -122,12 +122,12 @@ public class IntNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(int[] array, Node.OfInt n) {
-        assertEquals(n.asIntArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(int[] array, Node.OfInt n) {
-        assertEquals(Nodes.flattenInt(n).asIntArray(), array);
+        assertEquals(Nodes.flattenInt(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")

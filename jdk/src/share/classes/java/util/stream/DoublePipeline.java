@@ -461,7 +461,7 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final double[] toArray() {
         return Nodes.flattenDouble((Node.OfDouble) evaluateToArrayNode(Double[]::new))
-                        .asDoubleArray();
+                        .asPrimitiveArray();
     }
 
     //

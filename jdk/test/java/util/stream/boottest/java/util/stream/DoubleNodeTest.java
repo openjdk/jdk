@@ -122,12 +122,12 @@ public class DoubleNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(n.asDoubleArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(Nodes.flattenDouble(n).asDoubleArray(), array);
+        assertEquals(Nodes.flattenDouble(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")

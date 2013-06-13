@@ -122,12 +122,12 @@ public class LongNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(long[] array, Node.OfLong n) {
-        assertEquals(n.asLongArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(long[] array, Node.OfLong n) {
-        assertEquals(Nodes.flattenLong(n).asLongArray(), array);
+        assertEquals(Nodes.flattenLong(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
