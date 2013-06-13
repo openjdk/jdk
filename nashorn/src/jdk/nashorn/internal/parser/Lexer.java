@@ -1115,6 +1115,10 @@ public class Lexer extends Scanner {
             }
         }
 
+        if (Character.isJavaIdentifierStart(ch0)) {
+            error(Lexer.message("missing.space.after.number"), type, position, 1);
+        }
+
         // Add number token.
         add(type, start);
     }
