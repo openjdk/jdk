@@ -188,7 +188,7 @@ public final class Context {
     private final ScriptEnvironment env;
 
     /** is this context in strict mode? Cached from env. as this is used heavily. */
-    public final boolean _strict;
+    final boolean _strict;
 
     /** class loader to resolve classes from script. */
     private final ClassLoader  appLoader;

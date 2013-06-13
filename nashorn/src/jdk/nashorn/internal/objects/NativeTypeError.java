@@ -59,7 +59,7 @@ public final class NativeTypeError extends ScriptObject {
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
-            delete(NativeError.MESSAGE, Global.isStrict());
+            delete(NativeError.MESSAGE, false);
         }
     }
 

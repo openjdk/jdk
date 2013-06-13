@@ -216,7 +216,7 @@ public final class NativeFunction {
 
         final Global global = Global.instance();
 
-        return Global.directEval(global, sb.toString(), global, "<function>", Global.isStrict());
+        return Global.directEval(global, sb.toString(), global, "<function>", global.isStrictContext());
     }
 
     private static void checkFunctionParameters(final String params) {

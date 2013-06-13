@@ -118,7 +118,7 @@ public final class NativeArray extends ScriptObject {
             if (value == ScriptRuntime.EMPTY) {
                 arrayData = arrayData.delete(index);
             } else {
-                arrayData = arrayData.set(index, value, isStrictContext());
+                arrayData = arrayData.set(index, value, false);
             }
         }
 
@@ -158,6 +158,11 @@ public final class NativeArray extends ScriptObject {
 
         // Step 3
         if ("length".equals(key)) {
+            // check for length being made non-writable
+            if (desc.has(WRITABLE) && !desc.isWritable()) {
+                setIsLengthNotWritable();
+            }
+
             // Step 3a
             if (!desc.has(VALUE)) {
                 return super.defineOwnProperty("length", desc, reject);
@@ -603,7 +608,6 @@ public final class NativeArray extends ScriptObject {
     public static Object pop(final Object self) {
         try {
             final ScriptObject sobj = (ScriptObject)self;
-            final boolean strict    = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
                 return sobj.getArray().pop();
@@ -612,15 +616,15 @@ public final class NativeArray extends ScriptObject {
             final long len = JSType.toUint32(sobj.getLength());
 
             if (len == 0) {
-                sobj.set("length", 0, strict);
+                sobj.set("length", 0, true);
                 return ScriptRuntime.UNDEFINED;
             }
 
             final long   index   = len - 1;
             final Object element = sobj.get(index);
 
-            sobj.delete(index, strict);
-            sobj.set("length", index, strict);
+            sobj.delete(index, true);
+            sobj.set("length", index, true);
 
             return element;
         } catch (final ClassCastException | NullPointerException e) {
@@ -639,11 +643,10 @@ public final class NativeArray extends ScriptObject {
     public static Object push(final Object self, final Object... args) {
         try {
             final ScriptObject sobj   = (ScriptObject)self;
-            final boolean      strict = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
                 if (sobj.getArray().length() + args.length <= JSType.MAX_UINT) {
-                    final ArrayData newData = sobj.getArray().push(sobj.isStrictContext(), args);
+                    final ArrayData newData = sobj.getArray().push(true, args);
                     sobj.setArray(newData);
                     return newData.length();
                 }
@@ -652,9 +655,9 @@ public final class NativeArray extends ScriptObject {
 
             long len = JSType.toUint32(sobj.getLength());
             for (final Object element : args) {
-                sobj.set(len++, element, strict);
+                sobj.set(len++, element, true);
             }
-            sobj.set("length", len, strict);
+            sobj.set("length", len, true);
 
             return len;
         } catch (final ClassCastException | NullPointerException e) {
@@ -672,7 +675,6 @@ public final class NativeArray extends ScriptObject {
     public static Object reverse(final Object self) {
         try {
             final ScriptObject sobj   = (ScriptObject)self;
-            final boolean      strict = sobj.isStrictContext();
             final long         len    = JSType.toUint32(sobj.getLength());
             final long         middle = len / 2;
 
@@ -684,14 +686,14 @@ public final class NativeArray extends ScriptObject {
                 final boolean upperExists = sobj.has(upper);
 
                 if (lowerExists && upperExists) {
-                    sobj.set(lower, upperValue, strict);
-                    sobj.set(upper, lowerValue, strict);
+                    sobj.set(lower, upperValue, true);
+                    sobj.set(upper, lowerValue, true);
                 } else if (!lowerExists && upperExists) {
-                    sobj.set(lower, upperValue, strict);
-                    sobj.delete(upper, strict);
+                    sobj.set(lower, upperValue, true);
+                    sobj.delete(upper, true);
                 } else if (lowerExists && !upperExists) {
-                    sobj.delete(lower, strict);
-                    sobj.set(upper, lowerValue, strict);
+                    sobj.delete(lower, true);
+                    sobj.set(upper, lowerValue, true);
                 }
             }
             return sobj;
@@ -717,7 +719,6 @@ public final class NativeArray extends ScriptObject {
         }
 
         final ScriptObject sobj   = (ScriptObject) obj;
-        final boolean      strict = Global.isStrict();
 
         long len = JSType.toUint32(sobj.getLength());
 
@@ -728,15 +729,15 @@ public final class NativeArray extends ScriptObject {
                 sobj.getArray().shiftLeft(1);
             } else {
                 for (long k = 1; k < len; k++) {
-                    sobj.set(k - 1, sobj.get(k), strict);
+                    sobj.set(k - 1, sobj.get(k), true);
                 }
             }
-            sobj.delete(--len, strict);
+            sobj.delete(--len, true);
         } else {
             len = 0;
         }
 
-        sobj.set("length", len, strict);
+        sobj.set("length", len, true);
 
         return first;
     }
@@ -833,7 +834,6 @@ public final class NativeArray extends ScriptObject {
     public static Object sort(final Object self, final Object comparefn) {
         try {
             final ScriptObject sobj    = (ScriptObject) self;
-            final boolean      strict  = sobj.isStrictContext();
             final long         len     = JSType.toUint32(sobj.getLength());
             ArrayData          array   = sobj.getArray();
 
@@ -850,7 +850,7 @@ public final class NativeArray extends ScriptObject {
                 final Object[] sorted = sort(src.toArray(), comparefn);
 
                 for (int i = 0; i < sorted.length; i++) {
-                    array = array.set(i, sorted[i], strict);
+                    array = array.set(i, sorted[i], true);
                 }
 
                 // delete missing elements - which are at the end of sorted array
@@ -891,7 +891,6 @@ public final class NativeArray extends ScriptObject {
         }
 
         final ScriptObject sobj                = (ScriptObject)obj;
-        final boolean      strict              = Global.isStrict();
         final long         len                 = JSType.toUint32(sobj.getLength());
         final long         relativeStart       = JSType.toLong(start);
 
@@ -914,14 +913,14 @@ public final class NativeArray extends ScriptObject {
                 final long to   = k + items.length;
 
                 if (sobj.has(from)) {
-                    sobj.set(to, sobj.get(from), strict);
+                    sobj.set(to, sobj.get(from), true);
                 } else {
-                    sobj.delete(to, strict);
+                    sobj.delete(to, true);
                 }
             }
 
             for (long k = len; k > (len - actualDeleteCount + items.length); k--) {
-                sobj.delete(k - 1, strict);
+                sobj.delete(k - 1, true);
             }
         } else if (items.length > actualDeleteCount) {
             for (long k = len - actualDeleteCount; k > actualStart; k--) {
@@ -930,20 +929,20 @@ public final class NativeArray extends ScriptObject {
 
                 if (sobj.has(from)) {
                     final Object fromValue = sobj.get(from);
-                    sobj.set(to, fromValue, strict);
+                    sobj.set(to, fromValue, true);
                 } else {
-                    sobj.delete(to, strict);
+                    sobj.delete(to, true);
                 }
             }
         }
 
         long k = actualStart;
         for (int i = 0; i < items.length; i++, k++) {
-            sobj.set(k, items[i], strict);
+            sobj.set(k, items[i], true);
         }
 
         final long newLength = len - actualDeleteCount + items.length;
-        sobj.set("length", newLength, strict);
+        sobj.set("length", newLength, true);
 
         return array;
     }
@@ -964,7 +963,6 @@ public final class NativeArray extends ScriptObject {
         }
 
         final ScriptObject sobj   = (ScriptObject)obj;
-        final boolean      strict = Global.isStrict();
         final long         len    = JSType.toUint32(sobj.getLength());
 
         if (items == null) {
@@ -975,7 +973,7 @@ public final class NativeArray extends ScriptObject {
             sobj.getArray().shiftRight(items.length);
 
             for (int j = 0; j < items.length; j++) {
-                sobj.setArray(sobj.getArray().set(j, items[j], sobj.isStrictContext()));
+                sobj.setArray(sobj.getArray().set(j, items[j], true));
             }
         } else {
             for (long k = len; k > 0; k--) {
@@ -984,19 +982,19 @@ public final class NativeArray extends ScriptObject {
 
                 if (sobj.has(from)) {
                     final Object fromValue = sobj.get(from);
-                    sobj.set(to, fromValue, strict);
+                    sobj.set(to, fromValue, true);
                 } else {
-                    sobj.delete(to, strict);
+                    sobj.delete(to, true);
                 }
             }
 
             for (int j = 0; j < items.length; j++) {
-                sobj.set(j, items[j], strict);
+                 sobj.set(j, items[j], true);
             }
         }
 
         final long newLength = len + items.length;
-        sobj.set("length", newLength, strict);
+        sobj.set("length", newLength, true);
 
         return newLength;
     }
@@ -1239,7 +1237,7 @@ public final class NativeArray extends ScriptObject {
      * @return true if optimizable
      */
     private static boolean bulkable(final ScriptObject self) {
-        return self.isArray() && !hasInheritedArrayEntries(self);
+        return self.isArray() && !hasInheritedArrayEntries(self) && !self.isLengthNotWritable();
     }
 
     private static boolean hasInheritedArrayEntries(final ScriptObject self) {
