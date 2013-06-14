@@ -127,32 +127,13 @@ public final class LocaleServiceProviderPool {
     private LocaleServiceProviderPool (final Class<? extends LocaleServiceProvider> c) {
         providerClass = c;
 
-        // Add the JRE Locale Data Adapter implementation.
-        providers.putIfAbsent(LocaleProviderAdapter.Type.JRE,
-            LocaleProviderAdapter.forJRE().getLocaleServiceProvider(c));
-
-        // Add the SPI Locale Data Adapter implementation.
-        LocaleProviderAdapter lda = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.SPI);
-        LocaleServiceProvider provider = lda.getLocaleServiceProvider(c);
-        if (provider != null) {
-            providers.putIfAbsent(LocaleProviderAdapter.Type.SPI, provider);
-        }
-
-        // Add the CLDR Locale Data Adapter implementation, if needed.
-        lda =  LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR);
-        if (lda != null) {
-            provider = lda.getLocaleServiceProvider(c);
-            if (provider != null) {
-                providers.putIfAbsent(LocaleProviderAdapter.Type.CLDR, provider);
-            }
-        }
-
-        // Add the Host Locale Data Adapter implementation, if needed.
-        lda =  LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.HOST);
-        if (lda != null) {
-            provider = lda.getLocaleServiceProvider(c);
-            if (provider != null) {
-                providers.putIfAbsent(LocaleProviderAdapter.Type.HOST, provider);
+        for (LocaleProviderAdapter.Type type : LocaleProviderAdapter.getAdapterPreference()) {
+            LocaleProviderAdapter lda = LocaleProviderAdapter.forType(type);
+            if (lda != null) {
+                LocaleServiceProvider provider = lda.getLocaleServiceProvider(c);
+                if (provider != null) {
+                    providers.putIfAbsent(type, provider);
+                }
             }
         }
     }
@@ -246,7 +227,8 @@ public final class LocaleServiceProviderPool {
      */
     boolean hasProviders() {
         return providers.size() != 1 ||
-               providers.get(LocaleProviderAdapter.Type.JRE) == null;
+               (providers.get(LocaleProviderAdapter.Type.JRE) == null &&
+                providers.get(LocaleProviderAdapter.Type.FALLBACK) == null);
     }
 
     /**
@@ -296,9 +278,8 @@ public final class LocaleServiceProviderPool {
         // Check whether JRE is the sole locale data provider or not,
         // and directly call it if it is.
         if (!hasProviders()) {
-            return getter.getObject(
-                (P)providers.get(LocaleProviderAdapter.Type.JRE),
-                locale, key, params);
+            return getter.getObject((P)providers.get(LocaleProviderAdapter.defaultLocaleProviderAdapter),
+                                    locale, key, params);
         }
 
         List<Locale> lookupLocales = getLookupLocales(locale);

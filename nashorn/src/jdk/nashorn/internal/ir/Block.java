@@ -131,7 +131,7 @@ public class Block extends BreakableNode implements Flags<Block> {
      * @return new or same node
      */
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterBlock(this)) {
             return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, Statement.class, statements)));
         }

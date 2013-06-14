@@ -43,6 +43,7 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
+
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -58,6 +59,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * "class loader", it does not, in fact, extend {@code ClassLoader}, but rather uses them internally. Instances of this
  * class are normally created by {@link JavaAdapterBytecodeGenerator}.
  */
+@SuppressWarnings("javadoc")
 class JavaAdapterClassLoader extends JavaAdapterGeneratorBase {
     private static final Type PRIVILEGED_ACTION_TYPE = Type.getType(PrivilegedAction.class);
 

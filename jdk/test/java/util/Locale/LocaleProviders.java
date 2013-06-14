@@ -64,6 +64,10 @@ public class LocaleProviders {
                 bug8013086Test(args[1], args[2]);
                 break;
 
+            case "bug8013903Test":
+                bug8013903Test();
+                break;
+
             default:
                 throw new RuntimeException("Test method '"+methodName+"' not found.");
         }
@@ -194,5 +198,31 @@ public class LocaleProviders {
         } catch (ParseException pe) {
             // ParseException is fine in this test, as it's not "UTC"
 }
+    }
+
+    static void bug8013903Test() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            Date sampleDate = new Date(0x10000000000L);
+            String fallbackResult = "Heisei 16.Nov.03 (Wed) AM 11:53:47";
+            String jreResult = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
+            Locale l = new Locale("ja", "JP", "JP");
+            SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
+            String result = sdf.format(sampleDate);
+            System.out.println(result);
+            if (LocaleProviderAdapter.getAdapterPreference()
+                .contains(LocaleProviderAdapter.Type.JRE)) {
+                if (!jreResult.equals(result)) {
+                    throw new RuntimeException("Format failed. result: \"" +
+                        result + "\", expected: \"" + jreResult);
+                }
+            } else {
+                // should be FALLBACK, as Windows HOST does not return
+                // display names
+                if (!fallbackResult.equals(result)) {
+                    throw new RuntimeException("Format failed. result: \"" +
+                        result + "\", expected: \"" + fallbackResult);
+                }
+            }
+        }
     }
 }
