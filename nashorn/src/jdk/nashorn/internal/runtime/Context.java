@@ -46,6 +46,7 @@ import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -480,6 +481,13 @@ public final class Context {
             if (sobj.has("script") && sobj.has("name")) {
                 final String script = JSType.toString(sobj.get("script"));
                 final String name   = JSType.toString(sobj.get("name"));
+                source = new Source(name, script);
+            }
+        } else if (src instanceof Map) {
+            final Map map = (Map)src;
+            if (map.containsKey("script") && map.containsKey("name")) {
+                final String script = JSType.toString(map.get("script"));
+                final String name   = JSType.toString(map.get("name"));
                 source = new Source(name, script);
             }
         }
