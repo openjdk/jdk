@@ -2232,6 +2232,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
       // We still need to continue with the checks.
       if (src.is_constant()) {
         ciObject* src_con = src.get_jobject_constant();
+        guarantee(src_con != NULL, "no source constant");
 
         if (src_con->is_null_object()) {
           // The constant src object is null - We can skip

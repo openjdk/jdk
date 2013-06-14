@@ -69,6 +69,14 @@ interface ZipConstants {
     static final int EXTLEN = 12;       // uncompressed size
 
     /*
+     * Extra field header ID
+     */
+    static final int  EXTID_ZIP64 = 0x0001;      // Zip64
+    static final int  EXTID_NTFS  = 0x000a;      // NTFS
+    static final int  EXTID_UNIX  = 0x000d;      // UNIX
+    static final int  EXTID_EXTT  = 0x5455;      // Info-ZIP Extended Timestamp
+
+    /*
      * Central directory (CEN) header field offsets
      */
     static final int CENVEM = 4;        // version made by

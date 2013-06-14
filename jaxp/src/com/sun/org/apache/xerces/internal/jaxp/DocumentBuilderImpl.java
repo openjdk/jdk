@@ -236,10 +236,6 @@ public class DocumentBuilderImpl extends DocumentBuilder
                 String feature = (String) entry.getKey();
                 boolean value = ((Boolean) entry.getValue()).booleanValue();
                 domParser.setFeature(feature, value);
-                if (feature.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-                    domParser.setProperty(ACCESS_EXTERNAL_DTD, "");
-                    domParser.setProperty(ACCESS_EXTERNAL_SCHEMA, "");
-                }
             }
         }
     }

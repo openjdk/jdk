@@ -440,6 +440,23 @@ public class LexicalContext {
     }
 
     /**
+     * Check whether the lexical context is currently inside a loop
+     * @return true if inside a loop
+     */
+    public boolean inLoop() {
+        return getCurrentLoop() != null;
+    }
+
+    /**
+     * Returns the loop header of the current loop, or null if not inside a loop
+     * @return loop header
+     */
+    public LoopNode getCurrentLoop() {
+        final Iterator<LoopNode> iter = new NodeIterator<>(LoopNode.class, getCurrentFunction());
+        return iter.hasNext() ? iter.next() : null;
+    }
+
+    /**
      * Find the breakable node corresponding to this label.
      * @param label label to search for, if null the closest breakable node will be returned unconditionally, e.g. a while loop with no label
      * @return closest breakable node
@@ -461,8 +478,7 @@ public class LexicalContext {
     }
 
     private LoopNode getContinueTo() {
-        final Iterator<LoopNode> iter = new NodeIterator<>(LoopNode.class, getCurrentFunction());
-        return iter.hasNext() ? iter.next() : null;
+        return getCurrentLoop();
     }
 
     /**

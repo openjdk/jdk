@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.parser.TokenType.BIT_NOT;
 import static jdk.nashorn.internal.parser.TokenType.CONVERT;
 import static jdk.nashorn.internal.parser.TokenType.DECPOSTFIX;
 import static jdk.nashorn.internal.parser.TokenType.INCPOSTFIX;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -121,7 +120,7 @@ public final class UnaryNode extends Node implements Assignment<Node> {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterUnaryNode(this)) {
             return visitor.leaveUnaryNode(setRHS(rhs.accept(visitor)));
         }
