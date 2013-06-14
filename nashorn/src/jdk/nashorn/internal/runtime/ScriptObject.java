@@ -1108,7 +1108,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * return a List of own keys associated with the object.
+     * return an array of own property keys associated with the object.
+     *
      * @param all True if to include non-enumerable keys.
      * @return Array of keys.
      */
@@ -1209,7 +1210,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * the proto chain
      *
      * @param instance instace to check
-     * @return true if instance of instance
+     * @return true if 'instance' is an instance of this object
      */
     public boolean isInstance(final ScriptObject instance) {
         return false;
@@ -1382,7 +1383,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /**
      * Check whether this ScriptObject is frozen
-     * @return true if frozed
+     * @return true if frozen
      */
     public boolean isFrozen() {
         return getMap().isFrozen();
