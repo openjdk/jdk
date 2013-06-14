@@ -199,7 +199,7 @@ int LinuxAttachListener::init() {
   ::unlink(initial_path);
   int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1) {
-    RESTARTABLE(::close(listener), res);
+    ::close(listener);
     return -1;
   }
 
@@ -212,7 +212,7 @@ int LinuxAttachListener::init() {
       }
   }
   if (res == -1) {
-    RESTARTABLE(::close(listener), res);
+    ::close(listener);
     ::unlink(initial_path);
     return -1;
   }
@@ -340,24 +340,21 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     struct ucred cred_info;
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
-      int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     }
     uid_t euid = geteuid();
     gid_t egid = getegid();
 
     if (cred_info.uid != euid || cred_info.gid != egid) {
-      int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     }
 
     // peer credential look okay so we read the request
     LinuxAttachOperation* op = read_request(s);
     if (op == NULL) {
-      int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     } else {
       return op;
@@ -408,7 +405,7 @@ void LinuxAttachOperation::complete(jint result, bufferedStream* st) {
   }
 
   // done
-  RESTARTABLE(::close(this->socket()), rc);
+  ::close(this->socket());
 
   // were we externally suspended while we were waiting?
   thread->check_and_wait_while_suspended();
