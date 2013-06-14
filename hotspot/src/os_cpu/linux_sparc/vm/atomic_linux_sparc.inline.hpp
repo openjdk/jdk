@@ -169,7 +169,6 @@ inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    
     : "memory");
   return rv;
 #else
-  assert(VM_Version::v9_instructions_work(), "cas only supported on v9");
   volatile jlong_accessor evl, cvl, rv;
   evl.long_value = exchange_value;
   cvl.long_value = compare_value;
