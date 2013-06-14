@@ -1897,7 +1897,7 @@ jvmtiEnv *jvmti;
 	  </description>
 	</param>
 	<param id="monitor_info_ptr">
-	  <allocbuf outcount="owned_monitor_depth_count_ptr">
+	  <allocbuf outcount="monitor_info_count_ptr">
             <struct>jvmtiMonitorStackDepthInfo</struct>
           </allocbuf>
 	  <description>
