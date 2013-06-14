@@ -145,32 +145,37 @@ bool VM_GC_HeapInspection::skip_operation() const {
   return false;
 }
 
+bool VM_GC_HeapInspection::collect() {
+  if (GC_locker::is_active()) {
+    return false;
+  }
+  Universe::heap()->collect_as_vm_thread(GCCause::_heap_inspection);
+  return true;
+}
+
 void VM_GC_HeapInspection::doit() {
   HandleMark hm;
-  CollectedHeap* ch = Universe::heap();
-  ch->ensure_parsability(false); // must happen, even if collection does
-                                 // not happen (e.g. due to GC_locker)
+  Universe::heap()->ensure_parsability(false); // must happen, even if collection does
+                                               // not happen (e.g. due to GC_locker)
+                                               // or _full_gc being false
   if (_full_gc) {
-    // The collection attempt below would be skipped anyway if
-    // the gc locker is held. The following dump may then be a tad
-    // misleading to someone expecting only live objects to show
-    // up in the dump (see CR 6944195). Just issue a suitable warning
-    // in that case and do not attempt to do a collection.
-    // The latter is a subtle point, because even a failed attempt
-    // to GC will, in fact, induce one in the future, which we
-    // probably want to avoid in this case because the GC that we may
-    // be about to attempt holds value for us only
-    // if it happens now and not if it happens in the eventual
-    // future.
-    if (GC_locker::is_active()) {
+    if (!collect()) {
+      // The collection attempt was skipped because the gc locker is held.
+      // The following dump may then be a tad misleading to someone expecting
+      // only live objects to show up in the dump (see CR 6944195). Just issue
+      // a suitable warning in that case and do not attempt to do a collection.
+      // The latter is a subtle point, because even a failed attempt
+      // to GC will, in fact, induce one in the future, which we
+      // probably want to avoid in this case because the GC that we may
+      // be about to attempt holds value for us only
+      // if it happens now and not if it happens in the eventual
+      // future.
       warning("GC locker is held; pre-dump GC was skipped");
-    } else {
-      ch->collect_as_vm_thread(GCCause::_heap_inspection);
     }
   }
   HeapInspection inspect(_csv_format, _print_help, _print_class_stats,
                          _columns);
-  inspect.heap_inspection(_out, _need_prologue /* need_prologue */);
+  inspect.heap_inspection(_out);
 }
 
 
