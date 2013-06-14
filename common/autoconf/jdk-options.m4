@@ -351,11 +351,7 @@ AC_ARG_WITH(cacerts-file, [AS_HELP_STRING([--with-cacerts-file],
 if test "x$with_cacerts_file" != x; then
     CACERTS_FILE=$with_cacerts_file
 else
-    if test "x$OPENJDK" = "xtrue"; then
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
-    else
-        CACERTS_FILE=${SRC_ROOT}/jdk/src/closed/share/lib/security/cacerts.internal
-    fi
+    CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
 fi
 AC_SUBST(CACERTS_FILE)
 
@@ -420,6 +416,14 @@ elif test "x$with_milestone" != x; then
 fi
 if test "x$MILESTONE" = x; then
   MILESTONE=internal
+fi
+
+AC_ARG_WITH(update-version, [AS_HELP_STRING([--with-update-version], 
+                          [Set update version value for build @<:@b00@:>@])])
+if test "x$with_update_version" = xyes; then
+  AC_MSG_ERROR([Update version must have a value])
+elif test "x$with_update_version" != x; then
+  JDK_UPDATE_VERSION="$with_update_version"
 fi
 
 AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number], 

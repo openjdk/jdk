@@ -204,13 +204,13 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
                 Oop loader = ik.getClassLoader();
                 writeEdge(instance, loader, "loaded-by");
 
-                // write signers
-                Oop signers = ik.getSigners();
-                writeEdge(instance, signers, "signed-by");
+                // write signers NYI
+                // Oop signers = ik.getJavaMirror().getSigners();
+                writeEdge(instance, null, "signed-by");
 
-                // write protection domain
-                Oop protectionDomain = ik.getProtectionDomain();
-                writeEdge(instance, protectionDomain, "protection-domain");
+                // write protection domain NYI
+                // Oop protectionDomain = ik.getJavaMirror().getProtectionDomain();
+                writeEdge(instance, null, "protection-domain");
 
                 // write edges for static reference fields from this class
                 for (Iterator itr = refFields.iterator(); itr.hasNext();) {

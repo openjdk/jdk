@@ -25,7 +25,7 @@ ifeq ($(INCLUDE_JVMTI), false)
       CXXFLAGS += -DINCLUDE_JVMTI=0
       CFLAGS += -DINCLUDE_JVMTI=0
 
-      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp forte.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
+      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
 	jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
 	jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
 	jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
@@ -87,7 +87,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	g1BlockOffsetTable.cpp g1CardCounts.cpp g1CollectedHeap.cpp g1CollectorPolicy.cpp \
 	g1ErgoVerbose.cpp g1GCPhaseTimes.cpp g1HRPrinter.cpp g1HotCardCache.cpp g1Log.cpp \
 	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp \
-	g1RemSet.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
+	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
 	heapRegionRemSet.cpp heapRegionSeq.cpp heapRegionSet.cpp heapRegionSets.cpp \
 	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp \
 	adjoiningGenerations.cpp adjoiningVirtualSpaces.cpp asPSOldGen.cpp asPSYoungGen.cpp \

@@ -439,15 +439,11 @@ public class CoreReflectionFactory {
         ReflectionElement getGenericElement();
 
         // Functionality specific to the specialization
-
-        // Conceptually should have an override for getSource
-        // returning GenericDeclaration, but GenericDeclaration
-        // doesn't currently implement AnnotatedElement.
-//         /**
-//          * {@inheritDoc}
-//          */
-//         @Override
-//         java.lang.reflect.GenericDeclaration getSource();
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        java.lang.reflect.TypeVariable<?> getSource();
     }
 
     /**
@@ -1296,8 +1292,8 @@ public class CoreReflectionFactory {
         }
 
         @Override
-        public AnnotatedElement getSource() {
-            return (AnnotatedElement)source;
+        public java.lang.reflect.TypeVariable<?> getSource() {
+            return sourceTypeVar;
         }
 
         protected java.lang.reflect.TypeVariable<?> getSourceTypeVar() {

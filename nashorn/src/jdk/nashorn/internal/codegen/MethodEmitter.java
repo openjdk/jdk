@@ -2081,7 +2081,9 @@ public class MethodEmitter implements Emitter {
      * @param args debug information to print
      */
     private void debug(final Object... args) {
-        debug(30, args);
+        if (DEBUG) {
+            debug(30, args);
+        }
     }
 
     /**
@@ -2091,7 +2093,9 @@ public class MethodEmitter implements Emitter {
      * @param args debug information to print
      */
     private void debug_label(final Object... args) {
-        debug(26, args);
+        if (DEBUG) {
+            debug(22, args);
+        }
     }
 
     private void debug(final int padConstant, final Object... args) {
@@ -2164,7 +2168,6 @@ public class MethodEmitter implements Emitter {
                     new Throwable().printStackTrace(LOG.getOutputStream());
                 }
             }
-
         }
     }
 

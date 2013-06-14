@@ -1065,7 +1065,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   const int slop_factor = 2*wordSize;
 
   const int fixed_size = ((sizeof(BytecodeInterpreter) + slop_factor) >> LogBytesPerWord) + // what is the slop factor?
-                         //6815692//Method::extra_stack_words() +  // extra push slots for MH adapters
+                         Method::extra_stack_entries() + // extra stack for jsr 292
                          frame::memory_parameter_word_sp_offset +  // register save area + param window
                          (native ?  frame::interpreter_frame_extra_outgoing_argument_words : 0); // JNI, class
 
@@ -1221,9 +1221,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   // Full size expression stack
   __ ld_ptr(constMethod, O3);
   __ lduh(O3, in_bytes(ConstMethod::max_stack_offset()), O3);
-  guarantee(!EnableInvokeDynamic, "no support yet for java.lang.invoke.MethodHandle"); //6815692
-  //6815692//if (EnableInvokeDynamic)
-  //6815692//  __ inc(O3, Method::extra_stack_entries());
+  __ inc(O3, Method::extra_stack_entries());
   __ sll(O3, LogBytesPerWord, O3);
   __ sub(O2, O3, O3);
 //  __ sub(O3, wordSize, O3);                    // so prepush doesn't look out of bounds
@@ -2084,9 +2082,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
 
   const int fixed_size = sizeof(BytecodeInterpreter)/wordSize +           // interpreter state object
                          frame::memory_parameter_word_sp_offset;   // register save area + param window
-  const int extra_stack = 0; //6815692//Method::extra_stack_entries();
   return (round_to(max_stack +
-                   extra_stack +
                    slop_factor +
                    fixed_size +
                    monitor_size +
@@ -2173,8 +2169,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState to_fill,
   // Need +1 here because stack_base points to the word just above the first expr stack entry
   // and stack_limit is supposed to point to the word just below the last expr stack entry.
   // See generate_compute_interpreter_state.
-  int extra_stack = 0; //6815692//Method::extra_stack_entries();
-  to_fill->_stack_limit = stack_base - (method->max_stack() + 1 + extra_stack);
+  to_fill->_stack_limit = stack_base - (method->max_stack() + 1);
   to_fill->_monitor_base = (BasicObjectLock*) monitor_base;
 
   // sparc specific

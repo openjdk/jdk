@@ -115,6 +115,12 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         return Bits.get$Type$$BO$(bb, ix(checkIndex(i)));
     }
 
+#if[streamableType]
+   $type$ getUnchecked(int i) {
+        return Bits.get$Type$$BO$(bb, ix(i));
+    }
+#end[streamableType]
+
 #end[rw]
 
     public $Type$Buffer put($type$ x) {

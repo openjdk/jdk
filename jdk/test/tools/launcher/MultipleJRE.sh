@@ -1,3 +1,4 @@
+#!/bin/sh
 # @test MultipleJRE.sh
 # @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959
 # @build PrintVersion

@@ -31,10 +31,6 @@ public interface Config {
     final int ENC_CASE_FOLD_DEFAULT = ENC_CASE_FOLD_MIN;
     final boolean USE_CRNL_AS_LINE_TERMINATOR = false;
 
-    final boolean USE_NAMED_GROUP = true;
-    final boolean USE_SUBEXP_CALL = true;
-    final boolean USE_BACKREF_WITH_LEVEL = true;                            /* \k<name+n>, \k<name-n> */
-
     final boolean USE_MONOMANIAC_CHECK_CAPTURES_IN_ENDLESS_REPEAT = true; /* /(?:()|())*\2/ */
     final boolean USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE = true;     /* /\n$/ =~ "\n" */
     final boolean USE_WARNING_REDUNDANT_NESTED_REPEAT_OPERATOR = false;
@@ -42,12 +38,10 @@ public interface Config {
     final boolean CASE_FOLD_IS_APPLIED_INSIDE_NEGATIVE_CCLASS = true;
 
     final boolean USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE = false;
-    final boolean USE_CAPTURE_HISTORY = false;
     final boolean USE_VARIABLE_META_CHARS = true;
     final boolean USE_WORD_BEGIN_END = true;                                /* "\<": word-begin, "\>": word-end */
-    final boolean USE_POSIX_API_REGION_OPTION = true;                           /* needed for POSIX API support */
+    final boolean USE_POSIX_API_REGION_OPTION = false;                           /* needed for POSIX API support */
     final boolean USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE = true;
-    final boolean USE_COMBINATION_EXPLOSION_CHECK = false;
 
     final int NREGION                   = 10;
     final int MAX_BACKREF_NUM           = 1000;
@@ -73,13 +67,6 @@ public interface Config {
 
     final boolean USE_STRING_TEMPLATES              = true; // use embeded string templates in Regex object as byte arrays instead of compiling them into int bytecode array
 
-
-    final int MAX_CAPTURE_HISTORY_GROUP             = 31;
-
-
-    final int CHECK_STRING_THRESHOLD_LEN            = 7;
-    final int CHECK_BUFF_MAX_SIZE                   = 0x4000;
-
     final boolean NON_UNICODE_SDW                   = true;
 
 
@@ -95,6 +82,4 @@ public interface Config {
     final boolean DEBUG_COMPILE_BYTE_CODE_INFO      = DEBUG_ALL;
     final boolean DEBUG_SEARCH                      = DEBUG_ALL;
     final boolean DEBUG_MATCH                       = DEBUG_ALL;
-    final boolean DEBUG_ASM                         = true;
-    final boolean DEBUG_ASM_EXEC                    = true;
 }

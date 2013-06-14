@@ -40,16 +40,10 @@ public final class ScanEnvironment {
     final public Regex reg;
 
     int numCall;
-    UnsetAddrList unsetAddrList; // USE_SUBEXP_CALL
     public int numMem;
-
-    int numNamed; // USE_NAMED_GROUP
 
     public Node memNodes[];
 
-    // USE_COMBINATION_EXPLOSION_CHECK
-    int numCombExpCheck;
-    int combExpMaxRegNum;
     int currMaxRegNum;
     boolean hasRecursion;
 
@@ -69,12 +63,8 @@ public final class ScanEnvironment {
         numCall = 0;
         numMem = 0;
 
-        numNamed = 0;
-
         memNodes = null;
 
-        numCombExpCheck = 0;
-        combExpMaxRegNum = 0;
         currMaxRegNum = 0;
         hasRecursion = false;
     }

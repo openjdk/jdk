@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,13 @@
  */
 
 /* @test
- * @bug 8004832
+ * @bug 8004832 8000103
  * @summary Add new doclint package
- * @bug 8000103
  * @summary Create doclint utility
  */
 
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
@@ -43,6 +36,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.doclint.DocLint.BadArgs;
 
 /** javadoc error on toplevel:  a & b. */
 public class RunTest {

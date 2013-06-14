@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -85,6 +86,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
     Set<String> declaredKeys = new HashSet<>();
     List<Diagnostic<? extends JavaFileObject>> diags = new ArrayList<>();
     List<ElementKey> seenCandidates = new ArrayList<>();
+    Map<String, String> predefTranslationMap = new HashMap<>();
 
     protected ResolveHarness(JavaFileObject jfo) {
         this.jfo = jfo;
@@ -93,12 +95,36 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
             new VerboseDeferredInferenceNoteProcessor(),
             new ErrorProcessor()
         };
+        predefTranslationMap.put("+", "_plus");
+        predefTranslationMap.put("-", "_minus");
+        predefTranslationMap.put("~", "_not");
+        predefTranslationMap.put("++", "_plusplus");
+        predefTranslationMap.put("--", "_minusminus");
+        predefTranslationMap.put("!", "_bang");
+        predefTranslationMap.put("*", "_mul");
+        predefTranslationMap.put("/", "_div");
+        predefTranslationMap.put("%", "_mod");
+        predefTranslationMap.put("&", "_and");
+        predefTranslationMap.put("|", "_or");
+        predefTranslationMap.put("^", "_xor");
+        predefTranslationMap.put("<<", "_lshift");
+        predefTranslationMap.put(">>", "_rshift");
+        predefTranslationMap.put("<<<", "_lshiftshift");
+        predefTranslationMap.put(">>>", "_rshiftshift");
+        predefTranslationMap.put("<", "_lt");
+        predefTranslationMap.put(">", "_gt");
+        predefTranslationMap.put("<=", "_lteq");
+        predefTranslationMap.put(">=", "_gteq");
+        predefTranslationMap.put("==", "_eq");
+        predefTranslationMap.put("!=", "_neq");
+        predefTranslationMap.put("&&", "_andand");
+        predefTranslationMap.put("||", "_oror");
     }
 
     protected void check() throws Exception {
         String[] options = {
             "-XDshouldStopPolicy=ATTR",
-            "-XDverboseResolution=success,failure,applicable,inapplicable,deferred-inference"
+            "-XDverboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"
         };
 
         AbstractProcessor[] processors = { new ResolveCandidateFinder(), null };
@@ -223,7 +249,8 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         @Override
         void process(Diagnostic<? extends JavaFileObject> diagnostic) {
             Element siteSym = getSiteSym(diagnostic);
-            if (siteSym.getAnnotation(TraceResolve.class) == null) {
+            if (siteSym.getSimpleName().length() != 0 &&
+                    siteSym.getAnnotation(TraceResolve.class) == null) {
                 return;
             }
             int candidateIdx = 0;
@@ -307,7 +334,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
             if (Arrays.asList(c.applicable()).contains(phase)) { //applicable
                 if (c.mostSpecific() != mostSpecific) {
-                    error("Invalid most specific value for method " + methodSym);
+                    error("Invalid most specific value for method " + methodSym + " " + new ElementKey(methodSym).key);
                 }
                 MethodType mtype = getSig(diagnostic);
                 if (mtype != null) {
@@ -444,11 +471,21 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
         String computeKey(Element e) {
             StringBuilder buf = new StringBuilder();
-            while (e != null) {
+            if (predefTranslationMap.containsKey(e.getSimpleName().toString())) {
+                //predef element
+                buf.append("<predef>.");
+                String replacedName = predefTranslationMap.get(e.getSimpleName().toString());
+                buf.append(e.toString().replace(e.getSimpleName().toString(), replacedName));
+            } else if (e.getSimpleName().toString().startsWith("_")) {
+                buf.append("<predef>.");
                 buf.append(e.toString());
-                e = e.getEnclosingElement();
+            } else {
+                while (e != null) {
+                    buf.append(e.toString());
+                    e = e.getEnclosingElement();
+                }
+                buf.append(jfo.getName());
             }
-            buf.append(jfo.getName());
             return buf.toString();
         }
 

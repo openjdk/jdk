@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
@@ -89,6 +91,9 @@ public final class Symbol implements Comparable<Symbol> {
     /** Number of times this symbol is used in code */
     private int useCount;
 
+    /** Range for symbol */
+    private Range range;
+
     /** Debugging option - dump info and stack trace when symbols with given names are manipulated */
     private static final Set<String> TRACE_SYMBOLS;
     private static final Set<String> TRACE_SYMBOLS_STACKTRACE;
@@ -131,6 +136,7 @@ public final class Symbol implements Comparable<Symbol> {
         this.type       = type;
         this.slot       = slot;
         this.fieldIndex = -1;
+        this.range      = Range.createUnknownRange();
         trace("CREATE SYMBOL");
     }
 
@@ -157,12 +163,13 @@ public final class Symbol implements Comparable<Symbol> {
 
     private Symbol(final Symbol base, final String name, final int flags) {
         this.flags = flags;
-        this.name = name;
+        this.name  = name;
 
         this.fieldIndex = base.fieldIndex;
-        this.slot = base.slot;
-        this.type = base.type;
-        this.useCount = base.useCount;
+        this.slot       = base.slot;
+        this.type       = base.type;
+        this.useCount   = base.useCount;
+        this.range      = base.range;
     }
 
     private static String align(final String string, final int max) {
@@ -276,7 +283,7 @@ public final class Symbol implements Comparable<Symbol> {
 
     @Override
     public String toString() {
-        final StringBuilder sb   = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         sb.append(name).
             append(' ').
@@ -407,6 +414,22 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public boolean isParam() {
         return (flags & KINDMASK) == IS_PARAM;
+    }
+
+    /**
+     * Get the range for this symbol
+     * @return range for symbol
+     */
+    public Range getRange() {
+        return range;
+    }
+
+    /**
+     * Set the range for this symbol
+     * @param range range
+     */
+    public void setRange(final Range range) {
+        this.range = range;
     }
 
     /**
