@@ -1503,6 +1503,18 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   return res;
 }
 
+void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
+                               const char* mesg) {
+  pd_commit_memory_or_exit(addr, bytes, executable, mesg);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+}
+
+void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
+                               bool executable, const char* mesg) {
+  os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
+  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+}
+
 bool os::uncommit_memory(char* addr, size_t bytes) {
   bool res = pd_uncommit_memory(addr, bytes);
   if (res) {
