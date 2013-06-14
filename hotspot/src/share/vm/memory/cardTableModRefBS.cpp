@@ -412,7 +412,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
   }
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
-  debug_only(*byte_for(_covered[ind].last());)
+  debug_only((void) (*byte_for(_covered[ind].last()));)
   debug_only(verify_guard();)
 }
 

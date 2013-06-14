@@ -124,7 +124,7 @@ class DescriptorStream : public ResourceObj {
       fatal(STREAM->parse_error());      \
     }                                   \
     return NULL;                        \
-  } 0
+  } (void)0
 
 #define READ() STREAM->read(); CHECK_FOR_PARSE_ERROR()
 #define PEEK() STREAM->peek(); CHECK_FOR_PARSE_ERROR()
@@ -133,7 +133,7 @@ class DescriptorStream : public ResourceObj {
 #define EXPECTED(c, ch) STREAM->assert_char(c, ch); CHECK_FOR_PARSE_ERROR()
 #define EXPECT_END() STREAM->expect_end(); CHECK_FOR_PARSE_ERROR()
 
-#define CHECK_STREAM STREAM); CHECK_FOR_PARSE_ERROR(); (0
+#define CHECK_STREAM STREAM); CHECK_FOR_PARSE_ERROR(); ((void)0
 
 #ifndef PRODUCT
 void Identifier::print_on(outputStream* str) const {
