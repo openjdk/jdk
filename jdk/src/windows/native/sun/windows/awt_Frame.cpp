@@ -380,9 +380,11 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
 
             if (!sm_suppressFocusAndActivation) {
                 if (IsLightweightFrame() || IsEmbeddedFrame()) {
-                    AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
+                    HWND oppositeToplevelHWnd = AwtComponent::GetTopLevelParentForWindow((HWND)wParam);
+                    if (oppositeToplevelHWnd != AwtComponent::GetFocusedWindow()) {
+                        AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
+                    }
                 }
-
             } else if (sm_restoreFocusAndActivation) {
                 if (AwtComponent::GetFocusedWindow() != NULL) {
                     AwtWindow *focusedWindow = (AwtWindow*)GetComponent(AwtComponent::GetFocusedWindow());
