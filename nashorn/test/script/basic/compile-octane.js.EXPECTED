@@ -1,39 +1,13 @@
-Compiling... box2d.js
-Compiled OK: box2d.js
-
-Compiling... code-load.js
-Compiled OK: code-load.js
-
-Compiling... crypto.js
-Compiled OK: crypto.js
-
-Compiling... deltablue.js
-Compiled OK: deltablue.js
-
-Compiling... earley-boyer.js
-Compiled OK: earley-boyer.js
-
-Compiling... gbemu.js
-Compiled OK: gbemu.js
-
-Compiling... mandreel.js
-Compiled OK: mandreel.js
-
-Compiling... navier-stokes.js
-Compiled OK: navier-stokes.js
-
-Compiling... pdfjs.js
-Compiled OK: pdfjs.js
-
-Compiling... raytrace.js
-Compiled OK: raytrace.js
-
-Compiling... regexp.js
-Compiled OK: regexp.js
-
-Compiling... richards.js
-Compiled OK: richards.js
-
-Compiling... splay.js
-Compiled OK: splay.js
-
+Compiled OK: box2d
+Compiled OK: code-load
+Compiled OK: crypto
+Compiled OK: deltablue
+Compiled OK: earley-boyer
+Compiled OK: gbemu
+Compiled OK: mandreel
+Compiled OK: navier-stokes
+Compiled OK: pdfjs
+Compiled OK: raytrace
+Compiled OK: regexp
+Compiled OK: richards
+Compiled OK: splay

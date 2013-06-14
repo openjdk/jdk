@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,6 @@ else
 endif
 
 DEPLOY_BUILD_TARGETS = sanity deploy 
-# Only build 7-Zip LZMA file compression if it is available
-# Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(PLATFORM), windows)
-      EC_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/lzma ] ; then \
-        $(ECHO) true ; \
-      else \
-  $(ECHO) false ; \
-      fi )
-  ifeq ($(EC_TMP), true)
-        DEPLOY_BUILD_TARGETS += extra-comp-all
-      endif
-  endif
-endif
 
 ifneq ($(JQS), off)
   ifeq ($(ARCH_DATA_MODEL), 32)
@@ -64,22 +50,6 @@ ifneq ($(JQS), off)
     endif
   endif
 endif
-
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(PLATFORM), windows)
-    # Only set up to use UPX compression if it is available
-    UP_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/upx ] ; then \
-      $(ECHO) true ; \
-    else \
-      $(ECHO) false ; \
-    fi )
-    ifeq ($(UP_TMP), true)
-      DEPLOY_BUILD_TARGETS += cmd-comp-all
-    endif
-  endif
-endif
-
-
 
 ifndef DEV_ONLY
   DEPLOY_BUILD_TARGETS += images

@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -194,7 +195,7 @@ public final class CallNode extends LexicalContextNode implements TypeOverride<C
      * @return node or replacement
      */
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterCallNode(this)) {
             final CallNode newCallNode = (CallNode)visitor.leaveCallNode(
                     setFunction(function.accept(visitor)).

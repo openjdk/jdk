@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.ConsoleHandler;
@@ -117,7 +118,7 @@ public final class Logging {
                 if ("".equals(value)) {
                     level = Level.INFO;
                 } else {
-                    level = Level.parse(value.toUpperCase());
+                    level = Level.parse(value.toUpperCase(Locale.ENGLISH));
                 }
 
                 final String name = Logging.lastPart(key);
