@@ -722,8 +722,16 @@ public class URLClassPath {
         /* Throws if the given jar file is does not start with the correct LOC */
         static JarFile checkJar(JarFile jar) throws IOException {
             if (System.getSecurityManager() != null && !DISABLE_JAR_CHECKING
-                && !zipAccess.startsWithLocHeader(jar))
-                throw new IOException("Invalid Jar file");
+                && !zipAccess.startsWithLocHeader(jar)) {
+                IOException x = new IOException("Invalid Jar file");
+                try {
+                    jar.close();
+                } catch (IOException ex) {
+                    x.addSuppressed(ex);
+                }
+                throw x;
+            }
+
             return jar;
         }
 
