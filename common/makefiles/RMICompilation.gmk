@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,11 @@ define SetupRMICompilation
 
     ifneq (,$$($1_RUN_IIOP))
         $1_TARGETS += $$($1_TIE_FILES)
-        $1_ARGS += -iiop
+        $1_ARGS += -iiop -emitPermissionCheck
     endif
     ifneq (,$$($1_RUN_IIOP_STDPKG))
         $1_TARGETS += $$($1_TIE_STDPKG_FILES)
-        $1_ARGS2 := -iiop -standardPackage
+        $1_ARGS2 := -iiop -emitPermissionCheck -standardPackage
     endif
 
     ifneq (,$$($1_KEEP_GENERATED))
