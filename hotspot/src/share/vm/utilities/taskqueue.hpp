@@ -340,8 +340,12 @@ bool GenericTaskQueue<E, F, N>::push_slow(E t, uint dirty_n_elems) {
   if (dirty_n_elems == N - 1) {
     // Actually means 0, so do the push.
     uint localBot = _bottom;
-    // g++ complains if the volatile result of the assignment is unused.
-    const_cast<E&>(_elems[localBot] = t);
+    // g++ complains if the volatile result of the assignment is
+    // unused, so we cast the volatile away.  We cannot cast directly
+    // to void, because gcc treats that as not using the result of the
+    // assignment.  However, casting to E& means that we trigger an
+    // unused-value warning.  So, we cast the E& to void.
+    (void)const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
     TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
@@ -397,7 +401,12 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
     return false;
   }
 
-  const_cast<E&>(t = _elems[oldAge.top()]);
+  // g++ complains if the volatile result of the assignment is
+  // unused, so we cast the volatile away.  We cannot cast directly
+  // to void, because gcc treats that as not using the result of the
+  // assignment.  However, casting to E& means that we trigger an
+  // unused-value warning.  So, we cast the E& to void.
+  (void) const_cast<E&>(t = _elems[oldAge.top()]);
   Age newAge(oldAge);
   newAge.increment();
   Age resAge = _age.cmpxchg(newAge, oldAge);
@@ -640,8 +649,12 @@ GenericTaskQueue<E, F, N>::push(E t) {
   uint dirty_n_elems = dirty_size(localBot, top);
   assert(dirty_n_elems < N, "n_elems out of range.");
   if (dirty_n_elems < max_elems()) {
-    // g++ complains if the volatile result of the assignment is unused.
-    const_cast<E&>(_elems[localBot] = t);
+    // g++ complains if the volatile result of the assignment is
+    // unused, so we cast the volatile away.  We cannot cast directly
+    // to void, because gcc treats that as not using the result of the
+    // assignment.  However, casting to E& means that we trigger an
+    // unused-value warning.  So, we cast the E& to void.
+    (void) const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
     TASKQUEUE_STATS_ONLY(stats.record_push());
     return true;
@@ -665,7 +678,12 @@ GenericTaskQueue<E, F, N>::pop_local(E& t) {
   // This is necessary to prevent any read below from being reordered
   // before the store just above.
   OrderAccess::fence();
-  const_cast<E&>(t = _elems[localBot]);
+  // g++ complains if the volatile result of the assignment is
+  // unused, so we cast the volatile away.  We cannot cast directly
+  // to void, because gcc treats that as not using the result of the
+  // assignment.  However, casting to E& means that we trigger an
+  // unused-value warning.  So, we cast the E& to void.
+  (void) const_cast<E&>(t = _elems[localBot]);
   // This is a second read of "age"; the "size()" above is the first.
   // If there's still at least one element in the queue, based on the
   // "_bottom" and "age" we've read, then there can be no interference with

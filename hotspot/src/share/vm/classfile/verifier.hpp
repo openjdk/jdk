@@ -86,9 +86,9 @@ class StackMapTable;
 // These macros are used similarly to CHECK macros but also check
 // the status of the verifier and return if that has an error.
 #define CHECK_VERIFY(verifier) \
-  CHECK); if ((verifier)->has_error()) return; (0
+  CHECK); if ((verifier)->has_error()) return; ((void)0
 #define CHECK_VERIFY_(verifier, result) \
-  CHECK_(result)); if ((verifier)->has_error()) return (result); (0
+  CHECK_(result)); if ((verifier)->has_error()) return (result); ((void)0
 
 class TypeOrigin VALUE_OBJ_CLASS_SPEC {
  private:

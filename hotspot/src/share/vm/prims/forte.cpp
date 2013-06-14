@@ -619,7 +619,7 @@ void    collector_func_load(char* name,
                             void* null_argument_3);
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
-        ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),0 : 0 )
+        ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),(void)0 : (void)0 )
 #endif // __APPLE__
 #endif // !_WINDOWS
 
