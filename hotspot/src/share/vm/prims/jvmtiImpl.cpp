@@ -360,19 +360,14 @@ void VM_ChangeBreakpoints::doit() {
   case CLEAR_BREAKPOINT:
     _breakpoints->clear_at_safepoint(*_bp);
     break;
-  case CLEAR_ALL_BREAKPOINT:
-    _breakpoints->clearall_at_safepoint();
-    break;
   default:
     assert(false, "Unknown operation");
   }
 }
 
 void VM_ChangeBreakpoints::oops_do(OopClosure* f) {
-  // This operation keeps breakpoints alive
-  if (_breakpoints != NULL) {
-    _breakpoints->oops_do(f);
-  }
+  // The JvmtiBreakpoints in _breakpoints will be visited via
+  // JvmtiExport::oops_do.
   if (_bp != NULL) {
     _bp->oops_do(f);
   }
@@ -433,23 +428,13 @@ void JvmtiBreakpoints::clear_at_safepoint(JvmtiBreakpoint& bp) {
   }
 }
 
-void JvmtiBreakpoints::clearall_at_safepoint() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-
-  int len = _bps.length();
-  for (int i=0; i<len; i++) {
-    _bps.at(i).clear();
-  }
-  _bps.clear();
-}
-
 int JvmtiBreakpoints::length() { return _bps.length(); }
 
 int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
   if ( _bps.find(bp) != -1) {
      return JVMTI_ERROR_DUPLICATE;
   }
-  VM_ChangeBreakpoints set_breakpoint(this,VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
+  VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
 }
@@ -459,7 +444,7 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
      return JVMTI_ERROR_NOT_FOUND;
   }
 
-  VM_ChangeBreakpoints clear_breakpoint(this,VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
+  VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
   VMThread::execute(&clear_breakpoint);
   return JVMTI_ERROR_NONE;
 }
@@ -488,11 +473,6 @@ void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
       }
     }
   }
-}
-
-void JvmtiBreakpoints::clearall() {
-  VM_ChangeBreakpoints clearall_breakpoint(this,VM_ChangeBreakpoints::CLEAR_ALL_BREAKPOINT);
-  VMThread::execute(&clearall_breakpoint);
 }
 
 //

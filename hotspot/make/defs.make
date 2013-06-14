@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # The common definitions for hotspot builds.
@@ -236,7 +236,7 @@ ifneq ($(ALT_JDK_IMAGE_DIR),)
   JDK_IMAGE_DIR=$(ALT_JDK_IMAGE_DIR)
 endif
 
-# The platform dependent defs.make defines platform specific variable such 
+# The platform dependent defs.make defines platform specific variable such
 # as ARCH, EXPORT_LIST etc. We must place the include here after BOOTDIR is defined.
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/defs.make
 
@@ -258,7 +258,7 @@ ifneq ($(OSNAME),windows)
   #   LIBARCH   - directory name in JDK/JRE
 
   # Use uname output for SRCARCH, but deal with platform differences. If ARCH
-  # is not explicitly listed below, it is treated as x86. 
+  # is not explicitly listed below, it is treated as x86.
   SRCARCH     = $(ARCH/$(filter sparc sparc64 ia64 amd64 x86_64 arm ppc zero,$(ARCH)))
   ARCH/       = x86
   ARCH/sparc  = sparc
@@ -337,8 +337,5 @@ EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jni.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jmm.h
 
-ifndef JAVASE_EMBEDDED
-EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jfr.h
-endif
-
 .PHONY: $(HS_ALT_MAKE)/defs.make
+
