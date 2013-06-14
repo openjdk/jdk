@@ -919,6 +919,7 @@ public class Lexer extends Scanner {
 
     /**
      * Scan over a string literal.
+     * @param add true if we nare not just scanning but should actually modify the token stream
      */
     protected void scanString(final boolean add) {
         // Type of string.
@@ -1614,6 +1615,12 @@ public class Lexer extends Scanner {
         return null;
     }
 
+    /**
+     * Get the correctly localized error message for a given message id format arguments
+     * @param msgId message id
+     * @param args  format arguments
+     * @return message
+     */
     protected static String message(final String msgId, final String... args) {
         return ECMAErrors.getMessage("lexer.error." + msgId, args);
     }
