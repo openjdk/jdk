@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,11 +565,9 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
     if(new_start_aligned < new_end_for_commit) {
       MemRegion new_committed =
         MemRegion(new_start_aligned, new_end_for_commit);
-      if (!os::commit_memory((char*)new_committed.start(),
-                             new_committed.byte_size())) {
-        vm_exit_out_of_memory(new_committed.byte_size(), OOM_MMAP_ERROR,
-                              "card table expansion");
-      }
+      os::commit_memory_or_exit((char*)new_committed.start(),
+                                new_committed.byte_size(), !ExecMem,
+                                "card table expansion");
     }
     result = true;
   } else if (new_start_aligned > cur_committed.start()) {
