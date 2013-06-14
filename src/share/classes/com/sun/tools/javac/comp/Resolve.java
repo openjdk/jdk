@@ -2267,7 +2267,7 @@ public class Resolve {
                     sym = super.access(env, pos, location, sym);
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
-                    if (msym.isSignaturePolymorphic(types)) {
+                    if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
                         return findPolymorphicSignatureInstance(env, sym, argtypes);
                     }
                 }
