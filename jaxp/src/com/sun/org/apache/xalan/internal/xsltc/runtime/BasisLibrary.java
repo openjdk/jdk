@@ -952,7 +952,7 @@ public final class BasisLibrary {
                 return result;
         }
         else {
-            if (!Double.isFinite(d))
+            if (Double.isNaN(d) || Double.isInfinite(d))
                 return(Double.toString(d));
 
             //Convert -0.0 to +0.0 other values remains the same
