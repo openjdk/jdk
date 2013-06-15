@@ -6679,11 +6679,11 @@ size_t os::write(int fd, const void *buf, unsigned int nBytes) {
 }
 
 int os::close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 int os::socket_close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {

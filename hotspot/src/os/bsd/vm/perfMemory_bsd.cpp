@@ -120,7 +120,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       addr += result;
     }
 
-    RESTARTABLE(::close(fd), result);
+    result = ::close(fd);
     if (PrintMiscellaneous && Verbose) {
       if (result == OS_ERR) {
         warning("Could not close %s: %s\n", destfile, strerror(errno));
@@ -632,7 +632,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     if (PrintMiscellaneous && Verbose) {
       warning("could not set shared memory file size: %s\n", strerror(errno));
     }
-    RESTARTABLE(::close(fd), result);
+    ::close(fd);
     return -1;
   }
 
@@ -656,7 +656,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   if (result != -1) {
     return fd;
   } else {
-    RESTARTABLE(::close(fd), result);
+    ::close(fd);
     return -1;
   }
 }
@@ -734,9 +734,7 @@ static char* mmap_create_shared(size_t size) {
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-  // attempt to close the file - restart it if it was interrupted,
-  // but ignore other failures
-  RESTARTABLE(::close(fd), result);
+  result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -909,7 +907,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   // attempt to close the file - restart if it gets interrupted,
   // but ignore other failures
-  RESTARTABLE(::close(fd), result);
+  result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
