@@ -110,6 +110,8 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses the argument for the
      * default value.
+     *
+     * @param defaultValue the default value
      */
     protected ElementScanner6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
