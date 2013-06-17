@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -963,7 +963,7 @@ public:
   inline void sub(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
 
   using Assembler::swap;
-  inline void swap(Address& a, Register d, int offset = 0);
+  inline void swap(const Address& a, Register d, int offset = 0);
 
   // address pseudos: make these names unlike instruction names to avoid confusion
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
