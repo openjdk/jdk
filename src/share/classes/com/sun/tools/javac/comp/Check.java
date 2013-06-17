@@ -909,7 +909,7 @@ public class Check {
                                   "unchecked.generic.array.creation",
                                   argtype);
             }
-            if (!((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types)) {
+            if ((sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) == 0) {
                 TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
             }
          }

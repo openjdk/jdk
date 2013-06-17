@@ -278,6 +278,11 @@ public class Flags {
      */
     public static final long BAD_OVERRIDE = 1L<<45;
 
+    /**
+     * Flag that indicates a signature polymorphic method (292).
+     */
+    public static final long SIGNATURE_POLYMORPHIC = 1L<<46;
+
     /** Modifier masks.
      */
     public static final int
