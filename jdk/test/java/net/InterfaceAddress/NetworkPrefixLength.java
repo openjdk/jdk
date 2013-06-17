@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6707289
+ * @bug 6707289 7107883
  * @summary InterfaceAddress.getNetworkPrefixLength() does not conform to Javadoc
  */
 
@@ -46,6 +46,14 @@ public class NetworkPrefixLength {
                 if (!valid) {
                     passed = false;
                     debug(nic.getName(), iaddr);
+                }
+                InetAddress ia = iaddr.getAddress();
+                if (ia.isLoopbackAddress() && ia instanceof Inet4Address) {
+                    // assumption: prefix length will always be 8
+                    if (iaddr.getNetworkPrefixLength() != 8) {
+                        out.println("Expected prefix of 8, got " + iaddr);
+                        passed = false;
+                    }
                 }
             }
         }

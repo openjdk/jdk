@@ -268,8 +268,55 @@ class MetaspaceObj {
   bool is_shared() const;
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
+#define METASPACE_OBJ_TYPES_DO(f) \
+  f(Unknown) \
+  f(Class) \
+  f(Symbol) \
+  f(TypeArrayU1) \
+  f(TypeArrayU2) \
+  f(TypeArrayU4) \
+  f(TypeArrayU8) \
+  f(TypeArrayOther) \
+  f(Method) \
+  f(ConstMethod) \
+  f(MethodData) \
+  f(ConstantPool) \
+  f(ConstantPoolCache) \
+  f(Annotation) \
+  f(MethodCounters)
+
+#define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
+#define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
+
+  enum Type {
+    // Types are MetaspaceObj::ClassType, MetaspaceObj::SymbolType, etc
+    METASPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_DECLARE)
+    _number_of_types
+  };
+
+  static const char * type_name(Type type) {
+    switch(type) {
+    METASPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_NAME_CASE)
+    default:
+      ShouldNotReachHere();
+      return NULL;
+    }
+  }
+
+  static MetaspaceObj::Type array_type(size_t elem_size) {
+    switch (elem_size) {
+    case 1: return TypeArrayU1Type;
+    case 2: return TypeArrayU2Type;
+    case 4: return TypeArrayU4Type;
+    case 8: return TypeArrayU8Type;
+    default:
+      return TypeArrayOtherType;
+    }
+  }
+
   void* operator new(size_t size, ClassLoaderData* loader_data,
-                     size_t word_size, bool read_only, Thread* thread);
+                     size_t word_size, bool read_only,
+                     Type type, Thread* thread);
                      // can't use TRAPS from this header file.
   void operator delete(void* p) { ShouldNotCallThis(); }
 };

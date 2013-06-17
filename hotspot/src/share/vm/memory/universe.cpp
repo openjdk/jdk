@@ -230,11 +230,8 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
-    ResourceMark rm;
-    stringStream st;
-    st.print("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment);
-    char* error = st.as_string();
-    vm_exit_during_initialization(error);
+    vm_exit_during_initialization(
+      err_msg("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment));
   }
 }
 
@@ -919,7 +916,7 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   }
 
   if (!total_rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for object heap %d bytes", total_reserved));
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap", total_reserved/K));
     return total_rs;
   }
 
