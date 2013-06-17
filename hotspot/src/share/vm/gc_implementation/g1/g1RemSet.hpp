@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP
 
+#include "gc_implementation/g1/g1RemSetSummary.hpp"
+
 // A G1RemSet provides ways of iterating over pointers into a selected
 // collection set.
 
@@ -37,9 +39,11 @@ class ConcurrentG1Refine;
 // so that they can be used to update the individual region remsets.
 
 class G1RemSet: public CHeapObj<mtGC> {
+private:
+  G1RemSetSummary _prev_period_summary;
 protected:
   G1CollectedHeap* _g1;
-  unsigned _conc_refine_cards;
+  size_t _conc_refine_cards;
   uint n_workers();
 
 protected:
@@ -66,6 +70,8 @@ protected:
   // references into the collection set.
   OopsInHeapRegionClosure** _cset_rs_update_cl;
 
+  // Print the given summary info
+  virtual void print_summary_info(G1RemSetSummary * summary, const char * header = NULL);
 public:
   // This is called to reset dual hash tables after the gc pause
   // is finished and the initial hash table is no longer being
@@ -123,11 +129,18 @@ public:
                            int worker_i,
                            bool check_for_refs_into_cset);
 
-  // Print any relevant summary info.
+  // Print accumulated summary info from the start of the VM.
   virtual void print_summary_info();
+
+  // Print accumulated summary info from the last time called.
+  virtual void print_periodic_summary_info();
 
   // Prepare remembered set for verification.
   virtual void prepare_for_verify();
+
+  size_t conc_refine_cards() const {
+    return _conc_refine_cards;
+  }
 };
 
 class CountNonCleanMemRegionClosure: public MemRegionClosure {
