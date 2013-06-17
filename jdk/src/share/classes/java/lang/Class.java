@@ -708,8 +708,9 @@ public final class Class<T> implements java.io.Serializable,
      */
     @SuppressWarnings("unchecked")
     public TypeVariable<Class<T>>[] getTypeParameters() {
-        if (getGenericSignature() != null)
-            return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
+        ClassRepository info = getGenericInfo();
+        if (info != null)
+            return (TypeVariable<Class<T>>[])info.getTypeParameters();
         else
             return (TypeVariable<Class<T>>[])new TypeVariable<?>[0];
     }
@@ -759,15 +760,19 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public Type getGenericSuperclass() {
-        if (getGenericSignature() != null) {
-            // Historical irregularity:
-            // Generic signature marks interfaces with superclass = Object
-            // but this API returns null for interfaces
-            if (isInterface())
-                return null;
-            return getGenericInfo().getSuperclass();
-        } else
+        ClassRepository info = getGenericInfo();
+        if (info == null) {
             return getSuperclass();
+        }
+
+        // Historical irregularity:
+        // Generic signature marks interfaces with superclass = Object
+        // but this API returns null for interfaces
+        if (isInterface()) {
+            return null;
+        }
+
+        return info.getSuperclass();
     }
 
     /**
@@ -830,7 +835,23 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return an array of interfaces implemented by this class.
      */
-    public native Class<?>[] getInterfaces();
+    public Class<?>[] getInterfaces() {
+        ReflectionData<T> rd = reflectionData();
+        if (rd == null) {
+            // no cloning required
+            return getInterfaces0();
+        } else {
+            Class<?>[] interfaces = rd.interfaces;
+            if (interfaces == null) {
+                interfaces = getInterfaces0();
+                rd.interfaces = interfaces;
+            }
+            // defensively copy before handing over to user code
+            return interfaces.clone();
+        }
+    }
+
+    private native Class<?>[] getInterfaces0();
 
     /**
      * Returns the {@code Type}s representing the interfaces
@@ -882,10 +903,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public Type[] getGenericInterfaces() {
-        if (getGenericSignature() != null)
-            return getGenericInfo().getSuperInterfaces();
-        else
-            return getInterfaces();
+        ClassRepository info = getGenericInfo();
+        return (info == null) ?  getInterfaces() : info.getSuperInterfaces();
     }
 
 
@@ -2313,6 +2332,8 @@ public final class Class<T> implements java.io.Serializable,
         // Intermediate results for getFields and getMethods
         volatile Field[] declaredPublicFields;
         volatile Method[] declaredPublicMethods;
+        volatile Class<?>[] interfaces;
+
         // Value of classRedefinedCount when we created this ReflectionData instance
         final int redefinedCount;
 
@@ -2388,10 +2409,10 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Generic signature handling
-    private native String getGenericSignature();
+    private native String getGenericSignature0();
 
     // Generic info repository; lazily initialized
-    private transient ClassRepository genericInfo;
+    private volatile transient ClassRepository genericInfo;
 
     // accessor for factory
     private GenericsFactory getFactory() {
@@ -2399,15 +2420,20 @@ public final class Class<T> implements java.io.Serializable,
         return CoreReflectionFactory.make(this, ClassScope.make(this));
     }
 
-    // accessor for generic info repository
+    // accessor for generic info repository;
+    // generic info is lazily initialized
     private ClassRepository getGenericInfo() {
-        // lazily initialize repository if necessary
+        ClassRepository genericInfo = this.genericInfo;
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo = ClassRepository.make(getGenericSignature(),
-                                               getFactory());
+            String signature = getGenericSignature0();
+            if (signature == null) {
+                genericInfo = ClassRepository.NONE;
+            } else {
+                genericInfo = ClassRepository.make(signature, getFactory());
+            }
+            this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return (genericInfo != ClassRepository.NONE) ? genericInfo : null;
     }
 
     // Annotations handling
