@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,21 +82,16 @@ class TraceTime: public StackObj {
  private:
   bool          _active;    // do timing
   bool          _verbose;   // report every timing
-  bool          _print_cr;  // add a CR to the end of the timer report
   elapsedTimer  _t;         // timer
   elapsedTimer* _accum;     // accumulator
-  outputStream* _logfile;   // output log file
  public:
-  // Constuctors
+  // Constructors
   TraceTime(const char* title,
-            bool doit = true,
-            bool print_cr = true,
-            outputStream *logfile = NULL);
+            bool doit = true);
   TraceTime(const char* title,
             elapsedTimer* accumulator,
             bool doit = true,
-            bool verbose = false,
-            outputStream *logfile = NULL );
+            bool verbose = false);
   ~TraceTime();
 
   // Accessors
@@ -123,6 +118,11 @@ class TraceCPUTime: public StackObj {
                bool print_cr = true,
                outputStream *logfile = NULL);
   ~TraceCPUTime();
+};
+
+class TimeHelper {
+ public:
+  static double counter_to_seconds(jlong counter);
 };
 
 #endif // SHARE_VM_RUNTIME_TIMER_HPP
