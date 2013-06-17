@@ -320,8 +320,7 @@ ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
 
 void ClassHistogramDCmd::execute(DCmdSource source, TRAPS) {
   VM_GC_HeapInspection heapop(output(),
-                              !_all.value() /* request full gc if false */,
-                              true /* need_prologue */);
+                              !_all.value() /* request full gc if false */);
   VMThread::execute(&heapop);
 }
 
@@ -361,8 +360,7 @@ void ClassStatsDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   VM_GC_HeapInspection heapop(output(),
-                              true, /* request_full_gc */
-                              true /* need_prologue */);
+                              true /* request_full_gc */);
   heapop.set_csv_format(_csv.value());
   heapop.set_print_help(_help.value());
   heapop.set_print_class_stats(true);

@@ -147,6 +147,14 @@ public class StubDelegateImpl implements javax.rmi.CORBA.StubDelegate
             return ior.equals( other.ior ) ;
     }
 
+    public int hashCode() {
+        if (ior == null) {
+            return 0;
+        } else {
+            return ior.hashCode();
+        }
+    }
+
     /**
      * Returns a string representation of this stub. Returns the same string
      * for all stubs that represent the same remote object.

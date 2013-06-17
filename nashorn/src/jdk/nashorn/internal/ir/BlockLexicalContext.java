@@ -63,7 +63,6 @@ public class BlockLexicalContext extends LexicalContext {
         return sstack.pop();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends LexicalContextNode> T pop(final T node) {
         T expected = node;

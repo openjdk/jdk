@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6480504
+ * @bug 6480504 6303183
  * @summary Test that client-provided data in the extra field is written and
  * read correctly, taking into account the JAR_MAGIC written into the extra
  * field of the first entry of JAR files.
@@ -117,8 +117,7 @@ public class TestExtra {
         ZipInputStream zis = getInputStream();
 
         ze = zis.getNextEntry();
-        byte[] e = ze.getExtra();
-        check(e.length == 8, "expected extra length is 8, got " + e.length);
+        checkExtra(data, ze.getExtra());
         checkEntry(ze, 0, 0);
     }
 
@@ -140,10 +139,43 @@ public class TestExtra {
         ZipInputStream zis = getInputStream();
         ze = zis.getNextEntry();
         byte[] e = ze.getExtra();
-        check(e.length == 8, "expected extra length is 8, got " + e.length);
+        checkExtra(data, ze.getExtra());
         checkEntry(ze, 0, 0);
     }
 
+    // check if all "expected" extra fields equal to their
+    // corresponding fields in "extra". The "extra" might have
+    // timestamp fields added by ZOS.
+    static void checkExtra(byte[] expected, byte[] extra) {
+        if (expected == null)
+            return;
+        int off = 0;
+        int len = expected.length;
+        while (off + 4 < len) {
+            int tag = get16(expected, off);
+            int sz = get16(expected, off + 2);
+            int off0 = 0;
+            int len0 = extra.length;
+            boolean matched = false;
+            while (off0 + 4 < len0) {
+                int tag0 = get16(extra, off0);
+                int sz0 = get16(extra, off0 + 2);
+                if (tag == tag0 && sz == sz0) {
+                    matched = true;
+                    for (int i = 0; i < sz; i++) {
+                        if (expected[off + i] != extra[off0 +i])
+                            matched = false;
+                    }
+                    break;
+                }
+                off0 += (4 + sz0);
+            }
+            if (!matched) {
+                fail("Expected extra data [tag=" + tag + "sz=" + sz + "] check failed");
+            }
+            off += (4 + sz);
+        }
+    }
 
     /** Check that the entry's extra data is correct. */
     void checkEntry(ZipEntry ze, int count, int dataLength) {

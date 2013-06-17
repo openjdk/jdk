@@ -1960,8 +1960,7 @@ public class Code {
     }
 
     private void fillLocalVarPosition(LocalVar lv) {
-        if (lv == null || lv.sym == null
-                || lv.sym.annotations.isTypesEmpty())
+        if (lv == null || lv.sym == null || !lv.sym.hasTypeAnnotations())
             return;
         for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
             TypeAnnotationPosition p = ta.position;
@@ -1979,7 +1978,7 @@ public class Code {
         for (int i = 0; i < varBufferSize; ++i) {
             LocalVar lv = varBuffer[i];
             if (lv == null || lv.sym == null
-                    || lv.sym.annotations.isTypesEmpty()
+                    || !lv.sym.hasTypeAnnotations()
                     || !lv.sym.isExceptionParameter())
                 continue;
 
@@ -2028,7 +2027,7 @@ public class Code {
         // 2) it is an exception type and it contains type annotations
         if (!varDebugInfo &&
                 (!var.sym.isExceptionParameter() ||
-                var.sym.annotations.isTypesEmpty())) return;
+                var.sym.hasTypeAnnotations())) return;
         if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];
