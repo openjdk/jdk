@@ -34,29 +34,20 @@
 
 import com.oracle.java.testlibrary.*;
 
-import java.lang.reflect.Field;
 import sun.hotspot.WhiteBox;
-import sun.misc.Unsafe;
 
 public class ReserveMemory {
-  private static Unsafe getUnsafe() throws Exception {
-    Field f = Unsafe.class.getDeclaredField("theUnsafe");
-    f.setAccessible(true);
-    return (Unsafe)f.get(null);
-  }
-
   private static boolean isWindows() {
     return System.getProperty("os.name").toLowerCase().startsWith("win");
   }
 
+  private static boolean isOsx() {
+    return System.getProperty("os.name").toLowerCase().startsWith("mac");
+  }
+
   public static void main(String args[]) throws Exception {
     if (args.length > 0) {
-      long address = WhiteBox.getWhiteBox().reserveMemory(4096);
-
-      System.out.println("Reserved memory at address: 0x" + Long.toHexString(address));
-      System.out.println("Will now read from the address, expecting a crash!");
-
-      int x = getUnsafe().getInt(address);
+      WhiteBox.getWhiteBox().readReservedMemory();
 
       throw new Exception("Read of reserved/uncommitted memory unexpectedly succeeded, expected crash!");
     }
@@ -71,6 +62,8 @@ public class ReserveMemory {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     if (isWindows()) {
       output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
+    } else if (isOsx()) {
+      output.shouldContain("SIGBUS");
     } else {
       output.shouldContain("SIGSEGV");
     }

@@ -46,6 +46,17 @@ public class GenericOverrideTest
     extends JavacTestingAbstractThreadedTest
     implements Runnable {
 
+    enum SourceLevel {
+        SOURCE_7("-source", "7"),
+        SOURCE_DEFAULT();
+
+        String[] opts;
+
+        SourceLevel(String... opts) {
+            this.opts = opts;
+        }
+    }
+
     enum SignatureKind {
         NON_GENERIC(""),
         GENERIC("<X>");
@@ -112,12 +123,13 @@ public class GenericOverrideTest
             }
         }
 
-        boolean assignableTo(TypeArgumentKind that, SignatureKind sig) {
+        boolean assignableTo(TypeArgumentKind that, SignatureKind sig, SourceLevel level) {
             switch (this) {
                 case NONE:
                     //this case needs to workaround to javac's impl of 15.12.2.8 being too strict
-                    //ideally should be just 'return true' (see 7067746)
-                    return sig == SignatureKind.NON_GENERIC || that == NONE;
+                    //ideally should be just 'return true' (see 7067746/8015505)
+                    return level == SourceLevel.SOURCE_DEFAULT ||
+                            sig == SignatureKind.NON_GENERIC || that == NONE;
                 case UNBOUND:
                     return that == this || that == NONE;
                 case INTEGER:
@@ -143,10 +155,12 @@ public class GenericOverrideTest
                                     for (TypeArgumentKind ta3 : TypeArgumentKind.values()) {
                                         if (!ta3.compatibleWith(SignatureKind.NON_GENERIC))
                                             continue;
-                                        pool.execute(
-                                                new GenericOverrideTest(sig1,
-                                                rt1, ta1, sig2, rt2,
-                                                ta2, rt3, ta3));
+                                        for (SourceLevel level : SourceLevel.values()) {
+                                            pool.execute(
+                                                    new GenericOverrideTest(sig1,
+                                                    rt1, ta1, sig2, rt2,
+                                                    ta2, rt3, ta3, level));
+                                        }
                                     }
                                 }
                             }
@@ -162,12 +176,13 @@ public class GenericOverrideTest
     SignatureKind sig1, sig2;
     ReturnTypeKind rt1, rt2, rt3;
     TypeArgumentKind ta1, ta2, ta3;
+    SourceLevel level;
     JavaSource source;
     DiagnosticChecker diagChecker;
 
     GenericOverrideTest(SignatureKind sig1, ReturnTypeKind rt1, TypeArgumentKind ta1,
             SignatureKind sig2, ReturnTypeKind rt2, TypeArgumentKind ta2,
-            ReturnTypeKind rt3, TypeArgumentKind ta3) {
+            ReturnTypeKind rt3, TypeArgumentKind ta3, SourceLevel level) {
         this.sig1 = sig1;
         this.sig2 = sig2;
         this.rt1 = rt1;
@@ -176,6 +191,7 @@ public class GenericOverrideTest
         this.ta1 = ta1;
         this.ta2 = ta2;
         this.ta3 = ta3;
+        this.level = level;
         this.source = new JavaSource();
         this.diagChecker = new DiagnosticChecker();
     }
@@ -213,7 +229,8 @@ public class GenericOverrideTest
     @Override
     public void run() {
         JavacTask ct = (JavacTask)comp.getTask(null, fm.get(), diagChecker,
-                null, null, Arrays.asList(source));
+                level.opts != null ? Arrays.asList(level.opts) : null,
+                null, Arrays.asList(source));
         try {
             ct.analyze();
         } catch (Throwable ex) {
@@ -271,7 +288,7 @@ public class GenericOverrideTest
             SignatureKind mssig = mostSpecific == 1 ? sig1 : sig2;
 
             if (!msrt.moreSpecificThan(rt3) ||
-                    !msta.assignableTo(ta3, mssig)) {
+                    !msta.assignableTo(ta3, mssig, level)) {
                 errorExpected = true;
             }
         }
