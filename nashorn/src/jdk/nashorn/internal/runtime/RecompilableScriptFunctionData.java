@@ -30,6 +30,8 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import jdk.nashorn.internal.codegen.Compiler;
@@ -49,15 +51,39 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
+    /** FunctionNode with the code for this ScriptFunction */
     private FunctionNode functionNode;
-    private final PropertyMap  allocatorMap;
+
+    /** Allocator map from makeMap() */
+    private final PropertyMap allocatorMap;
+
+    /** Code installer used for all further recompilation/specialization of this ScriptFunction */
     private final CodeInstaller<ScriptEnvironment> installer;
+
+    /** Name of class where allocator function resides */
     private final String allocatorClassName;
 
     /** lazily generated allocator */
     private MethodHandle allocator;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    /**
+     * Used for specialization based on runtime arguments. Whenever we specialize on
+     * callsite parameter types at runtime, we need to use a parameter type guard to
+     * ensure that the specialized version of the script function continues to be
+     * applicable for a particular callsite *
+     */
+    private static final MethodHandle PARAM_TYPE_GUARD = findOwnMH("paramTypeGuard", boolean.class, Type[].class,  Object[].class);
+
+    /**
+     * It is usually a good gamble whever we detect a runtime callsite with a double
+     * (or java.lang.Number instance) to specialize the parameter to an integer, if the
+     * parameter in question can be represented as one. The double typically only exists
+     * because the compiler doesn't know any better than "a number type" and conservatively
+     * picks doubles when it can't prove that an integer addition wouldn't overflow
+     */
+    private static final MethodHandle ENSURE_INT = findOwnMH("ensureInt", int.class, Object.class);
 
     /**
      * Constructor - public as scripts use it
@@ -141,14 +167,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
              return; // nothing to do, we have code, at least some.
          }
 
-         // check if function node is lazy, need to compile it.
-         // note that currently function cloning is not working completely, which
-         // means that the compiler will mutate the function node it has been given
-         // once it has been compiled, it cannot be recompiled. This means that
-         // lazy compilation works (not compiled yet) but e.g. specializations won't
-         // until the copy-on-write changes for IR are in, making cloning meaningless.
-         // therefore, currently method specialization is disabled. TODO
-
          if (functionNode.isLazy()) {
              Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
              final Compiler compiler = new Compiler(installer);
@@ -156,38 +174,55 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
              assert !functionNode.isLazy();
              compiler.install(functionNode);
 
-             // we don't need to update any flags - varArgs and needsCallee are instrincic
-             // in the function world we need to get a destination node from the compile instead
-             // and replace it with our function node. TODO
+             /*
+              * We don't need to update any flags - varArgs and needsCallee are instrincic
+              * in the function world we need to get a destination node from the compile instead
+              * and replace it with our function node. TODO
+              */
          }
 
-         // we can't get here unless we have bytecode, either from eager compilation or from
-         // running a lazy compile on the lines above
+         /*
+          * We can't get to this program point unless we have bytecode, either from
+          * eager compilation or from running a lazy compile on the lines above
+          */
 
          assert functionNode.hasState(CompilationState.EMITTED) : functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
 
          // code exists - look it up and add it into the automatically sorted invoker list
-         addCode(functionNode, null, null);
+         addCode(functionNode);
     }
 
-    private MethodHandle addCode(final FunctionNode fn, final MethodHandle guard, final MethodHandle fallback) {
-        final MethodHandle target =
+    private MethodHandle addCode(final FunctionNode fn) {
+        return addCode(fn, null, null, null);
+    }
+
+    private MethodHandle addCode(final FunctionNode fn, final MethodType runtimeType, final MethodHandle guard, final MethodHandle fallback) {
+        final MethodType targetType = new FunctionSignature(fn).getMethodType();
+        MethodHandle target =
             MH.findStatic(
                     LOOKUP,
                     fn.getCompileUnit().getCode(),
                     fn.getName(),
-                    new FunctionSignature(fn).
-                        getMethodType());
-        MethodHandle mh = target;
-        if (guard != null) {
-            try {
-                mh = MH.guardWithTest(MH.asCollector(guard, Object[].class, target.type().parameterCount()), MH.asType(target, fallback.type()), fallback);
-            } catch (Throwable e) {
-                e.printStackTrace();
+                    targetType);
+
+        /*
+         * For any integer argument. a double that is representable as an integer is OK.
+         * otherwise the guard would have failed. in that case introduce a filter that
+         * casts the double to an integer, which we know will preserve all precision.
+         */
+        for (int i = 0; i < targetType.parameterCount(); i++) {
+            if (targetType.parameterType(i) == int.class) {
+                //representable as int
+                target = MH.filterArguments(target, i, ENSURE_INT);
             }
         }
 
-        final CompiledFunction cf = new CompiledFunction(mh);
+        MethodHandle mh = target;
+        if (guard != null) {
+            mh = MH.guardWithTest(MH.asCollector(guard, Object[].class, target.type().parameterCount()), MH.asType(target, fallback.type()), fallback);
+        }
+
+        final CompiledFunction cf = new CompiledFunction(runtimeType == null ? targetType : runtimeType, mh);
         code.add(cf);
 
         return cf.getInvoker();
@@ -212,69 +247,162 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return Type.OBJECT;
     }
 
-    @SuppressWarnings("unused")
-    private static boolean paramTypeGuard(final Type[] compileTimeTypes, final Type[] runtimeTypes, Object... args) {
-        //System.err.println("Param type guard " + Arrays.asList(args));
+    private static boolean canCoerce(final Object arg, final Type type) {
+        Type argType = runtimeType(arg);
+        if (Type.widest(argType, type) == type || arg == ScriptRuntime.UNDEFINED) {
+            return true;
+        }
+        System.err.println(arg + " does not fit in "+ argType + " " + type + " " + arg.getClass());
+        new Throwable().printStackTrace();
         return false;
     }
 
-    private static final MethodHandle PARAM_TYPE_GUARD = findOwnMH("paramTypeGuard", boolean.class, Type[].class, Type[].class, Object[].class);
+    @SuppressWarnings("unused")
+    private static boolean paramTypeGuard(final Type[] paramTypes, final Object... args) {
+        final int length = args.length;
+        assert args.length >= paramTypes.length;
+
+        //i==start, skip the this, callee params etc
+        int start = args.length - paramTypes.length;
+        for (int i = start; i < args.length; i++) {
+            final Object arg = args[i];
+            if (!canCoerce(arg, paramTypes[i - start])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unused")
+    private static int ensureInt(final Object arg) {
+        if (arg instanceof Number) {
+            return ((Number)arg).intValue();
+        } else if (arg instanceof Undefined) {
+            return 0;
+        }
+        throw new AssertionError(arg);
+    }
+
+    /**
+     * Given the runtime callsite args, compute a method type that is equivalent to what
+     * was passed - this is typically a lot more specific that what the compiler has been
+     * able to deduce
+     * @param callSiteType callsite type for the compiled callsite target
+     * @param args runtime arguments to the compiled callsite target
+     * @return adjusted method type, narrowed as to conform to runtime callsite type instead
+     */
+    private static MethodType runtimeType(final MethodType callSiteType, final Object[] args) {
+        if (args == null) {
+            //for example bound, or otherwise runtime arguments to callsite unavailable, then
+            //do not change the type
+            return callSiteType;
+        }
+        final Class<?>[] paramTypes = new Class<?>[callSiteType.parameterCount()];
+        final int        start      = args.length - callSiteType.parameterCount();
+        for (int i = start; i < args.length; i++) {
+            paramTypes[i - start] = runtimeType(args[i]).getTypeClass();
+        }
+        return MH.type(callSiteType.returnType(), paramTypes);
+    }
+
+    private static ArrayList<Type> runtimeType(final MethodType mt) {
+        final ArrayList<Type> type = new ArrayList<>();
+        for (int i = 0; i < mt.parameterCount(); i++) {
+            type.add(Type.typeFor(mt.parameterType(i)));
+        }
+        return type;
+    }
 
     @Override
     MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
-        final MethodHandle mh = super.getBestInvoker(callSiteType, args);
+        final MethodType runtimeType = runtimeType(callSiteType, args);
+        assert runtimeType.parameterCount() == callSiteType.parameterCount();
 
-        if (!functionNode.canSpecialize() || !code.isLessSpecificThan(callSiteType)) {
+        final MethodHandle mh = super.getBestInvoker(runtimeType, args);
+
+        /*
+         * Not all functions can be specialized, for example, if we deemed memory
+         * footprint too large to store a parse snapshot, or if it is meaningless
+         * to do so, such as e.g. for runScript
+         */
+        if (!functionNode.canSpecialize()) {
             return mh;
         }
 
-        final FunctionNode snapshot = functionNode.getSnapshot();
-        if (snapshot == null) {
+        /*
+         * Check if best invoker is equally specific or more specific than runtime
+         * type. In that case, we don't need further specialization, but can use
+         * whatever we have already. We know that it will match callSiteType, or it
+         * would not have been returned from getBestInvoker
+         */
+        if (!code.isLessSpecificThan(runtimeType)) {
             return mh;
         }
 
         int i;
+        final FunctionNode snapshot = functionNode.getSnapshot();
+        assert snapshot != null;
 
-        //classes known at runtime
-        final LinkedList<Type> runtimeArgs = new LinkedList<>();
-        for (i = args.length - 1; i >= args.length - snapshot.getParameters().size(); i--) {
-            runtimeArgs.addLast(runtimeType(args[i]));
-        }
-
-        //classes known at compile time
+        /*
+         * Create a list of the arg types that the compiler knows about
+         * typically, the runtime args are a lot more specific, and we should aggressively
+         * try to use those whenever possible
+         * We WILL try to make an aggressive guess as possible, and add guards if needed.
+         * For example, if the compiler can deduce that we have a number type, but the runtime
+         * passes and int, we might still want to keep it an int, and the gamble to
+         * check that whatever is passed is int representable usually pays off
+         * If the compiler only knows that a parameter is an "Object", it is still worth
+         * it to try to specialize it by looking at the runtime arg.
+         */
         final LinkedList<Type> compileTimeArgs = new LinkedList<>();
         for (i = callSiteType.parameterCount() - 1; i >= 0 && compileTimeArgs.size() < snapshot.getParameters().size(); i--) {
-            compileTimeArgs.addLast(Type.typeFor(callSiteType.parameterType(i)));
+            compileTimeArgs.addFirst(Type.typeFor(callSiteType.parameterType(i)));
         }
 
-        //the classes known at compile time are a safe to generate as primitives without parameter guards
-        //the classes known at runtime are safe to generate as primitives IFF there are parameter guards
+        /*
+         * The classes known at compile time are a safe to generate as primitives without parameter guards
+         * But the classes known at runtime (if more specific than compile time types) are safe to generate as primitives
+         * IFF there are parameter guards
+         */
         MethodHandle guard = null;
+        final ArrayList<Type> runtimeParamTypes = runtimeType(runtimeType);
+        while (runtimeParamTypes.size() > functionNode.getParameters().size()) {
+            runtimeParamTypes.remove(0);
+        }
         for (i = 0; i < compileTimeArgs.size(); i++) {
-            final Type runtimeType = runtimeArgs.get(i);
-            final Type compileType = compileTimeArgs.get(i);
+            final Type rparam = Type.typeFor(runtimeType.parameterType(i));
+            final Type cparam = compileTimeArgs.get(i);
 
-            if (compileType.isObject() && !runtimeType.isObject()) {
+            if (cparam.isObject() && !rparam.isObject()) {
+                //check that the runtime object is still coercible to the runtime type, because compiler can't prove it's always primitive
                 if (guard == null) {
-                    guard = PARAM_TYPE_GUARD;
-                    guard = MH.insertArguments(guard, 0, compileTimeArgs.toArray(new Type[compileTimeArgs.size()]), runtimeArgs.toArray(new Type[runtimeArgs.size()]));
+                    guard = MH.insertArguments(PARAM_TYPE_GUARD, 0, (Object)runtimeParamTypes.toArray(new Type[runtimeParamTypes.size()]));
                 }
             }
         }
 
-        //System.err.println("Specialized " + name + " " + runtimeArgs + " known=" + compileTimeArgs);
+        Compiler.LOG.info("Callsite specialized ", name, " runtimeType=", runtimeType, " parameters=", snapshot.getParameters(), " args=", Arrays.asList(args));
 
         assert snapshot != null;
         assert snapshot != functionNode;
 
         final Compiler compiler = new Compiler(installer);
-        final FunctionNode compiledSnapshot = compiler.compile(snapshot.setHints(null, new Compiler.Hints(compileTimeArgs.toArray(new Type[compileTimeArgs.size()]))));
 
+        final FunctionNode compiledSnapshot = compiler.compile(
+            snapshot.setHints(
+                null,
+                new Compiler.Hints(runtimeParamTypes.toArray(new Type[runtimeParamTypes.size()]))));
+
+        /*
+         * No matter how narrow your types were, they can never be narrower than Attr during recompile made them. I.e. you
+         * can put an int into the function here, if you see it as a runtime type, but if the function uses a multiplication
+         * on it, it will still need to be a double. At least until we have overflow checks. Similarly, if an int is
+         * passed but it is used as a string, it makes no sense to make the parameter narrower than Object. At least until
+         * the "different types for one symbol in difference places" work is done
+         */
         compiler.install(compiledSnapshot);
 
-        final MethodHandle nmh = addCode(compiledSnapshot, guard, mh);
-
-        return nmh;
+        return addCode(compiledSnapshot, runtimeType, guard, mh);
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

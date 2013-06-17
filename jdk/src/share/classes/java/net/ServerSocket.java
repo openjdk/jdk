@@ -316,7 +316,7 @@ class ServerSocket implements java.io.Closeable {
      * If the address is <code>null</code>, then the system will pick up
      * an ephemeral port and a valid local address to bind the socket.
      * <p>
-     * @param   endpoint        The IP address & port number to bind to.
+     * @param   endpoint        The IP address and port number to bind to.
      * @throws  IOException if the bind operation fails, or if the socket
      *                     is already bound.
      * @throws  SecurityException       if a <code>SecurityManager</code> is present and
@@ -343,7 +343,7 @@ class ServerSocket implements java.io.Closeable {
      * or may choose to ignore the parameter altogther. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
-     * @param   endpoint        The IP address & port number to bind to.
+     * @param   endpoint        The IP address and port number to bind to.
      * @param   backlog         requested maximum length of the queue of
      *                          incoming connections.
      * @throws  IOException if the bind operation fails, or if the socket
@@ -638,7 +638,7 @@ class ServerSocket implements java.io.Closeable {
      * a <B>java.net.SocketTimeoutException</B> is raised, though the
      * ServerSocket is still valid.  The option <B>must</B> be enabled
      * prior to entering the blocking operation to have effect.  The
-     * timeout must be > 0.
+     * timeout must be {@code > 0}.
      * A timeout of zero is interpreted as an infinite timeout.
      * @param timeout the specified timeout, in milliseconds
      * @exception SocketException if there is an error in

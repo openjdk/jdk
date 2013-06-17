@@ -541,6 +541,10 @@ Java_java_io_WinNTFileSystem_createFileExclusively(JNIEnv *env, jclass cls,
     WCHAR *pathbuf = pathToNTPath(env, path, JNI_FALSE);
     if (pathbuf == NULL)
         return JNI_FALSE;
+    if (isReservedDeviceNameW(pathbuf)) {
+        free(pathbuf);
+        return JNI_FALSE;
+    }
     h = CreateFileW(
         pathbuf,                              /* Wide char path name */
         GENERIC_READ | GENERIC_WRITE,         /* Read and write permission */

@@ -62,7 +62,7 @@ public final class ExecuteNode extends Statement {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterExecuteNode(this)) {
             return visitor.leaveExecuteNode(setExpression(expression.accept(visitor)));
         }

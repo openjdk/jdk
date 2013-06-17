@@ -33,7 +33,9 @@ import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
+import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
@@ -45,11 +47,12 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 /**
  * Simple constant folding pass, executed before IR is starting to be lowered.
  */
-final class FoldConstants extends NodeVisitor {
+final class FoldConstants extends NodeVisitor<LexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("fold");
 
     FoldConstants() {
+        super(new LexicalContext());
     }
 
     @Override
@@ -79,7 +82,7 @@ final class FoldConstants extends NodeVisitor {
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        return functionNode.setState(getLexicalContext(), CompilationState.CONSTANT_FOLDED);
+        return functionNode.setState(lc, CompilationState.CONSTANT_FOLDED);
     }
 
     @Override
@@ -138,6 +141,10 @@ final class FoldConstants extends NodeVisitor {
             final Node rhsNode = parent.rhs();
 
             if (!(rhsNode instanceof LiteralNode)) {
+                return null;
+            }
+
+            if (rhsNode instanceof ArrayLiteralNode) {
                 return null;
             }
 
@@ -212,6 +219,10 @@ final class FoldConstants extends NodeVisitor {
             final LiteralNode<?> lhs = (LiteralNode<?>)parent.lhs();
             final LiteralNode<?> rhs = (LiteralNode<?>)parent.rhs();
 
+            if (lhs instanceof ArrayLiteralNode || rhs instanceof ArrayLiteralNode) {
+                return null;
+            }
+
             final Type widest = Type.widest(lhs.getType(), rhs.getType());
 
             boolean isInteger = widest.isInteger();
@@ -279,9 +290,9 @@ final class FoldConstants extends NodeVisitor {
             isLong    &= value != 0.0 && JSType.isRepresentableAsLong(value);
 
             if (isInteger) {
-                return LiteralNode.newInstance(token, finish, JSType.toInt32(value));
+                return LiteralNode.newInstance(token, finish, (int)value);
             } else if (isLong) {
-                return LiteralNode.newInstance(token, finish, JSType.toLong(value));
+                return LiteralNode.newInstance(token, finish, (long)value);
             }
 
             return LiteralNode.newInstance(token, finish, value);

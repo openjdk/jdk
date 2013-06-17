@@ -297,11 +297,11 @@ AWT_ASSERT_APPKIT_THREAD;
 
 /*
  * Class:     sun_lwawt_macosx_LWCToolkit
- * Method:    doAWTRunLoop
+ * Method:    doAWTRunLoopImpl
  * Signature: (JZZ)V
  */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_doAWTRunLoop
-(JNIEnv *env, jclass clz, jlong mediator, jboolean processEvents)
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_doAWTRunLoopImpl
+(JNIEnv *env, jclass clz, jlong mediator, jboolean processEvents, jboolean inAWT)
 {
 AWT_ASSERT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
@@ -313,7 +313,7 @@ JNF_COCOA_ENTER(env);
     // Don't use acceptInputForMode because that doesn't setup autorelease pools properly
     BOOL isRunning = true;
     while (![mediatorObject shouldEndRunLoop] && isRunning) {
-        isRunning = [[NSRunLoop currentRunLoop] runMode:[JNFRunLoop javaRunLoopMode]
+        isRunning = [[NSRunLoop currentRunLoop] runMode:(inAWT ? [JNFRunLoop javaRunLoopMode] : NSDefaultRunLoopMode)
                                              beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.010]];
         if (processEvents) {
             //We do not spin a runloop here as date is nil, so does not matter which mode to use
@@ -342,7 +342,6 @@ JNF_COCOA_EXIT(env);
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_stopAWTRunLoop
 (JNIEnv *env, jclass clz, jlong mediator)
 {
-AWT_ASSERT_NOT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
 
     AWTRunLoopObject* mediatorObject = (AWTRunLoopObject*)jlong_to_ptr(mediator);

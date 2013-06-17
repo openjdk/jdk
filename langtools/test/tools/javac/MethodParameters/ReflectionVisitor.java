@@ -22,8 +22,6 @@
  */
 
 import java.io.*;
-import java.util.*;
-import java.net.*;
 import java.lang.reflect.*;
 
 /**
@@ -151,9 +149,6 @@ public class ReflectionVisitor extends Tester.Visitor {
                     }
                     expect = "this\\$[0-n]*";
                 }
-            } else if (isAnon) {
-                // not an implementation gurantee, but okay for now
-                expect = "x[0-n]*";
             }
 
             // Check expected flags
@@ -253,7 +248,7 @@ public class ReflectionVisitor extends Tester.Visitor {
                 String expect =  m.isSynthetic() ? ("arg" + i) : ((++c) + param);
                 param = p.getName();
                 sb.append(sep).append(param);
-                if (!expect.equals(param)) {
+                if (!m.isBridge() && !expect.equals(param)) {
                     error(prefix + "param[" + i + "]='"
                           + param + "' expected '" + expect + "'");
                     break;

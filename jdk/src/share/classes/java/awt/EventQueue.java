@@ -37,15 +37,9 @@ import java.security.PrivilegedAction;
 
 import java.util.EmptyStackException;
 
+import sun.awt.*;
 import sun.awt.dnd.SunDropTargetEvent;
 import sun.util.logging.PlatformLogger;
-
-import sun.awt.AppContext;
-import sun.awt.AWTAutoShutdown;
-import sun.awt.PeerEvent;
-import sun.awt.SunToolkit;
-import sun.awt.EventQueueItem;
-import sun.awt.AWTAccessor;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -186,6 +180,8 @@ public class EventQueue {
 
     private final String name = "AWT-EventQueue-" + threadInitNumber.getAndIncrement();
 
+    private FwDispatcher fwDispatcher;
+
     private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventQueue");
 
     static {
@@ -213,6 +209,10 @@ public class EventQueue {
                     throws InterruptedException, InvocationTargetException
                 {
                     EventQueue.invokeAndWait(source, r);
+                }
+                public void setFwDispatcher(EventQueue eventQueue,
+                                            FwDispatcher dispatcher) {
+                    eventQueue.setFwDispatcher(dispatcher);
                 }
             });
     }
@@ -690,7 +690,16 @@ public class EventQueue {
         final Object src = event.getSource();
         final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
             public Void run() {
-                dispatchEventImpl(event, src);
+                if (fwDispatcher == null) {
+                    dispatchEventImpl(event, src);
+                } else {
+                    fwDispatcher.scheduleDispatch(new Runnable() {
+                        @Override
+                        public void run() {
+                            dispatchEventImpl(event, src);
+                        }
+                    });
+                }
                 return null;
             }
         };
@@ -850,7 +859,9 @@ public class EventQueue {
             while (topQueue.nextQueue != null) {
                 topQueue = topQueue.nextQueue;
             }
-
+            if (topQueue.fwDispatcher != null) {
+                throw new RuntimeException("push() to queue with fwDispatcher");
+            }
             if ((topQueue.dispatchThread != null) &&
                 (topQueue.dispatchThread.getEventQueue() == this))
             {
@@ -979,6 +990,9 @@ public class EventQueue {
                 // Forward the request to the top of EventQueue stack
                 return nextQueue.createSecondaryLoop(cond, filter, interval);
             }
+            if (fwDispatcher != null) {
+                return fwDispatcher.createSecondaryLoop();
+            }
             if (dispatchThread == null) {
                 initDispatchThread();
             }
@@ -1021,6 +1035,9 @@ public class EventQueue {
             while (next != null) {
                 eq = next;
                 next = eq.nextQueue;
+            }
+            if (eq.fwDispatcher != null) {
+                return eq.fwDispatcher.isDispatchThread();
             }
             return (Thread.currentThread() == eq.dispatchThread);
         } finally {
@@ -1304,6 +1321,15 @@ public class EventQueue {
             }
         } finally {
             pushPopLock.unlock();
+        }
+    }
+
+    // The method is used by AWTAccessor for javafx/AWT single threaded mode.
+    private void setFwDispatcher(FwDispatcher dispatcher) {
+        if (nextQueue != null) {
+            nextQueue.setFwDispatcher(dispatcher);
+        } else {
+            fwDispatcher = dispatcher;
         }
     }
 }

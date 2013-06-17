@@ -39,6 +39,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.parser.DateParser;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -770,7 +771,7 @@ public final class NativeDate extends ScriptObject {
             nd.setTime(NaN);
             return nd.getTime();
         }
-        int yearInt = JSType.toInteger(yearNum);
+        int yearInt = (int)yearNum;
         if (0 <= yearInt && yearInt <= 99) {
             yearInt += 1900;
         }

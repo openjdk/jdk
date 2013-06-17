@@ -26,6 +26,7 @@
 package java.util;
 
 import java.io.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.BiFunction;
@@ -219,7 +220,8 @@ public class Hashtable<K,V>
      */
     final int initHashSeed() {
         if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
-            return sun.misc.Hashing.randomHashSeed(this);
+            int seed = ThreadLocalRandom.current().nextInt();
+            return (seed != 0) ? seed : 1;
         }
         return 0;
     }
@@ -1206,8 +1208,9 @@ public class Hashtable<K,V>
 
         // set hashMask
         if (Holder.USE_HASHSEED) {
+            int seed = ThreadLocalRandom.current().nextInt();
             Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
-                    sun.misc.Hashing.randomHashSeed(this));
+                                         (seed != 0) ? seed : 1);
         }
 
         // Read the original length of the array and number of elements

@@ -1574,7 +1574,7 @@ publicLookup().findVirtual(MethodHandle.class, "invoke", type)
      * As in the case of {@link #dropArguments(MethodHandle,int,List) dropArguments},
      * incoming arguments which are not mentioned in the reordering array
      * are may be any type, as determined only by {@code newType}.
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 ...
@@ -1590,7 +1590,7 @@ assert(add.type().equals(intfn2));
 MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
 assert(twice.type().equals(intfn1));
 assert((int)twice.invokeExact(21) == 42);
-     * </pre></blockquote>
+     * }</pre></blockquote>
      * @param target the method handle to invoke after arguments are reordered
      * @param newType the expected type of the new method handle
      * @param reorder an index array which controls the reordering

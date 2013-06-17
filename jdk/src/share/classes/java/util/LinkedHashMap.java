@@ -437,13 +437,13 @@ public class LinkedHashMap<K,V>
      * <p>Sample use: this override will allow the map to grow up to 100
      * entries and then delete the eldest entry each time a new entry is
      * added, maintaining a steady state of 100 entries.
-     * <pre>
+     * <pre>{@code
      *     private static final int MAX_ENTRIES = 100;
      *
      *     protected boolean removeEldestEntry(Map.Entry eldest) {
      *        return size() > MAX_ENTRIES;
      *     }
-     * </pre>
+     * }</pre>
      *
      * <p>This method typically does not modify the map in any way,
      * instead allowing the map to modify itself as directed by its

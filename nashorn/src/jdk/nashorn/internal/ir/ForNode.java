@@ -86,7 +86,7 @@ public final class ForNode extends LoopNode {
     }
 
     @Override
-    protected Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    protected Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterForNode(this)) {
             return visitor.leaveForNode(
                 setInit(lc, init == null ? null : init.accept(visitor)).

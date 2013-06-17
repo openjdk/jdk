@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Assignment;
@@ -84,13 +85,14 @@ import jdk.nashorn.internal.runtime.JSType;
  * and frame optimizations
  */
 
-final class FinalizeTypes extends NodeOperatorVisitor {
+final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
 
     private static final DebugLogger LOG = new DebugLogger("finalize");
 
     private final TemporarySymbols temporarySymbols;
 
     FinalizeTypes(final TemporarySymbols temporarySymbols) {
+        super(new LexicalContext());
         this.temporarySymbols = temporarySymbols;
     }
 
@@ -233,7 +235,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     private boolean symbolIsInteger(Node node) {
         final Symbol symbol = node.getSymbol();
-        assert symbol != null && symbol.getSymbolType().isInteger() : "int coercion expected: " + Debug.id(symbol) + " " + symbol + " " + getLexicalContext().getCurrentFunction().getSource();
+        assert symbol != null && symbol.getSymbolType().isInteger() : "int coercion expected: " + Debug.id(symbol) + " " + symbol + " " + lc.getCurrentFunction().getSource();
         return true;
     }
 
@@ -382,12 +384,10 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         final Node test   = forNode.getTest();
         final Node modify = forNode.getModify();
 
-        final LexicalContext lc = getLexicalContext();
-
         if (forNode.isForIn()) {
             return forNode.setModify(lc, convert(forNode.getModify(), Type.OBJECT)); // NASHORN-400
         }
-        assert test != null || forNode.hasGoto() : "forNode " + forNode + " needs goto and is missing it in " + getLexicalContext().getCurrentFunction();
+        assert test != null || forNode.hasGoto() : "forNode " + forNode + " needs goto and is missing it in " + lc.getCurrentFunction();
 
         return forNode.
             setInit(lc, init == null ? null : discard(init)).
@@ -419,7 +419,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        return functionNode.setState(getLexicalContext(), CompilationState.FINALIZED);
+        return functionNode.setState(lc, CompilationState.FINALIZED);
     }
 
     @Override
@@ -450,7 +450,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     public Node leaveReturnNode(final ReturnNode returnNode) {
         final Node expr = returnNode.getExpression();
         if (expr != null) {
-            return returnNode.setExpression(convert(expr, getLexicalContext().getCurrentFunction().getReturnType()));
+            return returnNode.setExpression(convert(expr, lc.getCurrentFunction().getReturnType()));
         }
         return returnNode;
     }
@@ -482,8 +482,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
         }
 
         return switchNode.
-            setExpression(getLexicalContext(), convert(expression, Type.OBJECT)).
-            setCases(getLexicalContext(), newCases);
+            setExpression(lc, convert(expression, Type.OBJECT)).
+            setCases(lc, newCases);
     }
 
     @Override
@@ -519,14 +519,14 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     public Node leaveWhileNode(final WhileNode whileNode) {
         final Node test = whileNode.getTest();
         if (test != null) {
-            return whileNode.setTest(getLexicalContext(), convert(test, Type.BOOLEAN));
+            return whileNode.setTest(lc, convert(test, Type.BOOLEAN));
         }
         return whileNode;
     }
 
     @Override
     public Node leaveWithNode(final WithNode withNode) {
-        return withNode.setExpression(getLexicalContext(), convert(withNode.getExpression(), Type.OBJECT));
+        return withNode.setExpression(lc, convert(withNode.getExpression(), Type.OBJECT));
     }
 
     private static void updateSymbolsLog(final FunctionNode functionNode, final Symbol symbol, final boolean loseSlot) {
@@ -550,7 +550,6 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             return; // nothing to do
         }
 
-        final LexicalContext lc             = getLexicalContext();
         final FunctionNode   functionNode   = lc.getFunction(block);
         final boolean        allVarsInScope = functionNode.allVarsInScope();
         final boolean        isVarArg       = functionNode.isVarArg();
@@ -652,7 +651,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     private static void setCanBePrimitive(final Node node, final Type to) {
         final HashSet<Node> exclude = new HashSet<>();
 
-        node.accept(new NodeVisitor() {
+        node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             private void setCanBePrimitive(final Symbol symbol) {
                 LOG.info("*** can be primitive symbol ", symbol, " ", Debug.id(symbol));
                 symbol.setCanBePrimitive(to);
@@ -762,7 +761,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             }
         }
         LOG.info("Type override for lhs in '", node, "' => ", to);
-        return ((TypeOverride<T>)node).setType(temporarySymbols, getLexicalContext(), to);
+        return ((TypeOverride<T>)node).setType(temporarySymbols, lc, to);
     }
 
     /**
@@ -785,8 +784,8 @@ final class FinalizeTypes extends NodeOperatorVisitor {
     private Node convert(final Node node, final Type to) {
         assert !to.isUnknown() : "unknown type for " + node + " class=" + node.getClass();
         assert node != null : "node is null";
-        assert node.getSymbol() != null : "node " + node + " " + node.getClass() + " has no symbol! " + getLexicalContext().getCurrentFunction();
-        assert node.tokenType() != TokenType.CONVERT : "assert convert in convert " + node + " in " + getLexicalContext().getCurrentFunction();
+        assert node.getSymbol() != null : "node " + node + " " + node.getClass() + " has no symbol! " + lc.getCurrentFunction();
+        assert node.tokenType() != TokenType.CONVERT : "assert convert in convert " + node + " in " + lc.getCurrentFunction();
 
         final Type from = node.getType();
 
@@ -800,7 +799,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         Node resultNode = node;
 
-        if (node instanceof LiteralNode && !to.isObject()) {
+        if (node instanceof LiteralNode && !(node instanceof ArrayLiteralNode) && !to.isObject()) {
             final LiteralNode<?> newNode = new LiteralNodeConstantEvaluator((LiteralNode<?>)node, to).eval();
             if (newNode != null) {
                 resultNode = newNode;
@@ -817,7 +816,6 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
         assert !node.isTerminal();
 
-        final LexicalContext lc = getLexicalContext();
         //This is the only place in this file that can create new temporaries
         //FinalizeTypes may not introduce ANY node that is not a conversion.
         return temporarySymbols.ensureSymbol(lc, to, resultNode);
@@ -854,7 +852,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
             symbol = symbol.setTypeOverrideShared(to, temporarySymbols);
             LOG.info("Type override for temporary in '", node, "' => ", to);
         }
-        return node.setSymbol(getLexicalContext(), symbol);
+        return node.setSymbol(lc, symbol);
     }
 
     /**
@@ -907,7 +905,7 @@ final class FinalizeTypes extends NodeOperatorVisitor {
 
             if (literalNode != null) {
                 //inherit literal symbol for attr.
-                literalNode = (LiteralNode<?>)literalNode.setSymbol(getLexicalContext(), parent.getSymbol());
+                literalNode = (LiteralNode<?>)literalNode.setSymbol(lc, parent.getSymbol());
             }
 
             return literalNode;

@@ -671,13 +671,15 @@ class Method : public Metadata {
                                                    Symbol* signature, //anything at all
                                                    TRAPS);
   static Klass* check_non_bcp_klass(Klass* klass);
-  // these operate only on invoke methods:
+
+  // How many extra stack entries for invokedynamic when it's enabled
+  static const int extra_stack_entries_for_jsr292 = 1;
+
+  // this operates only on invoke methods:
   // presize interpreter frames for extra interpreter stack entries, if needed
-  // method handles want to be able to push a few extra values (e.g., a bound receiver), and
-  // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
-  // all without checking for a stack overflow
-  static int extra_stack_entries() { return EnableInvokeDynamic ? 2 : 0; }
-  static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
+  // Account for the extra appendix argument for invokehandle/invokedynamic
+  static int extra_stack_entries() { return EnableInvokeDynamic ? extra_stack_entries_for_jsr292 : 0; }
+  static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize
 
   // RedefineClasses() support:
   bool is_old() const                               { return access_flags().is_old(); }

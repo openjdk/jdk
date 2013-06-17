@@ -27,6 +27,7 @@ package java.util;
 
 import java.lang.ref.WeakReference;
 import java.lang.ref.ReferenceQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 
@@ -215,7 +216,8 @@ public class WeakHashMap<K,V>
         if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
             // Do not set hashSeed more than once!
             // assert hashSeed == 0;
-            hashSeed = sun.misc.Hashing.randomHashSeed(this);
+            int seed = ThreadLocalRandom.current().nextInt();
+            hashSeed = (seed != 0) ? seed : 1;
         }
     }
 

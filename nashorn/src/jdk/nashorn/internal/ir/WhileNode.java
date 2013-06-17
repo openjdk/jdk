@@ -75,7 +75,7 @@ public final class WhileNode extends LoopNode {
     }
 
     @Override
-    protected Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    protected Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterWhileNode(this)) {
             if (isDoWhile()) {
                 return visitor.leaveWhileNode(
