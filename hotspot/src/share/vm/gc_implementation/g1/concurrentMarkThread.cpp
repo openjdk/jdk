@@ -93,7 +93,6 @@ void ConcurrentMarkThread::run() {
       ResourceMark rm;
       HandleMark   hm;
       double cycle_start = os::elapsedVTime();
-      char verbose_str[128];
 
       // We have to ensure that we finish scanning the root regions
       // before the next GC takes place. To ensure this we have to
@@ -155,8 +154,7 @@ void ConcurrentMarkThread::run() {
           }
 
           CMCheckpointRootsFinalClosure final_cl(_cm);
-          sprintf(verbose_str, "GC remark");
-          VM_CGC_Operation op(&final_cl, verbose_str, true /* needs_pll */);
+          VM_CGC_Operation op(&final_cl, "GC remark", true /* needs_pll */);
           VMThread::execute(&op);
         }
         if (cm()->restart_for_overflow()) {
@@ -187,8 +185,7 @@ void ConcurrentMarkThread::run() {
         }
 
         CMCleanUp cl_cl(_cm);
-        sprintf(verbose_str, "GC cleanup");
-        VM_CGC_Operation op(&cl_cl, verbose_str, false /* needs_pll */);
+        VM_CGC_Operation op(&cl_cl, "GC cleanup", false /* needs_pll */);
         VMThread::execute(&op);
       } else {
         // We don't want to update the marking status if a GC pause
@@ -292,6 +289,7 @@ void ConcurrentMarkThread::run() {
     // called System.gc() with +ExplicitGCInvokesConcurrent).
     _sts.join();
     g1h->increment_old_marking_cycles_completed(true /* concurrent */);
+    g1h->register_concurrent_cycle_end();
     _sts.leave();
   }
   assert(_should_terminate, "just checking");

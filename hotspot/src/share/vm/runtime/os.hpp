@@ -781,6 +781,104 @@ class os: AllStatic {
   // ResumeThread call)
   static void pause();
 
+  class SuspendedThreadTaskContext {
+  public:
+    SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
+    Thread* thread() const { return _thread; }
+    void* ucontext() const { return _ucontext; }
+  private:
+    Thread* _thread;
+    void* _ucontext;
+  };
+
+  class SuspendedThreadTask {
+  public:
+    SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
+    virtual ~SuspendedThreadTask() {}
+    void run();
+    bool is_done() { return _done; }
+    virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
+  protected:
+  private:
+    void internal_do_task();
+    Thread* _thread;
+    bool _done;
+  };
+
+#ifndef TARGET_OS_FAMILY_windows
+  // Suspend/resume support
+  // Protocol:
+  //
+  // a thread starts in SR_RUNNING
+  //
+  // SR_RUNNING can go to
+  //   * SR_SUSPEND_REQUEST when the WatcherThread wants to suspend it
+  // SR_SUSPEND_REQUEST can go to
+  //   * SR_RUNNING if WatcherThread decides it waited for SR_SUSPENDED too long (timeout)
+  //   * SR_SUSPENDED if the stopped thread receives the signal and switches state
+  // SR_SUSPENDED can go to
+  //   * SR_WAKEUP_REQUEST when the WatcherThread has done the work and wants to resume
+  // SR_WAKEUP_REQUEST can go to
+  //   * SR_RUNNING when the stopped thread receives the signal
+  //   * SR_WAKEUP_REQUEST on timeout (resend the signal and try again)
+  class SuspendResume {
+   public:
+    enum State {
+      SR_RUNNING,
+      SR_SUSPEND_REQUEST,
+      SR_SUSPENDED,
+      SR_WAKEUP_REQUEST
+    };
+
+  private:
+    volatile State _state;
+
+  private:
+    /* try to switch state from state "from" to state "to"
+     * returns the state set after the method is complete
+     */
+    State switch_state(State from, State to);
+
+  public:
+    SuspendResume() : _state(SR_RUNNING) { }
+
+    State state() const { return _state; }
+
+    State request_suspend() {
+      return switch_state(SR_RUNNING, SR_SUSPEND_REQUEST);
+    }
+
+    State cancel_suspend() {
+      return switch_state(SR_SUSPEND_REQUEST, SR_RUNNING);
+    }
+
+    State suspended() {
+      return switch_state(SR_SUSPEND_REQUEST, SR_SUSPENDED);
+    }
+
+    State request_wakeup() {
+      return switch_state(SR_SUSPENDED, SR_WAKEUP_REQUEST);
+    }
+
+    State running() {
+      return switch_state(SR_WAKEUP_REQUEST, SR_RUNNING);
+    }
+
+    bool is_running() const {
+      return _state == SR_RUNNING;
+    }
+
+    bool is_suspend_request() const {
+      return _state == SR_SUSPEND_REQUEST;
+    }
+
+    bool is_suspended() const {
+      return _state == SR_SUSPENDED;
+    }
+  };
+#endif
+
+
  protected:
   static long _rand_seed;                   // seed for random number generator
   static int _processor_count;              // number of processors

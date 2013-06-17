@@ -39,9 +39,7 @@ inline void PSScavenge::save_to_space_top_before_gc() {
 
 template <class T> inline bool PSScavenge::should_scavenge(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) return false;
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-  return PSScavenge::is_obj_in_young((HeapWord*)obj);
+  return PSScavenge::is_obj_in_young(heap_oop);
 }
 
 template <class T>
@@ -94,7 +92,7 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   // or from metadata.
   if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
       Universe::heap()->is_in_reserved(p)) {
-    if (PSScavenge::is_obj_in_young((HeapWord*)new_obj)) {
+    if (PSScavenge::is_obj_in_young(new_obj)) {
       card_table()->inline_write_ref_field_gc(p, new_obj);
     }
   }
@@ -147,7 +145,7 @@ class PSScavengeFromKlassClosure: public OopClosure {
       }
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
 
-      if (PSScavenge::is_obj_in_young((HeapWord*)new_obj)) {
+      if (PSScavenge::is_obj_in_young(new_obj)) {
         do_klass_barrier();
       }
     }

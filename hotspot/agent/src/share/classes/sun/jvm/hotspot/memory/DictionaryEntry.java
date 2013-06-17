@@ -96,9 +96,10 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
 
   public boolean containsProtectionDomain(Oop protectionDomain) {
     InstanceKlass ik = (InstanceKlass) klass();
-    if (protectionDomain.equals(ik.getProtectionDomain())) {
-      return true; // Succeeds trivially
-    }
+    // Currently unimplemented and not used.
+    // if (protectionDomain.equals(ik.getJavaMirror().getProtectionDomain())) {
+    //   return true; // Succeeds trivially
+    // }
     for (ProtectionDomainEntry current = pdSet(); current != null;
                                        current = current.next()) {
       if (protectionDomain.equals(current.protectionDomain())) {

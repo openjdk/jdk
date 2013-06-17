@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,14 @@ class CodeCache : AllStatic {
   static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
   static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
 
+  static int _codemem_full_count;
+
  public:
 
   // Initialization
   static void initialize();
+
+  static void report_codemem_full();
 
   // Allocation/administration
   static CodeBlob* allocate(int size, bool is_critical = false); // allocates a new CodeBlob
@@ -155,6 +159,7 @@ class CodeCache : AllStatic {
   // The full limits of the codeCache
   static address  low_bound()                    { return (address) _heap->low_boundary(); }
   static address  high_bound()                   { return (address) _heap->high_boundary(); }
+  static address  high()                         { return (address) _heap->high(); }
 
   // Profiling
   static address first_address();                // first address used for CodeBlobs
@@ -186,6 +191,8 @@ class CodeCache : AllStatic {
 
     // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
+
+  static int get_codemem_full_count() { return _codemem_full_count; }
 };
 
 #endif // SHARE_VM_CODE_CODECACHE_HPP
