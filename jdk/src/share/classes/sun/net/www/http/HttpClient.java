@@ -125,7 +125,7 @@ public class HttpClient extends NetworkClient {
 
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
     private static void logFinest(String msg) {
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest(msg);
         }
     }

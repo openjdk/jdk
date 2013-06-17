@@ -123,7 +123,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      * for adding separators
      */
     public void addSeparator() {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("addSeparator is not implemented");
         }
     }
@@ -343,7 +343,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      */
     public void handleKeyPress(XEvent xev) {
         XKeyEvent xkey = xev.get_xkey();
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(xkey.toString());
         }
         if (isEventDisabled(xev)) {

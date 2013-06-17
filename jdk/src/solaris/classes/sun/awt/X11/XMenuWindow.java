@@ -399,7 +399,7 @@ public class XMenuWindow extends XBaseMenuWindow {
         if (!isCreated()) {
             return;
         }
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("showing menu window + " + getWindow() + " at " + bounds);
         }
         XToolkit.awtLock();
