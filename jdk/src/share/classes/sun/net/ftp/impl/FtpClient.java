@@ -430,7 +430,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             }
             response = replyBuf.toString();
             replyBuf.setLength(0);
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                 logger.finest("Server [" + serverAddr + "] --> " + response);
             }
 
@@ -472,7 +472,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     /** Sends command <i>cmd</i> to the server. */
     private void sendServer(String cmd) {
         out.print(cmd);
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("Server [" + serverAddr + "] <-- " + cmd);
         }
     }

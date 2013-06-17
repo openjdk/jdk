@@ -119,7 +119,7 @@ public final class XErrorHandlerUtil {
             // Default XErrorHandler may just terminate the process. Don't call it.
             // return XlibWrapper.CallErrorHandler(saved_error_handler, display, error.pData);
         }
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Unhandled XErrorEvent: " +
                 "id=" + error.get_resourceid() + ", " +
                 "serial=" + error.get_serial() + ", " +

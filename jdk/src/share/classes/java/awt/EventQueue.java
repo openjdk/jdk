@@ -751,7 +751,7 @@ public class EventQueue {
                 dispatchThread.stopDispatching();
             }
         } else {
-            if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                 eventLog.fine("Unable to dispatch event: " + event);
             }
         }
@@ -849,7 +849,7 @@ public class EventQueue {
      * @since           1.2
      */
     public void push(EventQueue newEventQueue) {
-        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
             eventLog.fine("EventQueue.push(" + newEventQueue + ")");
         }
 
@@ -875,7 +875,7 @@ public class EventQueue {
                     // Use getNextEventPrivate() as it doesn't call flushPendingEvents()
                     newEventQueue.postEventPrivate(topQueue.getNextEventPrivate());
                 } catch (InterruptedException ie) {
-                    if (eventLog.isLoggable(PlatformLogger.FINE)) {
+                    if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                         eventLog.fine("Interrupted push", ie);
                     }
                 }
@@ -914,7 +914,7 @@ public class EventQueue {
      * @since           1.2
      */
     protected void pop() throws EmptyStackException {
-        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
             eventLog.fine("EventQueue.pop(" + this + ")");
         }
 
@@ -937,7 +937,7 @@ public class EventQueue {
                 try {
                     prevQueue.postEventPrivate(topQueue.getNextEventPrivate());
                 } catch (InterruptedException ie) {
-                    if (eventLog.isLoggable(PlatformLogger.FINE)) {
+                    if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                         eventLog.fine("Interrupted pop", ie);
                     }
                 }

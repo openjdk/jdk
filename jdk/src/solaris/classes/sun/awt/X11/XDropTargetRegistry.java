@@ -614,7 +614,7 @@ final class XDropTargetRegistry {
         if (info != null &&
             info.getProtocolVersion() >= XDnDConstants.XDND_MIN_PROTOCOL_VERSION) {
 
-            if (logger.isLoggable(PlatformLogger.FINE)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                 logger.fine("        XEmbed drop site will be registered for " + Long.toHexString(clientWindow));
             }
             registerEmbeddedDropSite(canvasWindow, clientWindow);
@@ -628,14 +628,14 @@ final class XDropTargetRegistry {
                 dropTargetProtocol.registerEmbeddedDropSite(clientWindow);
             }
 
-            if (logger.isLoggable(PlatformLogger.FINE)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                 logger.fine("        XEmbed drop site has been registered for " + Long.toHexString(clientWindow));
             }
         }
     }
 
     public void unregisterXEmbedClient(long canvasWindow, long clientWindow) {
-        if (logger.isLoggable(PlatformLogger.FINE)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINE)) {
             logger.fine("        XEmbed drop site will be unregistered for " + Long.toHexString(clientWindow));
         }
         Iterator dropTargetProtocols =
@@ -649,7 +649,7 @@ final class XDropTargetRegistry {
 
         unregisterEmbeddedDropSite(canvasWindow, clientWindow);
 
-        if (logger.isLoggable(PlatformLogger.FINE)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINE)) {
             logger.fine("        XEmbed drop site has beed unregistered for " + Long.toHexString(clientWindow));
         }
     }
