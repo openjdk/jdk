@@ -380,6 +380,14 @@ const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlass
 # include "globalDefinitions_ppc.hpp"
 #endif
 
+/*
+ * If a platform does not support NMT_detail
+ * the platform specific globalDefinitions (above)
+ * can set PLATFORM_NMT_DETAIL_SUPPORTED to false
+ */
+#ifndef PLATFORM_NMT_DETAIL_SUPPORTED
+#define PLATFORM_NMT_DETAIL_SUPPORTED true
+#endif
 
 // The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
 // Note: this value must be a power of 2
@@ -753,18 +761,6 @@ inline BasicType as_BasicType(TosState state) {
 // Helper function to convert BasicType info into TosState
 // Note: Cannot define here as it uses global constant at the time being.
 TosState as_TosState(BasicType type);
-
-
-// ReferenceType is used to distinguish between java/lang/ref/Reference subclasses
-
-enum ReferenceType {
- REF_NONE,      // Regular class
- REF_OTHER,     // Subclass of java/lang/ref/Reference, but not subclass of one of the classes below
- REF_SOFT,      // Subclass of java/lang/ref/SoftReference
- REF_WEAK,      // Subclass of java/lang/ref/WeakReference
- REF_FINAL,     // Subclass of java/lang/ref/FinalReference
- REF_PHANTOM    // Subclass of java/lang/ref/PhantomReference
-};
 
 
 // JavaThreadState keeps track of which part of the code a thread is executing in. This

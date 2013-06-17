@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
+
+import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 
 public class bug4624207 implements ChangeListener, FocusListener {
@@ -99,7 +101,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
 
         toolkit.realSync();
 
-        if ("Aqua".equals(UIManager.getLookAndFeel().getID())) {
+        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
         } else {
             Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);

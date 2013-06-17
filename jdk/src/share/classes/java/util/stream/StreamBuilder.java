@@ -38,7 +38,7 @@ import java.util.function.LongConsumer;
  * <p>A {@code StreamBuilder} has a lifecycle, where it starts in a building
  * phase, during which elements can be added, and then transitions to a built
  * phase, after which elements may not be added.  The built phase begins
- * when the {@link #build()}} method is called, which creates an ordered
+ * when the {@link #build()} method is called, which creates an ordered
  * {@code Stream} whose elements are the elements that were added to the stream
  * builder, in the order they were added.
  *
@@ -98,7 +98,7 @@ public interface StreamBuilder<T> extends Consumer<T> {
      * <p>A stream builder has a lifecycle, where it starts in a building
      * phase, during which elements can be added, and then transitions to a
      * built phase, after which elements may not be added.  The built phase
-     * begins when the {@link #build()}} method is called, which creates an
+     * begins when the {@link #build()} method is called, which creates an
      * ordered stream whose elements are the elements that were added to the
      * stream builder, in the order they were added.
      *
@@ -155,7 +155,7 @@ public interface StreamBuilder<T> extends Consumer<T> {
      * <p>A stream builder has a lifecycle, where it starts in a building
      * phase, during which elements can be added, and then transitions to a
      * built phase, after which elements may not be added.  The built phase
-     * begins when the {@link #build()}} method is called, which creates an
+     * begins when the {@link #build()} method is called, which creates an
      * ordered stream whose elements are the elements that were added to the
      * stream builder, in the order they were added.
      *
@@ -209,6 +209,13 @@ public interface StreamBuilder<T> extends Consumer<T> {
     /**
      * A mutable builder for a {@code DoubleStream}.
      *
+     * <p>A stream builder has a lifecycle, where it starts in a building
+     * phase, during which elements can be added, and then transitions to a
+     * built phase, after which elements may not be added.  The built phase
+     * begins when the {@link #build()} method is called, which creates an
+     * ordered stream whose elements are the elements that were added to the
+     * stream builder, in the order they were added.
+     *
      * @see LongStream#builder()
      * @since 1.8
      */
@@ -216,13 +223,6 @@ public interface StreamBuilder<T> extends Consumer<T> {
 
         /**
          * Adds an element to the stream being built.
-         *
-         * <p>A stream builder  has a lifecycle, where it starts in a building
-         * phase, during which elements can be added, and then transitions to a
-         * built phase, after which elements may not be added.  The built phase
-         * begins when the {@link #build()}} method is called, which creates an
-         * ordered stream whose elements are the elements that were added to the
-         * stream builder, in the order they were added.
          *
          * @throws IllegalStateException if the builder has already transitioned
          * to the built state

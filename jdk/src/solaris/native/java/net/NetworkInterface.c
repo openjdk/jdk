@@ -658,9 +658,9 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                     if (ia2Obj) {
                        setInetAddress_addr(env, ia2Obj, htonl(((struct sockaddr_in*)addrP->brdcast)->sin_addr.s_addr));
                        (*env)->SetObjectField(env, ibObj, ni_ib4broadcastID, ia2Obj);
-                       (*env)->SetShortField(env, ibObj, ni_ib4maskID, addrP->mask);
                     }
                  }
+                 (*env)->SetShortField(env, ibObj, ni_ib4maskID, addrP->mask);
                  (*env)->SetObjectArrayElement(env, bindArr, bind_index++, ibObj);
             }
         }
@@ -887,15 +887,12 @@ netif *addif(JNIEnv *env, int sock, const char * if_name,
     addrP->mask = prefix;
     addrP->next = 0;
     if (family == AF_INET) {
-      /*
-       * Deal with broadcast addr & subnet mask
-       */
+       // Deal with broadcast addr & subnet mask
        struct sockaddr * brdcast_to = (struct sockaddr *) ((char *) addrP + sizeof(netaddr) + addr_size);
        addrP->brdcast = getBroadcast(env, sock, name,  brdcast_to );
 
-       if (addrP->brdcast && (mask = getSubnet(env, sock, name)) != -1) {
+       if ((mask = getSubnet(env, sock, name)) != -1)
            addrP->mask = mask;
-       }
      }
 
     /**

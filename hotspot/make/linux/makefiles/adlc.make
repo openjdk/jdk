@@ -68,7 +68,7 @@ CXXFLAGS += -DASSERT
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
-CFLAGS_WARN = -Werror
+CFLAGS_WARN = $(WARNINGS_ARE_ERRORS)
 CFLAGS += $(CFLAGS_WARN)
 
 OBJECTNAMES = \
