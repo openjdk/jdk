@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.nashorn.internal.objects.NativeJava;
@@ -66,6 +67,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * </p>
  */
 
+@SuppressWarnings("javadoc")
 public final class JavaAdapterFactory {
     /**
      * A mapping from an original Class object to AdapterInfo representing the adapter for the class it represents.

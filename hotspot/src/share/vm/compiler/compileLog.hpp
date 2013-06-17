@@ -57,7 +57,7 @@ class CompileLog : public xmlStream {
   void va_tag(bool push, const char* format, va_list ap);
 
  public:
-  CompileLog(const char* file, FILE* fp, intx thread_id);
+  CompileLog(const char* file_name, FILE* fp, intx thread_id);
   ~CompileLog();
 
   intx          thread_id()                      { return _thread_id; }

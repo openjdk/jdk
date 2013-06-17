@@ -183,15 +183,8 @@ final class SetMethodCreator {
     private SetMethod createNewSpillPropertySetter() {
         final int nextSpill = getMap().getSpillLength();
 
-        final Property property = createSpillProperty(nextSpill);
+        final Property property = new AccessorProperty(getName(), Property.IS_SPILL, nextSpill);
         return new SetMethod(createSpillMethodHandle(nextSpill, property), property);
-    }
-
-    private Property createSpillProperty(final int nextSpill) {
-        final MethodHandle getter = MH.asType(MH.insertArguments(MH.arrayElementGetter(Object[].class), 1, nextSpill), Lookup.GET_OBJECT_TYPE);
-        final MethodHandle setter = MH.asType(MH.insertArguments(MH.arrayElementSetter(Object[].class), 1, nextSpill), Lookup.SET_OBJECT_TYPE);
-
-        return new AccessorProperty(getName(), Property.IS_SPILL, nextSpill, getter, setter);
     }
 
     private MethodHandle createSpillMethodHandle(final int nextSpill, Property property) {

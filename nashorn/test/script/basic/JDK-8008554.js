@@ -32,5 +32,5 @@
 var dir = __DIR__;
 var file = __FILE__.replace("JDK-8008554", "NASHORN-99");
 load(file);
-file = "file://" + __DIR__ + "NASHORN-99.js";
+file = "file:///" + __DIR__ + "NASHORN-99.js";
 load(file);

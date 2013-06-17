@@ -603,6 +603,11 @@ public final class NativeArguments extends ScriptObject {
         }
     }
 
+    @Override
+    public Object getLength() {
+        return length;
+    }
+
     private Object getArgumentsLength() {
         return length;
     }

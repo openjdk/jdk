@@ -113,7 +113,7 @@ public class JoniRegExp extends RegExp {
     public static class Factory extends RegExpFactory {
 
         @Override
-        protected RegExp compile(final String pattern, final String flags) throws ParserException {
+        public RegExp compile(final String pattern, final String flags) throws ParserException {
             return new JoniRegExp(pattern, flags);
         }
 
