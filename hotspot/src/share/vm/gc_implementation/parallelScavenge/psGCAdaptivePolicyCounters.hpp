@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
       ps_size_policy()->change_old_gen_for_min_pauses());
   }
 
-  // compute_generation_free_space() statistics
+  // compute_generations_free_space() statistics
 
   inline void update_avg_major_pause() {
     _avg_major_pause->set_value(

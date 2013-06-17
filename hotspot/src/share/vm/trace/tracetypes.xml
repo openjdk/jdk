@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!DOCTYPE types SYSTEM "trace.dtd">
+
+<!--
+
+Content types (complex) should create constant pool data
+in the recording.
+Currently at least, there is _NO_ verification that whatever
+writer you have is actually writing correctly. So BE CAREFUL!
+
+Declared with the 'content_type' tag.
+
+<type> is the ID type, i.e the integer type that resolves this. Most often
+U4 or U8, but for example really small number constants, like GCTYPE uses U1.
+
+<content-type> is where it gets interesting. 'builtin_type' means we're
+defining how we resolve one of the trace built-in types (Class, Thread etc),
+jvm_type means defining a new one for our own use.
+
+Example: (GcMode)
+
+<content_type id="GCMode" hr_name="GC mode" type="U1" jvm_type="GCMODE">
+  <value type="UTF8" field="desc" description="Description"/>
+</content_type>
+
+This creates a content type CONTENT_TYPE_GCMODE
+The field type referencing it is u1 (U1), and the constant pool struct has one field, the name.
+
+Before we can use it we need also define a primary field data type:
+
+<primary_type symbol="GCMODE" datatype="U1" contenttype="NONE"
+              type="u8" sizeop="sizeof(u1)"/>
+
+Now we can use the content + data type in declaring event fields.
+Remember however, that for us to be able to resolve the value later we must also add
+creating the constant pool data in  VM_JFRCheckpoint::write_checkpoint
+
+   ...
+   //CGMODE
+   w->be_uint(CONTENT_TYPE_GCMODE);
+   w->be_uint(MM_GC_MODE_UNINITIALIZED);
+   for (i = 0; i < MM_GC_MODE_UNINITIALIZED; i++) {
+      w->uchar(i);
+      w->write_utf8(gcModeGetName(i));
+   }
+
+ -->
+
+ <types>
+  <content_types>
+    <content_type id="Thread" hr_name="Thread"
+                  type="U4" builtin_type="OSTHREAD">
+      <value type="UTF8" field="name" label="Thread name"/>
+    </content_type>
+
+    <content_type id="VMThread" hr_name="VM Thread"
+                  type="U8" jvm_type="VMTHREAD">
+      <value type="OSTHREAD" field="thread" label="VM Thread"/>
+    </content_type>
+
+    <!-- The first argument ("JavaThread") is misleading, it's really a
+         java.lang.Thread id (long), but Mission Control depends on the name
+         being "JavaThread" so it shouldn't be changed.
+    -->
+    <content_type id="JavaThread" hr_name="Java thread"
+                  type="U8" builtin_type="JAVALANGTHREAD">
+      <value type="OSTHREAD" field="thread" label="OS Thread ID"/>
+      <value type="BYTES64" field="allocInsideTla"
+             label="Allocated bytes inside TLAs"/>
+      <value type="BYTES64" field="allocOutsideTla"
+             label="Allocated bytes outside TLAs"/>
+      <value type="THREADGROUP" field="group" label="Java Thread Group"/>
+    </content_type>
+
+    <content_type id="ThreadGroup" hr_name="Thread group"
+                  type="U4" jvm_type="THREADGROUP">
+      <value type="THREADGROUP" field="parent" label="Parent"/>
+      <value type="UTF8" field="name" label="Name"/>
+    </content_type>
+
+    <content_type id="StackTrace" hr_name="Stacktrace"
+                  type="U8" builtin_type="STACKTRACE">
+      <value type="BOOLEAN" field="truncated" label="Truncated"/>
+      <structarray type="StackFrame" field="frames" label="Stack frames"/>
+    </content_type>
+
+    <content_type id="Class" hr_name="Java class"
+                  type="U8" builtin_type="CLASS">
+      <value type="CLASS" field="loaderClass" label="ClassLoader"/>
+      <value type="SYMBOL" field="name" label="Name"/>
+      <value type="SHORT" field="modifiers" label="Access modifiers"/>
+    </content_type>
+
+    <content_type id="Method" hr_name="Java method"
+                  type="U8" jvm_type="METHOD">
+      <value type="CLASS" field="class" label="Class"/>
+      <value type="SYMBOL" field="name" label="Name"/>
+      <value type="SYMBOL" field="signature" label="Signature"/>
+      <value type="SHORT" field="modifiers" label="Access modifiers"/>
+    </content_type>
+
+    <content_type id="UTFConstant" hr_name="UTF constant"
+                  type="U8" jvm_type="SYMBOL">
+      <value type="UTF8" field="utf8" label="UTF8 data"/>
+    </content_type>
+
+    <content_type id="ThreadState" hr_name="Java Thread State"
+                  type="U2" jvm_type="THREADSTATE">
+      <value type="UTF8" field="name" label="Name"/>
+    </content_type>
+
+    <content_type id="FrameType" hr_name="Frame type"
+                  type="U1" jvm_type="FRAMETYPE">
+      <value type="UTF8" field="desc" label="Description"/>
+    </content_type>
+
+    <struct_type id="StackFrame">
+      <value type="METHOD" field="method" label="Java Method"/>
+      <value type="INTEGER" field="line" label="Line number"/>
+      <value type="FRAMETYPE" field="type" label="Frame type"/>
+    </struct_type>
+
+    <content_type id="GCName" hr_name="GC Name"
+                  type="U1" jvm_type="GCNAME">
+      <value type="UTF8" field="name" label="name" />
+    </content_type>
+
+    <content_type id="GCCause" hr_name="GC Cause"
+                  type="U2" jvm_type="GCCAUSE">
+      <value type="UTF8" field="cause" label="cause" />
+    </content_type>
+
+    <content_type id="GCWhen" hr_name="GC When"
+                  type="U1" jvm_type="GCWHEN">
+      <value type="UTF8" field="when" label="when" />
+    </content_type>
+
+    <content_type id="G1YCType" hr_name="G1 YC Type"
+                  type="U1" jvm_type="G1YCTYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="ReferenceType" hr_name="Reference Type"
+                  type="U1" jvm_type="REFERENCETYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="NARROW_OOP_MODE" hr_name="Narrow Oop Mode"
+                  type="U1" jvm_type="NARROWOOPMODE">
+      <value type="UTF8" field="mode" label="mode" />
+    </content_type>
+
+    <content_type id="VMOperationType" hr_name="VM Operation Type"
+                  type="U2" jvm_type="VMOPERATIONTYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+
+    <content_type id="CompilerPhaseType" hr_name="Compiler Phase Type"
+                  type="U1" jvm_type="COMPILERPHASETYPE">
+      <value type="UTF8" field="phase" label="phase" />
+    </content_type>
+
+  </content_types>
+
+
+  <primary_types>
+    <!--
+      - primary_type takes these attributes:
+      -   symbol      INTEGER, LONG etc
+      -   datatype    The trace datatype, see enum DataType
+      -   contenttype Either resolved content type or the semantic meaning
+      -   type        The actual type as used in structures etc
+      -   sizeop      A function/macro that can be applied on a single
+      -               struct value of type "type" and yield the factual byte
+      -               size we need to write.  The % is replaced by the value
+      -->
+
+    <!-- SIGNED 64bit -->
+    <primary_type symbol="LONG" datatype="LONG" contenttype="NONE"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- UNSIGNED 64bit -->
+    <primary_type symbol="ULONG" datatype="U8" contenttype="NONE"
+                  type="u8" sizeop="sizeof(u8)"/>
+
+    <!-- SIGNED 32bit -->
+    <primary_type symbol="INTEGER" datatype="INT" contenttype="NONE"
+                  type="s4" sizeop="sizeof(s4)"/>
+
+    <!-- UNSIGNED 32bit -->
+    <primary_type symbol="UINT" datatype="U4" contenttype="NONE"
+                  type="unsigned" sizeop="sizeof(unsigned)"/>
+
+    <!-- UNSIGNED 16bit -->
+    <primary_type symbol="USHORT" datatype="U2" contenttype="NONE"
+                  type="u2" sizeop="sizeof(u2)"/>
+
+    <!--  SIGNED 16bit -->
+    <primary_type symbol="SHORT" datatype="SHORT" contenttype="NONE"
+                  type="s2" sizeop="sizeof(s2)"/>
+
+    <!--  SIGNED 8bit -->
+    <primary_type symbol="BYTE" datatype="BYTE" contenttype="NONE"
+                  type="s1" sizeop="sizeof(s1)"/>
+
+    <!--  UNSIGNED 8bit -->
+    <primary_type symbol="UBYTE" datatype="U1" contenttype="NONE"
+                  type="u1" sizeop="sizeof(u1)"/>
+
+    <!--  float 32bit -->
+    <primary_type symbol="FLOAT" datatype="FLOAT" contenttype="NONE"
+                  type="float" sizeop="sizeof(float)"/>
+
+    <!--  float 64bit -->
+    <primary_type symbol="DOUBLE" datatype="DOUBLE" contenttype="NONE"
+                  type="double" sizeop="sizeof(double)"/>
+
+    <!-- boolean type (1-byte) -->
+    <primary_type symbol="BOOLEAN" datatype="BOOLEAN" contenttype="NONE"
+                  type="bool" sizeop="1"/>
+
+    <!-- 32-bit unsigned integer, SEMANTIC value BYTES -->
+    <primary_type symbol="BYTES" datatype="U4" contenttype="BYTES"
+                  type="u4" sizeop="sizeof(u4)"/>
+
+    <primary_type symbol="IOBYTES" datatype="U4" contenttype="BYTES"
+                  type="u4" sizeop="sizeof(u4)"/>
+
+    <!-- 64-bit unsigned integer, SEMANTIC value BYTES -->
+    <primary_type symbol="BYTES64" datatype="U8" contenttype="BYTES"
+                  type="u8" sizeop="sizeof(u8)"/>
+
+    <!-- 64-bit unsigned integer, SEMANTIC value ABSOLUTE MILLISECONDS -->
+    <primary_type symbol="EPOCHMILLIS" datatype="LONG" contenttype="EPOCHMILLIS"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- 64-bit unsigned integer, SEMANTIC value RELATIVE MILLISECONDS -->
+    <primary_type symbol="MILLIS" datatype="LONG" contenttype="MILLIS"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- 64-bit unsigned integer, SEMANTIC value RELATIVE NANOSECONDS -->
+    <primary_type symbol="NANOS" datatype="LONG" contenttype="NANOS"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- 64-bit signed integer, SEMANTIC value ABSOLUTE TICKS -->
+    <primary_type symbol="TICKS" datatype="LONG" contenttype="TICKS"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- 64-bit signed integer, SEMANTIC value RELATIVE TICKS -->
+    <primary_type symbol="RELATIVE_TICKS" datatype="LONG" contenttype="TICKS"
+                  type="s8" sizeop="sizeof(s8)"/>
+
+    <!-- 64-bit unsigned integer, SEMANTIC value ADDRESS (mem loc) -->
+    <primary_type symbol="ADDRESS" datatype="U8" contenttype="ADDRESS"
+                  type="u8" sizeop="sizeof(u8)"/>
+
+    <!-- 32-bit float, SEMANTIC value PERCENTAGE (0.0-1.0) -->
+    <primary_type symbol="PERCENT" datatype="FLOAT" contenttype="PERCENTAGE"
+                  type="float" sizeop="sizeof(float)"/>
+
+    <!-- UTF-encoded string, max length 64k -->
+    <primary_type symbol="UTF8" datatype="UTF8" contenttype="NONE"
+                  type="const char *" sizeop="sizeof_utf(%)"/>
+
+    <!-- Symbol* constant. Note that this may currently ONLY be used by
+          classes, methods fields.  This restriction might be lifted. -->
+    <primary_type symbol="SYMBOL" datatype="U8" contenttype="SYMBOL"
+                  type="Symbol *" sizeop="sizeof(u8)"/>
+
+    <!-- A Klass *. The actual class is marked as "used" and will
+         eventually be written into the recording constant pool -->
+    <primary_type symbol="CLASS" datatype="U8" contenttype="CLASS"
+                  type="Klass *" sizeop="sizeof(u8)"/>
+
+    <!-- A Method *. The method is marked as "used" and will eventually be
+         written into the recording constant pool. -->
+    <primary_type symbol="METHOD" datatype="U8" contenttype="METHOD"
+                  type="Method *" sizeop="sizeof(u8)"/>
+
+    <!--  The type for stacktraces in the recording. Shoudl not be used by
+          events explicitly -->
+    <primary_type symbol="STACKTRACE" datatype="U8" contenttype="STACKTRACE"
+                  type="u8" sizeop="sizeof(u8)"/>
+
+    <!-- OS Thread ID -->
+    <primary_type symbol="OSTHREAD" datatype="U4" contenttype="OSTHREAD"
+                  type="u4" sizeop="sizeof(u4)"/>
+
+    <!-- VM Thread ID Note: changed from U2 to U8 for hotspot -->
+    <primary_type symbol="VMTHREAD" datatype="U8" contenttype="VMTHREAD"
+                  type="u8"  sizeop="sizeof(u8)"/>
+
+    <!-- Java Thread ID -->
+    <primary_type symbol="JAVALANGTHREAD" datatype="LONG"
+                  contenttype="JAVALANGTHREAD" type="s8"
+                  sizeop="sizeof(s8)"/>
+
+    <!-- Threadgroup THIS TYPE MAY NOT BE USED IN NORMAL EVENTS (ATM). Only
+          for thread constant pool // KK TODO: u8 should be ObjectP -->
+    <primary_type symbol="THREADGROUP" datatype="U4" contenttype="THREADGROUP"
+                  type="u8"
+                  sizeop="sizeof(u4)"/>
+
+    <!-- FRAMETYPE enum -->
+    <primary_type symbol="FRAMETYPE" datatype="U1" contenttype="FRAMETYPE"
+                  type="u1" sizeop="sizeof(u1)"/>
+
+    <!-- THREADSTATE enum -->
+    <primary_type symbol="THREADSTATE" datatype="U2" contenttype="THREADSTATE"
+                  type="u2" sizeop="sizeof(u2)"/>
+
+    <!-- GCName -->
+    <primary_type symbol="GCNAME" datatype="U1" contenttype="GCNAME"
+                  type="u1" sizeop="sizeof(u1)" />
+
+    <!-- GCCAUSE -->
+    <primary_type symbol="GCCAUSE" datatype="U2" contenttype="GCCAUSE"
+                  type="u2" sizeop="sizeof(u2)" />
+
+    <!-- GCWHEN -->
+    <primary_type symbol="GCWHEN" datatype="U1" contenttype="GCWHEN"
+                  type="u1" sizeop="sizeof(u1)" />
+
+    <!-- G1YCType -->
+    <primary_type symbol="G1YCTYPE" datatype="U1" contenttype="G1YCTYPE"
+                  type="u1" sizeop="sizeof(u1)" />
+
+    <!-- REFERENCETYPE -->
+    <primary_type symbol="REFERENCETYPE" datatype="U1"
+                  contenttype="REFERENCETYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- NARROWOOPMODE -->
+    <primary_type symbol="NARROWOOPMODE" datatype="U1"
+                  contenttype="NARROWOOPMODE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- COMPILERPHASETYPE -->
+    <primary_type symbol="COMPILERPHASETYPE" datatype="U1"
+                  contenttype="COMPILERPHASETYPE" type="u1" sizeop="sizeof(u1)" />
+
+    <!-- VMOPERATIONTYPE -->
+    <primary_type symbol="VMOPERATIONTYPE" datatype="U2" contenttype="VMOPERATIONTYPE"
+                  type="u2" sizeop="sizeof(u2)" />
+
+  </primary_types>
+</types>
