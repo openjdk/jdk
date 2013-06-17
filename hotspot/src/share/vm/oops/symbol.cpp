@@ -55,7 +55,7 @@ void* Symbol::operator new(size_t sz, int len, ClassLoaderData* loader_data, TRA
   address res;
   int alloc_size = size(len)*HeapWordSize;
   res = (address) Metaspace::allocate(loader_data, size(len), true,
-                                      Metaspace::NonClassType, CHECK_NULL);
+                                      MetaspaceObj::SymbolType, CHECK_NULL);
   return res;
 }
 

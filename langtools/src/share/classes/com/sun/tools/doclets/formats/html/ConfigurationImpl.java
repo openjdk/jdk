@@ -324,7 +324,18 @@ public class ConfigurationImpl extends Configuration {
             option.startsWith("-xdoclint:")) {
             return 1;
         } else if (option.equals("-help")) {
+            // Uugh: first, this should not be hidden inside optionLength,
+            // and second, we should not be writing directly to stdout.
+            // But we have no access to a DocErrorReporter, which would
+            // allow use of reporter.printNotice
             System.out.println(getText("doclet.usage"));
+            return 1;
+        } else if (option.equals("-x")) {
+            // Uugh: first, this should not be hidden inside optionLength,
+            // and second, we should not be writing directly to stdout.
+            // But we have no access to a DocErrorReporter, which would
+            // allow use of reporter.printNotice
+            System.out.println(getText("doclet.X.usage"));
             return 1;
         } else if (option.equals("-footer") ||
                    option.equals("-header") ||

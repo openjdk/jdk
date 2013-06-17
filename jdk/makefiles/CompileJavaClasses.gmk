@@ -342,7 +342,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC,\
 		DISABLE_SJAVAC:=true,\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
 		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc, \
+		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
 		INCLUDES := com/apple/jobjc,\
                 EXCLUDES := tests/java/com/apple/jobjc,\
 		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes,\
@@ -355,7 +355,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS,\
 		SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
 		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
-		     $(JDK_OUTPUTDIR)/gensrc, \
+		     $(JDK_OUTPUTDIR)/gensrc_jobjc/src, \
 		INCLUDES := com/apple/jobjc,\
                 EXCLUDES := tests/java/com/apple/jobjc,\
 		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\

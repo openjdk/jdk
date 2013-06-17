@@ -228,7 +228,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         // Step 4a
-        final int index = ArrayIndex.getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         if (ArrayIndex.isValidArrayIndex(index)) {
             final long longIndex = ArrayIndex.toLongIndex(index);
             // Step 4b
@@ -770,7 +770,7 @@ public final class NativeArray extends ScriptObject {
 
         final NativeArray copy = new NativeArray(0);
         for (long n = 0; k < finale; n++, k++) {
-            copy.defineOwnProperty((int) n, sobj.get(k));
+            copy.defineOwnProperty(ArrayIndex.getArrayIndex(n), sobj.get(k));
         }
 
         return copy;
@@ -835,28 +835,26 @@ public final class NativeArray extends ScriptObject {
             final ScriptObject sobj    = (ScriptObject) self;
             final boolean      strict  = sobj.isStrictContext();
             final long         len     = JSType.toUint32(sobj.getLength());
+            ArrayData          array   = sobj.getArray();
 
             if (len > 1) {
                 // Get only non-missing elements. Missing elements go at the end
                 // of the sorted array. So, just don't copy these to sort input.
-
                 final ArrayList<Object> src = new ArrayList<>();
-                for (int i = 0; i < (int)len; i++) {
-                    if (sobj.has(i)) {
-                        src.add(sobj.get(i));
+                for (long i = 0; i < len; i = array.nextIndex(i)) {
+                    if (array.has((int) i)) {
+                        src.add(array.getObject((int) i));
                     }
                 }
 
                 final Object[] sorted = sort(src.toArray(), comparefn);
 
                 for (int i = 0; i < sorted.length; i++) {
-                    sobj.set(i, sorted[i], strict);
+                    array = array.set(i, sorted[i], strict);
                 }
 
                 // delete missing elements - which are at the end of sorted array
-                for (int j = sorted.length; j < (int)len; j++) {
-                    sobj.delete(j, strict);
-                }
+                sobj.setArray(array.delete(sorted.length, len - 1));
             }
 
             return sobj;
@@ -906,7 +904,7 @@ public final class NativeArray extends ScriptObject {
             final long from = actualStart + k;
 
             if (sobj.has(from)) {
-                array.defineOwnProperty((int) k, sobj.get(from));
+                array.defineOwnProperty(ArrayIndex.getArrayIndex(k), sobj.get(from));
             }
         }
 
@@ -1143,7 +1141,7 @@ public final class NativeArray extends ScriptObject {
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
                 final Object r = MAP_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self);
-                result.defineOwnProperty((int)index, r);
+                result.defineOwnProperty(ArrayIndex.getArrayIndex(index), r);
                 return true;
             }
 
@@ -1172,7 +1170,7 @@ public final class NativeArray extends ScriptObject {
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
                 if ((boolean)FILTER_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self)) {
-                    result.defineOwnProperty((int)(to++), val);
+                    result.defineOwnProperty(ArrayIndex.getArrayIndex(to++), val);
                 }
                 return true;
             }

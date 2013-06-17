@@ -68,19 +68,11 @@ public class Lint
 
     /**
      * Returns the result of combining the values in this object with
-     * the given annotations.
+     * the metadata on the given symbol.
      */
-    public Lint augment(Annotations annots) {
-        return augmentor.augment(this, annots.getDeclarationAttributes());
-    }
-
-    /**
-     * Returns the result of combining the values in this object with
-     * the given annotations and flags.
-     */
-    public Lint augment(Annotations annots, long flags) {
-        Lint l = augmentor.augment(this, annots.getDeclarationAttributes());
-        if ((flags & DEPRECATED) != 0) {
+    public Lint augment(Symbol sym) {
+        Lint l = augmentor.augment(this, sym.getDeclarationAttributes());
+        if (sym.isDeprecated()) {
             if (l == this)
                 l = new Lint(this);
             l.values.remove(LintCategory.DEPRECATION);
