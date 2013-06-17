@@ -3405,7 +3405,7 @@ public class Attr extends JCTree.Visitor {
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
             boolean isPolymorhicSignature =
-                sym.kind == MTH && ((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types);
+                (sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) != 0;
             return isPolymorhicSignature ?
                     checkSigPolyMethodId(tree, site, sym, env, resultInfo) :
                     checkMethodIdInternal(tree, site, sym, env, resultInfo);

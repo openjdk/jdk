@@ -1985,6 +1985,9 @@ public class ClassReader implements Completer {
                                       syms.methodClass);
         }
         MethodSymbol m = new MethodSymbol(flags, name, type, currentOwner);
+        if (types.isSignaturePolymorphic(m)) {
+            m.flags_field |= SIGNATURE_POLYMORPHIC;
+        }
         if (saveParameterNames)
             initParameterNames(m);
         Symbol prevOwner = currentOwner;

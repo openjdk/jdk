@@ -68,6 +68,8 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  */
 public class LambdaToMethod extends TreeTranslator {
 
+    private JCDiagnostic.Factory diags;
+    private Log log;
     private Lower lower;
     private Names names;
     private Symtab syms;
@@ -88,6 +90,9 @@ public class LambdaToMethod extends TreeTranslator {
 
     /** info about the current class being processed */
     private KlassInfo kInfo;
+
+    /** dump statistics about lambda code generation */
+    private boolean dumpLambdaToMethodStats;
 
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
@@ -146,6 +151,8 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     private LambdaToMethod(Context context) {
+        diags = JCDiagnostic.Factory.instance(context);
+        log = Log.instance(context);
         lower = Lower.instance(context);
         names = Names.instance(context);
         syms = Symtab.instance(context);
@@ -154,6 +161,8 @@ public class LambdaToMethod extends TreeTranslator {
         types = Types.instance(context);
         transTypes = TransTypes.instance(context);
         analyzer = new LambdaAnalyzerPreprocessor();
+        Options options = Options.instance(context);
+        dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
     }
     // </editor-fold>
 
@@ -1101,7 +1110,9 @@ public class LambdaToMethod extends TreeTranslator {
             Map<String, Integer> prevSerializableLambdaCount =
                     serializableLambdaCounts;
             Map<ClassSymbol, Symbol> prevClinits = clinits;
+            DiagnosticSource prevSource = log.currentSource();
             try {
+                log.useSource(tree.sym.sourcefile);
                 serializableLambdaCounts = new HashMap<String, Integer>();
                 prevClinits = new HashMap<ClassSymbol, Symbol>();
                 if (tree.sym.owner.kind == MTH) {
@@ -1126,6 +1137,7 @@ public class LambdaToMethod extends TreeTranslator {
                 super.visitClassDef(tree);
             }
             finally {
+                log.useSource(prevSource.getFile());
                 frameStack = prevStack;
                 serializableLambdaCounts = prevSerializableLambdaCount;
                 clinits = prevClinits;
@@ -1685,6 +1697,9 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 Name name = isSerializable() ? serializedLambdaName(owner) : lambdaName();
                 this.translatedSym = makeSyntheticMethod(0, name, null, owner.enclClass());
+                if (dumpLambdaToMethodStats) {
+                    log.note(tree, "lambda.stat", needsAltMetafactory(), translatedSym);
+                }
             }
 
             /**
@@ -1841,6 +1856,11 @@ public class LambdaToMethod extends TreeTranslator {
                                               lambdaName().append(names.fromString("$bridge")), null,
                                               owner.enclClass())
                         : null;
+                if (dumpLambdaToMethodStats) {
+                    String key = bridgeSym == null ?
+                            "mref.stat" : "mref.stat.1";
+                    log.note(tree, key, needsAltMetafactory(), bridgeSym);
+                }
             }
 
             /**

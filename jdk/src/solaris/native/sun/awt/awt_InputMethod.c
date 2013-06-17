@@ -185,7 +185,6 @@ extern char *XSetIMValues(
 );
 #endif
 
-#ifdef XAWT_HACK
 /*
  * This function is stolen from /src/solaris/hpi/src/system_md.c
  * It is used in setting the time in Java-level InputEvents
@@ -197,7 +196,6 @@ awt_util_nowMillisUTC()
     gettimeofday(&t, NULL);
     return ((jlong)t.tv_sec) * 1000 + (jlong)(t.tv_usec/1000);
 }
-#endif /* XAWT_HACK */
 
 /*
  * Converts the wchar_t string to a multi-byte string calling wcstombs(). A
@@ -546,11 +544,7 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
                                  "dispatchCommittedText",
                                  "(Ljava/lang/String;J)V",
                                  javastr,
-#ifndef XAWT_HACK
-                                 awt_util_nowMillisUTC_offset(event->time));
-#else
                                  event->time);
-#endif
         }
         break;
 
