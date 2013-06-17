@@ -160,7 +160,7 @@ public class JNIWriter {
         for (Scope.Entry i = c.members_field.elems; i != null; i = i.sibling) {
             if (i.sym.kind == Kinds.MTH && (i.sym.flags() & Flags.NATIVE) != 0)
                 return true;
-            for (Attribute.Compound a: i.sym.annotations.getDeclarationAttributes()) {
+            for (Attribute.Compound a: i.sym.getDeclarationAttributes()) {
                 if (a.type.tsym == syms.nativeHeaderType.tsym)
                     return true;
             }

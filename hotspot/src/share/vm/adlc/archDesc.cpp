@@ -29,8 +29,8 @@
 static FILE *errfile = stderr;
 
 //--------------------------- utility functions -----------------------------
-inline char  toUpper(char lower) {
-  return (('a' <= lower && lower <= 'z') ? (lower + ('A'-'a')) : lower);
+inline char toUpper(char lower) {
+  return (('a' <= lower && lower <= 'z') ? ((char) (lower + ('A'-'a'))) : lower);
 }
 char *toUpper(const char *str) {
   char *upper  = new char[strlen(str)+1];

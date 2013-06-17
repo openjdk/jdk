@@ -115,7 +115,7 @@ public class WhiteBox {
   public native boolean isInStringTable(String str);
 
   // Memory
-  public native long reserveMemory(long size);
+  public native void readReservedMemory();
 
   // force Full GC
   public native void fullGC();
