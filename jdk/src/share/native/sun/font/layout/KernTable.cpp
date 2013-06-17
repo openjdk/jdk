@@ -96,7 +96,7 @@ LE_CORRECT_SIZE(KernTableHeader, KERN_TABLE_HEADER_SIZE)
  * TODO: respect header flags
  */
 KernTable::KernTable(const LETableReference& base, LEErrorCode &success)
-  : pairs(), pairsSwapped(NULL), fTable(base)
+  : pairsSwapped(NULL), fTable(base)
 {
   if(LE_FAILURE(success) || (fTable.isEmpty())) {
 #if DEBUG
@@ -143,32 +143,36 @@ KernTable::KernTable(const LETableReference& base, LEErrorCode &success)
 #endif
 
         if(LE_SUCCESS(success) && nPairs>0) {
-          // pairs is an instance member, and table is on the stack.
-          // set 'pairs' based on table.getAlias(). This will range check it.
+          // pairsSwapped is an instance member, and table is on the stack.
+          // set 'pairsSwapped' based on table.getAlias(). This will range check it.
 
-          pairs = LEReferenceToArrayOf<PairInfo>(fTable, // based on overall table
-                                                 success,
-                                                 (const PairInfo*)table.getAlias(),  // subtable 0 + ..
-                                                 KERN_SUBTABLE_0_HEADER_SIZE,  // .. offset of header size
-                                                 nPairs); // count
-        }
-        if (LE_SUCCESS(success) && pairs.isValid()) {
-            pairsSwapped =  (PairInfo*)(malloc(nPairs*sizeof(PairInfo)));
-            PairInfo *p = (PairInfo*)pairsSwapped;
-            for (int i = 0; LE_SUCCESS(success) && i < nPairs; i++, p++) {
-              memcpy(p, pairs.getAlias(i,success), KERN_PAIRINFO_SIZE);
-              p->key = SWAPL(p->key);
+          pairsSwapped = (PairInfo*)(fTable.getFont()->getKernPairs());
+          if (pairsSwapped == NULL) {
+            LEReferenceToArrayOf<PairInfo>pairs =
+              LEReferenceToArrayOf<PairInfo>(fTable, // based on overall table
+                                             success,
+                                             (const PairInfo*)table.getAlias(),  // subtable 0 + ..
+                                             KERN_SUBTABLE_0_HEADER_SIZE,  // .. offset of header size
+                                             nPairs); // count
+            if (LE_SUCCESS(success) && pairs.isValid()) {
+              pairsSwapped =  (PairInfo*)(malloc(nPairs*sizeof(PairInfo)));
+              PairInfo *p = (PairInfo*)pairsSwapped;
+              for (int i = 0; LE_SUCCESS(success) && i < nPairs; i++, p++) {
+                memcpy(p, pairs.getAlias(i,success), KERN_PAIRINFO_SIZE);
+                p->key = SWAPL(p->key);
+              }
+              fTable.getFont()->setKernPairs((void*)pairsSwapped); // store it
             }
-            fTable.getFont()->setKernPairs((void*)pairsSwapped); // store it
+          }
         }
 
 #if 0
-        fprintf(stderr, "coverage: %0.4x nPairs: %d pairs %p\n", coverage, nPairs, pairs.getAlias());
+        fprintf(stderr, "coverage: %0.4x nPairs: %d pairs %p\n", coverage, nPairs, pairsSwapped);
         fprintf(stderr, "  searchRange: %d entrySelector: %d rangeShift: %d\n", searchRange, entrySelector, rangeShift);
         fprintf(stderr, "[[ ignored font table entries: range %d selector %d shift %d ]]\n", SWAPW(table->searchRange), SWAPW(table->entrySelector), SWAPW(table->rangeShift));
 #endif
 #if DEBUG
-        fprintf(stderr, "coverage: %0.4x nPairs: %d pairs 0x%x\n", coverage, nPairs, pairs);
+        fprintf(stderr, "coverage: %0.4x nPairs: %d pairs 0x%x\n", coverage, nPairs, pairsSwapped);
         fprintf(stderr,
           "  searchRange(pairs): %d entrySelector: %d rangeShift(pairs): %d\n",
           searchRange, entrySelector, rangeShift);
@@ -182,7 +186,7 @@ KernTable::KernTable(const LETableReference& base, LEErrorCode &success)
               ids[id] = (char)i;
             }
           }
-          PairInfo *p = pairs;
+          PairInfo *p = pairsSwapped;
           for (int i = 0; i < nPairs; ++i, p++) {
             le_uint32 k = p->key;
             le_uint16 left = (k >> 16) & 0xffff;
