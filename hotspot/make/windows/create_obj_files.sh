@@ -71,13 +71,11 @@ for sd in \
   BASE_PATHS="${BASE_PATHS} ${COMMONSRC}/${sd}"
 done
 
-BASE_PATHS="${BASE_PATHS} ${GENERATED}/jvmtifiles"
+BASE_PATHS="${BASE_PATHS} ${GENERATED}/jvmtifiles ${GENERATED}/tracefiles"
 
 if [ -d "${ALTSRC}/share/vm/jfr" ]; then
-  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/agent"
-  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/agent/isolated_deps/util"
-  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/jvm"
   BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr"
+  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/buffers"
 fi
 
 BASE_PATHS="${BASE_PATHS} ${COMMONSRC}/share/vm/prims/wbtestmethods"

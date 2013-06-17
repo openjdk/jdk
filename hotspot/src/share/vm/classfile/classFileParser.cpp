@@ -39,6 +39,7 @@
 #include "memory/gcLocker.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/referenceType.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.hpp"
@@ -444,8 +445,8 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
             break;
           case JVM_REF_invokeStatic:
           case JVM_REF_invokeSpecial:
-            check_property(
-               tag.is_method() || tag.is_interface_method(),
+            check_property(tag.is_method() ||
+                           ((_major_version >= JAVA_8_VERSION) && tag.is_interface_method()),
                "Invalid constant pool index %u in class file %s (not a method)",
                ref_index, CHECK_(nullHandle));
              break;
@@ -3152,7 +3153,6 @@ void ClassFileParser::layout_fields(Handle class_loader,
       }
     }
   }
-  int contended_count = nonstatic_contended_count;
 
 
   // Calculate the starting byte offsets
@@ -3177,35 +3177,52 @@ void ClassFileParser::layout_fields(Handle class_loader,
 
   next_nonstatic_field_offset = nonstatic_fields_start;
 
+  bool is_contended_class     = parsed_annotations->is_contended();
+
   // Class is contended, pad before all the fields
-  if (parsed_annotations->is_contended()) {
+  if (is_contended_class) {
     next_nonstatic_field_offset += ContendedPaddingWidth;
   }
 
-  // Compute the non-contended fields count
+  // Compute the non-contended fields count.
+  // The packing code below relies on these counts to determine if some field
+  // can be squeezed into the alignment gap. Contended fields are obviously
+  // exempt from that.
   unsigned int nonstatic_double_count = fac->count[NONSTATIC_DOUBLE] - fac_contended.count[NONSTATIC_DOUBLE];
   unsigned int nonstatic_word_count   = fac->count[NONSTATIC_WORD]   - fac_contended.count[NONSTATIC_WORD];
   unsigned int nonstatic_short_count  = fac->count[NONSTATIC_SHORT]  - fac_contended.count[NONSTATIC_SHORT];
   unsigned int nonstatic_byte_count   = fac->count[NONSTATIC_BYTE]   - fac_contended.count[NONSTATIC_BYTE];
   unsigned int nonstatic_oop_count    = fac->count[NONSTATIC_OOP]    - fac_contended.count[NONSTATIC_OOP];
 
+  // Total non-static fields count, including every contended field
+  unsigned int nonstatic_fields_count = fac->count[NONSTATIC_DOUBLE] + fac->count[NONSTATIC_WORD] +
+                                        fac->count[NONSTATIC_SHORT] + fac->count[NONSTATIC_BYTE] +
+                                        fac->count[NONSTATIC_OOP];
+
   bool super_has_nonstatic_fields =
           (_super_klass() != NULL && _super_klass->has_nonstatic_fields());
-  bool has_nonstatic_fields = super_has_nonstatic_fields ||
-          ((nonstatic_double_count + nonstatic_word_count +
-            nonstatic_short_count + nonstatic_byte_count +
-            nonstatic_oop_count) != 0);
+  bool has_nonstatic_fields = super_has_nonstatic_fields || (nonstatic_fields_count != 0);
 
 
   // Prepare list of oops for oop map generation.
+  //
+  // "offset" and "count" lists are describing the set of contiguous oop
+  // regions. offset[i] is the start of the i-th region, which then has
+  // count[i] oops following. Before we know how many regions are required,
+  // we pessimistically allocate the maps to fit all the oops into the
+  // distinct regions.
+  //
+  // TODO: We add +1 to always allocate non-zero resource arrays; we need
+  // to figure out if we still need to do this.
   int* nonstatic_oop_offsets;
   unsigned int* nonstatic_oop_counts;
   unsigned int nonstatic_oop_map_count = 0;
+  unsigned int max_nonstatic_oop_maps  = fac->count[NONSTATIC_OOP] + 1;
 
   nonstatic_oop_offsets = NEW_RESOURCE_ARRAY_IN_THREAD(
-            THREAD, int, nonstatic_oop_count + 1);
+            THREAD, int, max_nonstatic_oop_maps);
   nonstatic_oop_counts  = NEW_RESOURCE_ARRAY_IN_THREAD(
-            THREAD, unsigned int, nonstatic_oop_count + 1);
+            THREAD, unsigned int, max_nonstatic_oop_maps);
 
   first_nonstatic_oop_offset = 0; // will be set for first oop field
 
@@ -3392,9 +3409,11 @@ void ClassFileParser::layout_fields(Handle class_loader,
             int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
             heapOopSize ) {
           // Extend current oop map
+          assert(nonstatic_oop_map_count - 1 < max_nonstatic_oop_maps, "range check");
           nonstatic_oop_counts[nonstatic_oop_map_count - 1] += 1;
         } else {
           // Create new oop map
+          assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
           nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
           nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
           nonstatic_oop_map_count += 1;
@@ -3452,12 +3471,10 @@ void ClassFileParser::layout_fields(Handle class_loader,
   //
   // Additionally, this should not break alignment for the fields, so we round the alignment up
   // for each field.
-  if (contended_count > 0) {
+  if (nonstatic_contended_count > 0) {
 
     // if there is at least one contended field, we need to have pre-padding for them
-    if (nonstatic_contended_count > 0) {
-      next_nonstatic_padded_offset += ContendedPaddingWidth;
-    }
+    next_nonstatic_padded_offset += ContendedPaddingWidth;
 
     // collect all contended groups
     BitMap bm(_cp->size());
@@ -3518,6 +3535,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
             next_nonstatic_padded_offset += heapOopSize;
 
             // Create new oop map
+            assert(nonstatic_oop_map_count < max_nonstatic_oop_maps, "range check");
             nonstatic_oop_offsets[nonstatic_oop_map_count] = real_offset;
             nonstatic_oop_counts [nonstatic_oop_map_count] = 1;
             nonstatic_oop_map_count += 1;
@@ -3554,18 +3572,17 @@ void ClassFileParser::layout_fields(Handle class_loader,
     // handle static fields
   }
 
-  // Size of instances
-  int notaligned_offset = next_nonstatic_padded_offset;
-
   // Entire class is contended, pad in the back.
   // This helps to alleviate memory contention effects for subclass fields
   // and/or adjacent object.
-  if (parsed_annotations->is_contended()) {
-    notaligned_offset += ContendedPaddingWidth;
+  if (is_contended_class) {
+    next_nonstatic_padded_offset += ContendedPaddingWidth;
   }
 
-  int nonstatic_fields_end      = align_size_up(notaligned_offset, heapOopSize);
-  int instance_end              = align_size_up(notaligned_offset, wordSize);
+  int notaligned_nonstatic_fields_end = next_nonstatic_padded_offset;
+
+  int nonstatic_fields_end      = align_size_up(notaligned_nonstatic_fields_end, heapOopSize);
+  int instance_end              = align_size_up(notaligned_nonstatic_fields_end, wordSize);
   int static_fields_end         = align_size_up(next_static_byte_offset, wordSize);
 
   int static_field_size         = (static_fields_end -
@@ -3578,6 +3595,14 @@ void ClassFileParser::layout_fields(Handle class_loader,
   assert(instance_size == align_object_size(align_size_up(
          (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize),
           wordSize) / wordSize), "consistent layout helper value");
+
+  // Invariant: nonstatic_field end/start should only change if there are
+  // nonstatic fields in the class, or if the class is contended. We compare
+  // against the non-aligned value, so that end alignment will not fail the
+  // assert without actually having the fields.
+  assert((notaligned_nonstatic_fields_end == nonstatic_fields_start) ||
+         is_contended_class ||
+         (nonstatic_fields_count > 0), "double-check nonstatic start/end");
 
   // Number of non-static oop map blocks allocated at end of klass.
   const unsigned int total_oop_map_count =
@@ -4040,6 +4065,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       }
     }
 
+    // Allocate mirror and initialize static fields
+    java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
+
 
 #ifdef ASSERT
     if (ParseAllGenericSignatures) {
@@ -4054,17 +4082,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       DefaultMethods::generate_default_methods(
           this_klass(), &all_mirandas, CHECK_(nullHandle));
     }
-
-    // Allocate mirror and initialize static fields
-    java_lang_Class::create_mirror(this_klass, CHECK_(nullHandle));
-
-    // Allocate a simple java object for locking during class initialization.
-    // This needs to be a java object because it can be held across a java call.
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_NULL);
-    this_klass->set_init_lock(r);
-
-    // TODO: Move these oops to the mirror
-    this_klass->set_protection_domain(protection_domain());
 
     // Update the loader_data graph.
     record_defined_class_dependencies(this_klass, CHECK_NULL);

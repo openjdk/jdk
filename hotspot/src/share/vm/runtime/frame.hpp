@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   bool is_interpreted_frame()    const;
   bool is_java_frame()           const;
   bool is_entry_frame()          const;             // Java frame called from C?
+  bool is_stub_frame()           const;
   bool is_ignored_frame()        const;
   bool is_native_frame()         const;
   bool is_runtime_frame()        const;
@@ -411,7 +412,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* regmap) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
+  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f);
   void oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:

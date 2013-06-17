@@ -123,11 +123,17 @@ if test "x$SYS_ROOT" != "x/"; then
   if test "x$x_includes" = xNONE; then
     if test -f "$SYS_ROOT/usr/X11R6/include/X11/Xlib.h"; then
       x_includes="$SYS_ROOT/usr/X11R6/include"
+    elif test -f "$SYS_ROOT/usr/include/X11/Xlib.h"; then
+      x_includes="$SYS_ROOT/usr/include"
     fi
   fi
   if test "x$x_libraries" = xNONE; then
     if test -f "$SYS_ROOT/usr/X11R6/lib/libX11.so"; then
       x_libraries="$SYS_ROOT/usr/X11R6/lib"
+    elif test "$SYS_ROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      x_libraries="$SYS_ROOT/usr/lib64"
+    elif test -f "$SYS_ROOT/usr/lib/libX11.so"; then
+      x_libraries="$SYS_ROOT/usr/lib"
     fi
   fi
 fi
@@ -153,8 +159,7 @@ fi
 if test "x$OPENJDK_TARGET_OS" = xlinux; then
     if test -d "$SYS_ROOT/usr/X11R6"; then
         OPENWIN_HOME="$SYS_ROOT/usr/X11R6"
-    fi
-    if test -d "$SYS_ROOT/usr/include/X11"; then
+    elif test -d "$SYS_ROOT/usr/include/X11"; then
         OPENWIN_HOME="$SYS_ROOT/usr"
     fi
 fi
@@ -359,12 +364,12 @@ else
 	if test "x$FREETYPE2_FOUND" = xno; then
 	    AC_MSG_CHECKING([for freetype in some standard locations])
 	
-	    if test -s /usr/X11/include/ft2build.h && test -d /usr/X11/include/freetype2/freetype; then
-	        DEFAULT_FREETYPE_CFLAGS="-I/usr/X11/include/freetype2 -I/usr/X11/include"
-	        DEFAULT_FREETYPE_LIBS="-L/usr/X11/lib -lfreetype"
+	    if test -s $SYS_ROOT/usr/X11/include/ft2build.h && test -d $SYS_ROOT/usr/X11/include/freetype2/freetype; then
+	        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/X11/include/freetype2 -I$SYS_ROOT/usr/X11/include"
+	        DEFAULT_FREETYPE_LIBS="-L$SYS_ROOT/usr/X11/lib -lfreetype"
 	    fi
-	    if test -s /usr/include/ft2build.h && test -d /usr/include/freetype2/freetype; then
-	        DEFAULT_FREETYPE_CFLAGS="-I/usr/include/freetype2"
+	    if test -s $SYS_ROOT/usr/include/ft2build.h && test -d $SYS_ROOT/usr/include/freetype2/freetype; then
+	        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/include/freetype2"
 	        DEFAULT_FREETYPE_LIBS="-lfreetype"
 	    fi
 	

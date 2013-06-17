@@ -349,7 +349,7 @@ public class Resolve {
             : isAccessible(env, t.tsym, checkInner);
     }
 
-    /** Is symbol accessible as a member of given type in given evironment?
+    /** Is symbol accessible as a member of given type in given environment?
      *  @param env    The current environment.
      *  @param site   The type of which the tested symbol is regarded
      *                as a member.
@@ -490,11 +490,11 @@ public class Resolve {
     };
 
     /** Try to instantiate the type of a method so that it fits
-     *  given type arguments and argument types. If succesful, return
+     *  given type arguments and argument types. If successful, return
      *  the method's instantiated type, else return null.
      *  The instantiation will take into account an additional leading
      *  formal parameter if the method is an instance method seen as a member
-     *  of un underdetermined site In this case, we treat site as an additional
+     *  of an under determined site. In this case, we treat site as an additional
      *  parameter and the parameters of the class containing the method as
      *  additional type variables that get instantiated.
      *

@@ -60,6 +60,7 @@
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
 #include "memory/metablock.hpp"
+#include "memory/referenceType.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "memory/universe.hpp"
@@ -292,10 +293,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<Klass*>*)                        \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
-  nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                  \
+  nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(InstanceKlass,               _protection_domain,                            oop)                                   \
-  nonstatic_field(InstanceKlass,               _signers,                                      objArrayOop)                           \
   nonstatic_field(InstanceKlass,               _source_file_name,                             Symbol*)                               \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(InstanceKlass,               _inner_classes,                               Array<jushort>*)                       \
