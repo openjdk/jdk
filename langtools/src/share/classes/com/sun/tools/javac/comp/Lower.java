@@ -2002,7 +2002,7 @@ public class Lower extends TreeTranslator {
         JCStatement rethrow;
         if (target.hasInitCause()) {
             // rethrow = "throw new NoClassDefFoundError().initCause(e);
-            JCTree throwExpr =
+            JCExpression throwExpr =
                 makeCall(makeNewClass(syms.noClassDefFoundErrorType,
                                       List.<JCExpression>nil()),
                          names.initCause,
@@ -2360,7 +2360,7 @@ public class Lower extends TreeTranslator {
                                 null, List.<JCExpression>nil(), List.<JCTree>nil());
             ClassSymbol c = tree.packge.package_info;
             c.flags_field |= flags;
-            c.annotations.setAttributes(tree.packge.annotations);
+            c.setAttributes(tree.packge);
             ClassType ctype = (ClassType) c.type;
             ctype.supertype_field = syms.objectType;
             ctype.interfaces_field = List.nil();
@@ -2378,7 +2378,7 @@ public class Lower extends TreeTranslator {
                 return tree.packageAnnotations.nonEmpty();
             case NONEMPTY:
                 for (Attribute.Compound a :
-                         tree.packge.annotations.getDeclarationAttributes()) {
+                         tree.packge.getDeclarationAttributes()) {
                     Attribute.RetentionPolicy p = types.getRetention(a);
                     if (p != Attribute.RetentionPolicy.SOURCE)
                         return true;
@@ -2931,7 +2931,7 @@ public class Lower extends TreeTranslator {
             }
             result =
                 make.If(cond,
-                        make_at(detailPos).
+                        make_at(tree).
                            Throw(makeNewClass(syms.assertionErrorType, exnArgs)),
                         null);
         } else {

@@ -31,7 +31,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -42,14 +42,13 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import netscape.javascript.JSObject;
 
 /**
  * Mirror object that wraps a given ScriptObject instance. User can
  * access ScriptObject via the javax.script.Bindings interface or
  * netscape.javascript.JSObject interface.
  */
-final class ScriptObjectMirror extends JSObject implements Bindings {
+public final class ScriptObjectMirror extends JSObject implements Bindings {
     private final ScriptObject sobj;
     private final ScriptObject global;
 
@@ -218,7 +217,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Set<Map.Entry<String, Object>>>() {
             @Override public Set<Map.Entry<String, Object>> call() {
                 final Iterator<String>               iter    = sobj.propertyIterator();
-                final Set<Map.Entry<String, Object>> entries = new HashSet<>();
+                final Set<Map.Entry<String, Object>> entries = new LinkedHashSet<>();
 
                 while (iter.hasNext()) {
                     final String key   = iter.next();
@@ -254,7 +253,7 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Set<String>>() {
             @Override public Set<String> call() {
                 final Iterator<String> iter   = sobj.propertyIterator();
-                final Set<String>      keySet = new HashSet<>();
+                final Set<String>      keySet = new LinkedHashSet<>();
 
                 while (iter.hasNext()) {
                     keySet.add(iter.next());
@@ -303,6 +302,21 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
+    /**
+     * Delete a property from this object.
+     *
+     * @param key the property to be deleted
+     *
+     * @return if the delete was successful or not
+     */
+    public boolean delete(final Object key) {
+        return inGlobal(new Callable<Boolean>() {
+            @Override public Boolean call() {
+                return sobj.delete(unwrap(key, global));
+            }
+        });
+    }
+
     @Override
     public int size() {
         return inGlobal(new Callable<Integer>() {
@@ -328,20 +342,28 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         });
     }
 
-    // package-privates below this.
-    ScriptObject getScriptObject() {
-        return sobj;
-    }
 
-    static Object translateUndefined(Object obj) {
-        return (obj == ScriptRuntime.UNDEFINED)? null : obj;
-    }
+    // These are public only so that Context can access these.
 
-    static Object wrap(final Object obj, final ScriptObject homeGlobal) {
+    /**
+     * Make a script object mirror on given object if needed.
+     *
+     * @param obj object to be wrapped
+     * @param homeGlobal global to which this object belongs
+     * @return wrapped object
+     */
+    public static Object wrap(final Object obj, final ScriptObject homeGlobal) {
         return (obj instanceof ScriptObject) ? new ScriptObjectMirror((ScriptObject)obj, homeGlobal) : obj;
     }
 
-    static Object unwrap(final Object obj, final ScriptObject homeGlobal) {
+    /**
+     * Unwrap a script object mirror if needed.
+     *
+     * @param obj object to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return unwrapped object
+     */
+    public static Object unwrap(final Object obj, final ScriptObject homeGlobal) {
         if (obj instanceof ScriptObjectMirror) {
             final ScriptObjectMirror mirror = (ScriptObjectMirror)obj;
             return (mirror.global == homeGlobal)? mirror.sobj : obj;
@@ -350,7 +372,14 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return obj;
     }
 
-    static Object[] wrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    /**
+     * Wrap an array of object to script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return wrapped array
+     */
+    public static Object[] wrapArray(final Object[] args, final ScriptObject homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -364,7 +393,14 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
         return newArgs;
     }
 
-    static Object[] unwrapArray(final Object[] args, final ScriptObject homeGlobal) {
+    /**
+     * Unwrap an array of script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @param homeGlobal global to which this object belongs
+     * @return unwrapped array
+     */
+    public static Object[] unwrapArray(final Object[] args, final ScriptObject homeGlobal) {
         if (args == null || args.length == 0) {
             return args;
         }
@@ -376,5 +412,14 @@ final class ScriptObjectMirror extends JSObject implements Bindings {
             index++;
         }
         return newArgs;
+    }
+
+    // package-privates below this.
+    ScriptObject getScriptObject() {
+        return sobj;
+    }
+
+    static Object translateUndefined(Object obj) {
+        return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }
 }

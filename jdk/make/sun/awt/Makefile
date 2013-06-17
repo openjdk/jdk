@@ -467,12 +467,9 @@ ifeq ($(PLATFORM), linux)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv LINUX
 ifdef OPENJDK
 
-FONTCONFIGS_SRC	= $(PLATFORM_SRC)/classes/sun/awt/fontconfigs
-_FONTCONFIGS	= \
-	fontconfig.properties				\
-	fontconfig.SuSE.properties                      \
-	fontconfig.Ubuntu.properties                    \
-	fontconfig.Fedora.properties
+FONTCONFIGS_SRC	= 
+_FONTCONFIGS	= 
+
 else
 
 FONTCONFIGS_SRC	= $(CLOSED_SRC)/solaris/classes/sun/awt/fontconfigs
@@ -518,7 +515,11 @@ endif # PLATFORM
 FONTCONFIGS     = $(_FONTCONFIGS:%=$(LIBDIR)/%.src)
 BINARYFONTCONFIGS = $(_FONTCONFIGS:%.properties=$(LIBDIR)/%.bfc)
 
+ifneq ("x$(_FONTCONFIGS)", "x")
 fontconfigs: $(FONTCONFIGS) $(BINARYFONTCONFIGS)
+else
+fontconfigs:
+endif
 
 $(LIBDIR)/%.src: $(FONTCONFIGS_SRC)/$(FONTCONFIGS_SRC_PREFIX)%
 	$(install-file)
@@ -532,9 +533,13 @@ $(LIBDIR)/%.bfc: $(FONTCONFIGS_SRC)/$(FONTCONFIGS_SRC_PREFIX)%.properties \
 	$(call chmod-file, 444)
 	@$(java-vm-cleanup)
 
+ifneq ("x$(_FONTCONFIGS)", "x")
 fontconfigs.clean :
 	$(RM) $(FONTCONFIGS)
 	$(RM) $(BINARYFONTCONFIGS)
+else
+fontconfigs.clean :
+endif
 
 ifeq ($(PLATFORM), windows)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv WINDOWS

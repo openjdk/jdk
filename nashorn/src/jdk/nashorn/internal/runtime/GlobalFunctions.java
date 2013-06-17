@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.Locale;
 
 /**
  * Utilities used by Global class.
@@ -373,10 +374,10 @@ loop:
             } else if (ch < 256) {
                 sb.append('%');
                 final byte b = (byte)ch;
-                sb.append(Integer.toHexString(b & 0xFF).toUpperCase());
+                sb.append(Integer.toHexString(b & 0xFF).toUpperCase(Locale.ENGLISH));
             } else {
                 sb.append("%u");
-                sb.append(Integer.toHexString(ch & 0xFFFF).toUpperCase());
+                sb.append(Integer.toHexString(ch & 0xFFFF).toUpperCase(Locale.ENGLISH));
             }
         }
 

@@ -230,9 +230,9 @@ public class GenStubs {
             tree.typarams = translateTypeParams(tree.typarams);
             tree.params = translateVarDefs(tree.params);
             tree.thrown = translate(tree.thrown);
-            if (tree.restype != null && tree.body != null) {
+            if (tree.body != null) {
                 if ((currClassMods & Flags.INTERFACE) != 0) {
-                    tree.mods.flags &= ~Flags.DEFAULT;
+                    tree.mods.flags &= ~(Flags.DEFAULT | Flags.STATIC);
                 } else {
                     tree.mods.flags |= Flags.NATIVE;
                 }

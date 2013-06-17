@@ -35,21 +35,27 @@ import jdk.nashorn.internal.codegen.types.Type;
  */
 final class CompiledFunction implements Comparable<CompiledFunction> {
 
+    /** The method type may be more specific than the invoker, if. e.g.
+     *  the invoker is guarded, and a guard with a generic object only
+     *  fallback, while the target is more specific, we still need the
+     *  more specific type for sorting */
+    private final MethodType   type;
     private final MethodHandle invoker;
     private MethodHandle constructor;
 
-    CompiledFunction(final MethodHandle invoker) {
-        this(invoker, null);
+    CompiledFunction(final MethodType type, final MethodHandle invoker) {
+        this(type, invoker, null);
     }
 
-    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
-        this.invoker = invoker;
-        this.constructor = constructor; //isConstructor
+    CompiledFunction(final MethodType type, final MethodHandle invoker, final MethodHandle constructor) {
+        this.type        = type;
+        this.invoker     = invoker;
+        this.constructor = constructor;
     }
 
     @Override
     public String toString() {
-        return "<invoker=" + invoker + " ctor=" + constructor + ">";
+        return "<callSiteType= " + type + " invoker=" + invoker + " ctor=" + constructor + ">";
     }
 
     MethodHandle getInvoker() {
@@ -69,7 +75,7 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
     }
 
     MethodType type() {
-        return invoker.type();
+        return type;
     }
 
     @Override
@@ -103,8 +109,8 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
         return weight() > o.weight();
     }
 
-    boolean moreGenericThan(final MethodType type) {
-        return weight() > weight(type);
+    boolean moreGenericThan(final MethodType mt) {
+        return weight() > weight(mt);
     }
 
     /**
@@ -112,15 +118,15 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
      * It is compatible if the types are narrower than the invocation type so that
      * a semantically equivalent linkage can be performed.
      *
-     * @param typesc
+     * @param mt type to check against
      * @return
      */
-    boolean typeCompatible(final MethodType type) {
-        final Class<?>[] wantedParams   = type.parameterArray();
+    boolean typeCompatible(final MethodType mt) {
+        final Class<?>[] wantedParams   = mt.parameterArray();
         final Class<?>[] existingParams = type().parameterArray();
 
         //if we are not examining a varargs type, the number of parameters must be the same
-        if (wantedParams.length != existingParams.length && !isVarArgsType(type)) {
+        if (wantedParams.length != existingParams.length && !isVarArgsType(mt)) {
             return false;
         }
 

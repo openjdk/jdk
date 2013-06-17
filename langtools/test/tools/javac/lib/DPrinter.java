@@ -403,7 +403,7 @@ public class DPrinter {
                 printType("type", sym.type, Details.SUMMARY);
                 printType("erasure", sym.erasure_field, Details.SUMMARY);
                 sym.accept(symVisitor, null);
-                printAnnotations("annotations", sym.annotations, Details.SUMMARY);
+                printAnnotations("annotations", sym.getAnnotations(), Details.SUMMARY);
                 indent(-1);
             }
         }

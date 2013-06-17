@@ -72,7 +72,7 @@ public final class IfNode extends Statement {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterIfNode(this)) {
             return visitor.leaveIfNode(
                 setTest(test.accept(visitor)).

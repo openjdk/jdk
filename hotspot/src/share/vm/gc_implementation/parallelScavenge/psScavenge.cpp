@@ -61,6 +61,7 @@ CardTableExtension*        PSScavenge::_card_table = NULL;
 bool                       PSScavenge::_survivor_overflow = false;
 uint                       PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
+uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0;
 elapsedTimer               PSScavenge::_accumulated_time;
 Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
 Stack<oop, mtGC>           PSScavenge::_preserved_oop_stack;
@@ -71,7 +72,7 @@ bool                       PSScavenge::_promotion_failed = false;
 class PSIsAliveClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop p) {
-    return (!PSScavenge::is_obj_in_young((HeapWord*) p)) || p->is_forwarded();
+    return (!PSScavenge::is_obj_in_young(p)) || p->is_forwarded();
   }
 };
 
@@ -408,6 +409,7 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::flat_profiler));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
+      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
@@ -449,11 +451,9 @@ bool PSScavenge::invoke_no_policy() {
       reference_processor()->enqueue_discovered_references(NULL);
     }
 
-      // Unlink any dead interned Strings
-      StringTable::unlink(&_is_alive_closure);
-      // Process the remaining live ones
-      PSScavengeRootsClosure root_closure(promotion_manager);
-      StringTable::oops_do(&root_closure);
+    // Unlink any dead interned Strings and process the remaining live ones.
+    PSScavengeRootsClosure root_closure(promotion_manager);
+    StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     PSPromotionManager::post_scavenge();
@@ -816,7 +816,7 @@ void PSScavenge::initialize() {
   // Set boundary between young_gen and old_gen
   assert(old_gen->reserved().end() <= young_gen->eden_space()->bottom(),
          "old above young");
-  _young_generation_boundary = young_gen->eden_space()->bottom();
+  set_young_generation_boundary(young_gen->eden_space()->bottom());
 
   // Initialize ref handling object for scavenging.
   MemRegion mr = young_gen->reserved();
