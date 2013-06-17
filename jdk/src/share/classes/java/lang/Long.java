@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.annotation.Native;
 import java.math.*;
 
+
 /**
  * The {@code Long} class wraps a value of the primitive type {@code
  * long} in an object. An object of type {@code Long} contains a
@@ -344,18 +345,39 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /**
-     * Convert the integer to an unsigned number.
+     * Format a long (treated as unsigned) into a String.
+     * @param val the value to format
+     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
      */
-    private static String toUnsignedString0(long i, int shift) {
-        char[] buf = new char[64];
-        int charPos = 64;
+    static String toUnsignedString0(long val, int shift) {
+        // assert shift > 0 && shift <=5 : "Illegal shift value";
+        int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
+        int chars = Math.max(((mag + (shift - 1)) / shift), 1);
+        char[] buf = new char[chars];
+
+        formatUnsignedLong(val, shift, buf, 0, chars);
+        return new String(buf, true);
+    }
+
+    /**
+     * Format a long (treated as unsigned) into a character buffer.
+     * @param val the unsigned long to format
+     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
+     * @param buf the character buffer to write to
+     * @param offset the offset in the destination buffer to start at
+     * @param len the number of characters to write
+     * @return the lowest character location used
+     */
+     static int formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
+        int charPos = len;
         int radix = 1 << shift;
-        long mask = radix - 1;
+        int mask = radix - 1;
         do {
-            buf[--charPos] = Integer.digits[(int)(i & mask)];
-            i >>>= shift;
-        } while (i != 0);
-        return new String(buf, charPos, (64 - charPos));
+            buf[offset + --charPos] = Integer.digits[((int) val) & mask];
+            val >>>= shift;
+        } while (val != 0 && charPos > 0);
+
+        return charPos;
     }
 
     /**

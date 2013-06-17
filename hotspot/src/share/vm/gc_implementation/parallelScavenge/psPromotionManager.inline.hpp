@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
     if (o->is_forwarded()) {
       o = o->forwardee();
       // Card mark
-      if (PSScavenge::is_obj_in_young((HeapWord*) o)) {
+      if (PSScavenge::is_obj_in_young(o)) {
         PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
       }
       oopDesc::encode_store_heap_oop_not_null(p, o);
@@ -152,7 +152,7 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
 
         // This is the promotion failed test, and code handling.
         // The code belongs here for two reasons. It is slightly
-        // different thatn the code below, and cannot share the
+        // different than the code below, and cannot share the
         // CAS testing code. Keeping the code here also minimizes
         // the impact on the common case fast path code.
 
