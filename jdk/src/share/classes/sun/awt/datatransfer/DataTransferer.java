@@ -398,7 +398,7 @@ public abstract class DataTransferer {
      * "text".
      */
     public static boolean doesSubtypeSupportCharset(DataFlavor flavor) {
-        if (dtLog.isLoggable(PlatformLogger.FINE)) {
+        if (dtLog.isLoggable(PlatformLogger.Level.FINE)) {
             if (!"text".equals(flavor.getPrimaryType())) {
                 dtLog.fine("Assertion (\"text\".equals(flavor.getPrimaryType())) failed");
             }

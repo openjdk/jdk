@@ -60,7 +60,7 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
 
     @Override
     public void setCurrentFocusedWindow(Window win) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Setting current focused window " + win);
         }
 

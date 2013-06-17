@@ -2150,7 +2150,7 @@ public abstract class Toolkit {
         }
 
     synchronized int countAWTEventListeners(long eventMask) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             if (eventMask == 0) {
                 log.fine("Assertion (eventMask != 0) failed");
             }

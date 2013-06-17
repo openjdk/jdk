@@ -633,7 +633,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public long getNSWindowPtr() {
         final long nsWindowPtr = ptr;
         if (nsWindowPtr == 0L) {
-            if(logger.isLoggable(PlatformLogger.FINE)) {
+            if(logger.isLoggable(PlatformLogger.Level.FINE)) {
                 logger.fine("NSWindow already disposed?", new Exception("Pointer to native NSWindow is invalid."));
             }
         }
