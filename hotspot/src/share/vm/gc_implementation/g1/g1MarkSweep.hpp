@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ class G1MarkSweep : AllStatic {
 
   static void invoke_at_safepoint(ReferenceProcessor* rp,
                                   bool clear_all_softrefs);
+
+  static STWGCTimer* gc_timer() { return GenMarkSweep::_gc_timer; }
+  static SerialOldTracer* gc_tracer() { return GenMarkSweep::_gc_tracer; }
 
  private:
 

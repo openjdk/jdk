@@ -150,11 +150,11 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof AccessorPropertyDescriptor)) {
+        if (!(obj instanceof GenericPropertyDescriptor)) {
             return false;
         }
 
-        final AccessorPropertyDescriptor other = (AccessorPropertyDescriptor)obj;
+        final GenericPropertyDescriptor other = (GenericPropertyDescriptor)obj;
         return ScriptRuntime.sameValue(configurable, other.configurable) &&
                ScriptRuntime.sameValue(enumerable, other.enumerable);
     }
