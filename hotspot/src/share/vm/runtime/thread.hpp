@@ -47,7 +47,8 @@
 #include "services/memRecorder.hpp"
 #endif // INCLUDE_NMT
 
-#include "trace/tracing.hpp"
+#include "trace/traceBackend.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
@@ -258,7 +259,7 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  TRACE_BUFFER _trace_buffer;                   // Thread-local buffer for tracing
+  TRACE_DATA _trace_data;                       // Thread-local data for tracing
 
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
@@ -449,8 +450,7 @@ class Thread: public ThreadShadow {
     return allocated_bytes;
   }
 
-  TRACE_BUFFER trace_buffer()              { return _trace_buffer; }
-  void set_trace_buffer(TRACE_BUFFER buf)  { _trace_buffer = buf; }
+  TRACE_DATA* trace_data()              { return &_trace_data; }
 
   // VM operation support
   int vm_operation_ticket()                      { return ++_vm_operation_started_count; }
@@ -638,9 +638,6 @@ public:
   jint _hashStateZ ;
   void * _schedctl ;
 
-  intptr_t _ScratchA, _ScratchB ;              // Scratch locations for fast-path sync code
-  static ByteSize ScratchA_offset()            { return byte_offset_of(Thread, _ScratchA ); }
-  static ByteSize ScratchB_offset()            { return byte_offset_of(Thread, _ScratchB ); }
 
   volatile jint rng [4] ;                      // RNG for spin loop
 

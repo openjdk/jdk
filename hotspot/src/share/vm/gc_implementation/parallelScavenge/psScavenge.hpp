@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
@@ -37,8 +38,10 @@ class GCTaskQueue;
 class OopStack;
 class ReferenceProcessor;
 class ParallelScavengeHeap;
+class ParallelScavengeTracer;
 class PSIsAliveClosure;
 class PSRefProcTaskExecutor;
+class STWGCTimer;
 
 class PSScavenge: AllStatic {
   friend class PSIsAliveClosure;
@@ -62,19 +65,23 @@ class PSScavenge: AllStatic {
 
  protected:
   // Flags/counters
-  static ReferenceProcessor* _ref_processor;        // Reference processor for scavenging.
-  static PSIsAliveClosure    _is_alive_closure;     // Closure used for reference processing
-  static CardTableExtension* _card_table;           // We cache the card table for fast access.
-  static bool                _survivor_overflow;    // Overflow this collection
-  static uint                _tenuring_threshold;   // tenuring threshold for next scavenge
-  static elapsedTimer        _accumulated_time;     // total time spent on scavenge
-  static HeapWord*           _young_generation_boundary; // The lowest address possible for the young_gen.
-                                                         // This is used to decide if an oop should be scavenged,
-                                                         // cards should be marked, etc.
+  static ReferenceProcessor*  _ref_processor;        // Reference processor for scavenging.
+  static PSIsAliveClosure     _is_alive_closure;     // Closure used for reference processing
+  static CardTableExtension*  _card_table;           // We cache the card table for fast access.
+  static bool                 _survivor_overflow;    // Overflow this collection
+  static uint                 _tenuring_threshold;   // tenuring threshold for next scavenge
+  static elapsedTimer         _accumulated_time;     // total time spent on scavenge
+  static STWGCTimer           _gc_timer;             // GC time book keeper
+  static ParallelScavengeTracer _gc_tracer;          // GC tracing
+  // The lowest address possible for the young_gen.
+  // This is used to decide if an oop should be scavenged,
+  // cards should be marked, etc.
+  static HeapWord*            _young_generation_boundary;
+  // Used to optimize compressed oops young gen boundary checking.
+  static uintptr_t            _young_generation_boundary_compressed;
   static Stack<markOop, mtGC> _preserved_mark_stack; // List of marks to be restored after failed promotion
   static Stack<oop, mtGC>     _preserved_oop_stack;  // List of oops that need their mark restored.
-  static CollectorCounters*      _counters;          // collector performance counters
-  static bool                    _promotion_failed;
+  static CollectorCounters*   _counters;             // collector performance counters
 
   static void clean_up_failed_promotion();
 
@@ -90,7 +97,6 @@ class PSScavenge: AllStatic {
   // Accessors
   static uint             tenuring_threshold()  { return _tenuring_threshold; }
   static elapsedTimer*    accumulated_time()    { return &_accumulated_time; }
-  static bool             promotion_failed()    { return _promotion_failed; }
   static int              consecutive_skipped_scavenges()
     { return _consecutive_skipped_scavenges; }
 
@@ -112,6 +118,9 @@ class PSScavenge: AllStatic {
   // boundary moves, _young_generation_boundary must be reset
   static void set_young_generation_boundary(HeapWord* v) {
     _young_generation_boundary = v;
+    if (UseCompressedOops) {
+      _young_generation_boundary_compressed = (uintptr_t)oopDesc::encode_heap_oop((oop)v);
+    }
   }
 
   // Called by parallelScavengeHeap to init the tenuring threshold
@@ -140,11 +149,19 @@ class PSScavenge: AllStatic {
   static void copy_and_push_safe_barrier_from_klass(PSPromotionManager* pm, oop* p);
 
   // Is an object in the young generation
-  // This assumes that the HeapWord argument is in the heap,
+  // This assumes that the 'o' is in the heap,
   // so it only checks one side of the complete predicate.
+
+  inline static bool is_obj_in_young(oop o) {
+    return (HeapWord*)o >= _young_generation_boundary;
+  }
+
+  inline static bool is_obj_in_young(narrowOop o) {
+    return (uintptr_t)o >= _young_generation_boundary_compressed;
+  }
+
   inline static bool is_obj_in_young(HeapWord* o) {
-    const bool result = (o >= _young_generation_boundary);
-    return result;
+    return o >= _young_generation_boundary;
   }
 };
 

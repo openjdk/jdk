@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,6 @@ public:
   }
 };
 
-
 //------------------------------------------------------------------------------
 // MethodHandlesAdapterGenerator
 //
@@ -233,13 +232,13 @@ public:
 //------------------------------------------------------------------------------
 // MemberNameTable
 //
+
 class MemberNameTable : public GrowableArray<jweak> {
  public:
-  MemberNameTable();
+  MemberNameTable(int methods_cnt);
   ~MemberNameTable();
-  void add_member_name(jweak mem_name_ref);
- private:
-  int find_member_name(oop mem_name);
+  void add_member_name(int index, jweak mem_name_ref);
+  oop  get_member_name(int index);
 
 #if INCLUDE_JVMTI
  public:
