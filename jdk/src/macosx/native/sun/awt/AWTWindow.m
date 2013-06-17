@@ -539,7 +539,7 @@ AWT_ASSERT_APPKIT_THREAD;
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
     if (!IS(self.styleBits, IS_DIALOG)) {
         [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
-    } else if (IS(self.styleBits, IS_MODAL)) {
+    } else if ((opposite != NULL) && IS(self.styleBits, IS_MODAL)) {
         [CMenuBar activate:opposite->javaMenuBar modallyDisabled:YES];        
     }
     [AWTWindow setLastKeyWindow:nil];
