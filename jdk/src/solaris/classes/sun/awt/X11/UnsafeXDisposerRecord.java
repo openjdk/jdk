@@ -59,7 +59,7 @@ class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
         XToolkit.awtLock();
         try {
             if (!disposed) {
-                if (XlibWrapper.isBuildInternal && "Java2D Disposer".equals(Thread.currentThread().getName()) && log.isLoggable(PlatformLogger.WARNING)) {
+                if (XlibWrapper.isBuildInternal && "Java2D Disposer".equals(Thread.currentThread().getName()) && log.isLoggable(PlatformLogger.Level.WARNING)) {
                     if (place != null) {
                         log.warning(name + " object was not disposed before finalization!", place);
                     } else {

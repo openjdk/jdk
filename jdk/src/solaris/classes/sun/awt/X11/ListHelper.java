@@ -261,7 +261,7 @@ public class ListHelper implements XScrollbarClient {
     }
 
     public int y2index(int y) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("y=" + y +", firstIdx=" + firstDisplayedIndex() +", itemHeight=" + getItemHeight()
                      + ",item_margin=" + ITEM_MARGIN);
         }

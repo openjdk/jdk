@@ -43,7 +43,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     }
 
     public void setState(XWindowPeer window, int state) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Setting state of " + window + " to " + state);
         }
         if (window.isShowing()) {
@@ -55,7 +55,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
 
     private void setInitialState(XWindowPeer window, int state) {
         XAtomList old_state = window.getNETWMState();
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Current state of the window {0} is {1}", window, old_state);
         }
         if ((state & Frame.MAXIMIZED_VERT) != 0) {
@@ -68,7 +68,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         } else {
             old_state.remove(XA_NET_WM_STATE_MAXIMIZED_HORZ);
         }
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Setting initial state of the window {0} to {1}", window, old_state);
         }
         window.setNETWMState(old_state);
@@ -103,7 +103,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
               default:
                   return;
             }
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Requesting state on " + window + " for " + state);
             }
             req.set_type((int)XConstants.ClientMessage);
@@ -187,7 +187,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             req.set_data(1, state.getAtom());
             // Fix for 6735584: req.data[2] must be set to 0 when only one property is changed
             req.set_data(2, 0);
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Setting _NET_STATE atom {0} on {1} for {2}", state, window, Boolean.valueOf(isAdd));
             }
             XToolkit.awtLock();
@@ -214,7 +214,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
      * @param reset Indicates operation, 'set' if false, 'reset' if true
      */
     private void setStateHelper(XWindowPeer window, XAtom state, boolean set) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Window visibility is: withdrawn={0}, visible={1}, mapped={2} showing={3}",
                   Boolean.valueOf(window.isWithdrawn()), Boolean.valueOf(window.isVisible()),
                   Boolean.valueOf(window.isMapped()), Boolean.valueOf(window.isShowing()));
@@ -223,7 +223,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             requestState(window, state, set);
         } else {
             XAtomList net_wm_state = window.getNETWMState();
-            if (log.isLoggable(PlatformLogger.FINER)) {
+            if (log.isLoggable(PlatformLogger.Level.FINER)) {
                 log.finer("Current state on {0} is {1}", window, net_wm_state);
             }
             if (!set) {
@@ -231,7 +231,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             } else {
                 net_wm_state.add(state);
             }
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Setting states on {0} to {1}", window, net_wm_state);
             }
             window.setNETWMState(net_wm_state);
@@ -290,7 +290,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         }
         NetWindow = checkAnchor(XA_NET_SUPPORTING_WM_CHECK, XAtom.XA_WINDOW);
         supportChecked = true;
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("### " + this + " is active: " + (NetWindow != 0));
         }
     }
@@ -302,7 +302,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
 
     boolean doStateProtocol() {
         boolean res = active() && checkProtocol(XA_NET_SUPPORTED, XA_NET_WM_STATE);
-        if (stateLog.isLoggable(PlatformLogger.FINER)) {
+        if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
             stateLog.finer("doStateProtocol() returns " + res);
         }
         return res;
@@ -331,7 +331,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         if (net_wm_name_string == null) {
             return false;
         }
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("### WM_NAME = " + net_wm_name_string);
         }
         return net_wm_name_string.startsWith(name);
