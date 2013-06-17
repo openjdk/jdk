@@ -507,7 +507,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   const int extra_space =
     rounded_vm_local_words +                   // frame local scratch space
-    //6815692//Method::extra_stack_words() +       // extra push slots for MH adapters
+    Method::extra_stack_entries() +            // extra stack for jsr 292
     frame::memory_parameter_word_sp_offset +   // register save area
     (native_call ? frame::interpreter_frame_extra_outgoing_argument_words : 0);
 
@@ -1558,7 +1558,6 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
        round_to(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
   const int max_stack_words = max_stack * Interpreter::stackElementWords;
   return (round_to((max_stack_words
-                   //6815692//+ Method::extra_stack_words()
                    + rounded_vm_local_words
                    + frame::memory_parameter_word_sp_offset), WordsPerLong)
                    // already rounded

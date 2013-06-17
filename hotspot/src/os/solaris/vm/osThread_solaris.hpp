@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,61 +72,15 @@
  // ***************************************************************
 
  public:
-
-  class InterruptArguments : StackObj {
-   private:
-    Thread*     _thread;   // the thread to signal was dispatched to
-    ucontext_t* _ucontext; // the machine context at the time of the signal
-
-   public:
-    InterruptArguments(Thread* thread, ucontext_t* ucontext) {
-      _thread   = thread;
-      _ucontext = ucontext;
-    }
-
-    Thread*     thread()   const { return _thread;   }
-    ucontext_t* ucontext() const { return _ucontext; }
-  };
-
-  // There are currently no asynchronous callbacks - and we'd better not
-  // support them in the future either, as they need to be deallocated from
-  // the interrupt handler, which is not safe; they also require locks to
-  // protect the callback queue.
-
-  class Sync_Interrupt_Callback : private StackObj {
-   protected:
-    volatile bool _is_done;
-    Monitor*      _sync;
-    Thread*       _target;
-   public:
-    Sync_Interrupt_Callback(Monitor * sync) {
-      _is_done = false;  _target = NULL;  _sync = sync;
-    }
-
-    bool is_done() const               { return _is_done; }
-    Thread* target() const             { return _target;  }
-
-    int interrupt(Thread * target, int timeout);
-
-    // override to implement the callback.
-    virtual void execute(InterruptArguments *args) = 0;
-
-    void leave_callback();
-  };
+  os::SuspendResume sr;
 
  private:
-
-  Sync_Interrupt_Callback * volatile _current_callback;
-  enum {
-    callback_in_progress = 1
-  };
-  Mutex * _current_callback_lock;       // only used on v8
+  ucontext_t* _ucontext;
 
  public:
-
-  int set_interrupt_callback    (Sync_Interrupt_Callback * cb);
-  void remove_interrupt_callback(Sync_Interrupt_Callback * cb);
-  void do_interrupt_callbacks_at_interrupt(InterruptArguments *args);
+  ucontext_t* ucontext() const { return _ucontext; }
+  void set_ucontext(ucontext_t* ptr) { _ucontext = ptr; }
+  static void SR_handler(Thread* thread, ucontext_t* uc);
 
  // ***************************************************************
  // java.lang.Thread.interrupt state.
