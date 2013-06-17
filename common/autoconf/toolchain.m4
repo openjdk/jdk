@@ -36,7 +36,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
     $ECHO $COMPILER_VERSION_TEST | $GREP "^.*: Sun $COMPILER_NAME" > /dev/null
     if test $? -ne 0; then
       GCC_VERSION_TEST=`$COMPILER --version 2>&1 | $HEAD -n 1`
-      
+
       AC_MSG_NOTICE([The $COMPILER_NAME compiler (located as $COMPILER) does not seem to be the required Sun Studio compiler.])
       AC_MSG_NOTICE([The result from running with -V was: "$COMPILER_VERSION_TEST" and with --version: "$GCC_VERSION_TEST"])
       AC_MSG_ERROR([Sun Studio compiler is required. Try setting --with-tools-dir.])
@@ -69,7 +69,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
       AC_MSG_NOTICE([The result from running with --version was: "$COMPILER_VERSION_TEST"])
       AC_MSG_ERROR([GCC compiler is required. Try setting --with-tools-dir.])
     fi
-    
+
     # First line typically looks something like:
     # gcc (Ubuntu/Linaro 4.5.2-8ubuntu4) 4.5.2
     COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.* \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/p"`
@@ -142,7 +142,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
   BASIC_REMOVE_SYMBOLIC_LINKS(TEST_COMPILER)
   AC_MSG_RESULT([$TEST_COMPILER])
   AC_MSG_CHECKING([if $1 is disguised ccache])
-  
+
   COMPILER_BASENAME=`$BASENAME "$TEST_COMPILER"`
   if test "x$COMPILER_BASENAME" = "xccache"; then
     AC_MSG_RESULT([yes, trying to find proper $COMPILER_NAME compiler])
@@ -226,11 +226,11 @@ BDEPS_CHECK_MODULE(DEVKIT, devkit, xxx,
                     ],
                     [])
 
-if test "x$SYS_ROOT" != "x/" ; then                    
+if test "x$SYS_ROOT" != "x/" ; then
     CFLAGS="--sysroot=$SYS_ROOT $CFLAGS"
     CXXFLAGS="--sysroot=$SYS_ROOT $CXXFLAGS"
-    OBJCFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS" 
-    OBJCXXFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS" 
+    OBJCFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
+    OBJCXXFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
     CPPFLAGS="--sysroot=$SYS_ROOT $CPPFLAGS"
     LDFLAGS="--sysroot=$SYS_ROOT $LDFLAGS"
 fi
@@ -330,7 +330,7 @@ AC_SUBST(HOTSPOT_LD)
 COMPILER_NAME=gcc
 COMPILER_TYPE=CC
 AS_IF([test "x$OPENJDK_TARGET_OS" = xwindows], [
-    # For now, assume that we are always compiling using cl.exe. 
+    # For now, assume that we are always compiling using cl.exe.
     CC_OUT_OPTION=-Fo
     EXE_OUT_OPTION=-out:
     LD_OUT_OPTION=-out:
@@ -491,7 +491,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_LIBS],
 
 ###############################################################################
 #
-# How to compile shared libraries. 
+# How to compile shared libraries.
 #
 
 if test "x$GCC" = xyes; then
@@ -525,7 +525,7 @@ if test "x$GCC" = xyes; then
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
         SHARED_LIBRARY_SUFFIX='.dylib'
         EXE_SUFFIX=''
-        SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1' 
+        SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
         SET_SHARED_LIBRARY_MAPFILE=''
         SET_SHARED_LIBRARY_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
         SET_EXECUTABLE_ORIGIN="$SET_SHARED_LIBRARY_ORIGIN"
@@ -676,7 +676,7 @@ case $COMPILER_TYPE in
         # Use single precision floating point with 'float'
         CC_HIGHEST="$CC_HIGHEST -fsingle"
         # Assume memory references via basic pointer types do not alias
-        #   (Source with excessing pointer casting and data access with mixed 
+        #   (Source with excessing pointer casting and data access with mixed
         #    pointer types are not recommended)
         CC_HIGHEST="$CC_HIGHEST -xalias_level=basic"
         # Use intrinsic or inline versions for math/std functions
@@ -892,7 +892,7 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE"
-    # Setting these parameters makes it an error to link to macosx APIs that are 
+    # Setting these parameters makes it an error to link to macosx APIs that are
     # newer than the given OS version and makes the linked binaries compatible even
     # if built on a newer version of the OS.
     # The expected format is X.Y.Z
@@ -940,12 +940,12 @@ CXXFLAGS_JDKEXE="$CCXXFLAGS_JDK $CXXFLAGS_JDK"
 # Which should we link to? Are we lucky enough that the binary api to the libjvm.so library
 # is identical for client and server? Yes. Which is picked at runtime (client or server)?
 # Neither, since the chosen libjvm.so has already been loaded by the launcher, all the following
-# libraries will link to whatever is in memory. Yuck. 
+# libraries will link to whatever is in memory. Yuck.
 #
 # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
 if test "x$COMPILER_NAME" = xcl; then
     LDFLAGS_JDK="$LDFLAGS_JDK -nologo -opt:ref -incremental:no"
-    if test "x$OPENJDK_TARGET_CPU" = xx86; then 
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
         LDFLAGS_JDK="$LDFLAGS_JDK -safeseh"
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
@@ -965,7 +965,7 @@ else
         if test -n "$HAS_GNU_HASH"; then
             LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both "
         fi
-        if test "x$OPENJDK_TARGET_OS" = xlinux; then 
+        if test "x$OPENJDK_TARGET_OS" = xlinux; then
           # And since we now know that the linker is gnu, then add -z defs, to forbid
           # undefined symbols in object files.
           LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs"
@@ -1006,7 +1006,7 @@ fi
 
 # Adjust flags according to debug level.
 case $DEBUG_LEVEL in
-      fastdebug ) 
+      fastdebug )
               CFLAGS="$CFLAGS $D_FLAG"
               JAVAC_FLAGS="$JAVAC_FLAGS -g"
               ;;
@@ -1018,9 +1018,9 @@ case $DEBUG_LEVEL in
 	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
               JAVAC_FLAGS="$JAVAC_FLAGS -g"
               ;;
-esac              
+esac
 
-                
+
 AC_SUBST(CFLAGS_JDKLIB)
 AC_SUBST(CFLAGS_JDKEXE)
 
@@ -1092,28 +1092,45 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
 ])
 
-# Setup the JTREG paths 
-AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG], 
-[ 
-  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg], 
-  [Regression Test Harness @<:@probed@:>@])]) 
- 
-  AC_MSG_CHECKING([for JTReg Regression Test Harness]) 
- 
-  if test "x$with_jtreg" != x; then 
-    JT_HOME="$with_jtreg"
-    BASIC_FIXUP_PATH([JT_HOME])
-    AC_MSG_RESULT($JT_HOME)
- 
-    # jtreg win32 script works for everybody 
-    JTREGEXE="$JT_HOME/win32/bin/jtreg"
-    if test ! -f "$JTREGEXE"; then
-      AC_MSG_ERROR([JTReg executable does not exist: $JTREGEXE])
-    fi
-  else 
+# Setup the JTREG paths
+AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
+[
+  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg],
+  [Regression Test Harness @<:@probed@:>@])],
+  [],
+  [with_jtreg=no])
+
+  if test "x$with_jtreg" = xno; then
+    # jtreg disabled
+    AC_MSG_CHECKING([for jtreg])
     AC_MSG_RESULT(no)
-  fi 
- 
-  AC_SUBST(JT_HOME) 
-  AC_SUBST(JTREGEXE) 
+  else
+    if test "x$with_jtreg" != xyes; then
+      # with path specified.
+      JT_HOME="$with_jtreg"
+    fi
+
+    if test "x$JT_HOME" != x; then
+      AC_MSG_CHECKING([for jtreg])
+
+      # use JT_HOME enviroment var.
+      BASIC_FIXUP_PATH([JT_HOME])
+
+      # jtreg win32 script works for everybody
+      JTREGEXE="$JT_HOME/win32/bin/jtreg"
+
+      if test ! -f "$JTREGEXE"; then
+        AC_MSG_ERROR([JTReg executable does not exist: $JTREGEXE])
+      fi
+
+      AC_MSG_RESULT($JTREGEXE)
+    else
+      # try to find jtreg on path
+      BASIC_REQUIRE_PROG(JTREGEXE, jtreg)
+      JT_HOME="`$DIRNAME $JTREGEXE`"
+    fi
+  fi
+
+  AC_SUBST(JT_HOME)
+  AC_SUBST(JTREGEXE)
 ])

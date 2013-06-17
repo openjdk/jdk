@@ -106,7 +106,7 @@ public final class TryNode extends Statement {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterTryNode(this)) {
             // Need to do finallybody first for termination analysis. TODO still necessary?
             final Block newFinallyBody = finallyBody == null ? null : (Block)finallyBody.accept(visitor);

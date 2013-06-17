@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,9 +429,9 @@ public class T6889255 {
         // -- no Code attribute for the LocalVariableTable attribute
         if ((v.owner.flags() & Flags.ABSTRACT) != 0)
             return "arg" + (i - 1);
-        // bridge methods use xN
+        // bridge methods use argN. No LVT for them anymore
         if ((v.owner.flags() & Flags.BRIDGE) != 0)
-            return "x" + (i - 1);
+            return "arg" + (i - 1);
 
         // The rest of this method assumes the local conventions in the test program
         Type t = v.type;

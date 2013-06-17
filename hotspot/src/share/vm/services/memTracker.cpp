@@ -34,6 +34,7 @@
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 bool NMT_track_callsite = false;
@@ -77,7 +78,15 @@ void MemTracker::init_tracking_options(const char* option_line) {
   if (strcmp(option_line, "=summary") == 0) {
     _tracking_level = NMT_summary;
   } else if (strcmp(option_line, "=detail") == 0) {
-    _tracking_level = NMT_detail;
+    // detail relies on a stack-walking ability that may not
+    // be available depending on platform and/or compiler flags
+    if (PLATFORM_NMT_DETAIL_SUPPORTED) {
+      _tracking_level = NMT_detail;
+    } else {
+      jio_fprintf(defaultStream::error_stream(),
+        "NMT detail is not supported on this platform.  Using NMT summary instead.");
+      _tracking_level = NMT_summary;
+    }
   } else if (strcmp(option_line, "=off") != 0) {
     vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
   }
