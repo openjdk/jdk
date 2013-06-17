@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,7 +719,7 @@ inline void MacroAssembler::sub(Register s1, RegisterOrConstant s2, Register d, 
   if (offset != 0)       sub(d,  offset,                    d);
 }
 
-inline void MacroAssembler::swap(Address& a, Register d, int offset) {
+inline void MacroAssembler::swap(const Address& a, Register d, int offset) {
   relocate(a.rspec(offset));
   if (a.has_index()) { assert(offset == 0, ""); swap(a.base(), a.index(), d        ); }
   else               {                          swap(a.base(), a.disp() + offset, d); }
