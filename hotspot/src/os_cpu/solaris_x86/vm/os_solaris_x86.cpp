@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,10 @@ intptr_t* os::Solaris::ucontext_get_fp(ucontext_t *uc) {
   return (intptr_t*)uc->uc_mcontext.gregs[REG_FP];
 }
 
+address os::Solaris::ucontext_get_pc(ucontext_t *uc) {
+  return (address) uc->uc_mcontext.gregs[REG_PC];
+}
+
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread
 // is currently interrupted by SIGPROF.
 //
@@ -250,22 +254,6 @@ frame os::current_frame() {
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }
-}
-
-// This is a simple callback that just fetches a PC for an interrupted thread.
-// The thread need not be suspended and the fetched PC is just a hint.
-// This one is currently used for profiling the VMThread ONLY!
-
-// Must be synchronous
-void GetThreadPC_Callback::execute(OSThread::InterruptArguments *args) {
-  Thread*     thread = args->thread();
-  ucontext_t* uc     = args->ucontext();
-  intptr_t* sp;
-
-  assert(ProfileVM && thread->is_VM_thread(), "just checking");
-
-  ExtendedPC new_addr((address)uc->uc_mcontext.gregs[REG_PC]);
-  _addr = new_addr;
 }
 
 static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, gregset_t rs, lwpstatus_t *lwpstatus) {
@@ -419,14 +407,8 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   guarantee(sig != os::Solaris::SIGinterrupt(), "Can not chain VM interrupt signal, try -XX:+UseAltSigs");
 
   if (sig == os::Solaris::SIGasync()) {
-    if(thread){
-      OSThread::InterruptArguments args(thread, uc);
-      thread->osthread()->do_interrupt_callbacks_at_interrupt(&args);
-      return true;
-    }
-    else if(vmthread){
-      OSThread::InterruptArguments args(vmthread, uc);
-      vmthread->osthread()->do_interrupt_callbacks_at_interrupt(&args);
+    if(thread || vmthread){
+      OSThread::SR_handler(t, uc);
       return true;
     } else if (os::Solaris::chained_handler(sig, info, ucVoid)) {
       return true;

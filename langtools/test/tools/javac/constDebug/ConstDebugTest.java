@@ -25,26 +25,25 @@
  * @test
  * @bug 4645152 4785453
  * @summary javac compiler incorrectly inserts <clinit> when -g is specified
- * @library /tools/javac/lib
- * @build ToolBox
  * @run compile -g ConstDebugTest.java
  * @run main ConstDebugTest
  */
+import java.nio.file.Paths;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Method;
 
-//original test: test/tools/javac/constDebug/ConstDebug.sh
 public class ConstDebugTest {
 
     public static final long l = 12;
 
     public static void main(String args[]) throws Exception {
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -g -d . -classpath .${PS}${TESTSRC} $1.java 2> ${TMP1}
-//        if "${TESTJAVA}${FS}bin${FS}javap" $1.class | grep clinit; then fail
-        ToolBox.JavaToolArgs javapArgs =
-                new ToolBox.JavaToolArgs().setAllArgs("-v",
-                "-classpath", System.getProperty("test.classes"), "ConstDebugTest.class");
-        if (ToolBox.javap(javapArgs).contains("clinit")) {
-            throw new AssertionError(
-                "javac should not create a <clinit> method for ConstDebugTest class");
+        ClassFile classFile = ClassFile.read(Paths.get(System.getProperty("test.classes"),
+                ConstDebugTest.class.getSimpleName() + ".class"));
+        for (Method method: classFile.methods) {
+            if (method.getName(classFile.constant_pool).equals("<clinit>")) {
+                throw new AssertionError(
+                    "javac should not create a <clinit> method for ConstDebugTest class");
+            }
         }
     }
 

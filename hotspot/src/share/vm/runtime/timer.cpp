@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,11 @@
 # include "os_bsd.inline.hpp"
 #endif
 
+double TimeHelper::counter_to_seconds(jlong counter) {
+  double count = (double) counter;
+  double freq  = (double) os::elapsed_frequency();
+  return counter/freq;
+}
 
 void elapsedTimer::add(elapsedTimer t) {
   _counter += t._counter;
@@ -59,9 +64,7 @@ void elapsedTimer::stop() {
 }
 
 double elapsedTimer::seconds() const {
-  double count = (double) _counter;
-  double freq  = (double) os::elapsed_frequency();
-  return count/freq;
+ return TimeHelper::counter_to_seconds(_counter);
 }
 
 jlong elapsedTimer::milliseconds() const {
@@ -90,9 +93,7 @@ void TimeStamp::update() {
 double TimeStamp::seconds() const {
   assert(is_updated(), "must not be clear");
   jlong new_count = os::elapsed_counter();
-  double count = (double) new_count - _counter;
-  double freq  = (double) os::elapsed_frequency();
-  return count/freq;
+  return TimeHelper::counter_to_seconds(new_count - _counter);
 }
 
 jlong TimeStamp::milliseconds() const {
@@ -110,19 +111,15 @@ jlong TimeStamp::ticks_since_update() const {
 }
 
 TraceTime::TraceTime(const char* title,
-                     bool doit,
-                     bool print_cr,
-                     outputStream* logfile) {
+                     bool doit) {
   _active   = doit;
   _verbose  = true;
-  _print_cr = print_cr;
-  _logfile = (logfile != NULL) ? logfile : tty;
 
   if (_active) {
     _accum = NULL;
-    _logfile->stamp(PrintGCTimeStamps);
-    _logfile->print("[%s", title);
-    _logfile->flush();
+    tty->stamp(PrintGCTimeStamps);
+    tty->print("[%s", title);
+    tty->flush();
     _t.start();
   }
 }
@@ -130,17 +127,14 @@ TraceTime::TraceTime(const char* title,
 TraceTime::TraceTime(const char* title,
                      elapsedTimer* accumulator,
                      bool doit,
-                     bool verbose,
-                     outputStream* logfile) {
+                     bool verbose) {
   _active = doit;
   _verbose = verbose;
-  _print_cr = true;
-  _logfile = (logfile != NULL) ? logfile : tty;
   if (_active) {
     if (_verbose) {
-      _logfile->stamp(PrintGCTimeStamps);
-      _logfile->print("[%s", title);
-      _logfile->flush();
+      tty->stamp(PrintGCTimeStamps);
+      tty->print("[%s", title);
+      tty->flush();
     }
     _accum = accumulator;
     _t.start();
@@ -152,12 +146,8 @@ TraceTime::~TraceTime() {
     _t.stop();
     if (_accum!=NULL) _accum->add(_t);
     if (_verbose) {
-      if (_print_cr) {
-        _logfile->print_cr(", %3.7f secs]", _t.seconds());
-      } else {
-        _logfile->print(", %3.7f secs]", _t.seconds());
-      }
-      _logfile->flush();
+      tty->print_cr(", %3.7f secs]", _t.seconds());
+      tty->flush();
     }
   }
 }
