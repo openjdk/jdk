@@ -648,7 +648,7 @@ public class Lexer extends Scanner {
      *
      * @return The converted digit or -1 if invalid.
      */
-    private static int convertDigit(final char ch, final int base) {
+    protected static int convertDigit(final char ch, final int base) {
         int digit;
 
         if ('0' <= ch && ch <= '9') {
@@ -908,7 +908,7 @@ public class Lexer extends Scanner {
     /**
      * Scan over a string literal.
      */
-    private void scanString(final boolean add) {
+    protected void scanString(final boolean add) {
         // Type of string.
         TokenType type = STRING;
         // Record starting quote.
@@ -925,6 +925,9 @@ public class Lexer extends Scanner {
             if (ch0 == '\\') {
                 type = ESCSTRING;
                 skip(1);
+                if (! isEscapeCharacter(ch0)) {
+                    error(Lexer.message("invalid.escape.char"), STRING, position, limit);
+                }
                 if (isEOL(ch0)) {
                     // Multiline string literal
                     skipEOL(false);
@@ -979,6 +982,16 @@ public class Lexer extends Scanner {
     }
 
     /**
+     * Is the given character a valid escape char after "\" ?
+     *
+     * @param ch character to be checked
+     * @return if the given character is valid after "\"
+     */
+    protected boolean isEscapeCharacter(final char ch) {
+        return true;
+    }
+
+    /**
      * Convert string to number.
      *
      * @param valueString  String to convert.
@@ -1024,7 +1037,7 @@ public class Lexer extends Scanner {
     /**
      * Scan a number.
      */
-    private void scanNumber() {
+    protected void scanNumber() {
         // Record beginning of number.
         final int start = position;
         // Assume value is a decimal.
@@ -1583,7 +1596,7 @@ public class Lexer extends Scanner {
         return null;
     }
 
-    private static String message(final String msgId, final String... args) {
+    protected static String message(final String msgId, final String... args) {
         return ECMAErrors.getMessage("lexer.error." + msgId, args);
     }
 

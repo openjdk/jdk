@@ -29,6 +29,7 @@ import java.nio.file.spi.*;
 import java.nio.file.attribute.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -48,6 +49,7 @@ public class ZipFSTester {
             test0(fs);
             test1(fs);
             test2(fs);   // more tests
+            testTime(Paths.get(args[0]));
         }
     }
 
@@ -335,6 +337,46 @@ public class ZipFSTester {
         Files.delete(fs1Path);
         Files.delete(fs2Path);
         Files.delete(fs3Path);
+    }
+
+    // test file stamp
+    static void testTime(Path src) throws Exception {
+        // create a new filesystem, copy this file into it
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+        Path fsPath = getTempPath();
+        FileSystem fs = newZipFileSystem(fsPath, env);
+
+        System.out.println("test copy with timestamps...");
+        // copyin
+        Path dst = getPathWithParents(fs, "me");
+        Files.copy(src, dst, COPY_ATTRIBUTES);
+        checkEqual(src, dst);
+
+        BasicFileAttributes attrs = Files
+                        .getFileAttributeView(src, BasicFileAttributeView.class)
+                        .readAttributes();
+        System.out.println("mtime: " + attrs.lastModifiedTime());
+        System.out.println("ctime: " + attrs.creationTime());
+        System.out.println("atime: " + attrs.lastAccessTime());
+        System.out.println(" ==============>");
+        BasicFileAttributes dstAttrs = Files
+                        .getFileAttributeView(dst, BasicFileAttributeView.class)
+                        .readAttributes();
+        System.out.println("mtime: " + dstAttrs.lastModifiedTime());
+        System.out.println("ctime: " + dstAttrs.creationTime());
+        System.out.println("atime: " + dstAttrs.lastAccessTime());
+
+        // 1-second granularity
+        if (attrs.lastModifiedTime().to(TimeUnit.SECONDS) !=
+            dstAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ||
+            attrs.lastAccessTime().to(TimeUnit.SECONDS) !=
+            dstAttrs.lastAccessTime().to(TimeUnit.SECONDS) ||
+            attrs.creationTime().to(TimeUnit.SECONDS) !=
+            dstAttrs.creationTime().to(TimeUnit.SECONDS)) {
+            throw new RuntimeException("Timestamp Copy Failed!");
+        }
+        Files.delete(fsPath);
     }
 
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)

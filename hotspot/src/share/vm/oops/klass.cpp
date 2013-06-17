@@ -37,6 +37,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/atomic.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -140,7 +141,7 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) {
   return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             Metaspace::ClassType, CHECK_NULL);
+                             MetaspaceObj::ClassType, CHECK_NULL);
 }
 
 Klass::Klass() {
@@ -168,7 +169,7 @@ Klass::Klass() {
   set_next_sibling(NULL);
   set_next_link(NULL);
   set_alloc_count(0);
-  TRACE_SET_KLASS_TRACE_ID(this, 0);
+  TRACE_INIT_ID(this);
 
   set_prototype_header(markOopDesc::prototype());
   set_biased_lock_revocation_count(0);
@@ -511,8 +512,9 @@ void Klass::restore_unshareable_info(TRAPS) {
   // (same order as class file parsing)
   loader_data->add_class(this);
 
-  // Recreate the class mirror
-  java_lang_Class::create_mirror(this, CHECK);
+  // Recreate the class mirror.  The protection_domain is always null for
+  // boot loader, for now.
+  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
 }
 
 Klass* Klass::array_klass_or_null(int rank) {

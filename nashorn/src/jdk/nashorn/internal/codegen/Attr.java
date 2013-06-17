@@ -202,10 +202,40 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
         // This visitor will assign symbol to all declared variables, except function declarations (which are taken care
         // in a separate step above) and "var" declarations in for loop initializers.
+        //
+        // It also handles the case that a variable can be undefined, e.g
+        // if (cond) {
+        //    x = x.y;
+        // }
+        // var x = 17;
+        //
+        // by making sure that no identifier has been found earlier in the body than the
+        // declaration - if such is the case the identifier is flagged as caBeUndefined to
+        // be safe if it turns into a local var. Otherwise corrupt bytecode results
+
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            private final Set<String> uses = new HashSet<>();
+            private final Set<String> canBeUndefined = new HashSet<>();
+
             @Override
             public boolean enterFunctionNode(final FunctionNode nestedFn) {
                 return false;
+            }
+
+            @Override
+            public Node leaveIdentNode(final IdentNode identNode) {
+                uses.add(identNode.getName());
+                return identNode;
+            }
+
+            @Override
+            public boolean enterVarNode(final VarNode varNode) {
+                final String name = varNode.getName().getName();
+                //if this is used the var node symbol needs to be tagged as can be undefined
+                if (uses.contains(name)) {
+                    canBeUndefined.add(name);
+                }
+                return true;
             }
 
             @Override
@@ -214,6 +244,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 if (varNode.isStatement()) {
                     final IdentNode ident  = varNode.getName();
                     final Symbol    symbol = defineSymbol(body, ident.getName(), IS_VAR);
+                    if (canBeUndefined.contains(ident.getName())) {
+                        symbol.setType(Type.OBJECT);
+                        symbol.setCanBeUndefined();
+                    }
                     functionNode.addDeclaredSymbol(symbol);
                     if (varNode.isFunctionDeclaration()) {
                         newType(symbol, FunctionNode.FUNCTION_TYPE);
