@@ -252,6 +252,16 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    // Could be a zombie method
+    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
+      return false;
+    }
+
+    // Could be a zombie method
+    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
+      return false;
+    }
+
     // It should be safe to construct the sender though it might not be valid
 
     frame sender(_SENDER_SP, younger_sp, adjusted_stack);
@@ -294,10 +304,10 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return jcw_safe;
     }
 
-    // If the frame size is 0 something is bad because every nmethod has a non-zero frame size
+    // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size
     // because you must allocate window space
 
-    if (sender_blob->frame_size() == 0) {
+    if (sender_blob->frame_size() <= 0) {
       assert(!sender_blob->is_nmethod(), "should count return address at least");
       return false;
     }
