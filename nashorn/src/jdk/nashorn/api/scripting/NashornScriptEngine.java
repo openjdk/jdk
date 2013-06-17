@@ -72,7 +72,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private final ScriptObject        global;
 
     // default options passed to Nashorn Options object
-    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-af", "-doe" };
+    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-doe" };
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
