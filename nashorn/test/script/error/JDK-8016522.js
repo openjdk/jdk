@@ -22,14 +22,9 @@
  */
 
 /**
- * This loads "module.js" and calls the anonymous top-level function from it.
+ * JDK-8016522: Numeric literal must not be followed by IdentifierStart
  *
- * @test
- * @run
+ * @test/compile-error
  */
 
-var exports = {};
-var f = load(__DIR__ + "module.js");
-print(f);
-f(exports);
-exports.func();
+3in {};

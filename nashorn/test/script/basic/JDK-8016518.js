@@ -22,14 +22,17 @@
  */
 
 /**
- * This loads "module.js" and calls the anonymous top-level function from it.
+ * JDK-8016518: Parsing of octal string escapes is broken
  *
  * @test
  * @run
  */
 
-var exports = {};
-var f = load(__DIR__ + "module.js");
-print(f);
-f(exports);
-exports.func();
+print("\471".charCodeAt(0));
+print("\471".charCodeAt(1));
+
+print("\377".length);
+print("\377".charCodeAt(0));
+print("\400".length);
+print("\400".charCodeAt(0));
+print("\400".charCodeAt(1));

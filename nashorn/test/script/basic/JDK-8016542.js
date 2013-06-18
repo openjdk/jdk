@@ -22,14 +22,16 @@
  */
 
 /**
- * This loads "module.js" and calls the anonymous top-level function from it.
+ * JDK-8016542: String.prototype.replace called with function argument should not replace $ patterns
  *
  * @test
  * @run
  */
 
-var exports = {};
-var f = load(__DIR__ + "module.js");
-print(f);
-f(exports);
-exports.func();
+print("abc".replace("a", "$&"));
+print("abc".replace("b", "$&"));
+print("abc".replace("c", "$&"));
+
+print("abc".replace("a", function(){return "$&"}));
+print("abc".replace("b", function(){return "$&"}));
+print("abc".replace("c", function(){return "$&"}));
