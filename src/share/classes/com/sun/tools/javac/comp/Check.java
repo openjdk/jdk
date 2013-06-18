@@ -544,7 +544,7 @@ public class Check {
         if (checkContext.compatible(found, req, checkContext.checkWarner(pos, found, req))) {
             return found;
         } else {
-            if (found.getTag().isSubRangeOf(DOUBLE) && req.getTag().isSubRangeOf(DOUBLE)) {
+            if (found.isNumeric() && req.isNumeric()) {
                 checkContext.report(pos, diags.fragment("possible.loss.of.precision", found, req));
                 return types.createErrorType(found);
             }
@@ -754,7 +754,7 @@ public class Check {
      *  @param t             The type to be checked.
      */
     Type checkNullOrRefType(DiagnosticPosition pos, Type t) {
-        if (t.isNullOrReference())
+        if (t.isReference() || t.hasTag(BOT))
             return t;
         else
             return typeTagError(pos,
@@ -3228,7 +3228,7 @@ public class Check {
     void checkDivZero(DiagnosticPosition pos, Symbol operator, Type operand) {
         if (operand.constValue() != null
             && lint.isEnabled(LintCategory.DIVZERO)
-            && (operand.getTag().isSubRangeOf(LONG))
+            && operand.getTag().isSubRangeOf(LONG)
             && ((Number) (operand.constValue())).longValue() == 0) {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
