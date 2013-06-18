@@ -22,14 +22,30 @@
  */
 
 /**
- * This loads "module.js" and calls the anonymous top-level function from it.
+ * JDK-8011893: JS Object builtin prototype is not thread safe
  *
  * @test
  * @run
  */
 
-var exports = {};
-var f = load(__DIR__ + "module.js");
-print(f);
-f(exports);
-exports.func();
+var a = {};
+var thread = new java.lang.Thread(new java.lang.Runnable() {
+    run: function() {
+        print("Thread starts");
+        for (var i = 0; i < 1000000; i++) {
+            // Unsubscribe to builtin, subscribe to new proto
+            var b = Object.create(a);
+        }
+        print("Thread done");
+    }
+});
+
+print("Main starts");
+thread.start();
+for (var j = 0; j < 1000000; j++) {
+    // Subscribe to builtin prototype.
+    a = {};
+}
+
+thread.join();
+print("Main done");

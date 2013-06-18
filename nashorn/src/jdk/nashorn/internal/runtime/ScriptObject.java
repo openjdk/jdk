@@ -105,6 +105,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** Is this a prototype PropertyMap? */
     public static final int IS_PROTOTYPE   = 0b0000_1000;
 
+    /** Is length property not-writable? */
+    public static final int IS_LENGTH_NOT_WRITABLE = 0b0001_0000;
+
     /** Spill growth rate - by how many elements does {@link ScriptObject#spill} when full */
     public static final int SPILL_RATE = 8;
 
@@ -443,7 +446,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             if (newValue && property != null) {
                 // Temporarily clear flags.
                 property = modifyOwnProperty(property, 0);
-                set(key, value, getContext()._strict);
+                set(key, value, false);
             }
 
             if (property == null) {
@@ -998,7 +1001,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param value the value to write at the given index
      */
     public void setArgument(final int key, final Object value) {
-        set(key, value, getContext()._strict);
+        set(key, value, false);
     }
 
     /**
@@ -1105,7 +1108,8 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * return a List of own keys associated with the object.
+     * return an array of own property keys associated with the object.
+     *
      * @param all True if to include non-enumerable keys.
      * @return Array of keys.
      */
@@ -1206,7 +1210,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * the proto chain
      *
      * @param instance instace to check
-     * @return true if instance of instance
+     * @return true if 'instance' is an instance of this object
      */
     public boolean isInstance(final ScriptObject instance) {
         return false;
@@ -1277,18 +1281,34 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * @return {@code true} if is prototype
      */
-    public boolean isPrototype() {
+    public final boolean isPrototype() {
         return (flags & IS_PROTOTYPE) != 0;
     }
 
     /**
      * Flag this object as having a prototype.
      */
-    public void setIsPrototype() {
+    public final void setIsPrototype() {
         if (proto != null && !isPrototype()) {
             proto.addPropertyListener(this);
         }
         flags |= IS_PROTOTYPE;
+    }
+
+    /**
+     * Check if this object has non-writable length property
+     *
+     * @return {@code true} if 'length' property is non-writable
+     */
+    public final boolean isLengthNotWritable() {
+        return (flags & IS_LENGTH_NOT_WRITABLE) != 0;
+    }
+
+    /**
+     * Flag this object as having non-writable length property
+     */
+    public void setIsLengthNotWritable() {
+        flags |= IS_LENGTH_NOT_WRITABLE;
     }
 
     /**
@@ -1363,7 +1383,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /**
      * Check whether this ScriptObject is frozen
-     * @return true if frozed
+     * @return true if frozen
      */
     public boolean isFrozen() {
         return getMap().isFrozen();
@@ -1393,7 +1413,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      */
     public void clear() {
-        final boolean strict = getContext()._strict;
+        final boolean strict = isStrictContext();
         final Iterator<String> iter = propertyIterator();
         while (iter.hasNext()) {
             delete(iter.next(), strict);
@@ -1481,7 +1501,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     public Object put(final Object key, final Object value) {
         final Object oldValue = get(key);
-        set(key, value, getContext()._strict);
+        set(key, value, isStrictContext());
         return oldValue;
     }
 
@@ -1493,7 +1513,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param otherMap a {@literal <key,value>} map of properties to add
      */
     public void putAll(final Map<?, ?> otherMap) {
-        final boolean strict = getContext()._strict;
+        final boolean strict = isStrictContext();
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
             set(entry.getKey(), entry.getValue(), strict);
         }
@@ -1508,7 +1528,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     public Object remove(final Object key) {
         final Object oldValue = get(key);
-        delete(key, getContext()._strict);
+        delete(key, isStrictContext());
         return oldValue;
     }
 
@@ -1520,7 +1540,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @return if the delete was successful or not
      */
     public boolean delete(final Object key) {
-        return delete(key, getContext()._strict);
+        return delete(key, isStrictContext());
     }
 
     /**
@@ -2222,7 +2242,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
            return;
        }
 
-       final boolean isStrict = getContext()._strict;
+       final boolean isStrict = isStrictContext();
 
        if (newLength > arrayLength) {
            setArray(getArray().ensure(newLength - 1));

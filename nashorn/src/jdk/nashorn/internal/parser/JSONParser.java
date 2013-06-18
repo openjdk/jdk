@@ -149,9 +149,9 @@ public class JSONParser extends AbstractParser {
             @Override
             protected void scanNumber() {
                 // Record beginning of number.
-                final int start = position;
+                final int startPosition = position;
                 // Assume value is a decimal.
-                TokenType type = TokenType.DECIMAL;
+                TokenType valueType = TokenType.DECIMAL;
 
                 // floating point can't start with a "." with no leading digit before
                 if (ch0 == '.') {
@@ -211,11 +211,11 @@ public class JSONParser extends AbstractParser {
                         }
                     }
 
-                    type = TokenType.FLOATING;
+                    valueType = TokenType.FLOATING;
                 }
 
                 // Add number token.
-                add(type, start);
+                add(valueType, startPosition);
             }
 
             // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONEscapeCharacter
