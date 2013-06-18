@@ -1435,11 +1435,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
 
-            if (shouldStop(CompileState.UNLAMBDA))
-                return;
+            if (source.allowLambda()) {
+                if (shouldStop(CompileState.UNLAMBDA))
+                    return;
 
-            env.tree = lambdaToMethod.translateTopLevelClass(env, env.tree, localMake);
-            compileStates.put(env, CompileState.UNLAMBDA);
+                env.tree = lambdaToMethod.translateTopLevelClass(env, env.tree, localMake);
+                compileStates.put(env, CompileState.UNLAMBDA);
+            }
 
             if (shouldStop(CompileState.LOWER))
                 return;
