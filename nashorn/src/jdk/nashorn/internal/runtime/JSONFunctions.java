@@ -101,7 +101,6 @@ public final class JSONFunctions {
         final Object val = holder.get(name);
         if (val instanceof ScriptObject) {
             final ScriptObject     valueObj = (ScriptObject)val;
-            final boolean          strict   = valueObj.isStrictContext();
             final Iterator<String> iter     = valueObj.propertyIterator();
 
             while (iter.hasNext()) {
@@ -109,9 +108,9 @@ public final class JSONFunctions {
                 final Object newElement = walk(valueObj, key, reviver);
 
                 if (newElement == ScriptRuntime.UNDEFINED) {
-                    valueObj.delete(key, strict);
+                    valueObj.delete(key, false);
                 } else {
-                    setPropertyValue(valueObj, key, newElement, strict);
+                    setPropertyValue(valueObj, key, newElement, false);
                 }
             }
         }
@@ -164,14 +163,13 @@ public final class JSONFunctions {
         } else if (node instanceof ObjectNode) {
             final ObjectNode   objNode  = (ObjectNode) node;
             final ScriptObject object   = ((GlobalObject)global).newObject();
-            final boolean      strict   = global.isStrictContext();
 
             for (final PropertyNode pNode: objNode.getElements()) {
                 final Node         valueNode = pNode.getValue();
 
                 final String name = pNode.getKeyName();
                 final Object value = convertNode(global, valueNode);
-                setPropertyValue(object, name, value, strict);
+                setPropertyValue(object, name, value, false);
             }
 
             return object;
