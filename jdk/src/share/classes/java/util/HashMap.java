@@ -29,6 +29,7 @@ import java.io.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1299,10 +1300,112 @@ public class HashMap<K,V>
      */
     public V remove(Object key) {
         Entry<K,V> e = removeEntryForKey(key);
-        return (e == null ? null : e.value);
+       return (e == null ? null : e.value);
+   }
+
+   // optimized implementations of default methods in Map
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        final int expectedModCount = modCount;
+        if (nullKeyEntry != null) {
+            forEachNullKey(expectedModCount, action);
+        }
+        Object[] tab = this.table;
+        for (int index = 0; index < tab.length; index++) {
+            Object item = tab[index];
+            if (item == null) {
+                continue;
+            }
+            if (item instanceof HashMap.TreeBin) {
+                eachTreeNode(expectedModCount, ((TreeBin)item).first, action);
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>)item;
+            while (entry != null) {
+                action.accept(entry.key, entry.value);
+                entry = (Entry<K, V>)entry.next;
+
+                if (expectedModCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
     }
 
-    // optimized implementations of default methods in Map
+    private void eachTreeNode(int expectedModCount, TreeNode<K, V> node, BiConsumer<? super K, ? super V> action) {
+        while (node != null) {
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>)node.entry;
+            action.accept(entry.key, entry.value);
+            node = (TreeNode<K, V>)entry.next;
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    private void forEachNullKey(int expectedModCount, BiConsumer<? super K, ? super V> action) {
+        action.accept(null, nullKeyEntry.value);
+
+        if (expectedModCount != modCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        final int expectedModCount = modCount;
+        if (nullKeyEntry != null) {
+            replaceforNullKey(expectedModCount, function);
+        }
+        Object[] tab = this.table;
+        for (int index = 0; index < tab.length; index++) {
+            Object item = tab[index];
+            if (item == null) {
+                continue;
+            }
+            if (item instanceof HashMap.TreeBin) {
+                replaceEachTreeNode(expectedModCount, ((TreeBin)item).first, function);
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>)item;
+            while (entry != null) {
+                entry.value = function.apply(entry.key, entry.value);
+                entry = (Entry<K, V>)entry.next;
+
+                if (expectedModCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
+    }
+
+    private void replaceEachTreeNode(int expectedModCount, TreeNode<K, V> node, BiFunction<? super K, ? super V, ? extends V> function) {
+        while (node != null) {
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>)node.entry;
+            entry.value = function.apply(entry.key, entry.value);
+            node = (TreeNode<K, V>)entry.next;
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    private void replaceforNullKey(int expectedModCount, BiFunction<? super K, ? super V, ? extends V> function) {
+        nullKeyEntry.value = function.apply(null, nullKeyEntry.value);
+
+        if (expectedModCount != modCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
 
     @Override
     public V putIfAbsent(K key, V value) {
@@ -2297,12 +2400,12 @@ public class HashMap<K,V>
             if (e == null)
                 throw new NoSuchElementException();
 
-            if (e instanceof Entry) {
-                retVal = (Entry<K,V>)e;
-                next = ((Entry<K,V>)e).next;
-            } else { // TreeBin
+            if (e instanceof TreeNode) { // TreeBin
                 retVal = (Entry<K,V>)((TreeNode)e).entry;
                 next = retVal.next;
+            } else {
+                retVal = (Entry<K,V>)e;
+                next = ((Entry<K,V>)e).next;
             }
 
             if (next == null) { // Move to next bin
