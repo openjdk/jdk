@@ -110,49 +110,27 @@ public class Type implements PrimitiveType {
     }
 
     public boolean isNumeric() {
-        switch (tag) {
-            case BYTE: case CHAR:
-            case SHORT:
-            case INT: case LONG:
-            case FLOAT: case DOUBLE:
-                return true;
-            default:
-                return false;
-        }
+        return tag.isNumeric;
     }
 
     public boolean isPrimitive() {
-        return (isNumeric() || tag == BOOLEAN);
+        return tag.isPrimitive;
     }
 
     public boolean isPrimitiveOrVoid() {
-        return (isPrimitive() || tag == VOID);
+        return tag.isPrimitiveOrVoid;
     }
 
     public boolean isReference() {
-        switch (tag) {
-        case CLASS:
-        case ARRAY:
-        case TYPEVAR:
-        case WILDCARD:
-        case ERROR:
-            return true;
-        default:
-            return false;
-        }
+        return tag.isReference;
     }
 
     public boolean isNullOrReference() {
-        return (tag == BOT || isReference());
+        return (tag.isReference || tag == BOT);
     }
 
     public boolean isPartial() {
-        switch(tag) {
-            case ERROR: case UNKNOWN: case UNDETVAR:
-                return true;
-            default:
-                return false;
-        }
+        return tag.isPartial;
     }
 
     /**
