@@ -90,7 +90,7 @@ public final class NativeError extends ScriptObject {
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
-            this.delete(NativeError.MESSAGE, Global.isStrict());
+            this.delete(NativeError.MESSAGE, false);
         }
     }
 
@@ -166,7 +166,7 @@ public final class NativeError extends ScriptObject {
     public static Object setLineNumber(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(LINENUMBER, value, Global.isStrict());
+        sobj.set(LINENUMBER, value, false);
         return value;
     }
 
@@ -194,7 +194,7 @@ public final class NativeError extends ScriptObject {
     public static Object setColumnNumber(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(COLUMNNUMBER, value, Global.isStrict());
+        sobj.set(COLUMNNUMBER, value, false);
         return value;
     }
 
@@ -222,7 +222,7 @@ public final class NativeError extends ScriptObject {
     public static Object setFileName(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(FILENAME, value, Global.isStrict());
+        sobj.set(FILENAME, value, false);
         return value;
     }
 
@@ -278,7 +278,7 @@ public final class NativeError extends ScriptObject {
     public static Object setStack(final Object self, final Object value) {
         Global.checkObject(self);
         final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(STACK, value, Global.isStrict());
+        sobj.set(STACK, value, false);
         return value;
     }
 

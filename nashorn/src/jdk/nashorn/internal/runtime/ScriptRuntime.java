@@ -825,6 +825,13 @@ public final class ScriptRuntime {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
         }
 
+        if (clazz instanceof ScriptObjectMirror) {
+            if (obj instanceof ScriptObjectMirror) {
+                return ((ScriptObjectMirror)clazz).isInstance((ScriptObjectMirror)obj);
+            }
+            return false;
+        }
+
         throw typeError("instanceof.on.non.object");
     }
 

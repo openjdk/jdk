@@ -22,14 +22,30 @@
  */
 
 /**
- * This loads "module.js" and calls the anonymous top-level function from it.
+ * JDK-8016235 : use before definition in catch block generated erroneous bytecode
+ * as there is no guarantee anything in the try block has executed. 
  *
  * @test
- * @run
+ * @run 
  */
 
-var exports = {};
-var f = load(__DIR__ + "module.js");
-print(f);
-f(exports);
-exports.func();
+function f() {
+    try {
+	var parser = {};
+    } catch (e) {
+	parser = parser.context();
+    }
+}
+
+function g() { 
+    try {
+        return "apa";
+    } catch (tmp) {
+	//for now, too conservative as var ex declaration exists on the function
+	//level, but at least the code does not break, and the analysis is driven
+	//from the catch block (the rare case), not the try block (the common case)
+        var ex = new Error("DOM Exception 5");
+        ex.code = ex.number = 5;
+        return ex;
+    }
+}
