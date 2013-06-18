@@ -1532,21 +1532,23 @@ public class Attr extends JCTree.Visitor {
                 // If one arm has an integer subrange type (i.e., byte,
                 // short, or char), and the other is an integer constant
                 // that fits into the subrange, return the subrange type.
-                if (thenUnboxed.getTag().isStrictSubRangeOf(INT) && elseUnboxed.hasTag(INT) &&
-                    types.isAssignable(elseUnboxed, thenUnboxed))
+                if (thenUnboxed.getTag().isStrictSubRangeOf(INT) &&
+                    elseUnboxed.hasTag(INT) &&
+                    types.isAssignable(elseUnboxed, thenUnboxed)) {
                     return thenUnboxed.baseType();
-                if (elseUnboxed.getTag().isStrictSubRangeOf(INT) && thenUnboxed.hasTag(INT) &&
-                    types.isAssignable(thenUnboxed, elseUnboxed))
+                }
+                if (elseUnboxed.getTag().isStrictSubRangeOf(INT) &&
+                    thenUnboxed.hasTag(INT) &&
+                    types.isAssignable(thenUnboxed, elseUnboxed)) {
                     return elseUnboxed.baseType();
+                }
 
-                for (TypeTag tag : TypeTag.values()) {
-                    if (tag.ordinal() >= TypeTag.getTypeTagCount()) break;
+                for (TypeTag tag : primitiveTags) {
                     Type candidate = syms.typeOfTag[tag.ordinal()];
-                    if (candidate != null &&
-                        candidate.isPrimitive() &&
-                        types.isSubtype(thenUnboxed, candidate) &&
-                        types.isSubtype(elseUnboxed, candidate))
+                    if (types.isSubtype(thenUnboxed, candidate) &&
+                        types.isSubtype(elseUnboxed, candidate)) {
                         return candidate;
+                    }
                 }
             }
 
@@ -1574,6 +1576,17 @@ public class Attr extends JCTree.Visitor {
             // always be possible to infer "Object" if nothing better.
             return types.lub(thentype.baseType(), elsetype.baseType());
         }
+
+    final static TypeTag[] primitiveTags = new TypeTag[]{
+        BYTE,
+        CHAR,
+        SHORT,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+    };
 
     public void visitIf(JCIf tree) {
         attribExpr(tree.cond, env, syms.booleanType);
