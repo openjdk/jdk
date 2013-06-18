@@ -2875,7 +2875,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                 PAGE_READWRITE);
   // If reservation failed, return NULL
   if (p_buf == NULL) return NULL;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, mtNone, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -2941,7 +2941,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-          bytes_to_release, CALLER_PC);
+          bytes_to_release, mtNone, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -2961,9 +2961,10 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, pc);
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_commit((address)p_buf, bytes, pc);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, mtNone, pc);
+  } else {
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, mtNone, pc);
   }
 
   // made it this far, success
@@ -3154,8 +3155,7 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
     if (res != NULL) {
       address pc = CALLER_PC;
-      MemTracker::record_virtual_memory_reserve((address)res, bytes, pc);
-      MemTracker::record_virtual_memory_commit((address)res, bytes, pc);
+      MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, mtNone, pc);
     }
 
     return res;
@@ -3164,8 +3164,6 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
 bool os::release_memory_special(char* base, size_t bytes) {
   assert(base != NULL, "Sanity check");
-  // Memory allocated via reserve_memory_special() is committed
-  MemTracker::record_virtual_memory_uncommit((address)base, bytes);
   return release_memory(base, bytes);
 }
 

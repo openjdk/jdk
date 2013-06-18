@@ -3363,22 +3363,21 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   }
 
   // The memory is committed
-  address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)addr, bytes, pc);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, pc);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
 
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
   if (rslt == 0) {
-    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
-    MemTracker::record_virtual_memory_release((address)base, bytes);
+    tkr.record((address)base, bytes);
     return true;
   } else {
-   return false;
+    tkr.discard();
+    return false;
   }
 }
 
