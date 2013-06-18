@@ -25,15 +25,16 @@
 
 package java.lang.invoke;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.security.ProtectionDomain;
-import java.util.concurrent.atomic.AtomicInteger;
 import jdk.internal.org.objectweb.asm.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import sun.misc.Unsafe;
+
+import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * Lambda metafactory implementation which dynamically creates an inner-class-like class per lambda callsite.
@@ -41,6 +42,8 @@ import java.security.PrivilegedAction;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     private static final int CLASSFILE_VERSION = 51;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String NAME_MAGIC_ACCESSOR_IMPL = "java/lang/invoke/MagicLambdaImpl";
@@ -77,36 +80,51 @@ import java.security.PrivilegedAction;
     private final Type[] instantiatedArgumentTypes;  // ASM types for the functional interface arguments
 
     /**
-     * General meta-factory constructor, standard cases and allowing for uncommon options such as serialization.
+     * General meta-factory constructor, supporting both standard cases and
+     * allowing for uncommon options such as serialization or bridging.
      *
-     * @param caller Stacked automatically by VM; represents a lookup context with the accessibility privileges
-     *               of the caller.
-     * @param invokedType Stacked automatically by VM; the signature of the invoked method, which includes the
-     *                    expected static type of the returned lambda object, and the static types of the captured
-     *                    arguments for the lambda.  In the event that the implementation method is an instance method,
-     *                    the first argument in the invocation signature will correspond to the receiver.
-     * @param samMethod The primary method in the functional interface to which the lambda or method reference is
-     *                  being converted, represented as a method handle.
-     * @param implMethod The implementation method which should be called (with suitable adaptation of argument
-     *                   types, return types, and adjustment for captured arguments) when methods of the resulting
-     *                   functional interface instance are invoked.
-     * @param instantiatedMethodType The signature of the primary functional interface method after type variables
-     *                               are substituted with their instantiation from the capture site
-     * @param flags A bitmask containing flags that may influence the translation of this lambda expression.  Defined
-     *              fields include FLAG_SERIALIZABLE.
-     * @param markerInterfaces Additional interfaces which the lambda object should implement.
+     * @param caller Stacked automatically by VM; represents a lookup context
+     *               with the accessibility privileges of the caller.
+     * @param invokedType Stacked automatically by VM; the signature of the
+     *                    invoked method, which includes the expected static
+     *                    type of the returned lambda object, and the static
+     *                    types of the captured arguments for the lambda.  In
+     *                    the event that the implementation method is an
+     *                    instance method, the first argument in the invocation
+     *                    signature will correspond to the receiver.
+     * @param samMethod The primary method in the functional interface to which
+     *                  the lambda or method reference is being converted,
+     *                  represented as a method handle.
+     * @param implMethod The implementation method which should be called (with
+     *                   suitable adaptation of argument types, return types,
+     *                   and adjustment for captured arguments) when methods of
+     *                   the resulting functional interface instance are invoked.
+     * @param instantiatedMethodType The signature of the primary functional
+     *                               interface method after type variables are
+     *                               substituted with their instantiation from
+     *                               the capture site
+     * @param isSerializable Should the lambda be made serializable?  If set,
+     *                       either the target type or one of the additional SAM
+     *                       types must extend {@code Serializable}.
+     * @param markerInterfaces Additional interfaces which the lambda object
+     *                       should implement.
+     * @param additionalBridges Method types for additional signatures to be
+     *                          bridged to the implementation method
      * @throws ReflectiveOperationException
-     * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
+     * @throws LambdaConversionException If any of the meta-factory protocol
+     * invariants are violated
      */
     public InnerClassLambdaMetafactory(MethodHandles.Lookup caller,
                                        MethodType invokedType,
                                        MethodHandle samMethod,
                                        MethodHandle implMethod,
                                        MethodType instantiatedMethodType,
-                                       int flags,
-                                       Class<?>[] markerInterfaces)
+                                       boolean isSerializable,
+                                       Class<?>[] markerInterfaces,
+                                       MethodType[] additionalBridges)
             throws ReflectiveOperationException, LambdaConversionException {
-        super(caller, invokedType, samMethod, implMethod, instantiatedMethodType, flags, markerInterfaces);
+        super(caller, invokedType, samMethod, implMethod, instantiatedMethodType,
+              isSerializable, markerInterfaces, additionalBridges);
         implMethodClassName = implDefiningClass.getName().replace('.', '/');
         implMethodName = implInfo.getName();
         implMethodDesc = implMethodType.toMethodDescriptorString();
@@ -134,7 +152,8 @@ import java.security.PrivilegedAction;
      * @return a CallSite, which, when invoked, will return an instance of the
      * functional interface
      * @throws ReflectiveOperationException
-     * @throws LambdaConversionException If properly formed functional interface is not found
+     * @throws LambdaConversionException If properly formed functional interface
+     * is not found
      */
     @Override
     CallSite buildCallSite() throws ReflectiveOperationException, LambdaConversionException {
@@ -174,8 +193,16 @@ import java.security.PrivilegedAction;
      * Generate a class file which implements the functional
      * interface, define and return the class.
      *
+     * @implNote The class that is generated does not include signature
+     * information for exceptions that may be present on the SAM method.
+     * This is to reduce classfile size, and is harmless as checked exceptions
+     * are erased anyway, no one will ever compile against this classfile,
+     * and we make no guarantees about the reflective properties of lambda
+     * objects.
+     *
      * @return a Class which implements the functional interface
-     * @throws LambdaConversionException If properly formed functional interface is not found
+     * @throws LambdaConversionException If properly formed functional interface
+     * is not found
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
         String samName = samBase.getName().replace('.', '/');
@@ -197,28 +224,22 @@ import java.security.PrivilegedAction;
 
         generateConstructor();
 
-        MethodAnalyzer ma = new MethodAnalyzer();
-
         // Forward the SAM method
-        if (ma.getSamMethod() == null) {
-            throw new LambdaConversionException(String.format("Functional interface method not found: %s", samMethodType));
-        } else {
-            generateForwardingMethod(ma.getSamMethod(), false);
-        }
+        String methodDescriptor = samMethodType.toMethodDescriptorString();
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, samInfo.getName(), methodDescriptor, null, null);
+        new ForwardingMethodGenerator(mv).generate(methodDescriptor);
 
         // Forward the bridges
-        // @@@ The commented-out code is temporary, pending the VM's ability to bridge all methods on request
-        // @@@ Once the VM can do fail-over, uncomment the !ma.wasDefaultMethodFound() test, and emit the appropriate
-        // @@@ classfile attribute to request custom bridging.  See 8002092.
-        if (!ma.getMethodsToBridge().isEmpty() /* && !ma.conflictFoundBetweenDefaultAndBridge() */ ) {
-            for (Method m : ma.getMethodsToBridge()) {
-                generateForwardingMethod(m, true);
+        if (additionalBridges != null) {
+            for (MethodType mt : additionalBridges) {
+                methodDescriptor = mt.toMethodDescriptorString();
+                mv = cw.visitMethod(ACC_PUBLIC|ACC_BRIDGE, samInfo.getName(), methodDescriptor, null, null);
+                new ForwardingMethodGenerator(mv).generate(methodDescriptor);
             }
         }
 
-        if (isSerializable) {
+        if (isSerializable)
             generateWriteReplace();
-        }
 
         cw.visitEnd();
 
@@ -247,8 +268,8 @@ import java.security.PrivilegedAction;
             }
         );
 
-        return (Class<?>) Unsafe.getUnsafe().defineClass(lambdaClassName, classBytes, 0, classBytes.length,
-                                                                   loader, pd);
+        return UNSAFE.defineClass(lambdaClassName, classBytes, 0, classBytes.length,
+                                  loader, pd);
     }
 
     /**
@@ -265,7 +286,8 @@ import java.security.PrivilegedAction;
             ctor.visitVarInsn(ALOAD, 0);
             ctor.visitVarInsn(argTypes[i].getOpcode(ILOAD), lvIndex + 1);
             lvIndex += argTypes[i].getSize();
-            ctor.visitFieldInsn(PUTFIELD, lambdaClassName, argNames[i], argTypes[i].getDescriptor());
+            ctor.visitFieldInsn(PUTFIELD, lambdaClassName, argNames[i],
+                                argTypes[i].getDescriptor());
         }
         ctor.visitInsn(RETURN);
         ctor.visitMaxs(-1, -1); // Maxs computed by ClassWriter.COMPUTE_MAXS, these arguments ignored
@@ -283,7 +305,7 @@ import java.security.PrivilegedAction;
 
         mv.visitCode();
         mv.visitTypeInsn(NEW, NAME_SERIALIZED_LAMBDA);
-        mv.visitInsn(DUP);;
+        mv.visitInsn(DUP);
         mv.visitLdcInsn(Type.getType(targetClass));
         mv.visitLdcInsn(samInfo.getReferenceKind());
         mv.visitLdcInsn(invokedType.returnType().getName().replace('.', '/'));
@@ -313,24 +335,6 @@ import java.security.PrivilegedAction;
     }
 
     /**
-     * Generate a method which calls the lambda implementation method,
-     * converting arguments, as needed.
-     * @param m The method whose signature should be generated
-     * @param isBridge True if this methods should be flagged as a bridge
-     */
-    private void generateForwardingMethod(Method m, boolean isBridge) {
-        Class<?>[] exceptionTypes = m.getExceptionTypes();
-        String[] exceptionNames = new String[exceptionTypes.length];
-        for (int i = 0; i < exceptionTypes.length; i++) {
-            exceptionNames[i] = exceptionTypes[i].getName().replace('.', '/');
-        }
-        String methodDescriptor = Type.getMethodDescriptor(m);
-        int access = isBridge? ACC_PUBLIC | ACC_BRIDGE : ACC_PUBLIC;
-        MethodVisitor mv = cw.visitMethod(access, m.getName(), methodDescriptor, null, exceptionNames);
-        new ForwardingMethodGenerator(mv).generate(m);
-    }
-
-    /**
      * This class generates a method body which calls the lambda implementation
      * method, converting arguments, as needed.
      */
@@ -340,26 +344,26 @@ import java.security.PrivilegedAction;
             super(mv);
         }
 
-        void generate(Method m) throws InternalError {
+        void generate(String methodDescriptor) {
             visitCode();
 
             if (implKind == MethodHandleInfo.REF_newInvokeSpecial) {
                 visitTypeInsn(NEW, implMethodClassName);
-                visitInsn(DUP);;
+                visitInsn(DUP);
             }
             for (int i = 0; i < argTypes.length; i++) {
                 visitVarInsn(ALOAD, 0);
                 visitFieldInsn(GETFIELD, lambdaClassName, argNames[i], argTypes[i].getDescriptor());
             }
 
-            convertArgumentTypes(Type.getArgumentTypes(m));
+            convertArgumentTypes(Type.getArgumentTypes(methodDescriptor));
 
             // Invoke the method we want to forward to
             visitMethodInsn(invocationOpcode(), implMethodClassName, implMethodName, implMethodDesc);
 
             // Convert the return value (if any) and return it
             // Note: if adapting from non-void to void, the 'return' instruction will pop the unneeded result
-            Type samReturnType = Type.getReturnType(m);
+            Type samReturnType = Type.getReturnType(methodDescriptor);
             convertType(implMethodReturnType, samReturnType, samReturnType);
             visitInsn(samReturnType.getOpcode(Opcodes.IRETURN));
 
