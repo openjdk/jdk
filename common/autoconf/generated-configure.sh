@@ -3782,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1370949244
+DATE_WHEN_GENERATED=1371547755
 
 ###############################################################################
 #
@@ -29144,7 +29144,6 @@ CXX_FLAG_DEPS="-MMD -MF"
 
 case $COMPILER_TYPE in
   CC )
-    D_FLAG="-g"
     case $COMPILER_NAME in
       gcc )
       	case $OPENJDK_TARGET_OS in
@@ -29159,17 +29158,17 @@ case $COMPILER_TYPE in
 	    C_O_FLAG_HI="-O3"
 	    C_O_FLAG_NORM="-O2"
 	    C_O_FLAG_NONE="-O0"
-	    CFLAGS_DEBUG_SYMBOLS="-g"
-	    CXXFLAGS_DEBUG_SYMBOLS="-g"
-	    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
-	       CFLAGS_DEBUG_SYMBOLS="-g1"
-	       CXXFLAGS_DEBUG_SYMBOLS="-g1"
-	    fi
 	    ;;
 	esac
         CXX_O_FLAG_HI="$C_O_FLAG_HI"
         CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
         CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
+        CFLAGS_DEBUG_SYMBOLS="-g"
+        CXXFLAGS_DEBUG_SYMBOLS="-g"
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
+            CFLAGS_DEBUG_SYMBOLS="-g1"
+            CXXFLAGS_DEBUG_SYMBOLS="-g1"
+        fi
         ;;
       ossc )
         #
@@ -29250,7 +29249,6 @@ case $COMPILER_TYPE in
     esac
     ;;
   CL )
-    D_FLAG=
     C_O_FLAG_HIGHEST="-O2"
     C_O_FLAG_HI="-O1"
     C_O_FLAG_NORM="-O1"
@@ -29388,6 +29386,28 @@ case $COMPILER_NAME in
 esac
 
 ###############################################################################
+
+# Adjust flags according to debug level.
+case $DEBUG_LEVEL in
+      fastdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NORM"
+	      C_O_FLAG_NORM="$C_O_FLAG_NORM"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NORM"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NORM"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+      slowdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NONE"
+	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+esac
 
 CCXXFLAGS_JDK="$CCXXFLAGS_JDK $ADD_LP64"
 
@@ -29531,23 +29551,6 @@ else
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
     fi
 fi
-
-# Adjust flags according to debug level.
-case $DEBUG_LEVEL in
-      fastdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-      slowdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-	      C_O_FLAG_HI="$C_O_FLAG_NONE"
-	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
-	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
-	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-esac
-
 
 
 
