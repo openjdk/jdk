@@ -55,7 +55,7 @@ extern jboolean VerifyFixClassname(char *utf_name);
 static JNINativeMethod methods[] = {
     {"getName0",         "()" STR,          (void *)&JVM_GetClassName},
     {"getSuperclass",    "()" CLS,          NULL},
-    {"getInterfaces",    "()[" CLS,         (void *)&JVM_GetClassInterfaces},
+    {"getInterfaces0",   "()[" CLS,         (void *)&JVM_GetClassInterfaces},
     {"getClassLoader0",  "()" JCL,          (void *)&JVM_GetClassLoader},
     {"isInterface",      "()Z",             (void *)&JVM_IsInterface},
     {"getSigners",       "()[" OBJ,         (void *)&JVM_GetClassSigners},
@@ -70,7 +70,7 @@ static JNINativeMethod methods[] = {
     {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
     {"getDeclaredClasses0",  "()[" CLS,      (void *)&JVM_GetDeclaredClasses},
     {"getDeclaringClass",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
-    {"getGenericSignature", "()" STR,       (void *)&JVM_GetClassSignature},
+    {"getGenericSignature0", "()" STR,      (void *)&JVM_GetClassSignature},
     {"getRawAnnotations",      "()" BA,        (void *)&JVM_GetClassAnnotations},
     {"getConstantPool",     "()" CPL,       (void *)&JVM_GetClassConstantPool},
     {"desiredAssertionStatus0","("CLS")Z",(void *)&JVM_DesiredAssertionStatus},
