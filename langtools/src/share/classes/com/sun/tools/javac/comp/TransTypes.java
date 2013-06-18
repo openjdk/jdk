@@ -68,6 +68,7 @@ public class TransTypes extends TreeTranslator {
     private TreeMaker make;
     private Enter enter;
     private boolean allowEnums;
+    private boolean allowInterfaceBridges;
     private Types types;
     private final Resolve resolve;
 
@@ -91,6 +92,7 @@ public class TransTypes extends TreeTranslator {
         Source source = Source.instance(context);
         allowEnums = source.allowEnums();
         addBridges = source.addBridges();
+        allowInterfaceBridges = source.allowDefaultMethods();
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
@@ -252,7 +254,8 @@ public class TransTypes extends TreeTranslator {
 
         // Create a bridge method symbol and a bridge definition without a body.
         Type bridgeType = meth.erasure(types);
-        long flags = impl.flags() & AccessFlags | SYNTHETIC | BRIDGE;
+        long flags = impl.flags() & AccessFlags | SYNTHETIC | BRIDGE |
+                (origin.isInterface() ? DEFAULT : 0);
         if (hypothetical) flags |= HYPOTHETICAL;
         MethodSymbol bridge = new MethodSymbol(flags,
                                                meth.name,
@@ -387,11 +390,12 @@ public class TransTypes extends TreeTranslator {
         }
     }
     // where
-        Filter<Symbol> overrideBridgeFilter = new Filter<Symbol>() {
+        private Filter<Symbol> overrideBridgeFilter = new Filter<Symbol>() {
             public boolean accepts(Symbol s) {
                 return (s.flags() & (SYNTHETIC | OVERRIDE_BRIDGE)) != SYNTHETIC;
             }
         };
+
         /**
          * @param method The symbol for which a bridge might have to be added
          * @param impl The implementation of method
@@ -999,8 +1003,9 @@ public class TransTypes extends TreeTranslator {
                     ListBuffer<JCTree> bridges = new ListBuffer<JCTree>();
                     if (false) //see CR: 6996415
                         bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
-                    if ((tree.sym.flags() & INTERFACE) == 0)
-                        addBridges(tree.pos(), tree.sym, bridges);
+                    if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
+                        addBridges(tree.pos(), c, bridges);
+                    }
                     tree.defs = bridges.toList().prependList(tree.defs);
                 }
                 tree.type = erasure(tree.type);
