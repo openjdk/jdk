@@ -932,19 +932,39 @@ public class Hashtable<K,V>
     public synchronized void forEach(BiConsumer<? super K, ? super V> action) {
         Objects.requireNonNull(action);     // explicit check required in case
                                             // table is empty.
-        Entry<?,?>[] tab = table;
-        for (Entry<?,?> entry : tab) {
+        final int expectedModCount = modCount;
+
+        Entry<?, ?>[] tab = table;
+        for (Entry<?, ?> entry : tab) {
             while (entry != null) {
                 action.accept((K)entry.key, (V)entry.value);
                 entry = entry.next;
+
+                if (expectedModCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
             }
         }
     }
 
     @Override
-    public synchronized void replaceAll(
-            BiFunction<? super K, ? super V, ? extends V> function) {
-        Map.super.replaceAll(function);
+    public synchronized void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);     // explicit check required in case
+                                              // table is empty.
+        final int expectedModCount = modCount;
+
+        Entry<K, V>[] tab = (Entry<K, V>[])table;
+        for (Entry<K, V> entry : tab) {
+            while (entry != null) {
+                entry.value = Objects.requireNonNull(
+                    function.apply(entry.key, entry.value));
+                entry = entry.next;
+
+                if (expectedModCount != modCount) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+        }
     }
 
     @Override
@@ -1058,7 +1078,7 @@ public class Hashtable<K,V>
     }
 
     @Override
-    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public synchronized V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
@@ -1087,7 +1107,7 @@ public class Hashtable<K,V>
     }
 
     @Override
-    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public synchronized V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
@@ -1122,7 +1142,7 @@ public class Hashtable<K,V>
     }
 
     @Override
-    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    public synchronized V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
