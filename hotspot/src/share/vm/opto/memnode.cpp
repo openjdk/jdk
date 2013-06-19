@@ -4384,7 +4384,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
   }
 }
 #else // !ASSERT
-#define verify_memory_slice(m,i,n) (0)  // PRODUCT version is no-op
+#define verify_memory_slice(m,i,n) (void)(0)  // PRODUCT version is no-op
 #endif
 
 
