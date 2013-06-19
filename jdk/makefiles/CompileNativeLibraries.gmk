@@ -2055,7 +2055,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 	BUILD_LIBJLI_FILES += java_md.c \
-			      cmdtoargs.c
+			      cmdtoargs.c	
         # Staticically link with c runtime on windows.
 	LIBJLI_CFLAGS:=$(filter-out -MD,$(LIBJLI_CFLAGS))
 else ifneq ($(OPENJDK_TARGET_OS), macosx)
