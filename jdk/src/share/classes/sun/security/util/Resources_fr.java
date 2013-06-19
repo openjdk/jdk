@@ -127,6 +127,8 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "expressions Codebase multiples"},
         {"multiple.SignedBy.expressions","expressions SignedBy multiples"},
+        {"duplicate.keystore.domain.name","nom de domaine de fichier de cl\u00E9s en double : {0}"},
+        {"duplicate.keystore.name","nom de fichier de cl\u00E9s en double : {0}"},
         {"SignedBy.has.empty.alias","SignedBy poss\u00E8de un alias vide"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "impossible de sp\u00E9cifier le principal avec une classe g\u00E9n\u00E9rique sans nom g\u00E9n\u00E9rique"},
