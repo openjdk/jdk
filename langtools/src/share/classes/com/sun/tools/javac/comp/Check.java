@@ -1619,7 +1619,7 @@ public class Check {
             log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
                       cannotOverride(m, other),
                       other.flags() == 0 ?
-                          Flag.PACKAGE :
+                          "package" :
                           asFlagSet(other.flags() & AccessFlags));
             m.flags_field |= BAD_OVERRIDE;
             return;
