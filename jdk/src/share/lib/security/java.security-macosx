@@ -209,7 +209,8 @@ package.access=sun.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
-               apple.
+               apple.,\
+               oracle.jrockit.jfr.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -253,7 +254,8 @@ package.definition=sun.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
-                   apple.
+                   apple.,\
+                   oracle.jrockit.jfr.
 
 #
 # Determines whether this properties file can be appended to
