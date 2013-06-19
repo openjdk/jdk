@@ -340,12 +340,32 @@
 #define NOT_SPARC(code) code
 #endif
 
-#ifdef PPC
+#if defined(PPC32) || defined(PPC64)
+#ifndef PPC
+#define PPC
+#endif
 #define PPC_ONLY(code) code
 #define NOT_PPC(code)
 #else
+#undef PPC
 #define PPC_ONLY(code)
 #define NOT_PPC(code) code
+#endif
+
+#ifdef PPC32
+#define PPC32_ONLY(code) code
+#define NOT_PPC32(code)
+#else
+#define PPC32_ONLY(code)
+#define NOT_PPC32(code) code
+#endif
+
+#ifdef PPC64
+#define PPC64_ONLY(code) code
+#define NOT_PPC64(code)
+#else
+#define PPC64_ONLY(code)
+#define NOT_PPC64(code) code
 #endif
 
 #ifdef E500V2

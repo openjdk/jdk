@@ -346,7 +346,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   void interpreter_frame_set_method(Method* method);
   Method** interpreter_frame_method_addr() const;
   ConstantPoolCache** interpreter_frame_cache_addr() const;
-#ifdef PPC
+#ifdef PPC32
   oop* interpreter_frame_mirror_addr() const;
 #endif
 

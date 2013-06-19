@@ -14,4 +14,4 @@ compiler = gcc
 
 gnu_dis_arch = ppc
 
-sysdefs = -DLINUX -D_GNU_SOURCE -DPPC
+sysdefs = -DLINUX -D_GNU_SOURCE -DPPC32
