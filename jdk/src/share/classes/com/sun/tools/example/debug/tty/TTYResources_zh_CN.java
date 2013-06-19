@@ -240,7 +240,7 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
         {"operation not yet supported", "\u5C1A\u4E0D\u652F\u6301\u8BE5\u64CD\u4F5C"},
         {"Owned by:", "  \u62E5\u6709\u8005: {0}, \u6761\u76EE\u8BA1\u6570: {1,number,integer}"},
         {"Owned monitor:", "  \u62E5\u6709\u7684\u76D1\u89C6\u5668: {0}"},
-        {"Parse exception:", "\u8BED\u6CD5\u5206\u6790\u5F02\u5E38\u9519\u8BEF: {0}"},
+        {"Parse exception:", "\u89E3\u6790\u5F02\u5E38\u9519\u8BEF: {0}"},
         {"printbreakpointcommandusage", "\u7528\u6CD5: {0} <class>:<line_number> \u6216\n       {1} <class>.<method_name>[(argument_type,...)]"},
         {"Removed:", "\u5DF2\u5220\u9664: {0}"},
         {"Requested stack frame is no longer active:", "\u8BF7\u6C42\u7684\u5806\u6808\u5E27\u4E0D\u518D\u6709\u6548: {0,number,integer}"},
