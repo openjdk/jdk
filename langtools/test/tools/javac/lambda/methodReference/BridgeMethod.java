@@ -112,6 +112,6 @@ public class BridgeMethod {
             Class<?> returnType = m.getReturnType();
             assertTrue(types.remove(returnType.getName()));
         }
-        assertTrue(types.size() == 1); //there's a bridge
+        assertTrue(types.isEmpty());
     }
 }
