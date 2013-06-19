@@ -2327,12 +2327,13 @@ public class Attr extends JCTree.Visitor {
             if (pt() != Type.recoveryType) {
                 target = targetChecker.visit(target, that);
                 lambdaType = types.findDescriptorType(target);
+                chk.checkFunctionalInterface(that, target);
             } else {
                 target = Type.recoveryType;
                 lambdaType = fallbackDescriptorType(that);
             }
 
-            setFunctionalInfo(localEnv, that, pt(), lambdaType, target, resultInfo.checkContext);
+            setFunctionalInfo(that, pt(), lambdaType, target, resultInfo.checkContext.inferenceContext());
 
             if (lambdaType.hasTag(FORALL)) {
                 //lambda expression target desc cannot be a generic method
@@ -2674,12 +2675,13 @@ public class Attr extends JCTree.Visitor {
             if (pt() != Type.recoveryType) {
                 target = targetChecker.visit(pt(), that);
                 desc = types.findDescriptorType(target);
+                chk.checkFunctionalInterface(that, target);
             } else {
                 target = Type.recoveryType;
                 desc = fallbackDescriptorType(that);
             }
 
-            setFunctionalInfo(localEnv, that, pt(), desc, target, resultInfo.checkContext);
+            setFunctionalInfo(that, pt(), desc, target, resultInfo.checkContext.inferenceContext());
             List<Type> argtypes = desc.getParameterTypes();
 
             Pair<Symbol, Resolve.ReferenceLookupHelper> refResult =
@@ -2881,37 +2883,31 @@ public class Attr extends JCTree.Visitor {
      * might contain inference variables, we might need to register an hook in the
      * current inference context.
      */
-    private void setFunctionalInfo(final Env<AttrContext> env, final JCFunctionalExpression fExpr,
-            final Type pt, final Type descriptorType, final Type primaryTarget, final CheckContext checkContext) {
-        if (checkContext.inferenceContext().free(descriptorType)) {
-            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType), new FreeTypeListener() {
+    private void setFunctionalInfo(final JCFunctionalExpression fExpr, final Type pt,
+            final Type descriptorType, final Type primaryTarget, InferenceContext inferenceContext) {
+        if (inferenceContext.free(descriptorType)) {
+            inferenceContext.addFreeTypeListener(List.of(pt, descriptorType), new FreeTypeListener() {
                 public void typesInferred(InferenceContext inferenceContext) {
-                    setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
-                            inferenceContext.asInstType(primaryTarget), checkContext);
+                    setFunctionalInfo(fExpr, pt, inferenceContext.asInstType(descriptorType),
+                            inferenceContext.asInstType(primaryTarget), inferenceContext);
                 }
             });
         } else {
-            ListBuffer<Type> targets = ListBuffer.lb();
+            ListBuffer<TypeSymbol> targets = ListBuffer.lb();
             if (pt.hasTag(CLASS)) {
                 if (pt.isCompound()) {
-                    targets.append(types.removeWildcards(primaryTarget)); //this goes first
+                    targets.append(primaryTarget.tsym); //this goes first
                     for (Type t : ((IntersectionClassType)pt()).interfaces_field) {
                         if (t != primaryTarget) {
-                            targets.append(types.removeWildcards(t));
+                            targets.append(t.tsym);
                         }
                     }
                 } else {
-                    targets.append(types.removeWildcards(primaryTarget));
+                    targets.append(pt.tsym);
                 }
             }
             fExpr.targets = targets.toList();
-            if (checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
-                    pt != Type.recoveryType) {
-                //check that functional interface class is well-formed
-                ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
-                        names.empty, List.of(fExpr.targets.head), ABSTRACT);
-                chk.checkImplementations(env.tree, csym, csym);
-            }
+            fExpr.descriptorType = descriptorType;
         }
     }
 
@@ -4567,6 +4563,9 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitLambda(JCLambda that) {
             super.visitLambda(that);
+            if (that.descriptorType == null) {
+                that.descriptorType = syms.unknownType;
+            }
             if (that.targets == null) {
                 that.targets = List.nil();
             }
@@ -4577,6 +4576,9 @@ public class Attr extends JCTree.Visitor {
             super.visitReference(that);
             if (that.sym == null) {
                 that.sym = new MethodSymbol(0, names.empty, syms.unknownType, syms.noSymbol);
+            }
+            if (that.descriptorType == null) {
+                that.descriptorType = syms.unknownType;
             }
             if (that.targets == null) {
                 that.targets = List.nil();
