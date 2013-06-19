@@ -186,7 +186,7 @@ const char* Abstract_VM_Version::jre_release_version() {
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
                  ARM_ONLY("arm")                 \
-                 PPC_ONLY("ppc")                 \
+                 PPC32_ONLY("ppc")               \
                  SPARC_ONLY("sparc")
 #endif // ZERO
 
@@ -248,7 +248,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #define FLOAT_ARCH_STR "-e500v2"
     #elif defined(ARM)
       #define FLOAT_ARCH_STR "-vfp"
-    #elif defined(PPC)
+    #elif defined(PPC32)
       #define FLOAT_ARCH_STR "-hflt"
     #else
       #define FLOAT_ARCH_STR ""

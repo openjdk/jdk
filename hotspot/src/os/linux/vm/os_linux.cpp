@@ -247,7 +247,7 @@ static char cpu_arch[] = "i386";
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
 static char cpu_arch[] = "arm";
-#elif defined(PPC)
+#elif defined(PPC32)
 static char cpu_arch[] = "ppc";
 #elif defined(SPARC)
 #  ifdef _LP64
