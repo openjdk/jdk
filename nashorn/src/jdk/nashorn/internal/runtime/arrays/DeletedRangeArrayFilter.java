@@ -202,6 +202,8 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     @Override
     public ArrayData delete(final int index) {
         final long longIndex = ArrayIndex.toLongIndex(index);
+        underlying.setEmpty(index);
+
         if (longIndex + 1 == lo) {
             lo = longIndex;
         } else if (longIndex - 1 == hi) {
@@ -220,6 +222,7 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
         }
         lo = Math.min(fromIndex, lo);
         hi = Math.max(toIndex, hi);
+        underlying.setEmpty(lo, hi);
         return this;
     }
 
