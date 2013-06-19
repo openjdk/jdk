@@ -856,8 +856,12 @@ public final class NativeArray extends ScriptObject {
                 }
 
                 // delete missing elements - which are at the end of sorted array
-                sobj.setArray(array.delete(sorted.length, len - 1));
-            }
+                if (sorted.length != len) {
+                    array = array.delete(sorted.length, len - 1);
+                }
+
+                sobj.setArray(array);
+           }
 
             return sobj;
         } catch (final ClassCastException | NullPointerException e) {
