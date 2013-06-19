@@ -140,7 +140,9 @@ void ConcurrentMarkSweepThread::run() {
   while (!_should_terminate) {
     sleepBeforeNextCycle();
     if (_should_terminate) break;
-    _collector->collect_in_background(false);  // !clear_all_soft_refs
+    GCCause::Cause cause = _collector->_full_gc_requested ?
+      _collector->_full_gc_cause : GCCause::_cms_concurrent_mark;
+    _collector->collect_in_background(false, cause);
   }
   assert(_should_terminate, "just checking");
   // Check that the state of any protocol for synchronization
