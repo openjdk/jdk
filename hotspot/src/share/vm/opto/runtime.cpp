@@ -83,8 +83,11 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
-#ifdef TARGET_ARCH_MODEL_ppc
-# include "adfiles/ad_ppc.hpp"
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "adfiles/ad_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "adfiles/ad_ppc_64.hpp"
 #endif
 
 
@@ -977,7 +980,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   nm = CodeCache::find_nmethod(pc);
   assert(nm != NULL, "No NMethod found");
   if (nm->is_native_method()) {
-    fatal("Native mathod should not have path to exception handling");
+    fatal("Native method should not have path to exception handling");
   } else {
     // we are switching to old paradigm: search for exception handler in caller_frame
     // instead in exception handler of caller_frame.sender()
@@ -1006,7 +1009,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     }
 
     // If we are forcing an unwind because of stack overflow then deopt is
-    // irrelevant sice we are throwing the frame away anyway.
+    // irrelevant since we are throwing the frame away anyway.
 
     if (deopting && !force_unwind) {
       handler_address = SharedRuntime::deopt_blob()->unpack_with_exception();
@@ -1049,7 +1052,7 @@ JRT_END
 // Note we enter without the usual JRT wrapper. We will call a helper routine that
 // will do the normal VM entry. We do it this way so that we can see if the nmethod
 // we looked up the handler for has been deoptimized in the meantime. If it has been
-// we must not use the handler and instread return the deopt blob.
+// we must not use the handler and instead return the deopt blob.
 address OptoRuntime::handle_exception_C(JavaThread* thread) {
 //
 // We are in Java not VM and in debug mode we have a NoHandleMark
