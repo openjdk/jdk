@@ -187,6 +187,7 @@ const char* Abstract_VM_Version::jre_release_version() {
                  AMD64_ONLY("amd64")             \
                  ARM_ONLY("arm")                 \
                  PPC32_ONLY("ppc")               \
+                 PPC64_ONLY("ppc64")             \
                  SPARC_ONLY("sparc")
 #endif // ZERO
 

@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 
 /*

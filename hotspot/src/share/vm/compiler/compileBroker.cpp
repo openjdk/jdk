@@ -958,7 +958,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
 // Initialize the compilation queue
 void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
-#if !defined(ZERO) && !defined(SHARK)
+#if !defined(ZERO) && !defined(SHARK) && !defined(PPC64)
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
 #endif // !ZERO && !SHARK
   if (c2_compiler_count > 0) {
