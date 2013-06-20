@@ -137,7 +137,7 @@ public class MsgAppletViewer_zh_CN extends ListResourceBundle {
             {"appletpanel.fileexception", "\u52A0\u8F7D\u65F6\u51FA\u73B0{0}\u5F02\u5E38\u9519\u8BEF: {1}"},
             {"appletpanel.filedeath", "\u52A0\u8F7D\u65F6\u5DF2\u7EC8\u6B62{0}: {1}"},
             {"appletpanel.fileerror", "\u52A0\u8F7D\u65F6\u51FA\u73B0{0}\u9519\u8BEF: {1}"},
-            {"appletpanel.badattribute.exception", "HTML \u8BED\u6CD5\u5206\u6790: \u5BBD\u5EA6/\u9AD8\u5EA6\u5C5E\u6027\u7684\u503C\u4E0D\u6B63\u786E"},
+            {"appletpanel.badattribute.exception", "HTML \u89E3\u6790: \u5BBD\u5EA6/\u9AD8\u5EA6\u5C5E\u6027\u7684\u503C\u4E0D\u6B63\u786E"},
             {"appletillegalargumentexception.objectinputstream", "AppletObjectInputStream \u9700\u8981\u975E\u7A7A\u52A0\u8F7D\u5668"},
             {"appletprops.title", "AppletViewer \u5C5E\u6027"},
             {"appletprops.label.http.server", "Http \u4EE3\u7406\u670D\u52A1\u5668:"},

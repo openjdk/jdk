@@ -228,14 +228,14 @@ public abstract class Selector implements Closeable {
     }
 
     /**
-     * Tells whether or not this selector is open.  </p>
+     * Tells whether or not this selector is open.
      *
      * @return <tt>true</tt> if, and only if, this selector is open
      */
     public abstract boolean isOpen();
 
     /**
-     * Returns the provider that created this channel.  </p>
+     * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
      */

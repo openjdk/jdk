@@ -45,6 +45,9 @@ import javax.management.DescriptorRead;
 import javax.management.ImmutableDescriptor;
 import javax.management.MBeanAttributeInfo;
 import com.sun.jmx.remote.util.EnvHelp;
+import sun.reflect.misc.ConstructorUtil;
+import sun.reflect.misc.MethodUtil;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * Describes an attribute of an open MBean.
@@ -690,6 +693,7 @@ public class OpenMBeanAttributeInfoSupport
     private static <T> T convertFromString(String s, OpenType<T> openType) {
         Class<T> c;
         try {
+            ReflectUtil.checkPackageAccess(openType.safeGetClassName());
             c = cast(Class.forName(openType.safeGetClassName()));
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError(e.toString());  // can't happen
@@ -698,6 +702,8 @@ public class OpenMBeanAttributeInfoSupport
         // Look for: public static T valueOf(String)
         Method valueOf;
         try {
+            // It is safe to call this plain Class.getMethod because the class "c"
+            // was checked before by ReflectUtil.checkPackageAccess(openType.safeGetClassName());
             valueOf = c.getMethod("valueOf", String.class);
             if (!Modifier.isStatic(valueOf.getModifiers()) ||
                     valueOf.getReturnType() != c)
@@ -707,7 +713,7 @@ public class OpenMBeanAttributeInfoSupport
         }
         if (valueOf != null) {
             try {
-                return c.cast(valueOf.invoke(null, s));
+                return c.cast(MethodUtil.invoke(valueOf, null, new Object[] {s}));
             } catch (Exception e) {
                 final String msg =
                     "Could not convert \"" + s + "\" using method: " + valueOf;
@@ -718,6 +724,8 @@ public class OpenMBeanAttributeInfoSupport
         // Look for: public T(String)
         Constructor<T> con;
         try {
+            // It is safe to call this plain Class.getConstructor because the class "c"
+            // was checked before by ReflectUtil.checkPackageAccess(openType.safeGetClassName());
             con = c.getConstructor(String.class);
         } catch (NoSuchMethodException e) {
             con = null;

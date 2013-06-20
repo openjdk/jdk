@@ -907,6 +907,8 @@ Java_sun_awt_X11GraphicsDevice_getDisplay(JNIEnv *env, jobject this)
 static jint canUseShmExt = UNSET_MITSHM;
 static jint canUseShmExtPixmaps = UNSET_MITSHM;
 
+extern int mitShmPermissionMask;
+
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     XShmSegmentInfo shminfo;
     int XShmMajor, XShmMinor;
@@ -930,7 +932,8 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
      * we need to test that we can actually do XShmAttach.
      */
     if (XShmQueryExtension(awt_display)) {
-        shminfo.shmid = shmget(IPC_PRIVATE, 0x10000, IPC_CREAT|0777);
+        shminfo.shmid = shmget(IPC_PRIVATE, 0x10000,
+                               IPC_CREAT|mitShmPermissionMask);
         if (shminfo.shmid < 0) {
             AWT_UNLOCK();
             J2dRlsTraceLn1(J2D_TRACE_ERROR,

@@ -170,7 +170,19 @@ final class ProcessImpl extends Process {
         return matchList.toArray(new String[matchList.size()]);
     }
 
-    private static String createCommandLine(boolean isCmdFile,
+    private static final int VERIFICATION_CMD_BAT = 0;
+    private static final int VERIFICATION_WIN32 = 1;
+    private static final int VERIFICATION_LEGACY = 2;
+    private static final char ESCAPE_VERIFICATION[][] = {
+        // We guarantee the only command file execution for implicit [cmd.exe] run.
+        //    http://technet.microsoft.com/en-us/library/bb490954.aspx
+        {' ', '\t', '<', '>', '&', '|', '^'},
+
+        {' ', '\t', '<', '>'},
+        {' ', '\t'}
+    };
+
+    private static String createCommandLine(int verificationType,
                                      final String executablePath,
                                      final String cmd[])
     {
@@ -181,9 +193,8 @@ final class ProcessImpl extends Process {
         for (int i = 1; i < cmd.length; ++i) {
             cmdbuf.append(' ');
             String s = cmd[i];
-            if (needsEscaping(isCmdFile, s)) {
-                cmdbuf.append('"');
-                cmdbuf.append(s);
+            if (needsEscaping(verificationType, s)) {
+                cmdbuf.append('"').append(s);
 
                 // The code protects the [java.exe] and console command line
                 // parser, that interprets the [\"] combination as an escape
@@ -197,7 +208,7 @@ final class ProcessImpl extends Process {
                 // command line parser. The case of the [""] tail escape
                 // sequence could not be realized due to the argument validation
                 // procedure.
-                if (!isCmdFile && s.endsWith("\\")) {
+                if ((verificationType != VERIFICATION_CMD_BAT) && s.endsWith("\\")) {
                     cmdbuf.append('\\');
                 }
                 cmdbuf.append('"');
@@ -207,11 +218,6 @@ final class ProcessImpl extends Process {
         }
         return cmdbuf.toString();
     }
-
-    // We guarantee the only command file execution for implicit [cmd.exe] run.
-    //    http://technet.microsoft.com/en-us/library/bb490954.aspx
-    private static final char CMD_BAT_ESCAPE[] = {' ', '\t', '<', '>', '&', '|', '^'};
-    private static final char WIN32_EXECUTABLE_ESCAPE[] = {' ', '\t', '<', '>'};
 
     private static boolean isQuoted(boolean noQuotesInside, String arg,
             String errorMessage) {
@@ -235,7 +241,7 @@ final class ProcessImpl extends Process {
         return false;
     }
 
-    private static boolean needsEscaping(boolean isCmdFile, String arg) {
+    private static boolean needsEscaping(int verificationType, String arg) {
         // Switch off MS heuristic for internal ["].
         // Please, use the explicit [cmd.exe] call
         // if you need the internal ["].
@@ -243,13 +249,12 @@ final class ProcessImpl extends Process {
 
         // For [.exe] or [.com] file the unpaired/internal ["]
         // in the argument is not a problem.
-        boolean argIsQuoted = isQuoted(isCmdFile, arg,
-            "Argument has embedded quote, use the explicit CMD.EXE call.");
+        boolean argIsQuoted = isQuoted(
+            (verificationType == VERIFICATION_CMD_BAT),
+            arg, "Argument has embedded quote, use the explicit CMD.EXE call.");
 
         if (!argIsQuoted) {
-            char testEscape[] = isCmdFile
-                    ? CMD_BAT_ESCAPE
-                    : WIN32_EXECUTABLE_ESCAPE;
+            char testEscape[] = ESCAPE_VERIFICATION[verificationType];
             for (int i = 0; i < testEscape.length; ++i) {
                 if (arg.indexOf(testEscape[i]) >= 0) {
                     return true;
@@ -315,24 +320,26 @@ final class ProcessImpl extends Process {
     {
         String cmdstr;
         SecurityManager security = System.getSecurityManager();
-        boolean allowAmbigousCommands = false;
+        boolean allowAmbiguousCommands = false;
         if (security == null) {
-            String value = System.getProperty("jdk.lang.Process.allowAmbigousCommands");
+            allowAmbiguousCommands = true;
+            String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands");
             if (value != null)
-                allowAmbigousCommands = !"false".equalsIgnoreCase(value);
+                allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
         }
-        if (allowAmbigousCommands) {
+        if (allowAmbiguousCommands) {
             // Legacy mode.
 
             // Normalize path if possible.
             String executablePath = new File(cmd[0]).getPath();
 
-            // No worry about internal and unpaired ["] .
-            if (needsEscaping(false, executablePath) )
+            // No worry about internal, unpaired ["], and redirection/piping.
+            if (needsEscaping(VERIFICATION_LEGACY, executablePath) )
                 executablePath = quoteString(executablePath);
 
             cmdstr = createCommandLine(
-                false, //legacy mode doesn't worry about extended verification
+                //legacy mode doesn't worry about extended verification
+                VERIFICATION_LEGACY,
                 executablePath,
                 cmd);
         } else {
@@ -369,7 +376,9 @@ final class ProcessImpl extends Process {
             // [.exe] extension heuristic.
             cmdstr = createCommandLine(
                     // We need the extended verification procedure for CMD files.
-                    isShellFile(executablePath),
+                    isShellFile(executablePath)
+                        ? VERIFICATION_CMD_BAT
+                        : VERIFICATION_WIN32,
                     quoteString(executablePath),
                     cmd);
         }

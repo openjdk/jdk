@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Collection;
  *
  * @author Karl Helgason
  */
-public class ModelByteBuffer {
+public final class ModelByteBuffer {
 
     private ModelByteBuffer root = this;
     private File file;
@@ -49,12 +49,12 @@ public class ModelByteBuffer {
 
     private class RandomFileInputStream extends InputStream {
 
-        private RandomAccessFile raf;
+        private final RandomAccessFile raf;
         private long left;
         private long mark = 0;
         private long markleft = 0;
 
-        public RandomFileInputStream() throws IOException {
+        RandomFileInputStream() throws IOException {
             raf = new RandomAccessFile(root.file, "r");
             raf.seek(root.fileoffset + arrayOffset());
             left = capacity();

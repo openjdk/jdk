@@ -124,7 +124,7 @@ public abstract class FileLock implements AutoCloseable {
     private final boolean shared;
 
     /**
-     * Initializes a new instance of this class.  </p>
+     * Initializes a new instance of this class.
      *
      * @param  channel
      *         The file channel upon whose file this lock is held
@@ -249,7 +249,7 @@ public abstract class FileLock implements AutoCloseable {
     }
 
     /**
-     * Tells whether this lock is shared.  </p>
+     * Tells whether this lock is shared.
      *
      * @return <tt>true</tt> if lock is shared,
      *         <tt>false</tt> if it is exclusive
@@ -259,7 +259,7 @@ public abstract class FileLock implements AutoCloseable {
     }
 
     /**
-     * Tells whether or not this lock overlaps the given lock range.  </p>
+     * Tells whether or not this lock overlaps the given lock range.
      *
      * @return  <tt>true</tt> if, and only if, this lock and the given lock
      *          range overlap by at least one byte

@@ -210,6 +210,7 @@ typedef struct jzfile {   /* Zip file */
                              start of the file. */
     jboolean usemmap;     /* if mmap is used. */
 #endif
+    jboolean locsig;      /* if zip file starts with LOCSIG */
     cencache cencache;    /* CEN header cache */
     ZFILE zfd;            /* open file descriptor */
     void *lock;           /* read lock */

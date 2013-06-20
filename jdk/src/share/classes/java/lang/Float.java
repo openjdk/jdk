@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return a string representation of the argument.
      */
     public static String toString(float f) {
-        return new FloatingDecimal(f).toJavaFormatString();
+        return FloatingDecimal.toJavaFormatString(f);
     }
 
     /**
@@ -421,7 +421,7 @@ public final class Float extends Number implements Comparable<Float> {
      *          parsable number.
      */
     public static Float valueOf(String s) throws NumberFormatException {
-        return new Float(FloatingDecimal.readJavaFormatString(s).floatValue());
+        return new Float(parseFloat(s));
     }
 
     /**
@@ -456,7 +456,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @since 1.2
      */
     public static float parseFloat(String s) throws NumberFormatException {
-        return FloatingDecimal.readJavaFormatString(s).floatValue();
+        return FloatingDecimal.parseFloat(s);
     }
 
     /**
@@ -821,13 +821,13 @@ public final class Float extends Number implements Comparable<Float> {
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>
-     * int s = ((bits &gt;&gt; 31) == 0) ? 1 : -1;
-     * int e = ((bits &gt;&gt; 23) & 0xff);
+     * <blockquote><pre>{@code
+     * int s = ((bits >> 31) == 0) ? 1 : -1;
+     * int e = ((bits >> 23) & 0xff);
      * int m = (e == 0) ?
-     *                 (bits & 0x7fffff) &lt;&lt; 1 :
+     *                 (bits & 0x7fffff) << 1 :
      *                 (bits & 0x7fffff) | 0x800000;
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-150</sup>.
