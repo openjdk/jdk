@@ -161,4 +161,18 @@ public class LongNodeTest extends OpTestCase {
     public void testSpliterator(long[] array, Node.OfLong n) {
         SpliteratorTestHelper.testLongSpliterator(n::spliterator);
     }
+
+    @Test(dataProvider = "nodes")
+    public void testTruncate(long[] array, Node.OfLong n) {
+        int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
+        for (int start : nums)
+            for (int end : nums) {
+                if (start < 0 || end < 0 || end < start || end > array.length)
+                    continue;
+                Node.OfLong slice = n.truncate(start, end, Long[]::new);
+                long[] asArray = slice.asPrimitiveArray();
+                for (int k = start; k < end; k++)
+                    assertEquals(array[k], asArray[k - start]);
+            }
+    }
 }

@@ -65,7 +65,7 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, c -> new BoxingAdapter(c));
+        testSpliterator(supplier, BoxingAdapter::new);
     }
 
     public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier) {
@@ -87,7 +87,7 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, c -> new BoxingAdapter(c));
+        testSpliterator(supplier, BoxingAdapter::new);
     }
 
     public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier) {
@@ -109,7 +109,7 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, c -> new BoxingAdapter(c));
+        testSpliterator(supplier, BoxingAdapter::new);
     }
 
     static <T, S extends Spliterator<T>> void testSpliterator(Supplier<S> supplier,

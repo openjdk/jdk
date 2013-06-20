@@ -162,4 +162,18 @@ public class DoubleNodeTest extends OpTestCase {
     public void testSpliterator(double[] array, Node.OfDouble n) {
         SpliteratorTestHelper.testDoubleSpliterator(n::spliterator);
     }
+
+    @Test(dataProvider = "nodes")
+    public void testTruncate(double[] array, Node.OfDouble n) {
+        int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
+        for (int start : nums)
+            for (int end : nums) {
+                if (start < 0 || end < 0 || end < start || end > array.length)
+                    continue;
+                Node.OfDouble slice = n.truncate(start, end, Double[]::new);
+                double[] asArray = slice.asPrimitiveArray();
+                for (int k = start; k < end; k++)
+                    assertEquals(array[k], asArray[k - start]);
+            }
+    }
 }
