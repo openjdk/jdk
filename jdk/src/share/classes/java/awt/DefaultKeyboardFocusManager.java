@@ -285,10 +285,17 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         TimedWindowEvent we = (TimedWindowEvent)e;
         long time = we.getWhen();
         synchronized (this) {
-            for (KeyEvent ke: enqueuedKeyEvents) {
-                if (time >= ke.getWhen()) {
-                    SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
-                    return true;
+            KeyEvent ke = enqueuedKeyEvents.isEmpty() ? null : enqueuedKeyEvents.getFirst();
+            if (ke != null && time >= ke.getWhen()) {
+                TypeAheadMarker marker = typeAheadMarkers.getFirst();
+                if (marker != null) {
+                    Window toplevel = marker.untilFocused.getContainingWindow();
+                    // Check that the component awaiting focus belongs to
+                    // the current focused window. See 8015454.
+                    if (toplevel != null && toplevel.isFocused()) {
+                        SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
+                        return true;
+                    }
                 }
             }
         }
