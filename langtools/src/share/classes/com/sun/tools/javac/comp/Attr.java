@@ -134,6 +134,7 @@ public class Attr extends JCTree.Visitor {
         allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
         allowPoly = source.allowPoly();
+        allowTypeAnnos = source.allowTypeAnnotations();
         allowLambda = source.allowLambda();
         allowDefaultMethods = source.allowDefaultMethods();
         sourceName = source.name;
@@ -147,6 +148,7 @@ public class Attr extends JCTree.Visitor {
         statInfo = new ResultInfo(NIL, Type.noType);
         varInfo = new ResultInfo(VAR, Type.noType);
         unknownExprInfo = new ResultInfo(VAL, Type.noType);
+        unknownAnyPolyInfo = new ResultInfo(VAL, Infer.anyPoly);
         unknownTypeInfo = new ResultInfo(TYP, Type.noType);
         unknownTypeExprInfo = new ResultInfo(Kinds.TYP | Kinds.VAL, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
@@ -159,6 +161,10 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support target-typing inference
      */
     boolean allowPoly;
+
+    /** Switch: support type annotations.
+     */
+    boolean allowTypeAnnos;
 
     /** Switch: support generics?
      */
@@ -240,7 +246,7 @@ public class Attr extends JCTree.Visitor {
         InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
         Type owntype = found;
         if (!owntype.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
-            if (inferenceContext.free(found)) {
+            if (allowPoly && inferenceContext.free(found)) {
                 inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
@@ -558,6 +564,7 @@ public class Attr extends JCTree.Visitor {
 
     final ResultInfo statInfo;
     final ResultInfo varInfo;
+    final ResultInfo unknownAnyPolyInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
     final ResultInfo unknownTypeExprInfo;
@@ -664,17 +671,21 @@ public class Attr extends JCTree.Visitor {
             attribStat(l.head, env);
     }
 
-    /** Attribute the arguments in a method call, returning a list of types.
+    /** Attribute the arguments in a method call, returning the method kind.
      */
-    List<Type> attribArgs(List<JCExpression> trees, Env<AttrContext> env) {
-        ListBuffer<Type> argtypes = new ListBuffer<Type>();
+    int attribArgs(List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
+        int kind = VAL;
         for (JCExpression arg : trees) {
-            Type argtype = allowPoly && deferredAttr.isDeferred(env, arg) ?
-                    deferredAttr.new DeferredType(arg, env) :
-                    chk.checkNonVoid(arg, attribExpr(arg, env, Infer.anyPoly));
+            Type argtype;
+            if (allowPoly && deferredAttr.isDeferred(env, arg)) {
+                argtype = deferredAttr.new DeferredType(arg, env);
+                kind |= POLY;
+            } else {
+                argtype = chk.checkNonVoid(arg, attribTree(arg, env, unknownAnyPolyInfo));
+            }
             argtypes.append(argtype);
         }
-        return argtypes.toList();
+        return kind;
     }
 
     /** Attribute a type argument list, returning a list of types.
@@ -1739,6 +1750,7 @@ public class Attr extends JCTree.Visitor {
         boolean isConstructorCall =
             methName == names._this || methName == names._super;
 
+        ListBuffer<Type> argtypesBuf = ListBuffer.lb();
         if (isConstructorCall) {
             // We are seeing a ...this(...) or ...super(...) call.
             // Check that this is the first statement in a constructor.
@@ -1749,7 +1761,8 @@ public class Attr extends JCTree.Visitor {
                 localEnv.info.isSelfCall = true;
 
                 // Attribute arguments, yielding list of argument types.
-                argtypes = attribArgs(tree.args, localEnv);
+                attribArgs(tree.args, localEnv, argtypesBuf);
+                argtypes = argtypesBuf.toList();
                 typeargtypes = attribTypes(tree.typeargs, localEnv);
 
                 // Variable `site' points to the class in which the called
@@ -1821,7 +1834,8 @@ public class Attr extends JCTree.Visitor {
         } else {
             // Otherwise, we are seeing a regular method call.
             // Attribute the arguments, yielding list of argument types, ...
-            argtypes = attribArgs(tree.args, localEnv);
+            int kind = attribArgs(tree.args, localEnv, argtypesBuf);
+            argtypes = argtypesBuf.toList();
             typeargtypes = attribAnyTypes(tree.typeargs, localEnv);
 
             // ... and attribute the method using as a prototype a methodtype
@@ -1829,7 +1843,7 @@ public class Attr extends JCTree.Visitor {
             // arguments (this will also set the method symbol).
             Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
             localEnv.info.pendingResolutionPhase = null;
-            Type mtype = attribTree(tree.meth, localEnv, new ResultInfo(VAL, mpt, resultInfo.checkContext));
+            Type mtype = attribTree(tree.meth, localEnv, new ResultInfo(kind, mpt, resultInfo.checkContext));
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
@@ -1999,7 +2013,9 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Attribute constructor arguments.
-        List<Type> argtypes = attribArgs(tree.args, localEnv);
+        ListBuffer<Type> argtypesBuf = ListBuffer.lb();
+        int pkind = attribArgs(tree.args, localEnv, argtypesBuf);
+        List<Type> argtypes = argtypesBuf.toList();
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
         // If we have made no mistakes in the class type...
@@ -2086,11 +2102,16 @@ public class Attr extends JCTree.Visitor {
                             clazztype,
                             tree.constructor,
                             rsEnv,
-                            new ResultInfo(MTH, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
+                            new ResultInfo(pkind, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
                     if (rsEnv.info.lastResolveVarargs())
                         Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
                 }
-                findDiamondIfNeeded(localEnv, tree, clazztype);
+                if (cdef == null &&
+                        !clazztype.isErroneous() &&
+                        clazztype.getTypeArguments().nonEmpty() &&
+                        findDiamonds) {
+                    findDiamond(localEnv, tree, clazztype);
+                }
             }
 
             if (cdef != null) {
@@ -2157,7 +2178,7 @@ public class Attr extends JCTree.Visitor {
                     clazztype,
                     tree.constructor,
                     localEnv,
-                    new ResultInfo(VAL, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
+                    new ResultInfo(pkind, newMethodTemplate(syms.voidType, argtypes, typeargtypes)));
             } else {
                 if (tree.clazz.hasTag(ANNOTATED_TYPE)) {
                     checkForDeclarationAnnotations(((JCAnnotatedType) tree.clazz).annotations,
@@ -2172,32 +2193,27 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.typeargs, localEnv);
     }
     //where
-        void findDiamondIfNeeded(Env<AttrContext> env, JCNewClass tree, Type clazztype) {
-            if (tree.def == null &&
-                    !clazztype.isErroneous() &&
-                    clazztype.getTypeArguments().nonEmpty() &&
-                    findDiamonds) {
-                JCTypeApply ta = (JCTypeApply)tree.clazz;
-                List<JCExpression> prevTypeargs = ta.arguments;
-                try {
-                    //create a 'fake' diamond AST node by removing type-argument trees
-                    ta.arguments = List.nil();
-                    ResultInfo findDiamondResult = new ResultInfo(VAL,
-                            resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
-                    Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
-                    Type polyPt = allowPoly ?
-                            syms.objectType :
-                            clazztype;
-                    if (!inferred.isErroneous() &&
-                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
-                        String key = types.isSameType(clazztype, inferred) ?
-                            "diamond.redundant.args" :
-                            "diamond.redundant.args.1";
-                        log.warning(tree.clazz.pos(), key, clazztype, inferred);
-                    }
-                } finally {
-                    ta.arguments = prevTypeargs;
+        void findDiamond(Env<AttrContext> env, JCNewClass tree, Type clazztype) {
+            JCTypeApply ta = (JCTypeApply)tree.clazz;
+            List<JCExpression> prevTypeargs = ta.arguments;
+            try {
+                //create a 'fake' diamond AST node by removing type-argument trees
+                ta.arguments = List.nil();
+                ResultInfo findDiamondResult = new ResultInfo(VAL,
+                        resultInfo.checkContext.inferenceContext().free(resultInfo.pt) ? Type.noType : pt());
+                Type inferred = deferredAttr.attribSpeculative(tree, env, findDiamondResult).type;
+                Type polyPt = allowPoly ?
+                        syms.objectType :
+                        clazztype;
+                if (!inferred.isErroneous() &&
+                    types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
+                    String key = types.isSameType(clazztype, inferred) ?
+                        "diamond.redundant.args" :
+                        "diamond.redundant.args.1";
+                    log.warning(tree.clazz.pos(), key, clazztype, inferred);
                 }
+            } finally {
+                ta.arguments = prevTypeargs;
             }
         }
 
@@ -3051,7 +3067,7 @@ public class Attr extends JCTree.Visitor {
         //should we propagate the target type?
         final ResultInfo castInfo;
         JCExpression expr = TreeInfo.skipParens(tree.expr);
-        boolean isPoly = expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE);
+        boolean isPoly = allowPoly && (expr.hasTag(LAMBDA) || expr.hasTag(REFERENCE));
         if (isPoly) {
             //expression is a poly - we need to propagate target type info
             castInfo = new ResultInfo(VAL, clazztype, new Check.NestedCheckContext(resultInfo.checkContext) {
@@ -3440,10 +3456,14 @@ public class Attr extends JCTree.Visitor {
                      Symbol sym,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            Type pt = resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase));
-            Type owntype = checkIdInternal(tree, site, sym, pt, env, resultInfo);
-            resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
-            return owntype;
+            if ((resultInfo.pkind & POLY) != 0) {
+                Type pt = resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase));
+                Type owntype = checkIdInternal(tree, site, sym, pt, env, resultInfo);
+                resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
+                return owntype;
+            } else {
+                return checkIdInternal(tree, site, sym, resultInfo.pt, env, resultInfo);
+            }
         }
 
         Type checkIdInternal(JCTree tree,
@@ -3541,7 +3561,7 @@ public class Attr extends JCTree.Visitor {
                 break;
             case MTH: {
                 owntype = checkMethod(site, sym,
-                        new ResultInfo(VAL, resultInfo.pt.getReturnType(), resultInfo.checkContext),
+                        new ResultInfo(resultInfo.pkind, resultInfo.pt.getReturnType(), resultInfo.checkContext),
                         env, TreeInfo.args(env.tree), resultInfo.pt.getParameterTypes(),
                         resultInfo.pt.getTypeArguments());
                 break;
@@ -4289,12 +4309,13 @@ public class Attr extends JCTree.Visitor {
             (c.flags() & ABSTRACT) == 0) {
             checkSerialVersionUID(tree, c);
         }
+        if (allowTypeAnnos) {
+            // Correctly organize the postions of the type annotations
+            TypeAnnotations.organizeTypeAnnotationsBodies(this.syms, this.names, this.log, tree);
 
-        // Correctly organize the postions of the type annotations
-        TypeAnnotations.organizeTypeAnnotationsBodies(this.syms, this.names, this.log, tree);
-
-        // Check type annotations applicability rules
-        validateTypeAnnotations(tree);
+            // Check type annotations applicability rules
+            validateTypeAnnotations(tree);
+        }
     }
         // where
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
