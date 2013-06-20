@@ -3206,7 +3206,7 @@ public class Attr extends JCTree.Visitor {
         if (skind == TYP) {
             Type elt = site;
             while (elt.hasTag(ARRAY))
-                elt = ((ArrayType)elt).elemtype;
+                elt = ((ArrayType)elt.unannotatedType()).elemtype;
             if (elt.hasTag(TYPEVAR)) {
                 log.error(tree.pos(), "type.var.cant.be.deref");
                 result = types.createErrorType(tree.type);
