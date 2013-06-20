@@ -80,7 +80,8 @@ public class ServerSocketAdaptor                        // package-private
     public InetAddress getInetAddress() {
         if (!ssc.isBound())
             return null;
-        return Net.asInetSocketAddress(ssc.localAddress()).getAddress();
+        return Net.getRevealedLocalAddress(ssc.localAddress()).getAddress();
+
     }
 
     public int getLocalPort() {

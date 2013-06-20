@@ -84,7 +84,7 @@ static POINT *TransformPoly(jint *xpoints, jint *ypoints,
         *pNpoints = outpoints;
     }
     if (outpoints > POLYTEMPSIZE) {
-        pPoints = (POINT *) safe_Malloc(sizeof(POINT) * outpoints);
+        pPoints = (POINT *) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(POINT), outpoints);
     }
     BOOL isempty = fixend;
     for (int i = 0; i < npoints; i++) {

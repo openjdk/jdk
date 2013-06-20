@@ -38,8 +38,6 @@ import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.spec.*;
 
-import com.sun.org.apache.xml.internal.security.utils.IdResolver;
-
 /**
  * Useful static DOM utility methods.
  *
@@ -107,7 +105,7 @@ public class DOMUtils {
     public static void setAttributeID(Element elem, String name, String value) {
         if (value == null) return;
         elem.setAttributeNS(null, name, value);
-        IdResolver.registerElementById(elem, value);
+        elem.setIdAttributeNS(null, name, true);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.media.sound;
 
 import javax.sound.midi.MidiDevice;
-import javax.sound.midi.spi.MidiDeviceProvider;
 
 
 /**
@@ -35,15 +34,15 @@ import javax.sound.midi.spi.MidiDeviceProvider;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-public class MidiOutDeviceProvider extends AbstractMidiDeviceProvider {
+public final class MidiOutDeviceProvider extends AbstractMidiDeviceProvider {
 
     /** Cache of info objects for all MIDI output devices on the system. */
-    static Info[] infos = null;
+    private static Info[] infos = null;
 
     /** Cache of open MIDI output devices on the system. */
-    static MidiDevice[] devices = null;
+    private static MidiDevice[] devices = null;
 
-    private static boolean enabled;
+    private final static boolean enabled;
 
     // STATIC
 
@@ -104,8 +103,8 @@ public class MidiOutDeviceProvider extends AbstractMidiDeviceProvider {
      * previous instance may still exist and be open / in use / etc.,
      * the new instance will not reflect that state...
      */
-    static class MidiOutDeviceInfo extends AbstractMidiDeviceProvider.Info {
-        private Class providerClass;
+    static final class MidiOutDeviceInfo extends AbstractMidiDeviceProvider.Info {
+        private final Class providerClass;
 
         private MidiOutDeviceInfo(int index, Class providerClass) {
             super(nGetName(index), nGetVendor(index), nGetDescription(index), nGetVersion(index), index);

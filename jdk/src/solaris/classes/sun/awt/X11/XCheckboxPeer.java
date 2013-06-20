@@ -172,7 +172,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
             Checkbox cb = (Checkbox) e.getSource();
 
             if (cb.contains(e.getX(), e.getY())) {
-                if (log.isLoggable(PlatformLogger.FINER)) {
+                if (log.isLoggable(PlatformLogger.Level.FINER)) {
                     log.finer("mousePressed() on " + target.getName() + " : armed = " + armed + ", pressed = " + pressed
                               + ", selected = " + selected + ", enabled = " + isEnabled());
                 }
@@ -190,7 +190,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("mouseReleased() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }
@@ -215,7 +215,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseEntered(MouseEvent e) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("mouseEntered() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }
@@ -226,7 +226,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseExited(MouseEvent e) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("mouseExited() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }

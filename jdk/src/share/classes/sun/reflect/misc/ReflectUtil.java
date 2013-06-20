@@ -27,6 +27,7 @@
 package sun.reflect.misc;
 
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import sun.reflect.Reflection;
 
 public final class ReflectUtil {
@@ -114,11 +115,26 @@ public final class ReflectUtil {
         return false;
     }
 
-
+    /**
+     * Checks package access on the given class.
+     *
+     * If it is a {@link Proxy#isProxyClass(java.lang.Class)} that implements
+     * a non-public interface (i.e. may be in a non-restricted package),
+     * also check the package access on the proxy interfaces.
+     */
     public static void checkPackageAccess(Class<?> clazz) {
         checkPackageAccess(clazz.getName());
+        if (isNonPublicProxyClass(clazz)) {
+            checkProxyPackageAccess(clazz);
+        }
     }
 
+    /**
+     * Checks package access on the given classname.
+     * This method is typically called when the Class instance is not
+     * available and the caller attempts to load a class on behalf
+     * the true caller (application).
+     */
     public static void checkPackageAccess(String name) {
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
@@ -180,13 +196,30 @@ public final class ReflectUtil {
     }
 
     /**
+     * Check package access on the proxy interfaces that the given proxy class
+     * implements.
+     *
+     * @param clazz Proxy class object
+     */
+    public static void checkProxyPackageAccess(Class<?> clazz) {
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            // check proxy interfaces if the given class is a proxy class
+            if (Proxy.isProxyClass(clazz)) {
+                for (Class<?> intf : clazz.getInterfaces()) {
+                    checkPackageAccess(intf);
+                }
+            }
+        }
+    }
+
+    /**
      * Access check on the interfaces that a proxy class implements and throw
-     * {@code SecurityException} if it accesses a restricted package.
+     * {@code SecurityException} if it accesses a restricted package from
+     * the caller's class loader.
      *
      * @param ccl the caller's class loader
      * @param interfaces the list of interfaces that a proxy class implements
-     *
-     * @see Proxy#checkProxyAccess
      */
     public static void checkProxyPackageAccess(ClassLoader ccl,
                                                Class<?>... interfaces)
@@ -205,4 +238,16 @@ public final class ReflectUtil {
     // Note that bytecode instrumentation tools may exclude 'sun.*'
     // classes but not generated proxy classes and so keep it in com.sun.*
     public static final String PROXY_PACKAGE = "com.sun.proxy";
+
+    /**
+     * Test if the given class is a proxy class that implements
+     * non-public interface.  Such proxy class may be in a non-restricted
+     * package that bypasses checkPackageAccess.
+     */
+    public static boolean isNonPublicProxyClass(Class<?> cls) {
+        String name = cls.getName();
+        int i = name.lastIndexOf('.');
+        String pkg = (i != -1) ? name.substring(0, i) : "";
+        return Proxy.isProxyClass(cls) && !pkg.equals(PROXY_PACKAGE);
+    }
 }

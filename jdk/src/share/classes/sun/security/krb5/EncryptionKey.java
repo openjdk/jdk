@@ -98,36 +98,6 @@ public class EncryptionKey
     }
 
     /**
-     * Obtains the latest version of the secret key of
-     * the principal from a keytab.
-     *
-     * @param princ the principal whose secret key is desired
-     * @param keytab the path to the keytab file. A value of null
-     * will be accepted to indicate that the default path should be
-     * searched.
-     * @returns the secret key or null if none was found.
-     */
-    /*
-    // Replaced by acquireSecretKeys
-    public static EncryptionKey acquireSecretKey(PrincipalName princ,
-                                                 String keytab)
-        throws KrbException, IOException {
-
-        if (princ == null) {
-            throw new IllegalArgumentException(
-                "Cannot have null pricipal name to look in keytab.");
-        }
-
-        KeyTab ktab = KeyTab.getInstance(keytab);
-
-        if (ktab == null)
-            return null;
-
-        return ktab.readServiceKey(princ);
-    }
-    */
-
-    /**
      * Obtains all versions of the secret key of the principal from a
      * keytab.
      *
@@ -208,9 +178,6 @@ public class EncryptionKey
             String salt) throws KrbException {
 
         int[] etypes = EType.getDefaults("default_tkt_enctypes");
-        if (etypes == null) {
-            etypes = EType.getBuiltInDefaults();
-        }
 
         EncryptionKey[] encKeys = new EncryptionKey[etypes.length];
         for (int i = 0; i < etypes.length; i++) {
