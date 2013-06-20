@@ -640,7 +640,7 @@ public interface Map<K,V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
-     *         {@code 1} if there was no mapping for the key.
+     *         {@code null} if there was no mapping for the key.
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
@@ -994,20 +994,40 @@ public interface Map<K,V> {
         V oldValue = get(key);
         for (;;) {
             V newValue = remappingFunction.apply(key, oldValue);
-            if (oldValue != null) {
-                if (newValue != null) {
-                    if (replace(key, oldValue, newValue))
-                        return newValue;
-                } else if (remove(key, oldValue)) {
+            if (newValue == null) {
+                // delete mapping
+                if(oldValue != null || containsKey(key)) {
+                    // something to remove
+                    if (remove(key, oldValue)) {
+                        // removed the old value as expected
+                        return null;
+                    }
+
+                    // some other value replaced old value. try again.
+                    oldValue = get(key);
+                } else {
+                    // nothing to do. Leave things as they were.
                     return null;
                 }
-                oldValue = get(key);
             } else {
-                if (newValue != null) {
-                    if ((oldValue = putIfAbsent(key, newValue)) == null)
+                // add or replace old mapping
+                if (oldValue != null) {
+                    // replace
+                    if (replace(key, oldValue, newValue)) {
+                        // replaced as expected.
                         return newValue;
+                    }
+
+                    // some other value replaced old value. try again.
+                    oldValue = get(key);
                 } else {
-                    return null;
+                    // add (replace if oldValue was null)
+                    if ((oldValue = putIfAbsent(key, newValue)) == null) {
+                        // replaced
+                        return newValue;
+                    }
+
+                    // some other value replaced old value. try again.
                 }
             }
         }
