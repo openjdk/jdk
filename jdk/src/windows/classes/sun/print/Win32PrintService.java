@@ -180,6 +180,9 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private static final int DMDUP_VERTICAL = 2;
     private static final int DMDUP_HORIZONTAL = 3;
     private static final int DMCOLLATE_TRUE = 1;
+    private static final int DMCOLOR_MONOCHROME = 1;
+    private static final int DMCOLOR_COLOR = 2;
+
 
     // media sizes with indices above dmPaperToPrintService' length
     private static final int DMPAPER_A2 = 66;
@@ -1041,6 +1044,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         int defOrient = defaults[5];
         int defSides = defaults[6];
         int defCollate = defaults[7];
+        int defColor = defaults[8];
 
         if (category == Copies.class) {
             if (defCopies > 0) {
@@ -1049,11 +1053,10 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                 return new Copies(1);
             }
         } else if (category == Chromaticity.class) {
-            int caps = getPrinterCapabilities();
-            if ((caps & DEVCAP_COLOR) == 0) {
-                return Chromaticity.MONOCHROME;
-            } else {
+            if (defColor == DMCOLOR_COLOR) {
                 return Chromaticity.COLOR;
+            } else {
+                return Chromaticity.MONOCHROME;
             }
         } else if (category == JobName.class) {
             return new JobName("Java Printing", null);
