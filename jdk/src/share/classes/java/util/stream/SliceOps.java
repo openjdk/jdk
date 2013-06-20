@@ -28,7 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.LongConsumer;
 
 /**
  * Factory for instances of a short-circuiting stateful intermediate operations
@@ -352,7 +355,7 @@ final class SliceOps {
                     else
                         // This will create a tree of depth 1 and will not be a sub-tree
                         // for leaf nodes within the require range
-                        result = Nodes.conc(op.getOutputShape(), nodes);
+                        result = conc(op.getOutputShape(), nodes);
                     setLocalResult(result);
                 }
             }
@@ -418,94 +421,116 @@ final class SliceOps {
             if (skipLeft == 0 && skipRight == 0)
                 return input;
             else {
-                return Nodes.truncateNode(input, skipLeft, thisNodeSize - skipRight, generator);
+                return truncateNode(input, skipLeft, thisNodeSize - skipRight, generator);
             }
         }
-    }
+        /**
+         * Truncate a {@link Node}, returning a node describing a subsequence of
+         * the contents of the input node.
+         *
+         * @param <T> the type of elements of the input node and truncated node
+         * @param input the input node
+         * @param from the starting offset to include in the truncated node (inclusive)
+         * @param to the ending offset ot include in the truncated node (exclusive)
+         * @param generator the array factory (only used for reference nodes)
+         * @return the truncated node
+         */
+        @SuppressWarnings("unchecked")
+        private static <T> Node<T> truncateNode(Node<T> input, long from, long to, IntFunction<T[]> generator) {
+            StreamShape shape = input.getShape();
+            long size = truncatedSize(input.count(), from, to);
+            if (size == 0)
+                return Nodes.emptyNode(shape);
+            else if (from == 0 && to >= input.count())
+                return input;
 
-    // @@@ Currently unused -- optimization for when all sizes are known
-//    private static class SizedSliceTask<S, T> extends AbstractShortCircuitTask<S, T, Node<T>, SizedSliceTask<S, T>> {
-//        private final int targetOffset, targetSize;
-//        private final int offset, size;
-//
-//        private SizedSliceTask(ParallelPipelineHelper<S, T> helper, int offset, int size) {
-//            super(helper);
-//            targetOffset = offset;
-//            targetSize = size;
-//            this.offset = 0;
-//            this.size = spliterator.getSizeIfKnown();
-//        }
-//
-//        private SizedSliceTask(SizedSliceTask<S, T> parent, Spliterator<S> spliterator) {
-//            // Makes assumptions about order in which siblings are created and linked into parent!
-//            super(parent, spliterator);
-//            targetOffset = parent.targetOffset;
-//            targetSize = parent.targetSize;
-//            int siblingSizes = 0;
-//            for (SizedSliceTask<S, T> sibling = parent.children; sibling != null; sibling = sibling.nextSibling)
-//                siblingSizes += sibling.size;
-//            size = spliterator.getSizeIfKnown();
-//            offset = parent.offset + siblingSizes;
-//        }
-//
-//        @Override
-//        protected SizedSliceTask<S, T> makeChild(Spliterator<S> spliterator) {
-//            return new SizedSliceTask<>(this, spliterator);
-//        }
-//
-//        @Override
-//        protected Node<T> getEmptyResult() {
-//            return Nodes.emptyNode();
-//        }
-//
-//        @Override
-//        public boolean taskCanceled() {
-//            if (offset > targetOffset+targetSize || offset+size < targetOffset)
-//                return true;
-//            else
-//                return super.taskCanceled();
-//        }
-//
-//        @Override
-//        protected Node<T> doLeaf() {
-//            int skipLeft = Math.max(0, targetOffset - offset);
-//            int skipRight = Math.max(0, offset + size - (targetOffset + targetSize));
-//            if (skipLeft == 0 && skipRight == 0)
-//                return helper.into(Nodes.<T>makeBuilder(spliterator.getSizeIfKnown())).build();
-//            else {
-//                // If we're the first or last node that intersects the target range, peel off irrelevant elements
-//                int truncatedSize = size - skipLeft - skipRight;
-//                NodeBuilder<T> builder = Nodes.<T>makeBuilder(truncatedSize);
-//                Sink<S> wrappedSink = helper.wrapSink(builder);
-//                wrappedSink.begin(truncatedSize);
-//                Iterator<S> iterator = spliterator.iterator();
-//                for (int i=0; i<skipLeft; i++)
-//                    iterator.next();
-//                for (int i=0; i<truncatedSize; i++)
-//                    wrappedSink.apply(iterator.next());
-//                wrappedSink.end();
-//                return builder.build();
-//            }
-//        }
-//
-//        @Override
-//        public void onCompletion(CountedCompleter<?> caller) {
-//            if (!isLeaf()) {
-//                Node<T> result = null;
-//                for (SizedSliceTask<S, T> child = children.nextSibling; child != null; child = child.nextSibling) {
-//                    Node<T> childResult = child.getRawResult();
-//                    if (childResult == null)
-//                        continue;
-//                    else if (result == null)
-//                        result = childResult;
-//                    else
-//                        result = Nodes.node(result, childResult);
-//                }
-//                setRawResult(result);
-//                if (offset <= targetOffset && offset+size >= targetOffset+targetSize)
-//                    shortCircuit(result);
-//            }
-//        }
-//    }
+            switch (shape) {
+                case REFERENCE: {
+                    Spliterator<T> spliterator = input.spliterator();
+                    Node.Builder<T> nodeBuilder = Nodes.builder(size, generator);
+                    nodeBuilder.begin(size);
+                    for (int i = 0; i < from && spliterator.tryAdvance(e -> { }); i++) { }
+                    for (int i = 0; (i < size) && spliterator.tryAdvance(nodeBuilder); i++) { }
+                    nodeBuilder.end();
+                    return nodeBuilder.build();
+                }
+                case INT_VALUE: {
+                    Spliterator.OfInt spliterator = ((Node.OfInt) input).spliterator();
+                    Node.Builder.OfInt nodeBuilder = Nodes.intBuilder(size);
+                    nodeBuilder.begin(size);
+                    for (int i = 0; i < from && spliterator.tryAdvance((IntConsumer) e -> { }); i++) { }
+                    for (int i = 0; (i < size) && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
+                    nodeBuilder.end();
+                    return (Node<T>) nodeBuilder.build();
+                }
+                case LONG_VALUE: {
+                    Spliterator.OfLong spliterator = ((Node.OfLong) input).spliterator();
+                    Node.Builder.OfLong nodeBuilder = Nodes.longBuilder(size);
+                    nodeBuilder.begin(size);
+                    for (int i = 0; i < from && spliterator.tryAdvance((LongConsumer) e -> { }); i++) { }
+                    for (int i = 0; (i < size) && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
+                    nodeBuilder.end();
+                    return (Node<T>) nodeBuilder.build();
+                }
+                case DOUBLE_VALUE: {
+                    Spliterator.OfDouble spliterator = ((Node.OfDouble) input).spliterator();
+                    Node.Builder.OfDouble nodeBuilder = Nodes.doubleBuilder(size);
+                    nodeBuilder.begin(size);
+                    for (int i = 0; i < from && spliterator.tryAdvance((DoubleConsumer) e -> { }); i++) { }
+                    for (int i = 0; (i < size) && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
+                    nodeBuilder.end();
+                    return (Node<T>) nodeBuilder.build();
+                }
+                default:
+                    throw new IllegalStateException("Unknown shape " + shape);
+            }
+        }
+
+        private static long truncatedSize(long size, long from, long to) {
+            if (from >= 0)
+                size = Math.max(0, size - from);
+            long limit = to - from;
+            if (limit >= 0)
+                size = Math.min(size, limit);
+            return size;
+        }
+
+        /**
+         * Produces a concatenated {@link Node} that has two or more children.
+         * <p>The count of the concatenated node is equal to the sum of the count
+         * of each child. Traversal of the concatenated node traverses the content
+         * of each child in encounter order of the list of children. Splitting a
+         * spliterator obtained from the concatenated node preserves the encounter
+         * order of the list of children.
+         *
+         * <p>The result may be a concatenated node, the input sole node if the size
+         * of the list is 1, or an empty node.
+         *
+         * @param <T> the type of elements of the concatenated node
+         * @param shape the shape of the concatenated node to be created
+         * @param nodes the input nodes
+         * @return a {@code Node} covering the elements of the input nodes
+         * @throws IllegalStateException if all {@link Node} elements of the list
+         * are an not instance of type supported by this factory.
+         */
+        @SuppressWarnings("unchecked")
+        private static <T> Node<T> conc(StreamShape shape, List<? extends Node<T>> nodes) {
+            int size = nodes.size();
+            if (size == 0)
+                return Nodes.emptyNode(shape);
+            else if (size == 1)
+                return nodes.get(0);
+            else {
+                // Create a right-balanced tree when there are more that 2 nodes
+                List<Node<T>> refNodes = (List<Node<T>>) nodes;
+                Node<T> c = Nodes.conc(shape, refNodes.get(size - 2), refNodes.get(size - 1));
+                for (int i = size - 3; i >= 0; i--) {
+                    c = Nodes.conc(shape, refNodes.get(i), c);
+                }
+                return c;
+            }
+        }
+
+    }
 
 }
