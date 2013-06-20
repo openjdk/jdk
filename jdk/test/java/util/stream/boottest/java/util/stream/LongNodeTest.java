@@ -102,7 +102,7 @@ public class LongNodeTest extends OpTestCase {
 
         long i = it.nextLong();
         if (it.hasNext()) {
-            return new Nodes.LongConcNode(Nodes.node(new long[] {i}), degenerateTree(it));
+            return new Nodes.ConcNode.OfLong(Nodes.node(new long[] {i}), degenerateTree(it));
         }
         else {
             return Nodes.node(new long[] {i});
@@ -114,7 +114,7 @@ public class LongNodeTest extends OpTestCase {
             return m.apply(l);
         }
         else {
-            return new Nodes.LongConcNode(
+            return new Nodes.ConcNode.OfLong(
                     tree(l.subList(0, l.size() / 2), m),
                     tree(l.subList(l.size() / 2, l.size()), m));
         }

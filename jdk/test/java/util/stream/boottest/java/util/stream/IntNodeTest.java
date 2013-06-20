@@ -102,7 +102,7 @@ public class IntNodeTest extends OpTestCase {
 
         int i = it.nextInt();
         if (it.hasNext()) {
-            return new Nodes.IntConcNode(Nodes.node(new int[] {i}), degenerateTree(it));
+            return new Nodes.ConcNode.OfInt(Nodes.node(new int[] {i}), degenerateTree(it));
         }
         else {
             return Nodes.node(new int[] {i});
@@ -114,7 +114,7 @@ public class IntNodeTest extends OpTestCase {
             return m.apply(l);
         }
         else {
-            return new Nodes.IntConcNode(
+            return new Nodes.ConcNode.OfInt(
                     tree(l.subList(0, l.size() / 2), m),
                     tree(l.subList(l.size() / 2, l.size()), m));
         }

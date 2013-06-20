@@ -102,7 +102,7 @@ public class DoubleNodeTest extends OpTestCase {
 
         double i = it.nextDouble();
         if (it.hasNext()) {
-            return new Nodes.DoubleConcNode(Nodes.node(new double[] {i}), degenerateTree(it));
+            return new Nodes.ConcNode.OfDouble(Nodes.node(new double[] {i}), degenerateTree(it));
         }
         else {
             return Nodes.node(new double[] {i});
@@ -114,7 +114,7 @@ public class DoubleNodeTest extends OpTestCase {
             return m.apply(l);
         }
         else {
-            return new Nodes.DoubleConcNode(
+            return new Nodes.ConcNode.OfDouble(
                     tree(l.subList(0, l.size() / 2), m),
                     tree(l.subList(l.size() / 2, l.size()), m));
         }
