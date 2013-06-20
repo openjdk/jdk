@@ -125,7 +125,7 @@ public final class NativeArguments extends ScriptObject {
     @Override
     public void setArgument(final int key, final Object value) {
         if (namedArgs.has(key)) {
-            namedArgs.set(key, value, false);
+            namedArgs = namedArgs.set(key, value, false);
         }
     }
 
