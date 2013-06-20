@@ -566,7 +566,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "flush_callers_register_windows");
     address start = __ pc();
 
-    __ flush_windows();
+    __ flushw();
     __ retl(false);
     __ delayed()->add( FP, STACK_BIAS, O0 );
     // The returned value must be a stack pointer whose register save area
@@ -575,67 +575,9 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Helper functions for v8 atomic operations.
-  //
-  void get_v8_oop_lock_ptr(Register lock_ptr_reg, Register mark_oop_reg, Register scratch_reg) {
-    if (mark_oop_reg == noreg) {
-      address lock_ptr = (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr();
-      __ set((intptr_t)lock_ptr, lock_ptr_reg);
-    } else {
-      assert(scratch_reg != noreg, "just checking");
-      address lock_ptr = (address)StubRoutines::Sparc::_v8_oop_lock_cache;
-      __ set((intptr_t)lock_ptr, lock_ptr_reg);
-      __ and3(mark_oop_reg, StubRoutines::Sparc::v8_oop_lock_mask_in_place, scratch_reg);
-      __ add(lock_ptr_reg, scratch_reg, lock_ptr_reg);
-    }
-  }
-
-  void generate_v8_lock_prologue(Register lock_reg, Register lock_ptr_reg, Register yield_reg, Label& retry, Label& dontyield, Register mark_oop_reg = noreg, Register scratch_reg = noreg) {
-
-    get_v8_oop_lock_ptr(lock_ptr_reg, mark_oop_reg, scratch_reg);
-    __ set(StubRoutines::Sparc::locked, lock_reg);
-    // Initialize yield counter
-    __ mov(G0,yield_reg);
-
-    __ BIND(retry);
-    __ cmp_and_br_short(yield_reg, V8AtomicOperationUnderLockSpinCount, Assembler::less, Assembler::pt, dontyield);
-
-    // This code can only be called from inside the VM, this
-    // stub is only invoked from Atomic::add().  We do not
-    // want to use call_VM, because _last_java_sp and such
-    // must already be set.
-    //
-    // Save the regs and make space for a C call
-    __ save(SP, -96, SP);
-    __ save_all_globals_into_locals();
-    BLOCK_COMMENT("call os::naked_sleep");
-    __ call(CAST_FROM_FN_PTR(address, os::naked_sleep));
-    __ delayed()->nop();
-    __ restore_globals_from_locals();
-    __ restore();
-    // reset the counter
-    __ mov(G0,yield_reg);
-
-    __ BIND(dontyield);
-
-    // try to get lock
-    __ swap(lock_ptr_reg, 0, lock_reg);
-
-    // did we get the lock?
-    __ cmp(lock_reg, StubRoutines::Sparc::unlocked);
-    __ br(Assembler::notEqual, true, Assembler::pn, retry);
-    __ delayed()->add(yield_reg,1,yield_reg);
-
-    // yes, got lock. do the operation here.
-  }
-
-  void generate_v8_lock_epilogue(Register lock_reg, Register lock_ptr_reg, Register yield_reg, Label& retry, Label& dontyield, Register mark_oop_reg = noreg, Register scratch_reg = noreg) {
-    __ st(lock_reg, lock_ptr_reg, 0); // unlock
-  }
-
   // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
   //
-  // Arguments :
+  // Arguments:
   //
   //      exchange_value: O0
   //      dest:           O1
@@ -656,33 +598,14 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(O0, O3);       // scratch copy of exchange value
       __ ld(O1, 0, O2);     // observe the previous value
       // try to replace O2 with O3
-      __ cas_under_lock(O1, O2, O3,
-      (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr(),false);
+      __ cas(O1, O2, O3);
       __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pn, retry);
 
       __ retl(false);
       __ delayed()->mov(O2, O0);  // report previous value to caller
-
     } else {
-      if (VM_Version::v9_instructions_work()) {
-        __ retl(false);
-        __ delayed()->swap(O1, 0, O0);
-      } else {
-        const Register& lock_reg = O2;
-        const Register& lock_ptr_reg = O3;
-        const Register& yield_reg = O4;
-
-        Label retry;
-        Label dontyield;
-
-        generate_v8_lock_prologue(lock_reg, lock_ptr_reg, yield_reg, retry, dontyield);
-        // got the lock, do the swap
-        __ swap(O1, 0, O0);
-
-        generate_v8_lock_epilogue(lock_reg, lock_ptr_reg, yield_reg, retry, dontyield);
-        __ retl(false);
-        __ delayed()->nop();
-      }
+      __ retl(false);
+      __ delayed()->swap(O1, 0, O0);
     }
 
     return start;
@@ -691,7 +614,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Support for jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value)
   //
-  // Arguments :
+  // Arguments:
   //
   //      exchange_value: O0
   //      dest:           O1
@@ -701,15 +624,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   //     O0: the value previously stored in dest
   //
-  // Overwrites (v8): O3,O4,O5
-  //
   address generate_atomic_cmpxchg() {
     StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg");
     address start = __ pc();
 
     // cmpxchg(dest, compare_value, exchange_value)
-    __ cas_under_lock(O1, O2, O0,
-      (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr(),false);
+    __ cas(O1, O2, O0);
     __ retl(false);
     __ delayed()->nop();
 
@@ -718,7 +638,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Support for jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong *dest, jlong compare_value)
   //
-  // Arguments :
+  // Arguments:
   //
   //      exchange_value: O1:O0
   //      dest:           O2
@@ -728,17 +648,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   //     O1:O0: the value previously stored in dest
   //
-  // This only works on V9, on V8 we don't generate any
-  // code and just return NULL.
-  //
   // Overwrites: G1,G2,G3
   //
   address generate_atomic_cmpxchg_long() {
     StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg_long");
     address start = __ pc();
 
-    if (!VM_Version::supports_cx8())
-        return NULL;;
     __ sllx(O0, 32, O0);
     __ srl(O1, 0, O1);
     __ or3(O0,O1,O0);      // O0 holds 64-bit value from compare_value
@@ -756,7 +671,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Support for jint Atomic::add(jint add_value, volatile jint* dest).
   //
-  // Arguments :
+  // Arguments:
   //
   //      add_value: O0   (e.g., +1 or -1)
   //      dest:      O1
@@ -765,47 +680,22 @@ class StubGenerator: public StubCodeGenerator {
   //
   //     O0: the new value stored in dest
   //
-  // Overwrites (v9): O3
-  // Overwrites (v8): O3,O4,O5
+  // Overwrites: O3
   //
   address generate_atomic_add() {
     StubCodeMark mark(this, "StubRoutines", "atomic_add");
     address start = __ pc();
     __ BIND(_atomic_add_stub);
 
-    if (VM_Version::v9_instructions_work()) {
-      Label(retry);
-      __ BIND(retry);
+    Label(retry);
+    __ BIND(retry);
 
-      __ lduw(O1, 0, O2);
-      __ add(O0, O2, O3);
-      __ cas(O1, O2, O3);
-      __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pn, retry);
-      __ retl(false);
-      __ delayed()->add(O0, O2, O0); // note that cas made O2==O3
-    } else {
-      const Register& lock_reg = O2;
-      const Register& lock_ptr_reg = O3;
-      const Register& value_reg = O4;
-      const Register& yield_reg = O5;
-
-      Label(retry);
-      Label(dontyield);
-
-      generate_v8_lock_prologue(lock_reg, lock_ptr_reg, yield_reg, retry, dontyield);
-      // got lock, do the increment
-      __ ld(O1, 0, value_reg);
-      __ add(O0, value_reg, value_reg);
-      __ st(value_reg, O1, 0);
-
-      // %%% only for RMO and PSO
-      __ membar(Assembler::StoreStore);
-
-      generate_v8_lock_epilogue(lock_reg, lock_ptr_reg, yield_reg, retry, dontyield);
-
-      __ retl(false);
-      __ delayed()->mov(value_reg, O0);
-    }
+    __ lduw(O1, 0, O2);
+    __ add(O0, O2, O3);
+    __ cas(O1, O2, O3);
+    __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pn, retry);
+    __ retl(false);
+    __ delayed()->add(O0, O2, O0); // note that cas made O2==O3
 
     return start;
   }
@@ -841,7 +731,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(G3, L3);
     __ mov(G4, L4);
     __ mov(G5, L5);
-    for (i = 0; i < (VM_Version::v9_instructions_work() ? 64 : 32); i += 2) {
+    for (i = 0; i < 64; i += 2) {
       __ stf(FloatRegisterImpl::D, as_FloatRegister(i), preserve_addr, i * wordSize);
     }
 
@@ -855,7 +745,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(L3, G3);
     __ mov(L4, G4);
     __ mov(L5, G5);
-    for (i = 0; i < (VM_Version::v9_instructions_work() ? 64 : 32); i += 2) {
+    for (i = 0; i < 64; i += 2) {
       __ ldf(FloatRegisterImpl::D, preserve_addr, as_FloatRegister(i), i * wordSize);
     }
 
