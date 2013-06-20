@@ -1894,21 +1894,6 @@ bool Arguments::check_vm_args_consistency() {
   // Note: Needs platform-dependent factoring.
   bool status = true;
 
-#if ( (defined(COMPILER2) && defined(SPARC)))
-  // NOTE: The call to VM_Version_init depends on the fact that VM_Version_init
-  // on sparc doesn't require generation of a stub as is the case on, e.g.,
-  // x86.  Normally, VM_Version_init must be called from init_globals in
-  // init.cpp, which is called by the initial java thread *after* arguments
-  // have been parsed.  VM_Version_init gets called twice on sparc.
-  extern void VM_Version_init();
-  VM_Version_init();
-  if (!VM_Version::has_v9()) {
-    jio_fprintf(defaultStream::error_stream(),
-                "V8 Machine detected, Server requires V9\n");
-    status = false;
-  }
-#endif /* COMPILER2 && SPARC */
-
   // Allow both -XX:-UseStackBanging and -XX:-UseBoundThreads in non-product
   // builds so the cost of stack banging can be measured.
 #if (defined(PRODUCT) && defined(SOLARIS))
