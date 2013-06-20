@@ -549,9 +549,7 @@ public class HttpClient extends NetworkClient {
 
     public String getURLFile() throws IOException {
 
-        String fileName = url.getFile();
-        if ((fileName == null) || (fileName.length() == 0))
-            fileName = "/";
+        String fileName;
 
         /**
          * proxyDisabled is set by subclass HttpsClient!
@@ -575,8 +573,24 @@ public class HttpClient extends NetworkClient {
                 result.append(url.getQuery());
             }
 
-            fileName =  result.toString();
+            fileName = result.toString();
+        } else {
+            fileName = url.getFile();
+
+            if ((fileName == null) || (fileName.length() == 0)) {
+                fileName = "/";
+            } else if (fileName.charAt(0) == '?') {
+                /* HTTP/1.1 spec says in 5.1.2. about Request-URI:
+                 * "Note that the absolute path cannot be empty; if
+                 * none is present in the original URI, it MUST be
+                 * given as "/" (the server root)."  So if the file
+                 * name here has only a query string, the path is
+                 * empty and we also have to add a "/".
+                 */
+                fileName = "/" + fileName;
+            }
         }
+
         if (fileName.indexOf('\n') == -1)
             return fileName;
         else
