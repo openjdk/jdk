@@ -959,10 +959,8 @@ public class DeferredAttr extends JCTree.Visitor {
             if (sym.kind == Kinds.AMBIGUOUS) {
                 Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
                 result = ArgumentExpressionKind.PRIMITIVE;
-                for (List<Symbol> ambigousSyms = err.ambiguousSyms ;
-                        ambigousSyms.nonEmpty() && !result.isPoly() ;
-                        ambigousSyms = ambigousSyms.tail) {
-                    Symbol s = ambigousSyms.head;
+                for (Symbol s : err.ambiguousSyms) {
+                    if (result.isPoly()) break;
                     if (s.kind == Kinds.MTH) {
                         result = reduce(ArgumentExpressionKind.methodKind(s, types));
                     }
