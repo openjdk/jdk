@@ -25,6 +25,9 @@
 
 package javax.management;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 /**
@@ -67,7 +70,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
     /**
      * @serial The different types of the notification.
      */
-    private final String[] types;
+    private String[] types;
 
     /** @see MBeanInfo#arrayGettersSafe */
     private final transient boolean arrayGettersSafe;
@@ -114,9 +117,8 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
            notifType, though it doesn't explicitly allow it
            either.  */
 
-        if (notifTypes == null)
-            notifTypes = NO_TYPES;
-        this.types = notifTypes;
+        this.types = (notifTypes != null && notifTypes.length > 0) ?
+                        notifTypes.clone() : NO_TYPES;
         this.arrayGettersSafe =
             MBeanInfo.arrayGettersSafe(this.getClass(),
                                        MBeanNotificationInfo.class);
@@ -202,5 +204,17 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         for (int i = 0; i < types.length; i++)
             hash ^= types[i].hashCode();
         return hash;
+    }
+
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField gf = ois.readFields();
+        String[] t = (String[])gf.get("types", null);
+
+        if (t == null) {
+            throw new InvalidObjectException("Trying to deserialize an invalid " +
+                                             "instance of " + MBeanNotificationInfo.class +
+                                             "[types=null]");
+        }
+        types = t.length == 0 ? t : t.clone();
     }
 }
