@@ -919,11 +919,15 @@ public class Code {
         if (o instanceof Long) return syms.longType;
         if (o instanceof Double) return syms.doubleType;
         if (o instanceof ClassSymbol) return syms.classType;
-        if (o instanceof Type.ArrayType) return syms.classType;
-        if (o instanceof Type.MethodType) return syms.methodTypeType;
-        if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
         if (o instanceof Pool.MethodHandle) return syms.methodHandleType;
-        throw new AssertionError(o);
+        if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
+        if (o instanceof Type) {
+            Type ty = ((Type)o).unannotatedType();
+
+            if (ty instanceof Type.ArrayType) return syms.classType;
+            if (ty instanceof Type.MethodType) return syms.methodTypeType;
+        }
+        throw new AssertionError("Invalid type of constant pool entry: " + o.getClass());
     }
 
     /** Emit an opcode with a one-byte operand field;
