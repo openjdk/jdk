@@ -131,7 +131,7 @@ public class RejectClientRenego implements
                 sslOS.flush();
             }
             throw new Exception("Not reject client initialized renegotiation");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException ioe) {
             System.out.println("Got the expected exception");
         } finally {
             sslSocket.close();
@@ -181,7 +181,7 @@ public class RejectClientRenego implements
                 sslIS.read();
             }
             throw new Exception("Not reject client initialized renegotiation");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException ioe) {
             System.out.println("Got the expected exception");
         } finally {
             sslSocket.close();
