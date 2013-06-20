@@ -732,13 +732,21 @@ public:
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
 template <class E, MEMFLAGS F>
-class ArrayAllocator : StackObj {
+class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
   char* _addr;
   bool _use_malloc;
   size_t _size;
+  bool _free_in_destructor;
  public:
-  ArrayAllocator() : _addr(NULL), _use_malloc(false), _size(0) { }
-  ~ArrayAllocator() { free(); }
+  ArrayAllocator(bool free_in_destructor = true) :
+    _addr(NULL), _use_malloc(false), _size(0), _free_in_destructor(free_in_destructor) { }
+
+  ~ArrayAllocator() {
+    if (_free_in_destructor) {
+      free();
+    }
+  }
+
   E* allocate(size_t length);
   void free();
 };
