@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,10 +406,10 @@
   develop(intx, WarmCallMaxSize, 999999,                                    \
           "size of the largest inlinable method")                           \
                                                                             \
-  product(intx, MaxNodeLimit, 65000,                                        \
+  product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
                                                                             \
-  product(intx, NodeLimitFudgeFactor, 1000,                                 \
+  product(intx, NodeLimitFudgeFactor, 2000,                                 \
           "Fudge Factor for certain optimizations")                         \
                                                                             \
   product(bool, UseJumpTables, true,                                        \

@@ -178,11 +178,11 @@ inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
 }
 
 inline int os::close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 inline int os::socket_close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 inline int os::socket(int domain, int type, int protocol) {
