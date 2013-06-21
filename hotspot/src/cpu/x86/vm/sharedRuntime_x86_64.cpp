@@ -1429,6 +1429,8 @@ static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType
   assert(!length_arg.first()->is_Register() || length_arg.first()->as_Register() != tmp_reg,
          "possible collision");
 
+  __ block_comment("unpack_array_argument {");
+
   // Pass the length, ptr pair
   Label is_null, done;
   VMRegPair tmp;
@@ -1453,6 +1455,8 @@ static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType
   move_ptr(masm, tmp, body_arg);
   move32_64(masm, tmp, length_arg);
   __ bind(done);
+
+  __ block_comment("} unpack_array_argument");
 }
 
 
@@ -2170,27 +2174,34 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
   }
 
-  // point c_arg at the first arg that is already loaded in case we
-  // need to spill before we call out
-  int c_arg = total_c_args - total_in_args;
+  int c_arg;
 
   // Pre-load a static method's oop into r14.  Used both by locking code and
   // the normal JNI call code.
-  if (method->is_static() && !is_critical_native) {
+  if (!is_critical_native) {
+    // point c_arg at the first arg that is already loaded in case we
+    // need to spill before we call out
+    c_arg = total_c_args - total_in_args;
 
-    //  load oop into a register
-    __ movoop(oop_handle_reg, JNIHandles::make_local(method->method_holder()->java_mirror()));
+    if (method->is_static()) {
 
-    // Now handlize the static class mirror it's known not-null.
-    __ movptr(Address(rsp, klass_offset), oop_handle_reg);
-    map->set_oop(VMRegImpl::stack2reg(klass_slot_offset));
+      //  load oop into a register
+      __ movoop(oop_handle_reg, JNIHandles::make_local(method->method_holder()->java_mirror()));
 
-    // Now get the handle
-    __ lea(oop_handle_reg, Address(rsp, klass_offset));
-    // store the klass handle as second argument
-    __ movptr(c_rarg1, oop_handle_reg);
-    // and protect the arg if we must spill
-    c_arg--;
+      // Now handlize the static class mirror it's known not-null.
+      __ movptr(Address(rsp, klass_offset), oop_handle_reg);
+      map->set_oop(VMRegImpl::stack2reg(klass_slot_offset));
+
+      // Now get the handle
+      __ lea(oop_handle_reg, Address(rsp, klass_offset));
+      // store the klass handle as second argument
+      __ movptr(c_rarg1, oop_handle_reg);
+      // and protect the arg if we must spill
+      c_arg--;
+    }
+  } else {
+    // For JNI critical methods we need to save all registers in save_args.
+    c_arg = 0;
   }
 
   // Change state to native (we save the return address in the thread, since it might not
