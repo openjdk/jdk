@@ -33,12 +33,14 @@ package sun.security.krb5;
 
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
-import sun.security.krb5.internal.rcache.*;
 import sun.security.jgss.krb5.Krb5AcceptCredential;
 import java.net.InetAddress;
 import sun.security.util.*;
 import java.io.IOException;
 import java.util.Arrays;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 
 /**
  * This class encapsulates a KRB-AP-REQ that a client sends to a
@@ -53,11 +55,23 @@ public class KrbApReq {
     private Credentials creds;
     private APReq apReqMessg;
 
-    private static CacheTable table = new CacheTable();
+    // Used by acceptor side
+    private static ReplayCache rcache = ReplayCache.getInstance();
     private static boolean DEBUG = Krb5.DEBUG;
+    private static final char[] hexConst = "0123456789ABCDEF".toCharArray();
+
+    private static final MessageDigest md;
+
+    static {
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException("Impossible");
+        }
+    }
 
     /**
-     * Contructs a AP-REQ message to send to the peer.
+     * Constructs an AP-REQ message to send to the peer.
      * @param tgsCred the <code>Credentials</code> to be used to construct the
      *          AP Request  protocol message.
      * @param mutualRequired Whether mutual authentication is required
@@ -81,7 +95,7 @@ public class KrbApReq {
 */
 
     /**
-     * Contructs a AP-REQ message to send to the peer.
+     * Constructs an AP-REQ message to send to the peer.
      * @param tgsCred the <code>Credentials</code> to be used to construct the
      *          AP Request  protocol message.
      * @param mutualRequired Whether mutual authentication is required
@@ -125,7 +139,7 @@ public class KrbApReq {
     }
 
     /**
-     * Contructs a AP-REQ message from the bytes received from the
+     * Constructs an AP-REQ message from the bytes received from the
      * peer.
      * @param message The message received from the peer
      * @param keys <code>EncrtyptionKey</code>s to decrypt the message;
@@ -146,7 +160,7 @@ public class KrbApReq {
     }
 
     /**
-     * Contructs a AP-REQ message from the bytes received from the
+     * Constructs an AP-REQ message from the bytes received from the
      * peer.
      * @param value The <code>DerValue</code> that contains the
      *              DER enoded AP-REQ protocol message
@@ -297,15 +311,19 @@ public class KrbApReq {
         if (!authenticator.ctime.inClockSkew())
             throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
 
-        // start to check if it is a replay attack.
-        AuthTime time =
-            new AuthTime(authenticator.ctime.getTime(), authenticator.cusec);
-        String client = authenticator.cname.toString();
-        if (table.get(time, authenticator.cname.toString()) != null) {
-            throw new KrbApErrException(Krb5.KRB_AP_ERR_REPEAT);
-        } else {
-            table.put(client, time, System.currentTimeMillis());
+        byte[] hash = md.digest(apReqMessg.authenticator.cipher);
+        char[] h = new char[hash.length * 2];
+        for (int i=0; i<hash.length; i++) {
+            h[2*i] = hexConst[(hash[i]&0xff)>>4];
+            h[2*i+1] = hexConst[hash[i]&0xf];
         }
+        AuthTimeWithHash time = new AuthTimeWithHash(
+                authenticator.cname.toString(),
+                apReqMessg.ticket.sname.toString(),
+                authenticator.ctime.getSeconds(),
+                authenticator.cusec,
+                new String(h));
+        rcache.checkAndStore(KerberosTime.now(), time);
 
         if (initiator != null) {
             // sender host address

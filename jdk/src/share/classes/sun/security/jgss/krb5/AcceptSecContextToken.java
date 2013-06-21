@@ -27,9 +27,10 @@ package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
+import java.security.AccessController;
+
+import sun.security.action.GetBooleanAction;
 import sun.security.krb5.*;
 
 class AcceptSecContextToken extends InitialToken {
@@ -42,23 +43,19 @@ class AcceptSecContextToken extends InitialToken {
      */
     public AcceptSecContextToken(Krb5Context context,
                                  KrbApReq apReq)
-        throws KrbException, IOException {
+        throws KrbException, IOException, GSSException {
 
-        /*
-         * RFC 1964, section 1.2 states:
-         *  (1) context key: uses Kerberos session key (or subkey, if
-         *  present in authenticator emitted by context initiator) directly
-         *
-         * This does not mention context acceptor. Hence we will not
-         * generate a subkey on the acceptor side. Note: Our initiator will
-         * still allow another acceptor to generate a subkey, even though
-         * our acceptor does not do so.
-         */
-        boolean useSubkey = false;
+        boolean useSubkey = AccessController.doPrivileged(
+                new GetBooleanAction("sun.security.krb5.acceptor.subkey"));
 
         boolean useSequenceNumber = true;
 
-        apRep = new KrbApRep(apReq, useSequenceNumber, useSubkey);
+        EncryptionKey subKey = null;
+        if (useSubkey) {
+            subKey = new EncryptionKey(apReq.getCreds().getSessionKey());
+            context.setKey(Krb5Context.ACCEPTOR_SUBKEY, subKey);
+        }
+        apRep = new KrbApRep(apReq, useSequenceNumber, subKey);
 
         context.resetMySequenceNumber(apRep.getSeqNumber().intValue());
 
