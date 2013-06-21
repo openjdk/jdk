@@ -351,6 +351,10 @@ public class TestFDBigInteger {
         if (!isImmutable && diff != left) {
             throw new Exception("leftInplaceSub of doesn't reuse its argument");
         }
+        if (isImmutable) {
+            check(biLeft, left, "leftInplaceSub corrupts its left immutable argument");
+        }
+        check(biRight, right, "leftInplaceSub corrupts its right argument");
         check(biLeft.subtract(biRight), diff, "leftInplaceSub returns wrong result");
     }
 
@@ -380,6 +384,10 @@ public class TestFDBigInteger {
         FDBigInteger diff = left.rightInplaceSub(right);
         if (!isImmutable && diff != right) {
             throw new Exception("rightInplaceSub of doesn't reuse its argument");
+        }
+        check(biLeft, left, "leftInplaceSub corrupts its left argument");
+        if (isImmutable) {
+            check(biRight, right, "leftInplaceSub corrupts its right immutable argument");
         }
         try {
             check(biLeft.subtract(biRight), diff, "rightInplaceSub returns wrong result");

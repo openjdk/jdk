@@ -782,7 +782,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
         assert this.size() >= subtrahend.size() : "result should be positive";
         FDBigInteger minuend;
         if (this.isImmutable) {
-            minuend = new FDBigInteger(this.data, this.offset);
+            minuend = new FDBigInteger(this.data.clone(), this.offset);
         } else {
             minuend = this;
         }
@@ -851,7 +851,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
         assert this.size() >= subtrahend.size() : "result should be positive";
         FDBigInteger minuend = this;
         if (subtrahend.isImmutable) {
-            subtrahend = new FDBigInteger(subtrahend.data, subtrahend.offset);
+            subtrahend = new FDBigInteger(subtrahend.data.clone(), subtrahend.offset);
         }
         int offsetDiff = minuend.offset - subtrahend.offset;
         int[] sData = subtrahend.data;
