@@ -23,20 +23,106 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911 4421494 7021568 7039369
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494 6358355 7021568 7039369 4396272
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 
-import java.util.regex.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.regex.*;
 
 public class ParseDouble {
+
+    private static final BigDecimal HALF = BigDecimal.valueOf(0.5);
+
+    private static void fail(String val, double n) {
+        throw new RuntimeException("Double.parseDouble failed. String:" +
+                                                val + " Result:" + n);
+    }
+
+    private static void check(String val) {
+        double n = Double.parseDouble(val);
+        boolean isNegativeN = n < 0 || n == 0 && 1/n < 0;
+        double na = Math.abs(n);
+        String s = val.trim().toLowerCase();
+        switch (s.charAt(s.length() - 1)) {
+            case 'd':
+            case 'f':
+                s = s.substring(0, s.length() - 1);
+                break;
+        }
+        boolean isNegative = false;
+        if (s.charAt(0) == '+') {
+            s = s.substring(1);
+        } else if (s.charAt(0) == '-') {
+            s = s.substring(1);
+            isNegative = true;
+        }
+        if (s.equals("nan")) {
+            if (!Double.isNaN(n)) {
+                fail(val, n);
+            }
+            return;
+        }
+        if (Double.isNaN(n)) {
+            fail(val, n);
+        }
+        if (isNegativeN != isNegative)
+            fail(val, n);
+        if (s.equals("infinity")) {
+            if (na != Double.POSITIVE_INFINITY) {
+                fail(val, n);
+            }
+            return;
+        }
+        BigDecimal bd;
+        if (s.startsWith("0x")) {
+            s = s.substring(2);
+            int indP = s.indexOf('p');
+            long exp = Long.parseLong(s.substring(indP + 1));
+            int indD = s.indexOf('.');
+            String significand;
+            if (indD >= 0) {
+                significand = s.substring(0, indD) + s.substring(indD + 1, indP);
+                exp -= 4*(indP - indD - 1);
+            } else {
+                significand = s.substring(0, indP);
+            }
+            bd = new BigDecimal(new BigInteger(significand, 16));
+            if (exp >= 0) {
+                bd = bd.multiply(BigDecimal.valueOf(2).pow((int)exp));
+            } else {
+                bd = bd.divide(BigDecimal.valueOf(2).pow((int)-exp));
+            }
+        } else {
+            bd = new BigDecimal(s);
+        }
+        BigDecimal l, u;
+        if (Double.isInfinite(na)) {
+            l = new BigDecimal(Double.MAX_VALUE).add(new BigDecimal(Math.ulp(Double.MAX_VALUE)).multiply(HALF));
+            u = null;
+        } else {
+            l = new BigDecimal(na).subtract(new BigDecimal(Math.ulp(Math.nextUp(-na))).multiply(HALF));
+            u = new BigDecimal(na).add(new BigDecimal(Math.ulp(n)).multiply(HALF));
+        }
+        int cmpL = bd.compareTo(l);
+        int cmpU = u != null ? bd.compareTo(u) : -1;
+        if ((Double.doubleToLongBits(n) & 1) != 0) {
+            if (cmpL <= 0 || cmpU >= 0) {
+                fail(val, n);
+            }
+        } else {
+            if (cmpL < 0 || cmpU > 0) {
+                fail(val, n);
+            }
+        }
+    }
 
     private static void check(String val, double expected) {
         double n = Double.parseDouble(val);
         if (n != expected)
-            throw new RuntimeException("Double.parseDouble failed. String:" +
-                                                val + " Result:" + n);
+            fail(val, n);
+        check(val);
     }
 
     private static void rudimentaryTest() {
@@ -460,6 +546,7 @@ public class ParseDouble {
 
             try {
                 d = Double.parseDouble(input[i]);
+                check(input[i]);
             }
             catch (NumberFormatException e) {
                 if (! exceptionalInput) {
@@ -560,12 +647,13 @@ public class ParseDouble {
      * region that should convert to that value.
      */
     private static void testSubnormalPowers() {
+        boolean failed = false;
         BigDecimal TWO = BigDecimal.valueOf(2);
         // An ulp is the same for all subnormal values
         BigDecimal ulp_BD = new BigDecimal(Double.MIN_VALUE);
 
-        // Test subnormal powers of two
-        for(int i = -1074; i <= -1022; i++) {
+        // Test subnormal powers of two (except Double.MIN_VALUE)
+        for(int i = -1073; i <= -1022; i++) {
             double d = Math.scalb(1.0, i);
 
             /*
@@ -578,17 +666,69 @@ public class ParseDouble {
 
             double convertedLowerBound = Double.parseDouble(lowerBound.toString());
             double convertedUpperBound = Double.parseDouble(upperBound.toString());
+            if (convertedLowerBound != d) {
+                failed = true;
+                System.out.printf("2^%d lowerBound converts as %a %s%n",
+                                  i, convertedLowerBound, lowerBound);
+            }
+            if (convertedUpperBound != d) {
+                failed = true;
+                System.out.printf("2^%d upperBound converts as %a %s%n",
+                                  i, convertedUpperBound, upperBound);
+            }
         }
+        /*
+         * Double.MIN_VALUE
+         * The region ]0.5*Double.MIN_VALUE, 1.5*Double.MIN_VALUE[ should round to Double.MIN_VALUE .
+         */
+        BigDecimal minValue = new BigDecimal(Double.MIN_VALUE);
+        if (Double.parseDouble(minValue.multiply(new BigDecimal(0.5)).toString()) != 0.0) {
+            failed = true;
+            System.out.printf("0.5*MIN_VALUE doesn't convert 0%n");
+        }
+        if (Double.parseDouble(minValue.multiply(new BigDecimal(0.50000000001)).toString()) != Double.MIN_VALUE) {
+            failed = true;
+            System.out.printf("0.50000000001*MIN_VALUE doesn't convert to MIN_VALUE%n");
+        }
+        if (Double.parseDouble(minValue.multiply(new BigDecimal(1.49999999999)).toString()) != Double.MIN_VALUE) {
+            failed = true;
+            System.out.printf("1.49999999999*MIN_VALUE doesn't convert to MIN_VALUE%n");
+        }
+        if (Double.parseDouble(minValue.multiply(new BigDecimal(1.5)).toString()) != 2*Double.MIN_VALUE) {
+            failed = true;
+            System.out.printf("1.5*MIN_VALUE doesn't convert to 2*MIN_VALUE%n");
+        }
+
+        if (failed)
+            throw new RuntimeException("Inconsistent conversion");
     }
 
+    /**
+     * For each power of two, test at boundaries of
+     * region that should convert to that value.
+     */
+    private static void testPowers() {
+        for(int i = -1074; i <= +1023; i++) {
+            double d = Math.scalb(1.0, i);
+            BigDecimal d_BD = new BigDecimal(d);
+
+            BigDecimal lowerBound = d_BD.subtract(new BigDecimal(Math.ulp(Math.nextUp(-d))).multiply(HALF));
+            BigDecimal upperBound = d_BD.add(new BigDecimal(Math.ulp(d)).multiply(HALF));
+
+            check(lowerBound.toString());
+            check(upperBound.toString());
+        }
+        check(new BigDecimal(Double.MAX_VALUE).add(new BigDecimal(Math.ulp(Double.MAX_VALUE)).multiply(HALF)).toString());
+    }
 
     private static void testStrictness() {
-        final double expected = 0x0.0000008000001p-1022;
+        final double expected = 0x0.0000008000000p-1022;
+//        final double expected = 0x0.0000008000001p-1022;
         boolean failed = false;
         double conversion = 0.0;
         double sum = 0.0; // Prevent conversion from being optimized away
 
-        //2^-1047 + 2^-1075
+        //2^-1047 + 2^-1075 rounds to 2^-1047
         String decimal = "6.631236871469758276785396630275967243399099947355303144249971758736286630139265439618068200788048744105960420552601852889715006376325666595539603330361800519107591783233358492337208057849499360899425128640718856616503093444922854759159988160304439909868291973931426625698663157749836252274523485312442358651207051292453083278116143932569727918709786004497872322193856150225415211997283078496319412124640111777216148110752815101775295719811974338451936095907419622417538473679495148632480391435931767981122396703443803335529756003353209830071832230689201383015598792184172909927924176339315507402234836120730914783168400715462440053817592702766213559042115986763819482654128770595766806872783349146967171293949598850675682115696218943412532098591327667236328125E-316";
 
         for(int i = 0; i <= 12_000; i++) {
@@ -620,6 +760,7 @@ public class ParseDouble {
         testRegex(paddedBadStrings, true);
 
         testSubnormalPowers();
+        testPowers();
         testStrictness();
     }
 }
