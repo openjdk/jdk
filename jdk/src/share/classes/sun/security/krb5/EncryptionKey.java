@@ -297,9 +297,11 @@ public class EncryptionKey
 
     /**
      * Generates a sub-sessionkey from a given session key.
+     *
+     * Used in AcceptSecContextToken and KrbApReq by acceptor- and initiator-
+     * side respectively.
      */
-     // Used in KrbApRep, KrbApReq
-    EncryptionKey(EncryptionKey key) throws KrbCryptoException {
+    public EncryptionKey(EncryptionKey key) throws KrbCryptoException {
         // generate random sub-session key
         keyValue = Confounder.bytes(key.keyValue.length);
         for (int i = 0; i < keyValue.length; i++) {

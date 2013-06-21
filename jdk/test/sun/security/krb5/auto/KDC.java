@@ -1137,7 +1137,7 @@ public class KDC {
      * @return REALM.NAME = { kdc = host:port }
      */
     private static String realmLineForKDC(KDC kdc) {
-        return String.format("  %s = {\n    kdc = %s:%d\n  }\n",
+        return String.format("%s = {\n    kdc = %s:%d\n}\n",
                 kdc.realm,
                 kdc.kdc,
                 kdc.port);
