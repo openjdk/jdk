@@ -37,6 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * ECMA 10.6 Arguments Object.
@@ -142,6 +143,10 @@ public final class NativeStrictArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), NativeStrictArguments.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(NativeStrictArguments.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 }

@@ -35,6 +35,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * Instances of this class serve as "prototype" object for script functions.
@@ -106,6 +107,10 @@ public class PrototypeObject extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), PrototypeObject.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(PrototypeObject.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 }

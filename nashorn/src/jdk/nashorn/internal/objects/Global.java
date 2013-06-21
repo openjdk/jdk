@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -1780,7 +1781,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), Global.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(Global.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 
     RegExpResult getLastRegExpResult() {
