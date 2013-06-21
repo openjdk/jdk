@@ -25,8 +25,6 @@
 
 package java.util.zip;
 
-import java.util.Date;
-
 /**
  * This class is used to represent a ZIP file entry.
  *
@@ -35,7 +33,7 @@ import java.util.Date;
 public
 class ZipEntry implements ZipConstants, Cloneable {
     String name;        // entry name
-    long time = -1;     // modification time (in DOS time)
+    long mtime = -1;    // last modification time
     long crc = -1;      // crc-32 of entry data
     long size = -1;     // uncompressed size of entry data
     long csize = -1;    // compressed size of entry data
@@ -79,7 +77,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      */
     public ZipEntry(ZipEntry e) {
         name = e.name;
-        time = e.time;
+        mtime = e.mtime;
         crc = e.crc;
         size = e.size;
         csize = e.csize;
@@ -89,7 +87,7 @@ class ZipEntry implements ZipConstants, Cloneable {
         comment = e.comment;
     }
 
-    /*
+    /**
      * Creates a new un-initialized zip entry
      */
     ZipEntry() {}
@@ -103,22 +101,26 @@ class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * Sets the modification time of the entry.
-     * @param time the entry modification time in number of milliseconds
-     *             since the epoch
+     * Sets the last modification time of the entry.
+     *
+     * @param time the last modification time of the entry in milliseconds since the epoch
      * @see #getTime()
      */
     public void setTime(long time) {
-        this.time = javaToDosTime(time);
+        this.mtime = time;
     }
 
     /**
-     * Returns the modification time of the entry, or -1 if not specified.
-     * @return the modification time of the entry, or -1 if not specified
+     * Returns the last modification time of the entry.
+     * <p> The last modificatin time may come from zip entry's extensible
+     * data field {@code NTFS} or {@code Info-ZIP Extended Timestamp}, if
+     * the entry is read from {@link ZipInputStream} or {@link ZipFile}.
+     *
+     * @return the last modification time of the entry, or -1 if not specified
      * @see #setTime(long)
      */
     public long getTime() {
-        return time != -1 ? dosToJavaTime(time) : -1;
+        return mtime;
     }
 
     /**
@@ -275,35 +277,6 @@ class ZipEntry implements ZipConstants, Cloneable {
      */
     public String toString() {
         return getName();
-    }
-
-    /*
-     * Converts DOS time to Java time (number of milliseconds since epoch).
-     */
-    private static long dosToJavaTime(long dtime) {
-        @SuppressWarnings("deprecation") // Use of date constructor.
-        Date d = new Date((int)(((dtime >> 25) & 0x7f) + 80),
-                          (int)(((dtime >> 21) & 0x0f) - 1),
-                          (int)((dtime >> 16) & 0x1f),
-                          (int)((dtime >> 11) & 0x1f),
-                          (int)((dtime >> 5) & 0x3f),
-                          (int)((dtime << 1) & 0x3e));
-        return d.getTime();
-    }
-
-    /*
-     * Converts Java time to DOS time.
-     */
-    @SuppressWarnings("deprecation") // Use of date methods
-    private static long javaToDosTime(long time) {
-        Date d = new Date(time);
-        int year = d.getYear() + 1900;
-        if (year < 1980) {
-            return (1 << 21) | (1 << 16);
-        }
-        return (year - 1980) << 25 | (d.getMonth() + 1) << 21 |
-               d.getDate() << 16 | d.getHours() << 11 | d.getMinutes() << 5 |
-               d.getSeconds() >> 1;
     }
 
     /**

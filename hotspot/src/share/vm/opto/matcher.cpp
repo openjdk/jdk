@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method("Before Matching");
+  C->print_method(PHASE_BEFORE_MATCHING);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -1285,16 +1285,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     mcall->_argsize = out_arg_limit_per_call - begin_out_arg_area;
   }
 
-  if (is_method_handle_invoke) {
-    // Kill some extra stack space in case method handles want to do
-    // a little in-place argument insertion.
-    // FIXME: Is this still necessary?
-    int regs_per_word  = NOT_LP64(1) LP64_ONLY(2); // %%% make a global const!
-    out_arg_limit_per_call += Method::extra_stack_entries() * regs_per_word;
-    // Do not update mcall->_argsize because (a) the extra space is not
-    // pushed as arguments and (b) _argsize is dead (not used anywhere).
-  }
-
   // Compute the max stack slot killed by any call.  These will not be
   // available for debug info, and will be used to adjust FIRST_STACK_mask
   // after all call sites have been visited.
@@ -1861,7 +1851,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
 
   for( uint i=0; kid != NULL && i<2; kid = s->_kids[1], i++ ) {   // binary tree
     int newrule;
-    if( i == 0 )
+    if( i == 0)
       newrule = kid->_rule[_leftOp[rule]];
     else
       newrule = kid->_rule[_rightOp[rule]];

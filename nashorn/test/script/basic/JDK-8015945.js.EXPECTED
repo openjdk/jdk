@@ -1,0 +1,7 @@
+global an Object? false
+global.squares returns Array? false
+result length 4
+0 = 4
+1 = 9
+2 = 16
+3 = 25

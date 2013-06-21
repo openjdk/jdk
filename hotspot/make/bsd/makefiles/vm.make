@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Rules to build JVM and related libraries, included from vm.make in the build
@@ -52,7 +52,7 @@ endif
 # Src_Dirs_V is everything in src/share/vm/*, plus the right os/*/vm and cpu/*/vm
 # The adfiles directory contains ad_<arch>.[ch]pp.
 # The jvmtifiles directory contains jvmti*.[ch]pp
-Src_Dirs_V += $(GENERATED)/adfiles $(GENERATED)/jvmtifiles
+Src_Dirs_V += $(GENERATED)/adfiles $(GENERATED)/jvmtifiles $(GENERATED)/tracefiles
 VPATH += $(Src_Dirs_V:%=%:)
 
 # set INCLUDES for C preprocessor.
@@ -66,7 +66,7 @@ else
   SYMFLAG =
 endif
 
-# HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined 
+# HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined
 # in $(GAMMADIR)/make/defs.make
 ifeq ($(HOTSPOT_BUILD_VERSION),)
   BUILD_VERSION = -DHOTSPOT_RELEASE_VERSION="\"$(HOTSPOT_RELEASE_VERSION)\""
@@ -93,7 +93,7 @@ CXXFLAGS =           \
 
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
-# a time and date. 
+# a time and date.
 CXXFLAGS/vm_version.o += ${JRE_VERSION}
 
 CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
@@ -103,10 +103,6 @@ CXXFLAGS += $(CXXFLAGS/BYFILE)
 
 ifdef DEFAULT_LIBPATH
 CXXFLAGS += -DDEFAULT_LIBPATH="\"$(DEFAULT_LIBPATH)\""
-endif
-
-ifndef JAVASE_EMBEDDED
-CFLAGS += -DINCLUDE_TRACE
 endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
@@ -126,7 +122,11 @@ ifneq ($(OS_VENDOR), Darwin)
 LFLAGS += -Xlinker -z -Xlinker noexecstack
 endif
 
-LIBS += -lm -pthread
+LIBS += -lm
+
+ifeq ($(USE_CLANG),)
+  LIBS += -pthread
+endif
 
 # By default, link the *.o into the library, not the executable.
 LINK_INTO$(LINK_INTO) = LIBJVM
@@ -161,14 +161,14 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
 
-ifndef JAVASE_EMBEDDED
-SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
+CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
+CORE_PATHS+=$(GENERATED)/jvmtifiles $(GENERATED)/tracefiles
+
+ifneq ($(INCLUDE_TRACE), false)
+CORE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
   find $(HS_ALT_SRC)/share/vm/jfr -type d; \
   fi)
 endif
-
-CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
-CORE_PATHS+=$(GENERATED)/jvmtifiles
 
 COMPILER1_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/c1)
 COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/c1

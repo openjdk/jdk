@@ -75,8 +75,6 @@ public class InstanceKlass extends Klass {
     javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
     constants            = new MetadataField(type.getAddressField("_constants"), 0);
     classLoaderData      = type.getAddressField("_class_loader_data");
-    protectionDomain     = new OopField(type.getOopField("_protection_domain"), 0);
-    signers              = new OopField(type.getOopField("_signers"), 0);
     sourceFileName       = type.getAddressField("_source_file_name");
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = type.getAddressField("_inner_classes");
@@ -136,8 +134,6 @@ public class InstanceKlass extends Klass {
   private static CIntField javaFieldsCount;
   private static MetadataField constants;
   private static AddressField  classLoaderData;
-  private static OopField  protectionDomain;
-  private static OopField  signers;
   private static AddressField  sourceFileName;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
@@ -350,8 +346,6 @@ public class InstanceKlass extends Klass {
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public ClassLoaderData getClassLoaderData() { return                ClassLoaderData.instantiateWrapperFor(classLoaderData.getValue(getAddress())); }
   public Oop       getClassLoader()         { return                getClassLoaderData().getClassLoader(); }
-  public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
-  public ObjArray  getSigners()             { return (ObjArray)     signers.getValue(this); }
   public Symbol    getSourceFileName()      { return getSymbol(sourceFileName); }
   public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getAddress())); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
@@ -541,8 +535,6 @@ public class InstanceKlass extends Klass {
     // visitor.doOop(methods, true);
     // visitor.doOop(localInterfaces, true);
     // visitor.doOop(transitiveInterfaces, true);
-      visitor.doOop(protectionDomain, true);
-      visitor.doOop(signers, true);
       visitor.doCInt(nonstaticFieldSize, true);
       visitor.doCInt(staticFieldSize, true);
       visitor.doCInt(staticOopFieldCount, true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 
@@ -115,8 +116,6 @@ inline jint invocation_key_to_method_slot(jint key) {
 
 inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) {
   jlong byte_offset = field_offset_to_byte_offset(field_offset);
-  // Don't allow unsafe to be used to read or write the header word of oops
-  assert(p == NULL || field_offset >= oopDesc::header_size(), "offset must be outside of header");
 #ifdef ASSERT
   if (p != NULL) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
@@ -1206,6 +1205,7 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
   UnsafeWrapper("Unsafe_Park");
+  EventThreadPark event;
 #ifndef USDT2
   HS_DTRACE_PROBE3(hotspot, thread__park__begin, thread->parker(), (int) isAbsolute, time);
 #else /* USDT2 */
@@ -1220,6 +1220,13 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
   HOTSPOT_THREAD_PARK_END(
                           (uintptr_t) thread->parker());
 #endif /* USDT2 */
+  if (event.should_commit()) {
+    oop obj = thread->current_park_blocker();
+    event.set_klass(obj ? obj->klass() : NULL);
+    event.set_timeout(time);
+    event.set_address(obj ? (TYPE_ADDRESS) (uintptr_t) obj : 0);
+    event.commit();
+  }
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
