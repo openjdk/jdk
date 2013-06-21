@@ -227,7 +227,7 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
     }
     live_objects_only = strcmp(arg0, "-live") == 0;
   }
-  VM_GC_HeapInspection heapop(out, live_objects_only /* request full gc */, true /* need_prologue */);
+  VM_GC_HeapInspection heapop(out, live_objects_only /* request full gc */);
   VMThread::execute(&heapop);
   return JNI_OK;
 }

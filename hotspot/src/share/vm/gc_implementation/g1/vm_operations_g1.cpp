@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -227,7 +229,7 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 void VM_CGC_Operation::doit() {
   gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
   TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-  TraceTime t(_printGCMessage, G1Log::fine(), true, gclog_or_tty);
+  GCTraceTime t(_printGCMessage, G1Log::fine(), true, G1CollectedHeap::heap()->gc_timer_cm());
   SharedHeap* sh = SharedHeap::heap();
   // This could go away if CollectedHeap gave access to _gc_is_active...
   if (sh != NULL) {

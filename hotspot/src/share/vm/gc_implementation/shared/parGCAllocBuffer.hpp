@@ -158,7 +158,7 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object.
   // If "end_of_gc" is TRUE, is after the last use in the GC.  IF "retain"
   // is true, attempt to re-use the unused portion in the next GC.
-  void retire(bool end_of_gc, bool retain);
+  virtual void retire(bool end_of_gc, bool retain);
 
   void print() PRODUCT_RETURN;
 };

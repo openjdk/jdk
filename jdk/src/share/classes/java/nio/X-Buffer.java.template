@@ -30,6 +30,11 @@ package java.nio;
 #if[char]
 import java.io.IOException;
 #end[char]
+#if[streamableType]
+import java.util.Spliterator;
+import java.util.stream.StreamSupport;
+import java.util.stream.$Streamtype$Stream;
+#end[streamableType]
 
 /**
  * $A$ $type$ buffer.
@@ -588,6 +593,19 @@ public abstract class $Type$Buffer
      *          or not smaller than the buffer's limit
      */
     public abstract $type$ get(int index);
+
+#if[streamableType]
+    /**
+     * Absolute <i>get</i> method.  Reads the $type$ at the given
+     * index without any validation of the index.
+     *
+     * @param  index
+     *         The index from which the $type$ will be read
+     *
+     * @return  The $type$ at the given index
+     */
+    abstract $type$ getUnchecked(int index);   // package-private
+#end[streamableType]
 
     /**
      * Absolute <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
@@ -1457,5 +1475,17 @@ public abstract class $Type$Buffer
     // and double will be inserted here
 
 #end[byte]
+
+#if[streamableType]
+
+#if[char]
+    @Override
+#end[char]
+    public $Streamtype$Stream $type$s() {
+        return StreamSupport.$streamtype$Stream(() -> new $Type$BufferSpliterator(this),
+            Buffer.SPLITERATOR_CHARACTERISTICS);
+    }
+
+#end[streamableType]
 
 }

@@ -36,11 +36,9 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   ifdef OPENJDK
     GENDATA_FONT_CONFIG_SRC_DIR   := \
         $(JDK_TOPDIR)/src/solaris/classes/sun/awt/fontconfigs
-    GENDATA_FONT_CONFIG_SRC_FILES := \
-	fontconfig.properties \
-	fontconfig.SuSE.properties \
-	fontconfig.Ubuntu.properties \
-	fontconfig.Fedora.properties
+    # This is placeholder for possible fonconfig files which may
+    # useful for some highly specialized Linux distributions 
+    GENDATA_FONT_CONFIG_SRC_FILES := 
   else
     GENDATA_FONT_CONFIG_SRC_DIR   := \
         $(JDK_TOPDIR)/src/closed/solaris/classes/sun/awt/fontconfigs

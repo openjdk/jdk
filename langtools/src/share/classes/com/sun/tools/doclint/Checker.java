@@ -531,6 +531,17 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             }
                         }
                         break;
+
+                    case VALUE:
+                        if (currTag == HtmlTag.LI) {
+                            String v = getAttrValue(tree);
+                            if (v == null || v.isEmpty()) {
+                                env.messages.error(HTML, tree, "dc.attr.lacks.value");
+                            } else if (!validNumber.matcher(v).matches()) {
+                                env.messages.error(HTML, tree, "dc.attr.not.number");
+                            }
+                        }
+                        break;
                 }
             }
         }
@@ -542,6 +553,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // http://www.w3.org/TR/html401/types.html#type-name
     private static final Pattern validName = Pattern.compile("[A-Za-z][A-Za-z0-9-_:.]*");
+
+    private static final Pattern validNumber = Pattern.compile("-?[0-9]+");
 
     // pattern to remove leading {@docRoot}/?
     private static final Pattern docRoot = Pattern.compile("(?i)(\\{@docRoot *\\}/?)?(.*)");

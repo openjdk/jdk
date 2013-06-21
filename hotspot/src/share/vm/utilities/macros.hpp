@@ -160,6 +160,10 @@
 #define NOT_NMT_RETURN_(code) { return code; }
 #endif // INCLUDE_NMT
 
+#ifndef INCLUDE_TRACE
+#define INCLUDE_TRACE 1
+#endif // INCLUDE_TRACE
+
 // COMPILER1 variant
 #ifdef COMPILER1
 #ifdef COMPILER2
