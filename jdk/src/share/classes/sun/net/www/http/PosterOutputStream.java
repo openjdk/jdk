@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.net.*;
 
 /**
  * Instances of this class are returned to applications for the purpose of
- * sending user data for a HTTP POST or PUT request. This class is used
+ * sending user data for a HTTP request (excluding TRACE). This class is used
  * when the content-length will be specified in the header of the request.
  * The semantics of ByteArrayOutputStream are extended so that
  * when close() is called, it is no longer possible to write

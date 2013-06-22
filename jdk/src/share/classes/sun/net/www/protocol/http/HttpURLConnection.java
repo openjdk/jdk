@@ -1167,7 +1167,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /*
      * Allowable input/output sequences:
-     * [interpreted as POST/PUT]
+     * [interpreted as request entity]
      * - get output, [write output,] get input, [read input]
      * - get output, [write output]
      * [interpreted as GET]
@@ -1209,9 +1209,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (method.equals("GET")) {
                 method = "POST"; // Backward compatibility
             }
-            if (!"POST".equals(method) && !"PUT".equals(method) &&
-                "http".equals(url.getProtocol())) {
-                throw new ProtocolException("HTTP method " + method +
+            if ("TRACE".equals(method) && "http".equals(url.getProtocol())) {
+                throw new ProtocolException("HTTP method TRACE" +
                                             " doesn't support output");
             }
 
