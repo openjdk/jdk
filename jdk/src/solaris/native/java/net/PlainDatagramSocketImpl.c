@@ -50,7 +50,7 @@
 #ifndef IP_MULTICAST_ALL
 #define IP_MULTICAST_ALL      49
 #endif
-#endif  //  __linux__`
+#endif  //  __linux__
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
