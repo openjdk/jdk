@@ -71,6 +71,12 @@ public class ReplayCacheTestProc {
             int mode = 0;   // native(1), random(0), java(-1)
             boolean random = true;      // random experiments choreograph
 
+            // Do not test interop with native GSS on some platforms
+            String os = System.getProperty("os.name", "???");
+            if (!os.startsWith("SunOS") && !os.startsWith("Linux")) {
+                mode = -1;
+            }
+
             try {
                 Class<?> clazz = Class.forName(
                         "com.sun.security.auth.module.UnixSystem");
