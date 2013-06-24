@@ -387,7 +387,6 @@ void frame::interpreter_frame_set_locals(intptr_t* locs)  {
 Method* frame::interpreter_frame_method() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   Method* m = *interpreter_frame_method_addr();
-  assert(m->is_metadata(), "bad Method* in interpreter frame");
   assert(m->is_method(), "not a Method*");
   return m;
 }
