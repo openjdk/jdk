@@ -1045,7 +1045,7 @@ public class FloatingDecimal{
             this.nDigits = n;
         }
 
-        /*
+        /**
          * Takes a FloatingDecimal, which we presumably just scanned in,
          * and finds out what its value is, as a double.
          *
