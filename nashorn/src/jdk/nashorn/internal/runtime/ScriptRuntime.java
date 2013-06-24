@@ -361,6 +361,47 @@ public final class ScriptRuntime {
     }
 
     /**
+     * Check that the target function is associated with current Context.
+     * And also make sure that 'self', if ScriptObject, is from current context.
+     *
+     * Call a function as a constructor given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
+        final ScriptObject global = Context.getGlobalTrusted();
+        if (! (global instanceof GlobalObject)) {
+            throw new IllegalStateException("No current global set");
+        }
+
+        if (target.getContext() != global.getContext()) {
+            throw new IllegalArgumentException("'target' function is not from current Context");
+        }
+
+        // all in order - call real 'construct'
+        return construct(target, args);
+    }
+
+    /*
+     * Call a script function as a constructor with given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object construct(final ScriptFunction target, final Object... args) {
+        try {
+            return target.construct(args);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    /**
      * Generic implementation of ECMA 9.12 - SameValue algorithm
      *
      * @param x first value to compare
