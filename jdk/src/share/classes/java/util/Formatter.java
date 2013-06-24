@@ -3297,18 +3297,29 @@ public final class Formatter implements Closeable, Flushable {
                 else if (precision == 0)
                     prec = 1;
 
-                FormattedFloatingDecimal fd
+                char[] exp;
+                char[] mant;
+                int expRounded;
+                if (value == 0.0) {
+                    exp = null;
+                    mant = new char[] {'0'};
+                    expRounded = 0;
+                } else {
+                    FormattedFloatingDecimal fd
                         = FormattedFloatingDecimal.valueOf(value, prec,
                           FormattedFloatingDecimal.Form.GENERAL);
+                    exp = fd.getExponent();
+                    mant = fd.getMantissa();
+                    expRounded = fd.getExponentRounded();
+                }
 
-                char[] exp = fd.getExponent();
                 if (exp != null) {
                     prec -= 1;
                 } else {
-                    prec = prec - (value == 0 ? 0 : fd.getExponentRounded()) - 1;
+                    prec -= expRounded + 1;
                 }
 
-                char[] mant = addZeros(fd.getMantissa(), prec);
+                mant = addZeros(mant, prec);
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
                 if (f.contains(Flags.ALTERNATE) && (prec == 0))
