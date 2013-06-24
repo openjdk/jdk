@@ -41,6 +41,9 @@ public class ReplayCacheExpunge {
     static final Random rand = new Random();
 
     public static void main(String[] args) throws Exception {
+        // Make sure clockskew is default value
+        System.setProperty("java.security.krb5.conf", "nothing");
+
         int count = Integer.parseInt(args[0]);
         ReplayCache cache = ReplayCache.getInstance("dfl:./");
         AuthTimeWithHash a1 =
