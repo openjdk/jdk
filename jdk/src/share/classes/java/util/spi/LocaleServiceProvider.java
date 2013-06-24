@@ -94,7 +94,7 @@ import java.util.Locale;
  * supports the requested locale, the methods go through a list of candidate
  * locales and repeat the availability check for each until a match is found.
  * The algorithm used for creating a list of candidate locales is same as
- * the one used by <code>ResourceBunlde</code> by default (see
+ * the one used by <code>ResourceBundle</code> by default (see
  * {@link java.util.ResourceBundle.Control#getCandidateLocales getCandidateLocales}
  * for the details).  Even if a locale is resolved from the candidate list,
  * methods that return requested objects or names are invoked with the original
