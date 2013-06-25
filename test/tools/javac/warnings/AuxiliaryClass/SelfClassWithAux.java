@@ -34,11 +34,11 @@
  */
 
 class SelfClassWithAux {
-    Aux aux;
+    AuxClass aux;
     ClassWithAuxiliary.NotAnAuxiliaryClass alfa;
     ClassWithAuxiliary.NotAnAuxiliaryClassEither beta;
 }
 
-class Aux {
-    Aux aux;
+class AuxClass {
+    AuxClass aux;
 }
