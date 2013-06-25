@@ -1151,6 +1151,8 @@ class Field extends AccessibleObject implements Member {
     /**
      * Returns an AnnotatedType object that represents the use of a type to specify
      * the declared type of the field represented by this Field.
+     * @return an object representing the declared type of the field
+     * represented by this Field
      *
      * @since 1.8
      */
