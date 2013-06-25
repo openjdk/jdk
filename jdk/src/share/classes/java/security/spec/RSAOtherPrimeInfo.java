@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class RSAOtherPrimeInfo {
 
 
    /**
-    * Creates a new <code>RSAOtherPrimeInfo</code>
+    * Creates a new {@code RSAOtherPrimeInfo}
     * given the prime, primeExponent, and
     * crtCoefficient as defined in PKCS#1.
     *
@@ -67,8 +67,8 @@ public class RSAOtherPrimeInfo {
     * @param crtCoefficient the Chinese Remainder Theorem
     * coefficient.
     * @exception NullPointerException if any of the parameters, i.e.
-    * <code>prime</code>, <code>primeExponent</code>,
-    * <code>crtCoefficient</code>, is null.
+    * {@code prime}, {@code primeExponent},
+    * {@code crtCoefficient}, is null.
     *
     */
     public RSAOtherPrimeInfo(BigInteger prime,
