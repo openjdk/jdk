@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Parameters used as input for the Collection <code>CertStore</code>
+ * Parameters used as input for the Collection {@code CertStore}
  * algorithm.
  * <p>
  * This class is used to provide necessary configuration parameters
- * to implementations of the Collection <code>CertStore</code>
+ * to implementations of the Collection {@code CertStore}
  * algorithm. The only parameter included in this class is the
- * <code>Collection</code> from which the <code>CertStore</code> will
+ * {@code Collection} from which the {@code CertStore} will
  * retrieve certificates and CRLs.
  * <p>
  * <b>Concurrent Access</b>
@@ -58,30 +58,30 @@ public class CollectionCertStoreParameters
     private Collection<?> coll;
 
     /**
-     * Creates an instance of <code>CollectionCertStoreParameters</code>
+     * Creates an instance of {@code CollectionCertStoreParameters}
      * which will allow certificates and CRLs to be retrieved from the
-     * specified <code>Collection</code>. If the specified
-     * <code>Collection</code> contains an object that is not a
-     * <code>Certificate</code> or <code>CRL</code>, that object will be
-     * ignored by the Collection <code>CertStore</code>.
+     * specified {@code Collection}. If the specified
+     * {@code Collection} contains an object that is not a
+     * {@code Certificate} or {@code CRL}, that object will be
+     * ignored by the Collection {@code CertStore}.
      * <p>
-     * The <code>Collection</code> is <b>not</b> copied. Instead, a
+     * The {@code Collection} is <b>not</b> copied. Instead, a
      * reference is used. This allows the caller to subsequently add or
-     * remove <code>Certificates</code> or <code>CRL</code>s from the
-     * <code>Collection</code>, thus changing the set of
-     * <code>Certificates</code> or <code>CRL</code>s available to the
-     * Collection <code>CertStore</code>. The Collection <code>CertStore</code>
-     * will not modify the contents of the <code>Collection</code>.
+     * remove {@code Certificates} or {@code CRL}s from the
+     * {@code Collection}, thus changing the set of
+     * {@code Certificates} or {@code CRL}s available to the
+     * Collection {@code CertStore}. The Collection {@code CertStore}
+     * will not modify the contents of the {@code Collection}.
      * <p>
-     * If the <code>Collection</code> will be modified by one thread while
-     * another thread is calling a method of a Collection <code>CertStore</code>
-     * that has been initialized with this <code>Collection</code>, the
-     * <code>Collection</code> must have fail-fast iterators.
+     * If the {@code Collection} will be modified by one thread while
+     * another thread is calling a method of a Collection {@code CertStore}
+     * that has been initialized with this {@code Collection}, the
+     * {@code Collection} must have fail-fast iterators.
      *
-     * @param collection a <code>Collection</code> of
-     *        <code>Certificate</code>s and <code>CRL</code>s
-     * @exception NullPointerException if <code>collection</code> is
-     * <code>null</code>
+     * @param collection a {@code Collection} of
+     *        {@code Certificate}s and {@code CRL}s
+     * @exception NullPointerException if {@code collection} is
+     * {@code null}
      */
     public CollectionCertStoreParameters(Collection<?> collection) {
         if (collection == null)
@@ -90,22 +90,22 @@ public class CollectionCertStoreParameters
     }
 
     /**
-     * Creates an instance of <code>CollectionCertStoreParameters</code> with
+     * Creates an instance of {@code CollectionCertStoreParameters} with
      * the default parameter values (an empty and immutable
-     * <code>Collection</code>).
+     * {@code Collection}).
      */
     public CollectionCertStoreParameters() {
         coll = Collections.EMPTY_SET;
     }
 
     /**
-     * Returns the <code>Collection</code> from which <code>Certificate</code>s
-     * and <code>CRL</code>s are retrieved. This is <b>not</b> a copy of the
-     * <code>Collection</code>, it is a reference. This allows the caller to
-     * subsequently add or remove <code>Certificates</code> or
-     * <code>CRL</code>s from the <code>Collection</code>.
+     * Returns the {@code Collection} from which {@code Certificate}s
+     * and {@code CRL}s are retrieved. This is <b>not</b> a copy of the
+     * {@code Collection}, it is a reference. This allows the caller to
+     * subsequently add or remove {@code Certificates} or
+     * {@code CRL}s from the {@code Collection}.
      *
-     * @return the <code>Collection</code> (never null)
+     * @return the {@code Collection} (never null)
      */
     public Collection<?> getCollection() {
         return coll;
@@ -113,7 +113,7 @@ public class CollectionCertStoreParameters
 
     /**
      * Returns a copy of this object. Note that only a reference to the
-     * <code>Collection</code> is copied, and not the contents.
+     * {@code Collection} is copied, and not the contents.
      *
      * @return the copy
      */

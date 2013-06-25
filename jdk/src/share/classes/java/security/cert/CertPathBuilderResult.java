@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ package java.security.cert;
  * All results returned by the {@link CertPathBuilder#build
  * CertPathBuilder.build} method must implement this interface.
  * <p>
- * At a minimum, a <code>CertPathBuilderResult</code> contains the
- * <code>CertPath</code> built by the <code>CertPathBuilder</code> instance.
+ * At a minimum, a {@code CertPathBuilderResult} contains the
+ * {@code CertPath} built by the {@code CertPathBuilder} instance.
  * Implementations of this interface may add methods to return implementation
  * or algorithm specific information, such as debugging information or
  * certification path validation results.
@@ -54,15 +54,15 @@ public interface CertPathBuilderResult extends Cloneable {
     /**
      * Returns the built certification path.
      *
-     * @return the certification path (never <code>null</code>)
+     * @return the certification path (never {@code null})
      */
     CertPath getCertPath();
 
     /**
-     * Makes a copy of this <code>CertPathBuilderResult</code>. Changes to the
+     * Makes a copy of this {@code CertPathBuilderResult}. Changes to the
      * copy will not affect the original and vice versa.
      *
-     * @return a copy of this <code>CertPathBuilderResult</code>
+     * @return a copy of this {@code CertPathBuilderResult}
      */
     Object clone();
 }
