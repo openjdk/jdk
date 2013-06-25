@@ -95,6 +95,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *
      * Returns an array of length 0 if the type parameter declares no bounds.
      *
+     * @return an array of objects representing the upper bounds of the type variable
      * @since 1.8
      */
      AnnotatedType[] getAnnotatedBounds();
