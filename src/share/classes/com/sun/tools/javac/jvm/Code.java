@@ -1859,7 +1859,7 @@ public class Code {
         }
     }
 
-    static final Type jsrReturnValue = new Type(INT, null);
+    static final Type jsrReturnValue = new JCPrimitiveType(INT, null);
 
 
 /* **************************************************************************

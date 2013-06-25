@@ -115,10 +115,15 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(DEFERRED, null);
+            super(null);
             this.tree = tree;
             this.env = env.dup(tree, env.info.dup());
             this.speculativeCache = new SpeculativeCache();
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return DEFERRED;
         }
 
         /**
