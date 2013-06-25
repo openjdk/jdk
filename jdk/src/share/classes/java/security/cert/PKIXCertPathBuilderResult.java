@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ import java.security.PublicKey;
  * returned using this algorithm are also validated according to the PKIX
  * certification path validation algorithm.
  *
- * <p>Instances of <code>PKIXCertPathBuilderResult</code> are returned by
- * the <code>build</code> method of <code>CertPathBuilder</code>
+ * <p>Instances of {@code PKIXCertPathBuilderResult} are returned by
+ * the {@code build} method of {@code CertPathBuilder}
  * objects implementing the PKIX algorithm.
  *
- * <p>All <code>PKIXCertPathBuilderResult</code> objects contain the
+ * <p>All {@code PKIXCertPathBuilderResult} objects contain the
  * certification path constructed by the build algorithm, the
  * valid policy tree and subject public key resulting from the build
- * algorithm, and a <code>TrustAnchor</code> describing the certification
+ * algorithm, and a {@code TrustAnchor} describing the certification
  * authority (CA) that served as a trust anchor for the certification path.
  * <p>
  * <b>Concurrent Access</b>
@@ -62,18 +62,18 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
     private CertPath certPath;
 
     /**
-     * Creates an instance of <code>PKIXCertPathBuilderResult</code>
+     * Creates an instance of {@code PKIXCertPathBuilderResult}
      * containing the specified parameters.
      *
-     * @param certPath the validated <code>CertPath</code>
-     * @param trustAnchor a <code>TrustAnchor</code> describing the CA that
+     * @param certPath the validated {@code CertPath}
+     * @param trustAnchor a {@code TrustAnchor} describing the CA that
      * served as a trust anchor for the certification path
-     * @param policyTree the immutable valid policy tree, or <code>null</code>
+     * @param policyTree the immutable valid policy tree, or {@code null}
      * if there are no valid policies
      * @param subjectPublicKey the public key of the subject
-     * @throws NullPointerException if the <code>certPath</code>,
-     * <code>trustAnchor</code> or <code>subjectPublicKey</code> parameters
-     * are <code>null</code>
+     * @throws NullPointerException if the {@code certPath},
+     * {@code trustAnchor} or {@code subjectPublicKey} parameters
+     * are {@code null}
      */
     public PKIXCertPathBuilderResult(CertPath certPath,
         TrustAnchor trustAnchor, PolicyNode policyTree,
@@ -87,13 +87,13 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
 
     /**
      * Returns the built and validated certification path. The
-     * <code>CertPath</code> object does not include the trust anchor.
+     * {@code CertPath} object does not include the trust anchor.
      * Instead, use the {@link #getTrustAnchor() getTrustAnchor()} method to
-     * obtain the <code>TrustAnchor</code> that served as the trust anchor
+     * obtain the {@code TrustAnchor} that served as the trust anchor
      * for the certification path.
      *
-     * @return the built and validated <code>CertPath</code> (never
-     * <code>null</code>)
+     * @return the built and validated {@code CertPath} (never
+     * {@code null})
      */
     public CertPath getCertPath() {
         return certPath;
@@ -101,10 +101,10 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
 
     /**
      * Return a printable representation of this
-     * <code>PKIXCertPathBuilderResult</code>.
+     * {@code PKIXCertPathBuilderResult}.
      *
-     * @return a <code>String</code> describing the contents of this
-     *         <code>PKIXCertPathBuilderResult</code>
+     * @return a {@code String} describing the contents of this
+     *         {@code PKIXCertPathBuilderResult}
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();

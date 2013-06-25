@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package java.security.cert;
 
 /**
  * A selector that defines a set of criteria for selecting
- * <code>Certificate</code>s. Classes that implement this interface
- * are often used to specify which <code>Certificate</code>s should
- * be retrieved from a <code>CertStore</code>.
+ * {@code Certificate}s. Classes that implement this interface
+ * are often used to specify which {@code Certificate}s should
+ * be retrieved from a {@code CertStore}.
  * <p>
  * <b>Concurrent Access</b>
  * <p>
@@ -49,19 +49,19 @@ package java.security.cert;
 public interface CertSelector extends Cloneable {
 
     /**
-     * Decides whether a <code>Certificate</code> should be selected.
+     * Decides whether a {@code Certificate} should be selected.
      *
-     * @param   cert    the <code>Certificate</code> to be checked
-     * @return  <code>true</code> if the <code>Certificate</code>
-     * should be selected, <code>false</code> otherwise
+     * @param   cert    the {@code Certificate} to be checked
+     * @return  {@code true} if the {@code Certificate}
+     * should be selected, {@code false} otherwise
      */
     boolean match(Certificate cert);
 
     /**
-     * Makes a copy of this <code>CertSelector</code>. Changes to the
+     * Makes a copy of this {@code CertSelector}. Changes to the
      * copy will not affect the original and vice versa.
      *
-     * @return a copy of this <code>CertSelector</code>
+     * @return a copy of this {@code CertSelector}
      */
     Object clone();
 }

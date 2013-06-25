@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.security.cert;
 
 /**
  * Certificate Expired Exception. This is thrown whenever the current
- * <code>Date</code> or the specified <code>Date</code> is after the
- * <code>notAfter</code> date/time specified in the validity period
+ * {@code Date} or the specified {@code Date} is after the
+ * {@code notAfter} date/time specified in the validity period
  * of the certificate.
  *
  * @author Hemma Prafullchandra

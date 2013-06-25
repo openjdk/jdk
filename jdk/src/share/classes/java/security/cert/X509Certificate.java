@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import sun.security.x509.X509CertImpl;
  * <a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  * <p>
- * The ASN.1 definition of <code>tbsCertificate</code> is:
+ * The ASN.1 definition of {@code tbsCertificate} is:
  * <pre>
  * TBSCertificate  ::=  SEQUENCE  {
  *     version         [0]  EXPLICIT Version DEFAULT v1,
@@ -151,9 +151,9 @@ implements X509Extension {
      *        is valid at that date/time.
      *
      * @exception CertificateExpiredException if the certificate has expired
-     * with respect to the <code>date</code> supplied.
+     * with respect to the {@code date} supplied.
      * @exception CertificateNotYetValidException if the certificate is not
-     * yet valid with respect to the <code>date</code> supplied.
+     * yet valid with respect to the {@code date} supplied.
      *
      * @see #checkValidity()
      */
@@ -161,7 +161,7 @@ implements X509Extension {
         throws CertificateExpiredException, CertificateNotYetValidException;
 
     /**
-     * Gets the <code>version</code> (version number) value from the
+     * Gets the {@code version} (version number) value from the
      * certificate.
      * The ASN.1 definition for this is:
      * <pre>
@@ -173,7 +173,7 @@ implements X509Extension {
     public abstract int getVersion();
 
     /**
-     * Gets the <code>serialNumber</code> value from the certificate.
+     * Gets the {@code serialNumber} value from the certificate.
      * The serial number is an integer assigned by the certification
      * authority to each certificate. It must be unique for each
      * certificate issued by a given CA (i.e., the issuer name and
@@ -191,12 +191,12 @@ implements X509Extension {
 
     /**
      * <strong>Denigrated</strong>, replaced by {@linkplain
-     * #getIssuerX500Principal()}. This method returns the <code>issuer</code>
+     * #getIssuerX500Principal()}. This method returns the {@code issuer}
      * as an implementation specific Principal object, which should not be
      * relied upon by portable code.
      *
      * <p>
-     * Gets the <code>issuer</code> (issuer distinguished name) value from
+     * Gets the {@code issuer} (issuer distinguished name) value from
      * the certificate. The issuer name identifies the entity that signed (and
      * issued) the certificate.
      *
@@ -217,14 +217,14 @@ implements X509Extension {
      * AttributeType ::= OBJECT IDENTIFIER
      * AttributeValue ::= ANY
      * </pre>
-     * The <code>Name</code> describes a hierarchical name composed of
+     * The {@code Name} describes a hierarchical name composed of
      * attributes,
      * such as country name, and corresponding values, such as US.
-     * The type of the <code>AttributeValue</code> component is determined by
-     * the <code>AttributeType</code>; in general it will be a
-     * <code>directoryString</code>. A <code>directoryString</code> is usually
-     * one of <code>PrintableString</code>,
-     * <code>TeletexString</code> or <code>UniversalString</code>.
+     * The type of the {@code AttributeValue} component is determined by
+     * the {@code AttributeType}; in general it will be a
+     * {@code directoryString}. A {@code directoryString} is usually
+     * one of {@code PrintableString},
+     * {@code TeletexString} or {@code UniversalString}.
      *
      * @return a Principal whose name is the issuer distinguished name.
      */
@@ -232,11 +232,11 @@ implements X509Extension {
 
     /**
      * Returns the issuer (issuer distinguished name) value from the
-     * certificate as an <code>X500Principal</code>.
+     * certificate as an {@code X500Principal}.
      * <p>
      * It is recommended that subclasses override this method.
      *
-     * @return an <code>X500Principal</code> representing the issuer
+     * @return an {@code X500Principal} representing the issuer
      *          distinguished name
      * @since 1.4
      */
@@ -249,22 +249,22 @@ implements X509Extension {
 
     /**
      * <strong>Denigrated</strong>, replaced by {@linkplain
-     * #getSubjectX500Principal()}. This method returns the <code>subject</code>
+     * #getSubjectX500Principal()}. This method returns the {@code subject}
      * as an implementation specific Principal object, which should not be
      * relied upon by portable code.
      *
      * <p>
-     * Gets the <code>subject</code> (subject distinguished name) value
-     * from the certificate.  If the <code>subject</code> value is empty,
-     * then the <code>getName()</code> method of the returned
-     * <code>Principal</code> object returns an empty string ("").
+     * Gets the {@code subject} (subject distinguished name) value
+     * from the certificate.  If the {@code subject} value is empty,
+     * then the {@code getName()} method of the returned
+     * {@code Principal} object returns an empty string ("").
      *
      * <p> The ASN.1 definition for this is:
      * <pre>
      * subject    Name
      * </pre>
      *
-     * <p>See {@link #getIssuerDN() getIssuerDN} for <code>Name</code>
+     * <p>See {@link #getIssuerDN() getIssuerDN} for {@code Name}
      * and other relevant definitions.
      *
      * @return a Principal whose name is the subject name.
@@ -273,13 +273,13 @@ implements X509Extension {
 
     /**
      * Returns the subject (subject distinguished name) value from the
-     * certificate as an <code>X500Principal</code>.  If the subject value
-     * is empty, then the <code>getName()</code> method of the returned
-     * <code>X500Principal</code> object returns an empty string ("").
+     * certificate as an {@code X500Principal}.  If the subject value
+     * is empty, then the {@code getName()} method of the returned
+     * {@code X500Principal} object returns an empty string ("").
      * <p>
      * It is recommended that subclasses override this method.
      *
-     * @return an <code>X500Principal</code> representing the subject
+     * @return an {@code X500Principal} representing the subject
      *          distinguished name
      * @since 1.4
      */
@@ -291,7 +291,7 @@ implements X509Extension {
     }
 
     /**
-     * Gets the <code>notBefore</code> date from the validity period of
+     * Gets the {@code notBefore} date from the validity period of
      * the certificate.
      * The relevant ASN.1 definitions are:
      * <pre>
@@ -311,7 +311,7 @@ implements X509Extension {
     public abstract Date getNotBefore();
 
     /**
-     * Gets the <code>notAfter</code> date from the validity period of
+     * Gets the {@code notAfter} date from the validity period of
      * the certificate. See {@link #getNotBefore() getNotBefore}
      * for relevant ASN.1 definitions.
      *
@@ -322,7 +322,7 @@ implements X509Extension {
 
     /**
      * Gets the DER-encoded certificate information, the
-     * <code>tbsCertificate</code> from this certificate.
+     * {@code tbsCertificate} from this certificate.
      * This can be used to verify the signature independently.
      *
      * @return the DER-encoded certificate information.
@@ -332,7 +332,7 @@ implements X509Extension {
         throws CertificateEncodingException;
 
     /**
-     * Gets the <code>signature</code> value (the raw signature bits) from
+     * Gets the {@code signature} value (the raw signature bits) from
      * the certificate.
      * The ASN.1 definition for this is:
      * <pre>
@@ -357,7 +357,7 @@ implements X509Extension {
      *                             -- algorithm object identifier value
      * </pre>
      *
-     * <p>The algorithm name is determined from the <code>algorithm</code>
+     * <p>The algorithm name is determined from the {@code algorithm}
      * OID string.
      *
      * @return the signature algorithm name.
@@ -400,7 +400,7 @@ implements X509Extension {
     public abstract byte[] getSigAlgParams();
 
     /**
-     * Gets the <code>issuerUniqueID</code> value from the certificate.
+     * Gets the {@code issuerUniqueID} value from the certificate.
      * The issuer unique identifier is present in the certificate
      * to handle the possibility of reuse of issuer names over time.
      * RFC 3280 recommends that names not be reused and that
@@ -420,7 +420,7 @@ implements X509Extension {
     public abstract boolean[] getIssuerUniqueID();
 
     /**
-     * Gets the <code>subjectUniqueID</code> value from the certificate.
+     * Gets the {@code subjectUniqueID} value from the certificate.
      *
      * <p>The ASN.1 definition for this is:
      * <pre>
@@ -435,7 +435,7 @@ implements X509Extension {
 
     /**
      * Gets a boolean array representing bits of
-     * the <code>KeyUsage</code> extension, (OID = 2.5.29.15).
+     * the {@code KeyUsage} extension, (OID = 2.5.29.15).
      * The key usage extension defines the purpose (e.g., encipherment,
      * signature, certificate signing) of the key contained in the
      * certificate.
@@ -467,7 +467,7 @@ implements X509Extension {
 
     /**
      * Gets an unmodifiable list of Strings representing the OBJECT
-     * IDENTIFIERs of the <code>ExtKeyUsageSyntax</code> field of the
+     * IDENTIFIERs of the {@code ExtKeyUsageSyntax} field of the
      * extended key usage extension, (OID = 2.5.29.37).  It indicates
      * one or more purposes for which the certified public key may be
      * used, in addition to or in place of the basic purposes
@@ -486,7 +486,7 @@ implements X509Extension {
      * <p>
      * This method was added to version 1.4 of the Java 2 Platform Standard
      * Edition. In order to maintain backwards compatibility with existing
-     * service providers, this method is not <code>abstract</code>
+     * service providers, this method is not {@code abstract}
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
      *
@@ -503,13 +503,13 @@ implements X509Extension {
 
     /**
      * Gets the certificate constraints path length from the
-     * critical <code>BasicConstraints</code> extension, (OID = 2.5.29.19).
+     * critical {@code BasicConstraints} extension, (OID = 2.5.29.19).
      * <p>
      * The basic constraints extension identifies whether the subject
      * of the certificate is a Certificate Authority (CA) and
      * how deep a certification path may exist through that CA. The
-     * <code>pathLenConstraint</code> field (see below) is meaningful
-     * only if <code>cA</code> is set to TRUE. In this case, it gives the
+     * {@code pathLenConstraint} field (see below) is meaningful
+     * only if {@code cA} is set to TRUE. In this case, it gives the
      * maximum number of CA certificates that may follow this certificate in a
      * certification path. A value of zero indicates that only an end-entity
      * certificate may follow in the path.
@@ -521,21 +521,21 @@ implements X509Extension {
      *     pathLenConstraint   INTEGER (0..MAX) OPTIONAL }
      * </pre>
      *
-     * @return the value of <code>pathLenConstraint</code> if the
+     * @return the value of {@code pathLenConstraint} if the
      * BasicConstraints extension is present in the certificate and the
      * subject of the certificate is a CA, otherwise -1.
      * If the subject of the certificate is a CA and
-     * <code>pathLenConstraint</code> does not appear,
-     * <code>Integer.MAX_VALUE</code> is returned to indicate that there is no
+     * {@code pathLenConstraint} does not appear,
+     * {@code Integer.MAX_VALUE} is returned to indicate that there is no
      * limit to the allowed length of the certification path.
      */
     public abstract int getBasicConstraints();
 
     /**
      * Gets an immutable collection of subject alternative names from the
-     * <code>SubjectAltName</code> extension, (OID = 2.5.29.17).
+     * {@code SubjectAltName} extension, (OID = 2.5.29.17).
      * <p>
-     * The ASN.1 definition of the <code>SubjectAltName</code> extension is:
+     * The ASN.1 definition of the {@code SubjectAltName} extension is:
      * <pre>
      * SubjectAltName ::= GeneralNames
      *
@@ -553,23 +553,23 @@ implements X509Extension {
      *      registeredID                    [8]     OBJECT IDENTIFIER}
      * </pre>
      * <p>
-     * If this certificate does not contain a <code>SubjectAltName</code>
-     * extension, <code>null</code> is returned. Otherwise, a
-     * <code>Collection</code> is returned with an entry representing each
-     * <code>GeneralName</code> included in the extension. Each entry is a
-     * <code>List</code> whose first entry is an <code>Integer</code>
-     * (the name type, 0-8) and whose second entry is a <code>String</code>
+     * If this certificate does not contain a {@code SubjectAltName}
+     * extension, {@code null} is returned. Otherwise, a
+     * {@code Collection} is returned with an entry representing each
+     * {@code GeneralName} included in the extension. Each entry is a
+     * {@code List} whose first entry is an {@code Integer}
+     * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
      * respectively).
      * <p>
      * <a href="http://www.ietf.org/rfc/rfc822.txt">RFC 822</a>, DNS, and URI
-     * names are returned as <code>String</code>s,
+     * names are returned as {@code String}s,
      * using the well-established string formats for those types (subject to
      * the restrictions included in RFC 3280). IPv4 address names are
      * returned using dotted quad notation. IPv6 address names are returned
      * in the form "a1:a2:...:a8", where a1-a8 are hexadecimal values
      * representing the eight 16-bit pieces of the address. OID names are
-     * returned as <code>String</code>s represented as a series of nonnegative
+     * returned as {@code String}s represented as a series of nonnegative
      * integers separated by periods. And directory names (distinguished names)
      * are returned in <a href="http://www.ietf.org/rfc/rfc2253.txt">
      * RFC 2253</a> string format. No standard string format is
@@ -577,19 +577,19 @@ implements X509Extension {
      * other type of names. They are returned as byte arrays
      * containing the ASN.1 DER encoded form of the name.
      * <p>
-     * Note that the <code>Collection</code> returned may contain more
+     * Note that the {@code Collection} returned may contain more
      * than one name of the same type. Also, note that the returned
-     * <code>Collection</code> is immutable and any entries containing byte
+     * {@code Collection} is immutable and any entries containing byte
      * arrays are cloned to protect against subsequent modifications.
      * <p>
      * This method was added to version 1.4 of the Java 2 Platform Standard
      * Edition. In order to maintain backwards compatibility with existing
-     * service providers, this method is not <code>abstract</code>
+     * service providers, this method is not {@code abstract}
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
      *
-     * @return an immutable <code>Collection</code> of subject alternative
-     * names (or <code>null</code>)
+     * @return an immutable {@code Collection} of subject alternative
+     * names (or {@code null})
      * @throws CertificateParsingException if the extension cannot be decoded
      * @since 1.4
      */
@@ -600,38 +600,38 @@ implements X509Extension {
 
     /**
      * Gets an immutable collection of issuer alternative names from the
-     * <code>IssuerAltName</code> extension, (OID = 2.5.29.18).
+     * {@code IssuerAltName} extension, (OID = 2.5.29.18).
      * <p>
-     * The ASN.1 definition of the <code>IssuerAltName</code> extension is:
+     * The ASN.1 definition of the {@code IssuerAltName} extension is:
      * <pre>
      * IssuerAltName ::= GeneralNames
      * </pre>
-     * The ASN.1 definition of <code>GeneralNames</code> is defined
+     * The ASN.1 definition of {@code GeneralNames} is defined
      * in {@link #getSubjectAlternativeNames getSubjectAlternativeNames}.
      * <p>
-     * If this certificate does not contain an <code>IssuerAltName</code>
-     * extension, <code>null</code> is returned. Otherwise, a
-     * <code>Collection</code> is returned with an entry representing each
-     * <code>GeneralName</code> included in the extension. Each entry is a
-     * <code>List</code> whose first entry is an <code>Integer</code>
-     * (the name type, 0-8) and whose second entry is a <code>String</code>
+     * If this certificate does not contain an {@code IssuerAltName}
+     * extension, {@code null} is returned. Otherwise, a
+     * {@code Collection} is returned with an entry representing each
+     * {@code GeneralName} included in the extension. Each entry is a
+     * {@code List} whose first entry is an {@code Integer}
+     * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
      * respectively). For more details about the formats used for each
-     * name type, see the <code>getSubjectAlternativeNames</code> method.
+     * name type, see the {@code getSubjectAlternativeNames} method.
      * <p>
-     * Note that the <code>Collection</code> returned may contain more
+     * Note that the {@code Collection} returned may contain more
      * than one name of the same type. Also, note that the returned
-     * <code>Collection</code> is immutable and any entries containing byte
+     * {@code Collection} is immutable and any entries containing byte
      * arrays are cloned to protect against subsequent modifications.
      * <p>
      * This method was added to version 1.4 of the Java 2 Platform Standard
      * Edition. In order to maintain backwards compatibility with existing
-     * service providers, this method is not <code>abstract</code>
+     * service providers, this method is not {@code abstract}
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
      *
-     * @return an immutable <code>Collection</code> of issuer alternative
-     * names (or <code>null</code>)
+     * @return an immutable {@code Collection} of issuer alternative
+     * names (or {@code null})
      * @throws CertificateParsingException if the extension cannot be decoded
      * @since 1.4
      */
@@ -649,7 +649,7 @@ implements X509Extension {
      *
      * This method was added to version 1.8 of the Java Platform Standard
      * Edition. In order to maintain backwards compatibility with existing
-     * service providers, this method is not <code>abstract</code>
+     * service providers, this method is not {@code abstract}
      * and it provides a default implementation.
      *
      * @param key the PublicKey used to carry out the verification.

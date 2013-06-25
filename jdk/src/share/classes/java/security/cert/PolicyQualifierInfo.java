@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,12 @@ import sun.security.util.DerValue;
  * policy information terms limit the set of policies for certification paths
  * which include this certificate.
  * <p>
- * A <code>Set</code> of <code>PolicyQualifierInfo</code> objects are returned
+ * A {@code Set} of {@code PolicyQualifierInfo} objects are returned
  * by the {@link PolicyNode#getPolicyQualifiers PolicyNode.getPolicyQualifiers}
  * method. This allows applications with specific policy requirements to
  * process and validate each policy qualifier. Applications that need to
  * process policy qualifiers should explicitly set the
- * <code>policyQualifiersRejected</code> flag to false (by calling the
+ * {@code policyQualifiersRejected} flag to false (by calling the
  * {@link PKIXParameters#setPolicyQualifiersRejected
  * PKIXParameters.setPolicyQualifiersRejected} method) before validating
  * a certification path.
@@ -64,17 +64,17 @@ import sun.security.util.DerValue;
  * that any policy qualifier in a certificate policies extension that is
  * marked critical must be processed and validated. Otherwise the
  * certification path must be rejected. If the
- * <code>policyQualifiersRejected</code> flag is set to false, it is up to
+ * {@code policyQualifiersRejected} flag is set to false, it is up to
  * the application to validate all policy qualifiers in this manner in order
  * to be PKIX compliant.
  *
  * <p><b>Concurrent Access</b>
  *
- * <p>All <code>PolicyQualifierInfo</code> objects must be immutable and
+ * <p>All {@code PolicyQualifierInfo} objects must be immutable and
  * thread-safe. That is, multiple threads may concurrently invoke the
- * methods defined in this class on a single <code>PolicyQualifierInfo</code>
+ * methods defined in this class on a single {@code PolicyQualifierInfo}
  * object (or more than one) with no ill effects. Requiring
- * <code>PolicyQualifierInfo</code> objects to be immutable and thread-safe
+ * {@code PolicyQualifierInfo} objects to be immutable and thread-safe
  * allows them to be passed around to various pieces of code without
  * worrying about coordinating access.
  *
@@ -90,7 +90,7 @@ public class PolicyQualifierInfo {
     private String pqiString;
 
     /**
-     * Creates an instance of <code>PolicyQualifierInfo</code> from the
+     * Creates an instance of {@code PolicyQualifierInfo} from the
      * encoded bytes. The encoded byte array is copied on construction.
      *
      * @param encoded a byte array containing the qualifier in DER encoding
@@ -115,12 +115,12 @@ public class PolicyQualifierInfo {
     }
 
     /**
-     * Returns the <code>policyQualifierId</code> field of this
-     * <code>PolicyQualifierInfo</code>. The <code>policyQualifierId</code>
+     * Returns the {@code policyQualifierId} field of this
+     * {@code PolicyQualifierInfo}. The {@code policyQualifierId}
      * is an Object Identifier (OID) represented by a set of nonnegative
      * integers separated by periods.
      *
-     * @return the OID (never <code>null</code>)
+     * @return the OID (never {@code null})
      */
     public final String getPolicyQualifierId() {
         return mId;
@@ -128,9 +128,9 @@ public class PolicyQualifierInfo {
 
     /**
      * Returns the ASN.1 DER encoded form of this
-     * <code>PolicyQualifierInfo</code>.
+     * {@code PolicyQualifierInfo}.
      *
-     * @return the ASN.1 DER encoded bytes (never <code>null</code>).
+     * @return the ASN.1 DER encoded bytes (never {@code null}).
      * Note that a copy is returned, so the data is cloned each time
      * this method is called.
      */
@@ -139,10 +139,10 @@ public class PolicyQualifierInfo {
     }
 
     /**
-     * Returns the ASN.1 DER encoded form of the <code>qualifier</code>
-     * field of this <code>PolicyQualifierInfo</code>.
+     * Returns the ASN.1 DER encoded form of the {@code qualifier}
+     * field of this {@code PolicyQualifierInfo}.
      *
-     * @return the ASN.1 DER encoded bytes of the <code>qualifier</code>
+     * @return the ASN.1 DER encoded bytes of the {@code qualifier}
      * field. Note that a copy is returned, so the data is cloned each
      * time this method is called.
      */
@@ -152,10 +152,10 @@ public class PolicyQualifierInfo {
 
     /**
      * Return a printable representation of this
-     * <code>PolicyQualifierInfo</code>.
+     * {@code PolicyQualifierInfo}.
      *
-     * @return a <code>String</code> describing the contents of this
-     *         <code>PolicyQualifierInfo</code>
+     * @return a {@code String} describing the contents of this
+     *         {@code PolicyQualifierInfo}
      */
     public String toString() {
         if (pqiString != null)
