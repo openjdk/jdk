@@ -192,7 +192,7 @@ source-tips: $(OUTPUT_ROOT)/source_tips
 $(OUTPUT_ROOT)/source_tips: FRC
 	@$(MKDIR) -p $(@D)
 	@$(RM) $@
-	@$(if $(HG),$(call GetSourceTips),$(ECHO) "hg not installed" > $@)
+	@$(call GetSourceTips)
 
 
 # Remove everything, except the output from configure.
