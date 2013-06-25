@@ -274,7 +274,7 @@ class DebugInfoReadStream : public CompressedReadStream {
   Method* read_method() {
     Method* o = (Method*)(code()->metadata_at(read_int()));
     assert(o == NULL ||
-           o->is_metadata(), "meta data only");
+           o->is_metaspace_object(), "meta data only");
     return o;
   }
   ScopeValue* read_object_value();
