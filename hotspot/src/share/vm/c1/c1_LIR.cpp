@@ -201,23 +201,24 @@ void LIR_OprDesc::validate_type() const {
 
 #ifdef ASSERT
   if (!is_pointer() && !is_illegal()) {
+    OprKind kindfield = kind_field(); // Factored out because of compiler bug, see 8002160
     switch (as_BasicType(type_field())) {
     case T_LONG:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+      assert((kindfield == cpu_register || kindfield == stack_value) &&
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
       // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
-      assert((kind_field() == fpu_register || kind_field() == stack_value
-             ARM_ONLY(|| kind_field() == cpu_register)
-             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+      assert((kindfield == fpu_register || kindfield == stack_value
+             ARM_ONLY(|| kindfield == cpu_register)
+             PPC_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
       // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
-      assert((kind_field() == fpu_register || kind_field() == stack_value
-             ARM_ONLY(|| kind_field() == cpu_register)
-             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+      assert((kindfield == fpu_register || kindfield == stack_value
+             ARM_ONLY(|| kindfield == cpu_register)
+             PPC_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -229,7 +230,7 @@ void LIR_OprDesc::validate_type() const {
     case T_OBJECT:
     case T_METADATA:
     case T_ARRAY:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+      assert((kindfield == cpu_register || kindfield == stack_value) &&
              size_field() == single_size, "must match");
       break;
 

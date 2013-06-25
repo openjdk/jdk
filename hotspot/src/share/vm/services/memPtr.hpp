@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,9 +457,8 @@ class SeqMemPointerRecord : public MemPointerRecord {
  public:
   SeqMemPointerRecord(): _seq(0){ }
 
-  SeqMemPointerRecord(address addr, MEMFLAGS flags, size_t size)
-    : MemPointerRecord(addr, flags, size) {
-    _seq = SequenceGenerator::next();
+  SeqMemPointerRecord(address addr, MEMFLAGS flags, size_t size, jint seq)
+    : MemPointerRecord(addr, flags, size), _seq(seq)  {
   }
 
   SeqMemPointerRecord(const SeqMemPointerRecord& copy_from)
@@ -488,8 +487,8 @@ class SeqMemPointerRecordEx : public MemPointerRecordEx {
   SeqMemPointerRecordEx(): _seq(0) { }
 
   SeqMemPointerRecordEx(address addr, MEMFLAGS flags, size_t size,
-    address pc): MemPointerRecordEx(addr, flags, size, pc) {
-    _seq = SequenceGenerator::next();
+    jint seq, address pc):
+    MemPointerRecordEx(addr, flags, size, pc), _seq(seq)  {
   }
 
   SeqMemPointerRecordEx(const SeqMemPointerRecordEx& copy_from)
