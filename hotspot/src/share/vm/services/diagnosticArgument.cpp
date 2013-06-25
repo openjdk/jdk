@@ -247,7 +247,7 @@ template <> void DCmdArgument<NanoTimeArgument>::init_value(TRAPS) {
   } else {
     _value._time = 0;
     _value._nanotime = 0;
-    strcmp(_value._unit, "ns");
+    strcpy(_value._unit, "ns");
   }
 }
 

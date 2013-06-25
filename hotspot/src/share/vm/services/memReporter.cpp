@@ -190,17 +190,18 @@ void BaselineReporter::diff_callsites(const MemBaseline& cur, const MemBaseline&
   while (cur_malloc_callsite != NULL || prev_malloc_callsite != NULL) {
     if (prev_malloc_callsite == NULL ||
         cur_malloc_callsite->addr() < prev_malloc_callsite->addr()) {
+      // this is a new callsite
       _outputer.diff_malloc_callsite(cur_malloc_callsite->addr(),
         amount_in_current_scale(cur_malloc_callsite->amount()),
         cur_malloc_callsite->count(),
         diff_in_current_scale(cur_malloc_callsite->amount(), 0),
         diff(cur_malloc_callsite->count(), 0));
       cur_malloc_callsite = (MallocCallsitePointer*)cur_malloc_itr.next();
-    } else if (prev_malloc_callsite == NULL ||
+    } else if (cur_malloc_callsite == NULL ||
                cur_malloc_callsite->addr() > prev_malloc_callsite->addr()) {
-      _outputer.diff_malloc_callsite(cur_malloc_callsite->addr(),
-        amount_in_current_scale(prev_malloc_callsite->amount()),
-        prev_malloc_callsite->count(),
+      // this callsite is already gone
+      _outputer.diff_malloc_callsite(prev_malloc_callsite->addr(),
+        amount_in_current_scale(0), 0,
         diff_in_current_scale(0, prev_malloc_callsite->amount()),
         diff(0, prev_malloc_callsite->count()));
       prev_malloc_callsite = (MallocCallsitePointer*)prev_malloc_itr.next();
@@ -222,6 +223,7 @@ void BaselineReporter::diff_callsites(const MemBaseline& cur, const MemBaseline&
   VMCallsitePointer*          prev_vm_callsite = (VMCallsitePointer*)prev_vm_itr.current();
   while (cur_vm_callsite != NULL || prev_vm_callsite != NULL) {
     if (prev_vm_callsite == NULL || cur_vm_callsite->addr() < prev_vm_callsite->addr()) {
+      // this is a new callsite
       _outputer.diff_virtual_memory_callsite(cur_vm_callsite->addr(),
         amount_in_current_scale(cur_vm_callsite->reserved_amount()),
         amount_in_current_scale(cur_vm_callsite->committed_amount()),
@@ -229,9 +231,10 @@ void BaselineReporter::diff_callsites(const MemBaseline& cur, const MemBaseline&
         diff_in_current_scale(cur_vm_callsite->committed_amount(), 0));
       cur_vm_callsite = (VMCallsitePointer*)cur_vm_itr.next();
     } else if (cur_vm_callsite == NULL || cur_vm_callsite->addr() > prev_vm_callsite->addr()) {
+      // this callsite is already gone
       _outputer.diff_virtual_memory_callsite(prev_vm_callsite->addr(),
-        amount_in_current_scale(prev_vm_callsite->reserved_amount()),
-        amount_in_current_scale(prev_vm_callsite->committed_amount()),
+        amount_in_current_scale(0),
+        amount_in_current_scale(0),
         diff_in_current_scale(0, prev_vm_callsite->reserved_amount()),
         diff_in_current_scale(0, prev_vm_callsite->committed_amount()));
       prev_vm_callsite = (VMCallsitePointer*)prev_vm_itr.next();
