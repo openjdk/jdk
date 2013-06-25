@@ -158,12 +158,12 @@ public final class UserAccessorProperty extends Property {
     }
 
     @Override
-    protected Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
+    public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
         return userAccessorGetter(owner, getGetterSlot(), self);
     }
 
     @Override
-    protected void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
+    public void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
         userAccessorSetter(owner, getSetterSlot(), strict ? getKey() : null, self, value);
     }
 

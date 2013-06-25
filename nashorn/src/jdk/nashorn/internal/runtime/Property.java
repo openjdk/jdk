@@ -363,7 +363,7 @@ public abstract class Property {
      * @param value the new property value
      * @param strict is this a strict setter?
      */
-    protected abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
+    public abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
 
     /**
      * Set the Object value of this property from {@code owner}. This allows to bypass creation of the
@@ -373,7 +373,7 @@ public abstract class Property {
      * @param owner the owner object
      * @return  the property value
      */
-    protected abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
+    public abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
 
     /**
      * Abstract method for retrieving the setter for the property. We do not know
