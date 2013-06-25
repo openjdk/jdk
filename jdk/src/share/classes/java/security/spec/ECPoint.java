@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,11 @@ public class ECPoint {
 
     /**
      * Creates an ECPoint from the specified affine x-coordinate
-     * <code>x</code> and affine y-coordinate <code>y</code>.
+     * {@code x} and affine y-coordinate {@code y}.
      * @param x the affine x-coordinate.
      * @param y the affine y-coordinate.
-     * @exception NullPointerException if <code>x</code> or
-     * <code>y</code> is null.
+     * @exception NullPointerException if {@code x} or
+     * {@code y} is null.
      */
     public ECPoint(BigInteger x, BigInteger y) {
         if ((x==null) || (y==null)) {
@@ -69,7 +69,7 @@ public class ECPoint {
     }
 
     /**
-     * Returns the affine x-coordinate <code>x</code>.
+     * Returns the affine x-coordinate {@code x}.
      * Note: POINT_INFINITY has a null affine x-coordinate.
      * @return the affine x-coordinate.
      */
@@ -78,7 +78,7 @@ public class ECPoint {
     }
 
     /**
-     * Returns the affine y-coordinate <code>y</code>.
+     * Returns the affine y-coordinate {@code y}.
      * Note: POINT_INFINITY has a null affine y-coordinate.
      * @return the affine y-coordinate.
      */
@@ -90,7 +90,7 @@ public class ECPoint {
      * Compares this elliptic curve point for equality with
      * the specified object.
      * @param obj the object to be compared.
-     * @return true if <code>obj</code> is an instance of
+     * @return true if {@code obj} is an instance of
      * ECPoint and the affine coordinates match, false otherwise.
      */
     public boolean equals(Object obj) {

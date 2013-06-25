@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ public class ECGenParameterSpec implements AlgorithmParameterSpec {
     /**
      * Creates a parameter specification for EC parameter
      * generation using a standard (or predefined) name
-     * <code>stdName</code> in order to generate the corresponding
+     * {@code stdName} in order to generate the corresponding
      * (precomputed) elliptic curve domain parameters. For the
      * list of supported names, please consult the documentation
      * of provider whose implementation will be used.
      * @param stdName the standard name of the to-be-generated EC
      * domain parameters.
-     * @exception NullPointerException if <code>stdName</code>
+     * @exception NullPointerException if {@code stdName}
      * is null.
      */
     public ECGenParameterSpec(String stdName) {
