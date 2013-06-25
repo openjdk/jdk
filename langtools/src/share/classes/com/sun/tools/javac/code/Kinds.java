@@ -218,10 +218,10 @@ public class Kinds {
     /** A KindName representing the kind of a given class/interface type.
      */
     public static KindName typeKindName(Type t) {
-        if (t.tag == TYPEVAR ||
-            t.tag == CLASS && (t.tsym.flags() & COMPOUND) != 0)
+        if (t.hasTag(TYPEVAR) ||
+            t.hasTag(CLASS) && (t.tsym.flags() & COMPOUND) != 0)
             return KindName.BOUND;
-        else if (t.tag == PACKAGE)
+        else if (t.hasTag(PACKAGE))
             return KindName.PACKAGE;
         else if ((t.tsym.flags_field & ANNOTATION) != 0)
             return KindName.ANNOTATION;
