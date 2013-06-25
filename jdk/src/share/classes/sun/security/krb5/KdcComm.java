@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 import sun.security.krb5.internal.KRBError;
 
 /**
@@ -203,7 +204,6 @@ public final class KdcComm {
 
         if (obuf == null)
             return null;
-        Exception savedException = null;
         Config cfg = Config.getInstance();
 
         if (realm == null) {
@@ -218,42 +218,51 @@ public final class KdcComm {
         if (kdcList == null) {
             throw new KrbException("Cannot get kdc for realm " + realm);
         }
-        String tempKdc = null; // may include the port number also
-        byte[] ibuf = null;
-        for (String tmp: KdcAccessibility.list(kdcList)) {
-            tempKdc = tmp;
-            try {
-                ibuf = send(obuf,tempKdc,useTCP);
-                KRBError ke = null;
+        // tempKdc may include the port number also
+        Iterator<String> tempKdc = KdcAccessibility.list(kdcList).iterator();
+        if (!tempKdc.hasNext()) {
+            throw new KrbException("Cannot get kdc for realm " + realm);
+        }
+        try {
+            return sendIfPossible(obuf, tempKdc.next(), useTCP);
+        } catch(Exception first) {
+            while(tempKdc.hasNext()) {
                 try {
-                    ke = new KRBError(ibuf);
-                } catch (Exception e) {
-                    // OK
-                }
-                if (ke != null && ke.getErrorCode() ==
-                        Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
-                    ibuf = send(obuf, tempKdc, true);
-                }
-                KdcAccessibility.removeBad(tempKdc);
-                break;
+                    return sendIfPossible(obuf, tempKdc.next(), useTCP);
+                } catch(Exception ignore) {}
+            }
+            throw first;
+        }
+    }
+
+    // send the AS Request to the specified KDC
+    // failover to using TCP if useTCP is not set and response is too big
+    private byte[] sendIfPossible(byte[] obuf, String tempKdc, boolean useTCP)
+        throws IOException, KrbException {
+
+        try {
+            byte[] ibuf = send(obuf, tempKdc, useTCP);
+            KRBError ke = null;
+            try {
+                ke = new KRBError(ibuf);
             } catch (Exception e) {
-                if (DEBUG) {
-                    System.out.println(">>> KrbKdcReq send: error trying " +
-                            tempKdc);
-                    e.printStackTrace(System.out);
-                }
-                KdcAccessibility.addBad(tempKdc);
-                savedException = e;
+                // OK
             }
-        }
-        if (ibuf == null && savedException != null) {
-            if (savedException instanceof IOException) {
-                throw (IOException) savedException;
-            } else {
-                throw (KrbException) savedException;
+            if (ke != null && ke.getErrorCode() ==
+                    Krb5.KRB_ERR_RESPONSE_TOO_BIG) {
+                ibuf = send(obuf, tempKdc, true);
             }
+            KdcAccessibility.removeBad(tempKdc);
+            return ibuf;
+        } catch(Exception e) {
+            if (DEBUG) {
+                System.out.println(">>> KrbKdcReq send: error trying " +
+                        tempKdc);
+                e.printStackTrace(System.out);
+            }
+            KdcAccessibility.addBad(tempKdc);
+            throw e;
         }
-        return ibuf;
     }
 
     // send the AS Request to the specified KDC
@@ -496,7 +505,7 @@ public final class KdcComm {
         }
 
         // Returns a preferred KDC list by putting the bad ones at the end
-        private static synchronized String[] list(String kdcList) {
+        private static synchronized List<String> list(String kdcList) {
             StringTokenizer st = new StringTokenizer(kdcList);
             List<String> list = new ArrayList<>();
             if (badPolicy == BpType.TRY_LAST) {
@@ -515,7 +524,7 @@ public final class KdcComm {
                     list.add(st.nextToken());
                 }
             }
-            return list.toArray(new String[list.size()]);
+            return list;
         }
     }
 }
