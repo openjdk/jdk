@@ -2608,14 +2608,14 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
                         "->" SIZE_FORMAT
                         "("  SIZE_FORMAT ")",
                         prev_metadata_used,
-                        allocated_capacity_bytes(),
+                        allocated_used_bytes(),
                         reserved_in_bytes());
   } else {
     gclog_or_tty->print(" "  SIZE_FORMAT "K"
                         "->" SIZE_FORMAT "K"
                         "("  SIZE_FORMAT "K)",
                         prev_metadata_used / K,
-                        allocated_capacity_bytes() / K,
+                        allocated_used_bytes() / K,
                         reserved_in_bytes()/ K);
   }
 
