@@ -180,17 +180,19 @@ public abstract class Property {
 
     /**
      * Check whether this property has a user defined getter function. See {@link UserAccessorProperty}
+     * @param obj object containing getter
      * @return true if getter function exists, false is default
      */
-    public boolean hasGetterFunction() {
+    public boolean hasGetterFunction(final ScriptObject obj) {
         return false;
     }
 
     /**
      * Check whether this property has a user defined setter function. See {@link UserAccessorProperty}
+     * @param obj object containing setter
      * @return true if getter function exists, false is default
      */
-    public boolean hasSetterFunction() {
+    public boolean hasSetterFunction(final ScriptObject obj) {
         return false;
     }
 

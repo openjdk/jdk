@@ -155,8 +155,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
                 Lookup.TYPE_ERROR_THROWER_GETTER, Lookup.TYPE_ERROR_THROWER_SETTER);
     }
 
-    private static PropertyMap createStrictModeMap(final PropertyMap functionMap) {
-        return newThrowerProperty(newThrowerProperty(functionMap, "arguments"), "caller");
+    private static PropertyMap createStrictModeMap(PropertyMap map) {
+        final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
+        // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
+        map = map.addProperty(map.newUserAccessors("arguments", flags));
+        map = map.addProperty(map.newUserAccessors("caller", flags));
+        return map;
     }
 
     // Choose the map based on strict mode!
@@ -260,12 +264,15 @@ public class ScriptFunctionImpl extends ScriptFunction {
         this.setProto(Global.instance().getFunctionPrototype());
         this.prototype = LAZY_PROTOTYPE;
 
-        if (isStrict()) {
-            final ScriptFunction func = getTypeErrorThrower();
-            // We have to fill user accessor functions late as these are stored
-            // in this object rather than in the PropertyMap of this object.
-            setUserAccessors("arguments", func, func);
-            setUserAccessors("caller", func, func);
+        // We have to fill user accessor functions late as these are stored
+        // in this object rather than in the PropertyMap of this object.
+
+        if (findProperty("arguments", true) != null) {
+            setUserAccessors("arguments", getTypeErrorThrower(), getTypeErrorThrower());
+        }
+
+        if (findProperty("caller", true) != null) {
+            setUserAccessors("caller", getTypeErrorThrower(), getTypeErrorThrower());
         }
     }
 }
