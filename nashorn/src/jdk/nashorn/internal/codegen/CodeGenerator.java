@@ -244,7 +244,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /**
      * Check if this symbol can be accessed directly with a putfield or getfield or dynamic load
      *
-     * @param function function to check for fast scope
+     * @param symbol symbol to check for fast scope
      * @return true if fast scope
      */
     private boolean isFastScope(final Symbol symbol) {

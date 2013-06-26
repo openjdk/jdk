@@ -170,13 +170,30 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
+        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+    }
 
-        if (map == null) {
-            this.setMap(PropertyMap.newMap(getClass()));
-            return;
+    /**
+     * Constructor that directly sets the prototype to {@code proto} and property map to
+     * {@code map} without invalidating the map as calling {@link #setProto(ScriptObject)}
+     * would do. This should only be used for objects that are always constructed with the
+     * same combination of prototype and property map.
+     *
+     * @param proto the prototype object
+     * @param map intial {@link PropertyMap}
+     */
+    protected ScriptObject(final ScriptObject proto, final PropertyMap map) {
+        if (Context.DEBUG) {
+            ScriptObject.count++;
         }
 
-        this.setMap(map);
+        this.arrayData = ArrayData.EMPTY_ARRAY;
+        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.proto = proto;
+
+        if (proto != null) {
+            proto.setIsPrototype();
+        }
     }
 
     /**

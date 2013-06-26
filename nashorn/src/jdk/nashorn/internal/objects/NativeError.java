@@ -43,6 +43,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -86,8 +87,11 @@ public final class NativeError extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE, where = Where.PROTOTYPE)
     public Object message;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeError(final Object msg) {
-        this.setProto(Global.instance().getErrorPrototype());
+        super(Global.instance().getErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
