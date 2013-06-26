@@ -132,7 +132,7 @@ $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 ##########################################################################################
 
 # Full JRE exclude list for rt.jar and resources.jar
-# This value should exclude types destined for jars other than rt.jar and resources.jar. 
+# This value should exclude types destined for jars other than rt.jar and resources.jar.
 # When building a Profile this value augments the profile specific exclusions
 RT_JAR_EXCLUDES += \
 	com/oracle/security \
@@ -246,7 +246,8 @@ RT_JAR_EXCLUDES += \
 	sun/util/resources/cldr \
 	$(LOCALEDATA_INCLUDES) \
 	com/oracle/jrockit/jfr \
-	oracle/jrockit/jfr
+	oracle/jrockit/jfr \
+	jdk/jfr
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
@@ -337,7 +338,7 @@ $(PROFILE_VERSION_CLASS_TARGETS) : $(PROFILE_VERSION_JAVA_TARGETS)
 
 
 # Support for removing the addPropertyChangeListener and removePropertyChangeListener
-# methods from classes that only go into the profile builds. 
+# methods from classes that only go into the profile builds.
 BEANLESS_CLASSES = $(IMAGES_OUTPUTDIR)/beanless
 
 # When there are $ characters in filenames we have some very subtle interactions between
@@ -352,7 +353,7 @@ CLASSES_TO_DEBEAN = \
     java/util/jar/Pack200\$$Packer.class \
     java/util/jar/Pack200\$$Unpacker.class \
     com/sun/java/util/jar/pack/PackerImpl.class \
-    com/sun/java/util/jar/pack/UnpackerImpl.class 
+    com/sun/java/util/jar/pack/UnpackerImpl.class
 
 ifneq ($(PROFILE),)
     BEANLESS_CLASSES_TARGETS := $(addprefix $(BEANLESS_CLASSES)/, $(CLASSES_TO_DEBEAN))
@@ -428,7 +429,8 @@ ifeq ($(ENABLE_JFR), true)
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		SUFFIXES:=.class .jfc .xsd,\
 		INCLUDES:=com/oracle/jrockit/jfr \
-			  oracle/jrockit/jfr,\
+			  oracle/jrockit/jfr \
+			  jdk/jfr,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/jfr.jar,\
 		SKIP_METAINF:=true,\
 		MANIFEST:=$(MAINMANIFEST), \
@@ -468,14 +470,14 @@ $(JCE_MANIFEST): $(MAINMANIFEST)
 	$(MV) $@.tmp $@
 
 ##########################################################################################
-# For security and crypto jars, always build the jar, but for closed, install the prebuilt 
-# signed version instead of the newly built jar. Unsigned jars are treated as intermediate 
-# targets and explicitly added to the JARS list. For open, signing is not needed. See 
+# For security and crypto jars, always build the jar, but for closed, install the prebuilt
+# signed version instead of the newly built jar. Unsigned jars are treated as intermediate
+# targets and explicitly added to the JARS list. For open, signing is not needed. See
 # SignJars.gmk for more information.
 #
 # The source for the crypto jars is not available for all licensees. The BUILD_CRYPTO
 # variable is set to no if these jars can't be built to skip that step of the build.
-# Note that for OPENJDK, the build will fail if BUILD_CRYPTO=no since then there is no 
+# Note that for OPENJDK, the build will fail if BUILD_CRYPTO=no since then there is no
 # other way to get the jars than to build them.
 
 SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
@@ -738,7 +740,7 @@ $(UCRYPTO_JAR_DST) : $(UCRYPTO_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt OracleUcrypto provider..."
 	$(install-file)
 
-JARS += $(UCRYPTO_JAR_UNSIGNED) 
+JARS += $(UCRYPTO_JAR_UNSIGNED)
 
 endif
 endif
