@@ -149,12 +149,6 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return typeErrorThrower;
     }
 
-    // add a new property that throws TypeError on get as well as set
-    static synchronized PropertyMap newThrowerProperty(final PropertyMap map, final String name) {
-        return map.newProperty(name, Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, -1,
-                Lookup.TYPE_ERROR_THROWER_GETTER, Lookup.TYPE_ERROR_THROWER_SETTER);
-    }
-
     private static PropertyMap createStrictModeMap(PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.

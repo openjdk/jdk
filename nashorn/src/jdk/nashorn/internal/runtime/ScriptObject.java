@@ -868,9 +868,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public final void setUserAccessors(final String key, final ScriptFunction getter, final ScriptFunction setter) {
         final Property oldProperty = getMap().findProperty(key);
         if (oldProperty instanceof UserAccessorProperty) {
-            final UserAccessorProperty ua = (UserAccessorProperty)oldProperty;
-            setSpill(ua.getGetterSlot(), getter);
-            setSpill(ua.getSetterSlot(), setter);
+            modifyOwnProperty(oldProperty, oldProperty.getFlags(), getter, setter);
         } else {
             addOwnProperty(newUserAccessors(key, oldProperty != null ? oldProperty.getFlags() : 0, getter, setter));
         }
