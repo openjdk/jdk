@@ -57,8 +57,10 @@ public final class NativeStrictArguments extends ScriptObject {
         PropertyMap map = PropertyMap.newMap(NativeStrictArguments.class);
         map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
         // In strict mode, the caller and callee properties should throw TypeError
-        map = ScriptFunctionImpl.newThrowerProperty(map, "caller");
-        map = ScriptFunctionImpl.newThrowerProperty(map, "callee");
+        // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
+        final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
+        map = map.addProperty(map.newUserAccessors("caller", flags));
+        map = map.addProperty(map.newUserAccessors("callee", flags));
         nasgenmap$ = map;
     }
 
