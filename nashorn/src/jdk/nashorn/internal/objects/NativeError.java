@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -119,6 +120,20 @@ public final class NativeError extends ScriptObject {
     }
 
     /**
+     * Nashorn extension: Error.captureStackTrace. Capture stack trace at the point of call into the Error object provided.
+     *
+     * @param self self reference
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object captureStackTrace(final Object self, final Object errorObj) {
+        Global.checkObject(errorObj);
+        final ScriptObject sobj = (ScriptObject)errorObj;
+        final ECMAException exp = new ECMAException(sobj, null);
+        sobj.set("stack", NashornException.getScriptStackString(exp), false);
+        return UNDEFINED;
+    }
+
+    /**
      * Nashorn extension: Error.dumpStack
      * dumps the stack of the current thread.
      *
@@ -163,7 +178,7 @@ public final class NativeError extends ScriptObject {
         final Object exception = ECMAException.getException(sobj);
         Object[] res;
         if (exception instanceof Throwable) {
-            res = getScriptFrames((Throwable)exception);
+            res = NashornException.getScriptFrames((Throwable)exception);
         } else {
             res = ScriptRuntime.EMPTY_ARRAY;
         }
@@ -272,25 +287,8 @@ public final class NativeError extends ScriptObject {
         }
 
         final Object exception = ECMAException.getException(sobj);
-        final StringBuilder buf = new StringBuilder();
         if (exception instanceof Throwable) {
-            final Object[] frames = getScriptFrames((Throwable)exception);
-            for (final Object fr : frames) {
-                final StackTraceElement st = (StackTraceElement)fr;
-                buf.append(st.getMethodName());
-                buf.append(" @ ");
-                buf.append(st.getFileName());
-                buf.append(':');
-                buf.append(st.getLineNumber());
-                buf.append('\n');
-            }
-            final int len = buf.length();
-            // remove trailing '\n'
-            if (len > 0) {
-                assert buf.charAt(len - 1) == '\n';
-                buf.deleteCharAt(len - 1);
-            }
-            return buf.toString();
+            return NashornException.getScriptStackString((Throwable)exception);
         } else {
             return "";
         }
@@ -363,22 +361,5 @@ public final class NativeError extends ScriptObject {
         } catch (final NoSuchMethodException | IllegalAccessException e) {
             throw new MethodHandleFactory.LookupException(e);
         }
-    }
-
-    private static Object[] getScriptFrames(final Throwable exception) {
-        final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
-        final List<StackTraceElement> filtered = new ArrayList<>();
-        for (final StackTraceElement st : frames) {
-            if (ECMAErrors.isScriptFrame(st)) {
-                final String className = "<" + st.getFileName() + ">";
-                String methodName = st.getMethodName();
-                if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
-                    methodName = "<program>";
-                }
-                filtered.add(new StackTraceElement(className, methodName,
-                        st.getFileName(), st.getLineNumber()));
-            }
-        }
-        return filtered.toArray();
     }
 }
