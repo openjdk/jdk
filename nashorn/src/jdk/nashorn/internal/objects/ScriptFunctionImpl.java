@@ -51,7 +51,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // property map for bound functions
     private static final PropertyMap boundfunctionmap$;
     // property map for non-strict, non-bound functions.
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
 
     // Marker object for lazily initialized prototype object
     private static final Object LAZY_PROTOTYPE = new Object();
@@ -65,7 +65,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs) {
-        super(name, invokeHandle, nasgenmap$, null, specs, false, true, true);
+        super(name, invokeHandle, map$, null, specs, false, true, true);
         init();
     }
 
@@ -79,7 +79,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs) {
-        super(name, invokeHandle, map.addAll(nasgenmap$), null, specs, false, true, true);
+        super(name, invokeHandle, map.addAll(map$), null, specs, false, true, true);
         init();
     }
 
@@ -124,8 +124,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
         map = Lookup.newProperty(map, "prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE);
         map = Lookup.newProperty(map, "length",    Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null);
         map = Lookup.newProperty(map, "name",      Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null);
-        nasgenmap$ = map;
-        strictmodemap$ = createStrictModeMap(nasgenmap$);
+        map$ = map;
+        strictmodemap$ = createStrictModeMap(map$);
         boundfunctionmap$ = createBoundFunctionMap(strictmodemap$);
     }
 
@@ -165,7 +165,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
     // Choose the map based on strict mode!
     private static PropertyMap getMap(final boolean strict) {
-        return strict ? strictmodemap$ : nasgenmap$;
+        return strict ? strictmodemap$ : map$;
     }
 
     private static PropertyMap createBoundFunctionMap(final PropertyMap strictModeMap) {

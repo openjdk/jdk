@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import jdk.nashorn.internal.scripts.JO;
+
 import static jdk.nashorn.internal.runtime.PropertyHashMap.EMPTY_HASHMAP;
 
 import java.lang.invoke.MethodHandle;
@@ -166,7 +168,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      */
     public static PropertyMap newMap(final Class<?> structure, final Collection<Property> properties, final int fieldCount, final int fieldMaximum) {
         // Reduce the number of empty maps in the context.
-        if (structure == jdk.nashorn.internal.scripts.JO.class) {
+        if (structure == JO.class) {
             return EMPTY_MAP;
         }
 

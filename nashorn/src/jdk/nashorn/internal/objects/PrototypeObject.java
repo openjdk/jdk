@@ -44,7 +44,7 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
  *
  */
 public class PrototypeObject extends ScriptObject {
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
 
     private Object constructor;
 
@@ -54,11 +54,11 @@ public class PrototypeObject extends ScriptObject {
     static {
         PropertyMap map = PropertyMap.newMap(PrototypeObject.class);
         map = Lookup.newProperty(map, "constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR);
-        nasgenmap$ = map;
+        map$ = map;
     }
 
     PrototypeObject() {
-        this(nasgenmap$);
+        this(map$);
     }
 
     /**
@@ -67,12 +67,12 @@ public class PrototypeObject extends ScriptObject {
      * @param map property map
      */
     public PrototypeObject(final PropertyMap map) {
-        super(map != nasgenmap$ ? map.addAll(nasgenmap$) : nasgenmap$);
+        super(map != map$ ? map.addAll(map$) : map$);
         setProto(Global.objectPrototype());
     }
 
     PrototypeObject(final ScriptFunction func) {
-        this();
+        this(map$);
         this.constructor = func;
     }
 
