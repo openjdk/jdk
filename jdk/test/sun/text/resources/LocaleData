@@ -11,7 +11,7 @@ LocaleNames//es=Spanish
 # bug #4052679
 LocaleNames/fr/fr=fran\u00e7ais
 
-# bug #4055602, 4290801
+# bug #4055602, 4290801, 8013836
 CurrencyNames/pt_BR/BRL=R$
 FormatData/pt_BR/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/pt_BR/NumberPatterns/1=R$ #,##0.##;-R$ #,##0.## # Changed; see bug 4122840
@@ -34,7 +34,7 @@ FormatData/pt_BR/DayAbbreviations/2=Ter
 FormatData/pt_BR/DayNames/0=Domingo
 FormatData/pt_BR/DayNames/1=Segunda-feira
 FormatData/pt_BR/DayNames/2=Ter\u00e7a-feira
-CalendarData/pt_BR/firstDayOfWeek=2
+CalendarData/pt_BR/firstDayOfWeek=1
 CalendarData/pt_BR/minimalDaysInFirstWeek=1
 FormatData/pt_BR/MonthNames/0=Janeiro
 FormatData/pt_BR/MonthNames/1=Fevereiro
