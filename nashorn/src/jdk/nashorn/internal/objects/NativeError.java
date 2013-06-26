@@ -144,6 +144,30 @@ public final class NativeError extends ScriptObject {
     }
 
     /**
+     * Nashorn extension: Error.prototype.getStackTrace()
+     * "stack" property is an array typed value containing {@link StackTraceElement}
+     * objects of JavaScript stack frames.
+     *
+     * @param self  self reference
+     *
+     * @return      stack trace as a script array.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getStackTrace(final Object self) {
+        Global.checkObject(self);
+        final ScriptObject sobj = (ScriptObject)self;
+        final Object exception = ECMAException.getException(sobj);
+        Object[] res;
+        if (exception instanceof Throwable) {
+            res = getScriptFrames((Throwable)exception);
+        } else {
+            res = ScriptRuntime.EMPTY_ARRAY;
+        }
+
+        return new NativeArray(res);
+    }
+
+    /**
      * Nashorn extension: Error.prototype.lineNumber
      *
      * @param self self reference
@@ -229,8 +253,8 @@ public final class NativeError extends ScriptObject {
 
     /**
      * Nashorn extension: Error.prototype.stack
-     * "stack" property is an array typed value containing {@link StackTraceElement}
-     * objects of JavaScript stack frames.
+     * "stack" property is a string typed value containing JavaScript stack frames.
+     * Each frame information is separated bv "\n" character.
      *
      * @param self  self reference
      *
@@ -244,27 +268,28 @@ public final class NativeError extends ScriptObject {
         }
 
         final Object exception = ECMAException.getException(sobj);
-        Object[] res;
+        final StringBuilder buf = new StringBuilder();
         if (exception instanceof Throwable) {
-            final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
-            final List<StackTraceElement> filtered = new ArrayList<>();
-            for (final StackTraceElement st : frames) {
-                if (ECMAErrors.isScriptFrame(st)) {
-                    final String className = "<" + st.getFileName() + ">";
-                    String methodName = st.getMethodName();
-                    if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
-                        methodName = "<program>";
-                    }
-                    filtered.add(new StackTraceElement(className, methodName,
-                            st.getFileName(), st.getLineNumber()));
-                }
+            final Object[] frames = getScriptFrames((Throwable)exception);
+            for (final Object fr : frames) {
+                final StackTraceElement st = (StackTraceElement)fr;
+                buf.append(st.getMethodName());
+                buf.append(" @ ");
+                buf.append(st.getFileName());
+                buf.append(':');
+                buf.append(st.getLineNumber());
+                buf.append('\n');
             }
-            res = filtered.toArray();
+            final int len = buf.length();
+            // remove trailing '\n'
+            if (len > 0) {
+                assert buf.charAt(len - 1) == '\n';
+                buf.deleteCharAt(len - 1);
+            }
+            return buf.toString();
         } else {
-            res = ScriptRuntime.EMPTY_ARRAY;
+            return "";
         }
-
-        return new NativeArray(res);
     }
 
     /**
@@ -334,5 +359,22 @@ public final class NativeError extends ScriptObject {
         } catch (final NoSuchMethodException | IllegalAccessException e) {
             throw new MethodHandleFactory.LookupException(e);
         }
+    }
+
+    private static Object[] getScriptFrames(final Throwable exception) {
+        final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
+        final List<StackTraceElement> filtered = new ArrayList<>();
+        for (final StackTraceElement st : frames) {
+            if (ECMAErrors.isScriptFrame(st)) {
+                final String className = "<" + st.getFileName() + ">";
+                String methodName = st.getMethodName();
+                if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
+                    methodName = "<program>";
+                }
+                filtered.add(new StackTraceElement(className, methodName,
+                        st.getFileName(), st.getLineNumber()));
+            }
+        }
+        return filtered.toArray();
     }
 }
