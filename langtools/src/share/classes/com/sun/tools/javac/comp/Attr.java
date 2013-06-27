@@ -3010,6 +3010,8 @@ public class Attr extends JCTree.Visitor {
                 !left.isErroneous() &&
                 !right.isErroneous()) {
             owntype = operator.type.getReturnType();
+            // This will figure out when unboxing can happen and
+            // choose the right comparison operator.
             int opc = chk.checkOperator(tree.lhs.pos(),
                                         (OperatorSymbol)operator,
                                         tree.getTag(),
@@ -3037,9 +3039,11 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Check that argument types of a reference ==, != are
-            // castable to each other, (JLS???).
+            // castable to each other, (JLS 15.21).  Note: unboxing
+            // comparisons will not have an acmp* opc at this point.
             if ((opc == ByteCodes.if_acmpeq || opc == ByteCodes.if_acmpne)) {
-                if (!types.isCastable(left, right, new Warner(tree.pos()))) {
+                if (!types.isEqualityComparable(left, right,
+                                                new Warner(tree.pos()))) {
                     log.error(tree.pos(), "incomparable.types", left, right);
                 }
             }
