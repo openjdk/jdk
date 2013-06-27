@@ -371,6 +371,7 @@ Table styles
     overflow:hidden;
     padding:0px;
     margin:0px;
+    white-space:pre;
 }
 caption a:link, caption a:hover, caption a:active, caption a:visited {
     color:#FFFFFF;
