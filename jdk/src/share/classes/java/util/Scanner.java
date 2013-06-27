@@ -49,47 +49,51 @@ import sun.misc.LRUCache;
  *
  * <p>For example, this code allows a user to read a number from
  * <tt>System.in</tt>:
- * <blockquote><pre>
+ * <blockquote><pre>{@code
  *     Scanner sc = new Scanner(System.in);
  *     int i = sc.nextInt();
- * </pre></blockquote>
+ * }</pre></blockquote>
  *
  * <p>As another example, this code allows <code>long</code> types to be
  * assigned from entries in a file <code>myNumbers</code>:
- * <blockquote><pre>
+ * <blockquote><pre>{@code
  *      Scanner sc = new Scanner(new File("myNumbers"));
  *      while (sc.hasNextLong()) {
  *          long aLong = sc.nextLong();
- *      }</pre></blockquote>
+ *      }
+ * }</pre></blockquote>
  *
  * <p>The scanner can also use delimiters other than whitespace. This
  * example reads several items in from a string:
- *<blockquote><pre>
+ * <blockquote><pre>{@code
  *     String input = "1 fish 2 fish red fish blue fish";
  *     Scanner s = new Scanner(input).useDelimiter("\\s*fish\\s*");
  *     System.out.println(s.nextInt());
  *     System.out.println(s.nextInt());
  *     System.out.println(s.next());
  *     System.out.println(s.next());
- *     s.close(); </pre></blockquote>
+ *     s.close();
+ * }</pre></blockquote>
  * <p>
  * prints the following output:
- * <blockquote><pre>
+ * <blockqjote><pre>{@code
  *     1
  *     2
  *     red
- *     blue </pre></blockquote>
+ *     blue
+ * }</pre></blockquote>
  *
  * <p>The same output can be generated with this code, which uses a regular
  * expression to parse all four tokens at once:
- *<blockquote><pre>
+ * <blockquote><pre>{@code
  *     String input = "1 fish 2 fish red fish blue fish";
  *     Scanner s = new Scanner(input);
  *     s.findInLine("(\\d+) fish (\\d+) fish (\\w+) fish (\\w+)");
  *     MatchResult result = s.match();
  *     for (int i=1; i<=result.groupCount(); i++)
  *         System.out.println(result.group(i));
- *     s.close(); </pre></blockquote>
+ *     s.close();
+ * }</pre></blockquote>
  *
  * <p>The <a name="default-delimiter">default whitespace delimiter</a> used
  * by a scanner is as recognized by {@link java.lang.Character}.{@link
@@ -2640,11 +2644,11 @@ public final class Scanner implements Iterator<String>, Closeable {
      * <tt>scanner.reset()</tt> behaves in exactly the same way as the
      * invocation
      *
-     * <blockquote><pre>
+     * <blockquote><pre>{@code
      *   scanner.useDelimiter("\\p{javaWhitespace}+")
      *          .useLocale(Locale.getDefault(Locale.Category.FORMAT))
      *          .useRadix(10);
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * @return this scanner
      *

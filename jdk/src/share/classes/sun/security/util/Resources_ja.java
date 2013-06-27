@@ -127,6 +127,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "\u8907\u6570\u306ECodebase\u5F0F"},
         {"multiple.SignedBy.expressions","\u8907\u6570\u306ESignedBy\u5F0F"},
+        {"duplicate.keystore.domain.name","\u91CD\u8907\u3059\u308B\u30AD\u30FC\u30B9\u30C8\u30A2\u30FB\u30C9\u30E1\u30A4\u30F3\u540D: {0}"},
+        {"duplicate.keystore.name","\u91CD\u8907\u3059\u308B\u30AD\u30FC\u30B9\u30C8\u30A2\u540D: {0}"},
         {"SignedBy.has.empty.alias","SignedBy\u306F\u7A7A\u306E\u5225\u540D\u3092\u4FDD\u6301\u3057\u307E\u3059"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "\u30EF\u30A4\u30EB\u30C9\u30AB\u30FC\u30C9\u540D\u306E\u306A\u3044\u30EF\u30A4\u30EB\u30C9\u30AB\u30FC\u30C9\u30FB\u30AF\u30E9\u30B9\u3092\u4F7F\u7528\u3057\u3066\u3001\u30D7\u30EA\u30F3\u30B7\u30D1\u30EB\u3092\u6307\u5B9A\u3059\u308B\u3053\u3068\u306F\u3067\u304D\u307E\u305B\u3093"},

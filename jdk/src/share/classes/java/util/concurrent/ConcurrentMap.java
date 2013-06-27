@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
  * A {@link java.util.Map} providing additional atomic
@@ -183,4 +185,26 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      *         or value prevents it from being stored in this map
      */
     V replace(K key, V value);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implNote This implementation assumes that the ConcurrentMap cannot
+     * contain null values and get() returning null unambiguously means the key
+     * is absent. Implementations which support null values
+     * <strong>must</strong> override this default implementation.
+     */
+    @Override
+    default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        forEach((k,v) -> {
+            while(!replace(k, v, function.apply(k, v))) {
+                // v changed or k is gone
+                if( (v = get(k)) == null) {
+                    // k is no longer in the map.
+                    break;
+                }
+            }
+        });
+    }
 }

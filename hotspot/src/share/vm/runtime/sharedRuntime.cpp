@@ -2731,7 +2731,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();
   int len = (int)strlen(s);
-  *s++; len--;                  // Skip opening paren
+  s++; len--;                   // Skip opening paren
   char *t = s+len;
   while( *(--t) != ')' ) ;      // Find close paren
 

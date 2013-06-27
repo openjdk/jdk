@@ -29,6 +29,7 @@
 #include <dlfcn.h>
 
 #include <jni.h>
+#include <sizecalc.h>
 #include "sun_awt_UNIXToolkit.h"
 
 #ifndef HEADLESS
@@ -148,7 +149,8 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
     }
 
     len = (*env)->GetStringUTFLength(env, filename);
-    filename_str = (char *)malloc(sizeof(char) * (len + 1));
+    filename_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
+            sizeof(char), len + 1);
     if (filename_str == NULL) {
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return JNI_FALSE;
@@ -189,7 +191,8 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     }
 
     len = (*env)->GetStringUTFLength(env, stock_id);
-    stock_id_str = (char *)malloc(sizeof(char) * (len + 1));
+    stock_id_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
+            sizeof(char), len + 1);
     if (stock_id_str == NULL) {
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return JNI_FALSE;
@@ -200,7 +203,8 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     if (detail != NULL)
     {
         len = (*env)->GetStringUTFLength(env, detail);
-        detail_str = (char *)malloc(sizeof(char) * (len + 1));
+        detail_str = (char *)SAFE_SIZE_ARRAY_ALLOC(malloc,
+                sizeof(char), len + 1);
         if (detail_str == NULL) {
             JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
             return JNI_FALSE;

@@ -108,7 +108,7 @@ import java.util.stream.StreamSupport;
  * <tr><td valign="top" headers="construct characters"><tt>&#92;x</tt><i>{h...h}</i></td>
  *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;<tt>0x</tt><i>h...h</i>
  *         ({@link java.lang.Character#MIN_CODE_POINT Character.MIN_CODE_POINT}
- *         &nbsp;&lt;=&nbsp;<tt>0x</tt><i>h...h</i>&nbsp;&lt;=&nbsp
+ *         &nbsp;&lt;=&nbsp;<tt>0x</tt><i>h...h</i>&nbsp;&lt;=&nbsp;
  *          {@link java.lang.Character#MAX_CODE_POINT Character.MAX_CODE_POINT})</td></tr>
  * <tr><td valign="top" headers="matches"><tt>\t</tt></td>
  *     <td headers="matches">The tab character (<tt>'&#92;u0009'</tt>)</td></tr>

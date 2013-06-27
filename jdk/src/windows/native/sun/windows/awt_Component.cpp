@@ -2186,12 +2186,12 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
         if (insets != NULL) {
             ::OffsetRgn(rgn, insets->left, insets->top);
         }
-        int size = ::GetRegionData(rgn, 0, NULL);
+        DWORD size = ::GetRegionData(rgn, 0, NULL);
         if (size == 0) {
             ::DeleteObject((HGDIOBJ)rgn);
             return;
         }
-        char* buffer = new char[size];
+        char* buffer = new char[size]; // safe because sizeof(char)==1
         memset(buffer, 0, size);
         LPRGNDATA rgndata = (LPRGNDATA)buffer;
         rgndata->rdh.dwSize = sizeof(RGNDATAHEADER);
@@ -6134,18 +6134,30 @@ void AwtComponent::_SetRectangularShape(void *param)
         c = (AwtComponent *)pData;
         if (::IsWindow(c->GetHWnd())) {
             HRGN hRgn = NULL;
+
+            // If all the params are zeros, the shape must be simply reset.
+            // Otherwise, convert it into a region.
             if (region || x1 || x2 || y1 || y2) {
-                // If all the params are zeros, the shape must be simply reset.
-                // Otherwise, convert it into a region.
-                RGNDATA *pRgnData = NULL;
-                RGNDATAHEADER *pRgnHdr;
+                RECT_T rects[256];
+                RECT_T *pRect = rects;
 
-                /* reserving memory for the worst case */
-                size_t worstBufferSize = size_t(((x2 - x1) / 2 + 1) * (y2 - y1));
-                pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
-                        sizeof(RECT_T) * worstBufferSize);
-                pRgnHdr = (RGNDATAHEADER *) pRgnData;
+                const int numrects = RegionToYXBandedRectangles(env, x1, y1, x2, y2,
+                        region, &pRect, sizeof(rects)/sizeof(rects[0]));
+                if (!pRect) {
+                    // RegionToYXBandedRectangles doesn't use safe_Malloc(),
+                    // so throw the exception explicitly
+                    throw std::bad_alloc();
+                }
 
+                RGNDATA *pRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
+                        sizeof(RGNDATAHEADER), sizeof(RECT_T), numrects);
+                memcpy((BYTE*)pRgnData + sizeof(RGNDATAHEADER), pRect, sizeof(RECT_T) * numrects);
+                if (pRect != rects) {
+                    free(pRect);
+                }
+                pRect = NULL;
+
+                RGNDATAHEADER *pRgnHdr = (RGNDATAHEADER *) pRgnData;
                 pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
                 pRgnHdr->iType = RDH_RECTANGLES;
                 pRgnHdr->nRgnSize = 0;
@@ -6153,9 +6165,7 @@ void AwtComponent::_SetRectangularShape(void *param)
                 pRgnHdr->rcBound.left = 0;
                 pRgnHdr->rcBound.bottom = LONG(y2 - y1);
                 pRgnHdr->rcBound.right = LONG(x2 - x1);
-
-                RECT_T * pRect = (RECT_T *) (((BYTE *) pRgnData) + sizeof(RGNDATAHEADER));
-                pRgnHdr->nCount = RegionToYXBandedRectangles(env, x1, y1, x2, y2, region, &pRect, worstBufferSize);
+                pRgnHdr->nCount = numrects;
 
                 hRgn = ::ExtCreateRegion(NULL,
                         sizeof(RGNDATAHEADER) + sizeof(RECT_T) * pRgnHdr->nCount, pRgnData);
@@ -6297,7 +6307,7 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
     jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
 
     jsize len = env->GetArrayLength(obj);
-    AwtComponent::masks = new jint[len];
+    AwtComponent::masks = SAFE_SIZE_NEW_ARRAY(jint, len);
     for (int i = 0; i < len; i++) {
         AwtComponent::masks[i] = tmp[i];
     }
@@ -7185,3 +7195,4 @@ void ReleaseDCList(HWND hwnd, DCList &list) {
         delete tmpDCList;
     }
 }
+

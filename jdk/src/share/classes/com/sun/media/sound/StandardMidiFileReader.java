@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,13 @@
 package com.sun.media.sound;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.SequenceInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.io.BufferedInputStream;
 import java.net.URL;
-import java.net.MalformedURLException;
 
 import javax.sound.midi.MidiFileFormat;
 import javax.sound.midi.InvalidMidiDataException;
@@ -49,7 +40,6 @@ import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.spi.MidiFileReader;
@@ -64,22 +54,11 @@ import javax.sound.midi.spi.MidiFileReader;
  * @author Florian Bomers
  */
 
-public class StandardMidiFileReader extends MidiFileReader {
+public final class StandardMidiFileReader extends MidiFileReader {
 
     private static final int MThd_MAGIC = 0x4d546864;  // 'MThd'
 
-    private static final int MIDI_TYPE_0 = 0;
-    private static final int MIDI_TYPE_1 = 1;
-
     private static final int bisBufferSize = 1024; // buffer size in buffered input streams
-
-    /**
-     * MIDI parser types
-     */
-    private static final int types[] = {
-        MIDI_TYPE_0,
-        MIDI_TYPE_1
-    };
 
     public MidiFileFormat getMidiFileFormat(InputStream stream) throws InvalidMidiDataException, IOException {
         return getMidiFileFormatFromStream(stream, MidiFileFormat.UNKNOWN_LENGTH, null);
@@ -253,7 +232,7 @@ public class StandardMidiFileReader extends MidiFileReader {
 /**
  * State variables during parsing of a MIDI file
  */
-class SMFParser {
+final class SMFParser {
     private static final int MTrk_MAGIC = 0x4d54726b;  // 'MTrk'
 
     // set to true to not allow corrupt MIDI files tombe loaded
@@ -268,7 +247,7 @@ class SMFParser {
     private byte[] trackData = null;
     private int pos = 0;
 
-    public SMFParser() {
+    SMFParser() {
     }
 
     private int readUnsigned() throws IOException {

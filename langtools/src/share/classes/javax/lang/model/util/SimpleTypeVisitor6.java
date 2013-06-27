@@ -118,6 +118,10 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
      * The default action for visit methods.  The implementation in
      * this class just returns {@link #DEFAULT_VALUE}; subclasses will
      * commonly override this method.
+     *
+     * @param e the type to process
+     * @param p a visitor-specified parameter
+     * @return {@code DEFAULT_VALUE} unless overridden
      */
     protected R defaultAction(TypeMirror e, P p) {
         return DEFAULT_VALUE;

@@ -80,7 +80,7 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
      * </code> bytes of the buffer are copied to protect against subsequent
      * modification.
      * @exception IllegalArgumentException if <code>iv</code> is
-     * <code>null</code> or <code>(iv.length < 2 * (wordSize / 8))</code>
+     * <code>null</code> or {@code (iv.length < 2 * (wordSize / 8))}
      */
     public RC5ParameterSpec(int version, int rounds, int wordSize, byte[] iv) {
         this(version, rounds, wordSize, iv, 0);
@@ -107,7 +107,7 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
      * @param offset the offset in <code>iv</code> where the IV starts.
      * @exception IllegalArgumentException if <code>iv</code> is
      * <code>null</code> or
-     * <code>(iv.length - offset < 2 * (wordSize / 8))</code>
+     * {@code (iv.length - offset < 2 * (wordSize / 8))}
      */
     public RC5ParameterSpec(int version, int rounds, int wordSize,
                             byte[] iv, int offset) {

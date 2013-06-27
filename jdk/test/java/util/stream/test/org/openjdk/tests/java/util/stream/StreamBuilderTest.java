@@ -275,7 +275,7 @@ public class StreamBuilderTest extends OpTestCase {
     @Test(dataProvider = "sizes")
     public void testDoubleAfterBuilding(int size) {
         StreamBuilder.OfDouble sb = DoubleStream.builder();
-        DoubleStream.range(0, size).forEach(sb);
+        IntStream.range(0, size).asDoubleStream().forEach(sb);
         sb.build();
 
         checkISE(() -> sb.accept(1));
@@ -287,13 +287,13 @@ public class StreamBuilderTest extends OpTestCase {
     public void testDoubleStreamBuilder(int size) {
         testDoubleStreamBuilder(size, (s) -> {
             StreamBuilder.OfDouble sb = DoubleStream.builder();
-            DoubleStream.range(0, s).forEach(sb);
+            IntStream.range(0, s).asDoubleStream().forEach(sb);
             return sb.build();
         });
 
         testDoubleStreamBuilder(size, (s) -> {
             StreamBuilder.OfDouble sb = DoubleStream.builder();
-            DoubleStream.range(0, s).forEach(i -> {
+            IntStream.range(0, s).asDoubleStream().forEach(i -> {
                 StreamBuilder.OfDouble _sb = sb.add(i);
                 assertTrue(sb == _sb);
             });
@@ -307,12 +307,12 @@ public class StreamBuilderTest extends OpTestCase {
 
         withData(data).
                 stream(s -> s).
-                expectedResult(DoubleStream.range(0, size).toArray()).
+                expectedResult(IntStream.range(0, size).asDoubleStream().toArray()).
                 exercise();
 
         withData(data).
                 stream(s -> s.map(i -> i)).
-                expectedResult(DoubleStream.range(0, size).toArray()).
+                expectedResult(IntStream.range(0, size).asDoubleStream().toArray()).
                 exercise();
     }
 
