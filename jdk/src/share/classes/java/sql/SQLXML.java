@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,6 +360,7 @@ public interface SQLXML
    *   xmlReader.parse(saxSource.getInputSource());
    * </pre>
    *
+   * @param <T> the type of the class modeled by this Class object
    * @param sourceClass The class of the source, or null.
    * If the class is null, a vendor specifc Source implementation will be returned.
    * The following classes are supported at a minimum:
@@ -401,6 +402,7 @@ public interface SQLXML
    *   contentHandler.endDocument();
    * </pre>
    *
+   * @param <T> the type of the class modeled by this Class object
    * @param resultClass The class of the result, or null.
    * If resultClass is null, a vendor specific Result implementation will be returned.
    * The following classes are supported at a minimum:

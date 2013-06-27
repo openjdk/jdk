@@ -47,7 +47,7 @@ import sun.reflect.misc.ReflectUtil;
  * Static or transient fields cannot be serialized; an attempt to serialize
  * them will result in a <code>SerialException</code> object being thrown.
  *
- * <h4> Thread safety </h4>
+ * <h3> Thread safety </h3>
  *
  * A SerialJavaObject is not safe for use by multiple concurrent threads.  If a
  * SerialJavaObject is to be used by more than one thread then access to the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.*;
 
 /**
  * The interface that adds support to the JDBC API for the
- * JavaBeans<sup><font size=-2>TM</font></sup> component model.
+ * JavaBeans&trade; component model.
  * A rowset, which can be used as a JavaBeans component in
  * a visual Bean development environment, can be created and
  * configured at design time and executed at run time.
