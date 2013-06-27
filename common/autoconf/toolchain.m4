@@ -226,15 +226,6 @@ BDEPS_CHECK_MODULE(DEVKIT, devkit, xxx,
                     ],
                     [])
 
-if test "x$SYS_ROOT" != "x/" ; then
-    CFLAGS="--sysroot=$SYS_ROOT $CFLAGS"
-    CXXFLAGS="--sysroot=$SYS_ROOT $CXXFLAGS"
-    OBJCFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    OBJCXXFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    CPPFLAGS="--sysroot=$SYS_ROOT $CPPFLAGS"
-    LDFLAGS="--sysroot=$SYS_ROOT $LDFLAGS"
-fi
-
 # Store the CFLAGS etal passed to the configure script.
 ORG_CFLAGS="$CFLAGS"
 ORG_CXXFLAGS="$CXXFLAGS"
