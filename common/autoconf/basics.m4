@@ -43,6 +43,16 @@ AC_DEFUN([ADD_JVM_ARG_IF_OK],
     fi
 ])
 
+# Appends a string to a path variable, only adding the : when needed.
+AC_DEFUN([BASIC_APPEND_TO_PATH],
+[
+  if test "x[$]$1" = x; then
+    $1="$2"
+  else
+    $1="[$]$1:$2"
+  fi
+])
+
 # This will make sure the given variable points to a full and proper
 # path. This means:
 # 1) There will be no spaces in the path. On posix platforms,
@@ -351,7 +361,10 @@ fi
 AC_SUBST(SYS_ROOT)
 
 AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-  [search this directory for compilers and tools (for cross-compiling)])], [TOOLS_DIR=$with_tools_dir])
+  [search this directory for compilers and tools (for cross-compiling)])], 
+  [TOOLS_DIR=$with_tools_dir
+   BASIC_FIXUP_PATH([TOOLS_DIR])
+  ])
 
 AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
   [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
@@ -359,17 +372,14 @@ AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
     if test "x$with_sys_root" != x; then
       AC_MSG_ERROR([Cannot specify both --with-devkit and --with-sys-root at the same time])
     fi
-    if test "x$with_tools_dir" != x; then
-      AC_MSG_ERROR([Cannot specify both --with-devkit and --with-tools-dir at the same time])
-    fi
-    TOOLS_DIR=$with_devkit/bin
+    BASIC_FIXUP_PATH([with_devkit])
+    BASIC_APPEND_TO_PATH([TOOLS_DIR],$with_devkit/bin)
     if test -d "$with_devkit/$host_alias/libc"; then
       SYS_ROOT=$with_devkit/$host_alias/libc
     elif test -d "$with_devkit/$host/sys-root"; then
       SYS_ROOT=$with_devkit/$host/sys-root
     fi
   ])
-
 ])
 
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
