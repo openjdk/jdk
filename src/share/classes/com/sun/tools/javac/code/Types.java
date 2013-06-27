@@ -1342,6 +1342,26 @@ public class Types {
     }
     // </editor-fold>
 
+    /**
+     * Can t and s be compared for equality?  Any primitive ==
+     * primitive or primitive == object comparisons here are an error.
+     * Unboxing and correct primitive == primitive comparisons are
+     * already dealt with in Attr.visitBinary.
+     *
+     */
+    public boolean isEqualityComparable(Type s, Type t, Warner warn) {
+        if (t.isNumeric() && s.isNumeric())
+            return true;
+
+        boolean tPrimitive = t.isPrimitive();
+        boolean sPrimitive = s.isPrimitive();
+        if (!tPrimitive && !sPrimitive) {
+            return isCastable(s, t, warn) || isCastable(t, s, warn);
+        } else {
+            return false;
+        }
+    }
+
     // <editor-fold defaultstate="collapsed" desc="isCastable">
     public boolean isCastable(Type t, Type s) {
         return isCastable(t, s, noWarnings);
