@@ -1783,7 +1783,16 @@ public class Gen extends JCTree.Visitor {
             r.load();
             code.emitop0(ireturn + Code.truncate(Code.typecode(pt)));
         } else {
+            /*  If we have a statement like:
+             *
+             *  return;
+             *
+             *  we need to store the code.pendingStatPos value before generating
+             *  the finalizer.
+             */
+            int tmpPos = code.pendingStatPos;
             targetEnv = unwind(env.enclMethod, env);
+            code.pendingStatPos = tmpPos;
             code.emitop0(return_);
         }
         endFinalizerGaps(env, targetEnv);
