@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public interface PreferencesFactory {
     /**
      * Returns the system root preference node.  (Multiple calls on this
      * method will return the same object reference.)
+     * @return the system root preference node
      */
     Preferences systemRoot();
 
@@ -52,6 +53,8 @@ public interface PreferencesFactory {
      * Returns the user root preference node corresponding to the calling
      * user.  In a server, the returned value will typically depend on
      * some implicit client-context.
+     * @return the user root preference node corresponding to the calling
+     * user
      */
     Preferences userRoot();
 }
