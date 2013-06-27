@@ -257,7 +257,8 @@ public class LogManager {
     }
 
     /**
-     * Return the global LogManager object.
+     * Returns the global LogManager object.
+     * @return the global LogManager object
      */
     public static LogManager getLogManager() {
         if (manager != null) {
