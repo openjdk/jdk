@@ -631,6 +631,10 @@ public class TagletManager {
      * Initialize standard Javadoc tags for ordering purposes.
      */
     private void initStandardTaglets() {
+        if (javafx) {
+            initJavaFXTaglets();
+        }
+
         Taglet temp;
         addStandardTaglet(new ParamTaglet());
         addStandardTaglet(new ReturnTaglet());
@@ -664,10 +668,6 @@ public class TagletManager {
         standardTags.add("serial");
         standardTags.add("serialField");
         standardTags.add("Text");
-
-        if (javafx) {
-            initJavaFXTaglets();
-        }
     }
 
     /**
