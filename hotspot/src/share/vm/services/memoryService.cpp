@@ -35,6 +35,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -60,9 +61,11 @@ GrowableArray<MemoryPool*>* MemoryService::_pools_list =
 GrowableArray<MemoryManager*>* MemoryService::_managers_list =
   new (ResourceObj::C_HEAP, mtInternal) GrowableArray<MemoryManager*>(init_managers_list_size, true);
 
-GCMemoryManager* MemoryService::_minor_gc_manager = NULL;
-GCMemoryManager* MemoryService::_major_gc_manager = NULL;
-MemoryPool*      MemoryService::_code_heap_pool   = NULL;
+GCMemoryManager* MemoryService::_minor_gc_manager      = NULL;
+GCMemoryManager* MemoryService::_major_gc_manager      = NULL;
+MemoryPool*      MemoryService::_code_heap_pool        = NULL;
+MemoryPool*      MemoryService::_metaspace_pool        = NULL;
+MemoryPool*      MemoryService::_compressed_class_pool = NULL;
 
 class GcThreadCountClosure: public ThreadClosure {
  private:
@@ -396,6 +399,22 @@ void MemoryService::add_code_heap_memory_pool(CodeHeap* heap) {
   mgr->add_pool(_code_heap_pool);
 
   _pools_list->append(_code_heap_pool);
+  _managers_list->append(mgr);
+}
+
+void MemoryService::add_metaspace_memory_pools() {
+  MemoryManager* mgr = MemoryManager::get_metaspace_memory_manager();
+
+  _metaspace_pool = new MetaspacePool();
+  mgr->add_pool(_metaspace_pool);
+  _pools_list->append(_metaspace_pool);
+
+  if (UseCompressedKlassPointers) {
+    _compressed_class_pool = new CompressedKlassSpacePool();
+    mgr->add_pool(_compressed_class_pool);
+    _pools_list->append(_compressed_class_pool);
+  }
+
   _managers_list->append(mgr);
 }
 
