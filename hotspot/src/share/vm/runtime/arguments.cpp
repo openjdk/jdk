@@ -1571,7 +1571,9 @@ void Arguments::set_heap_base_min_address() {
     // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
     // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
     // some extra space for the C-heap compared to other collectors.
-    FLAG_SET_ERGO(uintx, HeapBaseMinAddress, 1*G);
+    // Use FLAG_SET_DEFAULT here rather than FLAG_SET_ERGO to make sure that
+    // code that checks for default values work correctly.
+    FLAG_SET_DEFAULT(HeapBaseMinAddress, 1*G);
   }
 }
 
