@@ -22,32 +22,33 @@
  */
 
 /**
- * NASHORN-296 : load messes file name in some cases
+ * JDK-8015959: Can't call foreign constructor
  *
  * @test
  * @run
  */
 
-function test(name) {
-    try {
-        load({ script: 'throw new Error()', name: name });
-    } catch(e) {
-        // normalize windows path separator to URL style
-        var actual = e.getStackTrace()[0].fileName;
-        if (actual !== name) {
-            fail("expected file name to be " + name +
-                 ", actually got file name " + actual);
-        }
-    }
+function check(global) {
+    var obj = new global.Point(344, 12);
+    print("obj.x " + obj.x);
+    print("obj.y " + obj.y);
+    print("obj instanceof global.Point? " + (obj instanceof global.Point))
+
+    var P = global.Point;
+    var p = new P(343, 54);
+    print("p.x " + p.x);
+    print("p.y " + p.y);
+    print("p instanceof P? " + (p instanceof P))
 }
 
-// test inexistent file
-test("com/oracle/node/sample.js");
+print("check with loadWithNewGlobal");
+check(loadWithNewGlobal({
+   name: "myscript",
+   script: "function Point(x, y) { this.x = x; this.y = y }; this"
+}));
 
-// test filename without file:/ prefix
-try {
-    throw new Error();
-} catch (e) {
-    test(e.getStackTrace()[0].fileName.substring(6));
-}
+print("check with script engine");
+var m = new javax.script.ScriptEngineManager();
+var e = m.getEngineByName('nashorn');
+check(e.eval("function Point(x, y) { this.x = x; this.y = y }; this"));
 

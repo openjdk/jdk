@@ -244,7 +244,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /**
      * Check if this symbol can be accessed directly with a putfield or getfield or dynamic load
      *
-     * @param function function to check for fast scope
+     * @param symbol symbol to check for fast scope
      * @return true if fast scope
      */
     private boolean isFastScope(final Symbol symbol) {
@@ -1016,6 +1016,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         assert lc.hasCompileUnits();
 
         method = lc.pushMethodEmitter(unit.getClassEmitter().method(functionNode));
+        // new method - reset last line number
+        lastLineNumber = -1;
         // Mark end for variable tables.
         method.begin();
 
@@ -1093,7 +1095,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void lineNumber(final Statement statement) {
         final int lineNumber = statement.getLineNumber();
         if (lineNumber != lastLineNumber) {
-            method.lineNumber(statement.getLineNumber());
+            method.lineNumber(lineNumber);
         }
         lastLineNumber = lineNumber;
     }

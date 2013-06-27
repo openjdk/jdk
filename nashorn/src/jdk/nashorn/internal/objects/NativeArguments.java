@@ -61,13 +61,13 @@ public final class NativeArguments extends ScriptObject {
     private static final MethodHandle G$CALLEE = findOwnMH("G$callee", Object.class, Object.class);
     private static final MethodHandle S$CALLEE = findOwnMH("S$callee", void.class, Object.class, Object.class);
 
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
 
     static {
         PropertyMap map = PropertyMap.newMap(NativeArguments.class);
         map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
         map = Lookup.newProperty(map, "callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE);
-        nasgenmap$ = map;
+        map$ = map;
     }
 
     private Object length;
@@ -76,8 +76,8 @@ public final class NativeArguments extends ScriptObject {
     // This is lazily initialized - only when delete is invoked at all
     private BitSet deleted;
 
-    NativeArguments(final Object[] arguments, final Object callee, final int numParams) {
-        super(nasgenmap$);
+    NativeArguments(final ScriptObject proto, final Object[] arguments, final Object callee, final int numParams) {
+        super(proto, map$);
         setIsArguments();
 
         setArray(ArrayData.allocate(arguments));
@@ -102,9 +102,6 @@ public final class NativeArguments extends ScriptObject {
         }
         System.arraycopy(arguments, 0, newValues, 0, Math.min(newValues.length, arguments.length));
         this.namedArgs = ArrayData.allocate(newValues);
-
-        // set Object.prototype as __proto__
-        this.setProto(Global.objectPrototype());
     }
 
     @Override
@@ -553,7 +550,8 @@ public final class NativeArguments extends ScriptObject {
     public static ScriptObject allocate(final Object[] arguments, final ScriptFunction callee, final int numParams) {
         // Strict functions won't always have a callee for arguments, and will pass null instead.
         final boolean isStrict = callee == null || callee.isStrict();
-        return isStrict ? new NativeStrictArguments(arguments, numParams) : new NativeArguments(arguments, callee, numParams);
+        final ScriptObject proto = Global.objectPrototype();
+        return isStrict ? new NativeStrictArguments(proto, arguments, numParams) : new NativeArguments(proto, arguments, callee, numParams);
     }
 
     /**

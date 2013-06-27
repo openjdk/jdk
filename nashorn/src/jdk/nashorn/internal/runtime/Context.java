@@ -101,13 +101,7 @@ public final class Context {
     /** Is Context global debug mode enabled ? */
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
 
-    private static final ThreadLocal<ScriptObject> currentGlobal =
-        new ThreadLocal<ScriptObject>() {
-            @Override
-            protected ScriptObject initialValue() {
-                 return null;
-            }
-        };
+    private static final ThreadLocal<ScriptObject> currentGlobal = new ThreadLocal<>();
 
     /**
      * Get the current global scope

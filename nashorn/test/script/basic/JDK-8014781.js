@@ -22,32 +22,19 @@
  */
 
 /**
- * NASHORN-296 : load messes file name in some cases
+ * JDK-8014781: support Error.captureStackTrace
  *
  * @test
  * @run
  */
 
-function test(name) {
-    try {
-        load({ script: 'throw new Error()', name: name });
-    } catch(e) {
-        // normalize windows path separator to URL style
-        var actual = e.getStackTrace()[0].fileName;
-        if (actual !== name) {
-            fail("expected file name to be " + name +
-                 ", actually got file name " + actual);
-        }
-    }
+function MyError() {
+    Error.captureStackTrace(this);
 }
 
-// test inexistent file
-test("com/oracle/node/sample.js");
-
-// test filename without file:/ prefix
-try {
-    throw new Error();
-} catch (e) {
-    test(e.getStackTrace()[0].fileName.substring(6));
+function func() {
+    return new MyError();
 }
 
+var e = func();
+print(e.stack.replace(/\\/g, '/'));
