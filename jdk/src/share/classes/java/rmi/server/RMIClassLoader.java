@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,7 +424,7 @@ public class RMIClassLoader {
      *
      * <ul>
      *
-     * <p><li>If the class loader is the system class loader (see
+     * <li><p>If the class loader is the system class loader (see
      * {@link ClassLoader#getSystemClassLoader}), a parent of the
      * system class loader such as the loader used for installed
      * extensions, or the bootstrap class loader (which may be
@@ -433,7 +433,7 @@ public class RMIClassLoader {
      * earlier cached value) is returned, or
      * <code>null</code> is returned if that property is not set.
      *
-     * <p><li>Otherwise, if the class loader is an instance of
+     * <li><p>Otherwise, if the class loader is an instance of
      * <code>URLClassLoader</code>, then the returned string is a
      * space-separated list of the external forms of the URLs returned
      * by invoking the <code>getURLs</code> methods of the loader.  If
@@ -452,7 +452,7 @@ public class RMIClassLoader {
      * property (or possibly an earlier cached value) is returned, or
      * <code>null</code> is returned if that property is not set.
      *
-     * <p><li>Finally, if the class loader is not an instance of
+     * <li><p>Finally, if the class loader is not an instance of
      * <code>URLClassLoader</code>, then the value of the
      * <code>java.rmi.server.codebase</code> property (or possibly an
      * earlier cached value) is returned, or
