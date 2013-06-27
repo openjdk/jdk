@@ -756,25 +756,15 @@ public class Attr extends JCTree.Visitor {
                                       JCTree.JCExpression initializer,
                                       Type type) {
 
-        // in case no lint value has been set up for this env, scan up
-        // env stack looking for smallest enclosing env for which it is set.
-        Env<AttrContext> lintEnv = env;
-        while (lintEnv.info.lint == null)
-            lintEnv = lintEnv.next;
+        /*  When this env was created, it didn't have the correct lint nor had
+         *  annotations has been processed.
+         *  But now at this phase we have already processed annotations and the
+         *  correct lint must have been set in chk, so we should use that one to
+         *  attribute the initializer.
+         */
+        Lint prevLint = env.info.lint;
+        env.info.lint = chk.getLint();
 
-        // Having found the enclosing lint value, we can initialize the lint value for this class
-        // ... but ...
-        // There's a problem with evaluating annotations in the right order, such that
-        // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
-        // null. In that case, calling augment will throw an NPE. To avoid this, for now we
-        // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
-        if (env.info.enclVar.annotationsPendingCompletion()) {
-            env.info.lint = lintEnv.info.lint;
-        } else {
-            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar);
-        }
-
-        Lint prevLint = chk.setLint(env.info.lint);
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
 
         try {
@@ -786,10 +776,11 @@ public class Attr extends JCTree.Visitor {
             memberEnter.typeAnnotate(initializer, env, null);
             annotate.flush();
             Type itype = attribExpr(initializer, env, type);
-            if (itype.constValue() != null)
+            if (itype.constValue() != null) {
                 return coerce(itype, type).constValue();
-            else
+            } else {
                 return null;
+            }
         } finally {
             env.info.lint = prevLint;
             log.useSource(prevSource);
