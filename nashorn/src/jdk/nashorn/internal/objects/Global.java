@@ -53,8 +53,10 @@ import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -379,6 +381,9 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     private final Context context;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     /**
      * Constructor
      *
@@ -484,7 +489,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptObject newObject() {
-        return newEmptyInstance();
+        return new JO(getObjectPrototype());
     }
 
     @Override
@@ -1242,7 +1247,17 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the new array
      */
     public static NativeArray allocate(final Object[] initial) {
-        return new NativeArray(initial);
+        ArrayData arrayData = ArrayData.allocate(initial);
+
+        for (int index = 0; index < initial.length; index++) {
+            final Object value = initial[index];
+
+            if (value == ScriptRuntime.EMPTY) {
+                arrayData = arrayData.delete(index);
+            }
+        }
+
+        return new NativeArray(arrayData);
     }
 
     /**
@@ -1252,7 +1267,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the new array
      */
     public static NativeArray allocate(final double[] initial) {
-        return new NativeArray(initial);
+        return new NativeArray(ArrayData.allocate(initial));
     }
 
     /**
@@ -1262,7 +1277,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the new array
      */
     public static NativeArray allocate(final long[] initial) {
-        return new NativeArray(initial);
+        return new NativeArray(ArrayData.allocate(initial));
     }
 
     /**
@@ -1272,7 +1287,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the new array
      */
     public static NativeArray allocate(final int[] initial) {
-        return new NativeArray(initial);
+        return new NativeArray(ArrayData.allocate(initial));
     }
 
     /**
@@ -1329,9 +1344,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return New empty object.
      */
     public static ScriptObject newEmptyInstance() {
-        final ScriptObject sobj = new JO();
-        sobj.setProto(objectPrototype());
-        return sobj;
+        return Global.instance().newObject();
     }
 
     /**
@@ -1545,7 +1558,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         addOwnProperty("echo", Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
-        final ScriptObject options = newEmptyInstance();
+        final ScriptObject options = newObject();
         final ScriptEnvironment scriptEnv = context.getEnv();
         copyOptions(options, scriptEnv);
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
@@ -1554,7 +1567,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         if (System.getSecurityManager() == null) {
             // do not fill $ENV if we have a security manager around
             // Retrieve current state of ENV variables.
-            final ScriptObject env = newEmptyInstance();
+            final ScriptObject env = newObject();
             env.putAll(System.getenv());
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
         } else {

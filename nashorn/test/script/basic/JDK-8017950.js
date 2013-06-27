@@ -22,32 +22,26 @@
  */
 
 /**
- * NASHORN-296 : load messes file name in some cases
+ * JDK-8017950: error.stack should be a string rather than an array
  *
  * @test
  * @run
  */
 
-function test(name) {
+function func() {
     try {
-        load({ script: 'throw new Error()', name: name });
-    } catch(e) {
-        // normalize windows path separator to URL style
-        var actual = e.getStackTrace()[0].fileName;
-        if (actual !== name) {
-            fail("expected file name to be " + name +
-                 ", actually got file name " + actual);
-        }
+        throw new Error();
+    } catch (e){
+        print(e.stack.replace(/\\/g, '/'))
     }
 }
 
-// test inexistent file
-test("com/oracle/node/sample.js");
-
-// test filename without file:/ prefix
-try {
-    throw new Error();
-} catch (e) {
-    test(e.getStackTrace()[0].fileName.substring(6));
+function f() { 
+    func()
 }
 
+function g() {
+    f()
+}
+
+g()

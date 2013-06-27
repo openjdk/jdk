@@ -34,6 +34,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -63,16 +64,19 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
     @Property
     public Object set;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     AccessorPropertyDescriptor() {
         this(false, false, UNDEFINED, UNDEFINED);
     }
 
     AccessorPropertyDescriptor(final boolean configurable, final boolean enumerable, final Object get, final Object set) {
+        super(Global.objectPrototype(), $nasgenmap$);
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.get          = get;
         this.set          = set;
-        setProto(Global.objectPrototype());
     }
 
     @Override

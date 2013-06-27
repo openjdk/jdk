@@ -22,32 +22,54 @@
  */
 
 /**
- * NASHORN-296 : load messes file name in some cases
+ * JDK-8015969: Needs to enforce and document that global "context" and "engine" can't be modified when running via jsr223
  *
  * @test
+ * @option -scripting
  * @run
  */
 
-function test(name) {
-    try {
-        load({ script: 'throw new Error()', name: name });
-    } catch(e) {
-        // normalize windows path separator to URL style
-        var actual = e.getStackTrace()[0].fileName;
-        if (actual !== name) {
-            fail("expected file name to be " + name +
-                 ", actually got file name " + actual);
-        }
+var m = new javax.script.ScriptEngineManager();
+var e = m.getEngineByName("nashorn");
+
+e.eval(<<EOF
+
+'use strict';
+
+try {
+    context = 444;
+    print("FAILED!! context write should have thrown error");
+} catch (e) {
+    if (! (e instanceof TypeError)) {
+        print("TypeError expected but got " + e);
     }
 }
 
-// test inexistent file
-test("com/oracle/node/sample.js");
-
-// test filename without file:/ prefix
 try {
-    throw new Error();
+    engine = "hello";
+    print("FAILED!! engine write should have thrown error");
 } catch (e) {
-    test(e.getStackTrace()[0].fileName.substring(6));
+    if (! (e instanceof TypeError)) {
+        print("TypeError expected but got " + e);
+    }
 }
 
+try {
+    delete context;
+    print("FAILED!! context delete should have thrown error");
+} catch (e) {
+    if (! (e instanceof SyntaxError)) {
+        print("SyntaxError expected but got " + e);
+    }
+}
+
+try {
+    delete engine;
+    print("FAILED!! engine delete should have thrown error");
+} catch (e) {
+    if (! (e instanceof SyntaxError)) {
+        print("SyntaxError expected but got " + e);
+    }
+}
+
+EOF);

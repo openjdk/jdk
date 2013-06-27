@@ -22,32 +22,18 @@
  */
 
 /**
- * NASHORN-296 : load messes file name in some cases
+ * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
  *
  * @test
  * @run
  */
 
-function test(name) {
-    try {
-        load({ script: 'throw new Error()', name: name });
-    } catch(e) {
-        // normalize windows path separator to URL style
-        var actual = e.getStackTrace()[0].fileName;
-        if (actual !== name) {
-            fail("expected file name to be " + name +
-                 ", actually got file name " + actual);
-        }
-    }
-}
+function func1() { func2() }
 
-// test inexistent file
-test("com/oracle/node/sample.js");
+function func2() { throw new Error() }
 
-// test filename without file:/ prefix
 try {
-    throw new Error();
+    func1()
 } catch (e) {
-    test(e.getStackTrace()[0].fileName.substring(6));
+    print(e.stack.replace(/\\/g, '/'))
 }
-

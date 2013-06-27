@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -43,6 +44,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -86,8 +88,11 @@ public final class NativeError extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE, where = Where.PROTOTYPE)
     public Object message;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeError(final Object msg) {
-        this.setProto(Global.instance().getErrorPrototype());
+        super(Global.instance().getErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
@@ -112,6 +117,20 @@ public final class NativeError extends ScriptObject {
     @Constructor
     public static Object constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeError(msg);
+    }
+
+    /**
+     * Nashorn extension: Error.captureStackTrace. Capture stack trace at the point of call into the Error object provided.
+     *
+     * @param self self reference
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object captureStackTrace(final Object self, final Object errorObj) {
+        Global.checkObject(errorObj);
+        final ScriptObject sobj = (ScriptObject)errorObj;
+        final ECMAException exp = new ECMAException(sobj, null);
+        sobj.set("stack", NashornException.getScriptStackString(exp), false);
+        return UNDEFINED;
     }
 
     /**
@@ -141,6 +160,30 @@ public final class NativeError extends ScriptObject {
     public static Object printStackTrace(final Object self) {
         Global.checkObject(self);
         return ECMAException.printStackTrace((ScriptObject)self);
+    }
+
+    /**
+     * Nashorn extension: Error.prototype.getStackTrace()
+     * "stack" property is an array typed value containing {@link StackTraceElement}
+     * objects of JavaScript stack frames.
+     *
+     * @param self  self reference
+     *
+     * @return      stack trace as a script array.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getStackTrace(final Object self) {
+        Global.checkObject(self);
+        final ScriptObject sobj = (ScriptObject)self;
+        final Object exception = ECMAException.getException(sobj);
+        Object[] res;
+        if (exception instanceof Throwable) {
+            res = NashornException.getScriptFrames((Throwable)exception);
+        } else {
+            res = ScriptRuntime.EMPTY_ARRAY;
+        }
+
+        return new NativeArray(res);
     }
 
     /**
@@ -229,8 +272,8 @@ public final class NativeError extends ScriptObject {
 
     /**
      * Nashorn extension: Error.prototype.stack
-     * "stack" property is an array typed value containing {@link StackTraceElement}
-     * objects of JavaScript stack frames.
+     * "stack" property is a string typed value containing JavaScript stack frames.
+     * Each frame information is separated bv "\n" character.
      *
      * @param self  self reference
      *
@@ -244,27 +287,11 @@ public final class NativeError extends ScriptObject {
         }
 
         final Object exception = ECMAException.getException(sobj);
-        Object[] res;
         if (exception instanceof Throwable) {
-            final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
-            final List<StackTraceElement> filtered = new ArrayList<>();
-            for (final StackTraceElement st : frames) {
-                if (ECMAErrors.isScriptFrame(st)) {
-                    final String className = "<" + st.getFileName() + ">";
-                    String methodName = st.getMethodName();
-                    if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
-                        methodName = "<program>";
-                    }
-                    filtered.add(new StackTraceElement(className, methodName,
-                            st.getFileName(), st.getLineNumber()));
-                }
-            }
-            res = filtered.toArray();
+            return NashornException.getScriptStackString((Throwable)exception);
         } else {
-            res = ScriptRuntime.EMPTY_ARRAY;
+            return "";
         }
-
-        return new NativeArray(res);
     }
 
     /**
