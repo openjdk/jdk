@@ -119,6 +119,19 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    /**
+     * When the parent window is activated this method is called for all EmbeddedFrames in it.
+     *
+     * For the CEmbeddedFrame which had focus before the deactivation this method triggers
+     * focus events in the following order:
+     *  1. WINDOW_ACTIVATED for this EmbeddedFrame
+     *  2. WINDOW_GAINED_FOCUS for this EmbeddedFrame
+     *  3. FOCUS_GAINED for the most recent focus owner in this EmbeddedFrame
+     *
+     * The caller must not requestFocus on the EmbeddedFrame together with calling this method.
+     *
+     * @param parentWindowActive true if the window is activated, false otherwise
+     */
     public void handleWindowFocusEvent(boolean parentWindowActive) {
         this.parentWindowActive = parentWindowActive;
         // ignore focus "lost" native request as it may mistakenly
