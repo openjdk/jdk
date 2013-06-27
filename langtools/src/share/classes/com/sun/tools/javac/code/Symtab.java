@@ -570,15 +570,18 @@ public class Symtab {
         arrayClass.members().enter(arrayCloneMethod);
 
         // Enter operators.
-        enterUnop("+", doubleType, doubleType, nop);
-        enterUnop("+", floatType, floatType, nop);
-        enterUnop("+", longType, longType, nop);
-        enterUnop("+", intType, intType, nop);
+        /*  Internally we use +++, --- for unary +, - to reduce +, - operators
+         *  overloading
+         */
+        enterUnop("+++", doubleType, doubleType, nop);
+        enterUnop("+++", floatType, floatType, nop);
+        enterUnop("+++", longType, longType, nop);
+        enterUnop("+++", intType, intType, nop);
 
-        enterUnop("-", doubleType, doubleType, dneg);
-        enterUnop("-", floatType, floatType, fneg);
-        enterUnop("-", longType, longType, lneg);
-        enterUnop("-", intType, intType, ineg);
+        enterUnop("---", doubleType, doubleType, dneg);
+        enterUnop("---", floatType, floatType, fneg);
+        enterUnop("---", longType, longType, lneg);
+        enterUnop("---", intType, intType, ineg);
 
         enterUnop("~", longType, longType, lxor);
         enterUnop("~", intType, intType, ixor);

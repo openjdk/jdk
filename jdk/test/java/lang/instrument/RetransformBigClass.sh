@@ -23,7 +23,6 @@
 
 # @test
 # @bug 7122253
-# @ignore until the fix for 7122253 (from HotSpot) is in a promoted build
 # @summary Retransform a big class.
 # @author Daniel D. Daugherty
 #

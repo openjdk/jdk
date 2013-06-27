@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,11 @@ MemRecorder::MemRecorder() {
 
   if (_pointer_records != NULL) {
     // recode itself
+    address pc = CURRENT_PC;
     record((address)this, (MemPointerRecord::malloc_tag()|mtNMT|otNMTRecorder),
-        sizeof(MemRecorder), CALLER_PC);
+        sizeof(MemRecorder), SequenceGenerator::next(), pc);
     record((address)_pointer_records, (MemPointerRecord::malloc_tag()|mtNMT|otNMTRecorder),
-        _pointer_records->instance_size(),CURRENT_PC);
+        _pointer_records->instance_size(), SequenceGenerator::next(), pc);
   }
 }
 
@@ -116,7 +117,8 @@ int MemRecorder::sort_record_fn(const void* e1, const void* e2) {
   }
 }
 
-bool MemRecorder::record(address p, MEMFLAGS flags, size_t size, address pc) {
+bool MemRecorder::record(address p, MEMFLAGS flags, size_t size, jint seq, address pc) {
+  assert(seq > 0, "No sequence number");
 #ifdef ASSERT
   if (MemPointerRecord::is_virtual_memory_record(flags)) {
     assert((flags & MemPointerRecord::tag_masks) != 0, "bad virtual memory record");
@@ -133,11 +135,11 @@ bool MemRecorder::record(address p, MEMFLAGS flags, size_t size, address pc) {
 #endif
 
   if (MemTracker::track_callsite()) {
-    SeqMemPointerRecordEx ap(p, flags, size, pc);
+    SeqMemPointerRecordEx ap(p, flags, size, seq, pc);
     debug_only(check_dup_seq(ap.seq());)
     return _pointer_records->append(&ap);
   } else {
-    SeqMemPointerRecord ap(p, flags, size);
+    SeqMemPointerRecord ap(p, flags, size, seq);
     debug_only(check_dup_seq(ap.seq());)
     return _pointer_records->append(&ap);
   }

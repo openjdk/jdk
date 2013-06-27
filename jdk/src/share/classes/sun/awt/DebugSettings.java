@@ -128,7 +128,7 @@ final class DebugSettings {
             });
 
         // echo the initial property settings to stdout
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("DebugSettings:\n{0}", this);
         }
     }
@@ -250,7 +250,7 @@ final class DebugSettings {
     }
 
     private void println(Object object) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer(object.toString());
         }
     }

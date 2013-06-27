@@ -108,6 +108,7 @@ oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
+LatestMethodOopCache* Universe::_pd_implies_cache         = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_perm_gen           = NULL;
@@ -224,6 +225,7 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
   _reflect_invoke_cache->serialize(f);
+  _pd_implies_cache->serialize(f);
 }
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
@@ -529,7 +531,9 @@ void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   if (vt) vt->initialize_vtable(false, CHECK);
   if (ko->oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*)ko;
-    for (KlassHandle s_h(THREAD, ik->subklass()); s_h() != NULL; s_h = (THREAD, s_h()->next_sibling())) {
+    for (KlassHandle s_h(THREAD, ik->subklass());
+         s_h() != NULL;
+         s_h = KlassHandle(THREAD, s_h()->next_sibling())) {
       reinitialize_vtable_of(s_h, CHECK);
     }
   }
@@ -645,6 +649,7 @@ jint universe_init() {
   // Metaspace::initialize_shared_spaces() tries to populate them.
   Universe::_finalizer_register_cache = new LatestMethodOopCache();
   Universe::_loader_addClass_cache    = new LatestMethodOopCache();
+  Universe::_pd_implies_cache         = new LatestMethodOopCache();
   Universe::_reflect_invoke_cache     = new ActiveMethodOopsCache();
 
   if (UseSharedSpaces) {
@@ -1108,6 +1113,23 @@ bool universe_post_init() {
   Universe::_loader_addClass_cache->init(
     SystemDictionary::ClassLoader_klass(), m, CHECK_false);
 
+  // Setup method for checking protection domain
+  InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->link_class(CHECK_false);
+  m = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->
+            find_method(vmSymbols::impliesCreateAccessControlContext_name(),
+                        vmSymbols::void_boolean_signature());
+  // Allow NULL which should only happen with bootstrapping.
+  if (m != NULL) {
+    if (m->is_static()) {
+      // NoSuchMethodException doesn't actually work because it tries to run the
+      // <init> function before java_lang_Class is linked. Print error and exit.
+      tty->print_cr("ProtectionDomain.impliesCreateAccessControlContext() has the wrong linkage");
+      return false; // initialization failed
+    }
+    Universe::_pd_implies_cache->init(
+      SystemDictionary::ProtectionDomain_klass(), m, CHECK_false);;
+  }
+
   // The folowing is initializing converter functions for serialization in
   // JVM.cpp. If we clean up the StrictMath code above we may want to find
   // a better solution for this as well.
@@ -1525,6 +1547,7 @@ bool ActiveMethodOopsCache::is_same_method(const Method* method) const {
 
 
 Method* LatestMethodOopCache::get_Method() {
+  if (klass() == NULL) return NULL;
   InstanceKlass* ik = InstanceKlass::cast(klass());
   Method* m = ik->method_with_idnum(method_idnum());
   assert(m != NULL, "sanity check");

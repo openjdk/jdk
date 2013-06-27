@@ -58,7 +58,7 @@ public final class NativeURIError extends ScriptObject {
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
-            this.delete(NativeError.MESSAGE, Global.isStrict());
+            this.delete(NativeError.MESSAGE, false);
         }
     }
 

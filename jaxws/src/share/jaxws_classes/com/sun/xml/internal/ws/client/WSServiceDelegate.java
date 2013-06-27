@@ -91,8 +91,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -187,7 +186,7 @@ public class WSServiceDelegate extends WSService {
      * Multiple {@link ServiceInterceptor}s are aggregated into one.
      */
     /*package*/ final @NotNull ServiceInterceptor serviceInterceptor;
-
+    private URL wsdlURL;
 
     public WSServiceDelegate(URL wsdlDocumentLocation, QName serviceName, Class<? extends Service> serviceClass, WebServiceFeature... features) {
         this(wsdlDocumentLocation, serviceName, serviceClass, new WebServiceFeatureList(features));
@@ -197,6 +196,7 @@ public class WSServiceDelegate extends WSService {
         this(
             wsdlDocumentLocation==null ? null : new StreamSource(wsdlDocumentLocation.toExternalForm()),
             serviceName,serviceClass, features);
+        wsdlURL = wsdlDocumentLocation;
     }
 
     /**
@@ -699,6 +699,39 @@ public class WSServiceDelegate extends WSService {
 
     }
 
+    private <T> T createProxy(final Class<T> portInterface, final InvocationHandler pis) {
+
+        // When creating the proxy, use a ClassLoader that can load classes
+        // from both the interface class and also from this classes
+        // classloader. This is necessary when this code is used in systems
+        // such as OSGi where the class loader for the interface class may
+        // not be able to load internal JAX-WS classes like
+        // "WSBindingProvider", but the class loader for this class may not
+        // be able to load the interface class.
+        final ClassLoader loader = getDelegatingLoader(portInterface.getClassLoader(),
+                WSServiceDelegate.class.getClassLoader());
+
+        // accessClassInPackage privilege needs to be granted ...
+        RuntimePermission perm = new RuntimePermission("accessClassInPackage.com.sun." + "xml.internal.*");
+        PermissionCollection perms = perm.newPermissionCollection();
+        perms.add(perm);
+
+        return AccessController.doPrivileged(
+                new PrivilegedAction<T>() {
+                    @Override
+                    public T run() {
+                        Object proxy = Proxy.newProxyInstance(loader,
+                                new Class[]{portInterface, WSBindingProvider.class, Closeable.class}, pis);
+                        return portInterface.cast(proxy);
+                    }
+                },
+                new AccessControlContext(
+                        new ProtectionDomain[]{
+                                new ProtectionDomain(null, perms)
+                        })
+        );
+    }
+
     private WSDLServiceImpl getWSDLModelfromSEI(final Class sei) {
         WebService ws = AccessController.doPrivileged(new PrivilegedAction<WebService>() {
             public WebService run() {
@@ -750,7 +783,7 @@ public class WSServiceDelegate extends WSService {
         }
     }
 
-    private <T> T createEndpointIFBaseProxy(@Nullable WSEndpointReference epr,QName portName, Class<T> portInterface,
+    private <T> T createEndpointIFBaseProxy(@Nullable WSEndpointReference epr, QName portName, Class<T> portInterface,
                                             WebServiceFeatureList webServiceFeatures, SEIPortInfo eif) {
         //fail if service doesnt have WSDL
         if (wsdlService == null) {
@@ -762,21 +795,11 @@ public class WSServiceDelegate extends WSService {
                 ClientMessages.INVALID_PORT_NAME(portName,buildWsdlPortNames()));
         }
 
-        BindingImpl binding = eif.createBinding(webServiceFeatures,portInterface);
+        BindingImpl binding = eif.createBinding(webServiceFeatures, portInterface);
         InvocationHandler pis = getStubHandler(binding, eif, epr);
 
-        // When creating the proxy, use a ClassLoader that can load classes
-        // from both the interface class and also from this classes
-        // classloader. This is necessary when this code is used in systems
-        // such as OSGi where the class loader for the interface class may
-        // not be able to load internal JAX-WS classes like
-        // "WSBindingProvider", but the class loader for this class may not
-        // be able to load the interface class.
-        ClassLoader loader =
-            getDelegatingLoader(portInterface.getClassLoader(),
-                               WSServiceDelegate.class.getClassLoader());
-        T proxy = portInterface.cast(Proxy.newProxyInstance(loader,
-                new Class[]{portInterface, WSBindingProvider.class, Closeable.class}, pis));
+        T proxy = createProxy(portInterface, pis);
+
         if (serviceInterceptor != null) {
             serviceInterceptor.postCreateProxy((WSBindingProvider)proxy, portInterface);
         }
@@ -841,7 +864,7 @@ public class WSServiceDelegate extends WSService {
                 config.setFeatures(features);
                 config.setClassLoader(portInterface.getClassLoader());
                 config.getMappingInfo().setPortName(portName);
-
+                config.setWsdlURL(wsdlURL);
         // if ExternalMetadataFeature present, ExternalMetadataReader will be created ...
         config.setMetadataReader(getMetadadaReader(features, portInterface.getClassLoader()));
 

@@ -869,7 +869,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         void registerEvent(SunDropTargetEvent e) {
             handler.lock();
-            if (!eventSet.add(e) && dndLog.isLoggable(PlatformLogger.FINE)) {
+            if (!eventSet.add(e) && dndLog.isLoggable(PlatformLogger.Level.FINE)) {
                 dndLog.fine("Event is already registered: " + e);
             }
             handler.unlock();

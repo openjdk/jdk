@@ -111,7 +111,7 @@ public abstract class SelectableChannel
      * identifying this channel's supported operations.  The bits that are set
      * in this integer value denote exactly the operations that are valid for
      * this channel.  This method always returns the same value for a given
-     * concrete channel class. </p>
+     * concrete channel class.
      *
      * @return  The valid-operation set
      */
@@ -140,7 +140,7 @@ public abstract class SelectableChannel
 
     /**
      * Retrieves the key representing the channel's registration with the given
-     * selector.  </p>
+     * selector.
      *
      * @return  The key returned when this channel was last registered with the
      *          given selector, or <tt>null</tt> if this channel is not
@@ -208,7 +208,7 @@ public abstract class SelectableChannel
      * @throws  IllegalArgumentException
      *          If a bit in the <tt>ops</tt> set does not correspond to an
      *          operation that is supported by this channel, that is, if
-     *          <tt>set & ~validOps() != 0</tt>
+     *          {@code set & ~validOps() != 0}
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
@@ -265,8 +265,8 @@ public abstract class SelectableChannel
      *
      * @throws  IllegalArgumentException
      *          If a bit in <tt>ops</tt> does not correspond to an operation
-     *          that is supported by this channel, that is, if <tt>set &
-     *          ~validOps() != 0</tt>
+     *          that is supported by this channel, that is, if {@code set &
+     *          ~validOps() != 0}
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
@@ -333,7 +333,6 @@ public abstract class SelectableChannel
      * configureBlocking} and {@link #register register} methods synchronize.
      * This is often useful in the implementation of adaptors that require a
      * specific blocking mode to be maintained for a short period of time.
-     * </p>
      *
      * @return  The blocking-mode lock object
      */

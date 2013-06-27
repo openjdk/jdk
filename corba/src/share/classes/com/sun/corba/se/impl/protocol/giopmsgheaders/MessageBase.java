@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,9 @@ import com.sun.corba.se.impl.encoding.CDRInputStream_1_0;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
 import com.sun.corba.se.impl.orbutil.ORBUtility;
 import com.sun.corba.se.impl.orbutil.ORBConstants;
-import com.sun.corba.se.impl.orbutil.ORBClassLoader;
 import com.sun.corba.se.impl.protocol.AddressingDispositionException;
+
+import sun.corba.SharedSecrets;
 
 /**
  * This class acts as the base class for the various GIOP message types. This
@@ -909,7 +910,8 @@ public abstract class MessageBase implements Message{
         SystemException sysEx = null;
 
         try {
-            Class clazz = ORBClassLoader.loadClass(exClassName);
+            Class<?> clazz =
+                SharedSecrets.getJavaCorbaAccess().loadClass(exClassName);
             if (message == null) {
                 sysEx = (SystemException) clazz.newInstance();
             } else {

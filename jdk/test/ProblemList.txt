@@ -314,6 +314,13 @@ sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.ja
 
 ############################################################################
 
+# jdk_time
+
+# 8016623
+java/time/test/java/time/format/TestDateTimeTextProvider.java   generic-all
+
+############################################################################
+
 # jdk_tools
 
 # 6461635
