@@ -103,7 +103,6 @@ import java.security.*;
  *   <td>Permits an application to remove a JDBC driver from the list of
  * registered Drivers and release its resources.</td>
  * </tr>
- * </tr>
  * </table>
  *<p>
  * @since 1.3

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.io.*;
  *
  * <h3>1.0 Overview</h3>
  * A wrapper around a <code>ResultSet</code> object that makes it possible
- * to use the result set as a JavaBeans<sup><font size=-2>TM</font></sup>
+ * to use the result set as a JavaBeans&trade;
  * component.  Thus, a <code>JdbcRowSet</code> object can be one of the Beans that
  * a tool makes available for composing an application.  Because
  * a <code>JdbcRowSet</code> is a connected rowset, that is, it continually
@@ -113,7 +113,7 @@ import java.io.*;
  * <P>
  * The implementation of the <code>RowSet</code> method <code>execute</code> in the
  * <code>JdbcRowSet</code> reference implementation differs from that in the
- * <code>CachedRowSet</code><sup><font size=-2>TM</font></sup>
+ * <code>CachedRowSet</code>&trade;
  * reference implementation to account for the different
  * requirements of connected and disconnected <code>RowSet</code> objects.
  * <p>
@@ -238,6 +238,7 @@ public interface JdbcRowSet extends RowSet, Joinable {
     * call to either the method commit or the method rollback. By default,
     * new connections are in auto-commit mode.
     *
+    * @return {@code true} if auto-commit is enabled; {@code false} otherwise
     * @throws SQLException if a database access error occurs
     * @see java.sql.Connection#getAutoCommit()
     */
@@ -251,7 +252,8 @@ public interface JdbcRowSet extends RowSet, Joinable {
     * to allow an application to set the <code>JdbcRowSet</code> transaction behavior.
     * <p>
     * Sets the current auto-commit mode for this <code>Connection</code> object.
-    *
+    * @param autoCommit {@code true} to enable auto-commit; {@code false} to
+    * disable auto-commit
     * @throws SQLException if a database access error occurs
     * @see java.sql.Connection#setAutoCommit(boolean)
     */
@@ -277,7 +279,7 @@ public interface JdbcRowSet extends RowSet, Joinable {
      * Undoes all changes made in the current transaction to the last set savepoint
      * and releases any database locks currently held by this <code>Connection</code>
      * object. This method should be used only when auto-commit mode has been disabled.
-     *
+     * @param s The {@code Savepoint} to rollback to
      * @throws SQLException if a database access error occurs or this <code>Connection</code>
      * object within this <code>JdbcRowSet</code> is in auto-commit mode.
      * @see #rollback
