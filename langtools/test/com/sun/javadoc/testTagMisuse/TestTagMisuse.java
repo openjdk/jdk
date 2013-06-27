@@ -21,9 +21,8 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 0000000
  * @summary Determine if proper warning messages are printed when know.
  * @author jamieh
  * @library ../lib/
