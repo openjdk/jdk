@@ -1016,6 +1016,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         assert lc.hasCompileUnits();
 
         method = lc.pushMethodEmitter(unit.getClassEmitter().method(functionNode));
+        // new method - reset last line number
+        lastLineNumber = -1;
         // Mark end for variable tables.
         method.begin();
 
@@ -1093,7 +1095,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void lineNumber(final Statement statement) {
         final int lineNumber = statement.getLineNumber();
         if (lineNumber != lastLineNumber) {
-            method.lineNumber(statement.getLineNumber());
+            method.lineNumber(lineNumber);
         }
         lastLineNumber = lineNumber;
     }
