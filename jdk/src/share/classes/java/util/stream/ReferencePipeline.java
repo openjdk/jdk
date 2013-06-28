@@ -490,16 +490,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Collector<? super P_OUT, R> collector) {
+    public final <R, A> R collect(Collector<? super P_OUT, A, ? extends R> collector) {
+        A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
                 && (!isOrdered() || collector.characteristics().contains(Collector.Characteristics.UNORDERED))) {
-            R container = collector.resultSupplier().get();
-            BiFunction<R, ? super P_OUT, R> accumulator = collector.accumulator();
-            forEach(u -> accumulator.apply(container, u));
-            return container;
+            container = collector.supplier().get();
+            BiConsumer<A, ? super P_OUT> accumulator = collector.accumulator();
+            forEach(u -> accumulator.accept(container, u));
         }
-        return evaluate(ReduceOps.makeRef(collector));
+        else {
+            container = evaluate(ReduceOps.makeRef(collector));
+        }
+        return collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
+               ? (R) container
+               : collector.finisher().apply(container);
     }
 
     @Override
