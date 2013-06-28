@@ -350,9 +350,9 @@ else
   ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
       ifeq ($(USE_CLANG), true)
         # Clang doesn't understand -gstabs
-        OPT_CFLAGS += -g
+        DEBUG_CFLAGS += -g
       else
-        OPT_CFLAGS += -gstabs
+        DEBUG_CFLAGS += -gstabs
       endif
   endif
   
@@ -365,9 +365,9 @@ else
     ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
       ifeq ($(USE_CLANG), true)
         # Clang doesn't understand -gstabs
-        OPT_CFLAGS += -g
+        FASTDEBUG_CFLAGS += -g
       else
-        OPT_CFLAGS += -gstabs
+        FASTDEBUG_CFLAGS += -gstabs
       endif
     endif
   
