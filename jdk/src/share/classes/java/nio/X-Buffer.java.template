@@ -44,23 +44,23 @@ import java.util.stream.$Streamtype$Stream;
  *
  * <ul>
  *
- *   <li><p> Absolute and relative {@link #get() </code><i>get</i><code>} and
- *   {@link #put($type$) </code><i>put</i><code>} methods that read and write
+ *   <li><p> Absolute and relative {@link #get() <i>get</i>} and
+ *   {@link #put($type$) <i>put</i>} methods that read and write
  *   single $type$s; </p></li>
  *
- *   <li><p> Relative {@link #get($type$[]) </code><i>bulk get</i><code>}
+ *   <li><p> Relative {@link #get($type$[]) <i>bulk get</i>}
  *   methods that transfer contiguous sequences of $type$s from this buffer
  *   into an array; {#if[!byte]?and}</p></li>
  *
- *   <li><p> Relative {@link #put($type$[]) </code><i>bulk put</i><code>}
+ *   <li><p> Relative {@link #put($type$[]) <i>bulk put</i>}
  *   methods that transfer contiguous sequences of $type$s from $a$
  *   $type$ array{#if[char]?,&#32;a&#32;string,} or some other $type$
  *   buffer into this buffer;{#if[!byte]?&#32;and} </p></li>
  *
 #if[byte]
  *
- *   <li><p> Absolute and relative {@link #getChar() </code><i>get</i><code>}
- *   and {@link #putChar(char) </code><i>put</i><code>} methods that read and
+ *   <li><p> Absolute and relative {@link #getChar() <i>get</i>}
+ *   and {@link #putChar(char) <i>put</i>} methods that read and
  *   write values of other primitive types, translating them to and from
  *   sequences of bytes in a particular byte order; </p></li>
  *
@@ -70,23 +70,23 @@ import java.util.stream.$Streamtype$Stream;
  *
 #end[byte]
  *
- *   <li><p> Methods for {@link #compact </code>compacting<code>}, {@link
- *   #duplicate </code>duplicating<code>}, and {@link #slice
- *   </code>slicing<code>} $a$ $type$ buffer.  </p></li>
+ *   <li><p> Methods for {@link #compact compacting}, {@link
+ *   #duplicate duplicating}, and {@link #slice slicing}
+ *   $a$ $type$ buffer.  </p></li>
  *
  * </ul>
  *
  * <p> $Type$ buffers can be created either by {@link #allocate
- * </code><i>allocation</i><code>}, which allocates space for the buffer's
+ * <i>allocation</i>}, which allocates space for the buffer's
  *
 #if[byte]
  *
- * content, or by {@link #wrap($type$[]) </code><i>wrapping</i><code>} an
+ * content, or by {@link #wrap($type$[]) <i>wrapping</i>} an
  * existing $type$ array {#if[char]?or&#32;string} into a buffer.
  *
 #else[byte]
  *
- * content, by {@link #wrap($type$[]) </code><i>wrapping</i><code>} an existing
+ * content, by {@link #wrap($type$[]) <i>wrapping</i>} an existing
  * $type$ array {#if[char]?or&#32;string} into a buffer, or by creating a
  * <a href="ByteBuffer.html#views"><i>view</i></a> of an existing byte buffer.
  *
@@ -94,8 +94,8 @@ import java.util.stream.$Streamtype$Stream;
  *
 #if[byte]
  *
- * <a name="direct">
- * <h4> Direct <i>vs.</i> non-direct buffers </h4>
+ * <a name="direct"></a>
+ * <h2> Direct <i>vs.</i> non-direct buffers </h2>
  *
  * <p> A byte buffer is either <i>direct</i> or <i>non-direct</i>.  Given a
  * direct byte buffer, the Java virtual machine will make a best effort to
@@ -116,7 +116,7 @@ import java.util.stream.$Streamtype$Stream;
  * buffers only when they yield a measureable gain in program performance.
  *
  * <p> A direct byte buffer may also be created by {@link
- * java.nio.channels.FileChannel#map </code>mapping<code>} a region of a file
+ * java.nio.channels.FileChannel#map mapping} a region of a file
  * directly into memory.  An implementation of the Java platform may optionally
  * support the creation of direct byte buffers from native code via JNI.  If an
  * instance of one of these kinds of buffers refers to an inaccessible region
@@ -129,8 +129,8 @@ import java.util.stream.$Streamtype$Stream;
  * that explicit buffer management can be done in performance-critical code.
  *
  *
- * <a name="bin">
- * <h4> Access to binary data </h4>
+ * <a name="bin"></a>
+ * <h2> Access to binary data </h2>
  *
  * <p> This class defines methods for reading and writing values of all other
  * primitive types, except <tt>boolean</tt>.  Primitive values are translated
@@ -156,7 +156,7 @@ import java.util.stream.$Streamtype$Stream;
  * parameters of the absolute <i>get</i> and <i>put</i> methods are in terms of
  * bytes rather than of the type being read or written.
  *
- * <a name="views">
+ * <a name="views"></a>
  *
  * <p> For access to homogeneous binary data, that is, sequences of values of
  * the same type, this class defines methods that can create <i>views</i> of a
@@ -214,7 +214,7 @@ import java.util.stream.$Streamtype$Stream;
 #end[char]
  *
 #if[byte]
- * <h4> Invocation chaining </h4>
+ * <h2> Invocation chaining </h2>
 #end[byte]
  *
  * <p> Methods in this class that do not otherwise have a value to return are
@@ -297,7 +297,7 @@ public abstract class $Type$Buffer
      * <p> The new buffer's position will be zero, its limit will be its
      * capacity, its mark will be undefined, and each of its elements will be
      * initialized to zero.  Whether or not it has a
-     * {@link #hasArray </code>backing array<code>} is unspecified.
+     * {@link #hasArray backing array} is unspecified.
      *
      * @param  capacity
      *         The new buffer's capacity, in $type$s
@@ -318,9 +318,8 @@ public abstract class $Type$Buffer
      *
      * <p> The new buffer's position will be zero, its limit will be its
      * capacity, its mark will be undefined, and each of its elements will be
-     * initialized to zero.  It will have a {@link #array
-     * </code>backing array<code>}, and its {@link #arrayOffset </code>array
-     * offset<code>} will be zero.
+     * initialized to zero.  It will have a {@link #array backing array},
+     * and its {@link #arrayOffset array offset} will be zero.
      *
      * @param  capacity
      *         The new buffer's capacity, in $type$s
@@ -344,8 +343,8 @@ public abstract class $Type$Buffer
      * and vice versa.  The new buffer's capacity will be
      * <tt>array.length</tt>, its position will be <tt>offset</tt>, its limit
      * will be <tt>offset + length</tt>, and its mark will be undefined.  Its
-     * {@link #array </code>backing array<code>} will be the given array, and
-     * its {@link #arrayOffset </code>array offset<code>} will be zero.  </p>
+     * {@link #array backing array} will be the given array, and
+     * its {@link #arrayOffset array offset} will be zero.  </p>
      *
      * @param  array
      *         The array that will back the new buffer
@@ -384,8 +383,8 @@ public abstract class $Type$Buffer
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity and limit will be
      * <tt>array.length</tt>, its position will be zero, and its mark will be
-     * undefined.  Its {@link #array </code>backing array<code>} will be the
-     * given array, and its {@link #arrayOffset </code>array offset<code>} will
+     * undefined.  Its {@link #array backing array} will be the
+     * given array, and its {@link #arrayOffset array offset>} will
      * be zero.  </p>
      *
      * @param  array
@@ -703,6 +702,9 @@ public abstract class $Type$Buffer
      * <pre>
      *     src.get(a, 0, a.length) </pre>
      *
+     * @param   dst
+     *          The destination array
+     *
      * @return  This buffer
      *
      * @throws  BufferUnderflowException
@@ -842,6 +844,9 @@ public abstract class $Type$Buffer
      * <pre>
      *     dst.put(a, 0, a.length) </pre>
      *
+     * @param   src
+     *          The source array
+     *
      * @return  This buffer
      *
      * @throws  BufferOverflowException
@@ -929,6 +934,9 @@ public abstract class $Type$Buffer
      *
      * <pre>
      *     dst.put(s, 0, s.length()) </pre>
+     *
+     * @param   src
+     *          The source string
      *
      * @return  This buffer
      *
@@ -1419,7 +1427,7 @@ public abstract class $Type$Buffer
      *
      * <p> The byte order of $a$ $type$ buffer created by allocation or by
      * wrapping an existing <tt>$type$</tt> array is the {@link
-     * ByteOrder#nativeOrder </code>native order<code>} of the underlying
+     * ByteOrder#nativeOrder native order} of the underlying
      * hardware.  The byte order of $a$ $type$ buffer created as a <a
      * href="ByteBuffer.html#views">view</a> of a byte buffer is that of the
      * byte buffer at the moment that the view is created.  </p>
