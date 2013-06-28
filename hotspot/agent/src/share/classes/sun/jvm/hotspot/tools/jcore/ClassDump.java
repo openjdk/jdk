@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.tools.jcore;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.jar.JarOutputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
@@ -38,6 +39,16 @@ public class ClassDump extends Tool {
     private ClassFilter classFilter;
     private String      outputDirectory;
     private JarOutputStream jarStream;
+    private String      pkgList;
+
+    public ClassDump() {
+        super();
+    }
+
+    public ClassDump(JVMDebugger d, String pkgList) {
+        super(d);
+        this.pkgList = pkgList;
+    }
 
     public void setClassFilter(ClassFilter cf) {
         classFilter = cf;
@@ -63,6 +74,25 @@ public class ClassDump extends Tool {
     public void run() {
         // Ready to go with the database...
         try {
+            // The name of the filter always comes from a System property.
+            // If we have a pkgList, pass it, otherwise let the filter read
+            // its own System property for the list of classes.
+            String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter",
+                                                        "sun.jvm.hotspot.tools.jcore.PackageNameFilter");
+            try {
+                Class filterClass = Class.forName(filterClassName);
+                if (pkgList == null) {
+                    classFilter = (ClassFilter) filterClass.newInstance();
+                } else {
+                    Constructor con = filterClass.getConstructor(String.class);
+                    classFilter = (ClassFilter) con.newInstance(pkgList);
+                }
+            } catch(Exception exp) {
+                System.err.println("Warning: Can not create class filter!");
+            }
+
+            String outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir", ".");
+            setOutputDirectory(outputDirectory);
 
             // walk through the system dictionary
             SystemDictionary dict = VM.getVM().getSystemDictionary();
@@ -139,26 +169,8 @@ public class ClassDump extends Tool {
     }
 
     public static void main(String[] args) {
-        // load class filters
-        ClassFilter classFilter = null;
-        String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter");
-        if (filterClassName != null) {
-            try {
-                Class filterClass = Class.forName(filterClassName);
-                classFilter = (ClassFilter) filterClass.newInstance();
-            } catch(Exception exp) {
-                System.err.println("Warning: Can not create class filter!");
-            }
-        }
-
-        String outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir");
-        if (outputDirectory == null)
-            outputDirectory = ".";
-
 
         ClassDump cd = new ClassDump();
-        cd.setClassFilter(classFilter);
-        cd.setOutputDirectory(outputDirectory);
         cd.start(args);
         cd.stop();
     }
