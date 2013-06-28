@@ -194,6 +194,8 @@ class MethodType implements java.io.Serializable {
     /**
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @param rtype  the return type
+     * @param ptypes the parameter types
      * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
@@ -214,6 +216,9 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The leading parameter type is prepended to the remaining array.
+     * @param rtype  the return type
+     * @param ptype0 the first parameter type
+     * @param ptypes the remaining parameter types
      * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is {@code void.class}
@@ -230,6 +235,7 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has no parameter types.
+     * @param rtype  the return type
      * @return a method type with the given return value
      * @throws NullPointerException if {@code rtype} is null
      */
@@ -242,6 +248,8 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has the single given parameter type.
+     * @param rtype  the return type
+     * @param ptype0 the parameter type
      * @return a method type with the given return value and parameter type
      * @throws NullPointerException if {@code rtype} or {@code ptype0} is null
      * @throws IllegalArgumentException if {@code ptype0} is {@code void.class}
@@ -256,6 +264,9 @@ class MethodType implements java.io.Serializable {
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has the same parameter types as {@code ptypes},
      * and the specified return type.
+     * @param rtype  the return type
+     * @param ptypes the method type which supplies the parameter types
+     * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptypes} is null
      */
     public static
@@ -938,7 +949,8 @@ s.writeObject(this.parameterArray());
      * provided to the factory method {@link #methodType(Class,Class[]) methodType}.
      * For example, null values, or {@code void} parameter types,
      * will lead to exceptions during deserialization.
-     * @param the stream to write the object to
+     * @param s the stream to write the object to
+     * @throws java.io.IOException if there is a problem writing the object
      */
     private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
         s.defaultWriteObject();  // requires serialPersistentFields to be an empty array
@@ -953,7 +965,9 @@ s.writeObject(this.parameterArray());
      * It provides the parameters to the factory method called by
      * {@link #readResolve readResolve}.
      * After that call it is discarded.
-     * @param the stream to read the object from
+     * @param s the stream to read the object from
+     * @throws java.io.IOException if there is a problem reading the object
+     * @throws ClassNotFoundException if one of the component classes cannot be resolved
      * @see #MethodType()
      * @see #readResolve
      * @see #writeObject
