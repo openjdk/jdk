@@ -365,8 +365,7 @@ public class AttributeWriter extends BasicWriter
         indent(+1);
         println("Start  Length  Slot  Name   Signature");
         for (LocalVariableTable_attribute.Entry entry : attr.local_variable_table) {
-            Formatter formatter = new Formatter();
-            println(formatter.format("%8d %7d %5d %5s   %s",
+            println(String.format("%5d %7d %5d %5s   %s",
                     entry.start_pc, entry.length, entry.index,
                     constantWriter.stringValue(entry.name_index),
                     constantWriter.stringValue(entry.descriptor_index)));
@@ -609,7 +608,8 @@ public class AttributeWriter extends BasicWriter
         public Void visit_append_frame(StackMapTable_attribute.append_frame frame, Void p) {
             printHeader(frame);
             println(" /* append */");
-            println("     offset_delta = " + frame.offset_delta);
+            indent(+1);
+            println("offset_delta = " + frame.offset_delta);
             printMap("locals", frame.locals);
             return null;
         }
