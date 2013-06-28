@@ -129,7 +129,7 @@ public final class NativeError extends ScriptObject {
         Global.checkObject(errorObj);
         final ScriptObject sobj = (ScriptObject)errorObj;
         final ECMAException exp = new ECMAException(sobj, null);
-        sobj.set("stack", NashornException.getScriptStackString(exp), false);
+        sobj.set("stack", getScriptStackString(sobj, exp), false);
         return UNDEFINED;
     }
 
@@ -288,7 +288,7 @@ public final class NativeError extends ScriptObject {
 
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
-            return NashornException.getScriptStackString((Throwable)exception);
+            return getScriptStackString(sobj, (Throwable)exception);
         } else {
             return "";
         }
@@ -361,5 +361,9 @@ public final class NativeError extends ScriptObject {
         } catch (final NoSuchMethodException | IllegalAccessException e) {
             throw new MethodHandleFactory.LookupException(e);
         }
+    }
+
+    private static String getScriptStackString(final ScriptObject sobj, final Throwable exp) {
+        return JSType.toString(sobj) + "\n" + NashornException.getScriptStackString(exp);
     }
 }

@@ -1,3 +1,4 @@
-MyError @ test/script/basic/JDK-8014781.js:32
-func @ test/script/basic/JDK-8014781.js:36
-<program> @ test/script/basic/JDK-8014781.js:39
+[object Object]
+	at MyError (test/script/basic/JDK-8014781.js:32)
+	at func (test/script/basic/JDK-8014781.js:36)
+	at <program> (test/script/basic/JDK-8014781.js:39)

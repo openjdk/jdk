@@ -30,7 +30,7 @@
 
 function func1() { func2() }
 
-function func2() { throw new Error() }
+function func2() { throw new Error("failed!") }
 
 try {
     func1()
