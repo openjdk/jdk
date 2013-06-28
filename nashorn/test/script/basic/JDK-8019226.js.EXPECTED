@@ -1,3 +1,4 @@
-func2 @ test/script/basic/JDK-8019226.js:33
-func1 @ test/script/basic/JDK-8019226.js:31
-<program> @ test/script/basic/JDK-8019226.js:36
+Error: failed!
+	at func2 (test/script/basic/JDK-8019226.js:33)
+	at func1 (test/script/basic/JDK-8019226.js:31)
+	at <program> (test/script/basic/JDK-8019226.js:36)
