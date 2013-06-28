@@ -622,6 +622,14 @@ AC_PATH_PROGS(READELF, [readelf greadelf])
 AC_PATH_PROG(HG, hg)
 AC_PATH_PROG(STAT, stat)
 AC_PATH_PROG(TIME, time)
+# Check if it's GNU time
+IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+if test "x$IS_GNU_TIME" != x; then
+  IS_GNU_TIME=yes
+else
+  IS_GNU_TIME=no
+fi
+AC_SUBST(IS_GNU_TIME)
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   BASIC_REQUIRE_PROG(COMM, comm)

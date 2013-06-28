@@ -799,6 +799,7 @@ OS_VERSION_MAJOR
 PKG_CONFIG
 CODESIGN
 XATTR
+IS_GNU_TIME
 TIME
 STAT
 HG
@@ -3785,7 +3786,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1372413413
+DATE_WHEN_GENERATED=1372413705
 
 ###############################################################################
 #
@@ -10471,6 +10472,14 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# Check if it's GNU time
+IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+if test "x$IS_GNU_TIME" != x; then
+  IS_GNU_TIME=yes
+else
+  IS_GNU_TIME=no
+fi
 
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
