@@ -106,6 +106,8 @@ public interface NetworkChannel
     /**
      * Sets the value of a socket option.
      *
+     * @param   <T>
+     *          The type of the socket option value
      * @param   name
      *          The socket option
      * @param   value
@@ -130,6 +132,8 @@ public interface NetworkChannel
     /**
      * Returns the value of a socket option.
      *
+     * @param   <T>
+     *          The type of the socket option value
      * @param   name
      *          The socket option
      *
