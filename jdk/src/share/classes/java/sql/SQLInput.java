@@ -444,7 +444,7 @@ public interface SQLInput {
      *<p>
      * The default implementation will throw {@code SQLFeatureNotSupportedException}
      *
-     * @param<T> the type of the class modeled by this Class object
+     * @param <T> the type of the class modeled by this Class object
      * @param type Class representing the Java data type to convert the attribute to.
      * @return the attribute at the head of the stream as an {@code Object} in the
      * Java programming language;{@code null} if the attribute is SQL {@code NULL}
