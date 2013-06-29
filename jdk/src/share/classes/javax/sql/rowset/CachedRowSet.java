@@ -118,7 +118,7 @@ import javax.sql.rowset.spi.*;
  * <P>
  * There are two ways for a <code>CachedRowSet</code> object to specify which
  * <code>SyncProvider</code> object it will use.
- * <UL)
+ * <UL>
  *     <LI>Supplying the name of the implementation to the constructor<BR>
  *     The following line of code creates the <code>CachedRowSet</code>
  *     object <i>crs2</i> that is initialized with default values except that its
@@ -135,7 +135,7 @@ import javax.sql.rowset.spi.*;
  *      <PRE>
  *           crs.setSyncProvider("com.fred.providers.HighAvailabilityProvider");
  *      </PRE>
- * </UL)
+ * </UL>
  * See the comments for <code>SyncFactory</code> and <code>SyncProvider</code> for
  * more details.
  *
@@ -426,10 +426,10 @@ import javax.sql.rowset.spi.*;
  * The following code fragment illustrates how the <code>CachedRowSet</code>
  * object <code>crs</code> might have its command property set.  Note that if a
  * tool is used to set properties, this is the code that the tool would use.
- * <PRE>
+ * <PRE>{@code
  *    crs.setCommand("SELECT FIRST_NAME, LAST_NAME, ADDRESS FROM CUSTOMERS " +
  *                   "WHERE CREDIT_LIMIT > ? AND REGION = ?");
- * </PRE>
+ * } </PRE>
  * <P>
  * The values that will be used to set the command's placeholder parameters are
  * contained in the <code>RowSet</code> object's <code>params</code> field, which is a
@@ -457,7 +457,7 @@ import javax.sql.rowset.spi.*;
  * The following code fragment gives an idea of how the reader
  * does this, after obtaining the <code>Connection</code> object
  * <code>con</code>.
- * <PRE>
+ * <PRE>{@code
  *    PreparedStatement pstmt = con.prepareStatement(crs.getCommand());
  *    reader.decodeParams();
  *    // decodeParams figures out which setter methods to use and does something
@@ -465,16 +465,16 @@ import javax.sql.rowset.spi.*;
  *    //    for (i = 0; i < params.length; i++) {
  *    //        pstmt.setObject(i + 1, params[i]);
  *    //    }
- * </PRE>
+ * }</PRE>
  * <P>
- * At this point, the command for <code>crs</code> is the query <code>"SELECT
+ * At this point, the command for <code>crs</code> is the query {@code "SELECT
  * FIRST_NAME, LAST_NAME, ADDRESS FROM CUSTOMERS WHERE CREDIT_LIMIT > 5000
- * AND REGION = "West"</code>.  After the <code>readData</code> method executes
+ * AND REGION = "West"}.  After the <code>readData</code> method executes
  * this command with the following line of code, it will have the data from
  * <code>rs</code> with which to populate <code>crs</code>.
- * <PRE>
+ * <PRE>{@code
  *     ResultSet rs = pstmt.executeQuery();
- * </PRE>
+ * }</PRE>
  * <P>
  * The preceding code fragments give an idea of what goes on behind the
  * scenes; they would not appear in an application, which would not invoke
@@ -484,13 +484,13 @@ import javax.sql.rowset.spi.*;
  * the command. Simply by calling the <code>execute</code> method,
  * <code>crs</code> populates itself with the requested data from the
  * table <code>CUSTOMERS</code>.
- * <PRE>
+ * <PRE>{@code
  *    crs.setCommand("SELECT FIRST_NAME, LAST_NAME, ADDRESS FROM CUSTOMERS" +
  *                   "WHERE CREDIT_LIMIT > ? AND REGION = ?");
  *    crs.setInt(1, 5000);
  *    crs.setString(2, "West");
  *    crs.execute();
- * </PRE>
+ * }</PRE>
  *
  * <h3>10.0 Paging Data</h3>
  * Because a <code>CachedRowSet</code> object stores data in memory,

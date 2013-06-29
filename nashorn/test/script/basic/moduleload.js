@@ -25,7 +25,6 @@
  * This loads "module.js" and calls the anonymous top-level function from it.
  *
  * @test
- * @option --anon-functions
  * @run
  */
 

@@ -64,7 +64,7 @@
 #
 # Translator:  Start Translating
 
-Compile.parsing=\u6B63\u5728\u5BF9 %0 \u8FDB\u884C\u8BED\u6CD5\u5206\u6790
+Compile.parsing=\u6B63\u5728\u89E3\u6790 %0
 Compile.parseDone=\u5B8C\u6210  - %0
 Compile.generating=\u6B63\u5728\u751F\u6210 %0
 Compile.genDone=\u5B8C\u6210   -   %0
@@ -165,7 +165,7 @@ Token.identifier=<\u6807\u8BC6\u7B26>
 Token.endOfFile=EOF
 Token.unknown=?
 Util.cantCreatePkg=\u65E0\u6CD5\u521B\u5EFA\u7A0B\u5E8F\u5305%0\u3002
-Version.product=IDL \u8BED\u6CD5\u5206\u6790\u5668\u6846\u67B6, \u7248\u672C "%0"
+Version.product=IDL \u89E3\u6790\u5668\u6846\u67B6, \u7248\u672C "%0"
 Version.number=3.2
 default=\u9519\u8BEF! \u8BF7\u6C42\u4E86\u4E0D\u5B58\u5728\u7684\u6D88\u606F\u3002\u6D88\u606F\u6587\u4EF6\u672A\u5305\u542B\u5173\u952E\u5B57: %0\u3002
 

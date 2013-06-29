@@ -193,7 +193,7 @@ public abstract class ApacheCanonicalizer extends TransformService {
 
         if (apacheTransform == null) {
             try {
-                apacheTransform = Transform.getInstance
+                apacheTransform = new Transform
                     (ownerDoc, getAlgorithm(), transformElem.getChildNodes());
                 apacheTransform.setElement(transformElem, xc.getBaseURI());
                 if (log.isLoggable(Level.FINE)) {

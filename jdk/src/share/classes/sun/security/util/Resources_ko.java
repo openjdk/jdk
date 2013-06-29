@@ -127,6 +127,8 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "Codebase \uD45C\uD604\uC2DD\uC774 \uC5EC\uB7EC \uAC1C\uC785\uB2C8\uB2E4."},
         {"multiple.SignedBy.expressions","SignedBy \uD45C\uD604\uC2DD\uC774 \uC5EC\uB7EC \uAC1C\uC785\uB2C8\uB2E4."},
+        {"duplicate.keystore.domain.name","\uC911\uBCF5\uB41C \uD0A4 \uC800\uC7A5\uC18C \uB3C4\uBA54\uC778 \uC774\uB984: {0}"},
+        {"duplicate.keystore.name","\uC911\uBCF5\uB41C \uD0A4 \uC800\uC7A5\uC18C \uC774\uB984: {0}"},
         {"SignedBy.has.empty.alias","SignedBy\uC758 \uBCC4\uCE6D\uC774 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "\uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uC774\uB984 \uC5C6\uC774 \uC640\uC77C\uB4DC \uCE74\uB4DC \uBB38\uC790 \uD074\uB798\uC2A4\uB97C \uC0AC\uC6A9\uD558\uB294 \uC8FC\uCCB4\uB97C \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},

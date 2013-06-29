@@ -324,7 +324,7 @@ public class X11GraphicsEnvironment
             // pRunningXinerama() simply returns a global boolean variable,
             // so there is no need to synchronize here
             xinerState = Boolean.valueOf(pRunningXinerama());
-            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
                 screenLog.finer("Running Xinerama: " + xinerState);
             }
         }
@@ -408,7 +408,7 @@ public class X11GraphicsEnvironment
             (unionRect.width / 2) + unionRect.x < center.x + 1 &&
             (unionRect.height / 2) + unionRect.y < center.y + 1) {
 
-            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
                 screenLog.finer("Video Wall: center point is at center of all displays.");
             }
             return unionRect;
@@ -416,7 +416,7 @@ public class X11GraphicsEnvironment
 
         // next, check if at center of one monitor
         if (centerMonitorRect != null) {
-            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+            if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
                 screenLog.finer("Center point at center of a particular " +
                                 "monitor, but not of the entire virtual display.");
             }
@@ -424,7 +424,7 @@ public class X11GraphicsEnvironment
         }
 
         // otherwise, the center is at some weird spot: return unionRect
-        if (screenLog.isLoggable(PlatformLogger.FINER)) {
+        if (screenLog.isLoggable(PlatformLogger.Level.FINER)) {
             screenLog.finer("Center point is somewhere strange - return union of all bounds.");
         }
         return unionRect;

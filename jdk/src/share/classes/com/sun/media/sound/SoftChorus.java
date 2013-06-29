@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@ import java.util.Arrays;
  *
  * @author Karl Helgason
  */
-public class SoftChorus implements SoftAudioProcessor {
+public final class SoftChorus implements SoftAudioProcessor {
 
     private static class VariableDelay {
 
-        private float[] delaybuffer;
+        private final float[] delaybuffer;
         private int rovepos = 0;
         private float gain = 1;
         private float rgain = 0;
@@ -44,7 +44,7 @@ public class SoftChorus implements SoftAudioProcessor {
         private float lastdelay = 0;
         private float feedback = 0;
 
-        public VariableDelay(int maxbuffersize) {
+        VariableDelay(int maxbuffersize) {
             delaybuffer = new float[maxbuffersize];
         }
 
@@ -119,10 +119,10 @@ public class SoftChorus implements SoftAudioProcessor {
         private double phase_step = 0;
         private double depth = 0;
         private VariableDelay vdelay;
-        private double samplerate;
-        private double controlrate;
+        private final double samplerate;
+        private final double controlrate;
 
-        public LFODelay(double samplerate, double controlrate) {
+        LFODelay(double samplerate, double controlrate) {
             this.samplerate = samplerate;
             this.controlrate = controlrate;
             // vdelay = new VariableDelay((int)(samplerate*4));

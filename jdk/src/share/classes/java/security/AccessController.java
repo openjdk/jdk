@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,28 +329,31 @@ public final class AccessController {
 
 
     /**
-     * Performs the specified <code>PrivilegedAction</code> with privileges
-     * enabled and restricted by the specified
-     * <code>AccessControlContext</code>.
+     * Performs the specified {@code PrivilegedAction} with privileges
+     * enabled and restricted by the specified {@code AccessControlContext}.
      * The action is performed with the intersection of the permissions
      * possessed by the caller's protection domain, and those possessed
-     * by the domains represented by the specified
-     * <code>AccessControlContext</code>.
+     * by the domains represented by the specified {@code AccessControlContext}.
      * <p>
-     * If the action's <code>run</code> method throws an (unchecked) exception,
+     * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
+     * <p>
+     * If a security manager is installed and the {@code AccessControlContext}
+     * was not created by system code and the caller's {@code ProtectionDomain}
+     * has not been granted the {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
      *                caller's domain's privileges before performing
      *                the specified action.  If the context is
-     *                <code>null</code>,
-     *                then no additional restriction is applied.
+     *                {@code null}, then no additional restriction is applied.
      *
-     * @return the value returned by the action's <code>run</code> method.
+     * @return the value returned by the action's {@code run} method.
      *
-     * @exception NullPointerException if the action is <code>null</code>
+     * @exception NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedExceptionAction,AccessControlContext)
@@ -566,30 +569,34 @@ public final class AccessController {
     }
 
     /**
-     * Performs the specified <code>PrivilegedExceptionAction</code> with
+     * Performs the specified {@code PrivilegedExceptionAction} with
      * privileges enabled and restricted by the specified
-     * <code>AccessControlContext</code>.  The action is performed with the
+     * {@code AccessControlContext}.  The action is performed with the
      * intersection of the permissions possessed by the caller's
      * protection domain, and those possessed by the domains represented by the
-     * specified <code>AccessControlContext</code>.
+     * specified {@code AccessControlContext}.
      * <p>
-     * If the action's <code>run</code> method throws an <i>unchecked</i>
+     * If the action's {@code run} method throws an <i>unchecked</i>
      * exception, it will propagate through this method.
+     * <p>
+     * If a security manager is installed and the {@code AccessControlContext}
+     * was not created by system code and the caller's {@code ProtectionDomain}
+     * has not been granted the {@literal "createAccessControlContext"}
+     * {@link java.security.SecurityPermission}, then the action is performed
+     * with no permissions.
      *
      * @param action the action to be performed
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
      *                caller's domain's privileges before performing
      *                the specified action.  If the context is
-     *                <code>null</code>,
-     *                then no additional restriction is applied.
+     *                {@code null}, then no additional restriction is applied.
      *
-     * @return the value returned by the action's <code>run</code> method
+     * @return the value returned by the action's {@code run} method
      *
      * @exception PrivilegedActionException if the specified action's
-     *         <code>run</code> method
-     *         threw a <i>checked</i> exception
-     * @exception NullPointerException if the action is <code>null</code>
+     *         {@code run} method threw a <i>checked</i> exception
+     * @exception NullPointerException if the action is {@code null}
      *
      * @see #doPrivileged(PrivilegedAction)
      * @see #doPrivileged(PrivilegedAction,AccessControlContext)

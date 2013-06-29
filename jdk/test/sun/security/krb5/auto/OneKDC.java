@@ -67,10 +67,19 @@ public class OneKDC extends KDC {
         addPrincipalRandKey("krbtgt/" + REALM);
         addPrincipalRandKey(SERVER);
         addPrincipalRandKey(BACKEND);
+
+        String extraConfig = "";
+        if (etype != null) {
+            extraConfig += "default_tkt_enctypes=" + etype
+                    + "\ndefault_tgs_enctypes=" + etype;
+            if (etype.startsWith("des")) {
+                extraConfig += "\nallow_weak_crypto = true";
+            }
+        }
         KDC.saveConfig(KRB5_CONF, this,
                 "forwardable = true",
                 "default_keytab_name = " + KTAB,
-                etype == null ? "" : "default_tkt_enctypes=" + etype + "\ndefault_tgs_enctypes=" + etype);
+                extraConfig);
         System.setProperty("java.security.krb5.conf", KRB5_CONF);
         // Whatever krb5.conf had been loaded before, we reload ours now.
         Config.refresh();

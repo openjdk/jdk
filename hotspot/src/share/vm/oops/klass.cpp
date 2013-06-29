@@ -37,6 +37,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/atomic.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -168,7 +169,7 @@ Klass::Klass() {
   set_next_sibling(NULL);
   set_next_link(NULL);
   set_alloc_count(0);
-  TRACE_SET_KLASS_TRACE_ID(this, 0);
+  TRACE_INIT_ID(this);
 
   set_prototype_header(markOopDesc::prototype());
   set_biased_lock_revocation_count(0);

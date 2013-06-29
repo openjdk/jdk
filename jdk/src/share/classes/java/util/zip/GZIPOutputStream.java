@@ -61,8 +61,7 @@ class GZIPOutputStream extends DeflaterOutputStream {
      * @param out the output stream
      * @param size the output buffer size
      * @exception IOException If an I/O error has occurred.
-     * @exception IllegalArgumentException if size is <= 0
-
+     * @exception IllegalArgumentException if {@code size <= 0}
      */
     public GZIPOutputStream(OutputStream out, int size) throws IOException {
         this(out, size, false);
@@ -81,7 +80,7 @@ class GZIPOutputStream extends DeflaterOutputStream {
      *        {@link Deflater#SYNC_FLUSH} before flushing the output
      *        stream, otherwise only flushes the output stream
      * @exception IOException If an I/O error has occurred.
-     * @exception IllegalArgumentException if size is <= 0
+     * @exception IllegalArgumentException if {@code size <= 0}
      *
      * @since 1.7
      */

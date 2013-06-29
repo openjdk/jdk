@@ -641,26 +641,19 @@ public final class NativeRegExp extends ScriptObject {
             return string;
         }
 
-        /*
-         * $$ -> $
-         * $& -> the matched substring
-         * $` -> the portion of string that preceeds matched substring
-         * $' -> the portion of string that follows the matched substring
-         * $n -> the nth capture, where n is [1-9] and $n is NOT followed by a decimal digit
-         * $nn -> the nnth capture, where nn is a two digit decimal number [01-99].
-         */
-        String replace = replacement;
-
         if (!regexp.isGlobal()) {
             if (!matcher.search(0)) {
                 return string;
             }
 
             final StringBuilder sb = new StringBuilder();
+            sb.append(string, 0, matcher.start());
+
             if (function != null) {
-                replace = callReplaceValue(function, matcher, string);
+                sb.append(callReplaceValue(function, matcher, string));
+            } else {
+                appendReplacement(matcher, string, replacement, sb);
             }
-            appendReplacement(matcher, string, replace, sb, 0);
             sb.append(string, matcher.end(), string.length());
             return sb.toString();
         }
@@ -676,11 +669,12 @@ public final class NativeRegExp extends ScriptObject {
         final StringBuilder sb = new StringBuilder();
 
         do {
+            sb.append(string, thisIndex, matcher.start());
             if (function != null) {
-                replace = callReplaceValue(function, matcher, string);
+                sb.append(callReplaceValue(function, matcher, string));
+            } else {
+                appendReplacement(matcher, string, replacement, sb);
             }
-
-            appendReplacement(matcher, string, replace, sb, thisIndex);
 
             // ECMA 15.5.4.10 String.prototype.match(regexp)
             thisIndex = matcher.end();
@@ -697,10 +691,19 @@ public final class NativeRegExp extends ScriptObject {
         return sb.toString();
     }
 
-    private void appendReplacement(final RegExpMatcher matcher, final String text, final String replacement, final StringBuilder sb, final int lastAppendPosition) {
-        // Process substitution string to replace group references with groups
+    private void appendReplacement(final RegExpMatcher matcher, final String text, final String replacement, final StringBuilder sb) {
+        /*
+         * Process substitution patterns:
+         *
+         * $$ -> $
+         * $& -> the matched substring
+         * $` -> the portion of string that preceeds matched substring
+         * $' -> the portion of string that follows the matched substring
+         * $n -> the nth capture, where n is [1-9] and $n is NOT followed by a decimal digit
+         * $nn -> the nnth capture, where nn is a two digit decimal number [01-99].
+         */
+
         int cursor = 0;
-        final StringBuilder result = new StringBuilder();
         Object[] groups = null;
 
         while (cursor < replacement.length()) {
@@ -732,37 +735,33 @@ public final class NativeRegExp extends ScriptObject {
                         }
                         // Append group if matched.
                         if (groups[refNum] != UNDEFINED) {
-                            result.append((String) groups[refNum]);
+                            sb.append((String) groups[refNum]);
                         }
                     } else { // $0. ignore.
                         assert refNum == 0;
-                        result.append("$0");
+                        sb.append("$0");
                     }
                 } else if (nextChar == '$') {
-                    result.append('$');
+                    sb.append('$');
                     cursor++;
                 } else if (nextChar == '&') {
-                    result.append(matcher.group());
+                    sb.append(matcher.group());
                     cursor++;
                 } else if (nextChar == '`') {
-                    result.append(text.substring(0, matcher.start()));
+                    sb.append(text, 0, matcher.start());
                     cursor++;
                 } else if (nextChar == '\'') {
-                    result.append(text.substring(matcher.end()));
+                    sb.append(text, matcher.end(), text.length());
                     cursor++;
                 } else {
                     // unknown substitution or $n with n>m. skip.
-                    result.append('$');
+                    sb.append('$');
                 }
             } else {
-                result.append(nextChar);
+                sb.append(nextChar);
                 cursor++;
             }
         }
-        // Append the intervening text
-        sb.append(text, lastAppendPosition, matcher.start());
-        // Append the match substitution
-        sb.append(result);
     }
 
     private String callReplaceValue(final ScriptFunction function, final RegExpMatcher matcher, final String string) {

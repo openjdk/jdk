@@ -60,6 +60,7 @@ class GCCause : public AllStatic {
     _cms_generation_full,
     _cms_initial_mark,
     _cms_final_remark,
+    _cms_concurrent_mark,
 
     _old_generation_expanded_on_last_scavenge,
     _old_generation_too_full_to_scavenge,

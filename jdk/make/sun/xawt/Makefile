@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ include $(BUILDDIR)/common/Defs.gmk
 
 GEN_DIR=$(GENSRCDIR)/sun/awt/X11
 
-CLASSES_INIT += $(TEMPDIR)/.gen.wrappers $(TEMPDIR)/.gen_icons touch.wrappers
+CLASSES_INIT += $(TEMPDIR)/.gen.wrappers touch.wrappers
 
 .PHONY: generated.clean
 
@@ -317,70 +317,7 @@ generated.clean:
 	$(RM) -r $(WRAPPER_GENERATOR_TEMPDIR)
 	$(RM) -r $(WRAPPER_GENERATOR_DIR)
 	$(RM) -r $(GEN_DIR)/*.java
-	$(RM) -r $(TEMPDIR)/.gen_icons
 
-ifdef OPENJDK
-    ICONS_PATH_PREFIX=$(PLATFORM_SRC)
-else
-    ICONS_PATH_PREFIX=$(CLOSED_SRC)/solaris
-endif
-
-ICONS = \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
-    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
-
-
-ICONPATH=$(PLATFORM_SRC)/classes/sun/awt/X11
-
-ICONS += \
-   $(ICONPATH)/security-icon-bw16.png \
-   $(ICONPATH)/security-icon-interim16.png \
-   $(ICONPATH)/security-icon-yellow16.png \
-   $(ICONPATH)/security-icon-bw24.png \
-   $(ICONPATH)/security-icon-interim24.png \
-   $(ICONPATH)/security-icon-yellow24.png \
-   $(ICONPATH)/security-icon-bw32.png \
-   $(ICONPATH)/security-icon-interim32.png \
-   $(ICONPATH)/security-icon-yellow32.png \
-   $(ICONPATH)/security-icon-bw48.png \
-   $(ICONPATH)/security-icon-interim48.png \
-   $(ICONPATH)/security-icon-yellow48.png
-
-TEMPDIR_CLASSES = $(TEMPDIR)/classes
-
-$(TEMPDIR_CLASSES)/sun/awt/X11/ToBin.class: ToBin.java
-	@$(prep-target)
-	$(BOOT_JAVAC_CMD) -d $(TEMPDIR_CLASSES) $<
-
-$(TEMPDIR)/.gen_icons: $(TEMPDIR_CLASSES)/sun/awt/X11/ToBin.class $(ICONS)
-	$(prep-target)
-	for i in $(ICONS); do \
-            filename=`basename $$i`; \
-	    name=`$(ECHO) $$filename | $(TR) '\-.' '__'`;  \
-            classname=$(GEN_DIR)/XAWTIcon32_$$name.java; \
-	    $(RM) $$classname; \
-	    $(ECHO) "package sun.awt.X11;" >> $$classname ; \
-	    $(ECHO) "public class XAWTIcon32_$$name {" >> $$classname; \
-	    $(ECHO) "public static int[] $$name = { " >> $$classname;  \
-	    $(CAT) $$i | \
-	      $(BOOT_JAVA_CMD) -cp $(TEMPDIR_CLASSES)  \
-		-Djava.awt.headless=true \
-		sun.awt.X11.ToBin >> $$classname; \
-	    $(ECHO) "}; }" >> $$classname;  \
-            classname=$(GEN_DIR)/XAWTIcon64_$$name.java; \
-	    $(RM) $$classname; \
-	    $(ECHO) "package sun.awt.X11;" >> $$classname ; \
-	    $(ECHO) "public class XAWTIcon64_$$name {" >> $$classname; \
-	    $(ECHO) "public static long[] $$name = { " >> $$classname;  \
-	    $(CAT) $$i | \
-	      $(BOOT_JAVA_CMD) -cp $(TEMPDIR_CLASSES)  \
-		-Djava.awt.headless=true \
-		sun.awt.X11.ToBin >> $$classname; \
-	    $(ECHO) "}; }" >> $$classname;  \
-	done
-	$(TOUCH) $@
 
 clean clobber:: generated.clean
 

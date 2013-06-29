@@ -317,7 +317,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      *         <code>false</code> otherwise
      */
     public boolean dispatchEvent(AWTEvent e) {
-        if (focusLog.isLoggable(PlatformLogger.FINE) && (e instanceof WindowEvent || e instanceof FocusEvent)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINE) && (e instanceof WindowEvent || e instanceof FocusEvent)) {
             focusLog.fine("" + e);
         }
         switch (e.getID()) {
@@ -426,7 +426,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
                     // The component which last has the focus when this window was focused
                     // should receive focus first
-                    if (focusLog.isLoggable(PlatformLogger.FINER)) {
+                    if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                         focusLog.finer("tempLost {0}, toFocus {1}",
                                        tempLost, toFocus);
                     }
@@ -495,7 +495,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 Component oldFocusOwner = getGlobalFocusOwner();
                 Component newFocusOwner = fe.getComponent();
                 if (oldFocusOwner == newFocusOwner) {
-                    if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                    if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                         focusLog.fine("Skipping {0} because focus owner is the same", e);
                     }
                     // We can't just drop the event - there could be
@@ -614,7 +614,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 FocusEvent fe = (FocusEvent)e;
                 Component currentFocusOwner = getGlobalFocusOwner();
                 if (currentFocusOwner == null) {
-                    if (focusLog.isLoggable(PlatformLogger.FINE))
+                    if (focusLog.isLoggable(PlatformLogger.Level.FINE))
                         focusLog.fine("Skipping {0} because focus owner is null", e);
                     break;
                 }
@@ -622,7 +622,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 // If we make a mistake because of retargeting, then the
                 // FOCUS_GAINED handler will correct it.
                 if (currentFocusOwner == fe.getOppositeComponent()) {
-                    if (focusLog.isLoggable(PlatformLogger.FINE))
+                    if (focusLog.isLoggable(PlatformLogger.Level.FINE))
                         focusLog.fine("Skipping {0} because current focus owner is equal to opposite", e);
                     break;
                 }
@@ -695,7 +695,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 Window losingFocusWindow = we.getWindow();
                 Window activeWindow = getGlobalActiveWindow();
                 Window oppositeWindow = we.getOppositeWindow();
-                if (focusLog.isLoggable(PlatformLogger.FINE))
+                if (focusLog.isLoggable(PlatformLogger.Level.FINE))
                     focusLog.fine("Active {0}, Current focused {1}, losing focus {2} opposite {3}",
                                   activeWindow, currentFocusedWindow,
                                   losingFocusWindow, oppositeWindow);
@@ -881,7 +881,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         }
                     }
                     if (ke != null) {
-                        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+                        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                             focusLog.finer("Pumping approved event {0}", ke);
                         }
                         enqueuedKeyEvents.removeFirst();
@@ -898,7 +898,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * Dumps the list of type-ahead queue markers to stderr
      */
     void dumpMarkers() {
-        if (focusLog.isLoggable(PlatformLogger.FINEST)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
             focusLog.finest(">>> Markers dump, time: {0}", System.currentTimeMillis());
             synchronized (this) {
                 if (typeAheadMarkers.size() != 0) {
@@ -932,7 +932,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         // The fix is rolled out.
 
                         if (ke.getWhen() > marker.after) {
-                            if (focusLog.isLoggable(PlatformLogger.FINER)) {
+                            if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                                 focusLog.finer("Storing event {0} because of marker {1}", ke, marker);
                             }
                             enqueuedKeyEvents.addLast(ke);
@@ -946,7 +946,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
 
             case FocusEvent.FOCUS_GAINED:
-                if (focusLog.isLoggable(PlatformLogger.FINEST)) {
+                if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
                     focusLog.finest("Markers before FOCUS_GAINED on {0}", target);
                 }
                 dumpMarkers();
@@ -975,7 +975,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         }
                     } else {
                         // Exception condition - event without marker
-                        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+                        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                             focusLog.finer("Event without marker {0}", e);
                         }
                     }
@@ -1216,7 +1216,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             return;
         }
 
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Enqueue at {0} for {1}",
                        after, untilFocused);
         }
@@ -1258,7 +1258,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             return;
         }
 
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Dequeue at {0} for {1}",
                        after, untilFocused);
         }

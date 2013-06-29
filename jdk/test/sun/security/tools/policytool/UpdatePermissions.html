@@ -10,8 +10,8 @@ reading these instructions.<br><br>
 First, policytool will be invoked.<br><br>
 
 Then, follow these steps:<br>
-0) If testing on Windows, create a temporary directory.
-(Example: C:\foo\tmp)<br><br>
+0) Find (or create) a temporary directory that you have write access to.
+(Example: 'C:\foo\tmp' on Windows or '/tmp' on other systems)<br><br>
 1) Click on the "Add Policy Entry" button in the
 main policytool window.<br><br>
 
@@ -32,13 +32,10 @@ select "Save As".<br><br>
 
 8) In the SaveAs window, enter "/tmp/ptool.test" as the file name
 and click "OK".<br>
-If testing on Windows, use the temporary directory created in Step 0.
-(Example: Save as "C:\foo\tmp\ptool.test")<br><br>
+(Or use the temporary directory mentioned in Step 0 if it's not '/tmp'.
+For example, "C:\foo\tmp\ptool.test" on Windows)<br><br>
 
-9) cat /tmp/ptool.test<br>
-If testing on Windows, check the contents of the file created in the previous
-step.<br><br>
-
+9) Check the content of the file created in the previous step<br><br>
 
 10) check to make sure that the new entry is in the policy file.<br><br>
 
@@ -53,8 +50,8 @@ step.<br><br>
 
 In the confirmation dialog pop-up, click "OK".<br><br>
 
-Exit policytool. If testing on Windows, delete the temporary directory and its
-contents created during this test.<br><br>
+Exit policytool. Delete the files created during this test. If the
+temporary directory is also newly created, empty and delete it.<br><br>
 
 Press "Pass" if ... press "Fail" otherwise.<br><br>
 

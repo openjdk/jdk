@@ -139,7 +139,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
     {
         assert (SunToolkit.isAWTLockHeldByCurrentThread());
         XConfigureEvent xe = xev.get_xconfigure();
-        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+        if (xembedLog.isLoggable(PlatformLogger.Level.FINE)) {
             xembedLog.fine(xe.toString());
         }
 
