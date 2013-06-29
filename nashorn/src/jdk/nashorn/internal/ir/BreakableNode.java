@@ -86,7 +86,7 @@ public abstract class BreakableNode extends LexicalContextNode {
 
     /**
      * Return the labels associated with this node. Breakable nodes that
-     * aren't LoopNodes only have a break label -> the location immediately
+     * aren't LoopNodes only have a break label - the location immediately
      * afterwards the node in code
      * @return list of labels representing locations around this node
      */

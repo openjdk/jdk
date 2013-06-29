@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -72,7 +73,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private final ScriptObject        global;
 
     // default options passed to Nashorn Options object
-    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-af", "-doe" };
+    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-doe" };
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
@@ -121,7 +122,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         try {
             if (reader instanceof URLReader) {
                 final URL url = ((URLReader)reader).getURL();
-                return evalImpl(compileImpl(new Source(url.toString(), url), ctxt), ctxt);
+                final Charset cs = ((URLReader)reader).getCharset();
+                return evalImpl(compileImpl(new Source(url.toString(), url, cs), ctxt), ctxt);
             }
             return evalImpl(Source.readFully(reader), ctxt);
         } catch (final IOException e) {

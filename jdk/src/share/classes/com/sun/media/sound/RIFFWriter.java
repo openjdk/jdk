@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.io.RandomAccessFile;
  *
  * @author Karl Helgason
  */
-public class RIFFWriter extends OutputStream {
+public final class RIFFWriter extends OutputStream {
 
     private interface RandomAccessWriter {
 
@@ -60,11 +60,11 @@ public class RIFFWriter extends OutputStream {
 
         RandomAccessFile raf;
 
-        public RandomAccessFileWriter(File file) throws FileNotFoundException {
+        RandomAccessFileWriter(File file) throws FileNotFoundException {
             this.raf = new RandomAccessFile(file, "rw");
         }
 
-        public RandomAccessFileWriter(String name) throws FileNotFoundException {
+        RandomAccessFileWriter(String name) throws FileNotFoundException {
             this.raf = new RandomAccessFile(name, "rw");
         }
 
@@ -107,9 +107,9 @@ public class RIFFWriter extends OutputStream {
         int length = 0;
         int pos = 0;
         byte[] s;
-        OutputStream stream;
+        final OutputStream stream;
 
-        public RandomAccessByteWriter(OutputStream stream) {
+        RandomAccessByteWriter(OutputStream stream) {
             this.stream = stream;
         }
 
@@ -163,8 +163,8 @@ public class RIFFWriter extends OutputStream {
     }
     private int chunktype = 0; // 0=RIFF, 1=LIST; 2=CHUNK
     private RandomAccessWriter raf;
-    private long chunksizepointer;
-    private long startpointer;
+    private final long chunksizepointer;
+    private final long startpointer;
     private RIFFWriter childchunk = null;
     private boolean open = true;
     private boolean writeoverride = false;

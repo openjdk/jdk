@@ -341,6 +341,9 @@ public class ZipFSTester {
 
     // test file stamp
     static void testTime(Path src) throws Exception {
+        BasicFileAttributes attrs = Files
+                        .getFileAttributeView(src, BasicFileAttributeView.class)
+                        .readAttributes();
         // create a new filesystem, copy this file into it
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
@@ -352,10 +355,6 @@ public class ZipFSTester {
         Path dst = getPathWithParents(fs, "me");
         Files.copy(src, dst, COPY_ATTRIBUTES);
         checkEqual(src, dst);
-
-        BasicFileAttributes attrs = Files
-                        .getFileAttributeView(src, BasicFileAttributeView.class)
-                        .readAttributes();
         System.out.println("mtime: " + attrs.lastModifiedTime());
         System.out.println("ctime: " + attrs.creationTime());
         System.out.println("atime: " + attrs.lastAccessTime());

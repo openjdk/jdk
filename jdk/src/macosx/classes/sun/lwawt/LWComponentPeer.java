@@ -899,7 +899,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                                 boolean focusedWindowChangeAllowed, long time,
                                 CausedFocusEvent.Cause cause)
     {
-        if (focusLog.isLoggable(PlatformLogger.FINEST)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
             focusLog.finest("lightweightChild=" + lightweightChild + ", temporary=" + temporary +
                             ", focusedWindowChangeAllowed=" + focusedWindowChangeAllowed +
                             ", time= " + time + ", cause=" + cause);
@@ -940,7 +940,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                         LWWindowPeer.getOwnerFrameDialog(parentPeer) : parentPeer;
 
                     if (decoratedPeer == null || !decoratedPeer.getPlatformWindow().isActive()) {
-                        if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                        if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                             focusLog.fine("request rejected, focusedWindowChangeAllowed==false, " +
                                           "decoratedPeer is inactive: " + decoratedPeer);
                         }
@@ -953,7 +953,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 // If parent window can be made focused and has been made focused (synchronously)
                 // then we can proceed with children, otherwise we retreat
                 if (!res || !parentWindow.isFocused()) {
-                    if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                    if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                         focusLog.fine("request rejected, res= " + res + ", parentWindow.isFocused()=" +
                                       parentWindow.isFocused());
                     }

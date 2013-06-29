@@ -2403,7 +2403,7 @@ loop:
             verifyStrictIdent(name, "function name");
         } else if (isStatement) {
             // Nashorn extension: anonymous function statements
-            if (env._no_syntax_extensions || !env._anon_functions) {
+            if (env._no_syntax_extensions) {
                 expect(IDENT);
             }
         }

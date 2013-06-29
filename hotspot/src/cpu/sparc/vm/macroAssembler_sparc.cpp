@@ -118,7 +118,6 @@ int MacroAssembler::patched_branch(int dest_pos, int inst, int inst_pos) {
       case bp_op2:     m = wdisp(  word_aligned_ones, 0, 19);  v = wdisp(  dest_pos, inst_pos, 19); break;
       case fb_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
       case br_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
-      case cb_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
       case bpr_op2: {
         if (is_cbcond(inst)) {
           m = wdisp10(word_aligned_ones, 0);
@@ -149,7 +148,6 @@ int MacroAssembler::branch_destination(int inst, int pos) {
       case bp_op2:     r = inv_wdisp(  inst, pos, 19);  break;
       case fb_op2:     r = inv_wdisp(  inst, pos, 22);  break;
       case br_op2:     r = inv_wdisp(  inst, pos, 22);  break;
-      case cb_op2:     r = inv_wdisp(  inst, pos, 22);  break;
       case bpr_op2: {
         if (is_cbcond(inst)) {
           r = inv_wdisp10(inst, pos);
@@ -325,12 +323,6 @@ void MacroAssembler::breakpoint_trap() {
   trap(ST_RESERVED_FOR_USER_0);
 }
 
-// flush windows (except current) using flushw instruction if avail.
-void MacroAssembler::flush_windows() {
-  if (VM_Version::v9_instructions_work())  flushw();
-  else                                     flush_windows_trap();
-}
-
 // Write serialization page so VM thread can do a pseudo remote membar
 // We use the current thread pointer to calculate a thread specific
 // offset to write to within the page. This minimizes bus traffic
@@ -358,88 +350,6 @@ void MacroAssembler::leave() {
   Unimplemented();
 }
 
-void MacroAssembler::mult(Register s1, Register s2, Register d) {
-  if(VM_Version::v9_instructions_work()) {
-    mulx (s1, s2, d);
-  } else {
-    smul (s1, s2, d);
-  }
-}
-
-void MacroAssembler::mult(Register s1, int simm13a, Register d) {
-  if(VM_Version::v9_instructions_work()) {
-    mulx (s1, simm13a, d);
-  } else {
-    smul (s1, simm13a, d);
-  }
-}
-
-
-#ifdef ASSERT
-void MacroAssembler::read_ccr_v8_assert(Register ccr_save) {
-  const Register s1 = G3_scratch;
-  const Register s2 = G4_scratch;
-  Label get_psr_test;
-  // Get the condition codes the V8 way.
-  read_ccr_trap(s1);
-  mov(ccr_save, s2);
-  // This is a test of V8 which has icc but not xcc
-  // so mask off the xcc bits
-  and3(s2, 0xf, s2);
-  // Compare condition codes from the V8 and V9 ways.
-  subcc(s2, s1, G0);
-  br(Assembler::notEqual, true, Assembler::pt, get_psr_test);
-  delayed()->breakpoint_trap();
-  bind(get_psr_test);
-}
-
-void MacroAssembler::write_ccr_v8_assert(Register ccr_save) {
-  const Register s1 = G3_scratch;
-  const Register s2 = G4_scratch;
-  Label set_psr_test;
-  // Write out the saved condition codes the V8 way
-  write_ccr_trap(ccr_save, s1, s2);
-  // Read back the condition codes using the V9 instruction
-  rdccr(s1);
-  mov(ccr_save, s2);
-  // This is a test of V8 which has icc but not xcc
-  // so mask off the xcc bits
-  and3(s2, 0xf, s2);
-  and3(s1, 0xf, s1);
-  // Compare the V8 way with the V9 way.
-  subcc(s2, s1, G0);
-  br(Assembler::notEqual, true, Assembler::pt, set_psr_test);
-  delayed()->breakpoint_trap();
-  bind(set_psr_test);
-}
-#else
-#define read_ccr_v8_assert(x)
-#define write_ccr_v8_assert(x)
-#endif // ASSERT
-
-void MacroAssembler::read_ccr(Register ccr_save) {
-  if (VM_Version::v9_instructions_work()) {
-    rdccr(ccr_save);
-    // Test code sequence used on V8.  Do not move above rdccr.
-    read_ccr_v8_assert(ccr_save);
-  } else {
-    read_ccr_trap(ccr_save);
-  }
-}
-
-void MacroAssembler::write_ccr(Register ccr_save) {
-  if (VM_Version::v9_instructions_work()) {
-    // Test code sequence used on V8.  Do not move below wrccr.
-    write_ccr_v8_assert(ccr_save);
-    wrccr(ccr_save);
-  } else {
-    const Register temp_reg1 = G3_scratch;
-    const Register temp_reg2 = G4_scratch;
-    write_ccr_trap(ccr_save, temp_reg1, temp_reg2);
-  }
-}
-
-
 // Calls to C land
 
 #ifdef ASSERT
@@ -465,8 +375,8 @@ void MacroAssembler::get_thread() {
 #ifdef ASSERT
   AddressLiteral last_get_thread_addrlit(&last_get_thread);
   set(last_get_thread_addrlit, L3);
-  inc(L4, get_pc(L4) + 2 * BytesPerInstWord); // skip getpc() code + inc + st_ptr to point L4 at call
-  st_ptr(L4, L3, 0);
+  rdpc(L4);
+  inc(L4, 3 * BytesPerInstWord); // skip rdpc + inc + st_ptr to point L4 at call  st_ptr(L4, L3, 0);
 #endif
   call(CAST_FROM_FN_PTR(address, reinitialize_thread), relocInfo::runtime_call_type);
   delayed()->nop();
@@ -1327,7 +1237,7 @@ void RegistersForDebugging::print(outputStream* s) {
 
 void RegistersForDebugging::save_registers(MacroAssembler* a) {
   a->sub(FP, round_to(sizeof(RegistersForDebugging), sizeof(jdouble)) - STACK_BIAS, O0);
-  a->flush_windows();
+  a->flushw();
   int i;
   for (i = 0; i < 8; ++i) {
     a->ld_ptr(as_iRegister(i)->address_in_saved_window().after_save(), L1);  a->st_ptr( L1, O0, i_offset(i));
@@ -1338,7 +1248,7 @@ void RegistersForDebugging::save_registers(MacroAssembler* a) {
   for (i = 0;  i < 32; ++i) {
     a->stf(FloatRegisterImpl::S, as_FloatRegister(i), O0, f_offset(i));
   }
-  for (i = 0; i < (VM_Version::v9_instructions_work() ? 64 : 32); i += 2) {
+  for (i = 0; i < 64; i += 2) {
     a->stf(FloatRegisterImpl::D, as_FloatRegister(i), O0, d_offset(i));
   }
 }
@@ -1350,7 +1260,7 @@ void RegistersForDebugging::restore_registers(MacroAssembler* a, Register r) {
   for (int j = 0; j < 32; ++j) {
     a->ldf(FloatRegisterImpl::S, O0, f_offset(j), as_FloatRegister(j));
   }
-  for (int k = 0; k < (VM_Version::v9_instructions_work() ? 64 : 32); k += 2) {
+  for (int k = 0; k < 64; k += 2) {
     a->ldf(FloatRegisterImpl::D, O0, d_offset(k), as_FloatRegister(k));
   }
 }
@@ -1465,8 +1375,6 @@ address MacroAssembler::_verify_oop_implicit_branch[3] = { NULL };
 // the high bits of the O-regs if they contain Long values.  Acts as a 'leaf'
 // call.
 void MacroAssembler::verify_oop_subroutine() {
-  assert( VM_Version::v9_instructions_work(), "VerifyOops not supported for V8" );
-
   // Leaf call; no frame.
   Label succeed, fail, null_or_fail;
 
@@ -1870,26 +1778,17 @@ void MacroAssembler::lcmp( Register Ra_hi, Register Ra_low,
   // And the equals case for the high part does not need testing,
   // since that triplet is reached only after finding the high halves differ.
 
-  if (VM_Version::v9_instructions_work()) {
-    mov(-1, Rresult);
-    ba(done);  delayed()-> movcc(greater, false, icc,  1, Rresult);
-  } else {
-    br(less,    true, pt, done); delayed()-> set(-1, Rresult);
-    br(greater, true, pt, done); delayed()-> set( 1, Rresult);
-  }
+  mov(-1, Rresult);
+  ba(done);
+  delayed()->movcc(greater, false, icc,  1, Rresult);
 
-  bind( check_low_parts );
+  bind(check_low_parts);
 
-  if (VM_Version::v9_instructions_work()) {
-    mov(                               -1, Rresult);
-    movcc(equal,           false, icc,  0, Rresult);
-    movcc(greaterUnsigned, false, icc,  1, Rresult);
-  } else {
-    set(-1, Rresult);
-    br(equal,           true, pt, done); delayed()->set( 0, Rresult);
-    br(greaterUnsigned, true, pt, done); delayed()->set( 1, Rresult);
-  }
-  bind( done );
+  mov(                               -1, Rresult);
+  movcc(equal,           false, icc,  0, Rresult);
+  movcc(greaterUnsigned, false, icc,  1, Rresult);
+
+  bind(done);
 }
 
 void MacroAssembler::lneg( Register Rhi, Register Rlow ) {
@@ -2117,118 +2016,23 @@ void MacroAssembler::store_sized_value(Register src, Address dst, size_t size_in
 void MacroAssembler::float_cmp( bool is_float, int unordered_result,
                                 FloatRegister Fa, FloatRegister Fb,
                                 Register Rresult) {
-
-  fcmp(is_float ? FloatRegisterImpl::S : FloatRegisterImpl::D, fcc0, Fa, Fb);
-
-  Condition lt = unordered_result == -1 ? f_unorderedOrLess    : f_less;
-  Condition eq =                          f_equal;
-  Condition gt = unordered_result ==  1 ? f_unorderedOrGreater : f_greater;
-
-  if (VM_Version::v9_instructions_work()) {
-
-    mov(-1, Rresult);
-    movcc(eq, true, fcc0, 0, Rresult);
-    movcc(gt, true, fcc0, 1, Rresult);
-
+  if (is_float) {
+    fcmp(FloatRegisterImpl::S, fcc0, Fa, Fb);
   } else {
-    Label done;
+    fcmp(FloatRegisterImpl::D, fcc0, Fa, Fb);
+  }
 
-    set( -1, Rresult );
-    //fb(lt, true, pn, done); delayed()->set( -1, Rresult );
-    fb( eq, true, pn, done);  delayed()->set(  0, Rresult );
-    fb( gt, true, pn, done);  delayed()->set(  1, Rresult );
-
-    bind (done);
+  if (unordered_result == 1) {
+    mov(                                    -1, Rresult);
+    movcc(f_equal,              true, fcc0,  0, Rresult);
+    movcc(f_unorderedOrGreater, true, fcc0,  1, Rresult);
+  } else {
+    mov(                                    -1, Rresult);
+    movcc(f_equal,              true, fcc0,  0, Rresult);
+    movcc(f_greater,            true, fcc0,  1, Rresult);
   }
 }
 
-
-void MacroAssembler::fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d)
-{
-  if (VM_Version::v9_instructions_work()) {
-    Assembler::fneg(w, s, d);
-  } else {
-    if (w == FloatRegisterImpl::S) {
-      Assembler::fneg(w, s, d);
-    } else if (w == FloatRegisterImpl::D) {
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 1) == 0) &&
-        ((d->encoding(FloatRegisterImpl::D) & 1) == 0), "float register alignment check");
-
-      Assembler::fneg(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-    } else {
-      assert(w == FloatRegisterImpl::Q, "Invalid float register width");
-
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 3) == 0) &&
-        ((d->encoding(FloatRegisterImpl::D) & 3) == 0), "float register alignment check");
-
-      Assembler::fneg(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor(), d->successor()->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor()->successor(), d->successor()->successor()->successor());
-    }
-  }
-}
-
-void MacroAssembler::fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d)
-{
-  if (VM_Version::v9_instructions_work()) {
-    Assembler::fmov(w, s, d);
-  } else {
-    if (w == FloatRegisterImpl::S) {
-      Assembler::fmov(w, s, d);
-    } else if (w == FloatRegisterImpl::D) {
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 1) == 0) &&
-        ((d->encoding(FloatRegisterImpl::D) & 1) == 0), "float register alignment check");
-
-      Assembler::fmov(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-    } else {
-      assert(w == FloatRegisterImpl::Q, "Invalid float register width");
-
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 3) == 0) &&
-        ((d->encoding(FloatRegisterImpl::D) & 3) == 0), "float register alignment check");
-
-      Assembler::fmov(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor(), d->successor()->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor()->successor(), d->successor()->successor()->successor());
-    }
-  }
-}
-
-void MacroAssembler::fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d)
-{
-  if (VM_Version::v9_instructions_work()) {
-    Assembler::fabs(w, s, d);
-  } else {
-    if (w == FloatRegisterImpl::S) {
-      Assembler::fabs(w, s, d);
-    } else if (w == FloatRegisterImpl::D) {
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 1) == 0) &&
-        ((d->encoding(FloatRegisterImpl::D) & 1) == 0), "float register alignment check");
-
-      Assembler::fabs(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-    } else {
-      assert(w == FloatRegisterImpl::Q, "Invalid float register width");
-
-      // number() does a sanity check on the alignment.
-      assert(((s->encoding(FloatRegisterImpl::D) & 3) == 0) &&
-       ((d->encoding(FloatRegisterImpl::D) & 3) == 0), "float register alignment check");
-
-      Assembler::fabs(FloatRegisterImpl::S, s, d);
-      Assembler::fmov(FloatRegisterImpl::S, s->successor(), d->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor(), d->successor()->successor());
-      Assembler::fmov(FloatRegisterImpl::S, s->successor()->successor()->successor(), d->successor()->successor()->successor());
-    }
-  }
-}
 
 void MacroAssembler::save_all_globals_into_locals() {
   mov(G1,L1);
@@ -2248,135 +2052,6 @@ void MacroAssembler::restore_globals_from_locals() {
   mov(L5,G5);
   mov(L6,G6);
   mov(L7,G7);
-}
-
-// Use for 64 bit operation.
-void MacroAssembler::casx_under_lock(Register top_ptr_reg, Register top_reg, Register ptr_reg, address lock_addr, bool use_call_vm)
-{
-  // store ptr_reg as the new top value
-#ifdef _LP64
-  casx(top_ptr_reg, top_reg, ptr_reg);
-#else
-  cas_under_lock(top_ptr_reg, top_reg, ptr_reg, lock_addr, use_call_vm);
-#endif // _LP64
-}
-
-// [RGV] This routine does not handle 64 bit operations.
-//       use casx_under_lock() or casx directly!!!
-void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Register ptr_reg, address lock_addr, bool use_call_vm)
-{
-  // store ptr_reg as the new top value
-  if (VM_Version::v9_instructions_work()) {
-    cas(top_ptr_reg, top_reg, ptr_reg);
-  } else {
-
-    // If the register is not an out nor global, it is not visible
-    // after the save.  Allocate a register for it, save its
-    // value in the register save area (the save may not flush
-    // registers to the save area).
-
-    Register top_ptr_reg_after_save;
-    Register top_reg_after_save;
-    Register ptr_reg_after_save;
-
-    if (top_ptr_reg->is_out() || top_ptr_reg->is_global()) {
-      top_ptr_reg_after_save = top_ptr_reg->after_save();
-    } else {
-      Address reg_save_addr = top_ptr_reg->address_in_saved_window();
-      top_ptr_reg_after_save = L0;
-      st(top_ptr_reg, reg_save_addr);
-    }
-
-    if (top_reg->is_out() || top_reg->is_global()) {
-      top_reg_after_save = top_reg->after_save();
-    } else {
-      Address reg_save_addr = top_reg->address_in_saved_window();
-      top_reg_after_save = L1;
-      st(top_reg, reg_save_addr);
-    }
-
-    if (ptr_reg->is_out() || ptr_reg->is_global()) {
-      ptr_reg_after_save = ptr_reg->after_save();
-    } else {
-      Address reg_save_addr = ptr_reg->address_in_saved_window();
-      ptr_reg_after_save = L2;
-      st(ptr_reg, reg_save_addr);
-    }
-
-    const Register& lock_reg = L3;
-    const Register& lock_ptr_reg = L4;
-    const Register& value_reg = L5;
-    const Register& yield_reg = L6;
-    const Register& yieldall_reg = L7;
-
-    save_frame();
-
-    if (top_ptr_reg_after_save == L0) {
-      ld(top_ptr_reg->address_in_saved_window().after_save(), top_ptr_reg_after_save);
-    }
-
-    if (top_reg_after_save == L1) {
-      ld(top_reg->address_in_saved_window().after_save(), top_reg_after_save);
-    }
-
-    if (ptr_reg_after_save == L2) {
-      ld(ptr_reg->address_in_saved_window().after_save(), ptr_reg_after_save);
-    }
-
-    Label(retry_get_lock);
-    Label(not_same);
-    Label(dont_yield);
-
-    assert(lock_addr, "lock_address should be non null for v8");
-    set((intptr_t)lock_addr, lock_ptr_reg);
-    // Initialize yield counter
-    mov(G0,yield_reg);
-    mov(G0, yieldall_reg);
-    set(StubRoutines::Sparc::locked, lock_reg);
-
-    bind(retry_get_lock);
-    cmp_and_br_short(yield_reg, V8AtomicOperationUnderLockSpinCount, Assembler::less, Assembler::pt, dont_yield);
-
-    if(use_call_vm) {
-      Untested("Need to verify global reg consistancy");
-      call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::yield_all), yieldall_reg);
-    } else {
-      // Save the regs and make space for a C call
-      save(SP, -96, SP);
-      save_all_globals_into_locals();
-      call(CAST_FROM_FN_PTR(address,os::yield_all));
-      delayed()->mov(yieldall_reg, O0);
-      restore_globals_from_locals();
-      restore();
-    }
-
-    // reset the counter
-    mov(G0,yield_reg);
-    add(yieldall_reg, 1, yieldall_reg);
-
-    bind(dont_yield);
-    // try to get lock
-    Assembler::swap(lock_ptr_reg, 0, lock_reg);
-
-    // did we get the lock?
-    cmp(lock_reg, StubRoutines::Sparc::unlocked);
-    br(Assembler::notEqual, true, Assembler::pn, retry_get_lock);
-    delayed()->add(yield_reg,1,yield_reg);
-
-    // yes, got lock.  do we have the same top?
-    ld(top_ptr_reg_after_save, 0, value_reg);
-    cmp_and_br_short(value_reg, top_reg_after_save, Assembler::notEqual, Assembler::pn, not_same);
-
-    // yes, same top.
-    st(ptr_reg_after_save, top_ptr_reg_after_save, 0);
-    membar(Assembler::StoreStore);
-
-    bind(not_same);
-    mov(value_reg, ptr_reg_after_save);
-    st(lock_reg, lock_ptr_reg, 0); // unlock
-
-    restore();
-  }
 }
 
 RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
@@ -2970,7 +2645,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
                   markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place,
                   mark_reg);
   or3(G2_thread, mark_reg, temp_reg);
-  casn(mark_addr.base(), mark_reg, temp_reg);
+  cas_ptr(mark_addr.base(), mark_reg, temp_reg);
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
   // need to revoke that bias. The revocation will occur in the
@@ -2998,7 +2673,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
-  casn(mark_addr.base(), mark_reg, temp_reg);
+  cas_ptr(mark_addr.base(), mark_reg, temp_reg);
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
   // need to revoke that bias. The revocation will occur in the
@@ -3027,7 +2702,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // bits in this situation. Should attempt to preserve them.
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
-  casn(mark_addr.base(), mark_reg, temp_reg);
+  cas_ptr(mark_addr.base(), mark_reg, temp_reg);
   // Fall through to the normal CAS-based lock, because no matter what
   // the result of the above CAS, some thread must have succeeded in
   // removing the bias bit from the object's header.
@@ -3056,15 +2731,6 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
     nop();
   }
 }
-
-
-// CASN -- 32-64 bit switch hitter similar to the synthetic CASN provided by
-// Solaris/SPARC's "as".  Another apt name would be cas_ptr()
-
-void MacroAssembler::casn (Register addr_reg, Register cmp_reg, Register set_reg ) {
-  casx_under_lock (addr_reg, cmp_reg, set_reg, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
-}
-
 
 
 // compiler_lock_object() and compiler_unlock_object() are direct transliterations
@@ -3129,8 +2795,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
 
      // compare object markOop with Rmark and if equal exchange Rscratch with object markOop
      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-     casx_under_lock(mark_addr.base(), Rmark, Rscratch,
-        (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+     cas_ptr(mark_addr.base(), Rmark, Rscratch);
 
      // if compare/exchange succeeded we found an unlocked object and we now have locked it
      // hence we are done
@@ -3176,7 +2841,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       mov(Rbox,  Rscratch);
       or3(Rmark, markOopDesc::unlocked_value, Rmark);
       assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-      casn(mark_addr.base(), Rmark, Rscratch);
+      cas_ptr(mark_addr.base(), Rmark, Rscratch);
       cmp(Rmark, Rscratch);
       brx(Assembler::equal, false, Assembler::pt, done);
       delayed()->sub(Rscratch, SP, Rscratch);
@@ -3207,7 +2872,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       // Invariant: if we acquire the lock then _recursions should be 0.
       add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
       mov(G2_thread, Rscratch);
-      casn(Rmark, G0, Rscratch);
+      cas_ptr(Rmark, G0, Rscratch);
       cmp(Rscratch, G0);
       // Intentional fall-through into done
    } else {
@@ -3240,7 +2905,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       mov(0, Rscratch);
       or3(Rmark, markOopDesc::unlocked_value, Rmark);
       assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-      casn(mark_addr.base(), Rmark, Rscratch);
+      cas_ptr(mark_addr.base(), Rmark, Rscratch);
 // prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
       cmp(Rscratch, Rmark);
       brx(Assembler::notZero, false, Assembler::pn, Recursive);
@@ -3266,7 +2931,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       // the fast-path stack-lock code from the interpreter and always passed
       // control to the "slow" operators in synchronizer.cpp.
 
-      // RScratch contains the fetched obj->mark value from the failed CASN.
+      // RScratch contains the fetched obj->mark value from the failed CAS.
 #ifdef _LP64
       sub(Rscratch, STACK_BIAS, Rscratch);
 #endif
@@ -3300,7 +2965,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       // Invariant: if we acquire the lock then _recursions should be 0.
       add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
       mov(G2_thread, Rscratch);
-      casn(Rmark, G0, Rscratch);
+      cas_ptr(Rmark, G0, Rscratch);
       cmp(Rscratch, G0);
       // ST box->displaced_header = NonZero.
       // Any non-zero value suffices:
@@ -3336,8 +3001,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
      // Check if it is still a light weight lock, this is is true if we see
      // the stack address of the basicLock in the markOop of the object
      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-     casx_under_lock(mark_addr.base(), Rbox, Rmark,
-       (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+     cas_ptr(mark_addr.base(), Rbox, Rmark);
      ba(done);
      delayed()->cmp(Rbox, Rmark);
      bind(done);
@@ -3398,7 +3062,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
       delayed()->andcc(G0, G0, G0);
       add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
       mov(G2_thread, Rscratch);
-      casn(Rmark, G0, Rscratch);
+      cas_ptr(Rmark, G0, Rscratch);
       // invert icc.zf and goto done
       br_notnull(Rscratch, false, Assembler::pt, done);
       delayed()->cmp(G0, G0);
@@ -3440,7 +3104,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // A prototype implementation showed excellent results, although
    // the scavenger and timeout code was rather involved.
 
-   casn(mark_addr.base(), Rbox, Rscratch);
+   cas_ptr(mark_addr.base(), Rbox, Rscratch);
    cmp(Rbox, Rscratch);
    // Intentional fall through into done ...
 
@@ -3540,7 +3204,8 @@ void MacroAssembler::eden_allocate(
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    ba_short(slow_case);
+    ba(slow_case);
+    delayed()->nop();
   } else {
     // get eden boundaries
     // note: we need both top & top_addr!
@@ -3583,7 +3248,7 @@ void MacroAssembler::eden_allocate(
     // Compare obj with the value at top_addr; if still equal, swap the value of
     // end with the value at top_addr. If not equal, read the value at top_addr
     // into end.
-    casx_under_lock(top_addr, obj, end, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    cas_ptr(top_addr, obj, end);
     // if someone beat us on the allocation, try again, otherwise continue
     cmp(obj, end);
     brx(Assembler::notEqual, false, Assembler::pn, retry);

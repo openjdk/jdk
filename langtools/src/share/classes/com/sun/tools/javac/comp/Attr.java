@@ -1172,8 +1172,11 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
         try {
-            attribStat(tree.var, loopEnv);
+            //the Formal Parameter of a for-each loop is not in the scope when
+            //attributing the for-each expression; we mimick this by attributing
+            //the for-each expression first (against original scope).
             Type exprType = types.upperBound(attribExpr(tree.expr, loopEnv));
+            attribStat(tree.var, loopEnv);
             chk.checkNonVoid(tree.pos(), exprType);
             Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
             if (elemtype == null) {
@@ -1529,21 +1532,23 @@ public class Attr extends JCTree.Visitor {
                 // If one arm has an integer subrange type (i.e., byte,
                 // short, or char), and the other is an integer constant
                 // that fits into the subrange, return the subrange type.
-                if (thenUnboxed.getTag().isStrictSubRangeOf(INT) && elseUnboxed.hasTag(INT) &&
-                    types.isAssignable(elseUnboxed, thenUnboxed))
+                if (thenUnboxed.getTag().isStrictSubRangeOf(INT) &&
+                    elseUnboxed.hasTag(INT) &&
+                    types.isAssignable(elseUnboxed, thenUnboxed)) {
                     return thenUnboxed.baseType();
-                if (elseUnboxed.getTag().isStrictSubRangeOf(INT) && thenUnboxed.hasTag(INT) &&
-                    types.isAssignable(thenUnboxed, elseUnboxed))
+                }
+                if (elseUnboxed.getTag().isStrictSubRangeOf(INT) &&
+                    thenUnboxed.hasTag(INT) &&
+                    types.isAssignable(thenUnboxed, elseUnboxed)) {
                     return elseUnboxed.baseType();
+                }
 
-                for (TypeTag tag : TypeTag.values()) {
-                    if (tag.ordinal() >= TypeTag.getTypeTagCount()) break;
+                for (TypeTag tag : primitiveTags) {
                     Type candidate = syms.typeOfTag[tag.ordinal()];
-                    if (candidate != null &&
-                        candidate.isPrimitive() &&
-                        types.isSubtype(thenUnboxed, candidate) &&
-                        types.isSubtype(elseUnboxed, candidate))
+                    if (types.isSubtype(thenUnboxed, candidate) &&
+                        types.isSubtype(elseUnboxed, candidate)) {
                         return candidate;
+                    }
                 }
             }
 
@@ -1571,6 +1576,17 @@ public class Attr extends JCTree.Visitor {
             // always be possible to infer "Object" if nothing better.
             return types.lub(thentype.baseType(), elsetype.baseType());
         }
+
+    final static TypeTag[] primitiveTags = new TypeTag[]{
+        BYTE,
+        CHAR,
+        SHORT,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        BOOLEAN,
+    };
 
     public void visitIf(JCIf tree) {
         attribExpr(tree.cond, env, syms.booleanType);
@@ -1830,9 +1846,6 @@ public class Attr extends JCTree.Visitor {
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, resultInfo);
-
-            if (localEnv.info.lastResolveVarargs())
-                Assert.check(result.isErroneous() || tree.varargsElement != null);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -2609,7 +2622,7 @@ public class Attr extends JCTree.Visitor {
                 //field initializer
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared()));
                 lambdaEnv.info.scope.owner =
-                    new MethodSymbol(0, names.empty, null,
+                    new MethodSymbol((owner.flags() & STATIC) | BLOCK, names.empty, null,
                                      env.info.scope.owner);
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
@@ -3405,7 +3418,7 @@ public class Attr extends JCTree.Visitor {
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
             boolean isPolymorhicSignature =
-                sym.kind == MTH && ((MethodSymbol)sym.baseSymbol()).isSignaturePolymorphic(types);
+                (sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) != 0;
             return isPolymorhicSignature ?
                     checkSigPolyMethodId(tree, site, sym, env, resultInfo) :
                     checkMethodIdInternal(tree, site, sym, env, resultInfo);
@@ -3730,8 +3743,28 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes,
                     noteWarner);
 
+            DeferredAttr.DeferredTypeMap checkDeferredMap =
+                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+
+            argtypes = Type.map(argtypes, checkDeferredMap);
+
+            if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
+                chk.warnUnchecked(env.tree.pos(),
+                        "unchecked.meth.invocation.applied",
+                        kindName(sym),
+                        sym.name,
+                        rs.methodArguments(sym.type.getParameterTypes()),
+                        rs.methodArguments(Type.map(argtypes, checkDeferredMap)),
+                        kindName(sym.location()),
+                        sym.location());
+               owntype = new MethodType(owntype.getParameterTypes(),
+                       types.erasure(owntype.getReturnType()),
+                       types.erasure(owntype.getThrownTypes()),
+                       syms.methodClass);
+            }
+
             return chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
-                    noteWarner.hasNonSilentLint(LintCategory.UNCHECKED), resultInfo.checkContext.inferenceContext());
+                    resultInfo.checkContext.inferenceContext());
         } catch (Infer.InferenceException ex) {
             //invalid target type - propagate exception outwards or report error
             //depending on the current check context

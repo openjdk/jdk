@@ -26,13 +26,14 @@
 package javax.swing.tree;
 
 import javax.swing.event.TreeModelEvent;
-import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.Vector;
+
+import sun.swing.SwingUtilities2;
 
 /**
  * NOTE: This will become more open in a future release.
@@ -413,7 +414,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             TreeStateNode     changedNode;
 
             changedIndexs = e.getChildIndices();
-            changedNode = getNodeForPath(e.getTreePath(), false, false);
+            changedNode = getNodeForPath(SwingUtilities2.getTreePath(e, getModel()), false, false);
             if(changedNode != null) {
                 Object            changedValue = changedNode.getValue();
 
@@ -466,7 +467,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             TreeStateNode     changedParentNode;
 
             changedIndexs = e.getChildIndices();
-            changedParentNode = getNodeForPath(e.getTreePath(), false, false);
+            changedParentNode = getNodeForPath(SwingUtilities2.getTreePath(e, getModel()), false, false);
             /* Only need to update the children if the node has been
                expanded once. */
             // PENDING(scott): make sure childIndexs is sorted!
@@ -540,7 +541,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             TreeStateNode     changedParentNode;
 
             changedIndexs = e.getChildIndices();
-            changedParentNode = getNodeForPath(e.getTreePath(), false, false);
+            changedParentNode = getNodeForPath(SwingUtilities2.getTreePath(e, getModel()), false, false);
             // PENDING(scott): make sure that changedIndexs are sorted in
             // ascending order.
             if(changedParentNode != null && changedIndexs != null &&
@@ -628,7 +629,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
     public void treeStructureChanged(TreeModelEvent e) {
         if(e != null)
         {
-            TreePath          changedPath = e.getTreePath();
+            TreePath          changedPath = SwingUtilities2.getTreePath(e, getModel());
             TreeStateNode     changedNode;
 
             changedNode = getNodeForPath(changedPath, false, false);

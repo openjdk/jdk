@@ -127,6 +127,8 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "espressioni Codebase multiple"},
         {"multiple.SignedBy.expressions","espressioni SignedBy multiple"},
+        {"duplicate.keystore.domain.name","nome dominio keystore duplicato: {0}"},
+        {"duplicate.keystore.name","nome keystore duplicato: {0}"},
         {"SignedBy.has.empty.alias","SignedBy presenta un alias vuoto"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "impossibile specificare un principal con una classe carattere jolly senza un nome carattere jolly"},

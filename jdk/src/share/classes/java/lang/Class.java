@@ -708,8 +708,9 @@ public final class Class<T> implements java.io.Serializable,
      */
     @SuppressWarnings("unchecked")
     public TypeVariable<Class<T>>[] getTypeParameters() {
-        if (getGenericSignature() != null)
-            return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
+        ClassRepository info = getGenericInfo();
+        if (info != null)
+            return (TypeVariable<Class<T>>[])info.getTypeParameters();
         else
             return (TypeVariable<Class<T>>[])new TypeVariable<?>[0];
     }
@@ -759,15 +760,19 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public Type getGenericSuperclass() {
-        if (getGenericSignature() != null) {
-            // Historical irregularity:
-            // Generic signature marks interfaces with superclass = Object
-            // but this API returns null for interfaces
-            if (isInterface())
-                return null;
-            return getGenericInfo().getSuperclass();
-        } else
+        ClassRepository info = getGenericInfo();
+        if (info == null) {
             return getSuperclass();
+        }
+
+        // Historical irregularity:
+        // Generic signature marks interfaces with superclass = Object
+        // but this API returns null for interfaces
+        if (isInterface()) {
+            return null;
+        }
+
+        return info.getSuperclass();
     }
 
     /**
@@ -830,7 +835,23 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return an array of interfaces implemented by this class.
      */
-    public native Class<?>[] getInterfaces();
+    public Class<?>[] getInterfaces() {
+        ReflectionData<T> rd = reflectionData();
+        if (rd == null) {
+            // no cloning required
+            return getInterfaces0();
+        } else {
+            Class<?>[] interfaces = rd.interfaces;
+            if (interfaces == null) {
+                interfaces = getInterfaces0();
+                rd.interfaces = interfaces;
+            }
+            // defensively copy before handing over to user code
+            return interfaces.clone();
+        }
+    }
+
+    private native Class<?>[] getInterfaces0();
 
     /**
      * Returns the {@code Type}s representing the interfaces
@@ -882,10 +903,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public Type[] getGenericInterfaces() {
-        if (getGenericSignature() != null)
-            return getGenericInfo().getSuperInterfaces();
-        else
-            return getInterfaces();
+        ClassRepository info = getGenericInfo();
+        return (info == null) ?  getInterfaces() : info.getSuperInterfaces();
     }
 
 
@@ -962,9 +981,28 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the immediately enclosing method of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and any of the
+     *             following conditions is met:
+     *
+     *             <ul>
+     *
+     *             <li> invocation of
+     *             {@link SecurityManager#checkMemberAccess
+     *             s.checkMemberAccess(enclosingClass, Member.DECLARED)} denies
+     *             access to the methods within the enclosing class
+     *
+     *             <li> the caller's class loader is not the same as or an
+     *             ancestor of the class loader for the enclosing class and
+     *             invocation of {@link SecurityManager#checkPackageAccess
+     *             s.checkPackageAccess()} denies access to the package
+     *             of the enclosing class
+     *
+     *             </ul>
      * @since 1.5
      */
-    public Method getEnclosingMethod() {
+    @CallerSensitive
+    public Method getEnclosingMethod() throws SecurityException {
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
 
         if (enclosingInfo == null)
@@ -985,13 +1023,22 @@ public final class Class<T> implements java.io.Serializable,
             for(int i = 0; i < parameterClasses.length; i++)
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
+            // Perform access check
+            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            // be very careful not to change the stack depth of this
+            // checkMemberAccess call for security reasons
+            // see java.lang.SecurityManager.checkMemberAccess
+            //
+            // Note that we need to do this on the enclosing class
+            enclosingCandidate.checkMemberAccess(Member.DECLARED,
+                                                 Reflection.getCallerClass(), true);
             /*
              * Loop over all declared methods; match method name,
              * number of and type of parameters, *and* return
              * type.  Matching return type is also necessary
              * because of covariant returns, etc.
              */
-            for(Method m: enclosingInfo.getEnclosingClass().getDeclaredMethods()) {
+            for(Method m: enclosingCandidate.getDeclaredMethods()) {
                 if (m.getName().equals(enclosingInfo.getName()) ) {
                     Class<?>[] candidateParamClasses = m.getParameterTypes();
                     if (candidateParamClasses.length == parameterClasses.length) {
@@ -1090,9 +1137,28 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the immediately enclosing constructor of the underlying class, if
      *     that class is a local or anonymous class; otherwise {@code null}.
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and any of the
+     *             following conditions is met:
+     *
+     *             <ul>
+     *
+     *             <li> invocation of
+     *             {@link SecurityManager#checkMemberAccess
+     *             s.checkMemberAccess(enclosingClass, Member.DECLARED)} denies
+     *             access to the constructors within the enclosing class
+     *
+     *             <li> the caller's class loader is not the same as or an
+     *             ancestor of the class loader for the enclosing class and
+     *             invocation of {@link SecurityManager#checkPackageAccess
+     *             s.checkPackageAccess()} denies access to the package
+     *             of the enclosing class
+     *
+     *             </ul>
      * @since 1.5
      */
-    public Constructor<?> getEnclosingConstructor() {
+    @CallerSensitive
+    public Constructor<?> getEnclosingConstructor() throws SecurityException {
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
 
         if (enclosingInfo == null)
@@ -1112,11 +1178,20 @@ public final class Class<T> implements java.io.Serializable,
             for(int i = 0; i < parameterClasses.length; i++)
                 parameterClasses[i] = toClass(parameterTypes[i]);
 
+            // Perform access check
+            Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
+            // be very careful not to change the stack depth of this
+            // checkMemberAccess call for security reasons
+            // see java.lang.SecurityManager.checkMemberAccess
+            //
+            // Note that we need to do this on the enclosing class
+            enclosingCandidate.checkMemberAccess(Member.DECLARED,
+                                                 Reflection.getCallerClass(), true);
             /*
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            for(Constructor<?> c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
+            for(Constructor<?> c: enclosingCandidate.getDeclaredConstructors()) {
                 Class<?>[] candidateParamClasses = c.getParameterTypes();
                 if (candidateParamClasses.length == parameterClasses.length) {
                     boolean matches = true;
@@ -1156,9 +1231,16 @@ public final class Class<T> implements java.io.Serializable,
      * class.  If the underlying class is a top level class this
      * method returns {@code null}.
      * @return the immediately enclosing class of the underlying class
+     * @exception  SecurityException
+     *             If a security manager, <i>s</i>, is present and the caller's
+     *             class loader is not the same as or an ancestor of the class
+     *             loader for the enclosing class and invocation of {@link
+     *             SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *             denies access to the package of the enclosing class
      * @since 1.5
      */
-    public Class<?> getEnclosingClass() {
+    @CallerSensitive
+    public Class<?> getEnclosingClass() throws SecurityException {
         // There are five kinds of classes (or interfaces):
         // a) Top level classes
         // b) Nested classes (static member classes)
@@ -1171,18 +1253,24 @@ public final class Class<T> implements java.io.Serializable,
         // attribute if and only if it is a local class or an
         // anonymous class.
         EnclosingMethodInfo enclosingInfo = getEnclosingMethodInfo();
+        Class<?> enclosingCandidate;
 
         if (enclosingInfo == null) {
             // This is a top level or a nested class or an inner class (a, b, or c)
-            return getDeclaringClass();
+            enclosingCandidate = getDeclaringClass();
         } else {
             Class<?> enclosingClass = enclosingInfo.getEnclosingClass();
             // This is a local class or an anonymous class (d or e)
             if (enclosingClass == this || enclosingClass == null)
                 throw new InternalError("Malformed enclosing method information");
             else
-                return enclosingClass;
+                enclosingCandidate = enclosingClass;
         }
+
+        if (enclosingCandidate != null)
+            enclosingCandidate.checkPackageAccess(
+                    ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+        return enclosingCandidate;
     }
 
     /**
@@ -2212,14 +2300,6 @@ public final class Class<T> implements java.io.Serializable,
      */
     private native java.security.ProtectionDomain getProtectionDomain0();
 
-
-    /**
-     * Set the ProtectionDomain for this class. Called by
-     * ClassLoader.defineClass.
-     */
-    native void setProtectionDomain0(java.security.ProtectionDomain pd);
-
-
     /*
      * Return the Virtual Machine's Class object for the named
      * primitive type.
@@ -2237,6 +2317,8 @@ public final class Class<T> implements java.io.Serializable,
     /*
      * Check if client is allowed to access members.  If access is denied,
      * throw a SecurityException.
+     *
+     * This method also enforces package access.
      *
      * <p> Default policy: allow all clients access with normal Java access
      * control.
@@ -2258,7 +2340,19 @@ public final class Class<T> implements java.io.Serializable,
                 // checkMemberAccess of subclasses of SecurityManager as specified.
                 s.checkMemberAccess(this, which);
             }
+            this.checkPackageAccess(ccl, checkProxyInterfaces);
+        }
+    }
 
+    /*
+     * Checks if a client loaded in ClassLoader ccl is allowed to access this
+     * class under the current package access policy. If access is denied,
+     * throw a SecurityException.
+     */
+    private void checkPackageAccess(final ClassLoader ccl, boolean checkProxyInterfaces) {
+        final SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            final ClassLoader cl = getClassLoader0();
 
             if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
                 String name = this.getName();
@@ -2266,7 +2360,7 @@ public final class Class<T> implements java.io.Serializable,
                 if (i != -1) {
                     // skip the package access check on a proxy class in default proxy package
                     String pkg = name.substring(0, i);
-                    if (!Proxy.isProxyClass(this) || !pkg.equals(ReflectUtil.PROXY_PACKAGE)) {
+                    if (!Proxy.isProxyClass(this) || ReflectUtil.isNonPublicProxyClass(this)) {
                         s.checkPackageAccess(pkg);
                     }
                 }
@@ -2321,6 +2415,8 @@ public final class Class<T> implements java.io.Serializable,
         // Intermediate results for getFields and getMethods
         volatile Field[] declaredPublicFields;
         volatile Method[] declaredPublicMethods;
+        volatile Class<?>[] interfaces;
+
         // Value of classRedefinedCount when we created this ReflectionData instance
         final int redefinedCount;
 
@@ -2396,10 +2492,10 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Generic signature handling
-    private native String getGenericSignature();
+    private native String getGenericSignature0();
 
     // Generic info repository; lazily initialized
-    private transient ClassRepository genericInfo;
+    private volatile transient ClassRepository genericInfo;
 
     // accessor for factory
     private GenericsFactory getFactory() {
@@ -2407,15 +2503,20 @@ public final class Class<T> implements java.io.Serializable,
         return CoreReflectionFactory.make(this, ClassScope.make(this));
     }
 
-    // accessor for generic info repository
+    // accessor for generic info repository;
+    // generic info is lazily initialized
     private ClassRepository getGenericInfo() {
-        // lazily initialize repository if necessary
+        ClassRepository genericInfo = this.genericInfo;
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo = ClassRepository.make(getGenericSignature(),
-                                               getFactory());
+            String signature = getGenericSignature0();
+            if (signature == null) {
+                genericInfo = ClassRepository.NONE;
+            } else {
+                genericInfo = ClassRepository.make(signature, getFactory());
+            }
+            this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return (genericInfo != ClassRepository.NONE) ? genericInfo : null;
     }
 
     // Annotations handling

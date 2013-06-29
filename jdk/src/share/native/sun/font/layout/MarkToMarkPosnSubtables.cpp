@@ -56,6 +56,10 @@ le_int32 MarkToMarkPositioningSubtable::process(const LETableReference &base, Gl
     LEGlyphID markGlyph = glyphIterator->getCurrGlyphID();
     le_int32 markCoverage = getGlyphCoverage(base, (LEGlyphID) markGlyph, success);
 
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
+
     if (markCoverage < 0) {
         // markGlyph isn't a covered mark glyph
         return 0;

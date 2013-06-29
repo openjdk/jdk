@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,6 @@ class Solaris {
   static void set_SIGinterrupt(int newsig) { _SIGinterrupt = newsig; }
   static void set_SIGasync(int newsig) { _SIGasync = newsig; }
 
-
  public:
   // Large Page Support--ISM.
   static bool largepage_range(char* addr, size_t size);
@@ -145,6 +144,7 @@ class Solaris {
   static intptr_t*   ucontext_get_sp(ucontext_t* uc);
   // ucontext_get_fp() is only used by Solaris X86 (see note below)
   static intptr_t*   ucontext_get_fp(ucontext_t* uc);
+  static address    ucontext_get_pc(ucontext_t* uc);
 
   // For Analyzer Forte AsyncGetCallTrace profiling support:
   // Parameter ret_fp is only used by Solaris X86.
@@ -157,6 +157,8 @@ class Solaris {
 
   static void hotspot_sigmask(Thread* thread);
 
+  // SR_handler
+  static void SR_handler(Thread* thread, ucontext_t* uc);
  protected:
   // Solaris-specific interface goes here
   static julong available_memory();
@@ -166,6 +168,9 @@ class Solaris {
   static int _dev_zero_fd;
   static int get_dev_zero_fd() { return _dev_zero_fd; }
   static void set_dev_zero_fd(int fd) { _dev_zero_fd = fd; }
+  static int commit_memory_impl(char* addr, size_t bytes, bool exec);
+  static int commit_memory_impl(char* addr, size_t bytes,
+                                size_t alignment_hint, bool exec);
   static char* mmap_chunk(char *addr, size_t size, int flags, int prot);
   static char* anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed);
   static bool mpss_sanity_check(bool warn, size_t * page_size);

@@ -27,6 +27,8 @@
 #include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -48,8 +50,8 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
   ResourceMark rm;
 
-  NOT_PRODUCT(TraceTime tm("ThreadRootsMarkingTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("ThreadRootsMarkingTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
 
@@ -77,8 +79,8 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
   assert(Universe::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(TraceTime tm("MarkFromRootsTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("MarkFromRootsTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
@@ -148,8 +150,8 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 {
   assert(Universe::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(TraceTime tm("RefProcTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("RefProcTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
@@ -204,8 +206,8 @@ StealMarkingTask::StealMarkingTask(ParallelTaskTerminator* t) :
 void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   assert(Universe::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(TraceTime tm("StealMarkingTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("StealMarkingTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
@@ -237,8 +239,8 @@ StealRegionCompactionTask::StealRegionCompactionTask(ParallelTaskTerminator* t):
 void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
   assert(Universe::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(TraceTime tm("StealRegionCompactionTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("StealRegionCompactionTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
@@ -304,8 +306,8 @@ UpdateDensePrefixTask::UpdateDensePrefixTask(
 
 void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
 
-  NOT_PRODUCT(TraceTime tm("UpdateDensePrefixTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("UpdateDensePrefixTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
@@ -319,8 +321,8 @@ void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
 void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
   assert(Universe::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(TraceTime tm("DrainStacksCompactionTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
+  NOT_PRODUCT(GCTraceTime tm("DrainStacksCompactionTask",
+    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);

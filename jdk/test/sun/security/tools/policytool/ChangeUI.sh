@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug  6296772 6293981 6290216
+# @bug  6296772 6293981 6290216 8015276
 # @summary FilePermission and DelegationPermission, and cancel button
 #
 # @run applet/manual=done ChangeUI.html
@@ -49,6 +49,11 @@ case "$OS" in
   SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
+    FS="/"
+    ;;
+  CYGWIN* )
+    NULL=/dev/null
+    PS=";"
     FS="/"
     ;;
   Windows* )

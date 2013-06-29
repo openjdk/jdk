@@ -810,7 +810,7 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
       int numSizes = ::DeviceCapabilities(printerName, printerPort,
                                           DC_PAPERS, NULL, NULL);
       if (numSizes > 0) {
-          LPTSTR papers = (LPTSTR)safe_Malloc(numSizes * sizeof(WORD));
+          LPTSTR papers = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, numSizes, sizeof(WORD));
           if (papers != NULL &&
               ::DeviceCapabilities(printerName, printerPort,
                                    DC_PAPERS, papers, NULL) != -1) {
