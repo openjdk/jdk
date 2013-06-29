@@ -1369,12 +1369,18 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
     mid = (*env)->GetMethodID(env, clazz, "<init>", "(IIII)V");
     if (mid != NULL) {
         if (usingXinerama) {
-            bounds = (*env)->NewObject(env, clazz, mid, fbrects[screen].x,
-                                                        fbrects[screen].y,
-                                                        fbrects[screen].width,
-                                                        fbrects[screen].height);
-        }
-        else {
+            if (0 <= screen && screen < awt_numScreens) {
+                bounds = (*env)->NewObject(env, clazz, mid, fbrects[screen].x,
+                                                            fbrects[screen].y,
+                                                            fbrects[screen].width,
+                                                            fbrects[screen].height);
+            } else {
+                jclass exceptionClass = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+                if (exceptionClass != NULL) {
+                    (*env)->ThrowNew(env, exceptionClass, "Illegal screen index");
+                }
+            }
+        } else {
             XWindowAttributes xwa;
             memset(&xwa, 0, sizeof(xwa));
 

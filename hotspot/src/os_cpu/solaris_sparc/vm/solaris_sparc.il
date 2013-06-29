@@ -152,23 +152,6 @@
         .nonvolatile
         .end
 
-  // Support for jlong Atomic::load and Atomic::store on v8.
-  //
-  // void _Atomic_move_long_v8(volatile jlong* src, volatile jlong* dst)
-  //
-  // Arguments:
-  //      src:  O0
-  //      dest: O1
-  //
-  // Overwrites O2 and O3
-
-        .inline _Atomic_move_long_v8,2
-        .volatile
-        ldd     [%o0], %o2
-        std     %o2, [%o1]
-        .nonvolatile
-        .end
-
   // Support for jlong Atomic::load and Atomic::store on v9.
   //
   // void _Atomic_move_long_v9(volatile jlong* src, volatile jlong* dst)
