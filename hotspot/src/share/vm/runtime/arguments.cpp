@@ -849,7 +849,7 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  Flag* found_flag = Flag::find_flag((char*)argname, arg_len, true);
+  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
     found_flag->get_locked_message(locked_message_buf, BUFLEN);
@@ -870,6 +870,14 @@ bool Arguments::process_argument(const char* arg,
   } else {
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
+    Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
+    if (fuzzy_matched != NULL) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Did you mean '%s%s%s'?\n",
+                  (fuzzy_matched->is_bool()) ? "(+/-)" : "",
+                  fuzzy_matched->name,
+                  (fuzzy_matched->is_bool()) ? "" : "=<value>");
+    }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
