@@ -391,27 +391,23 @@ public class LogManager {
                 // from the execution stack.
                 Object ecx = javaAwtAccess.getExecutionContext();
                 if (ecx == null) {
-                    // fall back to AppContext.getAppContext()
+                    // fall back to thread group seach of AppContext
                     ecx = javaAwtAccess.getContext();
                 }
-                context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
-                if (context == null) {
-                    if (javaAwtAccess.isMainAppContext()) {
-                        context = userContext;
-                    } else {
-                        context = new LoggerContext();
-                        // during initialization, rootLogger is null when
-                        // instantiating itself RootLogger
-                        if (manager.rootLogger != null)
-                            context.addLocalLogger(manager.rootLogger);
+                if (ecx != null) {
+                    context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
+                    if (context == null) {
+                        if (javaAwtAccess.isMainAppContext()) {
+                            context = userContext;
+                        } else {
+                            context = new LoggerContext();
+                        }
+                        javaAwtAccess.put(ecx, LoggerContext.class, context);
                     }
-                    javaAwtAccess.put(ecx, LoggerContext.class, context);
                 }
             }
-        } else {
-            context = userContext;
         }
-        return context;
+        return context != null ? context : userContext;
     }
 
     private List<LoggerContext> contexts() {
@@ -536,14 +532,26 @@ public class LogManager {
             return logger;
         }
 
+        synchronized void ensureRootLogger(Logger logger) {
+            if (logger.getName().isEmpty())
+                return;
+
+            // during initialization, rootLogger is null when
+            // instantiating itself RootLogger
+            if (findLogger("") == null && manager.rootLogger != null) {
+                addLocalLogger(manager.rootLogger);
+            }
+        }
+
         // Add a logger to this context.  This method will only set its level
         // and process parent loggers.  It doesn't set its handlers.
         synchronized boolean addLocalLogger(Logger logger) {
+            ensureRootLogger(logger);
+
             final String name = logger.getName();
             if (name == null) {
                 throw new NullPointerException();
             }
-
             LoggerWeakRef ref = namedLoggers.get(name);
             if (ref != null) {
                 if (ref.get() == null) {

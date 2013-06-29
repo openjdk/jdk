@@ -452,8 +452,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
 
             try {
-                boolean ok = run();
-                return ok ? EXIT_OK : EXIT_ERROR;
+                return run();
             } finally {
                 if (defaultFileManager != null) {
                     try {
@@ -569,12 +568,13 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     }
 
     public Boolean call() {
-        return run();
+        return run() == 0;
     }
 
-    public boolean run() {
-        if (classes == null || classes.size() == 0)
-            return false;
+    public int run() {
+        if (classes == null || classes.isEmpty()) {
+            return EXIT_ERROR;
+        }
 
         context.put(PrintWriter.class, log);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -583,54 +583,55 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         attributeFactory.setCompat(options.compat);
 
-        boolean ok = true;
+        int result = EXIT_OK;
 
         for (String className: classes) {
-            JavaFileObject fo;
             try {
-                writeClass(classWriter, className);
+                result = writeClass(classWriter, className);
             } catch (ConstantPoolException e) {
                 reportError("err.bad.constant.pool", className, e.getLocalizedMessage());
-                ok = false;
+                result = EXIT_ERROR;
             } catch (EOFException e) {
                 reportError("err.end.of.file", className);
-                ok = false;
+                result = EXIT_ERROR;
             } catch (FileNotFoundException e) {
                 reportError("err.file.not.found", e.getLocalizedMessage());
-                ok = false;
+                result = EXIT_ERROR;
             } catch (IOException e) {
                 //e.printStackTrace();
                 Object msg = e.getLocalizedMessage();
-                if (msg == null)
+                if (msg == null) {
                     msg = e;
+                }
                 reportError("err.ioerror", className, msg);
-                ok = false;
+                result = EXIT_ERROR;
             } catch (Throwable t) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 t.printStackTrace(pw);
                 pw.close();
                 reportError("err.crash", t.toString(), sw.toString());
-                ok = false;
+                result = EXIT_ABNORMAL;
             }
         }
 
-        return ok;
+        return result;
     }
 
-    protected boolean writeClass(ClassWriter classWriter, String className)
+    protected int writeClass(ClassWriter classWriter, String className)
             throws IOException, ConstantPoolException {
         JavaFileObject fo = open(className);
         if (fo == null) {
             reportError("err.class.not.found", className);
-            return false;
+            return EXIT_ERROR;
         }
 
         ClassFileInfo cfInfo = read(fo);
         if (!className.endsWith(".class")) {
             String cfName = cfInfo.cf.getName();
-            if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", ".")))
+            if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", "."))) {
                 reportWarning("warn.unexpected.class", className, cfName.replace('/', '.'));
+            }
         }
         write(cfInfo);
 
@@ -640,7 +641,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (a instanceof InnerClasses_attribute) {
                 InnerClasses_attribute inners = (InnerClasses_attribute) a;
                 try {
-                    boolean ok = true;
+                    int result = EXIT_OK;
                     for (int i = 0; i < inners.classes.length; i++) {
                         int outerIndex = inners.classes[i].outer_class_info_index;
                         ConstantPool.CONSTANT_Class_info outerClassInfo = cf.constant_pool.getClassInfo(outerIndex);
@@ -651,21 +652,22 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                             String innerClassName = innerClassInfo.getName();
                             classWriter.println("// inner class " + innerClassName.replaceAll("[/$]", "."));
                             classWriter.println();
-                            ok = ok & writeClass(classWriter, innerClassName);
+                            result = writeClass(classWriter, innerClassName);
+                            if (result != EXIT_OK) return result;
                         }
                     }
-                    return ok;
+                    return result;
                 } catch (ConstantPoolException e) {
                     reportError("err.bad.innerclasses.attribute", className);
-                    return false;
+                    return EXIT_ERROR;
                 }
             } else if (a != null) {
                 reportError("err.bad.innerclasses.attribute", className);
-                return false;
+                return EXIT_ERROR;
             }
         }
 
-        return true;
+        return EXIT_OK;
     }
 
     protected JavaFileObject open(String className) throws IOException {

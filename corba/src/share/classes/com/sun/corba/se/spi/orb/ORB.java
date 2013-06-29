@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ import com.sun.corba.se.impl.logging.OMGSystemException ;
 
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl ;
 
-import com.sun.corba.se.impl.orbutil.ORBClassLoader ;
 import sun.awt.AppContext;
+import sun.corba.SharedSecrets;
 
 public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     implements Broker, TypeCodeFactory
@@ -201,7 +201,7 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
 
                         try {
                             // First try the configured class name, if any
-                            Class cls = ORBClassLoader.loadClass( className ) ;
+                            Class<?> cls = SharedSecrets.getJavaCorbaAccess().loadClass( className ) ;
                             sff = (PresentationManager.StubFactoryFactory)cls.newInstance() ;
                         } catch (Exception exc) {
                             // Use the default. Log the error as a warning.

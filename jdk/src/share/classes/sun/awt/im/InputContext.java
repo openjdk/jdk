@@ -387,7 +387,7 @@ public class InputContext extends java.awt.im.InputContext
             }
             previousInputMethod = null;
 
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Current client component " + currentClientComponent);
             }
             if (inputMethod instanceof InputMethodAdapter) {
@@ -887,7 +887,7 @@ public class InputContext extends java.awt.im.InputContext
 
     private void logCreationFailed(Throwable throwable) {
         PlatformLogger logger = PlatformLogger.getLogger("sun.awt.im");
-        if (logger.isLoggable(PlatformLogger.CONFIG)) {
+        if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
             String errorTextFormat = Toolkit.getProperty("AWT.InputMethodCreationFailed",
                                                          "Could not create {0}. Reason: {1}");
             Object[] args =

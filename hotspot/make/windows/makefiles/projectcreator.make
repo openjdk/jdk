@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 !include $(WorkSpace)/make/windows/makefiles/rules.make
@@ -72,7 +72,7 @@ ProjectCreatorIncludesPRIVATE=\
         -ignorePath ppc \
         -ignorePath zero \
         -hidePath .hg
-	
+
 
 # This is referenced externally by both the IDE and batch builds
 ProjectCreatorOptions=
@@ -89,7 +89,7 @@ ProjectCreatorIDEOptions = \
         -disablePch        bytecodeInterpreter.cpp \
         -disablePch        bytecodeInterpreterWithChecks.cpp \
         -disablePch        getThread_windows_$(Platform_arch).cpp \
-        -disablePch_compiler2     opcodes.cpp    
+        -disablePch_compiler2     opcodes.cpp
 
 # Common options for the IDE builds for core, c1, and c2
 ProjectCreatorIDEOptions=\
@@ -115,7 +115,7 @@ ProjectCreatorIDEOptions=\
         -define TARGET_OS_ARCH_windows_x86 \
         -define TARGET_OS_FAMILY_windows \
         -define TARGET_COMPILER_visCPP \
-        -define INCLUDE_TRACE \
+        -define INCLUDE_TRACE=1 \
        $(ProjectCreatorIncludesPRIVATE)
 
 # Add in build-specific options
@@ -203,4 +203,12 @@ ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -additionalFile jvmtiEnter.cpp \
  -additionalFile jvmtiEnterTrace.cpp \
  -additionalFile jvmti.h \
- -additionalFile bytecodeInterpreterWithChecks.cpp
+ -additionalFile bytecodeInterpreterWithChecks.cpp \
+ -additionalFile traceEventClasses.hpp \
+ -additionalFile traceEventIds.hpp \
+!if "$(OPENJDK)" != "true"
+ -additionalFile traceRequestables.hpp \
+ -additionalFile traceEventControl.hpp \
+ -additionalFile traceProducer.cpp \
+!endif
+ -additionalFile traceTypes.hpp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ package com.sun.media.sound;
  */
 public final class FFT {
 
-    private double[] w;
-    private int fftFrameSize;
-    private int sign;
-    private int[] bitm_array;
-    private int fftFrameSize2;
+    private final double[] w;
+    private final int fftFrameSize;
+    private final int sign;
+    private final int[] bitm_array;
+    private final int fftFrameSize2;
 
     // Sign = -1 is FFT, 1 is IFFT (inverse FFT)
     // Data = Interlaced double array to be transformed.

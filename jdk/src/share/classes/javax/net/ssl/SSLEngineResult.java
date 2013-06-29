@@ -173,7 +173,7 @@ public class SSLEngineResult {
      *
      * @throws  IllegalArgumentException
      *          if the <code>status</code> or <code>handshakeStatus</code>
-     *          arguments are null, or if <<code>bytesConsumed</code> or
+     *          arguments are null, or if <code>bytesConsumed</code> or
      *          <code>bytesProduced</code> is negative.
      */
     public SSLEngineResult(Status status, HandshakeStatus handshakeStatus,

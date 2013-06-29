@@ -66,8 +66,7 @@ public class JavapTaskCtorFailWithNPE {
         JavaFileManager fm = JavapFileManager.create(dc, pw);
         JavapTask t = new JavapTask(pw, fm, dc, null,
                 Arrays.asList(classToCheck.getPath()));
-        boolean ok = t.run();
-        if (!ok)
+        if (t.run() != 0)
             throw new Error("javap failed unexpectedly");
 
         List<Diagnostic<? extends JavaFileObject>> diags = dc.getDiagnostics();

@@ -484,8 +484,8 @@ WORD AwtPrintControl::getNearestMatchingPaper(LPTSTR printer, LPTSTR port,
                                               NULL, NULL);
 
     if (numPaperSizes > 0) {
-        papers = (WORD*)safe_Malloc(sizeof(WORD) * numPaperSizes);
-        paperSizes = (POINT *)safe_Malloc(sizeof(*paperSizes) *
+        papers = (WORD*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(WORD), numPaperSizes);
+        paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes),
                                           numPaperSizes);
 
         DWORD result1 = DeviceCapabilities(printer, port,

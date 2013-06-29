@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.util.List;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -102,6 +103,16 @@ public final class NativeFunction {
             list.toArray(args = new Object[list.size()]);
         } else if (array == null || array == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;
+        } else if (array instanceof ScriptObjectMirror) {
+            // look for array-like ScriptObjectMirror object
+            final ScriptObjectMirror mirror = (ScriptObjectMirror)array;
+            final Object       len  = mirror.containsKey("length")? mirror.getMember("length") : Integer.valueOf(0);
+            final int n = (int)JSType.toUint32(len);
+
+            args = new Object[n];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = mirror.containsKey(i)? mirror.getSlot(i) : UNDEFINED;
+            }
         } else {
             throw typeError("function.apply.expects.array");
         }
@@ -216,7 +227,7 @@ public final class NativeFunction {
 
         final Global global = Global.instance();
 
-        return Global.directEval(global, sb.toString(), global, "<function>", Global.isStrict());
+        return Global.directEval(global, sb.toString(), global, "<function>", global.isStrictContext());
     }
 
     private static void checkFunctionParameters(final String params) {

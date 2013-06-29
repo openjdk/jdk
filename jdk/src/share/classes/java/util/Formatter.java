@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2807,10 +2807,10 @@ public final class Formatter implements Closeable, Flushable {
                 cal = Calendar.getInstance(l == null ? Locale.US : l);
                 cal.setTime((Date)arg);
             } else if (arg instanceof Calendar) {
-                cal = (Calendar) ((Calendar)arg).clone();
+                cal = (Calendar) ((Calendar) arg).clone();
                 cal.setLenient(true);
             } else if (arg instanceof TemporalAccessor) {
-                print((TemporalAccessor)arg, c, l);
+                print((TemporalAccessor) arg, c, l);
                 return;
             } else {
                 failConversion(c, arg);
@@ -3242,13 +3242,10 @@ public final class Formatter implements Closeable, Flushable {
                 int prec = (precision == -1 ? 6 : precision);
 
                 FormattedFloatingDecimal fd
-                    = new FormattedFloatingDecimal(value, prec,
-                        FormattedFloatingDecimal.Form.SCIENTIFIC);
+                        = FormattedFloatingDecimal.valueOf(value, prec,
+                          FormattedFloatingDecimal.Form.SCIENTIFIC);
 
-                char[] v = new char[MAX_FD_CHARS];
-                int len = fd.getChars(v);
-
-                char[] mant = addZeros(mantissa(v, len), prec);
+                char[] mant = addZeros(fd.getMantissa(), prec);
 
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
@@ -3256,7 +3253,7 @@ public final class Formatter implements Closeable, Flushable {
                     mant = addDot(mant);
 
                 char[] exp = (value == 0.0)
-                    ? new char[] {'+','0','0'} : exponent(v, len);
+                    ? new char[] {'+','0','0'} : fd.getExponent();
 
                 int newW = width;
                 if (width != -1)
@@ -3279,15 +3276,10 @@ public final class Formatter implements Closeable, Flushable {
                 int prec = (precision == -1 ? 6 : precision);
 
                 FormattedFloatingDecimal fd
-                    = new FormattedFloatingDecimal(value, prec,
-                        FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
+                        = FormattedFloatingDecimal.valueOf(value, prec,
+                          FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
 
-                // MAX_FD_CHARS + 1 (round?)
-                char[] v = new char[MAX_FD_CHARS + 1
-                                   + Math.abs(fd.getExponent())];
-                int len = fd.getChars(v);
-
-                char[] mant = addZeros(mantissa(v, len), prec);
+                char[] mant = addZeros(fd.getMantissa(), prec);
 
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
@@ -3306,22 +3298,17 @@ public final class Formatter implements Closeable, Flushable {
                     prec = 1;
 
                 FormattedFloatingDecimal fd
-                    = new FormattedFloatingDecimal(value, prec,
-                        FormattedFloatingDecimal.Form.GENERAL);
+                        = FormattedFloatingDecimal.valueOf(value, prec,
+                          FormattedFloatingDecimal.Form.GENERAL);
 
-                // MAX_FD_CHARS + 1 (round?)
-                char[] v = new char[MAX_FD_CHARS + 1
-                                   + Math.abs(fd.getExponent())];
-                int len = fd.getChars(v);
-
-                char[] exp = exponent(v, len);
+                char[] exp = fd.getExponent();
                 if (exp != null) {
                     prec -= 1;
                 } else {
                     prec = prec - (value == 0 ? 0 : fd.getExponentRounded()) - 1;
                 }
 
-                char[] mant = addZeros(mantissa(v, len), prec);
+                char[] mant = addZeros(fd.getMantissa(), prec);
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
                 if (f.contains(Flags.ALTERNATE) && (prec == 0))
@@ -3378,30 +3365,6 @@ public final class Formatter implements Closeable, Flushable {
                 sb.append(upper ? 'P' : 'p');
                 sb.append(s.substring(idx+1));
             }
-        }
-
-        private char[] mantissa(char[] v, int len) {
-            int i;
-            for (i = 0; i < len; i++) {
-                if (v[i] == 'e')
-                    break;
-            }
-            char[] tmp = new char[i];
-            System.arraycopy(v, 0, tmp, 0, i);
-            return tmp;
-        }
-
-        private char[] exponent(char[] v, int len) {
-            int i;
-            for (i = len - 1; i >= 0; i--) {
-                if (v[i] == 'e')
-                    break;
-            }
-            if (i == -1)
-                return null;
-            char[] tmp = new char[len - i - 1];
-            System.arraycopy(v, i + 1, tmp, 0, len - i - 1);
-            return tmp;
         }
 
         // Add zeros to the requested precision.

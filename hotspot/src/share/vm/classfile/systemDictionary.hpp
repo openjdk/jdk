@@ -31,8 +31,10 @@
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "trace/traceTime.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
+
 
 // The system dictionary stores all loaded classes and maps:
 //
@@ -636,6 +638,9 @@ private:
   // Setup link to hierarchy
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
 
+  // event based tracing
+  static void post_class_load_event(TracingTime start_time, instanceKlassHandle k,
+                                    Handle initiating_loader);
   // We pass in the hashtable index so we can calculate it outside of
   // the SystemDictionary_lock.
 

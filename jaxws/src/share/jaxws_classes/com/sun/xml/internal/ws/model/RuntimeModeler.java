@@ -210,20 +210,10 @@ public class RuntimeModeler {
 
     private <T extends Annotation> T getAnnotation(final Class<?> clazz, final Class<T> T) {
         return metadataReader.getAnnotation(T, clazz);
-//        return AccessController.doPrivileged(new PrivilegedAction<T>() {
-//           public T run() {
-//               return clazz.getAnnotation(T);
-//           }
-//        });
     }
 
     private <T extends Annotation> T getAnnotation(final Method method, final Class<T> T) {
         return metadataReader.getAnnotation(T, method);
-//        return AccessController.doPrivileged(new PrivilegedAction<T>() {
-//           public T run() {
-//               return method.getAnnotation(T);
-//           }
-//        });
     }
 
     private Annotation[] getAnnotations(final Method method) {
@@ -235,11 +225,6 @@ public class RuntimeModeler {
     }
     private Annotation[][] getParamAnnotations(final Method method) {
         return metadataReader.getParameterAnnotations(method);
-//        return AccessController.doPrivileged(new PrivilegedAction<Annotation[][]>() {
-//           public Annotation[][] run() {
-//               return method.getParameterAnnotations();
-//           }
-//        });
     }
 
     private static final Logger logger =
@@ -258,6 +243,7 @@ public class RuntimeModeler {
         model.endpointClass = config.getEndpointClass();
         model.classLoader = this.classLoader;
         model.wsBinding = wsBinding;
+        model.databindingInfo.setWsdlURL(config.getWsdlURL());
         model.databindingInfo.properties().putAll(config.properties());
         if (model.contractClass == null) model.contractClass = portClass;
         if (model.endpointClass == null && !portClass.isInterface()) model.endpointClass = portClass;
@@ -476,11 +462,12 @@ public class RuntimeModeler {
 
         for (Method method : clazz.getMethods()) {
             if (!clazz.isInterface()) {     // if clazz is SEI, then all methods are web methods
+                if (method.getDeclaringClass() == Object.class) continue;
                 if (!getBooleanSystemProperty("com.sun.xml.internal.ws.legacyWebMethod")) {  // legacy webMethod computation behaviour to be used
                     if (!isWebMethodBySpec(method, clazz))
                         continue;
                 } else {
-                    if (method.getDeclaringClass() == Object.class || !isWebMethod(method))
+                    if (!isWebMethod(method))
                         continue;
                 }
             }
