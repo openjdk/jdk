@@ -114,6 +114,9 @@ public class AttributeWriter extends BasicWriter
     }
 
     public Void visitDefault(DefaultAttribute attr, Void ignore) {
+        if (attr.reason != null) {
+            report(attr.reason);
+        }
         byte[] data = attr.info;
         int i = 0;
         int j = 0;
