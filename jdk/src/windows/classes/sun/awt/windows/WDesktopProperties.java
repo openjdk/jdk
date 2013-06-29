@@ -110,7 +110,7 @@ class WDesktopProperties {
      */
     private synchronized void setBooleanProperty(String key, boolean value) {
         assert( key != null );
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + String.valueOf(value));
         }
         map.put(key, Boolean.valueOf(value));
@@ -121,7 +121,7 @@ class WDesktopProperties {
      */
     private synchronized void setIntegerProperty(String key, int value) {
         assert( key != null );
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + String.valueOf(value));
         }
         map.put(key, Integer.valueOf(value));
@@ -132,7 +132,7 @@ class WDesktopProperties {
      */
     private synchronized void setStringProperty(String key, String value) {
         assert( key != null );
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + value);
         }
         map.put(key, value);
@@ -144,7 +144,7 @@ class WDesktopProperties {
     private synchronized void setColorProperty(String key, int r, int g, int b) {
         assert( key != null && r <= 255 && g <=255 && b <= 255 );
         Color color = new Color(r, g, b);
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + color);
         }
         map.put(key, color);
@@ -172,14 +172,14 @@ class WDesktopProperties {
             name = mappedName;
         }
         Font    font = new Font(name, style, size);
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + font);
         }
         map.put(key, font);
 
         String sizeKey = key + ".height";
         Integer iSize = Integer.valueOf(size);
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(sizeKey + "=" + iSize);
         }
         map.put(sizeKey, iSize);
@@ -192,7 +192,7 @@ class WDesktopProperties {
         assert( key != null && winEventName != null );
 
         Runnable soundRunnable = new WinPlaySound(winEventName);
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine(key + "=" + soundRunnable);
         }
         map.put(key, soundRunnable);

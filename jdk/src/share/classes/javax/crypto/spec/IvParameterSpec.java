@@ -68,7 +68,7 @@ public class IvParameterSpec implements AlgorithmParameterSpec {
      * starts.
      * @param len the number of IV bytes.
      * @throws IllegalArgumentException if <code>iv</code> is <code>null</code>
-     * or <code>(iv.length - offset < len)</code>
+     * or {@code (iv.length - offset < len)}
      * @throws ArrayIndexOutOfBoundsException is thrown if <code>offset</code>
      * or <code>len</code> index bytes outside the <code>iv</code>.
      */

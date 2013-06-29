@@ -812,68 +812,10 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final void stop() {
-        stop(new ThreadDeath());
-    }
-
-    /**
-     * Forces the thread to stop executing.
-     * <p>
-     * If there is a security manager installed, the <code>checkAccess</code>
-     * method of this thread is called, which may result in a
-     * <code>SecurityException</code> being raised (in the current thread).
-     * <p>
-     * If this thread is different from the current thread (that is, the current
-     * thread is trying to stop a thread other than itself) or
-     * <code>obj</code> is not an instance of <code>ThreadDeath</code>, the
-     * security manager's <code>checkPermission</code> method (with the
-     * <code>RuntimePermission("stopThread")</code> argument) is called in
-     * addition.
-     * Again, this may result in throwing a
-     * <code>SecurityException</code> (in the current thread).
-     * <p>
-     * If the argument <code>obj</code> is null, a
-     * <code>NullPointerException</code> is thrown (in the current thread).
-     * <p>
-     * The thread represented by this thread is forced to stop
-     * whatever it is doing abnormally and to throw the
-     * <code>Throwable</code> object <code>obj</code> as an exception. This
-     * is an unusual action to take; normally, the <code>stop</code> method
-     * that takes no arguments should be used.
-     * <p>
-     * It is permitted to stop a thread that has not yet been started.
-     * If the thread is eventually started, it immediately terminates.
-     *
-     * @param      obj   the Throwable object to be thrown.
-     * @exception  SecurityException  if the current thread cannot modify
-     *               this thread.
-     * @throws     NullPointerException if obj is <tt>null</tt>.
-     * @see        #interrupt()
-     * @see        #checkAccess()
-     * @see        #run()
-     * @see        #start()
-     * @see        #stop()
-     * @see        SecurityManager#checkAccess(Thread)
-     * @see        SecurityManager#checkPermission
-     * @deprecated This method is inherently unsafe.  See {@link #stop()}
-     *        for details.  An additional danger of this
-     *        method is that it may be used to generate exceptions that the
-     *        target thread is unprepared to handle (including checked
-     *        exceptions that the thread could not possibly throw, were it
-     *        not for this method).
-     *        For more information, see
-     *        <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
-     *        are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
-     */
-    @Deprecated
-    public final synchronized void stop(Throwable obj) {
-        if (obj == null)
-            throw new NullPointerException();
-
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             checkAccess();
-            if ((this != Thread.currentThread()) ||
-                (!(obj instanceof ThreadDeath))) {
+            if (this != Thread.currentThread()) {
                 security.checkPermission(SecurityConstants.STOP_THREAD_PERMISSION);
             }
         }
@@ -884,7 +826,26 @@ class Thread implements Runnable {
         }
 
         // The VM can handle all thread states
-        stop0(obj);
+        stop0(new ThreadDeath());
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}.
+     *
+     * @param obj ignored
+     *
+     * @deprecated This method was originally designed to force a thread to stop
+     *        and throw a given {@code Throwable} as an exception. It was
+     *        inherently unsafe (see {@link #stop()} for details), and furthermore
+     *        could be used to generate exceptions that the target thread was
+     *        not prepared to handle.
+     *        For more information, see
+     *        <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
+     *        are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
+     */
+    @Deprecated
+    public final synchronized void stop(Throwable obj) {
+        throw new UnsupportedOperationException();
     }
 
     /**

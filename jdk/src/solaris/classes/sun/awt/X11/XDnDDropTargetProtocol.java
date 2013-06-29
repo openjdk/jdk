@@ -993,7 +993,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             if (sourceFormats != null && sourceFormats.length > 3) {
                 data1 |= XDnDConstants.XDND_DATA_TYPES_BIT;
             }
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                 logger.finest("         "
                               + " entryVersion=" + version
                               + " sourceProtocolVersion=" +
@@ -1052,7 +1052,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
     public boolean forwardEventToEmbedded(long embedded, long ctxt,
                                           int eventID) {
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("        ctxt=" + ctxt +
                           " type=" + (ctxt != 0 ?
                                       getMessageType(new
@@ -1080,7 +1080,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 long data3 = Native.getLong(ctxt + size + 2 * Native.getLongSize());
                 long data4 = Native.getLong(ctxt + size + 3 * Native.getLongSize());
 
-                if (logger.isLoggable(PlatformLogger.FINEST)) {
+                if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                     logger.finest("         1 "
                                   + " embedded=" + embedded
                                   + " source=" + xclient.get_data(0)
@@ -1114,7 +1114,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
                                 if ((XErrorHandlerUtil.saved_error != null) &&
                                     (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
-                                    if (logger.isLoggable(PlatformLogger.WARNING)) {
+                                    if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
                                         logger.warning("Cannot set XdndTypeList on the proxy window");
                                     }
                                 }
@@ -1122,7 +1122,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                 XToolkit.awtUnlock();
                             }
                         } else {
-                            if (logger.isLoggable(PlatformLogger.WARNING)) {
+                            if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
                                 logger.warning("Cannot read XdndTypeList from the source window");
                             }
                         }
@@ -1137,7 +1137,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 overXEmbedClient = true;
             }
 
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                 logger.finest("         2 "
                               + " embedded=" + embedded
                               + " xclient=" + xclient);

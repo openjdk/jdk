@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,12 @@ package com.sun.xml.internal.ws.client;
 
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.model.wsdl.WSDLServiceImpl;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
-import com.sun.org.glassfish.external.amx.AMXGlassfish;
 import com.sun.org.glassfish.gmbal.AMXMetadata;
 import com.sun.org.glassfish.gmbal.Description;
-import com.sun.org.glassfish.gmbal.InheritedAttribute;
-import com.sun.org.glassfish.gmbal.InheritedAttributes;
 import com.sun.org.glassfish.gmbal.ManagedAttribute;
-import com.sun.org.glassfish.gmbal.ManagedData;
 import com.sun.org.glassfish.gmbal.ManagedObject;
-import com.sun.org.glassfish.gmbal.ManagedObjectManager;
-import com.sun.org.glassfish.gmbal.ManagedObjectManagerFactory;
 import java.net.URL;
 
 /**

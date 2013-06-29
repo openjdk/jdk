@@ -265,7 +265,7 @@ public class EndpointFactory {
             terminal = createProviderInvokerTube(implType, binding, invoker, container);
         } else {
             // Create runtime model for non Provider endpoints
-            seiModel = createSEIModel(wsdlPort, implType, serviceName, portName, binding);
+            seiModel = createSEIModel(wsdlPort, implType, serviceName, portName, binding, primaryDoc);
             if(binding instanceof SOAPBindingImpl){
                 //set portKnownHeaders on Binding, so that they can be used for MU processing
                 ((SOAPBindingImpl)binding).setPortKnownHeaders(
@@ -436,37 +436,17 @@ public class EndpointFactory {
 
 
     private static AbstractSEIModelImpl createSEIModel(WSDLPort wsdlPort,
-                                                       Class<?> implType, @NotNull QName serviceName, @NotNull QName portName, WSBinding binding) {
-//        RuntimeModeler rap;
-//        // Create runtime model for non Provider endpoints
-//
-//        // wsdlPort will be null, means we will generate WSDL. Hence no need to apply
-//        // bindings or need to look in the WSDL
-//        if(wsdlPort == null){
-//            rap = new RuntimeModeler(implType,serviceName, binding.getBindingId(), binding.getFeatures().toArray());
-//        } else {
-//            /*
-//            This not needed anymore as wsdlFeatures are merged later anyway
-//            and so is the MTOMFeature.
-//            applyEffectiveMtomSetting(wsdlPort.getBinding(), binding);
-//            */
-//            //now we got the Binding so lets build the model
-//            rap = new RuntimeModeler(implType, serviceName, (WSDLPortImpl)wsdlPort, binding.getFeatures().toArray());
-//        }
-//        rap.setClassLoader(implType.getClassLoader());
-//        rap.setPortName(portName);
-//        return rap.buildRuntimeModel();
+                                                       Class<?> implType, @NotNull QName serviceName, @NotNull QName portName, WSBinding binding,
+                                                       SDDocumentSource primaryWsdl) {
                 DatabindingFactory fac = DatabindingFactory.newInstance();
                 DatabindingConfig config = new DatabindingConfig();
                 config.setEndpointClass(implType);
                 config.getMappingInfo().setServiceName(serviceName);
                 config.setWsdlPort(wsdlPort);
                 config.setWSBinding(binding);
-//              config.setFeatures(binding.getFeatures().toArray());
-//              config.getMappingInfo().setBindingID(binding.getBindingId());
                 config.setClassLoader(implType.getClassLoader());
                 config.getMappingInfo().setPortName(portName);
-
+                if (primaryWsdl != null) config.setWsdlURL(primaryWsdl.getSystemId());
         config.setMetadataReader(getExternalMetadatReader(implType, binding));
 
                 com.sun.xml.internal.ws.db.DatabindingImpl rt = (com.sun.xml.internal.ws.db.DatabindingImpl)fac.createRuntime(config);

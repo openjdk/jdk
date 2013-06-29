@@ -1081,11 +1081,6 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
     }
-
-    // There must not be any interfering patches or breakpoints.
-    assert(!(iter.type() == relocInfo::breakpoint_type
-             && iter.breakpoint_reloc()->active()),
-           "no active breakpoint");
   }
 }
 
@@ -2615,7 +2610,8 @@ void nmethod::print_relocations() {
                       relocation_begin()-1+ip[1]);
       for (; ip < index_end; ip++)
         tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip++);
+      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip);
+      ip++;
       tty->print_cr("reloc_end @" INTPTR_FORMAT ":", ip);
     }
   }

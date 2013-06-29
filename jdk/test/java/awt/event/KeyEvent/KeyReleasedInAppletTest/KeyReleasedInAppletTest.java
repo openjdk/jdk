@@ -39,7 +39,6 @@ import java.lang.Throwable;
 import java.util.Hashtable;
 
 /*
-@test
 @bug 8010009
 @summary [macosx] Unable type into online word games on MacOSX
 @author petr.pchelko : area=awt.keyboard

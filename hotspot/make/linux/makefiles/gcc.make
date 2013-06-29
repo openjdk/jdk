@@ -214,7 +214,7 @@ ifeq ($(USE_CLANG), true)
   WARNINGS_ARE_ERRORS += -Wno-return-type -Wno-empty-body
 endif
 
-WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef -Wunused-function
+WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef -Wunused-function -Wunused-value
 
 ifeq ($(USE_CLANG),)
   # Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
@@ -350,9 +350,9 @@ else
   ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
       ifeq ($(USE_CLANG), true)
         # Clang doesn't understand -gstabs
-        OPT_CFLAGS += -g
+        DEBUG_CFLAGS += -g
       else
-        OPT_CFLAGS += -gstabs
+        DEBUG_CFLAGS += -gstabs
       endif
   endif
   
@@ -365,9 +365,9 @@ else
     ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
       ifeq ($(USE_CLANG), true)
         # Clang doesn't understand -gstabs
-        OPT_CFLAGS += -g
+        FASTDEBUG_CFLAGS += -g
       else
-        OPT_CFLAGS += -gstabs
+        FASTDEBUG_CFLAGS += -gstabs
       endif
     endif
   

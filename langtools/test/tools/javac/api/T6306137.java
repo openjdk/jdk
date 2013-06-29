@@ -27,7 +27,7 @@
  * @summary JSR 199: encoding option doesn't affect standard file manager
  * @compile -encoding utf-8 T6306137.java
  * @run main T6306137
- * @author  Peter von der Ahé
+ * @author  Peter von der Ah\u00e9
  */
 
 import java.io.File;

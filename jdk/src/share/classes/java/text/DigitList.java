@@ -271,7 +271,7 @@ final class DigitList implements Cloneable {
      * @param maximumFractionDigits The most fractional digits which should
      * be converted.
      */
-    public final void set(boolean isNegative, double source, int maximumFractionDigits) {
+    final void set(boolean isNegative, double source, int maximumFractionDigits) {
         set(isNegative, source, maximumFractionDigits, true);
     }
 
@@ -288,10 +288,11 @@ final class DigitList implements Cloneable {
      */
     final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
 
-        FloatingDecimal fd = new FloatingDecimal(source);
-        boolean hasBeenRoundedUp = fd.digitsRoundedUp();
-        boolean allDecimalDigits = fd.decimalDigitsExact();
-        String digitsString = fd.toJavaFormatString();
+        FloatingDecimal.BinaryToASCIIConverter fdConverter  = FloatingDecimal.getBinaryToASCIIConverter(source);
+        boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
+        boolean allDecimalDigits = fdConverter.decimalDigitsExact();
+        assert !fdConverter.isExceptional();
+        String digitsString = fdConverter.toJavaFormatString();
 
         set(isNegative, digitsString,
             hasBeenRoundedUp, allDecimalDigits,
@@ -305,9 +306,9 @@ final class DigitList implements Cloneable {
      * @param allDecimalDigits Boolean value indicating if the digits in s are
      * an exact decimal representation of the double that was passed.
      */
-    final void set(boolean isNegative, String s,
-                   boolean roundedUp, boolean allDecimalDigits,
-                   int maximumDigits, boolean fixedPoint) {
+    private void set(boolean isNegative, String s,
+                     boolean roundedUp, boolean allDecimalDigits,
+                     int maximumDigits, boolean fixedPoint) {
         this.isNegative = isNegative;
         int len = s.length();
         char[] source = getDataChars(len);
@@ -607,7 +608,7 @@ final class DigitList implements Cloneable {
     /**
      * Utility routine to set the value of the digit list from a long
      */
-    public final void set(boolean isNegative, long source) {
+    final void set(boolean isNegative, long source) {
         set(isNegative, source, 0);
     }
 
@@ -620,7 +621,7 @@ final class DigitList implements Cloneable {
      * If maximumDigits is lower than the number of significant digits
      * in source, the representation will be rounded.  Ignored if <= 0.
      */
-    public final void set(boolean isNegative, long source, int maximumDigits) {
+    final void set(boolean isNegative, long source, int maximumDigits) {
         this.isNegative = isNegative;
 
         // This method does not expect a negative number. However,

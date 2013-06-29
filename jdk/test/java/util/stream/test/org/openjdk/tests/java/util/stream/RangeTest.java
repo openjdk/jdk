@@ -24,10 +24,11 @@ package org.openjdk.tests.java.util.stream;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.DoubleStream;
+import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
+import java.util.stream.SpliteratorTestHelper;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
@@ -54,73 +55,76 @@ public class RangeTest extends OpTestCase {
 
     //
 
-    public void testIntRangeErrors() {
-        for (int start : Arrays.asList(1, 10, -1, -10)) {
-            for (int end : Arrays.asList(1, 10, -1, -10)) {
-                for (int step : Arrays.asList(0, 1, -1, Integer.MAX_VALUE, Integer.MIN_VALUE)) {
-                    if (step > 0)
-                        executeAndNoCatch(() -> IntStream.range(start, end, step));
-                    else
-                        executeAndCatch(() -> IntStream.range(start, end, step));
-                }
-            }
-        }
-    }
-
     public void testIntRange() {
-        // Without step
+        // Half-open
         for (int start : Arrays.asList(1, 10, -1, -10)) {
             for (int end : Arrays.asList(1, 10, -1, -10)) {
-                int step = 1;
                 int size = (start < end) ? end - start : 0;
                 int[] exp = new int[size];
-                if (start < end) {
-                    for (int i = start, p = 0; i < end; i++, p++) {
-                        exp[p] = i;
-                    }
+                for (int i = start, p = 0; i < end; i++, p++) {
+                    exp[p] = i;
                 }
 
                 int[] inc = IntStream.range(start, end).toArray();
                 assertEquals(inc.length, size);
                 assertTrue(Arrays.equals(exp, inc));
 
-                withData(intRangeData(start, end, step)).stream(s -> s).
+                withData(intRangeData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
             }
         }
 
-        // With step
+        // Closed
         for (int start : Arrays.asList(1, 10, -1, -10)) {
             for (int end : Arrays.asList(1, 10, -1, -10)) {
-                for (int step : Arrays.asList(1, -1, -2, 2)) {
-                    if (step > 0) {
-                        int d = end - start;
-                        int size = (start < end) ? (d / step) + ((d % step == 0) ? 0 : 1) : 0;
-                        int[] exp = new int[size];
-                        if (start < end) {
-                            for (int i = start, p = 0; i < end; i += step, p++) {
-                                exp[p] = i;
-                            }
-                        }
-
-                        int[] inc = IntStream.range(start, end, step).toArray();
-                        assertEquals(inc.length, size);
-                        assertTrue(Arrays.equals(exp, inc));
-
-                        withData(intRangeData(start, end, step)).stream(s -> s).
-                                expectedResult(exp).exercise();
-                    }
+                int size = (start <= end) ? end - start + 1 : 0;
+                int[] exp = new int[size];
+                for (int i = start, p = 0; i <= end; i++, p++) {
+                    exp[p] = i;
                 }
+
+                int[] inc = IntStream.rangeClosed(start, end).toArray();
+                assertEquals(inc.length, size);
+                assertTrue(Arrays.equals(exp, inc));
+
+                withData(intRangeClosedData(start, end)).stream(s -> s).
+                        expectedResult(exp).exercise();
             }
+        }
+
+        // Closed, maximum upper bound of Integer.MAX_VALUE
+        {
+            int[] inc = IntStream.rangeClosed(Integer.MAX_VALUE - 1, Integer.MAX_VALUE).toArray();
+            assertEquals(2, inc.length);
+            assertEquals(Integer.MAX_VALUE - 1, inc[0]);
+            assertEquals(Integer.MAX_VALUE, inc[1]);
+
+            inc = IntStream.rangeClosed(Integer.MAX_VALUE, Integer.MAX_VALUE).toArray();
+            assertEquals(1, inc.length);
+            assertEquals(Integer.MAX_VALUE, inc[0]);
+
+            SpliteratorTestHelper.testIntSpliterator(
+                    () -> IntStream.rangeClosed(Integer.MAX_VALUE - 8, Integer.MAX_VALUE).spliterator());
+        }
+
+        // Range wider than Integer.MAX_VALUE
+        {
+            Spliterator.OfInt s = IntStream.rangeClosed(Integer.MIN_VALUE, Integer.MAX_VALUE).
+                    spliterator();
+            assertEquals(s.estimateSize(), 1L << 32);
         }
     }
 
-    TestData.OfInt intRangeData(int start, int end, int step) {
-        return TestData.Factory.ofIntSupplier("int range", () -> IntStream.range(start, end, step));
+    TestData.OfInt intRangeData(int start, int end) {
+        return TestData.Factory.ofIntSupplier("int range", () -> IntStream.range(start, end));
+    }
+
+    TestData.OfInt intRangeClosedData(int start, int end) {
+        return TestData.Factory.ofIntSupplier("int rangeClosed", () -> IntStream.rangeClosed(start, end));
     }
 
     public void tesIntRangeReduce() {
-        withData(intRangeData(0, 10000, 1)).
+        withData(intRangeData(0, 10000)).
                 terminal(s -> s.reduce(0, Integer::sum)).exercise();
     }
 
@@ -137,74 +141,69 @@ public class RangeTest extends OpTestCase {
 
     //
 
-    public void testLongRangeErrors() {
-        for (long start : Arrays.asList(1, 10, -1, -10)) {
-            for (long end : Arrays.asList(1, 10, -1, -10)) {
-                for (long step : Arrays.asList(0L, 1L, -1L, Long.MAX_VALUE, Long.MIN_VALUE)) {
-                    if (step > 0)
-                        executeAndNoCatch(() -> LongStream.range(start, end, step));
-                    else
-                        executeAndCatch(() -> LongStream.range(start, end, step));
-                }
-            }
-        }
-    }
-
     public void testLongRange() {
-        // Without step
+        // Half-open
         for (long start : Arrays.asList(1, 1000, -1, -1000)) {
             for (long end : Arrays.asList(1, 1000, -1, -1000)) {
-                long step = 1;
                 long size = start < end ? end - start : 0;
                 long[] exp = new long[(int) size];
-                if (start < end) {
-                    for (long i = start, p = 0; i < end; i++, p++) {
-                        exp[(int) p] = i;
-                    }
+                for (long i = start, p = 0; i < end; i++, p++) {
+                    exp[(int) p] = i;
                 }
 
                 long[] inc = LongStream.range(start, end).toArray();
                 assertEquals(inc.length, size);
                 assertTrue(Arrays.equals(exp, inc));
 
-                withData(longRangeData(start, end, step)).stream(s -> s).
+                withData(longRangeData(start, end)).stream(s -> s).
                         expectedResult(exp).exercise();
             }
         }
 
-        // With step
+        // Closed
         for (long start : Arrays.asList(1, 1000, -1, -1000)) {
             for (long end : Arrays.asList(1, 1000, -1, -1000)) {
-                for (long step : Arrays.asList(1, -1, -2, 2)) {
-                    if (step > 0) {
-
-                        long d = end - start;
-                        long size = start < end ? (d / step) + ((d % step == 0) ? 0 : 1) : 0;
-                        long[] exp = new long[(int) size];
-                        if (start < end) {
-                            for (long i = start, p = 0; i < end; i += step, p++) {
-                                exp[(int) p] = i;
-                            }
-                        }
-
-                        long[] inc = LongStream.range(start, end, step).toArray();
-                        assertEquals(inc.length, size);
-                        assertTrue(Arrays.equals(exp, inc));
-
-                        withData(longRangeData(start, end, step)).stream(s -> s).
-                                expectedResult(exp).exercise();
-                    }
+                long size = start <= end ? end - start + 1: 0;
+                long[] exp = new long[(int) size];
+                for (long i = start, p = 0; i <= end; i++, p++) {
+                    exp[(int) p] = i;
                 }
+
+                long[] inc = LongStream.rangeClosed(start, end).toArray();
+                assertEquals(inc.length, size);
+                assertTrue(Arrays.equals(exp, inc));
+
+                withData(longRangeClosedData(start, end)).stream(s -> s).
+                        expectedResult(exp).exercise();
             }
+        }
+
+        // Closed, maximum upper bound of Long.MAX_VALUE
+        {
+            long[] inc = LongStream.rangeClosed(Long.MAX_VALUE - 1, Long.MAX_VALUE).toArray();
+            assertEquals(2, inc.length);
+            assertEquals(Long.MAX_VALUE - 1, inc[0]);
+            assertEquals(Long.MAX_VALUE, inc[1]);
+
+            inc = LongStream.rangeClosed(Long.MAX_VALUE, Long.MAX_VALUE).toArray();
+            assertEquals(1, inc.length);
+            assertEquals(Long.MAX_VALUE, inc[0]);
+
+            SpliteratorTestHelper.testLongSpliterator(
+                    () -> LongStream.rangeClosed(Long.MAX_VALUE - 8, Long.MAX_VALUE).spliterator());
         }
     }
 
-    TestData.OfLong longRangeData(long start, long end, long step) {
-        return TestData.Factory.ofLongSupplier("long range", () -> LongStream.range(start, end, step));
+    TestData.OfLong longRangeData(long start, long end) {
+        return TestData.Factory.ofLongSupplier("long range", () -> LongStream.range(start, end));
+    }
+
+    TestData.OfLong longRangeClosedData(long start, long end) {
+        return TestData.Factory.ofLongSupplier("long rangeClosed", () -> LongStream.rangeClosed(start, end));
     }
 
     public void testLongRangeReduce() {
-        withData(longRangeData(0, 10000, 1)).
+        withData(longRangeData(0, 10000)).
                 terminal(s -> s.reduce(0, Long::sum)).exercise();
     }
 
@@ -219,182 +218,116 @@ public class RangeTest extends OpTestCase {
         assertEquals(first, LongStream.iterate(0, i -> i + 1).parallel().filter(i -> i > 10000).findFirst().getAsLong());
     }
 
-    //
-
-    public void testDoubleRangeErrors() {
-        for (double start : Arrays.asList(1, 10, -1, -10)) {
-            for (double end : Arrays.asList(1, 10, -1, -10)) {
-                for (double step : Arrays.asList(0.0, +0.0, -0.0, 1.0, -1.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
-                    try {
-                        if (step > 0)
-                            executeAndNoCatch(() -> DoubleStream.range(start, end, step));
-                        else
-                            executeAndCatch(() -> DoubleStream.range(start, end, step));
-                    }
-                    catch (AssertionError e) {
-                        System.out.printf("start=%f, end=%f, step=%f%n", start, end, step);
-                        throw e;
-                    }
-                }
-            }
-        }
-
-        for (double start : Arrays.asList(0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN)) {
-            for (double end : Arrays.asList(0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN)) {
-                for (double step : Arrays.asList(1.0, -1.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN)) {
-                    try {
-                        if ((start == 0.0 && end == 0.0 && step > 0)
-                            || (start > end && step > 0)) {
-                            executeAndNoCatch(() -> DoubleStream.range(start, end, step));
-                        }
-                        else {
-                            executeAndCatch(() -> DoubleStream.range(start, end, step));
-                        }
-                    }
-                    catch (AssertionError e) {
-                        System.out.printf("start=%f, end=%f, step=%f%n", start, end, step);
-                        throw e;
-                    }
-                }
-            }
-        }
-    }
-
-    public void testDoubleRange() {
-        // Without step
-        for (double start : Arrays.asList(1, 1000, -1, -1000)) {
-            for (double end : Arrays.asList(1, 1000, -1, -1000)) {
-                double step = 1;
-                double size = start < end ? Math.ceil((end - start) / step) : 0;
-                double[] exp = new double[(int) size];
-                for (long i = 0; i < size; i++) {
-                    exp[(int) i] = start + i * step;
-                }
-
-                double[] inc = DoubleStream.range(start, end).toArray();
-                assertEquals(inc.length, (int) size);
-                assertTrue(Arrays.equals(exp, inc));
-
-                withData(doubleRangeData(start, end, step)).stream(s -> s).
-                        expectedResult(exp).exercise();
-            }
-        }
-
-        // With step
-        for (double start : Arrays.asList(1, 1000, -1, -1000)) {
-            for (double end : Arrays.asList(1, 1000, -1, -1000)) {
-                for (double step : Arrays.asList(1, -1, -2, 2)) {
-                    if (step <= 0)
-                        continue;
-                    double size = start < end ? Math.ceil((end - start) / step) : 0;
-                    double[] exp = new double[(int) size];
-                    for (long i = 0; i < size; i++) {
-                        exp[(int) i] = start + i * step;
-                    }
-
-                    double[] inc = DoubleStream.range(start, end, step).toArray();
-                    assertEquals(inc.length, (int) size);
-                    assertTrue(Arrays.equals(exp, inc));
-
-                    withData(doubleRangeData(start, end, step)).stream(s -> s).
-                            expectedResult(exp).exercise();
-                }
-            }
-        }
-
-        // With non-integer values
-        for (double step : Arrays.asList(Math.PI / 1000.0, Math.PI / 1000.0, Math.PI / 10000.0)) {
-            double start = -Math.PI;
-            double end = Math.PI;
-            double size = start < end ? Math.ceil((end - start) / step) : 0;
-            double[] exp = new double[(int) size];
-            for (long i = 0; i < size; i++) {
-                exp[(int) i] = start + i * step;
-            }
-
-            withData(doubleRangeData(start, end, step)).stream(s -> s).
-                    expectedResult(exp).exercise();
-        }
-    }
-
-    TestData.OfDouble doubleRangeData(double start, double end, double step) {
-        return TestData.Factory.ofDoubleSupplier("double range", () -> DoubleStream.range(start, end, step));
-    }
-
-    public void tesDoubleRangeReduce() {
-        withData(doubleRangeData(0, 10000, 1)).
-                terminal(s -> s.reduce(0, Double::sum)).exercise();
-    }
-
-    public void testDoubleInfiniteRangeLimit() {
-        withData(TestData.Factory.ofDoubleSupplier(
-                "double range", () -> DoubleStream.iterate(0, i -> i + 1).limit(10000))).
-                terminal(s -> s.reduce(0, Double::sum)).exercise();
-    }
-
-    public void testDoubleInfiniteRangeFindFirst() {
-        double first = DoubleStream.iterate(0, i -> i + 1).filter(i -> i > 10000).findFirst().getAsDouble();
-        assertEquals(first, DoubleStream.iterate(0, i -> i + 1).parallel().filter(i -> i > 10000).findFirst().getAsDouble());
-    }
-
-    //
-
-    private static int[] reverse(int[] a) {
-        int[] b = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            b[b.length - i - 1] = a[i];
-        }
-        return b;
-    }
-
-    private static long[] reverse(long[] a) {
-        long[] b = new long[a.length];
-        for (int i = 0; i < a.length; i++) {
-            b[b.length - i - 1] = a[i];
-        }
-        return b;
-    }
-
-    private static double[] reverse(double[] a) {
-        double[] b = new double[a.length];
-        for (int i = 0; i < a.length; i++) {
-            b[b.length - i - 1] = a[i];
-        }
-        return b;
-    }
-
-    private void executeAndCatch(Runnable r) {
-        executeAndCatch(IllegalArgumentException.class, r);
-    }
-
-    private void executeAndNoCatch(Runnable r) {
-        executeAndCatch(null, r);
-    }
-
-    private void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        }
-        catch (Exception e) {
-            caught = e;
-        }
-
-        if (expected != null) {
-            assertNotNull(caught,
-                          String.format("No Exception was thrown, expected an Exception of %s to be thrown",
-                                        expected.getName()));
-            assertTrue(expected.isInstance(caught),
-                       String.format("Exception thrown %s not an instance of %s",
-                                     caught.getClass().getName(), expected.getName()));
-        }
-        else {
-            if (caught != null) {
-                assertNull(caught,
-                           String.format("Unexpected exception of %s was thrown",
-                                         caught.getClass().getName()));
-            }
-        }
-    }
-
+    // Enable when Stream.concat is present and range implementations are
+    // updated to use that
+//    private static void assertSizedAndSubSized(Spliterator<?> s) {
+//        assertTrue(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
+//    }
+//
+//    private static void assertNotSizedAndSubSized(Spliterator<?> s) {
+//        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
+//    }
+//
+//    public void testLongLongRange() {
+//        // Test [Long.MIN_VALUE, Long.MAX_VALUE)
+//        // This will concatenate streams of three ranges
+//        //   [Long.MIN_VALUE, x) [x, 0) [0, Long.MAX_VALUE)
+//        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
+//        {
+//            Spliterator.OfLong s = LongStream.range(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
+//
+//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+//            assertNotSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s1 = s.trySplit();
+//            assertNotSizedAndSubSized(s1);
+//            assertSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s2 = s1.trySplit();
+//            assertSizedAndSubSized(s1);
+//            assertSizedAndSubSized(s2);
+//
+//            assertTrue(s.estimateSize() == Long.MAX_VALUE);
+//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
+//
+//            assertEquals(s.estimateSize() + s1.estimateSize() + s2.estimateSize(),
+//                         Long.MAX_VALUE - Long.MIN_VALUE);
+//        }
+//
+//        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
+//        for (int i = 0; i < ranges.length; i++) {
+//            long start = ranges[i][0];
+//            long end = ranges[i][1];
+//
+//            Spliterator.OfLong s = LongStream.range(start, end).spliterator();
+//
+//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+//            assertNotSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s1 = s.trySplit();
+//            assertSizedAndSubSized(s1);
+//            assertSizedAndSubSized(s);
+//
+//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+//
+//            assertEquals(s.estimateSize() + s1.estimateSize(), end - start);
+//        }
+//    }
+//
+//    public void testLongLongRangeClosed() {
+//        // Test [Long.MIN_VALUE, Long.MAX_VALUE]
+//        // This will concatenate streams of four ranges
+//        //   [Long.MIN_VALUE, x) [x, 0) [0, y) [y, Long.MAX_VALUE]
+//        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
+//        //       y = Long.divideUnsigned(Long.MAX_VALUE, 2) + 1
+//
+//        {
+//            Spliterator.OfLong s = LongStream.rangeClosed(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
+//
+//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+//            assertNotSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s1 = s.trySplit();
+//            assertNotSizedAndSubSized(s1);
+//            assertNotSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s2 = s1.trySplit();
+//            assertSizedAndSubSized(s1);
+//            assertSizedAndSubSized(s2);
+//
+//            Spliterator.OfLong s3 = s.trySplit();
+//            assertSizedAndSubSized(s3);
+//            assertSizedAndSubSized(s);
+//
+//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s3.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
+//
+//            assertEquals(s.estimateSize() + s3.estimateSize() + s1.estimateSize() + s2.estimateSize(),
+//                         Long.MAX_VALUE - Long.MIN_VALUE + 1);
+//        }
+//
+//        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
+//        for (int i = 0; i < ranges.length; i++) {
+//            long start = ranges[i][0];
+//            long end = ranges[i][1];
+//
+//            Spliterator.OfLong s = LongStream.rangeClosed(start, end).spliterator();
+//
+//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+//            assertNotSizedAndSubSized(s);
+//
+//            Spliterator.OfLong s1 = s.trySplit();
+//            assertSizedAndSubSized(s1);
+//            assertSizedAndSubSized(s);
+//
+//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+//
+//            assertEquals(s.estimateSize() + s1.estimateSize(), end - start + 1);
+//        }
+//    }
 }
