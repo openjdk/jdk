@@ -251,7 +251,7 @@ public abstract class InputStreamHook extends ObjectInputStream
     }
 
     protected abstract byte getStreamFormatVersion();
-    protected abstract org.omg.CORBA_2_3.portable.InputStream getOrbStream();
+    abstract org.omg.CORBA_2_3.portable.InputStream getOrbStream();
 
     // Description of possible actions
     protected static class ReadObjectState {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,8 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   _unique = C->unique();
 
   for( uint i=0; i<_phc._cfg._num_blocks; i++ ) {
+    C->check_node_count(NodeLimitFudgeFactor, "out of nodes in coalesce");
+    if (C->failing()) return;
     Block *b = _phc._cfg._blocks[i];
     uint cnt = b->num_preds();  // Number of inputs to the Phi
 

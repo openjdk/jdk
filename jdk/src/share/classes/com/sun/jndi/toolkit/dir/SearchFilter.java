@@ -396,7 +396,7 @@ public class SearchFilter implements AttrFilter {
 
             // do we need to begin with the first token?
             if(proto.charAt(0) != WILDCARD_TOKEN &&
-                    !value.toString().toLowerCase(Locale.ENGLISH).startsWith(
+                    !value.toLowerCase(Locale.ENGLISH).startsWith(
                         subStrs.nextToken().toLowerCase(Locale.ENGLISH))) {
                 if(debug) {
                     System.out.println("faild initial test");

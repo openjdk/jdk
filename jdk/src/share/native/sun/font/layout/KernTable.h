@@ -57,7 +57,6 @@ class U_LAYOUT_API KernTable
  private:
   le_uint16 coverage;
   le_uint16 nPairs;
-  LEReferenceToArrayOf<PairInfo> pairs;
   PairInfo  *pairsSwapped;
   const LETableReference &fTable;
   le_uint16 searchRange;

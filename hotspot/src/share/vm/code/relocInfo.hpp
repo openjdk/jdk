@@ -49,9 +49,6 @@ class NativeMovConstReg;
 //    RelocIterator
 //      A StackObj which iterates over the relocations associated with
 //      a range of code addresses.  Can be used to operate a copy of code.
-//    PatchingRelocIterator
-//      Specialized subtype of RelocIterator which removes breakpoints
-//      temporarily during iteration, then restores them.
 //    BoundRelocation
 //      An _internal_ type shared by packers and unpackers of relocations.
 //      It pastes together a RelocationHolder with some pointers into
@@ -204,15 +201,6 @@ class NativeMovConstReg;
 //   immediate field must not straddle a unit of memory coherence.
 //   //%note reloc_3
 //
-// relocInfo::breakpoint_type -- a conditional breakpoint in the code
-//   Value:  none
-//   Instruction types: any whatsoever
-//   Data:  [b [T]t  i...]
-//   The b is a bit-packed word representing the breakpoint's attributes.
-//   The t is a target address which the breakpoint calls (when it is enabled).
-//   The i... is a place to store one or two instruction words overwritten
-//   by a trap, so that the breakpoint may be subsequently removed.
-//
 // relocInfo::static_stub_type -- an extra stub for each static_call_type
 //   Value:  none
 //   Instruction types: a virtual call:  { set_oop; jump; }
@@ -271,8 +259,8 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
     section_word_type       =  9, // internal, but a cross-section reference
     poll_type               = 10, // polling instruction for safepoints
     poll_return_type        = 11, // polling instruction for safepoints at return
-    breakpoint_type         = 12, // an initialization barrier or safepoint
-    metadata_type           = 13, // metadata that used to be oops
+    metadata_type           = 12, // metadata that used to be oops
+    yet_unused_type_1       = 13, // Still unused
     yet_unused_type_2       = 14, // Still unused
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     type_mask               = 15  // A mask which selects only the above values
@@ -312,7 +300,6 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
     visitor(internal_word) \
     visitor(poll) \
     visitor(poll_return) \
-    visitor(breakpoint) \
     visitor(section_word) \
 
 
@@ -454,7 +441,7 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
  public:
   enum {
     // Conservatively large estimate of maximum length (in shorts)
-    // of any relocation record (probably breakpoints are largest).
+    // of any relocation record.
     // Extended format is length prefix, data words, and tag/offset suffix.
     length_limit       = 1 + 1 + (3*BytesPerWord/BytesPerShort) + 1,
     have_format        = format_width > 0
@@ -571,8 +558,6 @@ class RelocIterator : public StackObj {
 
   void initialize(nmethod* nm, address begin, address limit);
 
-  friend class PatchingRelocIterator;
-  // make an uninitialized one, for PatchingRelocIterator:
   RelocIterator() { initialize_misc(); }
 
  public:
@@ -779,9 +764,6 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
   void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
   address    pd_call_destination     (address orig_addr = NULL);
   void       pd_set_call_destination (address x);
-  void       pd_swap_in_breakpoint   (address x, short* instrs, int instrlen);
-  void       pd_swap_out_breakpoint  (address x, short* instrs, int instrlen);
-  static int pd_breakpoint_size      ();
 
   // this extracts the address of an address in the code stream instead of the reloc data
   address* pd_address_in_code       ();
@@ -1302,87 +1284,6 @@ class poll_return_Relocation : public Relocation {
   void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
 };
 
-
-class breakpoint_Relocation : public Relocation {
-  relocInfo::relocType type() { return relocInfo::breakpoint_type; }
-
-  enum {
-    // attributes which affect the interpretation of the data:
-    removable_attr = 0x0010,   // buffer [i...] allows for undoing the trap
-    internal_attr  = 0x0020,   // the target is an internal addr (local stub)
-    settable_attr  = 0x0040,   // the target is settable
-
-    // states which can change over time:
-    enabled_state  = 0x0100,   // breakpoint must be active in running code
-    active_state   = 0x0200,   // breakpoint instruction actually in code
-
-    kind_mask      = 0x000F,   // mask for extracting kind
-    high_bit       = 0x4000    // extra bit which is always set
-  };
-
- public:
-  enum {
-    // kinds:
-    initialization = 1,
-    safepoint      = 2
-  };
-
-  // If target is NULL, 32 bits are reserved for a later set_target().
-  static RelocationHolder spec(int kind, address target = NULL, bool internal_target = false) {
-    RelocationHolder rh = newHolder();
-    new(rh) breakpoint_Relocation(kind, target, internal_target);
-    return rh;
-  }
-
- private:
-  // We require every bits value to NOT to fit into relocInfo::datalen_width,
-  // because we are going to actually store state in the reloc, and so
-  // cannot allow it to be compressed (and hence copied by the iterator).
-
-  short   _bits;                  // bit-encoded kind, attrs, & state
-  address _target;
-
-  breakpoint_Relocation(int kind, address target, bool internal_target);
-
-  friend class RelocIterator;
-  breakpoint_Relocation() { }
-
-  short    bits()       const { return _bits; }
-  short&   live_bits()  const { return data()[0]; }
-  short*   instrs()     const { return data() + datalen() - instrlen(); }
-  int      instrlen()   const { return removable() ? pd_breakpoint_size() : 0; }
-
-  void set_bits(short x) {
-    assert(live_bits() == _bits, "must be the only mutator of reloc info");
-    live_bits() = _bits = x;
-  }
-
- public:
-  address  target()     const;
-  void set_target(address x);
-
-  int  kind()           const { return  bits() & kind_mask; }
-  bool enabled()        const { return (bits() &  enabled_state) != 0; }
-  bool active()         const { return (bits() &   active_state) != 0; }
-  bool internal()       const { return (bits() &  internal_attr) != 0; }
-  bool removable()      const { return (bits() & removable_attr) != 0; }
-  bool settable()       const { return (bits() &  settable_attr) != 0; }
-
-  void set_enabled(bool b);     // to activate, you must also say set_active
-  void set_active(bool b);      // actually inserts bpt (must be enabled 1st)
-
-  // data is packed as 16 bits, followed by the target (1 or 2 words), followed
-  // if necessary by empty storage for saving away original instruction bytes.
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
-
-  // during certain operations, breakpoints must be out of the way:
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
-    assert(!active(), "cannot perform relocation on enabled breakpoints");
-  }
-};
-
-
 // We know all the xxx_Relocation classes, so now we can define these:
 #define EACH_CASE(name)                                         \
 inline name##_Relocation* RelocIterator::name##_reloc() {       \
@@ -1400,26 +1301,5 @@ APPLY_TO_RELOCATIONS(EACH_CASE);
 inline RelocIterator::RelocIterator(nmethod* nm, address begin, address limit) {
   initialize(nm, begin, limit);
 }
-
-// if you are going to patch code, you should use this subclass of
-// RelocIterator
-class PatchingRelocIterator : public RelocIterator {
- private:
-  RelocIterator _init_state;
-
-  void prepass();               // deactivates all breakpoints
-  void postpass();              // reactivates all enabled breakpoints
-
-  // do not copy these puppies; it would have unpredictable side effects
-  // these are private and have no bodies defined because they should not be called
-  PatchingRelocIterator(const RelocIterator&);
-  void        operator=(const RelocIterator&);
-
- public:
-  PatchingRelocIterator(nmethod* nm, address begin = NULL, address limit = NULL)
-    : RelocIterator(nm, begin, limit)                { prepass();  }
-
-  ~PatchingRelocIterator()                           { postpass(); }
-};
 
 #endif // SHARE_VM_CODE_RELOCINFO_HPP

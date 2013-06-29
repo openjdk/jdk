@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ import java.io.InputStream;
  *
  * @author Karl Helgason
  */
-public class RIFFReader extends InputStream {
+public final class RIFFReader extends InputStream {
 
-    private RIFFReader root;
+    private final RIFFReader root;
     private long filepointer = 0;
-    private String fourcc;
+    private final String fourcc;
     private String riff_type = null;
     private long ckSize = 0;
     private InputStream stream;

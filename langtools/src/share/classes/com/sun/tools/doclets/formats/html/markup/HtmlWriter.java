@@ -311,8 +311,42 @@ public class HtmlWriter {
                 "    targetPage = \"\" + window.location.search;" + DocletConstants.NL +
                 "    if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
                 "        targetPage = targetPage.substring(1);" + DocletConstants.NL +
-                "    if (targetPage.indexOf(\":\") != -1)" + DocletConstants.NL +
+                "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + DocletConstants.NL +
                 "        targetPage = \"undefined\";" + DocletConstants.NL +
+                "    function validURL(url) {" + DocletConstants.NL +
+                "        var pos = url.indexOf(\".html\");" + DocletConstants.NL +
+                "        if (pos == -1 || pos != url.length - 5)" + DocletConstants.NL +
+                "            return false;" + DocletConstants.NL +
+                "        var allowNumber = false;" + DocletConstants.NL +
+                "        var allowSep = false;" + DocletConstants.NL +
+                "        var seenDot = false;" + DocletConstants.NL +
+                "        for (var i = 0; i < url.length - 5; i++) {" + DocletConstants.NL +
+                "            var ch = url.charAt(i);" + DocletConstants.NL +
+                "            if ('a' <= ch && ch <= 'z' ||" + DocletConstants.NL +
+                "                    'A' <= ch && ch <= 'Z' ||" + DocletConstants.NL +
+                "                    ch == '$' ||" + DocletConstants.NL +
+                "                    ch == '_') {" + DocletConstants.NL +
+                "                allowNumber = true;" + DocletConstants.NL +
+                "                allowSep = true;" + DocletConstants.NL +
+                "            } else if ('0' <= ch && ch <= '9'" + DocletConstants.NL +
+                "                    || ch == '-') {" + DocletConstants.NL +
+                "                if (!allowNumber)" + DocletConstants.NL +
+                "                     return false;" + DocletConstants.NL +
+                "            } else if (ch == '/' || ch == '.') {" + DocletConstants.NL +
+                "                if (!allowSep)" + DocletConstants.NL +
+                "                    return false;" + DocletConstants.NL +
+                "                allowNumber = false;" + DocletConstants.NL +
+                "                allowSep = false;" + DocletConstants.NL +
+                "                if (ch == '.')" + DocletConstants.NL +
+                "                     seenDot = true;" + DocletConstants.NL +
+                "                if (ch == '/' && seenDot)" + DocletConstants.NL +
+                "                     return false;" + DocletConstants.NL +
+                "            } else {" + DocletConstants.NL +
+                "                return false;"+ DocletConstants.NL +
+                "            }" + DocletConstants.NL +
+                "        }" + DocletConstants.NL +
+                "        return true;" + DocletConstants.NL +
+                "    }" + DocletConstants.NL +
                 "    function loadFrames() {" + DocletConstants.NL +
                 "        if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
                 "             top.classFrame.location = top.targetPage;" + DocletConstants.NL +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4665566 4855876 7025314
+ * @bug      4665566 4855876 7025314 8012375 8015997
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib/
@@ -35,7 +35,7 @@
 public class TestJavascript extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4665566-4855876";
+    private static final String BUG_ID = "4665566-4855876-8012375";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -53,8 +53,42 @@ public class TestJavascript extends JavadocTester {
                         "    targetPage = \"\" + window.location.search;" + NL +
             "    if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
             "        targetPage = targetPage.substring(1);" + NL +
-            "    if (targetPage.indexOf(\":\") != -1)" + NL +
+            "    if (targetPage.indexOf(\":\") != -1 || (targetPage != \"\" && !validURL(targetPage)))" + NL +
             "        targetPage = \"undefined\";" + NL +
+            "    function validURL(url) {" + NL +
+            "        var pos = url.indexOf(\".html\");" + NL +
+            "        if (pos == -1 || pos != url.length - 5)" + NL +
+            "            return false;" + NL +
+            "        var allowNumber = false;" + NL +
+            "        var allowSep = false;" + NL +
+            "        var seenDot = false;" + NL +
+            "        for (var i = 0; i < url.length - 5; i++) {" + NL +
+            "            var ch = url.charAt(i);" + NL +
+            "            if ('a' <= ch && ch <= 'z' ||" + NL +
+            "                    'A' <= ch && ch <= 'Z' ||" + NL +
+            "                    ch == '$' ||" + NL +
+            "                    ch == '_') {" + NL +
+            "                allowNumber = true;" + NL +
+            "                allowSep = true;" + NL +
+            "            } else if ('0' <= ch && ch <= '9'" + NL +
+            "                    || ch == '-') {" + NL +
+            "                if (!allowNumber)" + NL +
+            "                     return false;" + NL +
+            "            } else if (ch == '/' || ch == '.') {" + NL +
+            "                if (!allowSep)" + NL +
+            "                    return false;" + NL +
+            "                allowNumber = false;" + NL +
+            "                allowSep = false;" + NL +
+            "                if (ch == '.')" + NL +
+            "                     seenDot = true;" + NL +
+            "                if (ch == '/' && seenDot)" + NL +
+            "                     return false;" + NL +
+            "            } else {" + NL +
+            "                return false;" + NL +
+            "            }" + NL +
+            "        }" + NL +
+            "        return true;" + NL +
+            "    }" + NL +
             "    function loadFrames() {" + NL +
             "        if (targetPage != \"\" && targetPage != \"undefined\")" + NL +
             "             top.classFrame.location = top.targetPage;" + NL +

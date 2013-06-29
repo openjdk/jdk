@@ -647,10 +647,13 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
+  MemTracker::Tracker tkr = MemTracker::get_realloc_tracker();
   void* ptr = ::realloc(memblock, size);
   if (ptr != NULL) {
-    MemTracker::record_realloc((address)memblock, (address)ptr, size, memflags,
+    tkr.record((address)memblock, (address)ptr, size, memflags,
      caller == 0 ? CALLER_PC : caller);
+  } else {
+    tkr.discard();
   }
   return ptr;
 #else
@@ -1456,7 +1459,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
   }
 
   return result;
@@ -1466,7 +1469,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
    MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
     MemTracker::record_virtual_memory_type((address)result, flags);
   }
 
@@ -1476,7 +1479,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
 char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
   char* result = pd_attempt_reserve_memory_at(bytes, addr);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
   }
   return result;
 }
@@ -1503,18 +1506,36 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   return res;
 }
 
+void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
+                               const char* mesg) {
+  pd_commit_memory_or_exit(addr, bytes, executable, mesg);
+  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+}
+
+void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
+                               bool executable, const char* mesg) {
+  os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
+  MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+}
+
 bool os::uncommit_memory(char* addr, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
   bool res = pd_uncommit_memory(addr, bytes);
   if (res) {
-    MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
+    tkr.record((address)addr, bytes);
+  } else {
+    tkr.discard();
   }
   return res;
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
   bool res = pd_release_memory(addr, bytes);
   if (res) {
-    MemTracker::record_virtual_memory_release((address)addr, bytes);
+    tkr.record((address)addr, bytes);
+  } else {
+    tkr.discard();
   }
   return res;
 }
@@ -1525,8 +1546,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    MemTracker::record_virtual_memory_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, mtNone, CALLER_PC);
   }
   return result;
 }
@@ -1539,10 +1559,12 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
   bool result = pd_unmap_memory(addr, bytes);
   if (result) {
-    MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
-    MemTracker::record_virtual_memory_release((address)addr, bytes);
+    tkr.record((address)addr, bytes);
+  } else {
+    tkr.discard();
   }
   return result;
 }

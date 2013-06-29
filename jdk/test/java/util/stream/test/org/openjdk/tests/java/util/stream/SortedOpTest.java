@@ -150,7 +150,7 @@ public class SortedOpTest extends OpTestCase {
     }
 
     private IntStream unknownSizeIntStream(int[] a) {
-        return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(a)), 0));
+        return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0));
     }
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
@@ -193,7 +193,7 @@ public class SortedOpTest extends OpTestCase {
     }
 
     private LongStream unknownSizeLongStream(long[] a) {
-        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(a)), 0));
+        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0));
     }
 
     @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
@@ -236,7 +236,7 @@ public class SortedOpTest extends OpTestCase {
     }
 
     private DoubleStream unknownSizeDoubleStream(double[] a) {
-        return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(Spliterators.iteratorFromSpliterator(Arrays.spliterator(a)), 0));
+        return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(Spliterators.iterator(Arrays.spliterator(a)), 0));
     }
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)

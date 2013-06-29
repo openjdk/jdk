@@ -42,6 +42,7 @@ import org.xml.sax.EntityResolver;
 import com.oracle.webservices.internal.api.databinding.Databinding;
 import com.oracle.webservices.internal.api.databinding.Databinding.Builder;
 import com.oracle.webservices.internal.api.databinding.WSDLGenerator;
+import com.oracle.webservices.internal.api.databinding.DatabindingModeFeature;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
@@ -58,13 +59,10 @@ import com.sun.xml.internal.ws.util.ServiceFinder;
  */
 public class DatabindingFactoryImpl extends DatabindingFactory {
 
-//      static final String WsRuntimeFactoryProperties = DatabindingProvider.class.getName() + ".properties";
         static final String WsRuntimeFactoryDefaultImpl = "com.sun.xml.internal.ws.db.DatabindingProviderImpl";
 
         protected Map<String, Object> properties = new HashMap<String, Object>();
         protected DatabindingProvider defaultRuntimeFactory;
-//      protected Map<String, DatabindingProvider> runtimeFactories = new HashMap<String, DatabindingProvider>();
-//      protected Properties wsRuntimeFactoryMap;
         protected List<DatabindingProvider> providers;
 
     static private List<DatabindingProvider> providers() {
@@ -97,11 +95,6 @@ public class DatabindingFactoryImpl extends DatabindingFactory {
                 if (p.isFor(mode))
                     provider = p;
         } if (provider == null) {
-            // if (defaultRuntimeFactory == null) {
-            // defaultRuntimeFactory =
-            // newRuntimeFactory(WsRuntimeFactoryDefaultImpl);
-            // }
-            // provider = defaultRuntimeFactory;
             provider = new DatabindingProviderImpl();
         }
         return provider;
@@ -117,33 +110,14 @@ public class DatabindingFactoryImpl extends DatabindingFactory {
         return provider.wsdlGen(config);
     }
 
-//      DatabindingProvider newRuntimeFactory(String name) {
-//              ClassLoader classLoader = classLoader();
-//              DatabindingProvider factory = null;
-//              try {
-//                      Class cls = (classLoader != null) ? classLoader.loadClass(name) : Class.forName(name);
-//                      factory = DatabindingProvider.class.cast(cls.newInstance());
-//              } catch (Exception e) {
-//                      throw new DatabindingException("Unknown DatabindingFactory: " + name, e);
-//              }
-//              factory.init(properties);
-//              return factory;
-//      }
-
         String databindingMode(DatabindingConfig config) {
-//              if ( config.getOverrideMappingInfo() != null &&
-//                   config.getOverrideMappingInfo().getDatabindingMode() != null)
-//                      return config.getOverrideMappingInfo().getDatabindingMode();
-//              if ( config.getDefaultMappingInfo() != null &&
-//                   config.getDefaultMappingInfo().getDatabindingMode() != null)
-//                      return config.getDefaultMappingInfo().getDatabindingMode();
-
                 if ( config.getMappingInfo() != null &&
                      config.getMappingInfo().getDatabindingMode() != null)
                         return config.getMappingInfo().getDatabindingMode();
         if ( config.getFeatures() != null) for (WebServiceFeature f : config.getFeatures()) {
-            if (f instanceof com.oracle.webservices.internal.api.databinding.DatabindingModeFeature) {
-                com.oracle.webservices.internal.api.databinding.DatabindingModeFeature dmf = (com.oracle.webservices.internal.api.databinding.DatabindingModeFeature) f;
+            if (f instanceof DatabindingModeFeature) {
+                DatabindingModeFeature dmf = (DatabindingModeFeature) f;
+                config.properties().putAll(dmf.getProperties());
                 return dmf.getMode();
             }
         }

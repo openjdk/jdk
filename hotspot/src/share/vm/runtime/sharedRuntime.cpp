@@ -813,8 +813,11 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // 3. Implict null exception in nmethod
 
           if (!cb->is_nmethod()) {
-            guarantee(cb->is_adapter_blob() || cb->is_method_handles_adapter_blob(),
-                      "exception happened outside interpreter, nmethods and vtable stubs (1)");
+            bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
+            if (!is_in_blob) {
+              cb->print();
+              fatal(err_msg("exception happened outside interpreter, nmethods and vtable stubs at pc " INTPTR_FORMAT, pc));
+            }
             Events::log_exception(thread, "NullPointerException in code blob at " INTPTR_FORMAT, pc);
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
@@ -2731,7 +2734,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();
   int len = (int)strlen(s);
-  *s++; len--;                  // Skip opening paren
+  s++; len--;                   // Skip opening paren
   char *t = s+len;
   while( *(--t) != ')' ) ;      // Find close paren
 

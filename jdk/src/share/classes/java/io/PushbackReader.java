@@ -47,7 +47,7 @@ public class PushbackReader extends FilterReader {
      *
      * @param   in   The reader from which characters will be read
      * @param   size The size of the pushback buffer
-     * @exception IllegalArgumentException if size is <= 0
+     * @exception IllegalArgumentException if {@code size <= 0}
      */
     public PushbackReader(Reader in, int size) {
         super(in);

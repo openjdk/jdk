@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import com.sun.source.tree.Tree.Kind;
 
 import javax.lang.model.type.TypeKind;
 
+import static com.sun.tools.javac.code.TypeTag.NumericClasses.*;
+
 /** An interface for type tag values, which distinguish between different
  *  sorts of types.
  *
@@ -40,142 +42,176 @@ import javax.lang.model.type.TypeKind;
 public enum TypeTag {
     /** The tag of the basic type `byte'.
      */
-    BYTE(1),
+    BYTE(BYTE_CLASS, BYTE_SUPERCLASSES,
+            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `char'.
      */
-    CHAR(2),
+    CHAR(CHAR_CLASS, CHAR_SUPERCLASSES,
+            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `short'.
      */
-    SHORT(3),
+    SHORT(SHORT_CLASS, SHORT_SUPERCLASSES,
+            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `int'.
      */
-    INT(4),
+    INT(INT_CLASS, INT_SUPERCLASSES,
+            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `long'.
      */
-    LONG(5),
+    LONG(LONG_CLASS, LONG_SUPERCLASSES, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `float'.
      */
-    FLOAT(6),
+    FLOAT(FLOAT_CLASS, FLOAT_SUPERCLASSES, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `double'.
      */
-    DOUBLE(7),
+    DOUBLE(DOUBLE_CLASS, DOUBLE_CLASS, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
 
     /** The tag of the basic type `boolean'.
      */
-    BOOLEAN,
+    BOOLEAN(TypeTagKind.PRIMITIVE),
 
     /** The tag of the type `void'.
      */
-    VOID,
+    VOID(TypeTagKind.VOID),
 
     /** The tag of all class and interface types.
      */
-    CLASS,
+    CLASS(TypeTagKind.REFERENCE),
 
     /** The tag of all array types.
      */
-    ARRAY,
+    ARRAY(TypeTagKind.REFERENCE),
 
     /** The tag of all (monomorphic) method types.
      */
-    METHOD,
+    METHOD(TypeTagKind.OTHER),
 
     /** The tag of all package "types".
      */
-    PACKAGE,
+    PACKAGE(TypeTagKind.OTHER),
 
     /** The tag of all (source-level) type variables.
      */
-    TYPEVAR,
+    TYPEVAR(TypeTagKind.REFERENCE),
 
     /** The tag of all type arguments.
      */
-    WILDCARD,
+    WILDCARD(TypeTagKind.REFERENCE),
 
     /** The tag of all polymorphic (method-) types.
      */
-    FORALL,
+    FORALL(TypeTagKind.OTHER),
 
     /** The tag of deferred expression types in method context
      */
-    DEFERRED,
+    DEFERRED(TypeTagKind.OTHER),
 
     /** The tag of the bottom type {@code <null>}.
      */
-    BOT,
+    BOT(TypeTagKind.OTHER),
 
     /** The tag of a missing type.
      */
-    NONE,
+    NONE(TypeTagKind.OTHER),
 
     /** The tag of the error type.
      */
-    ERROR,
+    ERROR(TypeTagKind.REFERENCE | TypeTagKind.PARTIAL),
 
     /** The tag of an unknown type
      */
-    UNKNOWN,
+    UNKNOWN(TypeTagKind.PARTIAL),
 
     /** The tag of all instantiatable type variables.
      */
-    UNDETVAR,
+    UNDETVAR(TypeTagKind.PARTIAL),
 
     /** Pseudo-types, these are special tags
      */
-    UNINITIALIZED_THIS,
+    UNINITIALIZED_THIS(TypeTagKind.OTHER),
 
-    UNINITIALIZED_OBJECT;
+    UNINITIALIZED_OBJECT(TypeTagKind.OTHER);
 
-    /** This field will only be used for tags related with numeric types for
-     *  optimization reasons.
-     */
-    private final int order;
+    final boolean isPrimitive;
+    final boolean isNumeric;
+    final boolean isPartial;
+    final boolean isReference;
+    final boolean isPrimitiveOrVoid;
+    final int superClasses;
+    final int numericClass;
 
-    private TypeTag() {
-        this(0);
+    private TypeTag(int kind) {
+        this(0, 0, kind);
     }
 
-    private TypeTag(int order) {
-        this.order = order;
+    private TypeTag(int numericClass, int superClasses, int kind) {
+         isPrimitive = (kind & TypeTagKind.PRIMITIVE) != 0;
+         isNumeric = (kind & TypeTagKind.NUMERIC) != 0;
+         isPartial = (kind & TypeTagKind.PARTIAL) != 0;
+         isReference = (kind & TypeTagKind.REFERENCE) != 0;
+         isPrimitiveOrVoid = ((kind & TypeTagKind.PRIMITIVE) != 0) ||
+                 ((kind & TypeTagKind.VOID) != 0);
+         this.superClasses = superClasses;
+         this.numericClass = numericClass;
+     }
+
+    static class TypeTagKind {
+        static final int PRIMITIVE = 1;
+        static final int NUMERIC = 2;
+        static final int REFERENCE = 4;
+        static final int PARTIAL = 8;
+        static final int OTHER = 16;
+        static final int VOID = 32;
     }
 
-    private static final int MIN_NUMERIC_TAG_ORDER = 1;
-    private static final int MAX_NUMERIC_TAG_ORDER = 7;
+    public static class NumericClasses {
+        public static final int BYTE_CLASS = 1;
+        public static final int CHAR_CLASS = 2;
+        public static final int SHORT_CLASS = 4;
+        public static final int INT_CLASS = 8;
+        public static final int LONG_CLASS = 16;
+        public static final int FLOAT_CLASS = 32;
+        public static final int DOUBLE_CLASS = 64;
+
+        static final int BYTE_SUPERCLASSES = BYTE_CLASS | SHORT_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int CHAR_SUPERCLASSES = CHAR_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int SHORT_SUPERCLASSES = SHORT_CLASS | INT_CLASS |
+                LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int INT_SUPERCLASSES = INT_CLASS | LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int LONG_SUPERCLASSES = LONG_CLASS | FLOAT_CLASS | DOUBLE_CLASS;
+
+        static final int FLOAT_SUPERCLASSES = FLOAT_CLASS | DOUBLE_CLASS;
+    }
+
+    public boolean isStrictSubRangeOf(TypeTag tag) {
+        /*  Please don't change the implementation of this method to call method
+         *  isSubRangeOf. Both methods are called from hotspot code, the current
+         *  implementation is better performance-wise than the commented modification.
+         */
+        return (this.superClasses & tag.numericClass) != 0 && this != tag;
+    }
+
+    public boolean isSubRangeOf(TypeTag tag) {
+        return (this.superClasses & tag.numericClass) != 0;
+    }
 
     /** Returns the number of type tags.
      */
     public static int getTypeTagCount() {
         // last two tags are not included in the total as long as they are pseudo-types
         return (UNDETVAR.ordinal() + 1);
-    }
-
-    public boolean isSubRangeOf(TypeTag range) {
-        return (this == range) || isStrictSubRangeOf(range);
-    }
-
-    public boolean isStrictSubRangeOf(TypeTag range) {
-        if (this.order >= MIN_NUMERIC_TAG_ORDER && this.order <= MAX_NUMERIC_TAG_ORDER &&
-            range.order >= MIN_NUMERIC_TAG_ORDER && this.order <= MAX_NUMERIC_TAG_ORDER) {
-            if (this == range)
-                return false;
-            switch (this) {
-                case BYTE:
-                    return true;
-                case CHAR: case SHORT: case INT:
-                case LONG: case FLOAT:
-                    return this.order < range.order && range.order <= MAX_NUMERIC_TAG_ORDER;
-                default:
-                    return false;
-            }
-        }
-        else
-            return false;
     }
 
     public Kind getKindLiteral() {
