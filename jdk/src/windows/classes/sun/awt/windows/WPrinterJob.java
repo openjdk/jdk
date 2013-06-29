@@ -1269,11 +1269,13 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         mLastFontFamily = null;
     }
 
+    private boolean defaultCopies = true;
     /**
      * Set the number of copies to be printed.
      */
     public void setCopies(int copies) {
         super.setCopies(copies);
+        defaultCopies = false;
         mAttCopies = copies;
         setNativeCopies(copies);
     }
@@ -1529,8 +1531,9 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     }
 
     /* SheetCollate */
-    private final boolean getCollateAttrib() {
-        return (mAttCollate == 1);
+    private final int getCollateAttrib() {
+        // -1 means unset, 0 uncollated, 1 collated.
+        return mAttCollate;
     }
 
     private void setCollateAttrib(Attribute attr) {
@@ -1553,6 +1556,10 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         int orient = PageFormat.PORTRAIT;
         OrientationRequested orientReq = (attributes == null) ? null :
             (OrientationRequested)attributes.get(OrientationRequested.class);
+        if (orientReq == null) {
+            orientReq = (OrientationRequested)
+               myService.getDefaultAttributeValue(OrientationRequested.class);
+        }
         if (orientReq != null) {
             if (orientReq == OrientationRequested.REVERSE_LANDSCAPE) {
                 orient = PageFormat.REVERSE_LANDSCAPE;
@@ -1573,7 +1580,11 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
 
     /* Copies and Page Range. */
     private final int getCopiesAttrib() {
-        return getCopiesInt();
+        if (defaultCopies) {
+            return 0;
+        } else {
+            return getCopiesInt();
+        }
      }
 
     private final void setRangeCopiesAttribute(int from, int to,
@@ -1584,6 +1595,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
                 attributes.add(new PageRanges(from, to));
                 setPageRange(from, to);
             }
+            defaultCopies = false;
             attributes.add(new Copies(copies));
             /* Since this is called from native to tell Java to sync
              * up with native, we don't call this class's own setCopies()

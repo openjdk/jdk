@@ -373,11 +373,16 @@ loop:
                 sb.append(ch);
             } else if (ch < 256) {
                 sb.append('%');
-                final byte b = (byte)ch;
-                sb.append(Integer.toHexString(b & 0xFF).toUpperCase(Locale.ENGLISH));
+                if (ch < 16) {
+                    sb.append('0');
+                }
+                sb.append(Integer.toHexString(ch).toUpperCase(Locale.ENGLISH));
             } else {
                 sb.append("%u");
-                sb.append(Integer.toHexString(ch & 0xFFFF).toUpperCase(Locale.ENGLISH));
+                if (ch < 4096) {
+                    sb.append('0');
+                }
+                sb.append(Integer.toHexString(ch).toUpperCase(Locale.ENGLISH));
             }
         }
 

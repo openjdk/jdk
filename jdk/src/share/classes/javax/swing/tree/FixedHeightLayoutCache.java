@@ -26,12 +26,13 @@
 package javax.swing.tree;
 
 import javax.swing.event.TreeModelEvent;
-import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Stack;
+
+import sun.swing.SwingUtilities2;
 
 /**
  * NOTE: This will become more open in a future release.
@@ -346,7 +347,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         if(e != null) {
             int                 changedIndexs[];
             FHTreeStateNode     changedParent = getNodeForPath
-                                  (e.getTreePath(), false, false);
+                                  (SwingUtilities2.getTreePath(e, getModel()), false, false);
             int                 maxCounter;
 
             changedIndexs = e.getChildIndices();
@@ -390,7 +391,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         if(e != null) {
             int                 changedIndexs[];
             FHTreeStateNode     changedParent = getNodeForPath
-                                  (e.getTreePath(), false, false);
+                                  (SwingUtilities2.getTreePath(e, getModel()), false, false);
             int                 maxCounter;
 
             changedIndexs = e.getChildIndices();
@@ -429,7 +430,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         if(e != null) {
             int                  changedIndexs[];
             int                  maxCounter;
-            TreePath             parentPath = e.getTreePath();
+            TreePath             parentPath = SwingUtilities2.getTreePath(e, getModel());
             FHTreeStateNode      changedParentNode = getNodeForPath
                                        (parentPath, false, false);
 
@@ -475,7 +476,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeStructureChanged(TreeModelEvent e) {
         if(e != null) {
-            TreePath          changedPath = e.getTreePath();
+            TreePath          changedPath = SwingUtilities2.getTreePath(e, getModel());
             FHTreeStateNode   changedNode = getNodeForPath
                                                 (changedPath, false, false);
 

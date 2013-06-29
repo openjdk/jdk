@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndexNoThrow;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -156,7 +155,7 @@ public final class NativeString extends ScriptObject {
     @SuppressWarnings("unused")
     private static Object get(final Object self, final Object key) {
         final CharSequence cs = JSType.toCharSequence(self);
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         if (index >= 0 && index < cs.length()) {
             return String.valueOf(cs.charAt(index));
         }
@@ -191,7 +190,7 @@ public final class NativeString extends ScriptObject {
     // String characters can be accessed with array-like indexing..
     @Override
     public Object get(final Object key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         if (index >= 0 && index < value.length()) {
             return String.valueOf(value.charAt(index));
         }
@@ -284,7 +283,7 @@ public final class NativeString extends ScriptObject {
 
     @Override
     public boolean has(final Object key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.has(key);
     }
 
@@ -295,19 +294,19 @@ public final class NativeString extends ScriptObject {
 
     @Override
     public boolean has(final long key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.has(key);
     }
 
     @Override
     public boolean has(final double key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.has(key);
     }
 
     @Override
     public boolean hasOwnProperty(final Object key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.hasOwnProperty(key);
     }
 
@@ -318,13 +317,13 @@ public final class NativeString extends ScriptObject {
 
     @Override
     public boolean hasOwnProperty(final long key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.hasOwnProperty(key);
     }
 
     @Override
     public boolean hasOwnProperty(final double key) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return isValid(index) || super.hasOwnProperty(key);
     }
 
@@ -335,19 +334,19 @@ public final class NativeString extends ScriptObject {
 
     @Override
     public boolean delete(final long key, final boolean strict) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return checkDeleteIndex(index, strict)? false : super.delete(key, strict);
     }
 
     @Override
     public boolean delete(final double key, final boolean strict) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return checkDeleteIndex(index, strict)? false : super.delete(key, strict);
     }
 
     @Override
     public boolean delete(final Object key, final boolean strict) {
-        final int index = getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         return checkDeleteIndex(index, strict)? false : super.delete(key, strict);
     }
 
@@ -364,7 +363,7 @@ public final class NativeString extends ScriptObject {
 
     @Override
     public Object getOwnPropertyDescriptor(final String key) {
-        final int index = ArrayIndex.getArrayIndexNoThrow(key);
+        final int index = ArrayIndex.getArrayIndex(key);
         if (index >= 0 && index < value.length()) {
             final Global global = Global.instance();
             return global.newDataDescriptor(String.valueOf(value.charAt(index)), false, true, false);

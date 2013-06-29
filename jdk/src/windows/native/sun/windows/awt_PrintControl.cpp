@@ -252,7 +252,7 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     AwtPrintControl::getCopiesID =
       env->GetMethodID(cls, "getCopiesAttrib", "()I");
     AwtPrintControl::getCollateID =
-      env->GetMethodID(cls, "getCollateAttrib","()Z");
+      env->GetMethodID(cls, "getCollateAttrib","()I");
     AwtPrintControl::getOrientID =
       env->GetMethodID(cls, "getOrientAttrib", "()I");
     AwtPrintControl::getFromPageID =
@@ -690,12 +690,6 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
     pd.Flags = PD_ENABLEPRINTHOOK | PD_RETURNDC | PD_USEDEVMODECOPIESANDCOLLATE;
     pd.lpfnPrintHook = (LPPRINTHOOKPROC)PrintDlgHook;
 
-    if (env->CallBooleanMethod(printCtrl, AwtPrintControl::getCollateID)) {
-        pd.Flags |= PD_COLLATE;
-    }
-
-    pd.nCopies = (WORD)env->CallIntMethod(printCtrl,
-                                          AwtPrintControl::getCopiesID);
     pd.nFromPage = (WORD)env->CallIntMethod(printCtrl,
                                             AwtPrintControl::getFromPageID);
     pd.nToPage = (WORD)env->CallIntMethod(printCtrl,
@@ -729,37 +723,52 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
       DEVMODE *devmode = (DEVMODE *)::GlobalLock(pd.hDevMode);
       DASSERT(!IsBadWritePtr(devmode, sizeof(DEVMODE)));
 
-      devmode->dmFields |= DM_COPIES | DM_COLLATE | DM_ORIENTATION |
-          DM_PAPERSIZE | DM_PRINTQUALITY | DM_COLOR | DM_DUPLEX;
-
-      devmode->dmCopies = pd.nCopies;
+      WORD copies = (WORD)env->CallIntMethod(printCtrl,
+                                             AwtPrintControl::getCopiesID);
+      if (copies > 0) {
+          devmode->dmFields |= DM_COPIES;
+          devmode->dmCopies = copies;
+      }
 
       jint orient = env->CallIntMethod(printCtrl,
                                        AwtPrintControl::getOrientID);
-      if (orient == 0) {
+      if (orient == 0) {  // PageFormat.LANDSCAPE == 0
+        devmode->dmFields |= DM_ORIENTATION;
         devmode->dmOrientation = DMORIENT_LANDSCAPE;
-      } else if (orient == 1) {
+      } else if (orient == 1) { // PageFormat.PORTRAIT == 1
+        devmode->dmFields |= DM_ORIENTATION;
         devmode->dmOrientation = DMORIENT_PORTRAIT;
       }
 
-      devmode->dmCollate = (pd.Flags & PD_COLLATE) ? DMCOLLATE_TRUE
-        : DMCOLLATE_FALSE;
+      // -1 means unset, so we'll accept the printer default.
+      int collate = env->CallIntMethod(printCtrl,
+                                       AwtPrintControl::getCollateID);
+      if (collate == 1) {
+        devmode->dmFields |= DM_COLLATE;
+        devmode->dmCollate = DMCOLLATE_TRUE;
+      } else if (collate == 0) {
+        devmode->dmFields |= DM_COLLATE;
+        devmode->dmCollate = DMCOLLATE_FALSE;
+      }
 
       int quality = env->CallIntMethod(printCtrl,
                                        AwtPrintControl::getQualityID);
       if (quality) {
+        devmode->dmFields |= DM_PRINTQUALITY;
         devmode->dmPrintQuality = quality;
       }
 
       int color = env->CallIntMethod(printCtrl,
                                      AwtPrintControl::getColorID);
       if (color) {
+        devmode->dmFields |= DM_COLOR;
         devmode->dmColor = color;
       }
 
       int sides = env->CallIntMethod(printCtrl,
                                      AwtPrintControl::getSidesID);
       if (sides) {
+        devmode->dmFields |= DM_DUPLEX;
         devmode->dmDuplex = (int)sides;
       }
 
@@ -771,6 +780,7 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
 
       double newWid = 0.0, newHt = 0.0;
       if (wid_ht != NULL && wid_ht[0] != 0 && wid_ht[1] != 0) {
+        devmode->dmFields |= DM_PAPERSIZE;
         devmode->dmPaperSize = AwtPrintControl::getNearestMatchingPaper(
                                              printName,
                                              portName,
