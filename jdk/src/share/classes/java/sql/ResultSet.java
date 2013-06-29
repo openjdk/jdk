@@ -148,7 +148,7 @@ import java.io.InputStream;
 public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
-     * Moves the cursor froward one row from its current position.
+     * Moves the cursor forward one row from its current position.
      * A <code>ResultSet</code> cursor is initially positioned
      * before the first row; the first call to the method
      * <code>next</code> makes the first row the current row; the
