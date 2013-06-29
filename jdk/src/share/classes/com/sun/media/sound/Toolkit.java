@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,13 @@ import javax.sound.sampled.AudioSystem;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-public class Toolkit {
+public final class Toolkit {
 
+    /**
+     * Suppresses default constructor, ensuring non-instantiability.
+     */
+    private Toolkit() {
+    }
 
     /**
      * Converts bytes from signed to unsigned.

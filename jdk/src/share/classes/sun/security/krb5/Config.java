@@ -761,22 +761,23 @@ public class Config {
     }
 
     /**
-     * Returns the default encryption types.
-     *
+     * Returns all etypes specified in krb5.conf for the given configName,
+     * or all the builtin defaults. This result is always non-empty.
+     * If no etypes are found, an exception is thrown.
      */
-    public int[] defaultEtype(String enctypes) {
+    public int[] defaultEtype(String configName) throws KrbException {
         String default_enctypes;
-        default_enctypes = get("libdefaults", enctypes);
-        String delim = " ";
-        StringTokenizer st;
+        default_enctypes = get("libdefaults", configName);
         int[] etype;
         if (default_enctypes == null) {
             if (DEBUG) {
                 System.out.println("Using builtin default etypes for " +
-                    enctypes);
+                    configName);
             }
             etype = EType.getBuiltInDefaults();
         } else {
+            String delim = " ";
+            StringTokenizer st;
             for (int j = 0; j < default_enctypes.length(); j++) {
                 if (default_enctypes.substring(j, j + 1).equals(",")) {
                     // only two delimiters are allowed to use
@@ -791,17 +792,13 @@ public class Config {
             int type;
             for (int i = 0; i < len; i++) {
                 type = Config.getType(st.nextToken());
-                if ((type != -1) &&
-                    (EType.isSupported(type))) {
+                if (type != -1 && EType.isSupported(type)) {
                     ls.add(type);
                 }
             }
             if (ls.isEmpty()) {
-                if (DEBUG) {
-                    System.out.println(
-                        "no supported default etypes for " + enctypes);
-                }
-                return null;
+                throw new KrbException("no supported default etypes for "
+                        + configName);
             } else {
                 etype = new int[ls.size()];
                 for (int i = 0; i < etype.length; i++) {
@@ -811,7 +808,7 @@ public class Config {
         }
 
         if (DEBUG) {
-            System.out.print("default etypes for " + enctypes + ":");
+            System.out.print("default etypes for " + configName + ":");
             for (int i = 0; i < etype.length; i++) {
                 System.out.print(" " + etype[i]);
             }

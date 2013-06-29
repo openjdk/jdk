@@ -186,6 +186,11 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     public void exitFullScreenMode() {}
 
     @Override
+    public boolean isFullScreenMode() {
+        return false;
+    }
+
+    @Override
     public void setWindowState(int windowState) {}
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.util.*;
 import static java.util.GregorianCalendar.*;
 
 public class WeekDateTest {
-    static SimpleDateFormat ymdFormat = new SimpleDateFormat("yyyy-MM-dd");
-    static SimpleDateFormat ywdFormat = new SimpleDateFormat("YYYY-'W'ww-u");
+    static SimpleDateFormat ymdFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    static SimpleDateFormat ywdFormat = new SimpleDateFormat("YYYY-'W'ww-u", Locale.US);
     static {
         ymdFormat.setCalendar(newCalendar());
         ywdFormat.setCalendar(newCalendar());

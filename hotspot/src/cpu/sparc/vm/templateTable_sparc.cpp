@@ -1338,14 +1338,13 @@ void TemplateTable::lneg() {
 
 void TemplateTable::fneg() {
   transition(ftos, ftos);
-  __ fneg(FloatRegisterImpl::S, Ftos_f);
+  __ fneg(FloatRegisterImpl::S, Ftos_f, Ftos_f);
 }
 
 
 void TemplateTable::dneg() {
   transition(dtos, dtos);
-  // v8 has fnegd if source and dest are the same
-  __ fneg(FloatRegisterImpl::D, Ftos_f);
+  __ fneg(FloatRegisterImpl::D, Ftos_f, Ftos_f);
 }
 
 
@@ -1470,19 +1469,10 @@ void TemplateTable::convert() {
     __ st_long(Otos_l, __ d_tmp);
     __ ldf(FloatRegisterImpl::D, __ d_tmp, Ftos_d);
 
-    if (VM_Version::v9_instructions_work()) {
-      if (bytecode() == Bytecodes::_l2f) {
-        __ fxtof(FloatRegisterImpl::S, Ftos_d, Ftos_f);
-      } else {
-        __ fxtof(FloatRegisterImpl::D, Ftos_d, Ftos_d);
-      }
+    if (bytecode() == Bytecodes::_l2f) {
+      __ fxtof(FloatRegisterImpl::S, Ftos_d, Ftos_f);
     } else {
-      __ call_VM_leaf(
-        Lscratch,
-        bytecode() == Bytecodes::_l2f
-          ? CAST_FROM_FN_PTR(address, SharedRuntime::l2f)
-          : CAST_FROM_FN_PTR(address, SharedRuntime::l2d)
-      );
+      __ fxtof(FloatRegisterImpl::D, Ftos_d, Ftos_d);
     }
     break;
 
@@ -1490,11 +1480,6 @@ void TemplateTable::convert() {
       Label isNaN;
       // result must be 0 if value is NaN; test by comparing value to itself
       __ fcmp(FloatRegisterImpl::S, Assembler::fcc0, Ftos_f, Ftos_f);
-      // According to the v8 manual, you have to have a non-fp instruction
-      // between fcmp and fb.
-      if (!VM_Version::v9_instructions_work()) {
-        __ nop();
-      }
       __ fb(Assembler::f_unordered, true, Assembler::pn, isNaN);
       __ delayed()->clr(Otos_i);                                     // NaN
       __ ftoi(FloatRegisterImpl::S, Ftos_f, F30);
@@ -1537,16 +1522,7 @@ void TemplateTable::convert() {
     break;
 
     case Bytecodes::_d2f:
-    if (VM_Version::v9_instructions_work()) {
       __ ftof( FloatRegisterImpl::D, FloatRegisterImpl::S, Ftos_d, Ftos_f);
-    }
-    else {
-      // must uncache tos
-      __ push_d();
-      __ pop_i(O0);
-      __ pop_i(O1);
-      __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::d2f));
-    }
     break;
 
     default: ShouldNotReachHere();
@@ -1956,17 +1932,8 @@ void TemplateTable::fast_binaryswitch() {
     __ ld( Rarray, Rscratch, Rscratch );
     // (Rscratch is already in the native byte-ordering.)
     __ cmp( Rkey, Rscratch );
-    if ( VM_Version::v9_instructions_work() ) {
-      __ movcc( Assembler::less,         false, Assembler::icc, Rh, Rj );  // j = h if (key <  array[h].fast_match())
-      __ movcc( Assembler::greaterEqual, false, Assembler::icc, Rh, Ri );  // i = h if (key >= array[h].fast_match())
-    }
-    else {
-      Label end_of_if;
-      __ br( Assembler::less, true, Assembler::pt, end_of_if );
-      __ delayed()->mov( Rh, Rj ); // if (<) Rj = Rh
-      __ mov( Rh, Ri );            // else i = h
-      __ bind(end_of_if);          // }
-    }
+    __ movcc( Assembler::less,         false, Assembler::icc, Rh, Rj );  // j = h if (key <  array[h].fast_match())
+    __ movcc( Assembler::greaterEqual, false, Assembler::icc, Rh, Ri );  // i = h if (key >= array[h].fast_match())
 
     // while (i+1 < j)
     __ bind( entry );
@@ -3418,9 +3385,7 @@ void TemplateTable::_new() {
     // has been allocated.
     __ cmp_and_brx_short(RnewTopValue, RendValue, Assembler::greaterUnsigned, Assembler::pn, slow_case);
 
-    __ casx_under_lock(RtopAddr, RoldTopValue, RnewTopValue,
-      VM_Version::v9_instructions_work() ? NULL :
-      (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    __ cas_ptr(RtopAddr, RoldTopValue, RnewTopValue);
 
     // if someone beat us on the allocation, try again, otherwise continue
     __ cmp_and_brx_short(RoldTopValue, RnewTopValue, Assembler::notEqual, Assembler::pn, retry);
@@ -3701,14 +3666,7 @@ void TemplateTable::monitorenter() {
 
     __ verify_oop(O4);          // verify each monitor's oop
     __ tst(O4); // is this entry unused?
-    if (VM_Version::v9_instructions_work())
-      __ movcc( Assembler::zero, false, Assembler::ptr_cc, O3, O1);
-    else {
-      Label L;
-      __ br( Assembler::zero, true, Assembler::pn, L );
-      __ delayed()->mov(O3, O1); // rememeber this one if match
-      __ bind(L);
-    }
+    __ movcc( Assembler::zero, false, Assembler::ptr_cc, O3, O1);
 
     __ cmp(O4, O0); // check if current entry is for same object
     __ brx( Assembler::equal, false, Assembler::pn, exit );

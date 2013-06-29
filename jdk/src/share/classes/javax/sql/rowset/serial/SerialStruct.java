@@ -87,6 +87,7 @@ public class SerialStruct implements Struct, Serializable, Cloneable {
      * object for custom mapping the SQL structured type or any of its
      * attributes that are SQL structured types.
      *
+     * @param in an instance of {@code Struct}
      * @param map a <code>java.util.Map</code> object in which
      *        each entry consists of 1) a <code>String</code> object
      *        giving the fully qualified name of a UDT and 2) the

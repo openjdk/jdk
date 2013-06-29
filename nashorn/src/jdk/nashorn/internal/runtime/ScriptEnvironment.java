@@ -56,9 +56,6 @@ public final class ScriptEnvironment {
     /** Current Options object. */
     private final Options options;
 
-    /** Always allow functions as statements */
-    public final boolean _anon_functions;
-
     /** Size of the per-global Class cache size */
     public final int     _class_cache_size;
 
@@ -192,7 +189,6 @@ public final class ScriptEnvironment {
         this.namespace = new Namespace();
         this.options = options;
 
-        _anon_functions       = options.getBoolean("anon.functions");
         _class_cache_size     = options.getInteger("class.cache.size");
         _compile_only         = options.getBoolean("compile.only");
         _debug_lines          = options.getBoolean("debug.lines");

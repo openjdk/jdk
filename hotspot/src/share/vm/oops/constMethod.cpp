@@ -440,7 +440,6 @@ void ConstMethod::collect_statistics(KlassSizeStats *sz) const {
 
 void ConstMethod::verify_on(outputStream* st) {
   guarantee(is_constMethod(), "object must be constMethod");
-  guarantee(is_metadata(), err_msg("Should be metadata " PTR_FORMAT, this));
 
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.

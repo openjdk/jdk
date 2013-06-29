@@ -108,7 +108,7 @@ class WaitDispatchSupport implements SecondaryLoop {
         this.condition = new Conditional() {
             @Override
             public boolean evaluate() {
-                if (log.isLoggable(PlatformLogger.FINEST)) {
+                if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                     log.finest("evaluate(): blockingEDT=" + keepBlockingEDT.get() +
                                ", blockingCT=" + keepBlockingCT.get());
                 }
@@ -165,7 +165,7 @@ class WaitDispatchSupport implements SecondaryLoop {
      */
     @Override
     public boolean enter() {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("enter(): blockingEDT=" + keepBlockingEDT.get() +
                      ", blockingCT=" + keepBlockingCT.get());
         }
@@ -192,11 +192,11 @@ class WaitDispatchSupport implements SecondaryLoop {
 
         Thread currentThread = Thread.currentThread();
         if (currentThread == dispatchThread) {
-            if (log.isLoggable(PlatformLogger.FINEST)) {
+            if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                 log.finest("On dispatch thread: " + dispatchThread);
             }
             if (interval != 0) {
-                if (log.isLoggable(PlatformLogger.FINEST)) {
+                if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                     log.finest("scheduling the timer for " + interval + " ms");
                 }
                 timer.schedule(timerTask = new TimerTask() {
@@ -213,7 +213,7 @@ class WaitDispatchSupport implements SecondaryLoop {
             SequencedEvent currentSE = KeyboardFocusManager.
                 getCurrentKeyboardFocusManager().getCurrentSequencedEvent();
             if (currentSE != null) {
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("Dispose current SequencedEvent: " + currentSE);
                 }
                 currentSE.dispose();
@@ -231,7 +231,7 @@ class WaitDispatchSupport implements SecondaryLoop {
                 }
             });
         } else {
-            if (log.isLoggable(PlatformLogger.FINEST)) {
+            if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                 log.finest("On non-dispatch thread: " + currentThread);
             }
             synchronized (getTreeLock()) {
@@ -257,11 +257,11 @@ class WaitDispatchSupport implements SecondaryLoop {
                             getTreeLock().wait();
                         }
                     }
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("waitDone " + keepBlockingEDT.get() + " " + keepBlockingCT.get());
                     }
                 } catch (InterruptedException e) {
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("Exception caught while waiting: " + e);
                     }
                 } finally {
@@ -284,7 +284,7 @@ class WaitDispatchSupport implements SecondaryLoop {
      * @inheritDoc
      */
     public boolean exit() {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("exit(): blockingEDT=" + keepBlockingEDT.get() +
                      ", blockingCT=" + keepBlockingCT.get());
         }
@@ -311,7 +311,7 @@ class WaitDispatchSupport implements SecondaryLoop {
     };
 
     private void wakeupEDT() {
-        if (log.isLoggable(PlatformLogger.FINEST)) {
+        if (log.isLoggable(PlatformLogger.Level.FINEST)) {
             log.finest("wakeupEDT(): EDT == " + dispatchThread);
         }
         EventQueue eq = dispatchThread.getEventQueue();

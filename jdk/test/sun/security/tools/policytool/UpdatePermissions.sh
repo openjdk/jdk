@@ -23,6 +23,7 @@
 
 # @test
 # @bug 4218206
+# @bug 8015276
 # @summary missing or invalid permission target names in policy tool
 #
 # @run applet/manual=done UpdatePermissions.html
@@ -49,6 +50,11 @@ case "$OS" in
   SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
+    FS="/"
+    ;;
+  CYGWIN* )
+    NULL=/dev/null
+    PS=";"
     FS="/"
     ;;
   Windows* )

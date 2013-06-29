@@ -56,24 +56,45 @@ class DefaultDatagramSocketImplFactory
     /* If the version supports a dual stack TCP implementation */
     private static boolean useDualStackImpl = false;
 
+    /* sun.net.useExclusiveBind */
+    private static String exclBindProp;
+
+    /* True if exclusive binding is on for Windows */
+    private static boolean exclusiveBind = true;
+
+
     static {
         // Determine Windows Version.
-        java.security.AccessController.doPrivileged( new PrivilegedAction<Object>() {
-                public Object run() {
-                    version = 0;
-                    try {
-                        version = Float.parseFloat(System.getProperties().getProperty("os.version"));
-                        preferIPv4Stack = Boolean.parseBoolean(
-                                          System.getProperties().getProperty("java.net.preferIPv4Stack"));
-                    } catch (NumberFormatException e ) {
-                        assert false : e;
+        java.security.AccessController.doPrivileged(
+                new PrivilegedAction<Object>() {
+                    public Object run() {
+                        version = 0;
+                        try {
+                            version = Float.parseFloat(System.getProperties()
+                                    .getProperty("os.version"));
+                            preferIPv4Stack = Boolean.parseBoolean(
+                                              System.getProperties()
+                                              .getProperty(
+                                                   "java.net.preferIPv4Stack"));
+                            exclBindProp = System.getProperty(
+                                    "sun.net.useExclusiveBind");
+                        } catch (NumberFormatException e ) {
+                            assert false : e;
+                        }
+                        return null; // nothing to return
                     }
-                    return null; // nothing to return
-                } });
+                });
 
         // (version >= 6.0) implies Vista or greater.
         if (version >= 6.0 && !preferIPv4Stack) {
-            useDualStackImpl = true;
+                useDualStackImpl = true;
+        }
+        if (exclBindProp != null) {
+            // sun.net.useExclusiveBind is true
+            exclusiveBind = exclBindProp.length() == 0 ? true
+                    : Boolean.parseBoolean(exclBindProp);
+        } else if (version < 6.0) {
+            exclusiveBind = false;
         }
 
         // impl.prefix
@@ -105,10 +126,12 @@ class DefaultDatagramSocketImplFactory
                 throw new SocketException("can't instantiate DatagramSocketImpl");
             }
         } else {
+            if (isMulticast)
+                exclusiveBind = false;
             if (useDualStackImpl && !isMulticast)
-                return new DualStackPlainDatagramSocketImpl();
+                return new DualStackPlainDatagramSocketImpl(exclusiveBind);
             else
-                return new TwoStacksPlainDatagramSocketImpl();
+                return new TwoStacksPlainDatagramSocketImpl(exclusiveBind);
         }
     }
 }

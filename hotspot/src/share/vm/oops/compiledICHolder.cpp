@@ -48,8 +48,6 @@ void CompiledICHolder::print_value_on(outputStream* st) const {
 // Verification
 
 void CompiledICHolder::verify_on(outputStream* st) {
-  guarantee(holder_method()->is_metadata(),   "should be in metaspace");
   guarantee(holder_method()->is_method(), "should be method");
-  guarantee(holder_klass()->is_metadata(),    "should be in metaspace");
   guarantee(holder_klass()->is_klass(),   "should be klass");
 }

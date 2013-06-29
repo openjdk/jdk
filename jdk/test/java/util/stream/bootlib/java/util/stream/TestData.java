@@ -45,7 +45,7 @@ public interface TestData<T, S extends BaseStream<T, S>>
 
     @Override
     default Iterator<T> iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     Spliterator<T> spliterator();
@@ -292,7 +292,7 @@ public interface TestData<T, S extends BaseStream<T, S>>
 
             @Override
             public PrimitiveIterator.OfInt iterator() {
-                return Spliterators.iteratorFromSpliterator(spliterator());
+                return Spliterators.iterator(spliterator());
             }
 
             @Override
@@ -317,7 +317,7 @@ public interface TestData<T, S extends BaseStream<T, S>>
 
             @Override
             public PrimitiveIterator.OfLong iterator() {
-                return Spliterators.iteratorFromSpliterator(spliterator());
+                return Spliterators.iterator(spliterator());
             }
 
             @Override
@@ -342,7 +342,7 @@ public interface TestData<T, S extends BaseStream<T, S>>
 
             @Override
             public PrimitiveIterator.OfDouble iterator() {
-                return Spliterators.iteratorFromSpliterator(spliterator());
+                return Spliterators.iterator(spliterator());
             }
 
             @Override
