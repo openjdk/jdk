@@ -52,6 +52,7 @@ public class ExternalMetadataFeature extends WebServiceFeature {
 
     private List<String> resourceNames;
     private List<File> files;
+    private MetadataReader reader;
 
     private ExternalMetadataFeature() {
     }
@@ -88,6 +89,7 @@ public class ExternalMetadataFeature extends WebServiceFeature {
     }
 
     public MetadataReader getMetadataReader(ClassLoader classLoader, boolean disableSecureXmlProcessing) {
+        if (reader != null && enabled) return reader;
         return enabled ? new ExternalMetadataReader(files, resourceNames, classLoader, true, disableSecureXmlProcessing) : null;
     }
 
@@ -153,5 +155,9 @@ public class ExternalMetadataFeature extends WebServiceFeature {
             return this;
         }
 
+        public Builder setReader( MetadataReader r ) {
+            o.reader = r;
+            return this;
+        }
     }
 }

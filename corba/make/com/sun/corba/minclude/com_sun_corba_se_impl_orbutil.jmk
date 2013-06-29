@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ com_sun_corba_se_impl_orbutil_java = \
 	com/sun/corba/se/impl/orbutil/ObjectStreamClassUtil_1_3.java \
 	com/sun/corba/se/impl/orbutil/ORBConstants.java \
 	com/sun/corba/se/impl/orbutil/ORBUtility.java \
-	com/sun/corba/se/impl/orbutil/ORBClassLoader.java \
 	com/sun/corba/se/impl/orbutil/RepIdDelegator.java \
 	com/sun/corba/se/impl/orbutil/RepositoryIdFactory.java \
 	com/sun/corba/se/impl/orbutil/RepositoryIdStrings.java \

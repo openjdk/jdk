@@ -545,6 +545,7 @@ public interface Map<K,V> {
                 k = entry.getKey();
                 v = entry.getValue();
             } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
             action.accept(k, v);
@@ -599,9 +600,19 @@ public interface Map<K,V> {
                 k = entry.getKey();
                 v = entry.getValue();
             } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
-            entry.setValue(function.apply(k, v));
+
+            // ise thrown from function is not a cme.
+            v = function.apply(k, v);
+
+            try {
+                entry.setValue(v);
+            } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
         }
     }
 

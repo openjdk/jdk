@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.ws.spi.db;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public class BindingInfo {
         protected ClassLoader classLoader;
 
     private SEIModel seiModel;
+    private URL wsdlURL;
 
     public String getDatabindingMode() {
                 return databindingMode;
@@ -87,5 +89,10 @@ public class BindingInfo {
         public void setClassLoader(ClassLoader classLoader) {
                 this.classLoader = classLoader;
         }
-
+    public URL getWsdlURL() {
+        return wsdlURL;
+    }
+    public void setWsdlURL(URL wsdlURL) {
+        this.wsdlURL = wsdlURL;
+    }
 }

@@ -258,7 +258,7 @@ import java.lang.NullPointerException;  // for javadoc
  *       <td>All <i>alphanum</i> characters together with those in the string
  *        <tt>"_-!.~'()*"</tt></td></tr>
  *   <tr><th valign=top><i>punct</i></th>
- *       <td>The characters in the string <tt>",;:$&+="</tt></td></tr>
+ *       <td>The characters in the string <tt>",;:$&amp;+="</tt></td></tr>
  *   <tr><th valign=top><i>reserved</i></th>
  *       <td>All <i>punct</i> characters together with those in the string
  *        <tt>"?/[]@"</tt></td></tr>

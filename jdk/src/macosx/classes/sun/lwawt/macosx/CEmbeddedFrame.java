@@ -38,7 +38,8 @@ import java.awt.event.*;
 public class CEmbeddedFrame extends EmbeddedFrame {
 
     private CPlatformResponder responder;
-    private boolean focused = true;
+    private static final Object classLock = new Object();
+    private static volatile CEmbeddedFrame focusedWindow;
     private boolean parentWindowActive = true;
 
     public CEmbeddedFrame() {
@@ -104,9 +105,16 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         responder.handleInputEvent(text);
     }
 
+    // handleFocusEvent is called when the applet becames focused/unfocused.
+    // This method can be called from different threads.
     public void handleFocusEvent(boolean focused) {
-        this.focused = focused;
-        if (focused) {
+        synchronized (classLock) {
+            // In some cases an applet may not receive the focus lost event
+            // from the parent window (see 8012330)
+            focusedWindow = (focused) ? this
+                    : ((focusedWindow == this) ? null : focusedWindow);
+        }
+        if (focusedWindow == this) {
             // see bug 8010925
             // we can't put this to handleWindowFocusEvent because
             // it won't be invoced if focuse is moved to a html element
@@ -132,11 +140,14 @@ public class CEmbeddedFrame extends EmbeddedFrame {
      *
      * @param parentWindowActive true if the window is activated, false otherwise
      */
+    // handleWindowFocusEvent is called for all applets, when the browser
+    // becomes active/inactive. This event should be filtered out for
+    // non-focused applet. This method can be called from different threads.
     public void handleWindowFocusEvent(boolean parentWindowActive) {
         this.parentWindowActive = parentWindowActive;
         // ignore focus "lost" native request as it may mistakenly
         // deactivate active window (see 8001161)
-        if (focused && parentWindowActive) {
+        if (focusedWindow == this && parentWindowActive) {
             responder.handleWindowFocusEvent(parentWindowActive, null);
         }
     }

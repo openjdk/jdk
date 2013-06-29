@@ -513,6 +513,8 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
         return clipboard;
     }
 
+    protected abstract SecurityWarningWindow createSecurityWarning(Window ownerWindow, LWWindowPeer ownerPeer);
+
     // ---- DELEGATES ---- //
 
     public abstract Clipboard createPlatformClipboard();

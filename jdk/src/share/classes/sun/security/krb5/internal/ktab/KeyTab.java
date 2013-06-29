@@ -279,8 +279,7 @@ public class KeyTab implements KeyTabConstants {
 
     /**
      * Reads all keys for a service from the keytab file that have
-     * etypes that have been configured for use. If there are multiple
-     * keys with same etype, the one with the highest kvno is returned.
+     * etypes that have been configured for use.
      * @param service the PrincipalName of the requested service
      * @return an array containing all the service keys, never null
      */
@@ -313,35 +312,12 @@ public class KeyTab implements KeyTabConstants {
         size = keys.size();
         EncryptionKey[] retVal = keys.toArray(new EncryptionKey[size]);
 
-        // Sort keys according to default_tkt_enctypes
-        if (DEBUG) {
-            System.out.println("Ordering keys wrt default_tkt_enctypes list");
-        }
-
-        final int[] etypes = EType.getDefaults("default_tkt_enctypes");
-
-        // Sort the keys, k1 is preferred than k2 if:
-        // 1. k1's etype appears earlier in etypes than k2's
-        // 2. If same, k1's KVNO is higher
+        // Sort the keys by kvno. Sometimes we must choose a single key (say,
+        // generate encrypted timestamp in AS-REQ). A key with a higher KVNO
+        // sounds like a newer one.
         Arrays.sort(retVal, new Comparator<EncryptionKey>() {
             @Override
             public int compare(EncryptionKey o1, EncryptionKey o2) {
-                if (etypes != null) {
-                    int o1EType = o1.getEType();
-                    int o2EType = o2.getEType();
-                    if (o1EType != o2EType) {
-                        for (int i=0; i<etypes.length; i++) {
-                            if (etypes[i] == o1EType) {
-                                return -1;
-                            } else if (etypes[i] == o2EType) {
-                                return 1;
-                            }
-                        }
-                        // Neither o1EType nor o2EType in default_tkt_enctypes,
-                        // therefore won't be used in AS-REQ. We do not care
-                        // about their order, use kvno is OK.
-                    }
-                }
                 return o2.getKeyVersionNumber().intValue()
                         - o1.getKeyVersionNumber().intValue();
             }

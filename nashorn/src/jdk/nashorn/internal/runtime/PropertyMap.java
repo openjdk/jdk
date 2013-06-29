@@ -95,7 +95,6 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      */
     private PropertyMap(final PropertyHashMap properties, final int fieldCount, final int fieldMaximum) {
         this.properties   = properties;
-        this.hashCode     = computeHashCode();
         this.fieldCount   = fieldCount;
         this.fieldMaximum = fieldMaximum;
 
@@ -125,7 +124,6 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
         this.spillLength  = propertyMap.spillLength;
         this.fieldCount   = propertyMap.fieldCount;
         this.fieldMaximum = propertyMap.fieldMaximum;
-        this.hashCode     = computeHashCode();
 
         if (Context.DEBUG) {
             count++;
@@ -610,6 +608,9 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
 
     @Override
     public int hashCode() {
+        if (hashCode == 0 && !properties.isEmpty()) {
+            hashCode = computeHashCode();
+        }
         return hashCode;
     }
 

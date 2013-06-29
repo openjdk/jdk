@@ -31,6 +31,7 @@
 #include "gtk2_interface.h"
 #include "java_awt_Transparency.h"
 #include "jvm_md.h"
+#include "sizecalc.h"
 
 #define GTK2_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0")
 #define GTK2_LIB JNI_LIB_NAME("gtk-x11-2.0")
@@ -765,7 +766,8 @@ gboolean gtk2_load()
         gtk_modules_env && strstr (gtk_modules_env, "gail"))
     {
         /* the new env will be smaller than the old one */
-        gchar *s, *new_env = malloc (sizeof(ENV_PREFIX)+strlen (gtk_modules_env));
+        gchar *s, *new_env = SAFE_SIZE_STRUCT_ALLOC(malloc,
+                sizeof(ENV_PREFIX), 1, strlen (gtk_modules_env));
 
         if (new_env != NULL )
         {

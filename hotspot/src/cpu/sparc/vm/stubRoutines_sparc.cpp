@@ -52,7 +52,3 @@ address StubRoutines::Sparc::_stop_subroutine_entry = NULL;
 address StubRoutines::Sparc::_flush_callers_register_windows_entry = CAST_FROM_FN_PTR(address, bootstrap_flush_windows);
 
 address StubRoutines::Sparc::_partial_subtype_check = NULL;
-
-int StubRoutines::Sparc::_atomic_memory_operation_lock = StubRoutines::Sparc::unlocked;
-
-int StubRoutines::Sparc::_v8_oop_lock_cache[StubRoutines::Sparc::nof_v8_oop_lock_cache_entries];

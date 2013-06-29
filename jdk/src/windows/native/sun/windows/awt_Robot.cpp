@@ -234,7 +234,9 @@ void AwtRobot::GetRGBPixels(jint x, jint y, jint width, jint height, jintArray p
     static const int BITS_PER_PIXEL = 32;
     static const int BYTES_PER_PIXEL = BITS_PER_PIXEL/8;
 
+    if (!IS_SAFE_SIZE_MUL(width, height)) throw std::bad_alloc();
     int numPixels = width*height;
+    if (!IS_SAFE_SIZE_MUL(BYTES_PER_PIXEL, numPixels)) throw std::bad_alloc();
     int pixelDataSize = BYTES_PER_PIXEL*numPixels;
     DASSERT(pixelDataSize > 0 && pixelDataSize % 4 == 0);
     // allocate memory for BITMAPINFO + pixel data
@@ -244,6 +246,9 @@ void AwtRobot::GetRGBPixels(jint x, jint y, jint width, jint height, jintArray p
     // end of our block of memory.  Now we allocate sufficient memory.
     // See MSDN docs for BITMAPINFOHEADER -bchristi
 
+    if (!IS_SAFE_SIZE_ADD(sizeof(BITMAPINFOHEADER) + 3 * sizeof(RGBQUAD), pixelDataSize)) {
+        throw std::bad_alloc();
+    }
     BITMAPINFO * pinfo = (BITMAPINFO *)(new BYTE[sizeof(BITMAPINFOHEADER) + 3 * sizeof(RGBQUAD) + pixelDataSize]);
 
     // pixel data starts after 3 RGBQUADS for color masks

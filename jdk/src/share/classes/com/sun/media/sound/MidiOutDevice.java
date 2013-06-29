@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.sound.midi.*;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-class MidiOutDevice extends AbstractMidiDevice {
+final class MidiOutDevice extends AbstractMidiDevice {
 
     // CONSTRUCTOR
 
@@ -101,7 +101,7 @@ class MidiOutDevice extends AbstractMidiDevice {
 
     // INNER CLASSES
 
-    class MidiOutReceiver extends AbstractReceiver {
+    final class MidiOutReceiver extends AbstractReceiver {
 
         void implSend(final MidiMessage message, final long timeStamp) {
             final int length = message.getLength();

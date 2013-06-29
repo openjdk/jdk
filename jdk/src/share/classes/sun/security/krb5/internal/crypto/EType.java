@@ -230,11 +230,14 @@ public abstract class EType {
     /**
      * Retrieves the default etypes from the configuration file, or
      * if that's not available, return the built-in list of default etypes.
+     * This result is always non-empty. If no etypes are found,
+     * an exception is thrown.
      */
-    // used in KrbAsReq, KeyTab
-    public static int[] getDefaults(String configName) {
+    public static int[] getDefaults(String configName)
+            throws KrbException {
+        Config config = null;
         try {
-            return Config.getInstance().defaultEtype(configName);
+            config = Config.getInstance();
         } catch (KrbException exc) {
             if (DEBUG) {
                 System.out.println("Exception while getting " +
@@ -243,6 +246,7 @@ public abstract class EType {
             }
             return getBuiltInDefaults();
         }
+        return config.defaultEtype(configName);
     }
 
     /**
@@ -254,12 +258,8 @@ public abstract class EType {
      * we have keys.
      */
     public static int[] getDefaults(String configName, EncryptionKey[] keys)
-        throws KrbException {
+            throws KrbException {
         int[] answer = getDefaults(configName);
-        if (answer == null) {
-            throw new KrbException("No supported encryption types listed in "
-                + configName);
-        }
 
         List<Integer> list = new ArrayList<>(answer.length);
         for (int i = 0; i < answer.length; i++) {

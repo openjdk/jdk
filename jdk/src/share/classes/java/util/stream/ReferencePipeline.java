@@ -137,7 +137,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     public final Iterator<P_OUT> iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
 

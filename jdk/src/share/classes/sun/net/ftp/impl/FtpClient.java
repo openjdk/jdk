@@ -76,7 +76,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     private FtpReplyCode lastReplyCode = null;
     /** Welcome message from the server, if any. */
     private String welcomeMsg;
-    private boolean passiveMode = true;
+    /**
+     * Only passive mode used in JDK. See Bug 8010784.
+     */
+    private final boolean passiveMode = true;
     private TransferType type = TransferType.BINARY;
     private long restartOffset = 0;
     private long lastTransSize = -1; // -1 means 'unknown size'
@@ -427,7 +430,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             }
             response = replyBuf.toString();
             replyBuf.setLength(0);
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                 logger.finest("Server [" + serverAddr + "] --> " + response);
             }
 
@@ -469,7 +472,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     /** Sends command <i>cmd</i> to the server. */
     private void sendServer(String cmd) {
         out.print(cmd);
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("Server [" + serverAddr + "] <-- " + cmd);
         }
     }
@@ -645,9 +648,18 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         } else {
             s = new Socket();
         }
+
+        InetAddress serverAddress = AccessController.doPrivileged(
+                new PrivilegedAction<InetAddress>() {
+                    @Override
+                    public InetAddress run() {
+                        return server.getLocalAddress();
+                    }
+                });
+
         // Bind the socket to the same address as the control channel. This
         // is needed in case of multi-homed systems.
-        s.bind(new InetSocketAddress(server.getLocalAddress(), 0));
+        s.bind(new InetSocketAddress(serverAddress, 0));
         if (connectTimeout >= 0) {
             s.connect(dest, connectTimeout);
         } else {
@@ -816,7 +828,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * @see #setActiveMode()
      */
     public sun.net.ftp.FtpClient enablePassiveMode(boolean passive) {
-        passiveMode = passive;
+
+        // Only passive mode used in JDK. See Bug 8010784.
+        // passiveMode = passive;
         return this;
     }
 

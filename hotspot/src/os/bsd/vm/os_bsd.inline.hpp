@@ -178,11 +178,11 @@ inline size_t os::write(int fd, const void *buf, unsigned int nBytes) {
 }
 
 inline int os::close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 inline int os::socket_close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 inline int os::socket(int domain, int type, int protocol) {
@@ -284,22 +284,6 @@ inline int os::get_sock_opt(int fd, int level, int optname,
 inline int os::set_sock_opt(int fd, int level, int optname,
                             const char* optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
-}
-
-inline void os::Bsd::SuspendResume::set_suspended()           {
-  jint temp, temp2;
-  do {
-    temp = _state;
-    temp2 = Atomic::cmpxchg(temp | SR_SUSPENDED, &_state, temp);
-  } while (temp2 != temp);
-}
-
-inline void os::Bsd::SuspendResume::clear_suspended()        {
-  jint temp, temp2;
-  do {
-    temp = _state;
-    temp2 = Atomic::cmpxchg(temp & ~SR_SUSPENDED, &_state, temp);
-  } while (temp2 != temp);
 }
 
 #endif // OS_BSD_VM_OS_BSD_INLINE_HPP

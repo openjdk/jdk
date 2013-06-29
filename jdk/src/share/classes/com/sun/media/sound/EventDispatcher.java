@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,15 @@
 
 package com.sun.media.sound;
 
-import java.util.EventObject;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.Line;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
-
+import javax.sound.midi.ControllerEventListener;
+import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.ShortMessage;
-import javax.sound.midi.MetaEventListener;
-import javax.sound.midi.ControllerEventListener;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 
 
 
@@ -49,7 +45,7 @@ import javax.sound.midi.ControllerEventListener;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-class EventDispatcher implements Runnable {
+final class EventDispatcher implements Runnable {
 
     /**
      * time of inactivity until the auto closing clips
@@ -61,7 +57,7 @@ class EventDispatcher implements Runnable {
     /**
      * List of events
      */
-    private ArrayList eventQueue = new ArrayList();
+    private final ArrayList eventQueue = new ArrayList();
 
 
     /**
@@ -73,12 +69,12 @@ class EventDispatcher implements Runnable {
     /*
      * support for auto-closing Clips
      */
-    private ArrayList<ClipInfo> autoClosingClips = new ArrayList<ClipInfo>();
+    private final ArrayList<ClipInfo> autoClosingClips = new ArrayList<ClipInfo>();
 
     /*
      * support for monitoring data lines
      */
-    private ArrayList<LineMonitor> lineMonitors = new ArrayList<LineMonitor>();
+    private final ArrayList<LineMonitor> lineMonitors = new ArrayList<LineMonitor>();
 
     /**
      * Approximate interval between calls to LineMonitor.checkLine
@@ -105,7 +101,7 @@ class EventDispatcher implements Runnable {
      * Invoked when there is at least one event in the queue.
      * Implement this as a callback to process one event.
      */
-    protected void processEvent(EventInfo eventInfo) {
+    void processEvent(EventInfo eventInfo) {
         int count = eventInfo.getListenerCount();
 
         // process an LineEvent
@@ -166,7 +162,7 @@ class EventDispatcher implements Runnable {
      * exclusive access over the code where an event is removed from the
      *queue.
      */
-    protected void dispatchEvents() {
+    void dispatchEvents() {
 
         EventInfo eventInfo = null;
 
@@ -388,8 +384,8 @@ class EventDispatcher implements Runnable {
      */
     private class EventInfo {
 
-        private Object event;
-        private Object[] listeners;
+        private final Object event;
+        private final Object[] listeners;
 
         /**
          * Create a new instance of this event Info class
@@ -421,8 +417,8 @@ class EventDispatcher implements Runnable {
      */
     private class ClipInfo {
 
-        private AutoClosingClip clip;
-        private long expiration;
+        private final AutoClosingClip clip;
+        private final long expiration;
 
         /**
          * Create a new instance of this clip Info class

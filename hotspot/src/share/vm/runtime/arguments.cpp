@@ -1566,6 +1566,15 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
   return result;
 }
 
+void Arguments::set_heap_base_min_address() {
+  if (FLAG_IS_DEFAULT(HeapBaseMinAddress) && UseG1GC && HeapBaseMinAddress < 1*G) {
+    // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
+    // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
+    // some extra space for the C-heap compared to other collectors.
+    FLAG_SET_ERGO(uintx, HeapBaseMinAddress, 1*G);
+  }
+}
+
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
     // Deprecated flag
@@ -1884,21 +1893,6 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
-
-#if ( (defined(COMPILER2) && defined(SPARC)))
-  // NOTE: The call to VM_Version_init depends on the fact that VM_Version_init
-  // on sparc doesn't require generation of a stub as is the case on, e.g.,
-  // x86.  Normally, VM_Version_init must be called from init_globals in
-  // init.cpp, which is called by the initial java thread *after* arguments
-  // have been parsed.  VM_Version_init gets called twice on sparc.
-  extern void VM_Version_init();
-  VM_Version_init();
-  if (!VM_Version::has_v9()) {
-    jio_fprintf(defaultStream::error_stream(),
-                "V8 Machine detected, Server requires V9\n");
-    status = false;
-  }
-#endif /* COMPILER2 && SPARC */
 
   // Allow both -XX:-UseStackBanging and -XX:-UseBoundThreads in non-product
   // builds so the cost of stack banging can be measured.
@@ -3524,6 +3518,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
         "Incompatible compilation policy selected", NULL);
     }
   }
+
+  set_heap_base_min_address();
 
   // Set heap size based on available physical memory
   set_heap_size();
