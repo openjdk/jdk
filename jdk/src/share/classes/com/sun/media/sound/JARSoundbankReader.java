@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,16 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
 
+import sun.reflect.misc.ReflectUtil;
+
 /**
- * JarSoundbankReader is used to read sounbank object from jar files.
+ * JarSoundbankReader is used to read soundbank object from jar files.
  *
  * @author Karl Helgason
  */
-public class JARSoundbankReader extends SoundbankReader {
+public final class JARSoundbankReader extends SoundbankReader {
 
-    public boolean isZIP(URL url) {
+    private static boolean isZIP(URL url) {
         boolean ok = false;
         try {
             InputStream stream = url.openStream();
@@ -81,14 +83,14 @@ public class JARSoundbankReader extends SoundbankReader {
             while (line != null) {
                 if (!line.startsWith("#")) {
                     try {
-                        Class c = Class.forName(line.trim(), true, ucl);
-                        Object o = c.newInstance();
-                        if (o instanceof Soundbank) {
+                        Class<?> c = Class.forName(line.trim(), false, ucl);
+                        if (Soundbank.class.isAssignableFrom(c)) {
+                            Object o = ReflectUtil.newInstance(c);
                             soundbanks.add((Soundbank) o);
                         }
-                    } catch (ClassNotFoundException  e) {
-                    } catch (InstantiationException  e) {
-                    } catch (IllegalAccessException  e) {
+                    } catch (ClassNotFoundException ignored) {
+                    } catch (InstantiationException ignored) {
+                    } catch (IllegalAccessException ignored) {
                     }
                 }
                 line = r.readLine();

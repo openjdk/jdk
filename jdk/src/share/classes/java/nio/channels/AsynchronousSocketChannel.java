@@ -645,4 +645,24 @@ public abstract class AsynchronousSocketChannel
                                    TimeUnit unit,
                                    A attachment,
                                    CompletionHandler<Long,? super A> handler);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
+     * local port of the channel's socket is returned.
+     *
+     * @return  The {@code SocketAddress} that the socket is bound to, or the
+     *          {@code SocketAddress} representing the loopback address if
+     *          denied by the security manager, or {@code null} if the
+     *          channel's socket is not bound
+     *
+     * @throws  ClosedChannelException     {@inheritDoc}
+     * @throws  IOException                {@inheritDoc}
+     */
+    public abstract SocketAddress getLocalAddress() throws IOException;
 }

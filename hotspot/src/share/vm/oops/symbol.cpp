@@ -32,7 +32,9 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 
-Symbol::Symbol(const u1* name, int length, int refcount) : _refcount(refcount), _length(length) {
+Symbol::Symbol(const u1* name, int length, int refcount) {
+  _refcount = refcount;
+  _length = length;
   _identity_hash = os::random();
   for (int i = 0; i < _length; i++) {
     byte_at_put(i, name[i]);

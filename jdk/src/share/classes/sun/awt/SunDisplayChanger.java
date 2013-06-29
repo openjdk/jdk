@@ -71,12 +71,12 @@ public class SunDisplayChanger {
      * notified when the display is changed.
      */
     public void add(DisplayChangedListener theListener) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             if (theListener == null) {
                 log.fine("Assertion (theListener != null) failed");
             }
         }
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Adding listener: " + theListener);
         }
         listeners.put(theListener, null);
@@ -86,12 +86,12 @@ public class SunDisplayChanger {
      * Remove the given DisplayChangeListener from this SunDisplayChanger.
      */
     public void remove(DisplayChangedListener theListener) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             if (theListener == null) {
                 log.fine("Assertion (theListener != null) failed");
             }
         }
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Removing listener: " + theListener);
         }
         listeners.remove(theListener);
@@ -102,7 +102,7 @@ public class SunDisplayChanger {
      * taken place by calling their displayChanged() methods.
      */
     public void notifyListeners() {
-        if (log.isLoggable(PlatformLogger.FINEST)) {
+        if (log.isLoggable(PlatformLogger.Level.FINEST)) {
             log.finest("notifyListeners");
         }
     // This method is implemented by making a clone of the set of listeners,
@@ -126,7 +126,7 @@ public class SunDisplayChanger {
         while (itr.hasNext()) {
             DisplayChangedListener current = itr.next();
             try {
-                if (log.isLoggable(PlatformLogger.FINEST)) {
+                if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                     log.finest("displayChanged for listener: " + current);
                 }
                 current.displayChanged();
@@ -146,7 +146,7 @@ public class SunDisplayChanger {
      * taken place by calling their paletteChanged() methods.
      */
     public void notifyPaletteChanged() {
-        if (log.isLoggable(PlatformLogger.FINEST)) {
+        if (log.isLoggable(PlatformLogger.Level.FINEST)) {
             log.finest("notifyPaletteChanged");
         }
     // This method is implemented by making a clone of the set of listeners,
@@ -169,7 +169,7 @@ public class SunDisplayChanger {
         while (itr.hasNext()) {
             DisplayChangedListener current = itr.next();
             try {
-                if (log.isLoggable(PlatformLogger.FINEST)) {
+                if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                     log.finest("paletteChanged for listener: " + current);
                 }
                 current.paletteChanged();

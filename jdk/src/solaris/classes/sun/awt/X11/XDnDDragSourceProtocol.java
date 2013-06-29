@@ -395,7 +395,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                 return false;
             }
 
-            if (logger.isLoggable(PlatformLogger.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                 logger.finest("        sourceWindow=" + sourceWindow +
                               " get_window=" + xclient.get_window() +
                               " xclient=" + xclient);

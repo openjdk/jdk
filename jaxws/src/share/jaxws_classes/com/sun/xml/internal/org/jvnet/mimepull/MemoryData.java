@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,20 +78,22 @@ final class MemoryData implements Data {
             try {
                 String prefix = config.getTempFilePrefix();
                 String suffix = config.getTempFileSuffix();
-                File dir = config.getTempDir();
-                File tempFile = (dir == null)
-                        ? File.createTempFile(prefix, suffix)
-                        : File.createTempFile(prefix, suffix, dir);
+                File tempFile = TempFiles.createTempFile(prefix, suffix, config.getTempDir());
+                // delete the temp file when VM exits as a last resort for file clean up
+                tempFile.deleteOnExit();
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, "Created temp file = {0}", tempFile);
+                }
                 // delete the temp file when VM exits as a last resort for file clean up
                 tempFile.deleteOnExit();
                 if (LOGGER.isLoggable(Level.FINE)) {LOGGER.log(Level.FINE, "Created temp file = {0}", tempFile);}
                 dataHead.dataFile = new DataFile(tempFile);
-            } catch(IOException ioe) {
+            } catch (IOException ioe) {
                 throw new MIMEParsingException(ioe);
             }
 
             if (dataHead.head != null) {
-                for(Chunk c=dataHead.head; c != null; c=c.next) {
+                for (Chunk c = dataHead.head; c != null; c = c.next) {
                     long pointer = c.data.writeTo(dataHead.dataFile);
                     c.data = new FileData(dataHead.dataFile, pointer, len);
                 }
@@ -101,4 +103,5 @@ final class MemoryData implements Data {
             return new MemoryData(buf, config);
         }
     }
+
 }

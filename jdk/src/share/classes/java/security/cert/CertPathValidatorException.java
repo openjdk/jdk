@@ -141,8 +141,8 @@ public class CertPathValidatorException extends GeneralSecurityException {
      * that caused the error (or -1 if not applicable). Note that
      * the list of certificates in a <code>CertPath</code> is zero based.
      * @throws IndexOutOfBoundsException if the index is out of range
-     * <code>(index < -1 || (certPath != null && index >=
-     * certPath.getCertificates().size())</code>
+     * {@code (index < -1 || (certPath != null && index >=
+     * certPath.getCertificates().size()) }
      * @throws IllegalArgumentException if <code>certPath</code> is
      * <code>null</code> and <code>index</code> is not -1
      */
@@ -164,8 +164,8 @@ public class CertPathValidatorException extends GeneralSecurityException {
      * the list of certificates in a <code>CertPath</code> is zero based.
      * @param reason the reason the validation failed
      * @throws IndexOutOfBoundsException if the index is out of range
-     * <code>(index < -1 || (certPath != null && index >=
-     * certPath.getCertificates().size())</code>
+     * {@code (index < -1 || (certPath != null && index >=
+     * certPath.getCertificates().size()) }
      * @throws IllegalArgumentException if <code>certPath</code> is
      * <code>null</code> and <code>index</code> is not -1
      * @throws NullPointerException if <code>reason</code> is <code>null</code>

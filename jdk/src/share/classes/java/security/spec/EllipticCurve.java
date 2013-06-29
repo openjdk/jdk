@@ -184,9 +184,9 @@ public class EllipticCurve {
      * Returns a hash code value for this elliptic curve.
      * @return a hash code value computed from the hash codes of the field, A,
      * and B, as follows:
-     * <code>
+     * <pre>{@code
      *     (field.hashCode() << 6) + (a.hashCode() << 4) + (b.hashCode() << 2)
-     * </code>
+     * }</pre>
      */
     public int hashCode() {
         return (field.hashCode() << 6 +

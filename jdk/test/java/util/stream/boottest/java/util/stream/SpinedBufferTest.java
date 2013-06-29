@@ -210,7 +210,7 @@ public class SpinedBufferTest {
         list2.clear();
         sb.forEach((int i) -> list2.add(i));
         assertEquals(list1, list2);
-        int[] array = sb.asIntArray();
+        int[] array = sb.asPrimitiveArray();
         list2.clear();
         for (int i : array)
             list2.add(i);
@@ -285,7 +285,7 @@ public class SpinedBufferTest {
         list2.clear();
         sb.forEach((long i) -> list2.add(i));
         assertEquals(list1, list2);
-        long[] array = sb.asLongArray();
+        long[] array = sb.asPrimitiveArray();
         list2.clear();
         for (long i : array)
             list2.add(i);
@@ -300,7 +300,7 @@ public class SpinedBufferTest {
 
         for (int size : sizes) {
             // @@@ replace with double range when implemented
-            double[] array = LongStream.range(0, size).doubles().toArray();
+            double[] array = LongStream.range(0, size).asDoubleStream().toArray();
             SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
             Arrays.stream(array).forEach(sb);
 
@@ -361,7 +361,7 @@ public class SpinedBufferTest {
         list2.clear();
         sb.forEach((double i) -> list2.add(i));
         assertEquals(list1, list2);
-        double[] array = sb.asDoubleArray();
+        double[] array = sb.asPrimitiveArray();
         list2.clear();
         for (double i : array)
             list2.add(i);

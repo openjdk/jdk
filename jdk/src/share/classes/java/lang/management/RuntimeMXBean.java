@@ -308,7 +308,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>Map<String,String></tt> is
+     * The mapped type of {@code Map<String,String>} is
      * {@link javax.management.openmbean.TabularData TabularData}
      * with two items in each row as follows:
      * <blockquote>

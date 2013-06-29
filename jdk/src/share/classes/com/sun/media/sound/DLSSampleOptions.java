@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@ import java.util.List;
  *
  * @author Karl Helgason
  */
-public class DLSSampleOptions {
+public final class DLSSampleOptions {
 
-    protected int unitynote;
-    protected short finetune;
-    protected int attenuation;
-    protected long options;
-    protected List<DLSSampleLoop> loops = new ArrayList<DLSSampleLoop>();
+    int unitynote;
+    short finetune;
+    int attenuation;
+    long options;
+    List<DLSSampleLoop> loops = new ArrayList<DLSSampleLoop>();
 
     public int getAttenuation() {
         return attenuation;

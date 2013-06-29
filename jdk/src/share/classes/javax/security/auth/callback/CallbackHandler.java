@@ -79,7 +79,7 @@ public interface CallbackHandler {
      * This example code is for guidance only.  Many details,
      * including proper error handling, are left out for simplicity.
      *
-     * <pre>
+     * <pre>{@code
      * public void handle(Callback[] callbacks)
      * throws IOException, UnsupportedCallbackException {
      *
@@ -133,7 +133,7 @@ public interface CallbackHandler {
      * private char[] readPassword(InputStream in) throws IOException {
      *    // insert code to read a user password from the input stream
      * }
-     * </pre>
+     * }</pre>
      *
      * @param callbacks an array of <code>Callback</code> objects provided
      *          by an underlying security service which contains

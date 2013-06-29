@@ -128,7 +128,7 @@ public class  XMSelection {
             long display = XToolkit.getDisplay();
             synchronized(this) {
                 setOwner(owner, screen);
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("New Selection Owner for screen " + screen + " = " + owner );
                 }
                 XlibWrapper.XSelectInput(display, owner, XConstants.StructureNotifyMask | eventMask);
@@ -150,14 +150,14 @@ public class  XMSelection {
         try {
             try {
                 long display = XToolkit.getDisplay();
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("Grabbing XServer");
                 }
                 XlibWrapper.XGrabServer(display);
 
                 synchronized(this) {
                     String selection_name = getName()+"_S"+screen;
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("Screen = " + screen + " selection name = " + selection_name);
                     }
                     XAtom atom = XAtom.get(selection_name);
@@ -166,7 +166,7 @@ public class  XMSelection {
                     long owner = XlibWrapper.XGetSelectionOwner(display, atom.getAtom());
                     if (owner != 0) {
                         setOwner(owner, screen);
-                        if (log.isLoggable(PlatformLogger.FINE)) {
+                        if (log.isLoggable(PlatformLogger.Level.FINE)) {
                             log.fine("Selection Owner for screen " + screen + " = " + owner );
                         }
                         XlibWrapper.XSelectInput(display, owner, XConstants.StructureNotifyMask | extra_mask);
@@ -183,7 +183,7 @@ public class  XMSelection {
                 e.printStackTrace();
             }
             finally {
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("UnGrabbing XServer");
                 }
                 XlibWrapper.XUngrabServer(XToolkit.getDisplay());
@@ -197,7 +197,7 @@ public class  XMSelection {
     static boolean processClientMessage(XEvent xev, int screen) {
         XClientMessageEvent xce = xev.get_xclient();
         if (xce.get_message_type() == XA_MANAGER.getAtom()) {
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("client messags = " + xce);
             }
             long timestamp = xce.get_data(0);
@@ -306,7 +306,7 @@ public class  XMSelection {
 
 
     synchronized void dispatchSelectionChanged( XPropertyEvent ev, int screen) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Selection Changed : Screen = " + screen + "Event =" + ev);
         }
         if (listeners != null) {
@@ -319,7 +319,7 @@ public class  XMSelection {
     }
 
     synchronized void dispatchOwnerDeath(XDestroyWindowEvent de, int screen) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Owner dead : Screen = " + screen + "Event =" + de);
         }
         if (listeners != null) {
@@ -333,7 +333,7 @@ public class  XMSelection {
     }
 
     void dispatchSelectionEvent(XEvent xev, int screen) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Event =" + xev);
         }
         if (xev.get_type() == XConstants.DestroyNotify) {
