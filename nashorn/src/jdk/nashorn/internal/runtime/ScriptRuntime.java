@@ -127,6 +127,17 @@ public final class ScriptRuntime {
      * @param deflt default to use if not convertible.
      * @return int tag value (or deflt.)
      */
+    public static int switchTagAsInt(final boolean tag, final int deflt) {
+        return deflt;
+    }
+
+    /**
+     * Converts a switch tag value to a simple integer. deflt value if it can't.
+     *
+     * @param tag   Switch statement tag value.
+     * @param deflt default to use if not convertible.
+     * @return int tag value (or deflt.)
+     */
     public static int switchTagAsInt(final long tag, final int deflt) {
         return isRepresentableAsInt(tag) ? (int)tag : deflt;
     }
