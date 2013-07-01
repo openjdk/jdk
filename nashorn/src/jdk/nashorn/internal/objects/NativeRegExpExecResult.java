@@ -61,6 +61,11 @@ public final class NativeRegExpExecResult extends ScriptObject {
         this.input = result.getInput();
     }
 
+    @Override
+    public String getClassName() {
+        return "Array";
+    }
+
     /**
      * Length getter
      * @param self self reference
