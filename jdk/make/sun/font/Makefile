@@ -36,7 +36,7 @@ PRODUCT = sun
 CPLUSPLUSLIBRARY=true
 
 # Use higher optimization level
-OPTIMIZATION_LEVEL = HIGHER
+OPTIMIZATION_LEVEL = HIGHEST
 
 include $(BUILDDIR)/common/Defs.gmk
 

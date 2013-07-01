@@ -66,6 +66,7 @@ GlyphIterator::GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjus
         nextLimit = -1;
         prevLimit = glyphCount;
     }
+    filterResetCache();
 }
 
 GlyphIterator::GlyphIterator(GlyphIterator &that)
@@ -84,6 +85,7 @@ GlyphIterator::GlyphIterator(GlyphIterator &that)
     glyphGroup  = that.glyphGroup;
     glyphClassDefinitionTable = that.glyphClassDefinitionTable;
     markAttachClassDefinitionTable = that.markAttachClassDefinitionTable;
+    filterResetCache();
 }
 
 GlyphIterator::GlyphIterator(GlyphIterator &that, FeatureMask newFeatureMask)
@@ -102,6 +104,7 @@ GlyphIterator::GlyphIterator(GlyphIterator &that, FeatureMask newFeatureMask)
     glyphGroup  = 0;
     glyphClassDefinitionTable = that.glyphClassDefinitionTable;
     markAttachClassDefinitionTable = that.markAttachClassDefinitionTable;
+    filterResetCache();
 }
 
 GlyphIterator::GlyphIterator(GlyphIterator &that, le_uint16 newLookupFlags)
@@ -120,6 +123,7 @@ GlyphIterator::GlyphIterator(GlyphIterator &that, le_uint16 newLookupFlags)
     glyphGroup  = that.glyphGroup;
     glyphClassDefinitionTable = that.glyphClassDefinitionTable;
     markAttachClassDefinitionTable = that.markAttachClassDefinitionTable;
+    filterResetCache();
 }
 
 GlyphIterator::~GlyphIterator()
@@ -133,6 +137,7 @@ void GlyphIterator::reset(le_uint16 newLookupFlags, FeatureMask newFeatureMask)
     featureMask  = newFeatureMask;
     glyphGroup   = 0;
     lookupFlags  = newLookupFlags;
+    filterResetCache();
 }
 
 LEGlyphID *GlyphIterator::insertGlyphs(le_int32 count, LEErrorCode& success)
@@ -381,53 +386,68 @@ void GlyphIterator::setCursiveGlyph()
     glyphPositionAdjustments->setCursiveGlyph(position, baselineIsLogicalEnd());
 }
 
-le_bool GlyphIterator::filterGlyph(le_uint32 index) const
-{
-    LEErrorCode success = LE_NO_ERROR;
-    LEGlyphID glyphID = glyphStorage[index];
-    le_int32 glyphClass = gcdNoGlyphClass;
-
-    if (LE_GET_GLYPH(glyphID) >= 0xFFFE) {
-        return TRUE;
+void GlyphIterator::filterResetCache(void) {
+  filterCacheValid = FALSE;
     }
 
+le_bool GlyphIterator::filterGlyph(le_uint32 index)
+{
+    LEGlyphID glyphID = glyphStorage[index];
+
+    if (!filterCacheValid || filterCache.id != glyphID) {
+      filterCache.id = glyphID;
+
+      le_bool &filterResult = filterCache.result;  // NB: Making this a reference to accept the updated value, in case
+                                               // we want more fancy cacheing in the future.
+    if (LE_GET_GLYPH(glyphID) >= 0xFFFE) {
+        filterResult = TRUE;
+      } else {
+        LEErrorCode success = LE_NO_ERROR;
+        le_int32 glyphClass = gcdNoGlyphClass;
     if (glyphClassDefinitionTable.isValid()) {
       glyphClass = glyphClassDefinitionTable->getGlyphClass(glyphClassDefinitionTable, glyphID, success);
     }
-
-    switch (glyphClass)
-    {
+        switch (glyphClass) {
     case gcdNoGlyphClass:
-        return FALSE;
+          filterResult = FALSE;
+          break;
 
     case gcdSimpleGlyph:
-        return (lookupFlags & lfIgnoreBaseGlyphs) != 0;
+          filterResult = (lookupFlags & lfIgnoreBaseGlyphs) != 0;
+          break;
 
     case gcdLigatureGlyph:
-        return (lookupFlags & lfIgnoreLigatures) != 0;
+          filterResult = (lookupFlags & lfIgnoreLigatures) != 0;
+          break;
 
     case gcdMarkGlyph:
-    {
         if ((lookupFlags & lfIgnoreMarks) != 0) {
-            return TRUE;
-        }
-
+            filterResult = TRUE;
+          } else {
         le_uint16 markAttachType = (lookupFlags & lfMarkAttachTypeMask) >> lfMarkAttachTypeShift;
 
         if ((markAttachType != 0) && (markAttachClassDefinitionTable.isValid())) {
-          return markAttachClassDefinitionTable
-            -> getGlyphClass(markAttachClassDefinitionTable, glyphID, success) != markAttachType;
+              filterResult = (markAttachClassDefinitionTable
+                          -> getGlyphClass(markAttachClassDefinitionTable, glyphID, success) != markAttachType);
+            } else {
+              filterResult = FALSE;
         }
-
-        return FALSE;
     }
+          break;
 
     case gcdComponentGlyph:
-        return (lookupFlags & lfIgnoreBaseGlyphs) != 0;
+          filterResult = ((lookupFlags & lfIgnoreBaseGlyphs) != 0);
+          break;
 
     default:
-        return FALSE;
+          filterResult = FALSE;
+          break;
     }
+      }
+      filterCacheValid = TRUE;
+        }
+
+    return filterCache.result;
 }
 
 le_bool GlyphIterator::hasFeatureTag(le_bool matchGroup) const
