@@ -3786,7 +3786,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1372413705
+DATE_WHEN_GENERATED=1372685988
 
 ###############################################################################
 #
@@ -23975,19 +23975,20 @@ $as_echo "$as_me: Rewriting RC to \"$new_complete\"" >&6;}
         RC_FLAGS="$RC_FLAGS -d NDEBUG"
 
 fi
-    JDK_UPDATE_VERSION_NOTNULL=$JDK_UPDATE_VERSION
-    if test "x$JDK_UPDATE_VERSION" = x; then :
 
-        JDK_UPDATE_VERSION_NOTNULL=0
-
-fi
-    RC_FLAGS="$RC_FLAGS -d \"JDK_BUILD_ID=$FULL_VERSION\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPANY=$COMPANY_NAME\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPONENT=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME binary\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_VER=$JDK_MINOR_VERSION.$JDK_MICRO_VERSION.$JDK_UPDATE_VERSION_NOTNULL.$COOKED_BUILD_NUMBER\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_NAME=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME $JDK_MINOR_VERSION $JDK_UPDATE_META_TAG\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_FVER=$JDK_MINOR_VERSION,$JDK_MICRO_VERSION,$JDK_UPDATE_VERSION_NOTNULL,$COOKED_BUILD_NUMBER\""
+    # The version variables used to create RC_FLAGS may be overridden
+    # in a custom configure script, or possibly the command line.
+    # Let those variables be expanded at make time in spec.gmk.
+    # The \$ are escaped to the shell, and the $(...) variables
+    # are evaluated by make.
+    RC_FLAGS="$RC_FLAGS \
+        -d \"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -d \"JDK_COMPANY=\$(COMPANY_NAME)\" \
+        -d \"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
+        -d \"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
+        -d \"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
+        -d \"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
 
     # lib.exe is used to create static libraries.
     # Extract the first word of "lib", so it can be a program name with args.
