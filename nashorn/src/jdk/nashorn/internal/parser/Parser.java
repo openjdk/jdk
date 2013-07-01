@@ -767,8 +767,6 @@ loop:
         case LBRACE:
             block();
             break;
-        case RBRACE:
-            break;
         case VAR:
             variableStatement(true);
             break;
@@ -1267,6 +1265,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1314,6 +1313,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1368,6 +1368,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1403,6 +1404,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -2566,7 +2568,7 @@ loop:
                  */
 
                 // just expression as function body
-                final Node expr = expression();
+                final Node expr = assignmentExpression(true);
                 assert lc.getCurrentBlock() == lc.getFunctionBody(functionNode);
                 // create a return statement - this creates code in itself and does not need to be
                 // wrapped into an ExecuteNode
