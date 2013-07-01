@@ -42,7 +42,7 @@ import java.util.Locale;
  * interfaces to offer support for locales beyond the set of locales
  * supported by the Java runtime environment itself.
  * <p>
- * <h4>Packaging of Locale Sensitive Service Provider Implementations</h4>
+ * <h3>Packaging of Locale Sensitive Service Provider Implementations</h3>
  * Implementations of these locale sensitive services are packaged using the
  * <a href="../../../../technotes/guides/extensions/index.html">Java Extension Mechanism</a>
  * as installed extensions.  A provider identifies itself with a
@@ -165,7 +165,7 @@ public abstract class LocaleServiceProvider {
     /**
      * Returns {@code true} if the given {@code locale} is supported by
      * this locale service provider. The given {@code locale} may contain
-     * <a href="../Locale.html#def_extensions">extensions<a/> that should be
+     * <a href="../Locale.html#def_extensions">extensions</a> that should be
      * taken into account for the support determination.
      *
      * <p>The default implementation returns {@code true} if the given {@code locale}
