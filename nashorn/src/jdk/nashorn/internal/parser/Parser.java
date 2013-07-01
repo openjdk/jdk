@@ -1930,7 +1930,7 @@ loop:
 
         // Object context.
         // Prepare to accumulate elements.
-       // final List<Node> elements = new ArrayList<>();
+        // final List<Node> elements = new ArrayList<>();
         final Map<String, PropertyNode> map = new LinkedHashMap<>();
 
         // Create a block for the object literal.
@@ -1943,6 +1943,9 @@ loop:
                     break loop;
 
                 case COMMARIGHT:
+                    if (commaSeen) {
+                        throw error(AbstractParser.message("expected.property.id", type.getNameOrType()));
+                    }
                     next();
                     commaSeen = true;
                     break;
