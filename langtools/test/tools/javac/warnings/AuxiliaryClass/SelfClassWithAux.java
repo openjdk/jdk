@@ -29,6 +29,7 @@
 
 /*
  * @test
+ * @bug 7153951
  * @run compile -Werror -Xlint:auxiliaryclass SelfClassWithAux.java ClassWithAuxiliary.java
  * @run compile -Werror -Xlint:auxiliaryclass SelfClassWithAux.java
  */
