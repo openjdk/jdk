@@ -110,7 +110,8 @@ LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
-oop Universe::_out_of_memory_error_perm_gen           = NULL;
+oop Universe::_out_of_memory_error_metaspace          = NULL;
+oop Universe::_out_of_memory_error_class_metaspace    = NULL;
 oop Universe::_out_of_memory_error_array_size         = NULL;
 oop Universe::_out_of_memory_error_gc_overhead_limit  = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
@@ -179,7 +180,8 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_the_null_string);
   f->do_oop((oop*)&_the_min_jint_string);
   f->do_oop((oop*)&_out_of_memory_error_java_heap);
-  f->do_oop((oop*)&_out_of_memory_error_perm_gen);
+  f->do_oop((oop*)&_out_of_memory_error_metaspace);
+  f->do_oop((oop*)&_out_of_memory_error_class_metaspace);
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
     f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
@@ -561,7 +563,8 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
   // a potential loop which could happen if an out of memory occurs when attempting
   // to allocate the backtrace.
   return ((throwable() != Universe::_out_of_memory_error_java_heap) &&
-          (throwable() != Universe::_out_of_memory_error_perm_gen)  &&
+          (throwable() != Universe::_out_of_memory_error_metaspace)  &&
+          (throwable() != Universe::_out_of_memory_error_class_metaspace)  &&
           (throwable() != Universe::_out_of_memory_error_array_size) &&
           (throwable() != Universe::_out_of_memory_error_gc_overhead_limit));
 }
@@ -1011,7 +1014,8 @@ bool universe_post_init() {
     k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
     k_h = instanceKlassHandle(THREAD, k);
     Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_perm_gen = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_metaspace = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_class_metaspace = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_gc_overhead_limit =
       k_h->allocate_instance(CHECK_false);
@@ -1044,7 +1048,9 @@ bool universe_post_init() {
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
 
     msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_perm_gen, msg());
+    java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
+    msg = java_lang_String::create_from_str("Class Metadata space", CHECK_false);
+    java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_array_size, msg());
