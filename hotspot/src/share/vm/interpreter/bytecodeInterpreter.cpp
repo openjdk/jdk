@@ -30,7 +30,6 @@
 #include "interpreter/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "memory/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -503,8 +502,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   interpreterState orig = istate;
 #endif
 
-  static volatile jbyte* _byte_map_base; // adjusted card table base for oop store barrier
-
   register intptr_t*        topOfStack = (intptr_t *)istate->stack(); /* access with STACK macros */
   register address          pc = istate->bcp();
   register jubyte opcode;
@@ -512,12 +509,9 @@ BytecodeInterpreter::run(interpreterState istate) {
   register ConstantPoolCache*    cp = istate->constants(); // method()->constants()->cache()
 #ifdef LOTS_OF_REGS
   register JavaThread*      THREAD = istate->thread();
-  register volatile jbyte*  BYTE_MAP_BASE = _byte_map_base;
 #else
 #undef THREAD
 #define THREAD istate->thread()
-#undef BYTE_MAP_BASE
-#define BYTE_MAP_BASE _byte_map_base
 #endif
 
 #ifdef USELABELS
@@ -630,9 +624,6 @@ BytecodeInterpreter::run(interpreterState istate) {
 #ifdef VM_JVMTI
       _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
 #endif
-      BarrierSet* bs = Universe::heap()->barrier_set();
-      assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-      _byte_map_base = (volatile jbyte*)(((CardTableModRefBS*)bs)->byte_map_base);
       return;
     }
     break;
@@ -1708,11 +1699,7 @@ run:
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
           }
-          oop* elem_loc = (oop*)(((address) arrObj->base(T_OBJECT)) + index * sizeof(oop));
-          // *(oop*)(((address) arrObj->base(T_OBJECT)) + index * sizeof(oop)) = rhsObject;
-          *elem_loc = rhsObject;
-          // Mark the card
-          OrderAccess::release_store(&BYTE_MAP_BASE[(uintptr_t)elem_loc >> CardTableModRefBS::card_shift], 0);
+          ((objArrayOopDesc *) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
       }
       CASE(_bastore):
@@ -2052,7 +2039,6 @@ run:
             } else if (tos_type == atos) {
               VERIFY_OOP(STACK_OBJECT(-1));
               obj->release_obj_field_put(field_offset, STACK_OBJECT(-1));
-              OrderAccess::release_store(&BYTE_MAP_BASE[(uintptr_t)obj >> CardTableModRefBS::card_shift], 0);
             } else if (tos_type == btos) {
               obj->release_byte_field_put(field_offset, STACK_INT(-1));
             } else if (tos_type == ltos) {
@@ -2073,7 +2059,6 @@ run:
             } else if (tos_type == atos) {
               VERIFY_OOP(STACK_OBJECT(-1));
               obj->obj_field_put(field_offset, STACK_OBJECT(-1));
-              OrderAccess::release_store(&BYTE_MAP_BASE[(uintptr_t)obj >> CardTableModRefBS::card_shift], 0);
             } else if (tos_type == btos) {
               obj->byte_field_put(field_offset, STACK_INT(-1));
             } else if (tos_type == ltos) {
