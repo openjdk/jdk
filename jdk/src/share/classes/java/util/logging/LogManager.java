@@ -203,12 +203,17 @@ public class LogManager {
 
                     // Adding the global Logger. Doing so in the Logger.<clinit>
                     // would deadlock with the LogManager.<clinit>.
-                    Logger.global.setLogManager(manager);
+                    // Do not call Logger.getGlobal() here as this might trigger
+                    // the deadlock too.
+                    @SuppressWarnings("deprecation")
+                    final Logger global = Logger.global;
+                    global.setLogManager(manager);
+
                     // Make sure the global logger will be registered in the
                     // global manager's default contexts.
-                    manager.addLogger(Logger.global);
-                    manager.systemContext.addLocalLogger(Logger.global, false);
-                    manager.userContext.addLocalLogger(Logger.global, false);
+                    manager.addLogger(global);
+                    manager.systemContext.addLocalLogger(global, false);
+                    manager.userContext.addLocalLogger(global, false);
 
                     // We don't call readConfiguration() here, as we may be running
                     // very early in the JVM startup sequence.  Instead readConfiguration
