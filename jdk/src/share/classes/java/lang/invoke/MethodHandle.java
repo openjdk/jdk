@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * {@linkplain java.lang.invoke.MethodHandles#dropArguments deletion},
  * and {@linkplain java.lang.invoke.MethodHandles#filterArguments substitution}.
  *
- * <h3>Method handle contents</h3>
+ * <h1>Method handle contents</h1>
  * Method handles are dynamically and strongly typed according to their parameter and return types.
  * They are not distinguished by the name or the defining class of their underlying methods.
  * A method handle must be invoked using a symbolic type descriptor which matches
@@ -81,7 +81,7 @@ import java.util.logging.Logger;
  * from its specific class, as the method handle class hierarchy (if any)
  * may change from time to time or across implementations from different vendors.
  *
- * <h3>Method handle compilation</h3>
+ * <h1>Method handle compilation</h1>
  * A Java method call expression naming {@code invokeExact} or {@code invoke}
  * can invoke a method handle from Java source code.
  * From the viewpoint of source code, these methods can take any arguments
@@ -111,7 +111,7 @@ import java.util.logging.Logger;
  * The ambiguity with the type {@code Void} is harmless, since there are no references of type
  * {@code Void} except the null reference.
  *
- * <h3>Method handle invocation</h3>
+ * <h1>Method handle invocation</h1>
  * The first time a {@code invokevirtual} instruction is executed
  * it is linked, by symbolically resolving the names in the instruction
  * and verifying that the method call is statically legal.
@@ -154,7 +154,7 @@ import java.util.logging.Logger;
  * (<em>Note:</em> The adjusted method handle {@code M2} is not directly observable,
  * and implementations are therefore not required to materialize it.)
  *
- * <h3>Invocation checking</h3>
+ * <h1>Invocation checking</h1>
  * In typical programs, method handle type matching will usually succeed.
  * But if a match fails, the JVM will throw a {@link WrongMethodTypeException},
  * either directly (in the case of {@code invokeExact}) or indirectly as if
@@ -195,7 +195,7 @@ import java.util.logging.Logger;
  * They should not be passed to untrusted code unless their use from
  * the untrusted code would be harmless.
  *
- * <h3>Method handle creation</h3>
+ * <h1>Method handle creation</h1>
  * Java code can create a method handle that directly accesses
  * any method, constructor, or field that is accessible to that code.
  * This is done via a reflective, capability-based API called
@@ -249,7 +249,7 @@ import java.util.logging.Logger;
  * receiver type.  Such a method handle simulates the effect of
  * an {@code invokespecial} instruction to the same method.
  *
- * <h3>Usage examples</h3>
+ * <h1>Usage examples</h1>
  * Here are some examples of usage:
  * <p><blockquote><pre>{@code
 Object x, y; String s; int i;
@@ -295,7 +295,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * be a method which calls {@link java.util.Objects#equals(Object,Object) Objects.equals }
  * on its arguments, and asserts that the result is true.
  *
- * <h3>Exceptions</h3>
+ * <h1>Exceptions</h1>
  * The methods {@code invokeExact} and {@code invoke} are declared
  * to throw {@link java.lang.Throwable Throwable},
  * which is to say that there is no static restriction on what a method handle
@@ -308,7 +308,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * throwables locally, rethrowing only those which are legal in the context,
  * and wrapping ones which are illegal.
  *
- * <h3><a name="sigpoly"></a>Signature polymorphism</h3>
+ * <h1><a name="sigpoly"></a>Signature polymorphism</h1>
  * The unusual compilation and linkage behavior of
  * {@code invokeExact} and plain {@code invoke}
  * is referenced by the term <em>signature polymorphism</em>.
@@ -333,7 +333,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * Tools which determine symbolic linkage are required to accept such
  * untransformed descriptors, without reporting linkage errors.
  *
- * <h3>Interoperation between method handles and the Core Reflection API</h3>
+ * <h1>Interoperation between method handles and the Core Reflection API</h1>
  * Using factory methods in the {@link java.lang.invoke.MethodHandles.Lookup Lookup} API,
  * any class member represented by a Core Reflection API object
  * can be converted to a behaviorally equivalent method handle.
@@ -375,7 +375,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * to call {@code invokeExact} or plain {@code invoke},
  * for any specified type descriptor .
  *
- * <h3>Interoperation between method handles and Java generics</h3>
+ * <h1>Interoperation between method handles and Java generics</h1>
  * A method handle can be obtained on a method, constructor, or field
  * which is declared with Java generic types.
  * As with the Core Reflection API, the type of the method handle
@@ -457,6 +457,8 @@ public abstract class MethodHandle {
      * {@link java.lang.reflect.Method#invoke java.lang.reflect.Method.invoke}, via JNI,
      * or indirectly via {@link java.lang.invoke.MethodHandles.Lookup#unreflect Lookup.unreflect},
      * it will throw an {@code UnsupportedOperationException}.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      * @throws WrongMethodTypeException if the target's type is not identical with the caller's symbolic type descriptor
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
@@ -491,6 +493,8 @@ public abstract class MethodHandle {
      * {@link java.lang.reflect.Method#invoke java.lang.reflect.Method.invoke}, via JNI,
      * or indirectly via {@link java.lang.invoke.MethodHandles.Lookup#unreflect Lookup.unreflect},
      * it will throw an {@code UnsupportedOperationException}.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      * @throws WrongMethodTypeException if the target's type cannot be adjusted to the caller's symbolic type descriptor
      * @throws ClassCastException if the target's type can be adjusted to the caller, but a reference cast fails
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
@@ -511,15 +515,26 @@ public abstract class MethodHandle {
      * operations on outgoing argument values.)
      * The caller can assume that the incoming result value is part of the range
      * of the callee's return type.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     /*non-public*/ final native @PolymorphicSignature Object invokeBasic(Object... args) throws Throwable;
 
+    /**
+     * Private method for trusted invocation of a MemberName of kind {@code REF_invokeVirtual}.
+     * The caller signature is restricted to basic types as with {@code invokeBasic}.
+     * The trailing (not leading) argument must be a MemberName.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
+     */
     /*non-public*/ static native @PolymorphicSignature Object linkToVirtual(Object... args) throws Throwable;
 
     /**
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeStatic}.
      * The caller signature is restricted to basic types as with {@code invokeBasic}.
      * The trailing (not leading) argument must be a MemberName.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     /*non-public*/ static native @PolymorphicSignature Object linkToStatic(Object... args) throws Throwable;
 
@@ -527,6 +542,8 @@ public abstract class MethodHandle {
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeSpecial}.
      * The caller signature is restricted to basic types as with {@code invokeBasic}.
      * The trailing (not leading) argument must be a MemberName.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     /*non-public*/ static native @PolymorphicSignature Object linkToSpecial(Object... args) throws Throwable;
 
@@ -534,6 +551,8 @@ public abstract class MethodHandle {
      * Private method for trusted invocation of a MemberName of kind {@code REF_invokeInterface}.
      * The caller signature is restricted to basic types as with {@code invokeBasic}.
      * The trailing (not leading) argument must be a MemberName.
+     * @param args the signature-polymorphic parameter list, statically represented using varargs
+     * @return the signature-polymorphic result, statically represented using {@code Object}
      */
     /*non-public*/ static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 

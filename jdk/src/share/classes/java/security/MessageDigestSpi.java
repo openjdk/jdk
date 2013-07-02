@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.security.jca.JCAUtil;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>MessageDigest</code> class, which provides the functionality
+ * for the {@code MessageDigest} class, which provides the functionality
  * of a message digest algorithm, such as MD5 or SHA. Message digests are
  * secure one-way hash functions that take arbitrary-sized data and output a
  * fixed-length hash value.
@@ -88,14 +88,14 @@ public abstract class MessageDigestSpi {
      * @param offset the offset to start from in the array of bytes.
      *
      * @param len the number of bytes to use, starting at
-     * <code>offset</code>.
+     * {@code offset}.
      */
     protected abstract void engineUpdate(byte[] input, int offset, int len);
 
     /**
      * Update the digest using the specified ByteBuffer. The digest is
-     * updated using the <code>input.remaining()</code> bytes starting
-     * at <code>input.position()</code>.
+     * updated using the {@code input.remaining()} bytes starting
+     * at {@code input.position()}.
      * Upon return, the buffer's position will be equal to its limit;
      * its limit will not have changed.
      *
@@ -130,7 +130,7 @@ public abstract class MessageDigestSpi {
 
     /**
      * Completes the hash computation by performing final
-     * operations such as padding. Once <code>engineDigest</code> has
+     * operations such as padding. Once {@code engineDigest} has
      * been called, the engine should be reset (see
      * {@link #engineReset() engineReset}).
      * Resetting is the responsibility of the
@@ -142,7 +142,7 @@ public abstract class MessageDigestSpi {
 
     /**
      * Completes the hash computation by performing final
-     * operations such as padding. Once <code>engineDigest</code> has
+     * operations such as padding. Once {@code engineDigest} has
      * been called, the engine should be reset (see
      * {@link #engineReset() engineReset}).
      * Resetting is the responsibility of the
@@ -194,7 +194,7 @@ public abstract class MessageDigestSpi {
      * @return a clone if the implementation is cloneable.
      *
      * @exception CloneNotSupportedException if this is called on an
-     * implementation that does not support <code>Cloneable</code>.
+     * implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {
