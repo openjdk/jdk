@@ -1462,7 +1462,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             rhs = tmp;
         }
 
-        if (isNullLiteral(rhs)) {
+        // this is a null literal check, so if there is implicit coercion
+        // involved like {D}x=null, we will fail - this is very rare
+        if (isNullLiteral(rhs) && lhs.getType().isObject()) {
             final Label trueLabel  = new Label("trueLabel");
             final Label falseLabel = new Label("falseLabel");
             final Label endLabel   = new Label("end");
