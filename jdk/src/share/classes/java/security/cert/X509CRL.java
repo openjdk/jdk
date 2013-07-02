@@ -249,7 +249,8 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * The ASN.1 definition for this is:
      * <pre>
      * version    Version OPTIONAL,
-     *             -- if present, must be v2<p>
+     *             -- if present, must be v2
+     *
      * Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
      *             -- v3 does not apply to CRLs but appears for consistency
      *             -- with definition of Version for certs
@@ -413,7 +414,8 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * signature algorithm. An example is the string "SHA256withRSA".
      * The ASN.1 definition for this is:
      * <pre>
-     * signatureAlgorithm   AlgorithmIdentifier<p>
+     * signatureAlgorithm   AlgorithmIdentifier
+     *
      * AlgorithmIdentifier  ::=  SEQUENCE  {
      *     algorithm               OBJECT IDENTIFIER,
      *     parameters              ANY DEFINED BY algorithm OPTIONAL  }

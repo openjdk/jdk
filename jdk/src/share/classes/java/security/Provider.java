@@ -67,6 +67,7 @@ import java.lang.reflect.*;
  * or modified by applications.
  * The following attributes are automatically placed in each Provider object:
  * <table cellspacing=4>
+ * <caption><b>Attributes Automatically Placed in a Provider Object</b></caption>
  * <tr><th>Name</th><th>Value</th>
  * <tr><td>{@code Provider.id name}</td>
   *    <td>{@code String.valueOf(provider.getName())}</td>
