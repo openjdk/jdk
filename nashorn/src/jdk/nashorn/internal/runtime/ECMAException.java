@@ -51,7 +51,7 @@ public final class ECMAException extends NashornException {
     /** Field handle to the{@link ECMAException#thrown} field, so that it can be accessed from generated code */
     public static final FieldAccess THROWN = virtualField(ECMAException.class, "thrown", Object.class);
 
-    public static final String EXCEPTION_PROPERTY = "nashornException";
+    private static final String EXCEPTION_PROPERTY = "nashornException";
 
     /** Object thrown. */
     public final Object thrown;

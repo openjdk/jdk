@@ -172,12 +172,13 @@ public abstract class NashornException extends RuntimeException {
         final StringBuilder buf = new StringBuilder();
         final StackTraceElement[] frames = getScriptFrames((Throwable)exception);
         for (final StackTraceElement st : frames) {
+            buf.append("\tat ");
             buf.append(st.getMethodName());
-            buf.append(" @ ");
+            buf.append(" (");
             buf.append(st.getFileName());
             buf.append(':');
             buf.append(st.getLineNumber());
-            buf.append('\n');
+            buf.append(")\n");
         }
         final int len = buf.length();
         // remove trailing '\n'

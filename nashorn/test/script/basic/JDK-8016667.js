@@ -22,18 +22,13 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * Regression test for erroneous shortcut optimization for object null checks
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
-
-function func2() { throw new Error("failed!") }
-
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
-}
+function toto() {
+    var friends = 1;
+    (joe = friends) == null;
+} 

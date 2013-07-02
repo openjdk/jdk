@@ -30,10 +30,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.List;
 import jdk.nashorn.api.scripting.NashornException;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -41,7 +38,6 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
-import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -123,13 +119,14 @@ public final class NativeError extends ScriptObject {
      * Nashorn extension: Error.captureStackTrace. Capture stack trace at the point of call into the Error object provided.
      *
      * @param self self reference
+     * @return undefined
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object captureStackTrace(final Object self, final Object errorObj) {
         Global.checkObject(errorObj);
         final ScriptObject sobj = (ScriptObject)errorObj;
         final ECMAException exp = new ECMAException(sobj, null);
-        sobj.set("stack", NashornException.getScriptStackString(exp), false);
+        sobj.set("stack", getScriptStackString(sobj, exp), false);
         return UNDEFINED;
     }
 
@@ -288,7 +285,7 @@ public final class NativeError extends ScriptObject {
 
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
-            return NashornException.getScriptStackString((Throwable)exception);
+            return getScriptStackString(sobj, (Throwable)exception);
         } else {
             return "";
         }
@@ -361,5 +358,9 @@ public final class NativeError extends ScriptObject {
         } catch (final NoSuchMethodException | IllegalAccessException e) {
             throw new MethodHandleFactory.LookupException(e);
         }
+    }
+
+    private static String getScriptStackString(final ScriptObject sobj, final Throwable exp) {
+        return JSType.toString(sobj) + "\n" + NashornException.getScriptStackString(exp);
     }
 }

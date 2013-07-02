@@ -22,18 +22,35 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * JDK-8019508: Comma handling in object literal parsing is wrong
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
-
-function func2() { throw new Error("failed!") }
-
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
+function checkObjLiteral(str) {
+    try {
+        eval(str);
+        fail("SyntaxError expected for: " + str);
+    } catch (e) {
+        if (! (e instanceof SyntaxError)) {
+            fail("expected SyntaxError, got " + e);
+        }
+        print(e.message.replace(/\\/g, '/'));
+    }
 }
+
+// only comma
+checkObjLiteral("({,})");
+
+// starting with comma
+checkObjLiteral("({, a:2 })");
+
+// consecutive commas
+checkObjLiteral("({a:3,,})");
+
+// missing comma
+checkObjLiteral("({a:3 b:2}");
+
+// single trailing comma is okay!
+var obj = { a: 3, };
