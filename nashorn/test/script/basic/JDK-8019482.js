@@ -22,18 +22,20 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * JDK-8019482: Number("0x0.0p0") should evaluate to NaN
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
-
-function func2() { throw new Error("failed!") }
-
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
+function checkHexLiteral(str) {
+    if (! isNaN(Number(str))) {
+        fail("Number(" + str + ") is not NaN");
+    }
 }
+
+checkHexLiteral("0x0.0");
+checkHexLiteral("0x0.0p");
+checkHexLiteral("0x12tu");
+checkHexLiteral("0x12.2e22");
+checkHexLiteral("0xtu");

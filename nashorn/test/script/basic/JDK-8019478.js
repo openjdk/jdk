@@ -22,18 +22,12 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * JDK-8019478: Object.prototype.toString.call(/a/.exec("a")) === "[object Array]" should be true
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
-
-function func2() { throw new Error("failed!") }
-
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
+if (Object.prototype.toString.call(/a/.exec("a")) !== "[object Array]") {
+    fail("Object.prototype.toString.call(/a/.exec('a')) !== '[object Array]'");
 }

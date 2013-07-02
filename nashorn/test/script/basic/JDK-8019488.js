@@ -22,18 +22,47 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * JDK-8019488: switch on literals result in NoSuchMethodError or VerifyError
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
+switch("") {
+    case 0:
+        break
+}
 
-function func2() { throw new Error("failed!") }
+switch(true) {
+    case 0:
+        print("0"); break;
+    case 1:
+        print("1"); break;
+}
 
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
+switch(false) {
+    case 0:
+        print("0"); break;
+    case 1:
+        print("1"); break;
+}
+
+switch([]) {
+    case 1:
+        print("1");
+}
+
+switch (undefined) {
+    case 0:
+        print("0");
+}
+
+switch (null) {
+    case 0:
+        print("0");
+}
+
+switch({}) {
+    case 1:
+        print("1");
 }

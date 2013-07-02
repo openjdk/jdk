@@ -22,18 +22,41 @@
  */
 
 /**
- * JDK-8019226: line number not generated for first statement if it is on the same function declaration line 
+ * JDK-8019473: Parser issues related to functions and blocks
  *
  * @test
  * @run
  */
 
-function func1() { func2() }
-
-function func2() { throw new Error("failed!") }
-
-try {
-    func1()
-} catch (e) {
-    print(e.stack.replace(/\\/g, '/'))
+function checkNoError(code) {
+    try {
+        Function(code);
+    } catch (e) {
+        print("no error expected for: " + code + " , got " + e);
+    }
 }
+
+// implicit newlines at EOF should be accepted
+checkNoError("for(;;) continue")
+checkNoError("return")
+checkNoError("yield")
+checkNoError("for(;;) break")
+
+function checkError(code) {
+    try {
+        eval(code);
+        print("SyntaxError expected for: " + code);
+    } catch (e) {
+        if (! (e instanceof SyntaxError)) {
+            fail("SyntaxError expected, got " + e);
+        }
+    }
+}
+
+checkError("function f() { case0: }");
+checkError("function f() { if(0) }");
+checkError("function f() { if(0); else }");
+checkError("function f() { while(0) }");
+
+// comma expression as closure expression
+checkError("function sq(x) x, x*x");
