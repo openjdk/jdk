@@ -1644,8 +1644,11 @@ run:
           ARRAY_LOADTO32(T_INT, jint,   "%d",   STACK_INT, 0);
       CASE(_faload):
           ARRAY_LOADTO32(T_FLOAT, jfloat, "%f",   STACK_FLOAT, 0);
-      CASE(_aaload):
-          ARRAY_LOADTO32(T_OBJECT, oop,   INTPTR_FORMAT, STACK_OBJECT, 0);
+      CASE(_aaload): {
+          ARRAY_INTRO(-2);
+          SET_STACK_OBJECT(((objArrayOop) arrObj)->obj_at(index), -2);
+          UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
+      }
       CASE(_baload):
           ARRAY_LOADTO32(T_BYTE, jbyte,  "%d",   STACK_INT, 0);
       CASE(_caload):
