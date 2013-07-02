@@ -2335,6 +2335,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
+    @Override
+    public boolean enterVOID(final UnaryNode unaryNode) {
+        load(unaryNode.rhs()).pop();
+        method.loadUndefined(Type.OBJECT);
+
+        return false;
+    }
+
     private Node enterNumericAdd(final Node lhs, final Node rhs, final Type type, final Symbol symbol) {
         assert lhs.getType().equals(rhs.getType()) && lhs.getType().equals(type) : lhs.getType() + " != " + rhs.getType() + " != " + type + " " + new ASTWriter(lhs) + " " + new ASTWriter(rhs);
         load(lhs);

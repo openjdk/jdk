@@ -1009,10 +1009,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveVOID(final UnaryNode unaryNode) {
-        final RuntimeNode runtimeNode = (RuntimeNode)new RuntimeNode(unaryNode, Request.VOID).accept(this);
-        assert runtimeNode.getSymbol().getSymbolType().isObject();
-        end(unaryNode);
-        return runtimeNode;
+        return end(ensureSymbol(Type.OBJECT, unaryNode));
     }
 
     /**
