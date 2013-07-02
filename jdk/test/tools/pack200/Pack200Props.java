@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,11 +46,12 @@ import java.util.jar.Pack200.Packer;
 
 public class Pack200Props {
 
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         verifyDefaults();
         File out = new File("test" + Utils.PACK_FILE_EXT);
         out.delete();
         verifySegmentLimit(out);
+        Utils.cleanup();
     }
 
     static void verifySegmentLimit(File outFile) {
