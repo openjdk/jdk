@@ -36,7 +36,11 @@ PRODUCT = sun
 CPLUSPLUSLIBRARY=true
 
 # Use higher optimization level
+ifeq ($(PLATFORM), windows)
 OPTIMIZATION_LEVEL = HIGHEST
+else
+OPTIMIZATION_LEVEL = HIGHER
+endif
 
 include $(BUILDDIR)/common/Defs.gmk
 
