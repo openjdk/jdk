@@ -362,9 +362,8 @@ AC_SUBST(SYS_ROOT)
 
 AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
   [search this directory for compilers and tools (for cross-compiling)])], 
-  [TOOLS_DIR=$with_tools_dir
-   BASIC_FIXUP_PATH([TOOLS_DIR])
-  ])
+  [TOOLS_DIR=$with_tools_dir]
+)
 
 AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
   [use this directory as base for tools-dir and sys-root (for cross-compiling)])],
