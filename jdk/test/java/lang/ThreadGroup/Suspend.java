@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,47 +23,55 @@
 
 /**
  * @test
- * @bug 4176355
+ * @bug 4176355 7181748
  * @summary Suspending a ThreadGroup that contains the current thread has
  *          unpredictable results.
  */
 
 public class Suspend implements Runnable {
-    private static Thread first=null;
-    private static Thread second=null;
-    private static ThreadGroup group = new ThreadGroup("");
-    private static int count = 0;
 
-    Suspend() {
-        Thread thread = new Thread(group, this);
-        if (first == null)
-            first = thread;
-        else
-            second = thread;
-
-        thread.start();
-    }
+    private static volatile int count = 0;
+    private static final ThreadGroup group = new ThreadGroup("");
+    private static final Thread first = new Thread(group, new Suspend());
+    private static final Thread second = new Thread(group, new Suspend());
 
     public void run() {
         while (true) {
             try {
-                Thread.sleep(1000); // Give other thread a chance to start
-                if (Thread.currentThread() == first)
-                    group.suspend();
-                else
+                Thread.sleep(100);
+                if (Thread.currentThread() == first) {
+                    if (second.isAlive()) {
+                        group.suspend();
+                    }
+                } else {
                     count++;
-            } catch(InterruptedException e){
+                }
+            } catch (InterruptedException e) {
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        for (int i=0; i<2; i++)
-            new Suspend();
-        Thread.sleep(3000);
+        // Launch two threads as part of the same thread group
+        first.start();
+        second.start();
+
+        // Wait for the thread group suspend to be issued
+        while (!first.isAlive() || !second.isAlive()) {
+            Thread.sleep(100);
+        }
+        Thread.sleep(1000);
+        // Suppose, the thread group is now suspended
+
+        count = 0;
+        Thread.sleep(1000);
+
+        // Increment of the count indicates that the second thread is still running
         boolean failed = (count > 1);
-        first.stop(); second.stop();
-        if (failed)
+        first.stop();
+        second.stop();
+        if (failed) {
             throw new RuntimeException("Failure.");
+        }
     }
 }

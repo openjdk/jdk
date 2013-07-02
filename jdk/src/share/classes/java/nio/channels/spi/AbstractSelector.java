@@ -76,7 +76,7 @@ public abstract class AbstractSelector
     private final SelectorProvider provider;
 
     /**
-     * Initializes a new instance of this class.  </p>
+     * Initializes a new instance of this class.
      */
     protected AbstractSelector(SelectorProvider provider) {
         this.provider = provider;

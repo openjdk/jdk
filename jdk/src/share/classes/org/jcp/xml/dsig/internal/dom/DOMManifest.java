@@ -32,6 +32,7 @@ import javax.xml.crypto.dsig.*;
 
 import java.security.Provider;
 import java.util.*;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -85,12 +86,30 @@ public final class DOMManifest extends DOMStructure implements Manifest {
      */
     public DOMManifest(Element manElem, XMLCryptoContext context,
         Provider provider) throws MarshalException {
-        this.id = DOMUtils.getAttributeValue(manElem, "Id");
+        Attr attr = manElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            this.id = attr.getValue();
+            manElem.setIdAttributeNode(attr, true);
+        } else {
+            this.id = null;
+        }
+
+        boolean secVal = Utils.secureValidation(context);
         Element refElem = DOMUtils.getFirstChildElement(manElem);
         List refs = new ArrayList();
+        int refCount = 0;
         while (refElem != null) {
             refs.add(new DOMReference(refElem, context, provider));
             refElem = DOMUtils.getNextSiblingElement(refElem);
+
+            refCount++;
+            if (secVal && (refCount > DOMSignedInfo.MAXIMUM_REFERENCE_COUNT)) {
+                String error = "A maxiumum of " +
+                               DOMSignedInfo.MAXIMUM_REFERENCE_COUNT +
+                               " references per Manifest are allowed with" +
+                               " secure validation";
+                throw new MarshalException(error);
+            }
         }
         this.references = Collections.unmodifiableList(refs);
     }

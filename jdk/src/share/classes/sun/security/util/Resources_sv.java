@@ -127,6 +127,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "flera CodeBase-uttryck"},
         {"multiple.SignedBy.expressions","flera SignedBy-uttryck"},
+        {"duplicate.keystore.domain.name","dom\u00E4nnamn f\u00F6r dubbelt nyckellager: {0}"},
+        {"duplicate.keystore.name","namn f\u00F6r dubbelt nyckellager: {0}"},
         {"SignedBy.has.empty.alias","SignedBy har ett tomt alias"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "kan inte ange identitetshavare med en jokerteckenklass utan ett jokerteckennamn"},

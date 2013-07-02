@@ -955,6 +955,9 @@ public final class BasisLibrary {
             if (Double.isNaN(d) || Double.isInfinite(d))
                 return(Double.toString(d));
 
+            //Convert -0.0 to +0.0 other values remains the same
+            d = d + 0.0;
+
             // Use the XPath formatter to ignore locales
             StringBuffer result = threadLocalStringBuffer.get();
             result.setLength(0);

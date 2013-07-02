@@ -205,7 +205,7 @@ public class ForEachOpTest extends OpTestCase {
     public void testDoubleForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfDouble data = TestData.Factory.ofDoubleSupplier("[1, 10000]",
-                                                                   () -> DoubleStream.range(1, 10001));
+                                                                   () -> IntStream.range(1, 10001).asDoubleStream());
 
         Function<DoubleStream, List<Integer>> terminalFunc = s -> {
             List<Integer> l = new ArrayList<>();

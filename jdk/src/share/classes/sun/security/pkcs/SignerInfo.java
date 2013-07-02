@@ -34,6 +34,7 @@ import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import sun.security.timestamp.TimestampToken;
 import sun.security.util.*;
@@ -57,6 +58,7 @@ public class SignerInfo implements DerEncoder {
     byte[] encryptedDigest;
     Timestamp timestamp;
     private boolean hasTimestamp = true;
+    private static final Debug debug = Debug.getInstance("jar");
 
     PKCS9Attributes authenticatedAttributes;
     PKCS9Attributes unauthenticatedAttributes;
@@ -499,9 +501,38 @@ public class SignerInfo implements DerEncoder {
         CertPath tsaChain = cf.generateCertPath(chain);
         // Create a timestamp token info object
         TimestampToken tsTokenInfo = new TimestampToken(encTsTokenInfo);
+        // Check that the signature timestamp applies to this signature
+        verifyTimestamp(tsTokenInfo);
         // Create a timestamp object
         timestamp = new Timestamp(tsTokenInfo.getDate(), tsaChain);
         return timestamp;
+    }
+
+    /*
+     * Check that the signature timestamp applies to this signature.
+     * Match the hash present in the signature timestamp token against the hash
+     * of this signature.
+     */
+    private void verifyTimestamp(TimestampToken token)
+        throws NoSuchAlgorithmException, SignatureException {
+
+        MessageDigest md =
+            MessageDigest.getInstance(token.getHashAlgorithm().getName());
+
+        if (!Arrays.equals(token.getHashedMessage(),
+            md.digest(encryptedDigest))) {
+
+            throw new SignatureException("Signature timestamp (#" +
+                token.getSerialNumber() + ") generated on " + token.getDate() +
+                " is inapplicable");
+        }
+
+        if (debug != null) {
+            debug.println();
+            debug.println("Detected signature timestamp (#" +
+                token.getSerialNumber() + ") generated on " + token.getDate());
+            debug.println();
+        }
     }
 
     public String toString() {

@@ -892,7 +892,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 if (transX > 0 && transX < width &&
                     transY > 0 && transY < height) {
                     int newIdx = helper.y2index(transY);
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("transX=" + transX + ", transY=" + transY
                                  + ",width=" + width + ", height=" + height
                                  + ", newIdx=" + newIdx + " on " + target);

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 7033534
+ * @bug 6476665 7033534 6830714
  * @summary Verifies color conversion of Component Color Model based images
  * @run main ColConvCCMTest
  */
@@ -57,9 +57,9 @@ public class ColConvCCMTest extends ColConvTest {
     final static double [] ACCURACY = {
     // Accuracy for color conversions
         2.5,        // sRGB
-        6.5,        // LINEAR_RGB
+        (isOpenProfile() ? 45.0 : 10.1), // LINEAR_RGB
         10.5,       // GRAY
-        45.5,       // PYCC
+        (isOpenProfile() ? 207 : 45.5), // PYCC
         47.5        // CIEXYZ
     };
 

@@ -51,6 +51,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import org.jcp.xml.dsig.internal.DigesterOutputStream;
+import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
@@ -64,6 +65,12 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream
  */
 public final class DOMReference extends DOMStructure
     implements Reference, DOMURIReference {
+
+    /**
+     * The maximum number of transforms per reference, if secure validation
+     * is enabled.
+     */
+    public static final int MAXIMUM_TRANSFORM_COUNT = 5;
 
    /**
     * Look up useC14N11 system property. If true, an explicit C14N11 transform
@@ -184,15 +191,27 @@ public final class DOMReference extends DOMStructure
      */
     public DOMReference(Element refElem, XMLCryptoContext context,
         Provider provider) throws MarshalException {
+        boolean secVal = Utils.secureValidation(context);
+
         // unmarshal Transforms, if specified
         Element nextSibling = DOMUtils.getFirstChildElement(refElem);
         List transforms = new ArrayList(5);
         if (nextSibling.getLocalName().equals("Transforms")) {
             Element transformElem = DOMUtils.getFirstChildElement(nextSibling);
+
+            int transformCount = 0;
             while (transformElem != null) {
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
+
+                transformCount++;
+                if (secVal && (transformCount > MAXIMUM_TRANSFORM_COUNT)) {
+                    String error = "A maxiumum of " + MAXIMUM_TRANSFORM_COUNT +
+                                   " transforms per Reference are allowed" +
+                                   " with secure validation";
+                    throw new MarshalException(error);
+                }
             }
             nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
         }
@@ -200,6 +219,14 @@ public final class DOMReference extends DOMStructure
         // unmarshal DigestMethod
         Element dmElem = nextSibling;
         this.digestMethod = DOMDigestMethod.unmarshal(dmElem);
+        String digestMethodAlgorithm = this.digestMethod.getAlgorithm();
+        if (secVal
+            && MessageDigestAlgorithm.ALGO_ID_DIGEST_NOT_RECOMMENDED_MD5.equals(digestMethodAlgorithm))
+        {
+             throw new MarshalException("It is forbidden to use algorithm " +
+                                        digestMethod +
+                                        " when secure validation is enabled");
+        }
 
         // unmarshal DigestValue
         try {
@@ -211,7 +238,14 @@ public final class DOMReference extends DOMStructure
 
         // unmarshal attributes
         this.uri = DOMUtils.getAttributeValue(refElem, "URI");
-        this.id = DOMUtils.getAttributeValue(refElem, "Id");
+
+        Attr attr = refElem.getAttributeNodeNS(null, "Id");
+        if (attr != null) {
+            this.id = attr.getValue();
+            refElem.setIdAttributeNode(attr, true);
+        } else {
+            this.id = null;
+        }
 
         this.type = DOMUtils.getAttributeValue(refElem, "Type");
         this.here = refElem.getAttributeNodeNS(null, "URI");

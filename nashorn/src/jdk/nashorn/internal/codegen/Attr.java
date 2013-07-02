@@ -35,6 +35,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SWITCH_TAG_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
+import static jdk.nashorn.internal.ir.Symbol.IS_ALWAYS_DEFINED;
 import static jdk.nashorn.internal.ir.Symbol.IS_CONSTANT;
 import static jdk.nashorn.internal.ir.Symbol.IS_FUNCTION_SELF;
 import static jdk.nashorn.internal.ir.Symbol.IS_GLOBAL;
@@ -128,6 +129,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     private final Deque<Type> returnTypes;
 
+    private int catchNestingLevel;
+
     private static final DebugLogger LOG   = new DebugLogger("attr");
     private static final boolean     DEBUG = LOG.isEnabled();
 
@@ -169,14 +172,14 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         if (functionNode.isVarArg()) {
             initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL, Type.OBJECT_ARRAY);
             if (functionNode.needsArguments()) {
-                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL, Type.typeFor(ScriptObject.class));
+                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
                 addLocalDef(ARGUMENTS.symbolName());
             }
         }
 
         initParameters(functionNode, body);
-        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL, Type.typeFor(ScriptObject.class));
-        initCompileConstant(RETURN, body, IS_VAR | IS_INTERNAL, Type.OBJECT);
+        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
+        initCompileConstant(RETURN, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.OBJECT);
     }
 
 
@@ -202,10 +205,40 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
         // This visitor will assign symbol to all declared variables, except function declarations (which are taken care
         // in a separate step above) and "var" declarations in for loop initializers.
+        //
+        // It also handles the case that a variable can be undefined, e.g
+        // if (cond) {
+        //    x = x.y;
+        // }
+        // var x = 17;
+        //
+        // by making sure that no identifier has been found earlier in the body than the
+        // declaration - if such is the case the identifier is flagged as caBeUndefined to
+        // be safe if it turns into a local var. Otherwise corrupt bytecode results
+
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            private final Set<String> uses = new HashSet<>();
+            private final Set<String> canBeUndefined = new HashSet<>();
+
             @Override
             public boolean enterFunctionNode(final FunctionNode nestedFn) {
                 return false;
+            }
+
+            @Override
+            public Node leaveIdentNode(final IdentNode identNode) {
+                uses.add(identNode.getName());
+                return identNode;
+            }
+
+            @Override
+            public boolean enterVarNode(final VarNode varNode) {
+                final String name = varNode.getName().getName();
+                //if this is used the var node symbol needs to be tagged as can be undefined
+                if (uses.contains(name)) {
+                    canBeUndefined.add(name);
+                }
+                return true;
             }
 
             @Override
@@ -214,6 +247,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 if (varNode.isStatement()) {
                     final IdentNode ident  = varNode.getName();
                     final Symbol    symbol = defineSymbol(body, ident.getName(), IS_VAR);
+                    if (canBeUndefined.contains(ident.getName())) {
+                        symbol.setType(Type.OBJECT);
+                        symbol.setCanBeUndefined();
+                    }
                     functionNode.addDeclaredSymbol(symbol);
                     if (varNode.isFunctionDeclaration()) {
                         newType(symbol, FunctionNode.FUNCTION_TYPE);
@@ -286,10 +323,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         final Block     block     = lc.getCurrentBlock();
 
         start(catchNode);
+        catchNestingLevel++;
 
         // define block-local exception variable
-        final Symbol def = defineSymbol(block, exception.getName(), IS_VAR | IS_LET);
-        newType(def, Type.OBJECT);
+        final Symbol def = defineSymbol(block, exception.getName(), IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
+        newType(def, Type.OBJECT); //we can catch anything, not just ecma exceptions
+
         addLocalDef(exception.getName());
 
         return true;
@@ -300,6 +339,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         final IdentNode exception = catchNode.getException();
         final Block  block        = lc.getCurrentBlock();
         final Symbol symbol       = findSymbol(block, exception.getName());
+
+        catchNestingLevel--;
+
         assert symbol != null;
         return end(catchNode.setException((IdentNode)exception.setSymbol(lc, symbol)));
     }
@@ -509,9 +551,19 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 assert lc.getFunctionBody(functionNode).getExistingSymbol(CALLEE.symbolName()) != null;
                 lc.setFlag(functionNode.getBody(), Block.NEEDS_SELF_SYMBOL);
                 newType(symbol, FunctionNode.FUNCTION_TYPE);
-            } else if (!identNode.isInitializedHere()) { // NASHORN-448
-                // here is a use outside the local def scope
-                if (!isLocalDef(name)) {
+            } else if (!identNode.isInitializedHere()) {
+                /*
+                 * See NASHORN-448, JDK-8016235
+                 *
+                 * Here is a use outside the local def scope
+                 * the inCatch check is a conservative approach to handle things that might have only been
+                 * defined in the try block, but with variable declarations, which due to JavaScript rules
+                 * have to be lifted up into the function scope outside the try block anyway, but as the
+                 * flow can fault at almost any place in the try block and get us to the catch block, all we
+                 * know is that we have a declaration, not a definition. This can be made better and less
+                 * conservative once we superimpose a CFG onto the AST.
+                 */
+                if (!isLocalDef(name) || inCatch()) {
                     newType(symbol, Type.OBJECT);
                     symbol.setCanBeUndefined();
                 }
@@ -538,6 +590,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return end(identNode.setSymbol(lc, symbol));
     }
 
+    private boolean inCatch() {
+        return catchNestingLevel > 0;
+    }
+
     /**
      * If the symbol isn't already a scope symbol, and it is either not local to the current function, or it is being
      * referenced from within a with block, we force it to be a scope symbol.
@@ -550,26 +606,26 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private boolean symbolNeedsToBeScope(Symbol symbol) {
-        if(symbol.isThis() || symbol.isInternal()) {
+        if (symbol.isThis() || symbol.isInternal()) {
             return false;
         }
         boolean previousWasBlock = false;
-        for(final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
+        for (final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
             final LexicalContextNode node = it.next();
-            if(node instanceof FunctionNode) {
+            if (node instanceof FunctionNode) {
                 // We reached the function boundary without seeing a definition for the symbol - it needs to be in
                 // scope.
                 return true;
-            } else if(node instanceof WithNode) {
-                if(previousWasBlock) {
+            } else if (node instanceof WithNode) {
+                if (previousWasBlock) {
                     // We reached a WithNode; the symbol must be scoped. Note that if the WithNode was not immediately
                     // preceded by a block, this means we're currently processing its expression, not its body,
                     // therefore it doesn't count.
                     return true;
                 }
                 previousWasBlock = false;
-            } else if(node instanceof Block) {
-                if(((Block)node).getExistingSymbol(symbol.getName()) == symbol) {
+            } else if (node instanceof Block) {
+                if (((Block)node).getExistingSymbol(symbol.getName()) == symbol) {
                     // We reached the block that defines the symbol without reaching either the function boundary, or a
                     // WithNode. The symbol need not be scoped.
                     return false;
@@ -1666,8 +1722,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private void pushLocalsBlock() {
-        localDefs.push(localDefs.isEmpty() ? new HashSet<String>() : new HashSet<>(localDefs.peek()));
-        localUses.push(localUses.isEmpty() ? new HashSet<String>() : new HashSet<>(localUses.peek()));
+        localDefs.push(new HashSet<>(localDefs.peek()));
+        localUses.push(new HashSet<>(localUses.peek()));
     }
 
     private void popLocals() {

@@ -764,7 +764,7 @@ public final class Currency implements Serializable {
 
     private static void info(String message, Throwable t) {
         PlatformLogger logger = PlatformLogger.getLogger("java.util.Currency");
-        if (logger.isLoggable(PlatformLogger.INFO)) {
+        if (logger.isLoggable(PlatformLogger.Level.INFO)) {
             if (t != null) {
                 logger.info(message, t);
             } else {
