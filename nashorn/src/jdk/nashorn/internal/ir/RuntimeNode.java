@@ -53,8 +53,6 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
         NEW,
         /** Typeof operator */
         TYPEOF,
-        /** void type */
-        VOID,
         /** Reference error type */
         REFERENCE_ERROR,
         /** Delete operator */

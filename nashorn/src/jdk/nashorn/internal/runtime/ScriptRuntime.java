@@ -601,23 +601,6 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.4.2 - void operator
-     *
-     * @param object object to evaluate
-     *
-     * @return Undefined as the object type
-     */
-    public static Object VOID(final Object object) {
-        if (object instanceof Number) {
-            if (Double.isNaN(((Number)object).doubleValue())) {
-                return Double.NaN;
-            }
-        }
-
-        return UNDEFINED;
-    }
-
-    /**
      * Throw ReferenceError when LHS of assignment or increment/decrement
      * operator is not an assignable node (say a literal)
      *
