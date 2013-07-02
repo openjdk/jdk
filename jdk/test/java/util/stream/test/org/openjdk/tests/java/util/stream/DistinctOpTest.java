@@ -64,7 +64,6 @@ public class DistinctOpTest extends OpTestCase {
 
         node = withData(data).
                 stream(s -> s.unordered().distinct()).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
                 exercise();
         assertUnique(node);
 

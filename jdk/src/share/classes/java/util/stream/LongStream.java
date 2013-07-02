@@ -736,15 +736,8 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      */
     public static LongStream generate(LongSupplier s) {
         Objects.requireNonNull(s);
-        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
-                new PrimitiveIterator.OfLong() {
-                    @Override
-                    public boolean hasNext() { return true; }
-
-                    @Override
-                    public long nextLong() { return s.getAsLong(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+        return StreamSupport.longStream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfLong(Long.MAX_VALUE, s));
     }
 
     /**

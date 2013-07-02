@@ -58,7 +58,9 @@ public class RangeTest extends OpTestCase {
     public void testIntRange() {
         // Half-open
         for (int start : Arrays.asList(1, 10, -1, -10)) {
+            setContext("start", start);
             for (int end : Arrays.asList(1, 10, -1, -10)) {
+                setContext("end", end);
                 int size = (start < end) ? end - start : 0;
                 int[] exp = new int[size];
                 for (int i = start, p = 0; i < end; i++, p++) {
@@ -76,7 +78,9 @@ public class RangeTest extends OpTestCase {
 
         // Closed
         for (int start : Arrays.asList(1, 10, -1, -10)) {
+            setContext("start", start);
             for (int end : Arrays.asList(1, 10, -1, -10)) {
+                setContext("end", end);
                 int size = (start <= end) ? end - start + 1 : 0;
                 int[] exp = new int[size];
                 for (int i = start, p = 0; i <= end; i++, p++) {
@@ -144,7 +148,9 @@ public class RangeTest extends OpTestCase {
     public void testLongRange() {
         // Half-open
         for (long start : Arrays.asList(1, 1000, -1, -1000)) {
+            setContext("start", start);
             for (long end : Arrays.asList(1, 1000, -1, -1000)) {
+                setContext("end", end);
                 long size = start < end ? end - start : 0;
                 long[] exp = new long[(int) size];
                 for (long i = start, p = 0; i < end; i++, p++) {
@@ -162,7 +168,9 @@ public class RangeTest extends OpTestCase {
 
         // Closed
         for (long start : Arrays.asList(1, 1000, -1, -1000)) {
+            setContext("start", start);
             for (long end : Arrays.asList(1, 1000, -1, -1000)) {
+                setContext("end", end);
                 long size = start <= end ? end - start + 1: 0;
                 long[] exp = new long[(int) size];
                 for (long i = start, p = 0; i <= end; i++, p++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,13 +260,14 @@ public class SyncFactory {
      * <p>
      * Synchronization providers bound to a JNDI context can be
      * registered by binding a SyncProvider instance to a JNDI namespace.
-     * <ul>
+     *
      * <pre>
+     * {@code
      * SyncProvider p = new MySyncProvider();
      * InitialContext ic = new InitialContext();
      * ic.bind ("jdbc/rowset/MySyncProvider", p);
-     * </pre>
-     * </ul>
+     * } </pre>
+     *
      * Furthermore, an initial JNDI context should be set with the
      * <code>SyncFactory</code> using the <code>setJNDIContext</code> method.
      * The <code>SyncFactory</code> leverages this context to search for
@@ -564,6 +565,8 @@ public class SyncFactory {
      *
      * @return Enumeration  A enumeration of available synchronization
      * providers that are registered with this Factory
+     * @throws SyncFactoryException If an error occurs obtaining the registered
+     * providers
      */
     public static Enumeration<SyncProvider> getRegisteredProviders()
             throws SyncFactoryException {
@@ -648,7 +651,8 @@ public class SyncFactory {
     /**
      * Returns the logging object for applications to retrieve
      * synchronization events posted by SyncProvider implementations.
-     *
+     * @return The {@code Logger} that has been specified for use by
+     * {@code SyncProvider} implementations
      * @throws SyncFactoryException if no logging object has been set.
      */
     public static Logger getLogger() throws SyncFactoryException {
