@@ -265,8 +265,6 @@ ciObject* ciObjectFactory::get(oop key) {
 ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   ASSERT_IN_VM;
 
-  assert(key == NULL || key->is_metadata(), "must be");
-
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {
     Metadata* last = NULL;

@@ -25,6 +25,8 @@
 
 package com.sun.jmx.remote.util;
 
+import sun.reflect.misc.ReflectUtil;
+
 public class OrderClassLoaders extends ClassLoader {
     public OrderClassLoaders(ClassLoader cl1, ClassLoader cl2) {
         super(cl1);
@@ -32,9 +34,10 @@ public class OrderClassLoaders extends ClassLoader {
         this.cl2 = cl2;
     }
 
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        ReflectUtil.checkPackageAccess(name);
         try {
-            return super.findClass(name);
+            return super.loadClass(name, resolve);
         } catch (ClassNotFoundException cne) {
             if (cl2 != null) {
                 return cl2.loadClass(name);

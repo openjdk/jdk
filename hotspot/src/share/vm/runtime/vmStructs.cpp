@@ -379,7 +379,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ConstMethod,          _size_of_parameters,                           u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
-  volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
+  volatile_nonstatic_field(Symbol,             _refcount,                                     short)                                 \
   nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \

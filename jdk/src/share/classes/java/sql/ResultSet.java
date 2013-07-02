@@ -1350,7 +1350,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * @param rows the number of rows to fetch
      * @exception SQLException if a database access error occurs; this method
      * is called on a closed result set or the
-     * condition <code>rows >= 0 </code> is not satisfied
+     * condition {@code rows >= 0} is not satisfied
      * @since 1.2
      * @see #getFetchSize
      */

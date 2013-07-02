@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package java.rmi.dgc;
 
-import java.io.*;
-import java.net.*;
 import java.rmi.server.UID;
-import java.security.*;
+import java.security.SecureRandom;
 
 /**
  * A VMID is a identifier that is unique across all Java virtual
@@ -39,9 +37,8 @@ import java.security.*;
  * @author      Peter Jones
  */
 public final class VMID implements java.io.Serializable {
-
-    /** array of bytes uniquely identifying this host */
-    private static byte[] localAddr = computeAddressHash();
+    /** Array of bytes uniquely identifying this host */
+    private static final byte[] randomBytes;
 
     /**
      * @serial array of bytes uniquely identifying host created on
@@ -56,6 +53,14 @@ public final class VMID implements java.io.Serializable {
     /** indicate compatibility with JDK 1.1.x version of class */
     private static final long serialVersionUID = -538642295484486218L;
 
+    static {
+        // Generate 8 bytes of random data.
+        SecureRandom secureRandom = new SecureRandom();
+        byte bytes[] = new byte[8];
+        secureRandom.nextBytes(bytes);
+        randomBytes = bytes;
+    }
+
     /**
      * Create a new VMID.  Each new VMID returned from this constructor
      * is unique for all Java virtual machines under the following
@@ -65,7 +70,7 @@ public final class VMID implements java.io.Serializable {
      * for the lifetime of this object.  <p>
      */
     public VMID() {
-        addr = localAddr;
+        addr = randomBytes;
         uid = new UID();
     }
 
@@ -125,53 +130,5 @@ public final class VMID implements java.io.Serializable {
         result.append(':');
         result.append(uid.toString());
         return result.toString();
-    }
-
-    /**
-     * Compute the hash an IP address.  The hash is the first 8 bytes
-     * of the SHA digest of the IP address.
-     */
-    private static byte[] computeAddressHash() {
-
-        /*
-         * Get the local host's IP address.
-         */
-        byte[] addr = java.security.AccessController.doPrivileged(
-            new PrivilegedAction<byte[]>() {
-            public byte[] run() {
-                try {
-                    return InetAddress.getLocalHost().getAddress();
-                } catch (Exception e) {
-                }
-                return new byte[] { 0, 0, 0, 0 };
-            }
-        });
-
-        byte[] addrHash;
-        final int ADDR_HASH_LENGTH = 8;
-
-        try {
-            /*
-             * Calculate message digest of IP address using SHA.
-             */
-            MessageDigest md = MessageDigest.getInstance("SHA");
-            ByteArrayOutputStream sink = new ByteArrayOutputStream(64);
-            DataOutputStream out = new DataOutputStream(
-                new DigestOutputStream(sink, md));
-            out.write(addr, 0, addr.length);
-            out.flush();
-
-            byte digest[] = md.digest();
-            int hashlength = Math.min(ADDR_HASH_LENGTH, digest.length);
-            addrHash = new byte[hashlength];
-            System.arraycopy(digest, 0, addrHash, 0, hashlength);
-
-        } catch (IOException ignore) {
-            /* can't happen, but be deterministic anyway. */
-            addrHash = new byte[0];
-        } catch (NoSuchAlgorithmException complain) {
-            throw new InternalError(complain.toString(), complain);
-        }
-        return addrHash;
     }
 }

@@ -819,12 +819,10 @@ public class ShortComponentRaster extends SunWritableRaster {
             }
         }
 
-        int maxSize = 0;
-        int size;
-
         // we can be sure that width and height are greater than 0
         if (scanlineStride < 0 ||
-            scanlineStride > (Integer.MAX_VALUE / height))
+            scanlineStride > (Integer.MAX_VALUE / height) ||
+            scanlineStride > data.length)
         {
             // integer overflow
             throw new RasterFormatException("Incorrect scanline stride: "
@@ -833,7 +831,8 @@ public class ShortComponentRaster extends SunWritableRaster {
         int lastScanOffset = (height - 1) * scanlineStride;
 
         if (pixelStride < 0 ||
-            pixelStride > (Integer.MAX_VALUE / width))
+            pixelStride > (Integer.MAX_VALUE / width) ||
+            pixelStride > data.length)
         {
             // integer overflow
             throw new RasterFormatException("Incorrect pixel stride: "
@@ -847,21 +846,23 @@ public class ShortComponentRaster extends SunWritableRaster {
         }
         lastPixelOffset += lastScanOffset;
 
+        int index;
+        int maxIndex = 0;
         for (int i = 0; i < numDataElements; i++) {
             if (dataOffsets[i] > (Integer.MAX_VALUE - lastPixelOffset)) {
                 throw new RasterFormatException("Incorrect band offset: "
                             + dataOffsets[i]);
             }
 
-            size = lastPixelOffset + dataOffsets[i];
+            index = lastPixelOffset + dataOffsets[i];
 
-            if (size > maxSize) {
-                maxSize = size;
+            if (index > maxIndex) {
+                maxIndex = index;
             }
         }
-        if (data.length < maxSize) {
-            throw new RasterFormatException("Data array too small (should be "
-                    + maxSize + " )");
+        if (data.length <= maxIndex) {
+            throw new RasterFormatException("Data array too small (should be > "
+                    + maxIndex + " )");
         }
     }
 

@@ -51,6 +51,7 @@ import javax.management.MBeanOperationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.ReflectionException;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * An introspector for MBeans of a certain type.  There is one instance
@@ -175,7 +176,8 @@ abstract class MBeanIntrospector<M> {
     /**
      * Get the methods to be analyzed to build the MBean interface.
      */
-    List<Method> getMethods(final Class<?> mbeanType) {
+    final List<Method> getMethods(final Class<?> mbeanType) {
+        ReflectUtil.checkPackageAccess(mbeanType);
         return Arrays.asList(mbeanType.getMethods());
     }
 

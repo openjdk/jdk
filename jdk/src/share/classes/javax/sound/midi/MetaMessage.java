@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 
 package javax.sound.midi;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 
 
 /**
@@ -71,14 +67,6 @@ public class MetaMessage extends MidiMessage {
      */
     public static final int META                                                = 0xFF; // 255
 
-
-    // Default meta message data: just the META status byte value
-    // $$kk: 09.09.99: need a real event here!!
-
-    private static byte[] defaultMessage                                = { (byte)META, 0 };
-
-
-
     // Instance variables
 
     /**
@@ -98,8 +86,8 @@ public class MetaMessage extends MidiMessage {
      * to set them subsequently.
      */
     public MetaMessage() {
-        //super(defaultMessage);
-        this(defaultMessage);
+        // Default meta message data: just the META status byte value
+        this(new byte[]{(byte) META, 0});
     }
 
     /**

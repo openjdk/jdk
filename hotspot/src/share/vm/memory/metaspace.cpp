@@ -1561,19 +1561,7 @@ bool Metadebug::test_metadata_failure() {
 
 // ChunkManager methods
 
-// Verification of _free_chunks_total and _free_chunks_count does not
-// work with the CMS collector because its use of additional locks
-// complicate the mutex deadlock detection but it can still be useful
-// for detecting errors in the chunk accounting with other collectors.
-
 size_t ChunkManager::free_chunks_total() {
-#ifdef ASSERT
-  if (!UseConcMarkSweepGC && !SpaceManager::expand_lock()->is_locked()) {
-    MutexLockerEx cl(SpaceManager::expand_lock(),
-                     Mutex::_no_safepoint_check_flag);
-    slow_locked_verify_free_chunks_total();
-  }
-#endif
   return _free_chunks_total;
 }
 
@@ -2610,14 +2598,14 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
                         "->" SIZE_FORMAT
                         "("  SIZE_FORMAT ")",
                         prev_metadata_used,
-                        allocated_capacity_bytes(),
+                        allocated_used_bytes(),
                         reserved_in_bytes());
   } else {
     gclog_or_tty->print(" "  SIZE_FORMAT "K"
                         "->" SIZE_FORMAT "K"
                         "("  SIZE_FORMAT "K)",
                         prev_metadata_used / K,
-                        allocated_capacity_bytes() / K,
+                        allocated_used_bytes() / K,
                         reserved_in_bytes()/ K);
   }
 

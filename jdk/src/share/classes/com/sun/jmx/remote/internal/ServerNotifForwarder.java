@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,8 +226,9 @@ public class ServerNotifForwarder {
      * why we add the found notifications to a supplied List rather than
      * just returning a boolean.
      */
-    private final NotificationBufferFilter bufferFilter =
-            new NotificationBufferFilter() {
+    private final NotifForwarderBufferFilter bufferFilter = new NotifForwarderBufferFilter();
+
+    final class NotifForwarderBufferFilter implements NotificationBufferFilter {
         public void apply(List<TargetedNotification> targetedNotifs,
                           ObjectName source, Notification notif) {
             // We proceed in two stages here, to avoid holding the listenerMap
@@ -366,9 +367,16 @@ public class ServerNotifForwarder {
      * Explicitly check the MBeanPermission for
      * the current access control context.
      */
-    public void checkMBeanPermission(
+    public final void checkMBeanPermission(
             final ObjectName name, final String actions)
             throws InstanceNotFoundException, SecurityException {
+        checkMBeanPermission(mbeanServer,name,actions);
+    }
+
+    static void checkMBeanPermission(
+            final MBeanServer mbs, final ObjectName name, final String actions)
+            throws InstanceNotFoundException, SecurityException {
+
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             AccessControlContext acc = AccessController.getContext();
@@ -378,7 +386,7 @@ public class ServerNotifForwarder {
                     new PrivilegedExceptionAction<ObjectInstance>() {
                         public ObjectInstance run()
                         throws InstanceNotFoundException {
-                            return mbeanServer.getObjectInstance(name);
+                            return mbs.getObjectInstance(name);
                         }
                 });
             } catch (PrivilegedActionException e) {

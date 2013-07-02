@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.io.InputStream;
 import java.io.IOException;
 
 import java.util.Vector;
@@ -40,12 +39,12 @@ import javax.sound.sampled.AudioInputStream;
  *
  * @author Kara Kytle
  */
-public class UlawCodec extends SunCodec {
+public final class UlawCodec extends SunCodec {
 
     /* Tables used for U-law decoding */
 
-    final static byte ULAW_TABH[] = new byte[256];
-    final static byte ULAW_TABL[] = new byte[256];
+    private final static byte[] ULAW_TABH = new byte[256];
+    private final static byte[] ULAW_TABL = new byte[256];
 
     private static final AudioFormat.Encoding[] ulawEncodings = {AudioFormat.Encoding.ULAW,
                                                                  AudioFormat.Encoding.PCM_SIGNED};

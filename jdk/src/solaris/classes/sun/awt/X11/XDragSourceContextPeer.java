@@ -542,7 +542,7 @@ public final class XDragSourceContextPeer
             return false;
         }
 
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("        proxyModeSourceWindow=" +
                           getProxyModeSourceWindow() +
                           " ev=" + ev);

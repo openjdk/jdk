@@ -32,6 +32,8 @@ import java.util.Set;
 
 import javax.lang.model.element.Modifier;
 
+import com.sun.tools.javac.util.Assert;
+
 /** Access flags and other modifiers for Java classes and members.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -46,53 +48,29 @@ public class Flags {
     public static String toString(long flags) {
         StringBuilder buf = new StringBuilder();
         String sep = "";
-        for (Flag s : asFlagSet(flags)) {
+        for (Flag flag : asFlagSet(flags)) {
             buf.append(sep);
-            buf.append(s);
+            buf.append(flag);
             sep = " ";
         }
         return buf.toString();
     }
 
-    public static EnumSet<Flag> asFlagSet(long mask) {
-        EnumSet<Flag> flags = EnumSet.noneOf(Flag.class);
-        if ((mask&PUBLIC) != 0) flags.add(Flag.PUBLIC);
-        if ((mask&PRIVATE) != 0) flags.add(Flag.PRIVATE);
-        if ((mask&PROTECTED) != 0) flags.add(Flag.PROTECTED);
-        if ((mask&STATIC) != 0) flags.add(Flag.STATIC);
-        if ((mask&FINAL) != 0) flags.add(Flag.FINAL);
-        if ((mask&SYNCHRONIZED) != 0) flags.add(Flag.SYNCHRONIZED);
-        if ((mask&VOLATILE) != 0) flags.add(Flag.VOLATILE);
-        if ((mask&TRANSIENT) != 0) flags.add(Flag.TRANSIENT);
-        if ((mask&NATIVE) != 0) flags.add(Flag.NATIVE);
-        if ((mask&INTERFACE) != 0) flags.add(Flag.INTERFACE);
-        if ((mask&ABSTRACT) != 0) flags.add(Flag.ABSTRACT);
-        if ((mask&DEFAULT) != 0) flags.add(Flag.DEFAULT);
-        if ((mask&STRICTFP) != 0) flags.add(Flag.STRICTFP);
-        if ((mask&BRIDGE) != 0) flags.add(Flag.BRIDGE);
-        if ((mask&SYNTHETIC) != 0) flags.add(Flag.SYNTHETIC);
-        if ((mask&DEPRECATED) != 0) flags.add(Flag.DEPRECATED);
-        if ((mask&HASINIT) != 0) flags.add(Flag.HASINIT);
-        if ((mask&ENUM) != 0) flags.add(Flag.ENUM);
-        if ((mask&MANDATED) != 0) flags.add(Flag.MANDATED);
-        if ((mask&IPROXY) != 0) flags.add(Flag.IPROXY);
-        if ((mask&NOOUTERTHIS) != 0) flags.add(Flag.NOOUTERTHIS);
-        if ((mask&EXISTS) != 0) flags.add(Flag.EXISTS);
-        if ((mask&COMPOUND) != 0) flags.add(Flag.COMPOUND);
-        if ((mask&CLASS_SEEN) != 0) flags.add(Flag.CLASS_SEEN);
-        if ((mask&SOURCE_SEEN) != 0) flags.add(Flag.SOURCE_SEEN);
-        if ((mask&LOCKED) != 0) flags.add(Flag.LOCKED);
-        if ((mask&UNATTRIBUTED) != 0) flags.add(Flag.UNATTRIBUTED);
-        if ((mask&ANONCONSTR) != 0) flags.add(Flag.ANONCONSTR);
-        if ((mask&ACYCLIC) != 0) flags.add(Flag.ACYCLIC);
-        if ((mask&PARAMETER) != 0) flags.add(Flag.PARAMETER);
-        if ((mask&VARARGS) != 0) flags.add(Flag.VARARGS);
-        return flags;
+    public static EnumSet<Flag> asFlagSet(long flags) {
+        EnumSet<Flag> flagSet = EnumSet.noneOf(Flag.class);
+        for (Flag flag : Flag.values()) {
+            if ((flags & flag.value) != 0) {
+                flagSet.add(flag);
+                flags &= ~flag.value;
+            }
+        }
+        Assert.check(flags == 0, "Flags parameter contains unknown flags " + flags);
+        return flagSet;
     }
 
     /* Standard Java flags.
      */
-    public static final int PUBLIC       = 1<<0;
+    public static final int PUBLIC       = 1;
     public static final int PRIVATE      = 1<<1;
     public static final int PROTECTED    = 1<<2;
     public static final int STATIC       = 1<<3;
@@ -154,9 +132,9 @@ public class Flags {
 
     /** Flag is set for nested classes that do not access instance members
      *  or `this' of an outer class and therefore don't need to be passed
-     *  a this$n reference.  This flag is currently set only for anonymous
+     *  a this$n reference.  This value is currently set only for anonymous
      *  classes in superclass constructor calls and only for pre 1.4 targets.
-     *  todo: use this flag for optimizing away this$n parameters in
+     *  todo: use this value for optimizing away this$n parameters in
      *  other cases.
      */
     public static final int NOOUTERTHIS  = 1<<22;
@@ -278,6 +256,11 @@ public class Flags {
      */
     public static final long BAD_OVERRIDE = 1L<<45;
 
+    /**
+     * Flag that indicates a signature polymorphic method (292).
+     */
+    public static final long SIGNATURE_POLYMORPHIC = 1L<<46;
+
     /** Modifier masks.
      */
     public static final int
@@ -337,49 +320,65 @@ public class Flags {
         return symbol.getConstValue() != null;
     }
 
+
     public enum Flag {
+        PUBLIC(Flags.PUBLIC),
+        PRIVATE(Flags.PRIVATE),
+        PROTECTED(Flags.PROTECTED),
+        STATIC(Flags.STATIC),
+        FINAL(Flags.FINAL),
+        SYNCHRONIZED(Flags.SYNCHRONIZED),
+        VOLATILE(Flags.VOLATILE),
+        TRANSIENT(Flags.TRANSIENT),
+        NATIVE(Flags.NATIVE),
+        INTERFACE(Flags.INTERFACE),
+        ABSTRACT(Flags.ABSTRACT),
+        DEFAULT(Flags.DEFAULT),
+        STRICTFP(Flags.STRICTFP),
+        BRIDGE(Flags.BRIDGE),
+        SYNTHETIC(Flags.SYNTHETIC),
+        ANNOTATION(Flags.ANNOTATION),
+        DEPRECATED(Flags.DEPRECATED),
+        HASINIT(Flags.HASINIT),
+        BLOCK(Flags.BLOCK),
+        ENUM(Flags.ENUM),
+        MANDATED(Flags.MANDATED),
+        IPROXY(Flags.IPROXY),
+        NOOUTERTHIS(Flags.NOOUTERTHIS),
+        EXISTS(Flags.EXISTS),
+        COMPOUND(Flags.COMPOUND),
+        CLASS_SEEN(Flags.CLASS_SEEN),
+        SOURCE_SEEN(Flags.SOURCE_SEEN),
+        LOCKED(Flags.LOCKED),
+        UNATTRIBUTED(Flags.UNATTRIBUTED),
+        ANONCONSTR(Flags.ANONCONSTR),
+        ACYCLIC(Flags.ACYCLIC),
+        PARAMETER(Flags.PARAMETER),
+        VARARGS(Flags.VARARGS),
+        ACYCLIC_ANN(Flags.ACYCLIC_ANN),
+        GENERATEDCONSTR(Flags.GENERATEDCONSTR),
+        HYPOTHETICAL(Flags.HYPOTHETICAL),
+        PROPRIETARY(Flags.PROPRIETARY),
+        UNION(Flags.UNION),
+        OVERRIDE_BRIDGE(Flags.OVERRIDE_BRIDGE),
+        EFFECTIVELY_FINAL(Flags.EFFECTIVELY_FINAL),
+        CLASH(Flags.CLASH),
+        AUXILIARY(Flags.AUXILIARY),
+        NOT_IN_PROFILE(Flags.NOT_IN_PROFILE),
+        BAD_OVERRIDE(Flags.BAD_OVERRIDE);
 
-        PUBLIC("public"),
-        PRIVATE("private"),
-        PROTECTED("protected"),
-        STATIC("static"),
-        FINAL("final"),
-        SYNCHRONIZED("synchronized"),
-        VOLATILE("volatile"),
-        TRANSIENT("transient"),
-        NATIVE("native"),
-        INTERFACE("interface"),
-        ABSTRACT("abstract"),
-        DEFAULT("default"),
-        STRICTFP("strictfp"),
-        BRIDGE("bridge"),
-        SYNTHETIC("synthetic"),
-        DEPRECATED("deprecated"),
-        HASINIT("hasinit"),
-        ENUM("enum"),
-        MANDATED("mandated"),
-        IPROXY("iproxy"),
-        NOOUTERTHIS("noouterthis"),
-        EXISTS("exists"),
-        COMPOUND("compound"),
-        CLASS_SEEN("class_seen"),
-        SOURCE_SEEN("source_seen"),
-        LOCKED("locked"),
-        UNATTRIBUTED("unattributed"),
-        ANONCONSTR("anonconstr"),
-        ACYCLIC("acyclic"),
-        PARAMETER("parameter"),
-        VARARGS("varargs"),
-        PACKAGE("package");
-
-        private final String name;
-
-        Flag(String name) {
-            this.name = name;
+        Flag(long flag) {
+            this.value = flag;
+            this.lowercaseName = name().toLowerCase();
         }
 
+        @Override
         public String toString() {
-            return name;
+            return lowercaseName;
         }
+
+        final long value;
+        final String lowercaseName;
     }
+
 }

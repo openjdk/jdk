@@ -156,6 +156,7 @@ final public class Messages {
     public static String IMPACT;
     public static String INFO;
     public static String INFO_CAPITALIZED;
+    public static String INSECURE;
     public static String INVALID_PLUGIN_PATH;
     public static String INVALID_URL;
     public static String IS;
@@ -303,6 +304,8 @@ final public class Messages {
     public static String WRITABLE;
     public static String CONNECTION_FAILED1;
     public static String CONNECTION_FAILED2;
+    public static String CONNECTION_FAILED_SSL1;
+    public static String CONNECTION_FAILED_SSL2;
     public static String CONNECTION_LOST1;
     public static String CONNECTING_TO1;
     public static String CONNECTING_TO2;

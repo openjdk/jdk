@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,18 @@ import javax.sound.sampled.AudioInputStream;
  *
  * @author Karl Helgason
  */
-public class SF2Sample extends SoundbankResource {
+public final class SF2Sample extends SoundbankResource {
 
-    protected String name = "";
-    protected long startLoop = 0;
-    protected long endLoop = 0;
-    protected long sampleRate = 44100;
-    protected int originalPitch = 60;
-    protected byte pitchCorrection = 0;
-    protected int sampleLink = 0;
-    protected int sampleType = 0;
-    protected ModelByteBuffer data;
-    protected ModelByteBuffer data24;
+    String name = "";
+    long startLoop = 0;
+    long endLoop = 0;
+    long sampleRate = 44100;
+    int originalPitch = 60;
+    byte pitchCorrection = 0;
+    int sampleLink = 0;
+    int sampleType = 0;
+    ModelByteBuffer data;
+    ModelByteBuffer data24;
 
     public SF2Sample(Soundbank soundBank) {
         super(soundBank, null, AudioInputStream.class);

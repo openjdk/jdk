@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,12 +337,15 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         try {
             annotationType = AnnotationType.getInstance(type);
         } catch(IllegalArgumentException e) {
-            // Class is no longer an annotation type; all bets are off
-            return;
+            // Class is no longer an annotation type; time to punch out
+            throw new java.io.InvalidObjectException("Non-annotation type in annotation serial stream");
         }
 
         Map<String, Class<?>> memberTypes = annotationType.memberTypes();
 
+
+        // If there are annotation members without values, that
+        // situation is handled by the invoke method.
         for (Map.Entry<String, Object> memberValue : memberValues.entrySet()) {
             String name = memberValue.getKey();
             Class<?> memberType = memberTypes.get(name);

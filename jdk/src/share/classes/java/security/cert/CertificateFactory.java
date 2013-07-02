@@ -65,7 +65,7 @@ import sun.security.jca.GetInstance.Instance;
  * read position of the input stream is positioned to the next certificate in
  * the file:<p>
  *
- * <pre>
+ * <pre>{@code
  * FileInputStream fis = new FileInputStream(filename);
  * BufferedInputStream bis = new BufferedInputStream(fis);
  *
@@ -75,7 +75,7 @@ import sun.security.jca.GetInstance.Instance;
  *    Certificate cert = cf.generateCertificate(bis);
  *    System.out.println(cert.toString());
  * }
- * </pre>
+ * }</pre>
  *
  * <p>The following example parses a PKCS#7-formatted certificate reply stored
  * in a file and extracts all the certificates from it:<p>
