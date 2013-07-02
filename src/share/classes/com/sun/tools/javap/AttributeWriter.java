@@ -513,7 +513,12 @@ public class AttributeWriter extends BasicWriter
     }
 
     public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr, Void ignore) {
-        println("SourceDebugExtension: " + attr.getValue());
+        println("SourceDebugExtension:");
+        indent(+1);
+        for (String s: attr.getValue().split("[\r\n]+")) {
+            println(s);
+        }
+        indent(-1);
         return null;
     }
 
