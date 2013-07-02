@@ -535,15 +535,12 @@ loop:
             if (!(lhs instanceof AccessNode ||
                   lhs instanceof IndexNode ||
                   lhs instanceof IdentNode)) {
-                if (env._early_lvalue_error) {
-                    throw error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
-                }
-                return referenceError(lhs, rhs);
+                return referenceError(lhs, rhs, env._early_lvalue_error);
             }
 
             if (lhs instanceof IdentNode) {
                 if (!checkIdentLValue((IdentNode)lhs)) {
-                    return referenceError(lhs, rhs);
+                    return referenceError(lhs, rhs, false);
                 }
                 verifyStrictIdent((IdentNode)lhs, "assignment");
             }
@@ -2617,7 +2614,10 @@ loop:
         }
     }
 
-    private static RuntimeNode referenceError(final Node lhs, final Node rhs) {
+    private RuntimeNode referenceError(final Node lhs, final Node rhs, final boolean earlyError) {
+        if (earlyError) {
+            throw error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
+        }
         final ArrayList<Node> args = new ArrayList<>();
         args.add(lhs);
         if (rhs == null) {
@@ -2695,18 +2695,18 @@ loop:
             final Node lhs = leftHandSideExpression();
             // ++, -- without operand..
             if (lhs == null) {
-                // error would have been issued when looking for 'lhs'
-                return null;
+                throw error(AbstractParser.message("expected.lvalue", type.getNameOrType()));
             }
+
             if (!(lhs instanceof AccessNode ||
                   lhs instanceof IndexNode ||
                   lhs instanceof IdentNode)) {
-                return referenceError(lhs, null);
+                return referenceError(lhs, null, env._early_lvalue_error);
             }
 
             if (lhs instanceof IdentNode) {
                 if (!checkIdentLValue((IdentNode)lhs)) {
-                    return referenceError(lhs, null);
+                    return referenceError(lhs, null, false);
                 }
                 verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
             }
@@ -2725,16 +2725,21 @@ loop:
             case DECPREFIX:
                 final TokenType opType = type;
                 final Node lhs = expression;
+                // ++, -- without operand..
+                if (lhs == null) {
+                    throw error(AbstractParser.message("expected.lvalue", type.getNameOrType()));
+                }
+
                 if (!(lhs instanceof AccessNode ||
                    lhs instanceof IndexNode ||
                    lhs instanceof IdentNode)) {
                     next();
-                    return referenceError(lhs, null);
+                    return referenceError(lhs, null, env._early_lvalue_error);
                 }
                 if (lhs instanceof IdentNode) {
                     if (!checkIdentLValue((IdentNode)lhs)) {
                         next();
-                        return referenceError(lhs, null);
+                        return referenceError(lhs, null, false);
                     }
                     verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
                 }

@@ -22,41 +22,22 @@
  */
 
 /**
- * NASHORN-51 :  Post/pre increment and decrement operators should only accept "left hand side" expression.
+ * JDK-8019553:  NPE on illegal l-value for increment and decrement
  *
  * @test
  * @run
  */
 
-var literals = [1, 0, 3.14, true, false, null];
-
-for (i in literals) {
+function check(str) {
     try {
-        eval(literals[i] + "++");
-        print("ERROR!! post increment : " + literals[i]);
-    } catch (e) {
-        print(e.toString().replace(/\\/g, '/'));
-    }
-
-    try {
-        eval(literals[i] + "--");
-        print("ERROR!! post decrement : " + literals[i]);
-    } catch (e) {
-        print(e.toString().replace(/\\/g, '/'));
-    }
-
-    try {
-        eval("++" + literals[i]);
-        print("ERROR!! pre increment : " + literals[i]);
-    } catch (e) {
-        print(e.toString().replace(/\\/g, '/'));
-    }
-
-    try {
-        eval("--" + literals[i]);
-        print("ERROR!! pre decrement : " + literals[i]);
+        eval(str);
+        fail("SyntaxError expected for: " + str);
     } catch (e) {
         print(e.toString().replace(/\\/g, '/'));
     }
 }
 
+check("++ +3");
+check("++ -7");
+check("-- +2");
+check("-- -8");
