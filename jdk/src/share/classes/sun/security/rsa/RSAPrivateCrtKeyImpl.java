@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,29 +225,4 @@ public final class RSAPrivateCrtKeyImpl
         }
         return b;
     }
-
-    // return a string representation of this key for debugging
-    public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("Sun RSA private CRT key, ");
-        sb.append(n.bitLength());
-        sb.append(" bits\n  modulus:          ");
-        sb.append(n);
-        sb.append("\n  public exponent:  ");
-        sb.append(e);
-        sb.append("\n  private exponent: ");
-        sb.append(d);
-        sb.append("\n  prime p:          ");
-        sb.append(p);
-        sb.append("\n  prime q:          ");
-        sb.append(q);
-        sb.append("\n  prime exponent p: ");
-        sb.append(pe);
-        sb.append("\n  prime exponent q: ");
-        sb.append(qe);
-        sb.append("\n  crt coefficient:  ");
-        sb.append(coeff);
-        return sb.toString();
-    }
-
 }
