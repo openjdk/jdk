@@ -521,7 +521,8 @@ jdk_other: $(call TestDirs, \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
 	  com/sun/tracing \
-	  sun/usagetracker)
+	  sun/usagetracker \
+	  misc)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
