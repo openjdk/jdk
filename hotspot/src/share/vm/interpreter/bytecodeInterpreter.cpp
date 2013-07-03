@@ -482,9 +482,9 @@ BytecodeInterpreter::run(interpreterState istate) {
     // So we have a second version of the assertion which handles the case where EnableInvokeDynamic was
     // switched off because of the wrong classes.
     if (EnableInvokeDynamic || FLAG_IS_CMDLINE(EnableInvokeDynamic)) {
-      assert(abs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
+      assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
     } else {
-      const int extra_stack_entries = Method::extra_stack_entries_for_indy;
+      const int extra_stack_entries = Method::extra_stack_entries_for_jsr292;
       assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + extra_stack_entries
                                                                                                + 1), "bad stack limit");
     }
@@ -2362,7 +2362,7 @@ run:
         }
 
         Method* method = cache->f1_as_method();
-        VERIFY_OOP(method);
+        if (VerifyOops) method->verify();
 
         if (cache->has_appendix()) {
           ConstantPool* constants = METHOD->constants();
@@ -2394,8 +2394,7 @@ run:
         }
 
         Method* method = cache->f1_as_method();
-
-        VERIFY_OOP(method);
+        if (VerifyOops) method->verify();
 
         if (cache->has_appendix()) {
           ConstantPool* constants = METHOD->constants();
