@@ -1847,7 +1847,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // If expression not int see if we can convert, if not use deflt to trigger default.
             if (!type.isInteger()) {
                 method.load(deflt);
-                final Class exprClass = type.getTypeClass();
+                final Class<?> exprClass = type.getTypeClass();
                 method.invoke(staticCallNoLookup(ScriptRuntime.class, "switchTagAsInt", int.class, exprClass.isPrimitive()? exprClass : Object.class, int.class));
             }
 

@@ -119,6 +119,7 @@ public final class NativeError extends ScriptObject {
      * Nashorn extension: Error.captureStackTrace. Capture stack trace at the point of call into the Error object provided.
      *
      * @param self self reference
+     * @param errorObj the error object
      * @return undefined
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
@@ -286,9 +287,9 @@ public final class NativeError extends ScriptObject {
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
             return getScriptStackString(sobj, (Throwable)exception);
-        } else {
-            return "";
         }
+
+        return "";
     }
 
     /**

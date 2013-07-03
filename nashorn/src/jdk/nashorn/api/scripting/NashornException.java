@@ -146,7 +146,7 @@ public abstract class NashornException extends RuntimeException {
      * @return array of javascript stack frames
      */
     public static StackTraceElement[] getScriptFrames(final Throwable exception) {
-        final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
+        final StackTraceElement[] frames = exception.getStackTrace();
         final List<StackTraceElement> filtered = new ArrayList<>();
         for (final StackTraceElement st : frames) {
             if (ECMAErrors.isScriptFrame(st)) {
@@ -170,7 +170,7 @@ public abstract class NashornException extends RuntimeException {
      */
     public static String getScriptStackString(final Throwable exception) {
         final StringBuilder buf = new StringBuilder();
-        final StackTraceElement[] frames = getScriptFrames((Throwable)exception);
+        final StackTraceElement[] frames = getScriptFrames(exception);
         for (final StackTraceElement st : frames) {
             buf.append("\tat ");
             buf.append(st.getMethodName());

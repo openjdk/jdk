@@ -47,6 +47,7 @@ public final class NativeUint8Array extends ArrayBufferView {
     public static final int BYTES_PER_ELEMENT = 1;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {

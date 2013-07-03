@@ -42,6 +42,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
 public final class NativeInt16Array extends ArrayBufferView {
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     /**

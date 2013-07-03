@@ -48,6 +48,7 @@ public final class NativeFloat64Array extends ArrayBufferView {
     public static final int BYTES_PER_ELEMENT = 8;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {

@@ -40,6 +40,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 abstract class ArrayBufferView extends ScriptObject {
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {

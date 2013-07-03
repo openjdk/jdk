@@ -149,12 +149,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return typeErrorThrower;
     }
 
-    private static PropertyMap createStrictModeMap(PropertyMap map) {
+    private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
+        PropertyMap newMap = map;
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
-        map = map.addProperty(map.newUserAccessors("arguments", flags));
-        map = map.addProperty(map.newUserAccessors("caller", flags));
-        return map;
+        newMap = newMap.addProperty(map.newUserAccessors("arguments", flags));
+        newMap = newMap.addProperty(map.newUserAccessors("caller", flags));
+        return newMap;
     }
 
     // Choose the map based on strict mode!
