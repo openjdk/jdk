@@ -22,33 +22,26 @@
  */
 
 /**
- * Regression test for erroneous shortcut optimization for object null checks
+ * JDK-8019811: Number coercion for return values of static calls was broken
  *
  * @test
  * @run
  */
 
-function toto() {
-    var friends = 1;
-    (joe = friends) == null;
-} 
-
-//JDK-8019476 duplicate case of this
-Function("with(\nnull == (this % {}))( /x/g );"); 
-
-function f() {
-    with(null == (this % {}))(/x/g);
+function f(x) {
+    var window = 17;
+    return function (x) { 
+	return true 
+    } (x) >> window;
 }
 
-Function("return (null != [,,] <= this);"); 
+Function("L:if((function x ()3)() + arguments++) {return; } else if (new gc()) while(((x2.prop = functional)) && 0){ }"); 
 
-function f2() {
-    return (null != [,,] <= this);
-}
+Function("var x = x -= '' "); 
 
-Function("/*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }"); 
+Function("switch((Math.pow ? x = 1.2e3 : 3)) { default: return; }") 
 
-function f3() {
-    /*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }
-}
+Function("x = 0.1, x\ntrue\n~this");
 
+Function("with((function (x)x2)() ^ this){return; }");
+ 
