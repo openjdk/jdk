@@ -35,6 +35,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -196,6 +197,10 @@
           if (THREAD->pop_frame_pending() &&                                     \
               !THREAD->pop_frame_in_process()) {                                 \
             goto handle_Pop_Frame;                                               \
+          }                                                                      \
+          if (THREAD->jvmti_thread_state() &&                                    \
+              THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
+            goto handle_Early_Return;                                            \
           }                                                                      \
           opcode = *pc;                                                          \
         }                                                                        \
@@ -411,21 +416,25 @@
         CACHE_LOCALS();
 
 // Call the VM don't check for pending exceptions
-#define CALL_VM_NOCHECK(func)                                     \
-          DECACHE_STATE();                                        \
-          SET_LAST_JAVA_FRAME();                                  \
-          func;                                                   \
-          RESET_LAST_JAVA_FRAME();                                \
-          CACHE_STATE();                                          \
-          if (THREAD->pop_frame_pending() &&                      \
-              !THREAD->pop_frame_in_process()) {                  \
-            goto handle_Pop_Frame;                                \
-          }
+#define CALL_VM_NOCHECK(func)                                      \
+        DECACHE_STATE();                                           \
+        SET_LAST_JAVA_FRAME();                                     \
+        func;                                                      \
+        RESET_LAST_JAVA_FRAME();                                   \
+        CACHE_STATE();                                             \
+        if (THREAD->pop_frame_pending() &&                         \
+            !THREAD->pop_frame_in_process()) {                     \
+          goto handle_Pop_Frame;                                   \
+        }                                                          \
+        if (THREAD->jvmti_thread_state() &&                        \
+            THREAD->jvmti_thread_state()->is_earlyret_pending()) { \
+          goto handle_Early_Return;                                \
+        }
 
 // Call the VM and check for pending exceptions
-#define CALL_VM(func, label) {                                    \
-          CALL_VM_NOCHECK(func);                                  \
-          if (THREAD->has_pending_exception()) goto label;        \
+#define CALL_VM(func, label) {                                     \
+          CALL_VM_NOCHECK(func);                                   \
+          if (THREAD->has_pending_exception()) goto label;         \
         }
 
 /*
@@ -783,7 +792,6 @@ BytecodeInterpreter::run(interpreterState istate) {
     case popping_frame: {
       // returned from a java call to pop the frame, restart the call
       // clear the message so we don't confuse ourselves later
-      ShouldNotReachHere();  // we don't return this.
       assert(THREAD->pop_frame_in_process(), "wrong frame pop state");
       istate->set_msg(no_request);
       THREAD->clr_pop_frame_in_process();
@@ -810,6 +818,10 @@ BytecodeInterpreter::run(interpreterState istate) {
       // returned from a java call, continue executing.
       if (THREAD->pop_frame_pending() && !THREAD->pop_frame_in_process()) {
         goto handle_Pop_Frame;
+      }
+      if (THREAD->jvmti_thread_state() &&
+          THREAD->jvmti_thread_state()->is_earlyret_pending()) {
+        goto handle_Early_Return;
       }
 
       if (THREAD->has_pending_exception()) goto handle_exception;
@@ -2708,32 +2720,81 @@ run:
     // No handler in this activation, unwind and try again
     THREAD->set_pending_exception(except_oop(), NULL, 0);
     goto handle_return;
-  }  /* handle_exception: */
-
-
+  }  // handle_exception:
 
   // Return from an interpreter invocation with the result of the interpretation
   // on the top of the Java Stack (or a pending exception)
 
-handle_Pop_Frame:
+  handle_Pop_Frame: {
 
-  // We don't really do anything special here except we must be aware
-  // that we can get here without ever locking the method (if sync).
-  // Also we skip the notification of the exit.
+    // We don't really do anything special here except we must be aware
+    // that we can get here without ever locking the method (if sync).
+    // Also we skip the notification of the exit.
 
-  istate->set_msg(popping_frame);
-  // Clear pending so while the pop is in process
-  // we don't start another one if a call_vm is done.
-  THREAD->clr_pop_frame_pending();
-  // Let interpreter (only) see the we're in the process of popping a frame
-  THREAD->set_pop_frame_in_process();
+    istate->set_msg(popping_frame);
+    // Clear pending so while the pop is in process
+    // we don't start another one if a call_vm is done.
+    THREAD->clr_pop_frame_pending();
+    // Let interpreter (only) see the we're in the process of popping a frame
+    THREAD->set_pop_frame_in_process();
 
-handle_return:
-  {
+    goto handle_return;
+
+  } // handle_Pop_Frame
+
+  // ForceEarlyReturn ends a method, and returns to the caller with a return value
+  // given by the invoker of the early return.
+  handle_Early_Return: {
+
+    istate->set_msg(early_return);
+
+    // Clear expression stack.
+    topOfStack = istate->stack_base() - Interpreter::stackElementWords;
+
+    JvmtiThreadState *ts = THREAD->jvmti_thread_state();
+
+    // Push the value to be returned.
+    switch (istate->method()->result_type()) {
+      case T_BOOLEAN:
+      case T_SHORT:
+      case T_BYTE:
+      case T_CHAR:
+      case T_INT:
+        SET_STACK_INT(->earlyret_value().i, 0);
+        MORE_STACK(1);
+        break;
+      case T_LONG:
+        SET_STACK_LONG(ts->earlyret_value().j, 1);
+        MORE_STACK(2);
+        break;
+      case T_FLOAT:
+        SET_STACK_FLOAT(ts->earlyret_value().f, 0);
+        MORE_STACK(1);
+        break;
+      case T_DOUBLE:
+        SET_STACK_DOUBLE(ts->earlyret_value().d, 1);
+        MORE_STACK(2);
+        break;
+      case T_ARRAY:
+      case T_OBJECT:
+        SET_STACK_OBJECT(ts->earlyret_oop(), 0);
+        MORE_STACK(1);
+        break;
+    }
+
+    ts->clr_earlyret_value();
+    ts->set_earlyret_oop(NULL);
+    ts->clr_earlyret_pending();
+
+    // Fall through to handle_return.
+
+  } // handle_Early_Return
+
+  handle_return: {
     DECACHE_STATE();
 
-    bool suppress_error = istate->msg() == popping_frame;
-    bool suppress_exit_event = THREAD->has_pending_exception() || suppress_error;
+    bool suppress_error = istate->msg() == popping_frame || istate->msg() == early_return;
+    bool suppress_exit_event = THREAD->has_pending_exception() || istate->msg() == popping_frame;
     Handle original_exception(THREAD, THREAD->pending_exception());
     Handle illegal_state_oop(THREAD, NULL);
 
@@ -2946,7 +3007,6 @@ handle_return:
         THREAD->set_pending_exception(illegal_state_oop(), NULL, 0);
       else
         THREAD->set_pending_exception(original_exception(), NULL, 0);
-      istate->set_return_kind((Bytecodes::Code)opcode);
       UPDATE_PC_AND_RETURN(0);
     }
 
@@ -2965,13 +3025,12 @@ handle_return:
                                 LOCALS_SLOT(METHOD->size_of_parameters() - 1));
         THREAD->set_popframe_condition_bit(JavaThread::popframe_force_deopt_reexecution_bit);
       }
-      THREAD->clr_pop_frame_in_process();
+    } else {
+      istate->set_msg(return_from_method);
     }
 
     // Normal return
     // Advance the pc and return to frame manager
-    istate->set_msg(return_from_method);
-    istate->set_return_kind((Bytecodes::Code)opcode);
     UPDATE_PC_AND_RETURN(1);
   } /* handle_return: */
 
@@ -3246,7 +3305,6 @@ BytecodeInterpreter::print() {
   tty->print_cr("result_to_call._bcp_advance: %d ", this->_result._to_call._bcp_advance);
   tty->print_cr("osr._osr_buf: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_buf);
   tty->print_cr("osr._osr_entry: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_entry);
-  tty->print_cr("result_return_kind 0x%x ", (int) this->_result._return_kind);
   tty->print_cr("prev_link: " INTPTR_FORMAT, (uintptr_t) this->_prev_link);
   tty->print_cr("native_mirror: " INTPTR_FORMAT, (uintptr_t) this->_oop_temp);
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
