@@ -22,30 +22,15 @@
  */
 
 /**
- * Test for in
+ * JDK-8019805: for each (init; test; modify) is invalid
  *
  * @test
  * @run
  */
 
-var a = [10, 20, 30, 40];
-var o = {a: 100, b: 200, c: 300};
-var j = new java.util.ArrayList();
-j.add("apple");
-j.add("bear");
-j.add("car");
-var ja = j.toArray();
-var s = "apple,bear,car".split(",");
-
-for (i in a) print(i, a[i]);
-for each (i in a) print(i);
-for (i in o) print(i, o[i]);
-for each (i in j) print(i);
-for (i in ja) print(i, ja[i]);
-for each (i in ja) print(i);
-for (i in s) print(i, s[i]);
-for each (i in s) print(i);
-
-// 'each' is a contextual keyword. Ok to use as identifier elsewhere..
-var each = "This is each";
-print(each);
+try {
+    eval("for each(var v=0;false;);");
+    print("FAILED: for each(var v=0; false;); should have thrown error");
+} catch (e) {
+    print(e.toString().replace(/\\/g, '/'));
+}
