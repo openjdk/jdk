@@ -644,6 +644,9 @@ class CommandLineFlags {
   product(bool, UseAESIntrinsics, false,                                    \
           "use intrinsics for AES versions of crypto")                      \
                                                                             \
+  product(bool, UseCRC32Intrinsics, false,                                  \
+          "use intrinsics for java.util.zip.CRC32")                         \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
                                                                             \
