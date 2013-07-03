@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.tools;
 
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.tools.*;
 
 import sun.jvm.hotspot.oops.*;
@@ -42,6 +43,15 @@ import java.util.Comparator;
  * summary of these objects in the form of a histogram.
  */
 public class FinalizerInfo extends Tool {
+
+    public FinalizerInfo() {
+        super();
+    }
+
+    public FinalizerInfo(JVMDebugger d) {
+        super(d);
+    }
+
     public static void main(String[] args) {
         FinalizerInfo finfo = new FinalizerInfo();
         finfo.start(args);
