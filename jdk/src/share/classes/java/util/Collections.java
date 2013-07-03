@@ -1674,12 +1674,12 @@ public class Collections {
 
             @Override
             public Stream<Entry<K,V>> stream() {
-                return StreamSupport.stream(spliterator());
+                return StreamSupport.stream(spliterator(), false);
             }
 
             @Override
             public Stream<Entry<K,V>> parallelStream() {
-                return StreamSupport.parallelStream(spliterator());
+                return StreamSupport.stream(spliterator(), true);
             }
 
             public Iterator<Map.Entry<K,V>> iterator() {
