@@ -23,7 +23,7 @@
 # questions.
 #
 
-defalt: all
+default: all
 
 include $(SPEC)
 include MakeBase.gmk
@@ -128,10 +128,21 @@ define SetupLauncher
         $1_CFLAGS:=$(filter-out -MD,$(CFLAGS_JDKEXE))
     endif
 
-    ifneq ($(wildcard $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)),)
-        $1_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+    # The linker on older SuSE distros (e.g. on SLES 10) complains with:
+    # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+    # if feeded with a version script which contains named tags.
+    ifeq ($(USING_BROKEN_SUSE_LD),yes)
+        ifneq ($(wildcard $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous),)
+            $1_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
+        else
+            $1_MAPFILE:=
+        endif
     else
-        $1_MAPFILE:=
+        ifneq ($(wildcard $(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)),)
+            $1_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+        else
+            $1_MAPFILE:=
+        endif
     endif
 
     $(call SetupNativeCompilation,BUILD_LAUNCHER_$1,\
@@ -448,6 +459,16 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
     EXE_OUT_OPTION_save:=$(EXE_OUT_OPTION)
     EXE_OUT_OPTION:=-Fe
 endif
+
+# The linker on older SuSE distros (e.g. on SLES 10) complains with:
+# "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+# if feeded with a version script which contains named tags.
+ifeq ($(USING_BROKEN_SUSE_LD),yes)
+  UNPACK_MAPFILE=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200.anonymous
+else
+  UNPACK_MAPFILE=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
                 SRC:=$(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack,\
 		EXCLUDE_FILES:=jni.cpp,\
@@ -459,7 +480,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE,\
 		CFLAGS_linux:=-fPIC,\
 		CFLAGS_solaris:=-KPIC, \
 		CFLAGS_macosx:=-fPIC, \
-		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libunpack/mapfile-vers-unpack200,\
+		MAPFILE:=$(UNPACK_MAPFILE),\
 		LDFLAGS:=$(UNPACKEXE_ZIPOBJS),\
 		LDFLAGS_windows:=$(CXXFLAGS_JDKEXE),\
 		LDFLAGS_posix:=$(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \

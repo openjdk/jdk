@@ -23,7 +23,7 @@
 # questions.
 #
 
-defalt: all
+default: all
 
 include $(SPEC)
 include MakeBase.gmk
@@ -2478,11 +2478,14 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 				  -framework Cocoa \
                                   -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
 				  -framework JavaNativeFoundation
-else ifneq ($(OPENJDK_TARGET_OS), windows)
-	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
-else # OPENJDK_TARGET_OS
+else ifeq ($(OPENJDK_TARGET_OS), windows)
 	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
-endif # OPENJDK_TARGET_OS
+else ifeq ($(OPENJDK_TARGET_OS), solaris)
+	# Solaris still uses OPENWIN_LIB ..
+	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += -L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -lX11 -lXext $(LIBM) -lpthread
+else	# .. all other Unixes can use X_LIBS
+	LIBSPLASHSCREEN_LDFLAGS_SUFFIX += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread
+endif
 
 $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 		LIBRARY:=splashscreen,\
@@ -2861,6 +2864,10 @@ else
 
   ifeq ($(OPENJDK_TARGET_CPU), ppc)
 	LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), ppc64)
+       LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC64
   endif
 endif
 
