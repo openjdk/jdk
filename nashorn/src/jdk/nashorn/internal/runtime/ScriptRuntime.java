@@ -592,6 +592,8 @@ public final class ScriptRuntime {
                 throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
+            } else if (obj instanceof ScriptObjectMirror) {
+                obj = ((ScriptObjectMirror)obj).getMember(property.toString());
             } else {
                 obj = UNDEFINED;
             }
