@@ -1137,7 +1137,12 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
   if (VerifyMethodHandles && caller_jh != NULL &&
       java_lang_invoke_MemberName::clazz(mname()) != NULL) {
     Klass* reference_klass = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
-    if (reference_klass != NULL) {
+    if (reference_klass != NULL && reference_klass->oop_is_objArray()) {
+      reference_klass = ObjArrayKlass::cast(reference_klass)->bottom_klass();
+    }
+
+    // Reflection::verify_class_access can only handle instance classes.
+    if (reference_klass != NULL && reference_klass->oop_is_instance()) {
       // Emulate LinkResolver::check_klass_accessability.
       Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
       if (!Reflection::verify_class_access(caller,
