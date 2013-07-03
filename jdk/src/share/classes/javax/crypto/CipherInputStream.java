@@ -245,7 +245,7 @@ public class CipherInputStream extends FilterInputStream {
      * <p>Fewer bytes than requested might be skipped.
      * The actual number of bytes skipped is equal to <code>n</code> or
      * the result of a call to
-     * {@link #available() <code>available</code>},
+     * {@link #available() available},
      * whichever is smaller.
      * If <code>n</code> is less than zero, no bytes are skipped.
      *
