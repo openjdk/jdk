@@ -1093,6 +1093,24 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+
+  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed in executable.'
+  USING_BROKEN_SUSE_LD=no
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$GCC" = xyes; then
+    AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
+    echo "SUNWprivate_1.1 { local: *; };" > version-script.map
+    echo "int main() { }" > main.c
+    if $CXX -Xlinker -version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+      AC_MSG_RESULT(no)
+      USING_BROKEN_SUSE_LD=no
+    else
+      AC_MSG_RESULT(yes)
+      USING_BROKEN_SUSE_LD=yes
+    fi
+    rm -rf version-script.map main.c
+  fi
+  AC_SUBST(USING_BROKEN_SUSE_LD)
 ])
 
 # Setup the JTREG paths

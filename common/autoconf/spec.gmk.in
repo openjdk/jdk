@@ -206,6 +206,7 @@ JVM_VARIANT_MINIMAL1:=@JVM_VARIANT_MINIMAL1@
 JVM_VARIANT_KERNEL:=@JVM_VARIANT_KERNEL@
 JVM_VARIANT_ZERO:=@JVM_VARIANT_ZERO@
 JVM_VARIANT_ZEROSHARK:=@JVM_VARIANT_ZEROSHARK@
+JVM_VARIANT_CORE:=@JVM_VARIANT_CORE@
 
 # Universal binaries on macosx
 MACOSX_UNIVERSAL=@MACOSX_UNIVERSAL@
@@ -346,6 +347,11 @@ CPP:=@FIXPATH@ @CPP@
 
 # The linker can be gcc or ld on posix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
+
+# The linker on older SuSE distros (e.g. on SLES 10) complains with:
+# "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+# if feeded with a version script which contains named tags.
+USING_BROKEN_SUSE_LD:=@USING_BROKEN_SUSE_LD@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
