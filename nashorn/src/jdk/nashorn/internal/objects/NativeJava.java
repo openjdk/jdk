@@ -32,6 +32,7 @@ import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
+
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -54,6 +55,7 @@ import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 public final class NativeJava {
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private NativeJava() {

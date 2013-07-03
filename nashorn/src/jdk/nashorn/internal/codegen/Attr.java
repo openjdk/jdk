@@ -54,6 +54,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -234,10 +235,25 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             @Override
             public boolean enterVarNode(final VarNode varNode) {
                 final String name = varNode.getName().getName();
-                //if this is used the var node symbol needs to be tagged as can be undefined
+                //if this is used before the var node, the var node symbol needs to be tagged as can be undefined
                 if (uses.contains(name)) {
                     canBeUndefined.add(name);
                 }
+
+                // all uses of the declared varnode inside the var node are potentially undefined
+                // however this is a bit conservative as e.g. var x = 17; var x = 1 + x; does work
+                if (!varNode.isFunctionDeclaration() && varNode.getInit() != null) {
+                    varNode.getInit().accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                       @Override
+                       public boolean enterIdentNode(final IdentNode identNode) {
+                           if (name.equals(identNode.getName())) {
+                              canBeUndefined.add(name);
+                           }
+                           return false;
+                       }
+                    });
+                }
+
                 return true;
             }
 
@@ -257,6 +273,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     }
                     return varNode.setName((IdentNode)ident.setSymbol(lc, symbol));
                 }
+
                 return varNode;
             }
         });

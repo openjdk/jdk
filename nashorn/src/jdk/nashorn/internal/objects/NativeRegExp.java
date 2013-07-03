@@ -68,6 +68,7 @@ public final class NativeRegExp extends ScriptObject {
     private Global globalObject;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     NativeRegExp(final String input, final String flagString) {

@@ -382,6 +382,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private final Context context;
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     /**
