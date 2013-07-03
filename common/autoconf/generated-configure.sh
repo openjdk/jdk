@@ -638,6 +638,7 @@ CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+USING_BROKEN_SUSE_LD
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
@@ -824,6 +825,7 @@ VARIANT
 DEBUG_LEVEL
 MACOSX_UNIVERSAL
 INCLUDE_SA
+JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
 JVM_VARIANT_KERNEL
@@ -831,6 +833,7 @@ JVM_VARIANT_MINIMAL1
 JVM_VARIANT_CLIENT
 JVM_VARIANT_SERVER
 JVM_VARIANTS
+JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
 BUILD_LOG_WRAPPER
@@ -975,6 +978,7 @@ with_tools_dir
 with_devkit
 enable_openjdk_only
 with_jdk_variant
+with_jvm_interpreter
 with_jvm_variants
 enable_debug
 with_debug_level
@@ -1713,8 +1717,10 @@ Optional Packages:
   --with-devkit           use this directory as base for tools-dir and
                           sys-root (for cross-compiling)
   --with-jdk-variant      JDK variant to build (normal) [normal]
+  --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
-                          client, minimal1, kernel, zero, zeroshark) [server]
+                          client, minimal1, kernel, zero, zeroshark, core)
+                          [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug)
                           [release]
   --with-conf-name        use this as the name of the configuration [generated
@@ -2845,7 +2851,7 @@ $as_echo "$as_me: loading site script $ac_site_file" >&6;}
       || { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "failed to load site script $ac_site_file
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
   fi
 done
 
@@ -3505,6 +3511,8 @@ pkgadd_help() {
 
 
 
+
+
 ###############################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
@@ -3782,7 +3790,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1371547824
+DATE_WHEN_GENERATED=1372808067
 
 ###############################################################################
 #
@@ -6560,7 +6568,7 @@ fi
 $as_echo "$ac_cv_build" >&6; }
 case $ac_cv_build in
 *-*-*) ;;
-*) as_fn_error $? "invalid value of canonical build" "$LINENO" 5 ;;
+*) as_fn_error $? "invalid value of canonical build" "$LINENO" 5;;
 esac
 build=$ac_cv_build
 ac_save_IFS=$IFS; IFS='-'
@@ -6593,7 +6601,7 @@ fi
 $as_echo "$ac_cv_host" >&6; }
 case $ac_cv_host in
 *-*-*) ;;
-*) as_fn_error $? "invalid value of canonical host" "$LINENO" 5 ;;
+*) as_fn_error $? "invalid value of canonical host" "$LINENO" 5;;
 esac
 host=$ac_cv_host
 ac_save_IFS=$IFS; IFS='-'
@@ -6626,7 +6634,7 @@ fi
 $as_echo "$ac_cv_target" >&6; }
 case $ac_cv_target in
 *-*-*) ;;
-*) as_fn_error $? "invalid value of canonical target" "$LINENO" 5 ;;
+*) as_fn_error $? "invalid value of canonical target" "$LINENO" 5;;
 esac
 target=$ac_cv_target
 ac_save_IFS=$IFS; IFS='-'
@@ -7572,6 +7580,37 @@ fi
 $as_echo "$JDK_VARIANT" >&6; }
 
 
+###############################################################################
+#
+# Check which interpreter of the JVM we want to build.
+# Currently we have:
+#    template: Template interpreter (the default)
+#    cpp     : C++ interpreter
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking which interpreter of the JVM to build" >&5
+$as_echo_n "checking which interpreter of the JVM to build... " >&6; }
+
+# Check whether --with-jvm-interpreter was given.
+if test "${with_jvm_interpreter+set}" = set; then :
+  withval=$with_jvm_interpreter;
+fi
+
+
+if test "x$with_jvm_interpreter" = x; then
+     with_jvm_interpreter="template"
+fi
+
+JVM_INTERPRETER="$with_jvm_interpreter"
+
+if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
+   as_fn_error $? "The available JVM interpreters are: template, cpp" "$LINENO" 5
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_interpreter" >&5
+$as_echo "$with_jvm_interpreter" >&6; }
+
+
 
 ###############################################################################
 #
@@ -7584,6 +7623,7 @@ $as_echo "$JDK_VARIANT" >&6; }
 #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
 #    zero: no machine code interpreter, no compiler
 #    zeroshark: zero interpreter and shark/llvm compiler backend
+#    core: interpreter only, no compiler (only works on some platforms)
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variants of the JVM to build" >&5
 $as_echo_n "checking which variants of the JVM to build... " >&6; }
 
@@ -7598,10 +7638,10 @@ if test "x$with_jvm_variants" = x; then
 fi
 
 JVM_VARIANTS=",$with_jvm_variants,"
-TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
+TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
 
 if test "x$TEST_VARIANTS" != "x,"; then
-   as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark" "$LINENO" 5
+   as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark, core" "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_variants" >&5
 $as_echo "$with_jvm_variants" >&6; }
@@ -7612,6 +7652,7 @@ JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g
 JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
 JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
 JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
+JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
 
 if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
@@ -7631,7 +7672,7 @@ fi
 
 # Replace the commas with AND for use in the build directory name.
 ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/'`
-COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
+COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
 if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
 else
@@ -7646,11 +7687,15 @@ fi
 
 
 
+
 INCLUDE_SA=true
 if test "x$JVM_VARIANT_ZERO" = xtrue ; then
     INCLUDE_SA=false
 fi
 if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+fi
+if test "x$VAR_CPU" = xppc64 ; then
     INCLUDE_SA=false
 fi
 
@@ -7767,6 +7812,10 @@ fi
 
 if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
     HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
+fi
+
+if test "x$JVM_VARIANT_CORE" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
 fi
 
 HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
@@ -15718,7 +15767,7 @@ if test "x$with_boot_jdk_jvmargs" = x; then
 	JVM_ARG_OK=false
     fi
 
-    if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    if test "x$OPENJDK_TARGET_OS" = "xmacosx" || test "x$OPENJDK_TARGET_CPU" = "xppc64" ; then
         # Why does macosx need more heap? Its the huge JDK batch.
 
     $ECHO "Check if jvm arg is ok: -Xmx1600M" >&5
@@ -20041,7 +20090,7 @@ fi
 test -z "$CC" && { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "no acceptable C compiler found in \$PATH
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 
 # Provide some information about the compiler.
 $as_echo "$as_me:${as_lineno-$LINENO}: checking for C compiler version" >&5
@@ -20156,7 +20205,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error 77 "C compiler cannot create executables
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -20199,7 +20248,7 @@ else
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot compute suffix of executables: cannot compile and link
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f conftest conftest$ac_cv_exeext
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_exeext" >&5
@@ -20258,7 +20307,7 @@ $as_echo "$ac_try_echo"; } >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot run C compiled programs.
 If you meant to cross compile, use \`--host'.
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
     fi
   fi
 fi
@@ -20310,7 +20359,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "cannot compute suffix of object files: cannot compile
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f conftest.$ac_cv_objext conftest.$ac_ext
 fi
@@ -24485,7 +24534,7 @@ else
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "C preprocessor \"$CPP\" fails sanity check
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 fi
 
 ac_ext=cpp
@@ -24885,7 +24934,7 @@ else
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "C++ preprocessor \"$CXXCPP\" fails sanity check
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 fi
 
 ac_ext=cpp
@@ -28722,7 +28771,7 @@ else
      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error 77 "cannot compute sizeof (int *)
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
    else
      ac_cv_sizeof_int_p=0
    fi
@@ -29724,6 +29773,27 @@ $as_echo "$supports" >&6; }
 
 
 
+  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed in executable.'
+  USING_BROKEN_SUSE_LD=no
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$GCC" = xyes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken SuSE 'ld' which only understands anonymous version tags in executables" >&5
+$as_echo_n "checking for broken SuSE 'ld' which only understands anonymous version tags in executables... " >&6; }
+    echo "SUNWprivate_1.1 { local: *; };" > version-script.map
+    echo "int main() { }" > main.c
+    if $CXX -Xlinker -version-script=version-script.map main.c 2>&5 >&5; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      USING_BROKEN_SUSE_LD=no
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      USING_BROKEN_SUSE_LD=yes
+    fi
+    rm -rf version-script.map main.c
+  fi
+
+
+
 # Setup debug symbols (need objcopy from the toolchain for that)
 
 #
@@ -29945,7 +30015,7 @@ if test "x$with_x" = xno; then
   have_x=disabled
 else
   case $x_includes,$x_libraries in #(
-    *\'*) as_fn_error $? "cannot use X directory names containing '" "$LINENO" 5 ;; #(
+    *\'*) as_fn_error $? "cannot use X directory names containing '" "$LINENO" 5;; #(
     *,NONE | NONE,*) if test "${ac_cv_have_x+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
@@ -32605,7 +32675,7 @@ and LIBFFI_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details" "$LINENO" 5 ; }
+See \`config.log' for more details" "$LINENO" 5; }
 else
 	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
 	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
@@ -34134,7 +34204,7 @@ do
     "$OUTPUT_ROOT/spec.sh") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/spec.sh:$AUTOCONF_DIR/spec.sh.in" ;;
     "$OUTPUT_ROOT/Makefile") CONFIG_FILES="$CONFIG_FILES $OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in" ;;
 
-  *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;
+  *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
 done
 
@@ -34449,7 +34519,7 @@ do
   esac
   case $ac_mode$ac_tag in
   :[FHL]*:*);;
-  :L* | :C*:*) as_fn_error $? "invalid tag \`$ac_tag'" "$LINENO" 5 ;;
+  :L* | :C*:*) as_fn_error $? "invalid tag \`$ac_tag'" "$LINENO" 5;;
   :[FH]-) ac_tag=-:-;;
   :[FH]*) ac_tag=$ac_tag:$ac_tag.in;;
   esac
@@ -34477,7 +34547,7 @@ do
 	   [\\/$]*) false;;
 	   *) test -f "$srcdir/$ac_f" && ac_f="$srcdir/$ac_f";;
 	   esac ||
-	   as_fn_error 1 "cannot find input file: \`$ac_f'" "$LINENO" 5 ;;
+	   as_fn_error 1 "cannot find input file: \`$ac_f'" "$LINENO" 5;;
       esac
       case $ac_f in *\'*) ac_f=`$as_echo "$ac_f" | sed "s/'/'\\\\\\\\''/g"`;; esac
       as_fn_append ac_file_inputs " '$ac_f'"
@@ -34504,7 +34574,7 @@ $as_echo "$as_me: creating $ac_file" >&6;}
 
     case $ac_tag in
     *:-:* | *:-) cat >"$tmp/stdin" \
-      || as_fn_error $? "could not create $ac_file" "$LINENO" 5  ;;
+      || as_fn_error $? "could not create $ac_file" "$LINENO" 5 ;;
     esac
     ;;
   esac
