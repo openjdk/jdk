@@ -849,7 +849,7 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  Flag* found_flag = Flag::find_flag((char*)argname, arg_len, true);
+  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
     found_flag->get_locked_message(locked_message_buf, BUFLEN);
@@ -870,6 +870,14 @@ bool Arguments::process_argument(const char* arg,
   } else {
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
+    Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
+    if (fuzzy_matched != NULL) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Did you mean '%s%s%s'?\n",
+                  (fuzzy_matched->is_bool()) ? "(+/-)" : "",
+                  fuzzy_matched->name,
+                  (fuzzy_matched->is_bool()) ? "" : "=<value>");
+    }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -1571,7 +1579,9 @@ void Arguments::set_heap_base_min_address() {
     // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
     // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
     // some extra space for the C-heap compared to other collectors.
-    FLAG_SET_ERGO(uintx, HeapBaseMinAddress, 1*G);
+    // Use FLAG_SET_DEFAULT here rather than FLAG_SET_ERGO to make sure that
+    // code that checks for default values work correctly.
+    FLAG_SET_DEFAULT(HeapBaseMinAddress, 1*G);
   }
 }
 
