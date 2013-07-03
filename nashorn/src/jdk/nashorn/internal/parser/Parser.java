@@ -1084,6 +1084,12 @@ loop:
             switch (type) {
             case SEMICOLON:
                 // for (init; test; modify)
+
+                // for each (init; test; modify) is invalid
+                if (forNode.isForEach()) {
+                    throw error(AbstractParser.message("for.each.without.in"), token);
+                }
+
                 expect(SEMICOLON);
                 if (type != SEMICOLON) {
                     forNode = forNode.setTest(lc, expression());
