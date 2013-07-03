@@ -5097,7 +5097,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   // function used to determine this will always return false. Atomic::xchg
   // does not have this problem.
   if (Atomic::xchg(1, &vm_created) == 1) {
-    return JNI_ERR;   // already created, or create attempt in progress
+    return JNI_EEXIST;   // already created, or create attempt in progress
   }
   if (Atomic::xchg(0, &safe_to_recreate_vm) == 0) {
     return JNI_ERR;  // someone tried and failed and retry not allowed.
