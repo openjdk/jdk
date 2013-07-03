@@ -672,7 +672,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @return an empty sequential stream
      */
     public static DoubleStream empty() {
-        return StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator());
+        return StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator(), false);
     }
 
     /**
@@ -682,7 +682,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @return a singleton sequential stream
      */
     public static DoubleStream of(double t) {
-        return StreamSupport.doubleStream(new Streams.DoubleStreamBuilderImpl(t));
+        return StreamSupport.doubleStream(new Streams.DoubleStreamBuilderImpl(t), false);
     }
 
     /**
@@ -730,7 +730,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
         };
         return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     /**
@@ -744,7 +744,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
     public static DoubleStream generate(DoubleSupplier s) {
         Objects.requireNonNull(s);
         return StreamSupport.doubleStream(
-                new StreamSpliterators.InfiniteSupplyingSpliterator.OfDouble(Long.MAX_VALUE, s));
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfDouble(Long.MAX_VALUE, s), false);
     }
 
     /**
@@ -764,8 +764,6 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
 
         Spliterator.OfDouble split = new Streams.ConcatSpliterator.OfDouble(
                 a.spliterator(), b.spliterator());
-        return (a.isParallel() || b.isParallel())
-               ? StreamSupport.doubleParallelStream(split)
-               : StreamSupport.doubleStream(split);
+        return StreamSupport.doubleStream(split, a.isParallel() || b.isParallel());
     }
 }

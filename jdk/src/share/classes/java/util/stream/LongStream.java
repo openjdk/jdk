@@ -665,7 +665,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return an empty sequential stream
      */
     public static LongStream empty() {
-        return StreamSupport.longStream(Spliterators.emptyLongSpliterator());
+        return StreamSupport.longStream(Spliterators.emptyLongSpliterator(), false);
     }
 
     /**
@@ -675,7 +675,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return a singleton sequential stream
      */
     public static LongStream of(long t) {
-        return StreamSupport.longStream(new Streams.LongStreamBuilderImpl(t));
+        return StreamSupport.longStream(new Streams.LongStreamBuilderImpl(t), false);
     }
 
     /**
@@ -723,7 +723,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
         };
         return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     /**
@@ -737,7 +737,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
     public static LongStream generate(LongSupplier s) {
         Objects.requireNonNull(s);
         return StreamSupport.longStream(
-                new StreamSpliterators.InfiniteSupplyingSpliterator.OfLong(Long.MAX_VALUE, s));
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfLong(Long.MAX_VALUE, s), false);
     }
 
     /**
@@ -769,7 +769,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             return concat(range(startInclusive, m), range(m, endExclusive));
         } else {
             return StreamSupport.longStream(
-                    new Streams.RangeLongSpliterator(startInclusive, endExclusive, false));
+                    new Streams.RangeLongSpliterator(startInclusive, endExclusive, false), false);
         }
     }
 
@@ -803,7 +803,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             return concat(range(startInclusive, m), rangeClosed(m, endInclusive));
         } else {
             return StreamSupport.longStream(
-                    new Streams.RangeLongSpliterator(startInclusive, endInclusive, true));
+                    new Streams.RangeLongSpliterator(startInclusive, endInclusive, true), false);
         }
     }
 
@@ -824,8 +824,6 @@ public interface LongStream extends BaseStream<Long, LongStream> {
 
         Spliterator.OfLong split = new Streams.ConcatSpliterator.OfLong(
                 a.spliterator(), b.spliterator());
-        return (a.isParallel() || b.isParallel())
-               ? StreamSupport.longParallelStream(split)
-               : StreamSupport.longStream(split);
+        return StreamSupport.longStream(split, a.isParallel() || b.isParallel());
     }
 }

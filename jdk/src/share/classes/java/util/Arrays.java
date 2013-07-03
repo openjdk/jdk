@@ -4966,7 +4966,7 @@ public class Arrays {
      * @since 1.8
      */
     public static <T> Stream<T> stream(T[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.stream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.stream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -4996,7 +4996,7 @@ public class Arrays {
      * @since 1.8
      */
     public static IntStream stream(int[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.intStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.intStream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -5026,7 +5026,7 @@ public class Arrays {
      * @since 1.8
      */
     public static LongStream stream(long[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.longStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.longStream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -5056,6 +5056,6 @@ public class Arrays {
      * @since 1.8
      */
     public static DoubleStream stream(double[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive), false);
     }
 }

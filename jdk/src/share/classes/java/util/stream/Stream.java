@@ -805,7 +805,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return an empty sequential stream
      */
     public static<T> Stream<T> empty() {
-        return StreamSupport.stream(Spliterators.<T>emptySpliterator());
+        return StreamSupport.stream(Spliterators.<T>emptySpliterator(), false);
     }
 
     /**
@@ -816,7 +816,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return a singleton sequential stream
      */
     public static<T> Stream<T> of(T t) {
-        return StreamSupport.stream(new Streams.StreamBuilderImpl<>(t));
+        return StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
     }
 
     /**
@@ -866,7 +866,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
         };
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
     }
 
     /**
@@ -881,7 +881,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     public static<T> Stream<T> generate(Supplier<T> s) {
         Objects.requireNonNull(s);
         return StreamSupport.stream(
-                new StreamSpliterators.InfiniteSupplyingSpliterator.OfRef<>(Long.MAX_VALUE, s));
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfRef<>(Long.MAX_VALUE, s), false);
     }
 
     /**
@@ -904,8 +904,6 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
         @SuppressWarnings("unchecked")
         Spliterator<T> split = new Streams.ConcatSpliterator.OfRef<>(
                 (Spliterator<T>) a.spliterator(), (Spliterator<T>) b.spliterator());
-        return (a.isParallel() || b.isParallel())
-               ? StreamSupport.parallelStream(split)
-               : StreamSupport.stream(split);
+        return StreamSupport.stream(split, a.isParallel() || b.isParallel());
     }
 }

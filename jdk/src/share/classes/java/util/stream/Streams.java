@@ -25,10 +25,7 @@
 package java.util.stream;
 
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -379,7 +376,7 @@ final class Streams {
                 count = -count - 1;
                 // Use this spliterator if 0 or 1 elements, otherwise use
                 // the spliterator of the spined buffer
-                return (c < 2) ? StreamSupport.stream(this) : StreamSupport.stream(buffer.spliterator());
+                return (c < 2) ? StreamSupport.stream(this, false) : StreamSupport.stream(buffer.spliterator(), false);
             }
 
             throw new IllegalStateException();
@@ -466,7 +463,7 @@ final class Streams {
                 count = -count - 1;
                 // Use this spliterator if 0 or 1 elements, otherwise use
                 // the spliterator of the spined buffer
-                return (c < 2) ? StreamSupport.intStream(this) : StreamSupport.intStream(buffer.spliterator());
+                return (c < 2) ? StreamSupport.intStream(this, false) : StreamSupport.intStream(buffer.spliterator(), false);
             }
 
             throw new IllegalStateException();
@@ -553,7 +550,7 @@ final class Streams {
                 count = -count - 1;
                 // Use this spliterator if 0 or 1 elements, otherwise use
                 // the spliterator of the spined buffer
-                return (c < 2) ? StreamSupport.longStream(this) : StreamSupport.longStream(buffer.spliterator());
+                return (c < 2) ? StreamSupport.longStream(this, false) : StreamSupport.longStream(buffer.spliterator(), false);
             }
 
             throw new IllegalStateException();
@@ -640,7 +637,7 @@ final class Streams {
                 count = -count - 1;
                 // Use this spliterator if 0 or 1 elements, otherwise use
                 // the spliterator of the spined buffer
-                return (c < 2) ? StreamSupport.doubleStream(this) : StreamSupport.doubleStream(buffer.spliterator());
+                return (c < 2) ? StreamSupport.doubleStream(this, false) : StreamSupport.doubleStream(buffer.spliterator(), false);
             }
 
             throw new IllegalStateException();

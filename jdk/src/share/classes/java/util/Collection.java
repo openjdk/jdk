@@ -557,7 +557,7 @@ public interface Collection<E> extends Iterable<E> {
      * @since 1.8
      */
     default Stream<E> stream() {
-        return StreamSupport.stream(spliterator());
+        return StreamSupport.stream(spliterator(), false);
     }
 
     /**
@@ -578,6 +578,6 @@ public interface Collection<E> extends Iterable<E> {
      * @since 1.8
      */
     default Stream<E> parallelStream() {
-        return StreamSupport.parallelStream(spliterator());
+        return StreamSupport.stream(spliterator(), true);
     }
 }
