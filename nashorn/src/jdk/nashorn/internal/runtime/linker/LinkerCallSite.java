@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.FileNotFoundException;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jdk.internal.dynalink.ChainedCallSite;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -79,8 +79,9 @@ public class LinkerCallSite extends ChainedCallSite {
      * @param flags    Call site specific flags.
      * @return New LinkerCallSite.
      */
-    static LinkerCallSite newLinkerCallSite(final String name, final MethodType type, final int flags) {
-        final NashornCallSiteDescriptor desc = NashornCallSiteDescriptor.get(name, type, flags);
+    static LinkerCallSite newLinkerCallSite(final MethodHandles.Lookup lookup, final String name, final MethodType type,
+            final int flags) {
+        final NashornCallSiteDescriptor desc = NashornCallSiteDescriptor.get(lookup, name, type, flags);
 
         if (desc.isProfile()) {
             return ProfilingLinkerCallSite.newProfilingLinkerCallSite(desc);

@@ -78,7 +78,7 @@ public final class Bootstrap {
      * @return CallSite with MethodHandle to appropriate method or null if not found.
      */
     public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
-        return dynamicLinker.link(LinkerCallSite.newLinkerCallSite(opDesc, type, flags));
+        return dynamicLinker.link(LinkerCallSite.newLinkerCallSite(lookup, opDesc, type, flags));
     }
 
     /**
@@ -94,12 +94,12 @@ public final class Bootstrap {
         return new RuntimeCallSite(type, initialName);
     }
 
-
     /**
-     * Returns a dynamic invoker for a specified dynamic operation. You can use this method to create a method handle
-     * that when invoked acts completely as if it were a Nashorn-linked call site. An overview of available dynamic
-     * operations can be found in the <a href="https://github.com/szegedi/dynalink/wiki/User-Guide-0.4">Dynalink User Guide</a>,
-     * but we'll show few examples here:
+     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. You can use this method to
+     * create a method handle that when invoked acts completely as if it were a Nashorn-linked call site. An overview of
+     * available dynamic operations can be found in the
+     * <a href="https://github.com/szegedi/dynalink/wiki/User-Guide-0.6">Dynalink User Guide</a>, but we'll show few
+     * examples here:
      * <ul>
      *   <li>Get a named property with fixed name:
      *     <pre>
@@ -196,7 +196,7 @@ public final class Bootstrap {
     }
 
     /**
-     * Returns a dynamic invoker for a specified dynamic operation. Similar to
+     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. Similar to
      * {@link #createDynamicInvoker(String, Class, Class...)} but with return and parameter types composed into a
      * method type in the signature. See the discussion of that method for details.
      * @param opDesc Dynalink dynamic operation descriptor.
@@ -204,7 +204,7 @@ public final class Bootstrap {
      * @return MethodHandle for invoking the operation.
      */
     public static MethodHandle createDynamicInvoker(final String opDesc, final MethodType type) {
-        return bootstrap(null, opDesc, type, 0).dynamicInvoker();
+        return bootstrap(MethodHandles.publicLookup(), opDesc, type, 0).dynamicInvoker();
     }
 
     /**

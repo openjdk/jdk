@@ -81,106 +81,68 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.beans;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.util.Objects;
-import jdk.internal.dynalink.CallSiteDescriptor;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import sun.reflect.CallerSensitive;
 
 /**
- * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
- * as a generally useful {@code equals} and {@code hashCode} methods.
- * @author Attila Szegedi
+ * Utility class that determines if a method or constructor is caller sensitive. It actually encapsulates two different
+ * strategies for determining caller sensitivity; a more robust one that works if Dynalink runs as code with access
+ * to {@code sun.reflect} package, and an unprivileged one that is used when Dynalink doesn't have access to that
+ * package. Note that even the unprivileged strategy is ordinarily robust, but it relies on the {@code toString} method
+ * of the annotation. If an attacker were to use a different annotation to spoof the string representation of the
+ * {@code CallerSensitive} annotation, they could designate their own methods as caller sensitive. This however does not
+ * escalate privileges, only causes Dynalink to never cache method handles for such methods, so all it would do would
+ * decrease the performance in linking such methods. In the opposite case when an attacker could trick Dynalink into not
+ * recognizing genuine {@code CallerSensitive} annotations, Dynalink would treat caller sensitive methods as ordinary
+ * methods, and would cache them bound to a zero-privilege delegate as the caller (just what Dynalink did before it
+ * could handle caller-sensitive methods). That would practically render caller-sensitive methods exposed through
+ * Dynalink unusable, but again, can not lead to any privilege escalations. Therefore, even the less robust unprivileged
+ * strategy is safe; the worst thing a successful attack against it can achieve is slight reduction in Dynalink-exposed
+ * functionality or performance.
  */
-public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
+public class CallerSensitiveDetector {
 
-    @Override
-    public String getName() {
-        return appendName(new StringBuilder(getNameLength())).toString();
+    private static final DetectionStrategy DETECTION_STRATEGY = getDetectionStrategy();
+
+    static boolean isCallerSensitive(AccessibleObject ao) {
+        return DETECTION_STRATEGY.isCallerSensitive(ao);
     }
 
-   @Override
-   public Lookup getLookup() {
-       return MethodHandles.publicLookup();
-   }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof CallSiteDescriptor && equals((CallSiteDescriptor)obj);
+    private static DetectionStrategy getDetectionStrategy() {
+        try {
+            return new PrivilegedDetectionStrategy();
+        } catch(Throwable t) {
+            return new UnprivilegedDetectionStrategy();
+        }
     }
 
-    /**
-     * Returns true if this call site descriptor is equal to the passed call site descriptor.
-     * @param csd the other call site descriptor.
-     * @return true if they are equal.
-     */
-    public boolean equals(CallSiteDescriptor csd) {
-        if(csd == null) {
-            return false;
+    private abstract static class DetectionStrategy {
+        abstract boolean isCallerSensitive(AccessibleObject ao);
+    }
+
+    private static class PrivilegedDetectionStrategy extends DetectionStrategy {
+        private static final Class<? extends Annotation> CALLER_SENSITIVE_ANNOTATION_CLASS = CallerSensitive.class;
+
+        @Override
+        boolean isCallerSensitive(AccessibleObject ao) {
+            return ao.getAnnotation(CALLER_SENSITIVE_ANNOTATION_CLASS) != null;
         }
-        if(csd == this) {
-            return true;
-        }
-        final int ntc = getNameTokenCount();
-        if(ntc != csd.getNameTokenCount()) {
-            return false;
-        }
-        for(int i = ntc; i-- > 0;) { // Reverse order as variability is higher at the end
-            if(!Objects.equals(getNameToken(i), csd.getNameToken(i))) {
-                return false;
+    }
+
+    private static class UnprivilegedDetectionStrategy extends DetectionStrategy {
+        private static final String CALLER_SENSITIVE_ANNOTATION_STRING = "@sun.reflect.CallerSensitive()";
+
+        @Override
+        boolean isCallerSensitive(AccessibleObject o) {
+            for(Annotation a: o.getAnnotations()) {
+                if(String.valueOf(a).equals(CALLER_SENSITIVE_ANNOTATION_STRING)) {
+                    return true;
+                }
             }
-        }
-        if(!getMethodType().equals(csd.getMethodType())) {
             return false;
         }
-        return lookupsEqual(getLookup(), csd.getLookup());
-    }
-
-    @Override
-    public int hashCode() {
-        final MethodHandles.Lookup lookup = getLookup();
-        int h = lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
-        final int c = getNameTokenCount();
-        for(int i = 0; i < c; ++i) {
-            h = h * 31 + getNameToken(i).hashCode();
-        }
-        return h * 31 + getMethodType().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        final String mt = getMethodType().toString();
-        final String l = getLookup().toString();
-        final StringBuilder b = new StringBuilder(l.length() + 1 + mt.length() + getNameLength());
-        return appendName(b).append(mt).append("@").append(l).toString();
-    }
-
-    private int getNameLength() {
-        final int c = getNameTokenCount();
-        int l = 0;
-        for(int i = 0; i < c; ++i) {
-            l += getNameToken(i).length();
-        }
-        return l +  c - 1;
-    }
-
-    private StringBuilder appendName(StringBuilder b) {
-        b.append(getNameToken(0));
-        final int c = getNameTokenCount();
-        for(int i = 1; i < c; ++i) {
-            b.append(':').append(getNameToken(i));
-        }
-        return b;
-    }
-
-    private static boolean lookupsEqual(Lookup l1, Lookup l2) {
-        if(l1 == l2) {
-            return true;
-        }
-        if(l1.lookupClass() != l2.lookupClass()) {
-            return false;
-        }
-        return l1.lookupModes() == l2.lookupModes();
     }
 }

@@ -81,106 +81,78 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.beans;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.util.Objects;
-import jdk.internal.dynalink.CallSiteDescriptor;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import jdk.internal.dynalink.support.Lookup;
 
 /**
- * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
- * as a generally useful {@code equals} and {@code hashCode} methods.
+ * A dynamic method bound to exactly one Java method or constructor that is caller sensitive. Since the target method is
+ * caller sensitive, it doesn't cache a method handle but rather uses the passed lookup object in
+ * {@link #getTarget(java.lang.invoke.MethodHandles.Lookup)} to unreflect a method handle from the reflective member on
+ * every request.
+ *
  * @author Attila Szegedi
  */
-public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
+class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
+    // Typed as "AccessibleObject" as it can be either a method or a constructor.
+    // If we were Java8-only, we could use java.lang.reflect.Executable
+    private final AccessibleObject target;
+    private final MethodType type;
 
-    @Override
-    public String getName() {
-        return appendName(new StringBuilder(getNameLength())).toString();
+    public CallerSensitiveDynamicMethod(AccessibleObject target) {
+        super(getName(target));
+        this.target = target;
+        this.type = getMethodType(target);
     }
 
-   @Override
-   public Lookup getLookup() {
-       return MethodHandles.publicLookup();
-   }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof CallSiteDescriptor && equals((CallSiteDescriptor)obj);
+    private static String getName(AccessibleObject target) {
+        final Member m = (Member)target;
+        return getMethodNameWithSignature(getMethodType(target), getClassAndMethodName(m.getDeclaringClass(),
+                m.getName()));
     }
 
-    /**
-     * Returns true if this call site descriptor is equal to the passed call site descriptor.
-     * @param csd the other call site descriptor.
-     * @return true if they are equal.
-     */
-    public boolean equals(CallSiteDescriptor csd) {
-        if(csd == null) {
-            return false;
-        }
-        if(csd == this) {
-            return true;
-        }
-        final int ntc = getNameTokenCount();
-        if(ntc != csd.getNameTokenCount()) {
-            return false;
-        }
-        for(int i = ntc; i-- > 0;) { // Reverse order as variability is higher at the end
-            if(!Objects.equals(getNameToken(i), csd.getNameToken(i))) {
-                return false;
+    @Override
+    MethodType getMethodType() {
+        return type;
+    }
+
+    private static MethodType getMethodType(AccessibleObject ao) {
+        final boolean isMethod = ao instanceof Method;
+        final Class<?> rtype = isMethod ? ((Method)ao).getReturnType() : ((Constructor<?>)ao).getDeclaringClass();
+        final Class<?>[] ptypes = isMethod ? ((Method)ao).getParameterTypes() : ((Constructor<?>)ao).getParameterTypes();
+        final MethodType type = MethodType.methodType(rtype, ptypes);
+        final Member m = (Member)ao;
+        return type.insertParameterTypes(0,
+                isMethod ?
+                        Modifier.isStatic(m.getModifiers()) ?
+                                Object.class :
+                                m.getDeclaringClass() :
+                        StaticClass.class);
+    }
+
+    @Override
+    boolean isVarArgs() {
+        return target instanceof Method ? ((Method)target).isVarArgs() : ((Constructor<?>)target).isVarArgs();
+    }
+
+    @Override
+    MethodHandle getTarget(MethodHandles.Lookup lookup) {
+        if(target instanceof Method) {
+            final MethodHandle mh = Lookup.unreflect(lookup, (Method)target);
+            if(Modifier.isStatic(((Member)target).getModifiers())) {
+                return StaticClassIntrospector.editStaticMethodHandle(mh);
             }
+            return mh;
         }
-        if(!getMethodType().equals(csd.getMethodType())) {
-            return false;
-        }
-        return lookupsEqual(getLookup(), csd.getLookup());
-    }
-
-    @Override
-    public int hashCode() {
-        final MethodHandles.Lookup lookup = getLookup();
-        int h = lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
-        final int c = getNameTokenCount();
-        for(int i = 0; i < c; ++i) {
-            h = h * 31 + getNameToken(i).hashCode();
-        }
-        return h * 31 + getMethodType().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        final String mt = getMethodType().toString();
-        final String l = getLookup().toString();
-        final StringBuilder b = new StringBuilder(l.length() + 1 + mt.length() + getNameLength());
-        return appendName(b).append(mt).append("@").append(l).toString();
-    }
-
-    private int getNameLength() {
-        final int c = getNameTokenCount();
-        int l = 0;
-        for(int i = 0; i < c; ++i) {
-            l += getNameToken(i).length();
-        }
-        return l +  c - 1;
-    }
-
-    private StringBuilder appendName(StringBuilder b) {
-        b.append(getNameToken(0));
-        final int c = getNameTokenCount();
-        for(int i = 1; i < c; ++i) {
-            b.append(':').append(getNameToken(i));
-        }
-        return b;
-    }
-
-    private static boolean lookupsEqual(Lookup l1, Lookup l2) {
-        if(l1 == l2) {
-            return true;
-        }
-        if(l1.lookupClass() != l2.lookupClass()) {
-            return false;
-        }
-        return l1.lookupModes() == l2.lookupModes();
+        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.unreflectConstructor(lookup,
+                (Constructor<?>)target));
     }
 }
