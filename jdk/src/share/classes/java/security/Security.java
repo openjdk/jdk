@@ -480,8 +480,8 @@ public final class Security {
      * Returns an array containing all installed providers that satisfy the
      * specified selection criterion, or null if no such providers have been
      * installed. The returned providers are ordered
-     * according to their <a href=
-     * "#insertProviderAt(java.security.Provider, int)">preference order</a>.
+     * according to their
+     * {@linkplain #insertProviderAt(java.security.Provider, int) preference order}.
      *
      * <p> A cryptographic service is always associated with a particular
      * algorithm or type. For example, a digital signature service is
@@ -492,8 +492,8 @@ public final class Security {
      * <p>The selection criterion must be specified in one of the following two
      * formats:
      * <ul>
-     * <li> <i>&lt;crypto_service>.&lt;algorithm_or_type></i> <p> The
-     * cryptographic service name must not contain any dots.
+     * <li> <i>{@literal <crypto_service>.<algorithm_or_type>}</i>
+     * <p> The cryptographic service name must not contain any dots.
      * <p> A
      * provider satisfies the specified selection criterion iff the provider
      * implements the
@@ -501,11 +501,12 @@ public final class Security {
      * <p> For example, "CertificateFactory.X.509"
      * would be satisfied by any provider that supplied
      * a CertificateFactory implementation for X.509 certificates.
-     * <li> <i>&lt;crypto_service>.&lt;algorithm_or_type>
-     * &lt;attribute_name>:&lt attribute_value></i>
+     * <li> <i>{@literal <crypto_service>.<algorithm_or_type>
+     * <attribute_name>:<attribute_value>}</i>
      * <p> The cryptographic service name must not contain any dots. There
      * must be one or more space charaters between the
-     * <i>&lt;algorithm_or_type></i> and the <i>&lt;attribute_name></i>.
+     * <i>{@literal <algorithm_or_type>}</i> and the
+     * <i>{@literal <attribute_name>}</i>.
      *  <p> A provider satisfies this selection criterion iff the
      * provider implements the specified algorithm or type for the specified
      * cryptographic service and its implementation meets the
@@ -558,8 +559,9 @@ public final class Security {
      * Returns an array containing all installed providers that satisfy the
      * specified* selection criteria, or null if no such providers have been
      * installed. The returned providers are ordered
-     * according to their <a href=
-     * "#insertProviderAt(java.security.Provider, int)">preference order</a>.
+     * according to their
+     * {@linkplain #insertProviderAt(java.security.Provider, int)
+     * preference order}.
      *
      * <p>The selection criteria are represented by a map.
      * Each map entry represents a selection criterion.
@@ -567,16 +569,18 @@ public final class Security {
      * criteria. The key for any entry in such a map must be in one of the
      * following two formats:
      * <ul>
-     * <li> <i>&lt;crypto_service>.&lt;algorithm_or_type></i>
+     * <li> <i>{@literal <crypto_service>.<algorithm_or_type>}</i>
      * <p> The cryptographic service name must not contain any dots.
      * <p> The value associated with the key must be an empty string.
      * <p> A provider
      * satisfies this selection criterion iff the provider implements the
      * specified algorithm or type for the specified cryptographic service.
-     * <li>  <i>&lt;crypto_service>.&lt;algorithm_or_type> &lt;attribute_name></i>
+     * <li>  <i>{@literal <crypto_service>}.
+     * {@literal <algorithm_or_type> <attribute_name>}</i>
      * <p> The cryptographic service name must not contain any dots. There
-     * must be one or more space charaters between the <i>&lt;algorithm_or_type></i>
-     * and the <i>&lt;attribute_name></i>.
+     * must be one or more space charaters between the
+     * <i>{@literal <algorithm_or_type>}</i>
+     * and the <i>{@literal <attribute_name>}</i>.
      * <p> The value associated with the key must be a non-empty string.
      * A provider satisfies this selection criterion iff the
      * provider implements the specified algorithm or type for the specified

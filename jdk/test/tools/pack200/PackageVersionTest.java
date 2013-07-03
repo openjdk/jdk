@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +53,7 @@ public class PackageVersionTest {
     public final static int JAVA7_PACKAGE_MAJOR_VERSION = 170;
     public final static int JAVA7_PACKAGE_MINOR_VERSION = 1;
 
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         if (!javaHome.getName().endsWith("jre")) {
             throw new RuntimeException("Error: requires an SDK to run");
         }
@@ -78,6 +77,7 @@ public class PackageVersionTest {
         // test for resource file, ie. no class files
         verifyPack("Test6.java", JAVA5_PACKAGE_MAJOR_VERSION,
                 JAVA5_PACKAGE_MINOR_VERSION);
+        Utils.cleanup();
     }
 
     static void verify6991164() {
