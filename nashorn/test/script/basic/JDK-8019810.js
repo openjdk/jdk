@@ -22,33 +22,15 @@
  */
 
 /**
- * Regression test for erroneous shortcut optimization for object null checks
+ * JDK-8019810: Assertion error in attr in function body
  *
  * @test
  * @run
  */
 
-function toto() {
-    var friends = 1;
-    (joe = friends) == null;
-} 
-
-//JDK-8019476 duplicate case of this
-Function("with(\nnull == (this % {}))( /x/g );"); 
+Function("return (void ({ set each (x2)y }));");
 
 function f() {
-    with(null == (this % {}))(/x/g);
+    return (void ({ set each (x2)y }));
 }
-
-Function("return (null != [,,] <= this);"); 
-
-function f2() {
-    return (null != [,,] <= this);
-}
-
-Function("/*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }"); 
-
-function f3() {
-    /*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }
-}
-
+print(f());

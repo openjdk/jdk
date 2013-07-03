@@ -578,6 +578,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Node         function        = callNode.getFunction();
         final Block        currentBlock    = lc.getCurrentBlock();
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
+        final Type         callNodeType    = callNode.getType();
 
         function.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
@@ -593,7 +594,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 loadArgs(args);
                 final Type[] paramTypes = method.getTypesFromStack(args.size());
-                final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol, identNode.getType(), callNode.getType(), paramTypes, scopeCallFlags);
+                final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol, identNode.getType(), callNodeType, paramTypes, scopeCallFlags);
                 return scopeCall.generateInvoke(method);
             }
 
@@ -602,7 +603,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.convert(Type.OBJECT); // foo() makes no sense if foo == 3
                 // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
                 method.loadNull(); //the 'this'
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), flags);
             }
 
             private void evalCall(final IdentNode node, final int flags) {
@@ -634,14 +635,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 // direct call to Global.directEval
                 globalDirectEval();
-                method.convert(callNode.getType());
+                method.convert(callNodeType);
                 method._goto(eval_done);
 
                 method.label(not_eval);
                 // This is some scope 'eval' or global eval replaced by user
                 // but not the built-in ECMAScript 'eval' function call
                 method.loadNull();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), flags);
 
                 method.label(eval_done);
             }
@@ -666,7 +667,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     } else {
                         sharedScopeCall(node, flags);
                     }
-                    assert method.peekType().equals(callNode.getType()) : method.peekType() + "!=" + callNode.getType();
+                    assert method.peekType().equals(callNodeType) : method.peekType() + "!=" + callNode.getType();
                 } else {
                     enterDefault(node);
                 }
@@ -681,8 +682,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.dup();
                 method.dynamicGet(node.getType(), node.getProperty().getName(), getCallSiteFlags(), true);
                 method.swap();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
-                assert method.peekType().equals(callNode.getType());
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
+                assert method.peekType().equals(callNodeType);
 
                 return false;
             }
@@ -707,6 +708,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 assert callee.getCompileUnit() != null : "no compile unit for " + callee.getName() + " " + Debug.id(callee) + " " + callNode;
                 method.invokestatic(callee.getCompileUnit().getUnitClassName(), callee.getName(), signature);
                 assert method.peekType().equals(callee.getReturnType()) : method.peekType() + " != " + callee.getReturnType();
+                method.convert(callNodeType);
                 return false;
             }
 
@@ -722,7 +724,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 method.dynamicGetIndex(node.getType(), getCallSiteFlags(), true);
                 method.swap();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
                 assert method.peekType().equals(callNode.getType());
 
                 return false;
@@ -734,7 +736,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 load(function);
                 method.convert(Type.OBJECT); //TODO, e.g. booleans can be used as functions
                 method.loadNull(); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
                 assert method.peekType().equals(callNode.getType());
 
                 return false;
