@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,6 +325,9 @@ public final class Subject implements java.io.Serializable {
      *                  <code>action</code> will run as.  This parameter
      *                  may be <code>null</code>. <p>
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
+     *
      * @param action the code to be run as the specified
      *                  <code>Subject</code>. <p>
      *
@@ -377,6 +380,9 @@ public final class Subject implements java.io.Serializable {
      * @param subject the <code>Subject</code> that the specified
      *                  <code>action</code> will run as.  This parameter
      *                  may be <code>null</code>. <p>
+     *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      *
      * @param action the code to be run as the specified
      *                  <code>Subject</code>. <p>
@@ -433,6 +439,9 @@ public final class Subject implements java.io.Serializable {
      * @param subject the <code>Subject</code> that the specified
      *                  <code>action</code> will run as.  This parameter
      *                  may be <code>null</code>. <p>
+     *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      *
      * @param action the code to be run as the specified
      *                  <code>Subject</code>. <p>
@@ -491,6 +500,9 @@ public final class Subject implements java.io.Serializable {
      * @param subject the <code>Subject</code> that the specified
      *                  <code>action</code> will run as.  This parameter
      *                  may be <code>null</code>. <p>
+     *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      *
      * @param action the code to be run as the specified
      *                  <code>Subject</code>. <p>
@@ -590,6 +602,8 @@ public final class Subject implements java.io.Serializable {
      *
      * <p>
      *
+     * @param <T> the type of the class modeled by {@code c}
+     *
      * @param c the returned <code>Set</code> of Principals will all be
      *          instances of this class.
      *
@@ -684,6 +698,8 @@ public final class Subject implements java.io.Serializable {
      *
      * <p>
      *
+     * @param <T> the type of the class modeled by {@code c}
+     *
      * @param c the returned <code>Set</code> of public credentials will all be
      *          instances of this class.
      *
@@ -720,6 +736,8 @@ public final class Subject implements java.io.Serializable {
      * will not affect the internal private Credential <code>Set</code>.
      *
      * <p>
+     *
+     * @param <T> the type of the class modeled by {@code c}
      *
      * @param c the returned <code>Set</code> of private credentials will all be
      *          instances of this class.

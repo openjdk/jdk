@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,9 +159,9 @@ public abstract class X509Certificate extends Certificate {
      * certificate is expected to be in the input stream.
      * Also, all X509Certificate
      * subclasses must provide a constructor of the form:
-     * <code><pre>
-     * public &lt;subClass&gt;(InputStream inStream) ...
-     * </pre></code>
+     * <pre>{@code
+     * public <subClass>(InputStream inStream) ...
+     * }</pre>
      *
      * @param inStream an input stream with the data to be read to
      *        initialize the certificate.
@@ -184,9 +184,9 @@ public abstract class X509Certificate extends Certificate {
      *
      * <p>Note: All X509Certificate
      * subclasses must provide a constructor of the form:
-     * <code><pre>
-     * public &lt;subClass&gt;(InputStream inStream) ...
-     * </pre></code>
+     * <pre>{@code
+     * public <subClass>(InputStream inStream) ...
+     * }</pre>
      *
      * @param certData a byte array containing the DER-encoded
      *        certificate.
@@ -255,10 +255,12 @@ public abstract class X509Certificate extends Certificate {
      * is valid. It is defined in
      * ASN.1 as:
      * <pre>
-     * validity             Validity<p>
+     * validity             Validity
+     *
      * Validity ::= SEQUENCE {
      *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }<p>
+     *     notAfter       CertificateValidityDate }
+     *
      * CertificateValidityDate ::= CHOICE {
      *     utcTime        UTCTime,
      *     generalTime    GeneralizedTime }
@@ -291,7 +293,8 @@ public abstract class X509Certificate extends Certificate {
      * Gets the <code>version</code> (version number) value from the
      * certificate. The ASN.1 definition for this is:
      * <pre>
-     * version         [0]  EXPLICIT Version DEFAULT v1<p>
+     * version         [0]  EXPLICIT Version DEFAULT v1
+     *
      * Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
      * </pre>
      *
@@ -307,7 +310,7 @@ public abstract class X509Certificate extends Certificate {
      * serial number identify a unique certificate).
      * The ASN.1 definition for this is:
      * <pre>
-     * serialNumber     CertificateSerialNumber<p>
+     * serialNumber     CertificateSerialNumber
      *
      * CertificateSerialNumber  ::=  INTEGER
      * </pre>
@@ -325,7 +328,7 @@ public abstract class X509Certificate extends Certificate {
      * X.500 distinguished name (DN).
      * The ASN.1 definition for this is:
      * <pre>
-     * issuer    Name<p>
+     * issuer    Name
      *
      * Name ::= CHOICE { RDNSequence }
      * RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
@@ -371,11 +374,12 @@ public abstract class X509Certificate extends Certificate {
      * the certificate.
      * The relevant ASN.1 definitions are:
      * <pre>
-     * validity             Validity<p>
+     * validity             Validity
      *
      * Validity ::= SEQUENCE {
      *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }<p>
+     *     notAfter       CertificateValidityDate }
+     *
      * CertificateValidityDate ::= CHOICE {
      *     utcTime        UTCTime,
      *     generalTime    GeneralizedTime }
@@ -401,7 +405,8 @@ public abstract class X509Certificate extends Certificate {
      * signature algorithm. An example is the string "SHA-1/DSA".
      * The ASN.1 definition for this is:
      * <pre>
-     * signatureAlgorithm   AlgorithmIdentifier<p>
+     * signatureAlgorithm   AlgorithmIdentifier
+     *
      * AlgorithmIdentifier  ::=  SEQUENCE  {
      *     algorithm               OBJECT IDENTIFIER,
      *     parameters              ANY DEFINED BY algorithm OPTIONAL  }

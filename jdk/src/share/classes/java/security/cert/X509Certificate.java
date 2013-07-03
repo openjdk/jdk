@@ -126,10 +126,12 @@ implements X509Extension {
      * is valid. It is defined in
      * ASN.1 as:
      * <pre>
-     * validity             Validity<p>
+     * validity             Validity
+     *
      * Validity ::= SEQUENCE {
      *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }<p>
+     *     notAfter       CertificateValidityDate }
+     *
      * CertificateValidityDate ::= CHOICE {
      *     utcTime        UTCTime,
      *     generalTime    GeneralizedTime }
@@ -165,7 +167,8 @@ implements X509Extension {
      * certificate.
      * The ASN.1 definition for this is:
      * <pre>
-     * version  [0] EXPLICIT Version DEFAULT v1<p>
+     * version  [0] EXPLICIT Version DEFAULT v1
+     *
      * Version ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
      * </pre>
      * @return the version number, i.e. 1, 2 or 3.
@@ -180,7 +183,7 @@ implements X509Extension {
      * serial number identify a unique certificate).
      * The ASN.1 definition for this is:
      * <pre>
-     * serialNumber     CertificateSerialNumber<p>
+     * serialNumber     CertificateSerialNumber
      *
      * CertificateSerialNumber  ::=  INTEGER
      * </pre>
@@ -204,7 +207,7 @@ implements X509Extension {
      * X.500 distinguished name (DN).
      * The ASN.1 definition for this is:
      * <pre>
-     * issuer    Name<p>
+     * issuer    Name
      *
      * Name ::= CHOICE { RDNSequence }
      * RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
@@ -295,11 +298,12 @@ implements X509Extension {
      * the certificate.
      * The relevant ASN.1 definitions are:
      * <pre>
-     * validity             Validity<p>
+     * validity             Validity
      *
      * Validity ::= SEQUENCE {
      *     notBefore      CertificateValidityDate,
-     *     notAfter       CertificateValidityDate }<p>
+     *     notAfter       CertificateValidityDate }
+     *
      * CertificateValidityDate ::= CHOICE {
      *     utcTime        UTCTime,
      *     generalTime    GeneralizedTime }
@@ -348,7 +352,8 @@ implements X509Extension {
      * signature algorithm. An example is the string "SHA256withRSA".
      * The ASN.1 definition for this is:
      * <pre>
-     * signatureAlgorithm   AlgorithmIdentifier<p>
+     * signatureAlgorithm   AlgorithmIdentifier
+     *
      * AlgorithmIdentifier  ::=  SEQUENCE  {
      *     algorithm               OBJECT IDENTIFIER,
      *     parameters              ANY DEFINED BY algorithm OPTIONAL  }
@@ -410,7 +415,8 @@ implements X509Extension {
      *
      * <p>The ASN.1 definition for this is:
      * <pre>
-     * issuerUniqueID  [1]  IMPLICIT UniqueIdentifier OPTIONAL<p>
+     * issuerUniqueID  [1]  IMPLICIT UniqueIdentifier OPTIONAL
+     *
      * UniqueIdentifier  ::=  BIT STRING
      * </pre>
      *
@@ -424,7 +430,8 @@ implements X509Extension {
      *
      * <p>The ASN.1 definition for this is:
      * <pre>
-     * subjectUniqueID  [2]  IMPLICIT UniqueIdentifier OPTIONAL<p>
+     * subjectUniqueID  [2]  IMPLICIT UniqueIdentifier OPTIONAL
+     *
      * UniqueIdentifier  ::=  BIT STRING
      * </pre>
      *
@@ -474,9 +481,9 @@ implements X509Extension {
      * indicated in the key usage extension field.  The ASN.1
      * definition for this is:
      * <pre>
-     * ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId<p>
+     * ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
      *
-     * KeyPurposeId ::= OBJECT IDENTIFIER<p>
+     * KeyPurposeId ::= OBJECT IDENTIFIER
      * </pre>
      *
      * Key purposes may be defined by any organization with a

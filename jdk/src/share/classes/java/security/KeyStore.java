@@ -227,15 +227,13 @@ public class KeyStore {
      * {@link #store(KeyStore.LoadStoreParameter) store} operations.
      * <p>
      * The following syntax is supported for configuration data:
-     * <pre>
-     *
+     * <pre>{@code
      *     domain <domainName> [<property> ...] {
      *         keystore <keystoreName> [<property> ...] ;
      *         ...
      *     };
      *     ...
-     *
-     * </pre>
+     * }</pre>
      * where {@code domainName} and {@code keystoreName} are identifiers
      * and {@code property} is a key/value pairing. The key and value are
      * separated by an 'equals' symbol and the value is enclosed in double
