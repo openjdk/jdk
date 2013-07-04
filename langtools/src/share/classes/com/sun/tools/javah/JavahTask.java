@@ -531,7 +531,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             String name = o.aliases[0].substring(1); // there must always be at least one name
             log.println(getMessage("main.opt." + name));
         }
-        String[] fmOptions = { "-classpath", "-bootclasspath" };
+        String[] fmOptions = { "-classpath", "-cp", "-bootclasspath" };
         for (String o: fmOptions) {
             if (fileManager.isSupportedOption(o) == -1)
                 continue;
