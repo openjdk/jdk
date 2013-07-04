@@ -4301,7 +4301,7 @@ public class Attr extends JCTree.Visitor {
         if (env.info.lint.isEnabled(LintCategory.SERIAL) &&
             isSerializable(c) &&
             (c.flags() & Flags.ENUM) == 0 &&
-            (c.flags() & ABSTRACT) == 0) {
+            checkForSerial(c)) {
             checkSerialVersionUID(tree, c);
         }
         if (allowTypeAnnos) {
@@ -4313,6 +4313,22 @@ public class Attr extends JCTree.Visitor {
         }
     }
         // where
+        boolean checkForSerial(ClassSymbol c) {
+            if ((c.flags() & ABSTRACT) == 0) {
+                return true;
+            } else {
+                return c.members().anyMatch(anyNonAbstractOrDefaultMethod);
+            }
+        }
+
+        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = new Filter<Symbol>() {
+            @Override
+            public boolean accepts(Symbol s) {
+                return s.kind == Kinds.MTH &&
+                       (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
+            }
+        };
+
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
         private DiagnosticPosition getDiagnosticPosition(JCClassDecl tree, Type t) {
             for(List<JCAnnotation> al = tree.mods.annotations; !al.isEmpty(); al = al.tail) {
