@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  * default group is not configured then the pooled threads of the default group
  * are {@link Thread#isDaemon daemon} threads.
  *
- * <table border>
+ * <table border summary="System properties">
  *   <tr>
  *     <th>System property</th>
  *     <th>Description</th>
@@ -89,7 +89,7 @@ import java.util.concurrent.TimeUnit;
  *   </tr>
  * </table>
  *
- * <a name="threading"><h4>Threading</h4></a>
+ * <a name="threading"></a><h2>Threading</h2>
  *
  * <p> The completion handler for an I/O operation initiated on a channel bound
  * to a group is guaranteed to be invoked by one of the pooled threads in the
@@ -104,7 +104,7 @@ import java.util.concurrent.TimeUnit;
  * handler directly by the initiating thread (see {@link
  * AsynchronousServerSocketChannel#accept(Object,CompletionHandler) accept}).
  *
- * <a name="shutdown"><h4>Shutdown and Termination</h4></a>
+ * <a name="shutdown"></a><h2>Shutdown and Termination</h2>
  *
  * <p> The {@link #shutdown() shutdown} method is used to initiate an <em>orderly
  * shutdown</em> of a group. An orderly shutdown marks the group as shutdown;

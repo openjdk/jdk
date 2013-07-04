@@ -61,10 +61,13 @@ public class BigIntegerTest {
     // KARATSUBA_SQUARE_THRESHOLD = 90  ints = 2880 bits
     // TOOM_COOK_SQUARE_THRESHOLD = 140 ints = 4480 bits
     //
+    // SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 8 ints = 256 bits
+    //
     static final int BITS_KARATSUBA = 1600;
     static final int BITS_TOOM_COOK = 2400;
     static final int BITS_KARATSUBA_SQUARE = 2880;
     static final int BITS_TOOM_COOK_SQUARE = 4480;
+    static final int BITS_SCHOENHAGE_BASE = 256;
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
@@ -467,12 +470,13 @@ public class BigIntegerTest {
     public static void stringConv() {
         int failCount = 0;
 
+        // Generic string conversion.
         for (int i=0; i<100; i++) {
             byte xBytes[] = new byte[Math.abs(rnd.nextInt())%100+1];
             rnd.nextBytes(xBytes);
             BigInteger x = new BigInteger(xBytes);
 
-            for (int radix=2; radix < 37; radix++) {
+            for (int radix=Character.MIN_RADIX; radix < Character.MAX_RADIX; radix++) {
                 String result = x.toString(radix);
                 BigInteger test = new BigInteger(result, radix);
                 if (!test.equals(x)) {
@@ -483,6 +487,32 @@ public class BigIntegerTest {
                 }
             }
         }
+
+        // String conversion straddling the Schoenhage algorithm crossover
+        // threshold, and at twice and four times the threshold.
+        for (int k = 0; k <= 2; k++) {
+            int factor = 1 << k;
+            int upper = factor * BITS_SCHOENHAGE_BASE + 33;
+            int lower = upper - 35;
+
+            for (int bits = upper; bits >= lower; bits--) {
+                for (int i = 0; i < 50; i++) {
+                    BigInteger x = BigInteger.ONE.shiftLeft(bits - 1).or(new BigInteger(bits - 2, rnd));
+
+                    for (int radix = Character.MIN_RADIX; radix < Character.MAX_RADIX; radix++) {
+                        String result = x.toString(radix);
+                        BigInteger test = new BigInteger(result, radix);
+                        if (!test.equals(x)) {
+                            failCount++;
+                            System.err.println("BigInteger toString: " + x);
+                            System.err.println("Test: " + test);
+                            System.err.println(radix);
+                        }
+                    }
+                }
+            }
+        }
+
         report("String Conversion", failCount);
     }
 

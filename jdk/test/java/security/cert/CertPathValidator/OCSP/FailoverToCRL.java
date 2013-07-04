@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6383095
+ * @bug 6383095 8019259
  * @summary CRL revoked certificate failures masked by OCSP failures
  *
  * Note that the certificate validity is from Mar 16 14:55:35 2009 GMT to
@@ -254,12 +254,32 @@ public class FailoverToCRL {
         CertPathValidator validator = CertPathValidator.getInstance("PKIX");
 
         try {
+            System.out.println("Validating cert via OCSP: no responder URL");
             validator.validate(path, params);
         } catch (CertPathValidatorException cpve) {
             if (cpve.getReason() != BasicReason.REVOKED) {
                 throw new Exception(
-                    "unexpect exception, should be a REVOKED CPVE", cpve);
+                    "unexpected exception, should be a REVOKED CPVE", cpve);
             }
+            System.out.println("  successful failover to using CRLs");
+        }
+
+        java.security.cert.PKIXRevocationChecker revocationChecker =
+            (java.security.cert.PKIXRevocationChecker)
+                validator.getRevocationChecker();
+        revocationChecker.setOCSPResponder(
+            new java.net.URI("bad_ocsp_responder_url"));
+        params.addCertPathChecker(revocationChecker);
+
+        try {
+            System.out.println("Validating cert via OCSP: bad responder URL");
+            validator.validate(path, params);
+        } catch (CertPathValidatorException cpve) {
+            if (cpve.getReason() != BasicReason.REVOKED) {
+                throw new Exception(
+                    "unexpected exception, should be a REVOKED CPVE", cpve);
+            }
+            System.out.println("  successful failover to using CRLs");
         }
     }
 }
