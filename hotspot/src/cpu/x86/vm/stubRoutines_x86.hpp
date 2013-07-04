@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,24 @@
  *
  */
 
-#ifndef CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP
-#define CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP
+#ifndef CPU_X86_VM_STUBROUTINES_X86_HPP
+#define CPU_X86_VM_STUBROUTINES_X86_HPP
 
-
-// Generation of Interpreter
-//
-  friend class AbstractInterpreterGenerator;
+// This file holds the platform specific parts of the StubRoutines
+// definition. See stubRoutines.hpp for a description on how to
+// extend it.
 
  private:
+  static address _verify_mxcsr_entry;
+  // shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers
+  static address _key_shuffle_mask_addr;
+  // masks and table for CRC32
+  static uint64_t _crc_by128_masks[];
+  static juint    _crc_table[];
 
-  address generate_normal_entry(bool synchronized);
-  address generate_native_entry(bool synchronized);
-  address generate_abstract_entry(void);
-  address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_empty_entry(void);
-  address generate_accessor_entry(void);
-  address generate_Reference_get_entry();
-  address generate_CRC32_update_entry();
-  address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-  void lock_method(void);
-  void generate_stack_overflow_check(void);
+ public:
+  static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
+  static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
+  static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 
-  void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
-  void generate_counter_overflow(Label* do_continue);
-
-#endif // CPU_X86_VM_INTERPRETERGENERATOR_X86_HPP
+#endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP
