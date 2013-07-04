@@ -2221,10 +2221,23 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+  // Check lower bounds of the code cache
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
+  if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Should be greater than InitialCodeCacheSize=%dK\n",
+                "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
+                os::vm_page_size()/K);
+    status = false;
+  } else if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
+    status = false;
+  } else if (ReservedCodeCacheSize < min_code_cache_size) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                min_code_cache_size/K);
     status = false;
   }
 
@@ -2626,10 +2639,20 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xoss
     } else if (match_option(option, "-Xoss", &tail)) {
           // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
-    // -Xmaxjitcodesize
+    } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
+      julong long_CodeCacheExpansionSize = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                   "Invalid argument: %s. Must be at least %luK.\n", option->optionString,
+                   os::vm_page_size()/K);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, CodeCacheExpansionSize, (uintx)long_CodeCacheExpansionSize);
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
+
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
