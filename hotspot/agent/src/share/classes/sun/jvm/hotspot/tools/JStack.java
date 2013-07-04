@@ -24,6 +24,8 @@
 
 package sun.jvm.hotspot.tools;
 
+import sun.jvm.hotspot.debugger.JVMDebugger;
+
 public class JStack extends Tool {
     public JStack(boolean mixedMode, boolean concurrentLocks) {
         this.mixedMode = mixedMode;
@@ -32,6 +34,10 @@ public class JStack extends Tool {
 
     public JStack() {
         this(true, true);
+    }
+
+    public JStack(JVMDebugger d) {
+        super(d);
     }
 
     protected boolean needsJavaPrefix() {
