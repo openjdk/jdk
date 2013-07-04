@@ -256,7 +256,7 @@ public final class Double extends Number implements Comparable<Double> {
      * </ul>
      *
      * <table border>
-     * <caption><h3>Examples</h3></caption>
+     * <caption>Examples</caption>
      * <tr><th>Floating-point Value</th><th>Hexadecimal String</th>
      * <tr><td>{@code 1.0}</td> <td>{@code 0x1.0p0}</td>
      * <tr><td>{@code -1.0}</td>        <td>{@code -0x1.0p0}</td>
