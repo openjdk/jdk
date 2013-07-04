@@ -425,6 +425,8 @@ public abstract class AsynchronousFileChannel
      * They are not suitable for controlling access to a file by multiple
      * threads within the same virtual machine.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   position
      *          The position at which the locked region is to start; must be
      *          non-negative
@@ -473,6 +475,8 @@ public abstract class AsynchronousFileChannel
      *     ch.{@link #lock(long,long,boolean,Object,CompletionHandler) lock}(0L, Long.MAX_VALUE, false, att, handler)
      * </pre>
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
@@ -652,6 +656,8 @@ public abstract class AsynchronousFileChannel
      * If the given file position is greater than the file's size at the time
      * that the read is attempted then no bytes are read.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   dst
      *          The buffer into which bytes are to be transferred
      * @param   position
@@ -716,6 +722,8 @@ public abstract class AsynchronousFileChannel
      * bytes; the values of any bytes between the previous end-of-file and the
      * newly-written bytes are unspecified.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   src
      *          The buffer from which bytes are to be transferred
      * @param   position

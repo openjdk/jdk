@@ -87,22 +87,31 @@ public interface BasicFileAttributes {
 
     /**
      * Tells whether the file is a regular file with opaque content.
+     *
+     * @return {@code true} if the file is a regular file with opaque content
      */
     boolean isRegularFile();
 
     /**
      * Tells whether the file is a directory.
+     *
+     * @return {@code true} if the file is a directory
      */
     boolean isDirectory();
 
     /**
      * Tells whether the file is a symbolic link.
+     *
+     * @return {@code true} if the file is a symbolic link
      */
     boolean isSymbolicLink();
 
     /**
      * Tells whether the file is something other than a regular file, directory,
      * or symbolic link.
+     *
+     * @return {@code true} if the file something other than a regular file,
+     *         directory or symbolic link
      */
     boolean isOther();
 
@@ -137,6 +146,8 @@ public interface BasicFileAttributes {
      * suitable for use in collections. If the file system and files remain static,
      * and two files are the {@link java.nio.file.Files#isSameFile same} with
      * non-{@code null} file keys, then their file keys are equal.
+     *
+     * @return an object that uniquely identifies the given file, or {@code null}
      *
      * @see java.nio.file.Files#walkFileTree
      */

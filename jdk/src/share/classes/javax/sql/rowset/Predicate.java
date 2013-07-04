@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public interface Predicate {
      * cursor moving  from row to the next. In addition, if this internal method
      * moves the cursor onto a row that has been deleted, the internal method will
      * continue to ove the cursor until a valid row is found.
-     *
+     * @param rs The {@code RowSet} to be evaluated
      * @return <code>true</code> if there are more rows in the filter;
      *     <code>false</code> otherwise
      */
