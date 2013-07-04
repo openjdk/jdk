@@ -645,6 +645,9 @@ class CommandLineFlags {
   product(bool, UseAESIntrinsics, false,                                    \
           "use intrinsics for AES versions of crypto")                      \
                                                                             \
+  product(bool, UseCRC32Intrinsics, false,                                  \
+          "use intrinsics for java.util.zip.CRC32")                         \
+                                                                            \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
                                                                             \
@@ -3160,6 +3163,9 @@ class CommandLineFlags {
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
+                                                                            \
+  develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
+          "Minimum code cache size (in bytes) required to start VM.")       \
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
