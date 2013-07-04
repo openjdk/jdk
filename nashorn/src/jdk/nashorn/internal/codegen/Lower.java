@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -115,6 +116,21 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                 }
                 return newStatements;
             }
+
+            @Override
+            protected Block afterSetStatements(final Block block) {
+                final List<Statement> stmts = block.getStatements();
+                for(final ListIterator<Statement> li = stmts.listIterator(stmts.size()); li.hasPrevious();) {
+                    final Statement stmt = li.previous();
+                    // popStatements() guarantees that the only thing after a terminal statement are uninitialized
+                    // VarNodes. We skip past those, and set the terminal state of the block to the value of the
+                    // terminal state of the first statement that is not an uninitialized VarNode.
+                    if(!(stmt instanceof VarNode && ((VarNode)stmt).getInit() == null)) {
+                        return block.setIsTerminal(this, stmt.isTerminal());
+                    }
+                }
+                return block.setIsTerminal(this, false);
+            }
         });
     }
 
@@ -132,11 +148,11 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         //now we have committed the entire statement list to the block, but we need to truncate
         //whatever is after the last terminal. block append won't append past it
 
-        Statement last = lc.getLastStatement();
 
         if (lc.isFunctionBody()) {
             final FunctionNode currentFunction = lc.getCurrentFunction();
             final boolean isProgram = currentFunction.isProgram();
+            final Statement last = lc.getLastStatement();
             final ReturnNode returnNode = new ReturnNode(
                 last == null ? block.getLineNumber() : last.getLineNumber(), //TODO?
                 currentFunction.getToken(),
@@ -145,11 +161,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                     compilerConstant(RETURN) :
                     LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED));
 
-            last = (Statement)returnNode.accept(this);
-        }
-
-        if (last != null && last.isTerminal()) {
-            return block.setIsTerminal(lc, true);
+            returnNode.accept(this);
         }
 
         return block;
