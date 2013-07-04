@@ -158,7 +158,7 @@ Declares a structure type that can be used in other events.
       <structvalue type="MetaspaceSizes" field="classSpace" label="Class"/>
     </event>
 
-    <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="ParallelScavengeHeap Summary" is_instant="true">
+    <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />
 
@@ -203,7 +203,7 @@ Declares a structure type that can be used in other events.
       <value type="G1YCTYPE" field="type" label="Type" />
     </event>
 
-    <event id="EvacuationInfo" path="vm/gc/detailed/evacuation_info" label="Evacuation Info" is_instant="true">
+    <event id="EvacuationInfo" path="vm/gc/detailed/evacuation_info" label="Evacuation Information" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="UINT" field="cSetRegions" label="Collection Set Regions"/>
       <value type="BYTES64" field="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions"/>
@@ -211,7 +211,7 @@ Declares a structure type that can be used in other events.
       <value type="UINT" field="allocationRegions" label="Allocation Regions" description="Regions chosen as allocation regions during evacuation (includes survivors and old space regions)"/>
       <value type="BYTES64" field="allocRegionsUsedBefore" label="Alloc Regions Before" description="Memory usage before GC in allocation regions"/>
       <value type="BYTES64" field="allocRegionsUsedAfter" label="Alloc Regions After" description="Memory usage after GC in allocation regions"/>
-      <value type="BYTES64" field="bytesCopied" label="BytesCopied"/>
+      <value type="BYTES64" field="bytesCopied" label="Bytes Copied"/>
       <value type="UINT" field="regionsFreed" label="Regions Freed"/>
     </event>
 
@@ -240,14 +240,14 @@ Declares a structure type that can be used in other events.
     <event id="PromotionFailed" path="vm/gc/detailed/promotion_failed" label="Promotion Failed" is_instant="true"
            description="Promotion of an object failed">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
-      <structvalue type="CopyFailed" field="data" label="data"/>
+      <structvalue type="CopyFailed" field="data" label="Data"/>
       <value type="OSTHREAD" field="thread" label="Running thread"/>
     </event>
 
     <event id="EvacuationFailed" path="vm/gc/detailed/evacuation_failed" label="Evacuation Failed" is_instant="true"
            description="Evacuation of an object failed">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
-      <structvalue type="CopyFailed" field="data" label="data"/>
+      <structvalue type="CopyFailed" field="data" label="Data"/>
     </event>
 
     <event id="ConcurrentModeFailure" path="vm/gc/detailed/concurrent_mode_failure" label="Concurrent Mode Failure"
@@ -309,7 +309,7 @@ Declares a structure type that can be used in other events.
       <value type="USHORT" field="sweepFractionIndex" label="Fraction Index"/>
       <value type="UINT" field="sweptCount" label="Methods Swept"/>
       <value type="UINT" field="flushedCount" label="Methods Flushed"/>
-      <value type="UINT" field="markedCount" label="Methods Reclaim"/>
+      <value type="UINT" field="markedCount" label="Methods Reclaimed"/>
       <value type="UINT" field="zombifiedCount" label="Methods Zombified"/>
     </event>
 

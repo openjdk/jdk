@@ -149,6 +149,7 @@ public:
 
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
+  void print_shared_spaces() NOT_CDS_RETURN;
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP
