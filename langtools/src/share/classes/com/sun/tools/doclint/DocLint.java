@@ -187,6 +187,8 @@ public class DocLint implements Plugin {
                 javacBootClassPath = splitPath(args[++i]);
             } else if (arg.equals("-classpath") && i + 1 < args.length) {
                 javacClassPath = splitPath(args[++i]);
+            } else if (arg.equals("-cp") && i + 1 < args.length) {
+                javacClassPath = splitPath(args[++i]);
             } else if (arg.equals("-sourcepath") && i + 1 < args.length) {
                 javacSourcePath = splitPath(args[++i]);
             } else if (arg.equals(XMSGS_OPTION)) {
