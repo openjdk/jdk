@@ -260,8 +260,8 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
     poll_type               = 10, // polling instruction for safepoints
     poll_return_type        = 11, // polling instruction for safepoints at return
     metadata_type           = 12, // metadata that used to be oops
-    yet_unused_type_1       = 13, // Still unused
-    yet_unused_type_2       = 14, // Still unused
+    trampoline_stub_type    = 13, // stub-entry for trampoline
+    yet_unused_type_1       = 14, // Still unused
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     type_mask               = 15  // A mask which selects only the above values
   };
@@ -301,6 +301,7 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
     visitor(poll) \
     visitor(poll_return) \
     visitor(section_word) \
+    visitor(trampoline_stub) \
 
 
  public:
@@ -1148,6 +1149,43 @@ class runtime_call_Relocation : public CallRelocation {
   runtime_call_Relocation() { }
 
  public:
+};
+
+// Trampoline Relocations.
+// A trampoline allows to encode a small branch in the code, even if there
+// is the chance that this branch can not reach all possible code locations.
+// If the relocation finds that a branch is too far for the instruction
+// in the code, it can patch it to jump to the trampoline where is
+// sufficient space for a far branch. Needed on PPC.
+class trampoline_stub_Relocation : public Relocation {
+  relocInfo::relocType type() { return relocInfo::trampoline_stub_type; }
+
+ public:
+  static RelocationHolder spec(address static_call) {
+    RelocationHolder rh = newHolder();
+    return (new (rh) trampoline_stub_Relocation(static_call));
+  }
+
+ private:
+  address _owner;    // Address of the NativeCall that owns the trampoline.
+
+  trampoline_stub_Relocation(address owner) {
+    _owner = owner;
+  }
+
+  friend class RelocIterator;
+  trampoline_stub_Relocation() { }
+
+ public:
+
+  // Return the address of the NativeCall that owns the trampoline.
+  address owner() { return _owner; }
+
+  void pack_data_to(CodeSection * dest);
+  void unpack_data();
+
+  // Find the trampoline stub for a call.
+  static address get_trampoline_for(address call, nmethod* code);
 };
 
 class external_word_Relocation : public DataRelocation {
