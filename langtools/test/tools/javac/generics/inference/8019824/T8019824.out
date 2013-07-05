@@ -1,0 +1,2 @@
+T8019824.java:9:25: compiler.err.cant.apply.symbol: kindname.method, make, java.lang.Class<C>, java.lang.Class<compiler.misc.type.captureof: 1, ? extends T8019824.Foo<?,?>>, kindname.class, T8019824, (compiler.misc.incompatible.eq.upper.bounds: C, compiler.misc.type.captureof: 1, ? extends T8019824.Foo<?,?>, T8019824.Foo<java.lang.Object,B>)
+1 error

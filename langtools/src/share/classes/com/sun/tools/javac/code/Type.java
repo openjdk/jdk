@@ -1514,9 +1514,14 @@ public abstract class Type implements TypeMirror {
             return buf.toList();
         }
 
+        /** internal method used to override an undetvar bounds */
+        public void setBounds(InferenceBound ib, List<Type> newBounds) {
+            bounds.put(ib, newBounds);
+        }
+
         /** add a bound of a given kind - this might trigger listener notification */
         public void addBound(InferenceBound ib, Type bound, Types types) {
-            Type bound2 = toTypeVarMap.apply(bound);
+            Type bound2 = boundMap.apply(bound);
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
@@ -1527,12 +1532,12 @@ public abstract class Type implements TypeMirror {
             notifyChange(EnumSet.of(ib));
         }
         //where
-            Type.Mapping toTypeVarMap = new Mapping("toTypeVarMap") {
+            Type.Mapping boundMap = new Mapping("boundMap") {
                 @Override
                 public Type apply(Type t) {
                     if (t.hasTag(UNDETVAR)) {
                         UndetVar uv = (UndetVar)t;
-                        return uv.qtype;
+                        return uv.inst != null ? uv.inst : uv.qtype;
                     } else {
                         return t.map(this);
                     }
