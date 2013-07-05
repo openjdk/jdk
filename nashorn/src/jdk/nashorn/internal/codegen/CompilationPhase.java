@@ -18,17 +18,15 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
@@ -117,7 +115,7 @@ enum CompilationPhase {
                         final FunctionNode parent = lc.getParentFunction(functionNode);
                         assert parent != null;
                         lc.setFlag(parent, FunctionNode.HAS_LAZY_CHILDREN);
-                        lc.setFlag(parent.getBody(), Block.NEEDS_SCOPE);
+                        lc.setBlockNeedsScope(parent.getBody());
                         lc.setFlag(functionNode, FunctionNode.IS_LAZY);
                         return functionNode;
                     }
