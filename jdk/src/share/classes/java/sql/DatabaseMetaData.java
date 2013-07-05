@@ -31,7 +31,7 @@ package java.sql;
  * <P>
  * This interface is implemented by driver vendors to let users know the capabilities
  * of a Database Management System (DBMS) in combination with
- * the driver based on JDBC<sup><font size=-2>TM</font></sup> technology
+ * the driver based on JDBC&trade; technology
  * ("JDBC driver") that is used with it.  Different relational DBMSs often support
  * different features, implement features in different ways, and use different
  * data types.  In addition, a driver may implement a feature on top of what the
@@ -3074,7 +3074,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param holdability one of the following constants:
      *          <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-     *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT<code>
+     *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
      * @exception SQLException if a database access error occurs
      * @see Connection

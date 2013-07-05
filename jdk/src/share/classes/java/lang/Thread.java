@@ -865,8 +865,8 @@ class Thread implements Runnable {
      * will receive an {@link InterruptedException}.
      *
      * <p> If this thread is blocked in an I/O operation upon an {@link
-     * java.nio.channels.InterruptibleChannel </code>interruptible
-     * channel<code>} then the channel will be closed, the thread's interrupt
+     * java.nio.channels.InterruptibleChannel InterruptibleChannel}
+     * then the channel will be closed, the thread's interrupt
      * status will be set, and the thread will receive a {@link
      * java.nio.channels.ClosedByInterruptException}.
      *
@@ -1883,6 +1883,7 @@ class Thread implements Runnable {
      * there is no default.
      * @since 1.5
      * @see #setDefaultUncaughtExceptionHandler
+     * @return the default uncaught exception handler for all threads
      */
     public static UncaughtExceptionHandler getDefaultUncaughtExceptionHandler(){
         return defaultUncaughtExceptionHandler;
@@ -1895,6 +1896,7 @@ class Thread implements Runnable {
      * <tt>ThreadGroup</tt> object is returned, unless this thread
      * has terminated, in which case <tt>null</tt> is returned.
      * @since 1.5
+     * @return the uncaught exception handler for this thread
      */
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
         return uncaughtExceptionHandler != null ?
@@ -1993,12 +1995,21 @@ class Thread implements Runnable {
 
 
     // The following three initially uninitialized fields are exclusively
-    // managed by class java.util.concurrent.ThreadLocalRandom.
+    // managed by class java.util.concurrent.ThreadLocalRandom. These
+    // fields are used to build the high-performance PRNGs in the
+    // concurrent code, and we can not risk accidental false sharing.
+    // Hence, the fields are isolated with @Contended.
+
     /** The current seed for a ThreadLocalRandom */
+    @sun.misc.Contended("tlr")
     long threadLocalRandomSeed;
+
     /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
+    @sun.misc.Contended("tlr")
     int threadLocalRandomProbe;
+
     /** Secondary seed isolated from public ThreadLocalRandom sequence */
+    @sun.misc.Contended("tlr")
     int threadLocalRandomSecondarySeed;
 
     /* Some private helper methods */

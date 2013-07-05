@@ -560,6 +560,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             chk.setDeferredLintHandler(prevLintHandler);
         }
 
+        if (types.isSignaturePolymorphic(m)) {
+            m.flags_field |= SIGNATURE_POLYMORPHIC;
+        }
+
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
         JCVariableDecl lastParam = null;

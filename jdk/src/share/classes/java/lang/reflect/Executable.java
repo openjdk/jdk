@@ -326,8 +326,12 @@ public abstract class Executable extends AccessibleObject
             tmp = getParameters0();
 
             // If we get back nothing, then synthesize parameters
-            if (tmp == null)
+            if (tmp == null) {
+                hasRealParameterData = false;
                 tmp = synthesizeAllParams();
+            } else {
+                hasRealParameterData = true;
+            }
 
             parameters = tmp;
         }
@@ -335,6 +339,16 @@ public abstract class Executable extends AccessibleObject
         return tmp;
     }
 
+    boolean hasRealParameterData() {
+        // If this somehow gets called before parameters gets
+        // initialized, force it into existence.
+        if (parameters == null) {
+            privateGetParameters();
+        }
+        return hasRealParameterData;
+    }
+
+    private transient volatile boolean hasRealParameterData;
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();
@@ -384,6 +398,8 @@ public abstract class Executable extends AccessibleObject
     /**
      * Returns a string describing this {@code Executable}, including
      * any type parameters.
+     * @return a string describing this {@code Executable}, including
+     * any type parameters
      */
     public abstract String toGenericString();
 
@@ -496,6 +512,8 @@ public abstract class Executable extends AccessibleObject
      * If this Executable represents a method, the AnnotatedType object
      * represents the use of a type to specify the return type of the method.
      *
+     * @return an object representing the return type of this method
+     * or constructor
      * @since 1.8
      */
     public abstract AnnotatedType getAnnotatedReturnType();
@@ -531,6 +549,9 @@ public abstract class Executable extends AccessibleObject
      *
      * Returns null if this Executable represents a static method.
      *
+     * @return an object representing the receiver type of the
+     * method or constructor represented by this Executable
+     *
      * @since 1.8
      */
     public AnnotatedType getAnnotatedReceiverType() {
@@ -553,6 +574,9 @@ public abstract class Executable extends AccessibleObject
      * Returns an array of length 0 if the method/constructor declares no
      * parameters.
      *
+     * @return an array of objects representing the types of the
+     * formal parameters of this method or constructor
+     *
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
@@ -574,6 +598,9 @@ public abstract class Executable extends AccessibleObject
      *
      * Returns an array of length 0 if the method/constructor declares no
      * exceptions.
+     *
+     * @return an array of objects representing the declared
+     * exceptions of this method or constructor
      *
      * @since 1.8
      */

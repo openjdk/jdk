@@ -812,8 +812,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 throw new RuntimeException("Unknown window state: " + windowState);
         }
 
-        nativeSynthesizeMouseEnteredExitedEvents();
-
         // NOTE: the SWP.windowState field gets updated to the newWindowState
         //       value when the native notification comes to us
     }

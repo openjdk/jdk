@@ -174,6 +174,8 @@ public abstract class AsynchronousChannelProvider {
      * @param   threadFactory
      *          The factory to use when creating new threads
      *
+     * @return  A new asynchronous channel group
+     *
      * @throws  IllegalArgumentException
      *          If {@code nThreads <= 0}
      * @throws  IOException
@@ -192,6 +194,8 @@ public abstract class AsynchronousChannelProvider {
      * @param   initialSize
      *          A value {@code >=0} or a negative value for implementation
      *          specific default
+     *
+     * @return  A new asynchronous channel group
      *
      * @throws  IOException
      *          If an I/O error occurs

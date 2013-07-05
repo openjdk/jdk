@@ -79,11 +79,11 @@ public abstract class OpTestCase extends LoggingTestCase {
          * test.
          *
          * @param actual the actual result
-         * @param excepted the expected result
+         * @param expected the expected result
          * @param isOrdered true if the pipeline is ordered
          * @param isParallel true if the pipeline is parallel
          */
-        void assertResult(R actual, R excepted, boolean isOrdered, boolean isParallel);
+        void assertResult(R actual, R expected, boolean isOrdered, boolean isParallel);
     }
 
     // Exercise stream operations
