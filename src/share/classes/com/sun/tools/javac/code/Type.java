@@ -78,6 +78,9 @@ public abstract class Type implements TypeMirror {
     /** Constant type: special type to be used during recovery of deferred expressions. */
     public static final JCNoType recoveryType = new JCNoType();
 
+    /** Constant type: special type to be used for marking stuck trees. */
+    public static final JCNoType stuckType = new JCNoType();
+
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */
