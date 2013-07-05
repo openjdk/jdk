@@ -23,7 +23,7 @@
 #
 
 # @test
-# @bug 6332666 7180362 8003846
+# @bug 6332666 6863624 7180362 8003846
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
 # @build PropertiesTest
@@ -56,9 +56,14 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
-  Windows* | CYGWIN* )
+  Windows* )
     PS=";"
     FS="/"
+    ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
+    TESTJAVA=`cygpath -u ${TESTJAVA}`
     ;;
   * )
     echo "Unrecognized system!"
@@ -92,24 +97,27 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 # Dump built-in currency data + overrides in properties file copied into
 # JRE image.
 
-# copy the test properties file
+# Copy the test properties file. If testjava is not a typical jdk-image
+# or testjava is not writable, make a private copy of it.
 COPIED=0
-if [ -w $TESTJAVA ]
+if [ -w ${TESTJAVA}${FS}jre${FS}lib ]
 then
   WRITABLEJDK=$TESTJAVA
-else
-  WRITABLEJDK=.${FS}testjava
-  cp -r $TESTJAVA $WRITABLEJDK
-  COPIED=1
-fi
-
-if [ -d ${WRITABLEJDK}${FS}jre ]
-then
   PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
 else
-  PROPLOCATION=${WRITABLEJDK}${FS}lib
+  WRITABLEJDK=.${FS}testjava
+  if [ -d ${TESTJAVA}${FS}jre ]
+  then
+    PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
+  else
+    PROPLOCATION=${WRITABLEJDK}${FS}lib
+  fi
+  cp -r $TESTJAVA $WRITABLEJDK
+  chmod -R +w $WRITABLEJDK
+  COPIED=1
 fi
 cp ${PROPS} $PROPLOCATION
+echo "Properties location: ${PROPLOCATION}"
 
 # run
 echo ''
