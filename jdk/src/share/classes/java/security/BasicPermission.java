@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,8 +124,8 @@ public abstract class BasicPermission extends Permission
      *
      * @param name the name of the BasicPermission.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
     public BasicPermission(String name) {
         super(name);
@@ -141,8 +141,8 @@ public abstract class BasicPermission extends Permission
      * @param name the name of the BasicPermission.
      * @param actions ignored.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
     public BasicPermission(String name, String actions) {
         super(name);
@@ -217,7 +217,7 @@ public abstract class BasicPermission extends Permission
     /**
      * Returns the hash code value for this object.
      * The hash code used is the hash code of the name, that is,
-     * <code>getName().hashCode()</code>, where <code>getName</code> is
+     * {@code getName().hashCode()}, where {@code getName} is
      * from the Permission superclass.
      *
      * @return a hash code value for this object.
@@ -243,7 +243,7 @@ public abstract class BasicPermission extends Permission
      *
      * <p>BasicPermission objects must be stored in a manner that allows them
      * to be inserted in any order, but that also enables the
-     * PermissionCollection <code>implies</code> method
+     * PermissionCollection {@code implies} method
      * to be implemented in an efficient (and consistent) manner.
      *
      * @return a new PermissionCollection object suitable for
@@ -312,7 +312,7 @@ final class BasicPermissionCollection
     private transient Map<String, Permission> perms;
 
     /**
-     * This is set to <code>true</code> if this BasicPermissionCollection
+     * This is set to {@code true} if this BasicPermissionCollection
      * contains a BasicPermission with '*' as its permission name.
      *
      * @see #serialPersistentFields
@@ -477,7 +477,7 @@ final class BasicPermissionCollection
      *    The Hashtable is indexed by the BasicPermission name; the value
      *    of the Hashtable entry is the permission.
      * @serialField all_allowed boolean
-     *   This is set to <code>true</code> if this BasicPermissionCollection
+     *   This is set to {@code true} if this BasicPermissionCollection
      *   contains a BasicPermission with '*' as its permission name.
      * @serialField permClass java.lang.Class
      *   The class to which all BasicPermissions in this

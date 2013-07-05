@@ -165,7 +165,8 @@ public class ClassEmitter implements Emitter {
     /**
      * Constructor from the compiler
      *
-     * @param compiler      Compiler
+     * @param env           Script environment
+     * @param sourceName    Source name
      * @param unitClassName Compile unit class name.
      * @param strictMode    Should we generate this method in strict mode
      */

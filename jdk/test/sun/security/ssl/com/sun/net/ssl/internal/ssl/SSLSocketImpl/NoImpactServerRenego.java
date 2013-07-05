@@ -29,7 +29,7 @@
  * @bug 7188658
  * @summary Add possibility to disable client initiated renegotiation
  * @run main/othervm
- *      -Djdk.tls.rejectClientInitializedRenego=true NoImpactServerRenego
+ *      -Djdk.tls.rejectClientInitiatedRenegotiation=true NoImpactServerRenego
  */
 
 import java.io.*;
