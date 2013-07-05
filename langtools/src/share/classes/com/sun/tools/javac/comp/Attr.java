@@ -2392,7 +2392,7 @@ public class Attr extends JCTree.Visitor {
 
             ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
                 recoveryInfo :
-                new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
+                new LambdaResultInfo(lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
             Log.DeferredDiagnosticHandler lambdaDeferredHandler = new Log.DeferredDiagnosticHandler(log);
@@ -2581,6 +2581,28 @@ public class Attr extends JCTree.Visitor {
                 //a void return is compatible with an expression statement lambda
                 return TreeInfo.isExpressionStatement(expr) && req.hasTag(VOID) ||
                         super.compatible(found, req, warn);
+            }
+        }
+
+        class LambdaResultInfo extends ResultInfo {
+
+            LambdaResultInfo(Type pt, CheckContext checkContext) {
+                super(VAL, pt, checkContext);
+            }
+
+            @Override
+            protected Type check(DiagnosticPosition pos, Type found) {
+                return super.check(pos, found.baseType());
+            }
+
+            @Override
+            protected ResultInfo dup(CheckContext newContext) {
+                return new LambdaResultInfo(pt, newContext);
+            }
+
+            @Override
+            protected ResultInfo dup(Type newPt) {
+                return new LambdaResultInfo(newPt, checkContext);
             }
         }
 
