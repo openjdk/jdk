@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,15 +68,15 @@ public class EllipticCurve {
 
     /**
      * Creates an elliptic curve with the specified elliptic field
-     * <code>field</code> and the coefficients <code>a</code> and
-     * <code>b</code>.
+     * {@code field} and the coefficients {@code a} and
+     * {@code b}.
      * @param field the finite field that this elliptic curve is over.
      * @param a the first coefficient of this elliptic curve.
      * @param b the second coefficient of this elliptic curve.
-     * @exception NullPointerException if <code>field</code>,
-     * <code>a</code>, or <code>b</code> is null.
-     * @exception IllegalArgumentException if <code>a</code>
-     * or <code>b</code> is not null and not in <code>field</code>.
+     * @exception NullPointerException if {@code field},
+     * {@code a}, or {@code b} is null.
+     * @exception IllegalArgumentException if {@code a}
+     * or {@code b} is not null and not in {@code field}.
      */
     public EllipticCurve(ECField field, BigInteger a,
                          BigInteger b) {
@@ -85,18 +85,18 @@ public class EllipticCurve {
 
     /**
      * Creates an elliptic curve with the specified elliptic field
-     * <code>field</code>, the coefficients <code>a</code> and
-     * <code>b</code>, and the <code>seed</code> used for curve generation.
+     * {@code field}, the coefficients {@code a} and
+     * {@code b}, and the {@code seed} used for curve generation.
      * @param field the finite field that this elliptic curve is over.
      * @param a the first coefficient of this elliptic curve.
      * @param b the second coefficient of this elliptic curve.
      * @param seed the bytes used during curve generation for later
      * validation. Contents of this array are copied to protect against
      * subsequent modification.
-     * @exception NullPointerException if <code>field</code>,
-     * <code>a</code>, or <code>b</code> is null.
-     * @exception IllegalArgumentException if <code>a</code>
-     * or <code>b</code> is not null and not in <code>field</code>.
+     * @exception NullPointerException if {@code field},
+     * {@code a}, or {@code b} is null.
+     * @exception IllegalArgumentException if {@code a}
+     * or {@code b} is not null and not in {@code field}.
      */
     public EllipticCurve(ECField field, BigInteger a,
                          BigInteger b, byte[] seed) {
@@ -122,9 +122,9 @@ public class EllipticCurve {
     }
 
     /**
-     * Returns the finite field <code>field</code> that this
+     * Returns the finite field {@code field} that this
      * elliptic curve is over.
-     * @return the field <code>field</code> that this curve
+     * @return the field {@code field} that this curve
      * is over.
      */
     public ECField getField() {
@@ -132,27 +132,27 @@ public class EllipticCurve {
     }
 
     /**
-     * Returns the first coefficient <code>a</code> of the
+     * Returns the first coefficient {@code a} of the
      * elliptic curve.
-     * @return the first coefficient <code>a</code>.
+     * @return the first coefficient {@code a}.
      */
     public BigInteger getA() {
         return a;
     }
 
     /**
-     * Returns the second coefficient <code>b</code> of the
+     * Returns the second coefficient {@code b} of the
      * elliptic curve.
-     * @return the second coefficient <code>b</code>.
+     * @return the second coefficient {@code b}.
      */
     public BigInteger getB() {
         return b;
     }
 
     /**
-     * Returns the seeding bytes <code>seed</code> used
+     * Returns the seeding bytes {@code seed} used
      * during curve generation. May be null if not specified.
-     * @return the seeding bytes <code>seed</code>. A new
+     * @return the seeding bytes {@code seed}. A new
      * array is returned each time this method is called.
      */
     public byte[] getSeed() {
@@ -164,7 +164,7 @@ public class EllipticCurve {
      * Compares this elliptic curve for equality with the
      * specified object.
      * @param obj the object to be compared.
-     * @return true if <code>obj</code> is an instance of
+     * @return true if {@code obj} is an instance of
      * EllipticCurve and the field, A, and B match, false otherwise.
      */
     public boolean equals(Object obj) {

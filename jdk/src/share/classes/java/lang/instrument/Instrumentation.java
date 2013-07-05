@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,6 +363,8 @@ public interface Instrumentation {
      * Primitive classes (for example, <code>java.lang.Integer.TYPE</code>)
      * and array classes are never modifiable.
      *
+     * @param theClass the class to check for being modifiable
+     * @return whether or not the argument class is modifiable
      * @throws java.lang.NullPointerException if the specified class is <code>null</code>.
      *
      * @see #retransformClasses
@@ -549,14 +551,14 @@ public interface Instrumentation {
      * {@link java.lang.instrument.ClassFileTransformer ClassFileTransformer},
      * it enables native methods to be
      * instrumented.
-     * <p/>
+     * <p>
      * Since native methods cannot be directly instrumented
      * (they have no bytecodes), they must be wrapped with
      * a non-native method which can be instrumented.
      * For example, if we had:
      * <pre>
      *   native boolean foo(int x);</pre>
-     * <p/>
+     * <p>
      * We could transform the class file (with the
      * ClassFileTransformer during the initial definition
      * of the class) so that this becomes:
@@ -567,14 +569,14 @@ public interface Instrumentation {
      *   }
      *
      *   native boolean wrapped_foo(int x);</pre>
-     * <p/>
+     * <p>
      * Where <code>foo</code> becomes a wrapper for the actual native
      * method with the appended prefix "wrapped_".  Note that
      * "wrapped_" would be a poor choice of prefix since it
      * might conceivably form the name of an existing method
      * thus something like "$$$MyAgentWrapped$$$_" would be
      * better but would make these examples less readable.
-     * <p/>
+     * <p>
      * The wrapper will allow data to be collected on the native
      * method call, but now the problem becomes linking up the
      * wrapped method with the native implementation.
@@ -583,7 +585,7 @@ public interface Instrumentation {
      * which might be:
      * <pre>
      *   Java_somePackage_someClass_foo(JNIEnv* env, jint x)</pre>
-     * <p/>
+     * <p>
      * This function allows the prefix to be specified and the
      * proper resolution to occur.
      * Specifically, when the standard resolution fails, the
@@ -596,29 +598,29 @@ public interface Instrumentation {
      * <pre>{@code
      *   method(foo) -> nativeImplementation(foo)
      * }</pre>
-     * <p/>
+     * <p>
      * When this fails, the resolution will be retried with
      * the specified prefix prepended to the method name,
      * yielding the correct resolution:
      * <pre>{@code
      *   method(wrapped_foo) -> nativeImplementation(foo)
      * }</pre>
-     * <p/>
+     * <p>
      * For automatic resolution, the JVM will attempt:
      * <pre>{@code
      *   method(wrapped_foo) -> nativeImplementation(wrapped_foo)
      * }</pre>
-     * <p/>
+     * <p>
      * When this fails, the resolution will be retried with
      * the specified prefix deleted from the implementation name,
      * yielding the correct resolution:
      * <pre>{@code
      *   method(wrapped_foo) -> nativeImplementation(foo)
      * }</pre>
-     * <p/>
+     * <p>
      * Note that since the prefix is only used when standard
      * resolution fails, native methods can be wrapped selectively.
-     * <p/>
+     * <p>
      * Since each <code>ClassFileTransformer</code>
      * can do its own transformation of the bytecodes, more
      * than one layer of wrappers may be applied. Thus each

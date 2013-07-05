@@ -71,13 +71,6 @@ bool MetaspaceObj::is_shared() const {
   return MetaspaceShared::is_in_shared_space(this);
 }
 
-bool MetaspaceObj::is_metadata() const {
-  // GC Verify checks use this in guarantees.
-  // TODO: either replace them with is_metaspace_object() or remove them.
-  // is_metaspace_object() is slower than this test.  This test doesn't
-  // seem very useful for metaspace objects anymore though.
-  return !Universe::heap()->is_in_reserved(this);
-}
 
 bool MetaspaceObj::is_metaspace_object() const {
   return Metaspace::contains((void*)this);

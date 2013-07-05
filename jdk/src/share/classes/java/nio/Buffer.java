@@ -52,7 +52,7 @@ import java.util.Spliterator;
  * <p> There is one subclass of this class for each non-boolean primitive type.
  *
  *
- * <h4> Transferring data </h4>
+ * <h2> Transferring data </h2>
  *
  * <p> Each subclass of this class defines two categories of <i>get</i> and
  * <i>put</i> operations: </p>
@@ -78,7 +78,7 @@ import java.util.Spliterator;
  * current position.
  *
  *
- * <h4> Marking and resetting </h4>
+ * <h2> Marking and resetting </h2>
  *
  * <p> A buffer's <i>mark</i> is the index to which its position will be reset
  * when the {@link #reset reset} method is invoked.  The mark is not always
@@ -89,7 +89,7 @@ import java.util.Spliterator;
  * {@link InvalidMarkException} to be thrown.
  *
  *
- * <h4> Invariants </h4>
+ * <h2> Invariants </h2>
  *
  * <p> The following invariant holds for the mark, position, limit, and
  * capacity values:
@@ -109,7 +109,7 @@ import java.util.Spliterator;
  * to zero.
  *
  *
- * <h4> Clearing, flipping, and rewinding </h4>
+ * <h2> Clearing, flipping, and rewinding </h2>
  *
  * <p> In addition to methods for accessing the position, limit, and capacity
  * values and for marking and resetting, this class also defines the following
@@ -132,7 +132,7 @@ import java.util.Spliterator;
  * </ul>
  *
  *
- * <h4> Read-only buffers </h4>
+ * <h2> Read-only buffers </h2>
  *
  * <p> Every buffer is readable, but not every buffer is writable.  The
  * mutation methods of each buffer class are specified as <i>optional
@@ -143,14 +143,14 @@ import java.util.Spliterator;
  * {@link #isReadOnly isReadOnly} method.
  *
  *
- * <h4> Thread safety </h4>
+ * <h2> Thread safety </h2>
  *
  * <p> Buffers are not safe for use by multiple concurrent threads.  If a
  * buffer is to be used by more than one thread then access to the buffer
  * should be controlled by appropriate synchronization.
  *
  *
- * <h4> Invocation chaining </h4>
+ * <h2> Invocation chaining </h2>
  *
  * <p> Methods in this class that do not otherwise have a value to return are
  * specified to return the buffer upon which they are invoked.  This allows
