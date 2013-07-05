@@ -2009,7 +2009,7 @@ loop:
                     }
 
                     if (!redefinitionOk) {
-                        throw error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
+                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                     }
 
                     PropertyNode newProperty = existingProperty;

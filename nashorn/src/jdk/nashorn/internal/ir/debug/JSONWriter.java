@@ -514,7 +514,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             type("ArrayExpression");
             comma();
 
-            final Node[] value = (Node[])literalNode.getValue();
+            final Node[] value = literalNode.getArray();
             array("elements", Arrays.asList(value));
         } else {
             type("Literal");

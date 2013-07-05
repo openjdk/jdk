@@ -91,14 +91,16 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     /**
      * Constructor.
      *
-     * @param properties    A {@link PropertyHashMap} with initial contents.
-     * @param fieldCount    Number of fields in use.
+     * @param properties   A {@link PropertyHashMap} with initial contents.
+     * @param fieldCount   Number of fields in use.
      * @param fieldMaximum Number of fields available.
+     * @param spillLength  Number of spill slots used.
      */
-    private PropertyMap(final PropertyHashMap properties, final int fieldCount, final int fieldMaximum) {
+    private PropertyMap(final PropertyHashMap properties, final int fieldCount, final int fieldMaximum, final int spillLength) {
         this.properties   = properties;
         this.fieldCount   = fieldCount;
         this.fieldMaximum = fieldMaximum;
+        this.spillLength  = spillLength;
 
         if (Context.DEBUG) {
             count++;
@@ -111,7 +113,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      * @param properties A {@link PropertyHashMap} with initial contents.
      */
     private PropertyMap(final PropertyHashMap properties) {
-        this(properties, 0, 0);
+        this(properties, 0, 0, 0);
     }
 
     /**
@@ -159,42 +161,23 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
     /**
      * Public property map allocator.
      *
-     * @param structure  Class the map's {@link AccessorProperty}s apply to.
-     * @param properties Collection of initial properties.
-     * @param fieldCount    Number of fields in use.
+     * @param properties   Collection of initial properties.
+     * @param fieldCount   Number of fields in use.
      * @param fieldMaximum Number of fields available.
-     *
+     * @param spillLength  Number of used spill slots.
      * @return New {@link PropertyMap}.
      */
-    public static PropertyMap newMap(final Class<?> structure, final Collection<Property> properties, final int fieldCount, final int fieldMaximum) {
-        // Reduce the number of empty maps in the context.
-        if (structure == JO.class) {
-            return EMPTY_MAP;
-        }
-
+    public static PropertyMap newMap(final Collection<Property> properties, final int fieldCount, final int fieldMaximum,  final int spillLength) {
         PropertyHashMap newProperties = EMPTY_HASHMAP.immutableAdd(properties);
-
-        return new PropertyMap(newProperties, fieldCount, fieldMaximum);
-    }
-
-    /**
-     * Public property map factory allocator
-     *
-     * @param structure  Class the map's {@link AccessorProperty}s apply to.
-     *
-     * @return New {@link PropertyMap}.
-     */
-    public static PropertyMap newMap(final Class<?> structure) {
-        return newMap(structure, null, 0, 0);
+        return new PropertyMap(newProperties, fieldCount, fieldMaximum, spillLength);
     }
 
     /**
      * Return a sharable empty map.
      *
-     * @param  context the context
      * @return New empty {@link PropertyMap}.
      */
-    public static PropertyMap newEmptyMap(final Context context) {
+    public static PropertyMap newMap() {
         return new PropertyMap(EMPTY_HASHMAP);
     }
 

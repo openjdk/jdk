@@ -140,8 +140,8 @@ public class AccessorProperty extends Property {
 
         this.primitiveGetter = bindTo(property.primitiveGetter, delegate);
         this.primitiveSetter = bindTo(property.primitiveSetter, delegate);
-        this.objectGetter    = bindTo(property.objectGetter, delegate);
-        this.objectSetter    = bindTo(property.objectSetter, delegate);
+        this.objectGetter    = bindTo(property.ensureObjectGetter(), delegate);
+        this.objectSetter    = bindTo(property.ensureObjectSetter(), delegate);
 
         setCurrentType(property.getCurrentType());
     }
@@ -331,12 +331,26 @@ public class AccessorProperty extends Property {
         }
     }
 
-    @Override
-    public MethodHandle getGetter(final Class<?> type) {
+    // Spill getters and setters are lazily initialized, see JDK-8011630
+    private MethodHandle ensureObjectGetter() {
         if (isSpill() && objectGetter == null) {
             objectGetter = getSpillGetter();
         }
+        return objectGetter;
+    }
+
+    private MethodHandle ensureObjectSetter() {
+        if (isSpill() && objectSetter == null) {
+            objectSetter = getSpillSetter();
+        }
+        return objectSetter;
+    }
+
+    @Override
+    public MethodHandle getGetter(final Class<?> type) {
         final int i = getAccessorTypeIndex(type);
+        ensureObjectGetter();
+
         if (getters[i] == null) {
             getters[i] = debug(
                 createGetter(currentType, type, primitiveGetter, objectGetter),
@@ -372,9 +386,7 @@ public class AccessorProperty extends Property {
     }
 
     private MethodHandle generateSetter(final Class<?> forType, final Class<?> type) {
-        if (isSpill() && objectSetter == null) {
-            objectSetter = getSpillSetter();
-        }
+        ensureObjectSetter();
         MethodHandle mh = createSetter(forType, type, primitiveSetter, objectSetter);
         mh = debug(mh, currentType, type, "set");
         return mh;

@@ -131,6 +131,10 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     @Ignore
     private final Compiler.Hints hints;
 
+    /** Properties of this object assigned in this function */
+    @Ignore
+    private HashSet<String> thisProperties;
+
     /** Function flags. */
     private final int flags;
 
@@ -277,6 +281,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         this.declaredSymbols = functionNode.declaredSymbols;
         this.kind            = functionNode.kind;
         this.firstToken      = functionNode.firstToken;
+        this.thisProperties  = functionNode.thisProperties;
     }
 
     @Override
@@ -611,6 +616,25 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public boolean needsParentScope() {
         return getFlag(NEEDS_PARENT_SCOPE) || isProgram();
+    }
+
+    /**
+     * Register a property assigned to the this object in this function.
+     * @param key the property name
+     */
+    public void addThisProperty(final String key) {
+        if (thisProperties == null) {
+            thisProperties = new HashSet<>();
+        }
+        thisProperties.add(key);
+    }
+
+    /**
+     * Get the number of properties assigned to the this object in this function.
+     * @return number of properties
+     */
+    public int countThisProperties() {
+        return thisProperties == null ? 0 : thisProperties.size();
     }
 
     /**

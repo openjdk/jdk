@@ -175,6 +175,14 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         if (destType == null) {
             destType = specBinaryNode.getType();
         }
+        // Register assignments to this object in case this is used as constructor
+        if (binaryNode.lhs() instanceof AccessNode) {
+            AccessNode accessNode = (AccessNode) binaryNode.lhs();
+
+            if (accessNode.getBase().getSymbol().isThis()) {
+                lc.getCurrentFunction().addThisProperty(accessNode.getProperty().getName());
+            }
+        }
         return specBinaryNode.setRHS(convert(specBinaryNode.rhs(), destType));
     }
 

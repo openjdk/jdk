@@ -149,7 +149,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     static {
-        PropertyMap map = PropertyMap.newMap(ScriptFunctionImpl.class);
+        PropertyMap map = PropertyMap.newMap();
         map = Lookup.newProperty(map, "prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE);
         map = Lookup.newProperty(map, "length",    Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null);
         map = Lookup.newProperty(map, "name",      Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null);
@@ -201,7 +201,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // Instance of this class is used as global anonymous function which
     // serves as Function.prototype object.
     private static class AnonymousFunction extends ScriptFunctionImpl {
-        private static final PropertyMap nasgenmap$$ = PropertyMap.newMap(AnonymousFunction.class);
+        private static final PropertyMap nasgenmap$$ = PropertyMap.newMap();
 
         AnonymousFunction() {
             super("", GlobalFunctions.ANONYMOUS, nasgenmap$$, null);
