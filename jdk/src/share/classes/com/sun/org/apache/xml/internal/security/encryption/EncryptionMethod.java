@@ -2,28 +2,28 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
-
 import java.util.Iterator;
 import org.w3c.dom.Element;
-
 
 /**
  * <code>EncryptionMethod</code> describes the encryption algorithm applied to
@@ -83,6 +83,30 @@ public interface EncryptionMethod {
     void setOAEPparams(byte[] parameters);
 
     /**
+     * Set the Digest Algorithm to use
+     * @param digestAlgorithm the Digest Algorithm to use
+     */
+    void setDigestAlgorithm(String digestAlgorithm);
+
+    /**
+     * Get the Digest Algorithm to use
+     * @return the Digest Algorithm to use
+     */
+    String getDigestAlgorithm();
+
+    /**
+     * Set the MGF Algorithm to use
+     * @param mgfAlgorithm the MGF Algorithm to use
+     */
+    void setMGFAlgorithm(String mgfAlgorithm);
+
+    /**
+     * Get the MGF Algorithm to use
+     * @return the MGF Algorithm to use
+     */
+    String getMGFAlgorithm();
+
+    /**
      * Returns an iterator over all the additional elements contained in the
      * <code>EncryptionMethod</code>.
      *
@@ -106,3 +130,4 @@ public interface EncryptionMethod {
      */
     void removeEncryptionMethodInformation(Element information);
 }
+
