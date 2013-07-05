@@ -157,7 +157,6 @@ KlassInfoTable::~KlassInfoTable() {
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  assert(p->is_metadata(), "all klasses are metadata");
   return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
 }
 

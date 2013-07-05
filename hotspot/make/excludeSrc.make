@@ -112,3 +112,5 @@ ifeq ($(INCLUDE_NMT), false)
 endif
 
 -include $(HS_ALT_MAKE)/excludeSrc.make
+
+.PHONY: $(HS_ALT_MAKE)/excludeSrc.make
