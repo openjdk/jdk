@@ -1065,7 +1065,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   // Compute prolog code size
   _method_size = 0;
   _frame_slots = OptoReg::reg2stack(_matcher->_old_SP)+_regalloc->_framesize;
-#ifdef IA64
+#if defined(IA64) && !defined(AIX)
   if (save_argument_registers()) {
     // 4815101: this is a stub with implicit and unknown precision fp args.
     // The usual spill mechanism can only generate stfd's in this case, which
