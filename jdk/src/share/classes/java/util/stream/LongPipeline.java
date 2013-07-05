@@ -275,6 +275,12 @@ abstract class LongPipeline<E_IN>
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(long t) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         LongStream result = mapper.apply(t);
@@ -306,6 +312,11 @@ abstract class LongPipeline<E_IN>
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
                     @Override
                     public void accept(long t) {
                         if (predicate.test(t))

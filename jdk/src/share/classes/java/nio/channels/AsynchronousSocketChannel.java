@@ -62,7 +62,7 @@ import java.nio.ByteBuffer;
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Asynchronous socket channels support the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -91,7 +91,7 @@ import java.nio.ByteBuffer;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
- * <h4>Timeouts</h4>
+ * <h2>Timeouts</h2>
  *
  * <p> The {@link #read(ByteBuffer,long,TimeUnit,Object,CompletionHandler) read}
  * and {@link #write(ByteBuffer,long,TimeUnit,Object,CompletionHandler) write}
@@ -123,6 +123,9 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected AsynchronousSocketChannel(AsynchronousChannelProvider provider) {
         this.provider = provider;
@@ -130,6 +133,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Returns the provider that created this channel.
+     *
+     * @return  The provider that created this channel
      */
     public final AsynchronousChannelProvider provider() {
         return provider;
@@ -287,6 +292,8 @@ public abstract class AsynchronousSocketChannel
      * java.lang.SecurityManager#checkConnect checkConnect} method permits
      * connecting to the address and port number of the given remote endpoint.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   remote
      *          The remote address to which this channel is to be connected
      * @param   attachment
@@ -365,6 +372,8 @@ public abstract class AsynchronousSocketChannel
      * AsynchronousByteChannel#read(ByteBuffer,Object,CompletionHandler)}
      * method.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   dst
      *          The buffer into which bytes are to be transferred
      * @param   timeout
@@ -461,6 +470,8 @@ public abstract class AsynchronousSocketChannel
      * read from the channel will cause an unspecific runtime exception to be
      * thrown.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   dsts
      *          The buffers into which bytes are to be transferred
      * @param   offset
@@ -520,6 +531,8 @@ public abstract class AsynchronousSocketChannel
      * AsynchronousByteChannel#write(ByteBuffer,Object,CompletionHandler)}
      * method.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   src
      *          The buffer from which bytes are to be retrieved
      * @param   timeout
@@ -610,6 +623,8 @@ public abstract class AsynchronousSocketChannel
      * to write to the channel will cause an unspecific runtime exception to be
      * thrown.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   srcs
      *          The buffers from which bytes are to be retrieved
      * @param   offset

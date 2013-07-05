@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,15 @@ package java.security;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>Policy</code> class.
+ * for the {@code Policy} class.
  * All the abstract methods in this class must be implemented by each
  * service provider who wishes to supply a Policy implementation.
  *
  * <p> Subclass implementations of this abstract class must provide
- * a public constructor that takes a <code>Policy.Parameters</code>
+ * a public constructor that takes a {@code Policy.Parameters}
  * object as an input parameter.  This constructor also must throw
  * an IllegalArgumentException if it does not understand the
- * <code>Policy.Parameters</code> input.
+ * {@code Policy.Parameters} input.
  *
  *
  * @since 1.6
@@ -59,7 +59,7 @@ public abstract class PolicySpi {
 
     /**
      * Refreshes/reloads the policy configuration. The behavior of this method
-     * depends on the implementation. For example, calling <code>refresh</code>
+     * depends on the implementation. For example, calling {@code refresh}
      * on a file-based policy will cause the file to be re-read.
      *
      * <p> The default implementation of this method does nothing.

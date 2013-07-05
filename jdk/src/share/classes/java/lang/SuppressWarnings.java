@@ -66,6 +66,7 @@ public @interface SuppressWarnings {
      * additional warning names they support in conjunction with this
      * annotation type. They are encouraged to cooperate to ensure
      * that the same names work across multiple compilers.
+     * @return the set of warnings to be suppressed
      */
     String[] value();
 }

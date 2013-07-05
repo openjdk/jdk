@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ package java.security;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
- * The <code>AlgorithmParameterGenerator</code> class is used to generate a
+ * The {@code AlgorithmParameterGenerator} class is used to generate a
  * set of
  * parameters to be used with a certain algorithm. Parameter generators
- * are constructed using the <code>getInstance</code> factory methods
+ * are constructed using the {@code getInstance} factory methods
  * (static methods that return instances of a given class).
  *
  * <P>The object that will generate the parameters can be initialized
@@ -61,17 +61,17 @@ import java.security.spec.AlgorithmParameterSpec;
  *
  * <P>In case the client does not explicitly initialize the
  * AlgorithmParameterGenerator
- * (via a call to an <code>init</code> method), each provider must supply (and
+ * (via a call to an {@code init} method), each provider must supply (and
  * document) a default initialization. For example, the Sun provider uses a
  * default modulus prime size of 1024 bits for the generation of DSA
  * parameters.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>AlgorithmParameterGenerator</code> algorithms and
+ * following standard {@code AlgorithmParameterGenerator} algorithms and
  * keysizes in parentheses:
  * <ul>
- * <li><tt>DiffieHellman</tt> (1024)</li>
- * <li><tt>DSA</tt> (1024)</li>
+ * <li>{@code DiffieHellman} (1024)</li>
+ * <li>{@code DSA} (1024)</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
@@ -272,11 +272,11 @@ public class AlgorithmParameterGenerator {
 
     /**
      * Initializes this parameter generator for a certain size.
-     * To create the parameters, the <code>SecureRandom</code>
+     * To create the parameters, the {@code SecureRandom}
      * implementation of the highest-priority installed provider is used as
      * the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * <code>SecureRandom</code>, a system-provided source of randomness is
+     * {@code SecureRandom}, a system-provided source of randomness is
      * used.)
      *
      * @param size the size (number of bits).
@@ -299,11 +299,11 @@ public class AlgorithmParameterGenerator {
     /**
      * Initializes this parameter generator with a set of algorithm-specific
      * parameter generation values.
-     * To generate the parameters, the <code>SecureRandom</code>
+     * To generate the parameters, the {@code SecureRandom}
      * implementation of the highest-priority installed provider is used as
      * the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * <code>SecureRandom</code>, a system-provided source of randomness is
+     * {@code SecureRandom}, a system-provided source of randomness is
      * used.)
      *
      * @param genParamSpec the set of algorithm-specific parameter generation values.

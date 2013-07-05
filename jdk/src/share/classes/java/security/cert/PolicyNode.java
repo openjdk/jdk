@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.util.Set;
  *
  * <p>Most applications will not need to examine the valid policy tree.
  * They can achieve their policy processing goals by setting the
- * policy-related parameters in <code>PKIXParameters</code>. However,
+ * policy-related parameters in {@code PKIXParameters}. However,
  * the valid policy tree is available for more sophisticated applications,
  * especially those that process policy qualifiers.
  *
@@ -50,12 +50,12 @@ import java.util.Set;
  * valid policy tree. The tree can be traversed using the
  * {@link #getChildren getChildren} and {@link #getParent getParent} methods.
  * Data about a particular node can be retrieved using other methods of
- * <code>PolicyNode</code>.
+ * {@code PolicyNode}.
  *
  * <p><b>Concurrent Access</b>
- * <p>All <code>PolicyNode</code> objects must be immutable and
+ * <p>All {@code PolicyNode} objects must be immutable and
  * thread-safe. Multiple threads may concurrently invoke the methods defined
- * in this class on a single <code>PolicyNode</code> object (or more than one)
+ * in this class on a single {@code PolicyNode} object (or more than one)
  * with no ill effects. This stipulation applies to all public fields and
  * methods of this class and any added or overridden by subclasses.
  *
@@ -65,10 +65,10 @@ import java.util.Set;
 public interface PolicyNode {
 
     /**
-     * Returns the parent of this node, or <code>null</code> if this is the
+     * Returns the parent of this node, or {@code null} if this is the
      * root node.
      *
-     * @return the parent of this node, or <code>null</code> if this is the
+     * @return the parent of this node, or {@code null} if this is the
      * root node
      */
     PolicyNode getParent();
@@ -76,8 +76,8 @@ public interface PolicyNode {
     /**
      * Returns an iterator over the children of this node. Any attempts to
      * modify the children of this node through the
-     * <code>Iterator</code>'s remove method must throw an
-     * <code>UnsupportedOperationException</code>.
+     * {@code Iterator}'s remove method must throw an
+     * {@code UnsupportedOperationException}.
      *
      * @return an iterator over the children of this node
      */
@@ -94,7 +94,7 @@ public interface PolicyNode {
     /**
      * Returns the valid policy represented by this node.
      *
-     * @return the <code>String</code> OID of the valid policy
+     * @return the {@code String} OID of the valid policy
      * represented by this node. For the root node, this method always returns
      * the special anyPolicy OID: "2.5.29.32.0".
      */
@@ -104,9 +104,9 @@ public interface PolicyNode {
      * Returns the set of policy qualifiers associated with the
      * valid policy represented by this node.
      *
-     * @return an immutable <code>Set</code> of
-     * <code>PolicyQualifierInfo</code>s. For the root node, this
-     * is always an empty <code>Set</code>.
+     * @return an immutable {@code Set} of
+     * {@code PolicyQualifierInfo}s. For the root node, this
+     * is always an empty {@code Set}.
      */
     Set<? extends PolicyQualifierInfo> getPolicyQualifiers();
 
@@ -114,9 +114,9 @@ public interface PolicyNode {
      * Returns the set of expected policies that would satisfy this
      * node's valid policy in the next certificate to be processed.
      *
-     * @return an immutable <code>Set</code> of expected policy
-     * <code>String</code> OIDs. For the root node, this method
-     * always returns a <code>Set</code> with one element, the
+     * @return an immutable {@code Set} of expected policy
+     * {@code String} OIDs. For the root node, this method
+     * always returns a {@code Set} with one element, the
      * special anyPolicy OID: "2.5.29.32.0".
      */
     Set<String> getExpectedPolicies();
@@ -125,8 +125,8 @@ public interface PolicyNode {
      * Returns the criticality indicator of the certificate policy extension
      * in the most recently processed certificate.
      *
-     * @return <code>true</code> if extension marked critical,
-     * <code>false</code> otherwise. For the root node, <code>false</code>
+     * @return {@code true} if extension marked critical,
+     * {@code false} otherwise. For the root node, {@code false}
      * is always returned.
      */
     boolean isCritical();

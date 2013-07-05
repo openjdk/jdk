@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.sql.*;
  * A factory for {@code XAConnection} objects that is used internally.
  * An object that implements the {@code XADataSource} interface is
  * typically registered with a naming service that uses the
- * Java Naming and Directory Interface<sup><font size=-3>TM</font></sup>
+ * Java Naming and Directory Interface&trade;
  * (JNDI).
  *  <p>
  * An implementation of {@code XADataSource} must include a public no-arg
