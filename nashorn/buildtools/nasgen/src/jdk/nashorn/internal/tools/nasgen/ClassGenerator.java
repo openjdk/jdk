@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.tools.nasgen;
 
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -164,7 +165,6 @@ public class ClassGenerator {
         mi.visitCode();
         mi.pushNull();
         mi.putStatic(className, MAP_FIELD_NAME, MAP_DESC);
-        mi.loadClass(className);
         mi.invokeStatic(MAP_TYPE, MAP_NEWMAP, MAP_NEWMAP_DESC);
         // stack: PropertyMap
     }
@@ -236,7 +236,7 @@ public class ClassGenerator {
 
     static void addMapField(final ClassVisitor cv) {
         // add a MAP static field
-        final FieldVisitor fv = cv.visitField(ACC_PRIVATE | ACC_STATIC,
+        final FieldVisitor fv = cv.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
             MAP_FIELD_NAME, MAP_DESC, null, null);
         if (fv != null) {
             fv.visitEnd();

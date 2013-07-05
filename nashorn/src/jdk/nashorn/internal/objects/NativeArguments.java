@@ -64,7 +64,7 @@ public final class NativeArguments extends ScriptObject {
     private static final PropertyMap map$;
 
     static {
-        PropertyMap map = PropertyMap.newMap(NativeArguments.class);
+        PropertyMap map = PropertyMap.newMap();
         map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
         map = Lookup.newProperty(map, "callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE);
         map$ = map;

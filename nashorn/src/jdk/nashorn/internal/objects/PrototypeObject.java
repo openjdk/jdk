@@ -52,7 +52,7 @@ public class PrototypeObject extends ScriptObject {
     private static final MethodHandle SET_CONSTRUCTOR = findOwnMH("setConstructor", void.class, Object.class, Object.class);
 
     static {
-        PropertyMap map = PropertyMap.newMap(PrototypeObject.class);
+        PropertyMap map = PropertyMap.newMap();
         map = Lookup.newProperty(map, "constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR);
         map$ = map;
     }

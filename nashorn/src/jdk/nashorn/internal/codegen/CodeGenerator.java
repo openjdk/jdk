@@ -179,6 +179,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private static final DebugLogger LOG   = new DebugLogger("codegen", "nashorn.codegen.debug");
 
+    /** From what size should we use spill instead of fields for JavaScript objects? */
+    private static final int OBJECT_SPILL_THRESHOLD = 300;
 
     /**
      * Constructor.
@@ -942,7 +944,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * Create a new object based on the symbols and values, generate
              * bootstrap code for object
              */
-            final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
+            new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
                 @Override
                 protected void loadValue(final Symbol value) {
                     method.load(value);
@@ -956,8 +958,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         m.loadNull();
                     }
                 }
-            };
-            foc.makeObject(method);
+            }.makeObject(method);
 
             // runScript(): merge scope into global
             if (isFunctionBody && function.isProgram()) {
@@ -1320,7 +1321,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return method;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public boolean enterLiteralNode(final LiteralNode literalNode) {
         assert literalNode.getSymbol() != null : literalNode + " has no symbol";
@@ -1352,73 +1352,71 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             values.add(value);
         }
 
-        new FieldObjectCreator<Node>(this, keys, symbols, values) {
-            @Override
-            protected void loadValue(final Node node) {
-                load(node);
-            }
+        if (elements.size() > OBJECT_SPILL_THRESHOLD) {
+            new SpillObjectCreator(this, keys, symbols, values).makeObject(method);
+        } else {
+            new FieldObjectCreator<Node>(this, keys, symbols, values) {
+                @Override
+                protected void loadValue(final Node node) {
+                    load(node);
+                }
 
-            /**
-             * Ensure that the properties start out as object types so that
-             * we can do putfield initializations instead of dynamicSetIndex
-             * which would be the case to determine initial property type
-             * otherwise.
-             *
-             * Use case, it's very expensive to do a million var x = {a:obj, b:obj}
-             * just to have to invalidate them immediately on initialization
-             *
-             * see NASHORN-594
-             */
-            @Override
-            protected MapCreator newMapCreator(final Class<?> fieldObjectClass) {
-                return new MapCreator(fieldObjectClass, keys, symbols) {
-                    @Override
-                    protected int getPropertyFlags(final Symbol symbol, final boolean isVarArg) {
-                        return super.getPropertyFlags(symbol, isVarArg) | Property.IS_ALWAYS_OBJECT;
-                    }
-                };
-            }
+                /**
+                 * Ensure that the properties start out as object types so that
+                 * we can do putfield initializations instead of dynamicSetIndex
+                 * which would be the case to determine initial property type
+                 * otherwise.
+                 *
+                 * Use case, it's very expensive to do a million var x = {a:obj, b:obj}
+                 * just to have to invalidate them immediately on initialization
+                 *
+                 * see NASHORN-594
+                 */
+                @Override
+                protected MapCreator newMapCreator(final Class<?> fieldObjectClass) {
+                    return new MapCreator(fieldObjectClass, keys, symbols) {
+                        @Override
+                        protected int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
+                            return super.getPropertyFlags(symbol, hasArguments) | Property.IS_ALWAYS_OBJECT;
+                        }
+                    };
+                }
 
-        }.makeObject(method);
+            }.makeObject(method);
+        }
 
         method.dup();
         globalObjectPrototype();
         method.invoke(ScriptObject.SET_PROTO);
 
-        if (!hasGettersSetters) {
-            method.store(objectNode.getSymbol());
-            return false;
-        }
+        if (hasGettersSetters) {
+            for (final PropertyNode propertyNode : elements) {
+                final FunctionNode getter       = propertyNode.getGetter();
+                final FunctionNode setter       = propertyNode.getSetter();
 
-        for (final Node element : elements) {
-            final PropertyNode propertyNode = (PropertyNode)element;
-            final Object       key          = propertyNode.getKey();
-            final FunctionNode getter       = propertyNode.getGetter();
-            final FunctionNode setter       = propertyNode.getSetter();
+                if (getter == null && setter == null) {
+                    continue;
+                }
 
-            if (getter == null && setter == null) {
-                continue;
+                method.dup().loadKey(propertyNode.getKey());
+
+                if (getter == null) {
+                    method.loadNull();
+                } else {
+                    getter.accept(this);
+                }
+
+                if (setter == null) {
+                    method.loadNull();
+                } else {
+                    setter.accept(this);
+                }
+
+                method.invoke(ScriptObject.SET_USER_ACCESSORS);
             }
-
-            method.dup().loadKey(key);
-
-            if (getter == null) {
-                method.loadNull();
-            } else {
-                getter.accept(this);
-            }
-
-            if (setter == null) {
-                method.loadNull();
-            } else {
-                setter.accept(this);
-            }
-
-            method.invoke(ScriptObject.SET_USER_ACCESSORS);
         }
 
         method.store(objectNode.getSymbol());
-
         return false;
     }
 
@@ -3183,24 +3181,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
 
-        final boolean isLazy  = functionNode.isLazy();
+        // Generate the object class and property map in case this function is ever used as constructor
+        final String      className          = SCRIPTFUNCTION_IMPL_OBJECT;
+        final int         fieldCount         = ObjectClassGenerator.getPaddedFieldCount(functionNode.countThisProperties());
+        final String      allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount));
+        final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
 
-        new ObjectCreator(this, new ArrayList<String>(), new ArrayList<Symbol>(), false, false) {
-            @Override
-            protected void makeObject(final MethodEmitter m) {
-                final String className = SCRIPTFUNCTION_IMPL_OBJECT;
+        method._new(className).dup();
+        loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), allocatorClassName, allocatorMap));
 
-                m._new(className).dup();
-                loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), Compiler.binaryName(getClassName()), makeMap()));
-
-                if (isLazy || functionNode.needsParentScope()) {
-                    m.loadCompilerConstant(SCOPE);
-                } else {
-                    m.loadNull();
-                }
-                m.invoke(constructorNoLookup(className, RecompilableScriptFunctionData.class, ScriptObject.class));
-            }
-        }.makeObject(method);
+        if (functionNode.isLazy() || functionNode.needsParentScope()) {
+            method.loadCompilerConstant(SCOPE);
+        } else {
+            method.loadNull();
+        }
+        method.invoke(constructorNoLookup(className, RecompilableScriptFunctionData.class, ScriptObject.class));
     }
 
     // calls on Global class.

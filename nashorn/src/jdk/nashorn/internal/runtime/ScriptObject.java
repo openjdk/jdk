@@ -170,7 +170,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
-        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.setMap(map == null ? PropertyMap.newMap() : map);
     }
 
     /**
@@ -188,7 +188,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
-        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.setMap(map == null ? PropertyMap.newMap() : map);
         this.proto = proto;
 
         if (proto != null) {

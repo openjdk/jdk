@@ -54,7 +54,7 @@ public final class NativeStrictArguments extends ScriptObject {
     private static final PropertyMap map$;
 
     static {
-        PropertyMap map = PropertyMap.newMap(NativeStrictArguments.class);
+        PropertyMap map = PropertyMap.newMap();
         map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
         // In strict mode, the caller and callee properties should throw TypeError
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.

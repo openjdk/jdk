@@ -33,7 +33,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  */
 public class JO extends ScriptObject {
 
-    private static final PropertyMap map$ = PropertyMap.newMap(JO.class);
+    private static final PropertyMap map$ = PropertyMap.newMap();
 
     /**
      * Returns the initial property map to be used.

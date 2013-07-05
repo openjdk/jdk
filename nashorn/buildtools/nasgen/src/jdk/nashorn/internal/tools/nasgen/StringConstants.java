@@ -96,12 +96,10 @@ public interface StringConstants {
     static final String MAP_TYPE = TYPE_PROPERTYMAP.getInternalName();
     static final String MAP_DESC = TYPE_PROPERTYMAP.getDescriptor();
     static final String MAP_NEWMAP = "newMap";
-    static final String MAP_NEWMAP_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP, TYPE_CLASS);
+    static final String MAP_NEWMAP_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP);
     static final String MAP_DUPLICATE = "duplicate";
     static final String MAP_DUPLICATE_DESC = Type.getMethodDescriptor(TYPE_PROPERTYMAP);
-    static final String MAP_SETFLAGS = "setFlags";
     static final String LOOKUP_TYPE = TYPE_LOOKUP.getInternalName();
-    static final String LOOKUP_GETMETHOD = "getMethod";
     static final String LOOKUP_NEWPROPERTY = "newProperty";
     static final String LOOKUP_NEWPROPERTY_DESC =
         Type.getMethodDescriptor(TYPE_PROPERTYMAP, TYPE_PROPERTYMAP, TYPE_STRING, Type.INT_TYPE, TYPE_METHODHANDLE, TYPE_METHODHANDLE);
