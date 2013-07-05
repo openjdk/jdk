@@ -60,6 +60,8 @@ public final class NativeJava {
     private static PropertyMap $nasgenmap$;
 
     private NativeJava() {
+        // don't create me
+        throw new UnsupportedOperationException();
     }
 
     /**

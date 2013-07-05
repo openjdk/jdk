@@ -150,7 +150,7 @@ public final class NativeUint16Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getUint16ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getUint16ArrayPrototype();
     }
 }

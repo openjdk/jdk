@@ -62,8 +62,9 @@ public final class NativeJSON extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeJSON() {
-        super(Global.objectPrototype(), $nasgenmap$);
+    private NativeJSON() {
+        // don't create me!!
+        throw new UnsupportedOperationException();
     }
 
     /**

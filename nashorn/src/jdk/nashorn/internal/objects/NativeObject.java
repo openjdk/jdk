@@ -58,6 +58,8 @@ public final class NativeObject {
     private static PropertyMap $nasgenmap$;
 
     private NativeObject() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     private static ECMAException notAnObject(final Object obj) {

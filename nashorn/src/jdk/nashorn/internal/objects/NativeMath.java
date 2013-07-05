@@ -45,8 +45,9 @@ public final class NativeMath extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeMath() {
-        super(Global.objectPrototype(), $nasgenmap$);
+    private NativeMath() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     /** ECMA 15.8.1.1 - E, always a double constant. Not writable or configurable */

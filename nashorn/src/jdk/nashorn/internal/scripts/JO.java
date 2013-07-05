@@ -36,10 +36,11 @@ public class JO extends ScriptObject {
     private static final PropertyMap map$ = PropertyMap.newMap(JO.class);
 
     /**
-     * Constructor
+     * Returns the initial property map to be used.
+     * @return the initial property map.
      */
-    public JO() {
-        super(map$);
+    public static PropertyMap getInitialMap() {
+        return map$;
     }
 
     /**
@@ -52,16 +53,17 @@ public class JO extends ScriptObject {
     }
 
     /**
-     * Constructor given an initial prototype using the default property map
+     * Constructor given an initial prototype and an initial property map.
      *
      * @param proto the prototype object
+     * @param map the property map
      */
-    public JO(final ScriptObject proto) {
-        super(proto, map$);
+    public JO(final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
     }
 
     /**
-     * Used by FunctionObjectCreator. A method handle of this method is passed to the ScriptFunction constructor.
+     * A method handle of this method is passed to the ScriptFunction constructor.
      *
      * @param map  the property map to use for allocatorMap
      *

@@ -57,8 +57,17 @@ public class PrototypeObject extends ScriptObject {
         map$ = map;
     }
 
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
+    private PrototypeObject(final Global global, final PropertyMap map) {
+        super(map != map$? map.addAll(global.getPrototypeObjectMap()) : global.getPrototypeObjectMap());
+        setProto(global.getObjectPrototype());
+    }
+
     PrototypeObject() {
-        this(map$);
+        this(Global.instance(), map$);
     }
 
     /**
@@ -67,12 +76,11 @@ public class PrototypeObject extends ScriptObject {
      * @param map property map
      */
     public PrototypeObject(final PropertyMap map) {
-        super(map != map$ ? map.addAll(map$) : map$);
-        setProto(Global.objectPrototype());
+        this(Global.instance(), map);
     }
 
     PrototypeObject(final ScriptFunction func) {
-        this(map$);
+        this(Global.instance(), map$);
         this.constructor = func;
     }
 
@@ -107,10 +115,6 @@ public class PrototypeObject extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(PrototypeObject.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), PrototypeObject.class, name, MH.type(rtype, types));
     }
 }

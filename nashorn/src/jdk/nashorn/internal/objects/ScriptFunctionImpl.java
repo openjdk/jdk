@@ -53,8 +53,25 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // property map for non-strict, non-bound functions.
     private static final PropertyMap map$;
 
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
+    static PropertyMap getInitialStrictMap() {
+        return strictmodemap$;
+    }
+
+    static PropertyMap getInitialBoundMap() {
+        return boundfunctionmap$;
+    }
+
     // Marker object for lazily initialized prototype object
     private static final Object LAZY_PROTOTYPE = new Object();
+
+    private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs, final Global global) {
+        super(name, invokeHandle, global.getFunctionMap(), null, specs, false, true, true);
+        init(global);
+    }
 
     /**
      * Constructor called by Nasgen generated code, no membercount, use the default map.
@@ -65,8 +82,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs) {
-        super(name, invokeHandle, map$, null, specs, false, true, true);
-        init();
+        this(name, invokeHandle, specs, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs, final Global global) {
+        super(name, invokeHandle, map.addAll(global.getFunctionMap()), null, specs, false, true, true);
+        init(global);
     }
 
     /**
@@ -79,8 +100,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs) {
-        super(name, invokeHandle, map.addAll(map$), null, specs, false, true, true);
-        init();
+        this(name, invokeHandle, map, specs, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor, final Global global) {
+        super(name, methodHandle, getMap(global, isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
+        init(global);
     }
 
     /**
@@ -95,8 +120,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param isConstructor can the function be used as a constructor (most can; some built-ins are restricted).
      */
     ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        super(name, methodHandle, getMap(isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
-        init();
+        this(name, methodHandle, scope, specs, isStrict, isBuiltin, isConstructor, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope, final Global global) {
+        super(data, getMap(global, data.isStrict()), scope);
+        init(global);
     }
 
     /**
@@ -106,17 +135,17 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param scope scope object
      */
     public ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope) {
-        super(data, getMap(data.isStrict()), scope);
-        init();
+        this(data, scope, Global.instance());
     }
 
     /**
      * Only invoked internally from {@link BoundScriptFunctionImpl} constructor.
      * @param data the script function data for the bound function.
+     * @param global the global object
      */
-    ScriptFunctionImpl(final ScriptFunctionData data) {
-        super(data, boundfunctionmap$, null);
-        init();
+    ScriptFunctionImpl(final ScriptFunctionData data, final Global global) {
+        super(data, global.getBoundFunctionMap(), null);
+        init(global);
     }
 
     static {
@@ -159,8 +188,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     // Choose the map based on strict mode!
-    private static PropertyMap getMap(final boolean strict) {
-        return strict ? strictmodemap$ : map$;
+    private static PropertyMap getMap(final Global global, final boolean strict) {
+        return strict ? global.getStrictFunctionMap() : global.getFunctionMap();
     }
 
     private static PropertyMap createBoundFunctionMap(final PropertyMap strictModeMap) {
@@ -255,8 +284,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     // Internals below..
-    private void init() {
-        this.setProto(Global.instance().getFunctionPrototype());
+    private void init(final Global global) {
+        this.setProto(global.getFunctionPrototype());
         this.prototype = LAZY_PROTOTYPE;
 
         // We have to fill user accessor functions late as these are stored

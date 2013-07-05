@@ -40,12 +40,17 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 abstract class ArrayBufferView extends ScriptObject {
 
     // initialized by nasgen
-    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
 
     ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
         checkConstructorArgs(buffer, byteOffset, elementLength);
-        this.setProto(getPrototype());
+        final Global global = Global.instance();
+        this.setMap(global.getArrayBufferViewMap());
+        this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));
     }
 
@@ -283,7 +288,7 @@ abstract class ArrayBufferView extends ScriptObject {
 
     protected abstract Factory factory();
 
-    protected abstract ScriptObject getPrototype();
+    protected abstract ScriptObject getPrototype(final Global global);
 
     protected boolean isFloatArray() {
         return false;

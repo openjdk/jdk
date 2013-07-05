@@ -192,7 +192,7 @@ public final class NativeFloat32Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getFloat32ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getFloat32ArrayPrototype();
     }
 }

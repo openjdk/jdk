@@ -1027,6 +1027,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Set the current context.
+     * @param ctx context instance to set
+     */
+    protected final void setContext(final Context ctx) {
+        ctx.getClass();
+        this.context = ctx;
+    }
+
+    /**
      * Return the map of an object.
      * @return PropertyMap object.
      */

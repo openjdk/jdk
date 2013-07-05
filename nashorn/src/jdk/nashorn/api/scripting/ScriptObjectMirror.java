@@ -308,9 +308,9 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public void putAll(final Map<? extends String, ? extends Object> map) {
         final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
-        final boolean strict = sobj.isStrictContext();
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
+                final boolean strict = global.isStrictContext();
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
                     final Object value = entry.getValue();
                     final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
