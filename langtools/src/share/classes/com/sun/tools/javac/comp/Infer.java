@@ -418,6 +418,7 @@ public class Infer {
     void checkWithinBounds(InferenceContext inferenceContext,
                              Warner warn) throws InferenceException {
         MultiUndetVarListener mlistener = new MultiUndetVarListener(inferenceContext.undetvars);
+        List<Type> saved_undet = inferenceContext.save();
         try {
             while (true) {
                 mlistener.reset();
@@ -443,6 +444,9 @@ public class Infer {
         }
         finally {
             mlistener.detach();
+            if (mlistener.rounds == MAX_INCORPORATION_STEPS) {
+                inferenceContext.rollback(saved_undet);
+            }
         }
     }
     //where
@@ -645,7 +649,7 @@ public class Infer {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha <: beta
                         //0. set beta :> alpha
-                        uv2.addBound(InferenceBound.LOWER, uv.qtype, infer.types);
+                        uv2.addBound(InferenceBound.LOWER, uv, infer.types);
                         //1. copy alpha's lower to beta's
                         for (Type l : uv.getBounds(InferenceBound.LOWER)) {
                             uv2.addBound(InferenceBound.LOWER, inferenceContext.asInstType(l), infer.types);
@@ -670,7 +674,7 @@ public class Infer {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha :> beta
                         //0. set beta <: alpha
-                        uv2.addBound(InferenceBound.UPPER, uv.qtype, infer.types);
+                        uv2.addBound(InferenceBound.UPPER, uv, infer.types);
                         //1. copy alpha's upper to beta's
                         for (Type u : uv.getBounds(InferenceBound.UPPER)) {
                             uv2.addBound(InferenceBound.UPPER, inferenceContext.asInstType(u), infer.types);
@@ -695,7 +699,7 @@ public class Infer {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
                         //alpha == beta
                         //0. set beta == alpha
-                        uv2.addBound(InferenceBound.EQ, uv.qtype, infer.types);
+                        uv2.addBound(InferenceBound.EQ, uv, infer.types);
                         //1. copy all alpha's bounds to beta's
                         for (InferenceBound ib : InferenceBound.values()) {
                             for (Type b2 : uv.getBounds(ib)) {
@@ -1090,7 +1094,7 @@ public class Infer {
             while (!sstrategy.done()) {
                 InferenceGraph.Node nodeToSolve = sstrategy.pickNode(inferenceGraph);
                 List<Type> varsToSolve = List.from(nodeToSolve.data);
-                inferenceContext.save();
+                List<Type> saved_undet = inferenceContext.save();
                 try {
                     //repeat until all variables are solved
                     outer: while (Type.containsAny(inferenceContext.restvars(), varsToSolve)) {
@@ -1107,7 +1111,7 @@ public class Infer {
                 }
                 catch (InferenceException ex) {
                     //did we fail because of interdependent ivars?
-                    inferenceContext.rollback();
+                    inferenceContext.rollback(saved_undet);
                     instantiateAsUninferredVars(varsToSolve, inferenceContext);
                     checkWithinBounds(inferenceContext, warn);
                 }
@@ -1502,7 +1506,7 @@ public class Infer {
         /**
          * Save the state of this inference context
          */
-        void save() {
+        List<Type> save() {
             ListBuffer<Type> buf = ListBuffer.lb();
             for (Type t : undetvars) {
                 UndetVar uv = (UndetVar)t;
@@ -1515,16 +1519,24 @@ public class Infer {
                 uv2.inst = uv.inst;
                 buf.add(uv2);
             }
-            saved_undet = buf.toList();
+            return buf.toList();
         }
 
         /**
          * Restore the state of this inference context to the previous known checkpoint
          */
-        void rollback() {
-            Assert.check(saved_undet != null && saved_undet.length() == undetvars.length());
-            undetvars = saved_undet;
-            saved_undet = null;
+        void rollback(List<Type> saved_undet) {
+             Assert.check(saved_undet != null && saved_undet.length() == undetvars.length());
+            //restore bounds (note: we need to preserve the old instances)
+            for (Type t : undetvars) {
+                UndetVar uv = (UndetVar)t;
+                UndetVar uv_saved = (UndetVar)saved_undet.head;
+                for (InferenceBound ib : InferenceBound.values()) {
+                    uv.setBounds(ib, uv_saved.getBounds(ib));
+                }
+                uv.inst = uv_saved.inst;
+                saved_undet = saved_undet.tail;
+            }
         }
 
         /**
