@@ -941,6 +941,10 @@ public class DeferredAttr extends JCTree.Visitor {
                     attribSpeculative(rec, env, attr.unknownTypeExprInfo).type :
                     env.enclClass.sym.type;
 
+            while (site.hasTag(TYPEVAR)) {
+                site = site.getUpperBound();
+            }
+
             ListBuffer<Type> args = ListBuffer.lb();
             for (int i = 0; i < tree.args.length(); i ++) {
                 args.append(Type.noType);
