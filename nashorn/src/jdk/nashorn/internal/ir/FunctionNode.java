@@ -160,6 +160,10 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     /** Does a nested function contain eval? If it does, then all variables in this function might be get/set by it. */
     public static final int HAS_NESTED_EVAL = 1 << 6;
 
+    /** Does this function have any blocks that create a scope? This is used to determine if the function needs to
+     * have a local variable slot for the scope symbol. */
+    public static final int HAS_SCOPE_BLOCK = 1 << 7;
+
     /**
      * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
      * name. This precludes it from needing to have an Arguments object defined as "arguments" local variable. Note that
@@ -577,7 +581,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if(this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags | (body.needsScope() ? FunctionNode.HAS_SCOPE_BLOCK : 0), name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -635,6 +639,14 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public int countThisProperties() {
         return thisProperties == null ? 0 : thisProperties.size();
+    }
+
+    /**
+     * Returns true if any of the blocks in this function create their own scope.
+     * @return true if any of the blocks in this function create their own scope.
+     */
+    public boolean hasScopeBlock() {
+        return getFlag(HAS_SCOPE_BLOCK);
     }
 
     /**

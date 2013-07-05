@@ -881,9 +881,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final FunctionNode function = lc.getCurrentFunction();
         if (isFunctionBody) {
-            /* Fix the predefined slots so they have numbers >= 0, like varargs. */
-            if (function.needsParentScope()) {
-                initParentScope();
+            if(method.hasScope()) {
+                if (function.needsParentScope()) {
+                    method.loadCompilerConstant(CALLEE);
+                    method.invoke(ScriptFunction.GET_SCOPE);
+                } else {
+                    assert function.hasScopeBlock();
+                    method.loadNull();
+                }
+                method.storeCompilerConstant(SCOPE);
             }
             if (function.needsArguments()) {
                 initArguments(function);
@@ -949,15 +955,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 protected void loadValue(final Symbol value) {
                     method.load(value);
                 }
-
-                @Override
-                protected void loadScope(MethodEmitter m) {
-                    if (function.needsParentScope()) {
-                        m.loadCompilerConstant(SCOPE);
-                    } else {
-                        m.loadNull();
-                    }
-                }
             }.makeObject(method);
 
             // runScript(): merge scope into global
@@ -996,12 +993,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.load(function.getParameters().size());
         globalAllocateArguments();
         method.storeCompilerConstant(ARGUMENTS);
-    }
-
-    private void initParentScope() {
-        method.loadCompilerConstant(CALLEE);
-        method.invoke(ScriptFunction.GET_SCOPE);
-        method.storeCompilerConstant(SCOPE);
     }
 
     @Override

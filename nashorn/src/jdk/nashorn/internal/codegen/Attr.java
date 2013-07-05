@@ -54,7 +54,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -343,10 +342,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         catchNestingLevel++;
 
         // define block-local exception variable
-        final Symbol def = defineSymbol(block, exception.getName(), IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
+        final String exname = exception.getName();
+        final Symbol def = defineSymbol(block, exname, IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
         newType(def, Type.OBJECT); //we can catch anything, not just ecma exceptions
 
-        addLocalDef(exception.getName());
+        addLocalDef(exname);
 
         return true;
     }
@@ -678,7 +678,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
             if (scopeBlock != null) {
                 assert lc.contains(scopeBlock);
-                lc.setFlag(scopeBlock, Block.NEEDS_SCOPE);
+                lc.setBlockNeedsScope(scopeBlock);
             }
         }
     }

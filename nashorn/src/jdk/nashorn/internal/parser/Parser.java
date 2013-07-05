@@ -2957,7 +2957,7 @@ loop:
             } else {
                 lc.setFlag(fn, FunctionNode.HAS_NESTED_EVAL);
             }
-            lc.setFlag(lc.getFunctionBody(fn), Block.NEEDS_SCOPE);
+            lc.setBlockNeedsScope(lc.getFunctionBody(fn));
         }
     }
 
