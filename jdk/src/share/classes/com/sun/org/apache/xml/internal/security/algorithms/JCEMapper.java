@@ -115,6 +115,18 @@ public class JCEMapper {
             new Algorithm("", "SHA1withECDSA", "Signature")
         );
         algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA256,
+            new Algorithm("", "SHA256withECDSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA384,
+            new Algorithm("", "SHA384withECDSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA512,
+            new Algorithm("", "SHA512withECDSA", "Signature")
+        );
+        algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_NOT_RECOMMENDED_MD5,
             new Algorithm("", "HmacMD5", "Mac")
         );
@@ -155,11 +167,27 @@ public class JCEMapper {
             new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 256)
         );
         algorithmsMap.put(
+            XMLCipher.AES_128_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 128)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_192_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 192)
+        );
+        algorithmsMap.put(
+            XMLCipher.AES_256_GCM,
+            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 256)
+        );
+        algorithmsMap.put(
             XMLCipher.RSA_v1dot5,
             new Algorithm("RSA", "RSA/ECB/PKCS1Padding", "KeyTransport")
         );
         algorithmsMap.put(
             XMLCipher.RSA_OAEP,
+            new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
+        );
+        algorithmsMap.put(
+            XMLCipher.RSA_OAEP_11,
             new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
         );
         algorithmsMap.put(
