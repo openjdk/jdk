@@ -52,13 +52,13 @@ abstract class Striped64 extends Number {
      * accessed directly by subclasses.
      *
      * Table entries are of class Cell; a variant of AtomicLong padded
-     * to reduce cache contention on most processors. Padding is
-     * overkill for most Atomics because they are usually irregularly
-     * scattered in memory and thus don't interfere much with each
-     * other. But Atomic objects residing in arrays will tend to be
-     * placed adjacent to each other, and so will most often share
-     * cache lines (with a huge negative performance impact) without
-     * this precaution.
+     * (via @sun.misc.Contended) to reduce cache contention. Padding
+     * is overkill for most Atomics because they are usually
+     * irregularly scattered in memory and thus don't interfere much
+     * with each other. But Atomic objects residing in arrays will
+     * tend to be placed adjacent to each other, and so will most
+     * often share cache lines (with a huge negative performance
+     * impact) without this precaution.
      *
      * In part because Cells are relatively large, we avoid creating
      * them until they are needed.  When there is no contention, all
@@ -112,18 +112,13 @@ abstract class Striped64 extends Number {
 
     /**
      * Padded variant of AtomicLong supporting only raw accesses plus CAS.
-     * The value field is placed between pads, hoping that the JVM doesn't
-     * reorder them.
      *
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
      */
-    static final class Cell {
-        volatile long p0, p1, p2, p3, p4, p5, p6;
+    @sun.misc.Contended static final class Cell {
         volatile long value;
-        volatile long q0, q1, q2, q3, q4, q5, q6;
         Cell(long x) { value = x; }
-
         final boolean cas(long cmp, long val) {
             return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
         }

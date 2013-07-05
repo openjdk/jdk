@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,9 +403,9 @@ public final class Short extends Number implements Comparable<Short> {
      * Returns a hash code for a {@code short} value; compatible with
      * {@code Short.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code short} value.
+     * @since 1.8
      */
     public static int hashCode(short value) {
         return (int)value;
@@ -482,6 +482,7 @@ public final class Short extends Number implements Comparable<Short> {
      * Returns the value obtained by reversing the order of the bytes in the
      * two's complement representation of the specified {@code short} value.
      *
+     * @param i the value whose bytes are to be reversed
      * @return the value obtained by reversing (or, equivalently, swapping)
      *     the bytes in the specified {@code short} value.
      * @since 1.5

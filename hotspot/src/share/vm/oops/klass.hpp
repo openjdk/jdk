@@ -703,8 +703,8 @@ class Klass : public Metadata {
   virtual const char* internal_name() const = 0;
 
   // Verification
-  virtual void verify_on(outputStream* st);
-  void verify() { verify_on(tty); }
+  virtual void verify_on(outputStream* st, bool check_dictionary);
+  void verify(bool check_dictionary = true) { verify_on(tty, check_dictionary); }
 
 #ifndef PRODUCT
   void verify_vtable_index(int index);

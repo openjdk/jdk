@@ -144,7 +144,7 @@ public interface Driver {
 
     /**
      * Reports whether this driver is a genuine JDBC
-     * Compliant<sup><font size=-2>TM</font></sup> driver.
+     * Compliant&trade; driver.
      * A driver may only report <code>true</code> here if it passes the JDBC
      * compliance tests; otherwise it is required to return <code>false</code>.
      * <P>
@@ -173,7 +173,8 @@ public interface Driver {
      * In the worst case, this may be the root Logger.
      *
      * @return the parent Logger for this driver
-     * @throws SQLFeatureNotSupportedException if the driver does not use <code>java.util.logging<code>.
+     * @throws SQLFeatureNotSupportedException if the driver does not use
+     * {@code java.util.logging}.
      * @since 1.7
      */
     public Logger getParentLogger() throws SQLFeatureNotSupportedException;

@@ -38,6 +38,10 @@ class CGIClientException extends Exception {
     public CGIClientException(String s) {
         super(s);
     }
+
+    public CGIClientException(String s, Throwable cause) {
+        super(s, cause);
+    }
 }
 
 /**
@@ -49,6 +53,10 @@ class CGIServerException extends Exception {
 
     public CGIServerException(String s) {
         super(s);
+    }
+
+    public CGIServerException(String s, Throwable cause) {
+        super(s, cause);
     }
 }
 
@@ -148,13 +156,16 @@ public final class CGIHandler {
                 try {
                     handler.execute(param);
                 } catch (CGIClientException e) {
+                    e.printStackTrace();
                     returnClientError(e.getMessage());
                 } catch (CGIServerException e) {
+                    e.printStackTrace();
                     returnServerError(e.getMessage());
                 }
             else
                 returnClientError("invalid command.");
         } catch (Exception e) {
+            e.printStackTrace();
             returnServerError("internal error: " + e.getMessage());
         }
         System.exit(0);
@@ -225,7 +236,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             port = Integer.parseInt(param);
         } catch (NumberFormatException e) {
-            throw new CGIClientException("invalid port number.");
+            throw new CGIClientException("invalid port number.", e);
         }
         if (port <= 0 || port > 0xFFFF)
             throw new CGIClientException("invalid port: " + port);
@@ -238,7 +249,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             socket = new Socket(InetAddress.getLocalHost(), port);
         } catch (IOException e) {
-            throw new CGIServerException("could not connect to local port");
+            throw new CGIServerException("could not connect to local port", e);
         }
 
         /*
@@ -249,9 +260,9 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             clientIn.readFully(buffer);
         } catch (EOFException e) {
-            throw new CGIClientException("unexpected EOF reading request body");
+            throw new CGIClientException("unexpected EOF reading request body", e);
         } catch (IOException e) {
-            throw new CGIClientException("error reading request body");
+            throw new CGIClientException("error reading request body", e);
         }
 
         /*
@@ -266,7 +277,7 @@ final class CGIForwardCommand implements CGICommandHandler {
             socketOut.write(buffer);
             socketOut.flush();
         } catch (IOException e) {
-            throw new CGIServerException("error writing to server");
+            throw new CGIServerException("error writing to server", e);
         }
 
         /*
@@ -276,7 +287,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             socketIn = new DataInputStream(socket.getInputStream());
         } catch (IOException e) {
-            throw new CGIServerException("error reading from server");
+            throw new CGIServerException("error reading from server", e);
         }
         String key = "Content-length:".toLowerCase();
         boolean contentLengthFound = false;
@@ -286,7 +297,7 @@ final class CGIForwardCommand implements CGICommandHandler {
             try {
                 line = getLine(socketIn);
             } catch (IOException e) {
-                throw new CGIServerException("error reading from server");
+                throw new CGIServerException("error reading from server", e);
             }
             if (line == null)
                 throw new CGIServerException(
@@ -313,9 +324,9 @@ final class CGIForwardCommand implements CGICommandHandler {
             socketIn.readFully(buffer);
         } catch (EOFException e) {
             throw new CGIServerException(
-                "unexpected EOF reading server response");
+                "unexpected EOF reading server response", e);
         } catch (IOException e) {
-            throw new CGIServerException("error reading from server");
+            throw new CGIServerException("error reading from server", e);
         }
 
         /*
@@ -327,7 +338,7 @@ final class CGIForwardCommand implements CGICommandHandler {
         try {
             System.out.write(buffer);
         } catch (IOException e) {
-            throw new CGIServerException("error writing response");
+            throw new CGIServerException("error writing response", e);
         }
         System.out.flush();
     }

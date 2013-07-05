@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.InputStream;
 
 /**
  * The representation (mapping) in
- * the Java<sup><font size=-2>TM</font></sup> programming
+ * the Java&trade; programming
  * language of an SQL
  * <code>BLOB</code> value.  An SQL <code>BLOB</code> is a built-in type
  * that stores a Binary Large Object as a column value in a row of
