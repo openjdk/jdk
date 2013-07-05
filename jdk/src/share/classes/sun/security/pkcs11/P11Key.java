@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -881,6 +881,29 @@ abstract class P11Key implements Key, Length {
             return super.toString() +  "\n  x: " + x + "\n  p: " + params.getP()
                 + "\n  g: " + params.getG();
         }
+        public int hashCode() {
+            if (token.isValid() == false) {
+                return 0;
+            }
+            fetchValues();
+            return Objects.hash(x, params.getP(), params.getG());
+        }
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            // equals() should never throw exceptions
+            if (token.isValid() == false) {
+                return false;
+            }
+            if (!(obj instanceof DHPrivateKey)) {
+                return false;
+            }
+            fetchValues();
+            DHPrivateKey other = (DHPrivateKey) obj;
+            DHParameterSpec otherParams = other.getParams();
+            return ((this.x.compareTo(other.getX()) == 0) &&
+                    (this.params.getP().compareTo(otherParams.getP()) == 0) &&
+                    (this.params.getG().compareTo(otherParams.getG()) == 0));
+        }
     }
 
     private static final class P11DHPublicKey extends P11Key
@@ -944,6 +967,29 @@ abstract class P11Key implements Key, Length {
             fetchValues();
             return super.toString() +  "\n  y: " + y + "\n  p: " + params.getP()
                 + "\n  g: " + params.getG();
+        }
+        public int hashCode() {
+            if (token.isValid() == false) {
+                return 0;
+            }
+            fetchValues();
+            return Objects.hash(y, params.getP(), params.getG());
+        }
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            // equals() should never throw exceptions
+            if (token.isValid() == false) {
+                return false;
+            }
+            if (!(obj instanceof DHPublicKey)) {
+                return false;
+            }
+            fetchValues();
+            DHPublicKey other = (DHPublicKey) obj;
+            DHParameterSpec otherParams = other.getParams();
+            return ((this.y.compareTo(other.getY()) == 0) &&
+                    (this.params.getP().compareTo(otherParams.getP()) == 0) &&
+                    (this.params.getG().compareTo(otherParams.getG()) == 0));
         }
     }
 
