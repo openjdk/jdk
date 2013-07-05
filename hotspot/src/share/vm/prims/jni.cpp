@@ -5138,9 +5138,21 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
       event.commit();
     }
 
+#ifndef PRODUCT
+  #ifndef TARGET_OS_FAMILY_windows
+    #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
+  #endif
+
     // Check if we should compile all classes on bootclasspath
-    NOT_PRODUCT(if (CompileTheWorld) ClassLoader::compile_the_world();)
-    NOT_PRODUCT(if (ReplayCompiles) ciReplay::replay(thread);)
+    if (CompileTheWorld) ClassLoader::compile_the_world();
+    if (ReplayCompiles) ciReplay::replay(thread);
+
+    // Some platforms (like Win*) need a wrapper around these test
+    // functions in order to properly handle error conditions.
+    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(test_error_handler);
+    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(execute_internal_vm_tests);
+#endif
+
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_and_fence(thread, _thread_in_vm, _thread_in_native);
   } else {
@@ -5157,8 +5169,6 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     OrderAccess::release_store(&vm_created, 0);
   }
 
-  NOT_PRODUCT(test_error_handler(ErrorHandlerTest));
-  NOT_PRODUCT(execute_internal_vm_tests());
   return result;
 }
 
