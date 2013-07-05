@@ -1537,25 +1537,6 @@ public abstract class Symbol implements Element {
                     getKind() == ElementKind.INSTANCE_INIT;
         }
 
-        /**
-         * A polymorphic signature method (JLS SE 7, 8.4.1) is a method that
-         * (i) is declared in the java.lang.invoke.MethodHandle class, (ii) takes
-         * a single variable arity parameter (iii) whose declared type is Object[],
-         * (iv) has a return type of Object and (v) is native.
-         */
-        public boolean isSignaturePolymorphic(Types types) {
-            List<Type> argtypes = type.getParameterTypes();
-            Type firstElemType = argtypes.nonEmpty() ?
-                    types.elemtype(argtypes.head) :
-                    null;
-            return owner == types.syms.methodHandleType.tsym &&
-                    argtypes.length() == 1 &&
-                    firstElemType != null &&
-                    types.isSameType(firstElemType, types.syms.objectType) &&
-                    types.isSameType(type.getReturnType(), types.syms.objectType) &&
-                    (flags() & NATIVE) != 0;
-        }
-
         public Attribute getDefaultValue() {
             return defaultValue;
         }

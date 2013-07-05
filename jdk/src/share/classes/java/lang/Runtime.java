@@ -117,11 +117,11 @@ public class Runtime {
      *
      *   <ul>
      *
-     *   <p> <li> The program <i>exits</i> normally, when the last non-daemon
+     *   <li> The program <i>exits</i> normally, when the last non-daemon
      *   thread exits or when the <tt>{@link #exit exit}</tt> (equivalently,
-     *   <tt>{@link System#exit(int) System.exit}</tt>) method is invoked, or
+     *   {@link System#exit(int) System.exit}) method is invoked, or
      *
-     *   <p> <li> The virtual machine is <i>terminated</i> in response to a
+     *   <li> The virtual machine is <i>terminated</i> in response to a
      *   user interrupt, such as typing <tt>^C</tt>, or a system-wide event,
      *   such as user logoff or system shutdown.
      *
@@ -661,7 +661,7 @@ public class Runtime {
     /**
      * Returns the maximum amount of memory that the Java virtual machine will
      * attempt to use.  If there is no inherent limit then the value {@link
-     * java.lang.Long#MAX_VALUE} will be returned. </p>
+     * java.lang.Long#MAX_VALUE} will be returned.
      *
      * @return  the maximum amount of memory that the virtual machine will
      *          attempt to use, measured in bytes

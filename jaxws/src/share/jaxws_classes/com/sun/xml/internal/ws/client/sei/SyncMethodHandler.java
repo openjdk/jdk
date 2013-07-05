@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,13 @@ import com.sun.xml.internal.ws.client.RequestContext;
 import com.sun.xml.internal.ws.client.ResponseContextReceiver;
 import com.sun.xml.internal.ws.encoding.soap.DeserializationException;
 import com.sun.xml.internal.ws.message.jaxb.JAXBMessage;
+import com.sun.xml.internal.ws.model.JavaMethodImpl;
+import com.sun.xml.internal.ws.resources.DispatchMessages;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.Holder;
+import javax.xml.ws.WebServiceException;
 
 import java.lang.reflect.Method;
 
@@ -60,17 +63,15 @@ import java.lang.reflect.Method;
  * @author Kohsuke Kawaguchi
  */
 final class SyncMethodHandler extends MethodHandler {
-//    private ResponseBuilder responseBuilder;
-
-    SyncMethodHandler(SEIStub owner, Method m) {
-        super(owner, m);
-//        responseBuilder = buildResponseBuilder(method, ValueSetterFactory.SYNC);
+    final boolean isVoid;
+    final boolean isOneway;
+    final JavaMethodImpl javaMethod;
+    SyncMethodHandler(SEIStub owner, JavaMethodImpl jm) {
+        super(owner, jm.getMethod());
+        javaMethod = jm;
+        isVoid = void.class.equals(jm.getMethod().getReturnType());
+        isOneway = jm.getMEP().isOneWay();
     }
-
-//    SyncMethodHandler(SEIStub owner, JavaMethodImpl method) {
-//        super(owner, method);
-//        responseBuilder = buildResponseBuilder(method, ValueSetterFactory.SYNC);
-//    }
 
     Object invoke(Object proxy, Object[] args) throws Throwable {
         return invoke(proxy,args,owner.requestContext,owner);
@@ -87,37 +88,32 @@ final class SyncMethodHandler extends MethodHandler {
      */
     Object invoke(Object proxy, Object[] args, RequestContext rc, ResponseContextReceiver receiver) throws Throwable {
         JavaCallInfo call = owner.databinding.createJavaCallInfo(method, args);
-//      Packet req = new Packet(createRequestMessage(args));
         Packet req = (Packet) owner.databinding.serializeRequest(call);
         // process the message
         Packet reply = owner.doProcess(req,rc,receiver);
 
         Message msg = reply.getMessage();
-        if(msg ==null)
-            // no reply. must have been one-way
+        if(msg == null) {
+            if (!isOneway || !isVoid) {
+                throw new WebServiceException(DispatchMessages.INVALID_RESPONSE());
+            }
             return null;
+        }
 
         try {
-//              return dbHandler.readResponse(reply, call).getReturnValue();
             call = owner.databinding.deserializeResponse(reply, call);
             if (call.getException() != null) {
                 throw call.getException();
             } else {
                 return call.getReturnValue();
             }
-//            if(msg.isFault()) {
-//                SOAPFaultBuilder faultBuilder = SOAPFaultBuilder.create(msg);
-//                throw faultBuilder.createException(checkedExceptions);
-//            } else {
-//                return responseBuilder.readResponse(msg,args);
-//            }
         } catch (JAXBException e) {
-            throw new DeserializationException("failed.to.read.response",e);
+            throw new DeserializationException(DispatchMessages.INVALID_RESPONSE_DESERIALIZATION(), e);
         } catch (XMLStreamException e) {
-            throw new DeserializationException("failed.to.read.response",e);
+            throw new DeserializationException(DispatchMessages.INVALID_RESPONSE_DESERIALIZATION(),e);
         } finally {
-                if (reply.transportBackChannel != null)
-                        reply.transportBackChannel.close();
+            if (reply.transportBackChannel != null)
+                reply.transportBackChannel.close();
         }
     }
 

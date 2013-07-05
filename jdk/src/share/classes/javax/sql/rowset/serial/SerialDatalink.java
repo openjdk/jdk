@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.net.URL;
  *      java.net.URL url = rowset.getURL(1);
  * </pre>
  *
- * <h4> Thread safety </h4>
+ * <h3> Thread safety </h3>
  *
  * A SerialDatalink is not safe for use by multiple concurrent threads.  If a
  * SerialDatalink is to be used by more than one thread then access to the
@@ -77,6 +77,7 @@ public class SerialDatalink implements Serializable, Cloneable {
       * Constructs a new <code>SerialDatalink</code> object from the given
       * <code>java.net.URL</code> object.
       * <P>
+      * @param url the {@code URL} to create the {@code SerialDataLink} from
       * @throws SerialException if url parameter is a null
       */
     public SerialDatalink(URL url) throws SerialException {

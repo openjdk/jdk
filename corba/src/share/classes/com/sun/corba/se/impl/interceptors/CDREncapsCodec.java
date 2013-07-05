@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,8 @@ public final class CDREncapsCodec
         // be versioned.  This can be handled once this work is complete.
 
         // Create output stream with default endianness.
-        EncapsOutputStream cdrOut = new EncapsOutputStream(
+        EncapsOutputStream cdrOut =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream(
             (com.sun.corba.se.spi.orb.ORB)orb, giopVersion );
 
         // This is an encapsulation, so put out the endian:

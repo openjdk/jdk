@@ -24,14 +24,9 @@
  */
 package java.util.stream;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
-import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
-import java.util.function.LongConsumer;
 
 /**
  * Factory for instances of a short-circuiting stateful intermediate operations
@@ -43,6 +38,63 @@ final class SliceOps {
 
     // No instances
     private SliceOps() { }
+
+    /**
+     * Calculates the sliced size given the current size, number of elements
+     * skip, and the number of elements to limit.
+     *
+     * @param size the current size
+     * @param skip the number of elements to skip, assumed to be >= 0
+     * @param limit the number of elements to limit, assumed to be >= 0, with
+     *        a value of {@code Long.MAX_VALUE} if there is no limit
+     * @return the sliced size
+     */
+    private static long calcSize(long size, long skip, long limit) {
+        return size >= 0 ? Math.max(-1, Math.min(size - skip, limit)) : -1;
+    }
+
+    /**
+     * Calculates the slice fence, which is one past the index of the slice
+     * range
+     * @param skip the number of elements to skip, assumed to be >= 0
+     * @param limit the number of elements to limit, assumed to be >= 0, with
+     *        a value of {@code Long.MAX_VALUE} if there is no limit
+     * @return the slice fence.
+     */
+    private static long calcSliceFence(long skip, long limit) {
+        long sliceFence = limit >= 0 ? skip + limit : Long.MAX_VALUE;
+        // Check for overflow
+        return (sliceFence >= 0) ? sliceFence : Long.MAX_VALUE;
+    }
+
+    /**
+     * Creates a slice spliterator given a stream shape governing the
+     * spliterator type.  Requires that the underlying Spliterator
+     * be SUBSIZED.
+     */
+    @SuppressWarnings("unchecked")
+    private static <P_IN> Spliterator<P_IN> sliceSpliterator(StreamShape shape,
+                                                             Spliterator<P_IN> s,
+                                                             long skip, long limit) {
+        assert s.hasCharacteristics(Spliterator.SUBSIZED);
+        long sliceFence = calcSliceFence(skip, limit);
+        switch (shape) {
+            case REFERENCE:
+                return new StreamSpliterators
+                        .SliceSpliterator.OfRef<>(s, skip, sliceFence);
+            case INT_VALUE:
+                return (Spliterator<P_IN>) new StreamSpliterators
+                        .SliceSpliterator.OfInt((Spliterator.OfInt) s, skip, sliceFence);
+            case LONG_VALUE:
+                return (Spliterator<P_IN>) new StreamSpliterators
+                        .SliceSpliterator.OfLong((Spliterator.OfLong) s, skip, sliceFence);
+            case DOUBLE_VALUE:
+                return (Spliterator<P_IN>) new StreamSpliterators
+                        .SliceSpliterator.OfDouble((Spliterator.OfDouble) s, skip, sliceFence);
+            default:
+                throw new IllegalStateException("Unknown shape " + shape);
+        }
+    }
 
     /**
      * Appends a "slice" operation to the provided stream.  The slice operation
@@ -61,11 +113,71 @@ final class SliceOps {
 
         return new ReferencePipeline.StatefulOp<T,T>(upstream, StreamShape.REFERENCE,
                                                      flags(limit)) {
+            Spliterator<T> unorderedSkipLimitSpliterator(Spliterator<T> s,
+                                                         long skip, long limit, long sizeIfKnown) {
+                if (skip <= sizeIfKnown) {
+                    // Use just the limit if the number of elements
+                    // to skip is <= the known pipeline size
+                    limit = limit >= 0 ? Math.min(limit, sizeIfKnown - skip) : sizeIfKnown - skip;
+                    skip = 0;
+                }
+                return new StreamSpliterators.UnorderedSliceSpliterator.OfRef<>(s, skip, limit);
+            }
+
+            @Override
+            <P_IN> Spliterator<T> opEvaluateParallelLazy(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    return new StreamSpliterators.SliceSpliterator.OfRef<>(
+                            helper.wrapSpliterator(spliterator),
+                            skip,
+                            calcSliceFence(skip, limit));
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    return unorderedSkipLimitSpliterator(
+                            helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                }
+                else {
+                    // @@@ OOMEs will occur for LongStream.longs().filter(i -> true).limit(n)
+                    //     regardless of the value of n
+                    //     Need to adjust the target size of splitting for the
+                    //     SliceTask from say (size / k) to say min(size / k, 1 << 14)
+                    //     This will limit the size of the buffers created at the leaf nodes
+                    //     cancellation will be more aggressive cancelling later tasks
+                    //     if the target slice size has been reached from a given task,
+                    //     cancellation should also clear local results if any
+                    return new SliceTask<>(this, helper, spliterator, i -> (T[]) new Object[i], skip, limit).
+                            invoke().spliterator();
+                }
+            }
+
             @Override
             <P_IN> Node<T> opEvaluateParallel(PipelineHelper<T> helper,
                                               Spliterator<P_IN> spliterator,
                                               IntFunction<T[]> generator) {
-                return new SliceTask<>(this, helper, spliterator, generator, skip, limit).invoke();
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    // Because the pipeline is SIZED the slice spliterator
+                    // can be created from the source, this requires matching
+                    // to shape of the source, and is potentially more efficient
+                    // than creating the slice spliterator from the pipeline
+                    // wrapping spliterator
+                    Spliterator<P_IN> s = sliceSpliterator(helper.getSourceShape(), spliterator, skip, limit);
+                    return Nodes.collect(helper, s, true, generator);
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    Spliterator<T> s =  unorderedSkipLimitSpliterator(
+                            helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                    // Collect using this pipeline, which is empty and therefore
+                    // can be used with the pipeline wrapping spliterator
+                    // Note that we cannot create a slice spliterator from
+                    // the source spliterator if the pipeline is not SIZED
+                    return Nodes.collect(this, s, true, generator);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, generator, skip, limit).
+                            invoke();
+                }
             }
 
             @Override
@@ -73,6 +185,11 @@ final class SliceOps {
                 return new Sink.ChainedReference<T>(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(calcSize(size, skip, m));
+                    }
 
                     @Override
                     public void accept(T t) {
@@ -112,11 +229,64 @@ final class SliceOps {
 
         return new IntPipeline.StatefulOp<Integer>(upstream, StreamShape.INT_VALUE,
                                                    flags(limit)) {
+            Spliterator.OfInt unorderedSkipLimitSpliterator(
+                    Spliterator.OfInt s, long skip, long limit, long sizeIfKnown) {
+                if (skip <= sizeIfKnown) {
+                    // Use just the limit if the number of elements
+                    // to skip is <= the known pipeline size
+                    limit = limit >= 0 ? Math.min(limit, sizeIfKnown - skip) : sizeIfKnown - skip;
+                    skip = 0;
+                }
+                return new StreamSpliterators.UnorderedSliceSpliterator.OfInt(s, skip, limit);
+            }
+
+            @Override
+            <P_IN> Spliterator<Integer> opEvaluateParallelLazy(PipelineHelper<Integer> helper,
+                                                               Spliterator<P_IN> spliterator) {
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    return new StreamSpliterators.SliceSpliterator.OfInt(
+                            (Spliterator.OfInt) helper.wrapSpliterator(spliterator),
+                            skip,
+                            calcSliceFence(skip, limit));
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    return unorderedSkipLimitSpliterator(
+                            (Spliterator.OfInt) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, Integer[]::new, skip, limit).
+                            invoke().spliterator();
+                }
+            }
+
             @Override
             <P_IN> Node<Integer> opEvaluateParallel(PipelineHelper<Integer> helper,
                                                     Spliterator<P_IN> spliterator,
                                                     IntFunction<Integer[]> generator) {
-                return new SliceTask<>(this, helper, spliterator, generator, skip, limit).invoke();
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    // Because the pipeline is SIZED the slice spliterator
+                    // can be created from the source, this requires matching
+                    // to shape of the source, and is potentially more efficient
+                    // than creating the slice spliterator from the pipeline
+                    // wrapping spliterator
+                    Spliterator<P_IN> s = sliceSpliterator(helper.getSourceShape(), spliterator, skip, limit);
+                    return Nodes.collectInt(helper, s, true);
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    Spliterator.OfInt s =  unorderedSkipLimitSpliterator(
+                            (Spliterator.OfInt) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                    // Collect using this pipeline, which is empty and therefore
+                    // can be used with the pipeline wrapping spliterator
+                    // Note that we cannot create a slice spliterator from
+                    // the source spliterator if the pipeline is not SIZED
+                    return Nodes.collectInt(this, s, true);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, generator, skip, limit).
+                            invoke();
+                }
             }
 
             @Override
@@ -124,6 +294,11 @@ final class SliceOps {
                 return new Sink.ChainedInt(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(calcSize(size, skip, m));
+                    }
 
                     @Override
                     public void accept(int t) {
@@ -163,11 +338,64 @@ final class SliceOps {
 
         return new LongPipeline.StatefulOp<Long>(upstream, StreamShape.LONG_VALUE,
                                                  flags(limit)) {
+            Spliterator.OfLong unorderedSkipLimitSpliterator(
+                    Spliterator.OfLong s, long skip, long limit, long sizeIfKnown) {
+                if (skip <= sizeIfKnown) {
+                    // Use just the limit if the number of elements
+                    // to skip is <= the known pipeline size
+                    limit = limit >= 0 ? Math.min(limit, sizeIfKnown - skip) : sizeIfKnown - skip;
+                    skip = 0;
+                }
+                return new StreamSpliterators.UnorderedSliceSpliterator.OfLong(s, skip, limit);
+            }
+
+            @Override
+            <P_IN> Spliterator<Long> opEvaluateParallelLazy(PipelineHelper<Long> helper,
+                                                            Spliterator<P_IN> spliterator) {
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    return new StreamSpliterators.SliceSpliterator.OfLong(
+                            (Spliterator.OfLong) helper.wrapSpliterator(spliterator),
+                            skip,
+                            calcSliceFence(skip, limit));
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    return unorderedSkipLimitSpliterator(
+                            (Spliterator.OfLong) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, Long[]::new, skip, limit).
+                            invoke().spliterator();
+                }
+            }
+
             @Override
             <P_IN> Node<Long> opEvaluateParallel(PipelineHelper<Long> helper,
                                                  Spliterator<P_IN> spliterator,
                                                  IntFunction<Long[]> generator) {
-                return new SliceTask<>(this, helper, spliterator, generator, skip, limit).invoke();
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    // Because the pipeline is SIZED the slice spliterator
+                    // can be created from the source, this requires matching
+                    // to shape of the source, and is potentially more efficient
+                    // than creating the slice spliterator from the pipeline
+                    // wrapping spliterator
+                    Spliterator<P_IN> s = sliceSpliterator(helper.getSourceShape(), spliterator, skip, limit);
+                    return Nodes.collectLong(helper, s, true);
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    Spliterator.OfLong s =  unorderedSkipLimitSpliterator(
+                            (Spliterator.OfLong) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                    // Collect using this pipeline, which is empty and therefore
+                    // can be used with the pipeline wrapping spliterator
+                    // Note that we cannot create a slice spliterator from
+                    // the source spliterator if the pipeline is not SIZED
+                    return Nodes.collectLong(this, s, true);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, generator, skip, limit).
+                            invoke();
+                }
             }
 
             @Override
@@ -175,6 +403,11 @@ final class SliceOps {
                 return new Sink.ChainedLong(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(calcSize(size, skip, m));
+                    }
 
                     @Override
                     public void accept(long t) {
@@ -214,11 +447,64 @@ final class SliceOps {
 
         return new DoublePipeline.StatefulOp<Double>(upstream, StreamShape.DOUBLE_VALUE,
                                                      flags(limit)) {
+            Spliterator.OfDouble unorderedSkipLimitSpliterator(
+                    Spliterator.OfDouble s, long skip, long limit, long sizeIfKnown) {
+                if (skip <= sizeIfKnown) {
+                    // Use just the limit if the number of elements
+                    // to skip is <= the known pipeline size
+                    limit = limit >= 0 ? Math.min(limit, sizeIfKnown - skip) : sizeIfKnown - skip;
+                    skip = 0;
+                }
+                return new StreamSpliterators.UnorderedSliceSpliterator.OfDouble(s, skip, limit);
+            }
+
+            @Override
+            <P_IN> Spliterator<Double> opEvaluateParallelLazy(PipelineHelper<Double> helper,
+                                                              Spliterator<P_IN> spliterator) {
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    return new StreamSpliterators.SliceSpliterator.OfDouble(
+                            (Spliterator.OfDouble) helper.wrapSpliterator(spliterator),
+                            skip,
+                            calcSliceFence(skip, limit));
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    return unorderedSkipLimitSpliterator(
+                            (Spliterator.OfDouble) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, Double[]::new, skip, limit).
+                            invoke().spliterator();
+                }
+            }
+
             @Override
             <P_IN> Node<Double> opEvaluateParallel(PipelineHelper<Double> helper,
                                                    Spliterator<P_IN> spliterator,
                                                    IntFunction<Double[]> generator) {
-                return new SliceTask<>(this, helper, spliterator, generator, skip, limit).invoke();
+                long size = helper.exactOutputSizeIfKnown(spliterator);
+                if (size > 0 && spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
+                    // Because the pipeline is SIZED the slice spliterator
+                    // can be created from the source, this requires matching
+                    // to shape of the source, and is potentially more efficient
+                    // than creating the slice spliterator from the pipeline
+                    // wrapping spliterator
+                    Spliterator<P_IN> s = sliceSpliterator(helper.getSourceShape(), spliterator, skip, limit);
+                    return Nodes.collectDouble(helper, s, true);
+                } else if (!StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
+                    Spliterator.OfDouble s =  unorderedSkipLimitSpliterator(
+                            (Spliterator.OfDouble) helper.wrapSpliterator(spliterator),
+                            skip, limit, size);
+                    // Collect using this pipeline, which is empty and therefore
+                    // can be used with the pipeline wrapping spliterator
+                    // Note that we cannot create a slice spliterator from
+                    // the source spliterator if the pipeline is not SIZED
+                    return Nodes.collectDouble(this, s, true);
+                }
+                else {
+                    return new SliceTask<>(this, helper, spliterator, generator, skip, limit).
+                            invoke();
+                }
             }
 
             @Override
@@ -226,6 +512,11 @@ final class SliceOps {
                 return new Sink.ChainedDouble(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(calcSize(size, skip, m));
+                    }
 
                     @Override
                     public void accept(double t) {
@@ -252,20 +543,6 @@ final class SliceOps {
     private static int flags(long limit) {
         return StreamOpFlag.NOT_SIZED | ((limit != -1) ? StreamOpFlag.IS_SHORT_CIRCUIT : 0);
     }
-
-    // Parallel strategy -- two cases
-    // IF we have full size information
-    // - decompose, keeping track of each leaf's (offset, size)
-    // - calculate leaf only if intersection between (offset, size) and desired slice
-    // - Construct a Node containing the appropriate sections of the appropriate leaves
-    // IF we don't
-    // - decompose, and calculate size of each leaf
-    // - on complete of any node, compute completed initial size from the root, and if big enough, cancel later nodes
-    // - @@@ this can be significantly improved
-
-    // @@@ Currently we don't do the sized version at all
-
-    // @@@ Should take into account ORDERED flag; if not ORDERED, we can limit in temporal order instead
 
     /**
      * {@code ForkJoinTask} implementing slice computation.
@@ -319,19 +596,18 @@ final class SliceOps {
                                    ? op.exactOutputSizeIfKnown(spliterator)
                                    : -1;
                 final Node.Builder<P_OUT> nb = op.makeNodeBuilder(sizeIfKnown, generator);
-                Sink<P_OUT> opSink = op.opWrapSink(op.sourceOrOpFlags, nb);
-
-                if (!StreamOpFlag.SHORT_CIRCUIT.isKnown(op.sourceOrOpFlags))
-                    helper.wrapAndCopyInto(opSink, spliterator);
-                else
-                    helper.copyIntoWithCancel(helper.wrapSink(opSink), spliterator);
+                Sink<P_OUT> opSink = op.opWrapSink(helper.getStreamAndOpFlags(), nb);
+                helper.copyIntoWithCancel(helper.wrapSink(opSink), spliterator);
+                // There is no need to truncate since the op performs the
+                // skipping and limiting of elements
                 return nb.build();
             }
             else {
                 Node<P_OUT> node = helper.wrapAndCopyInto(helper.makeNodeBuilder(-1, generator),
-                                                      spliterator).build();
+                                                          spliterator).build();
                 thisNodeSize = node.count();
                 completed = true;
+                spliterator = null;
                 return node;
             }
         }
@@ -339,198 +615,95 @@ final class SliceOps {
         @Override
         public final void onCompletion(CountedCompleter<?> caller) {
             if (!isLeaf()) {
+                Node<P_OUT> result;
                 thisNodeSize = leftChild.thisNodeSize + rightChild.thisNodeSize;
-                completed = true;
-
-                if (isRoot()) {
-                    // Only collect nodes once absolute size information is known
-
-                    ArrayList<Node<P_OUT>> nodes = new ArrayList<>();
-                    visit(nodes, 0);
-                    Node<P_OUT> result;
-                    if (nodes.size() == 0)
-                        result = Nodes.emptyNode(op.getOutputShape());
-                    else if (nodes.size() == 1)
-                        result = nodes.get(0);
-                    else
-                        // This will create a tree of depth 1 and will not be a sub-tree
-                        // for leaf nodes within the require range
-                        result = conc(op.getOutputShape(), nodes);
-                    setLocalResult(result);
+                if (canceled) {
+                    thisNodeSize = 0;
+                    result = getEmptyResult();
                 }
+                else if (thisNodeSize == 0)
+                    result = getEmptyResult();
+                else if (leftChild.thisNodeSize == 0)
+                    result = rightChild.getLocalResult();
+                else {
+                    result = Nodes.conc(op.getOutputShape(),
+                                        leftChild.getLocalResult(), rightChild.getLocalResult());
+                }
+                setLocalResult(isRoot() ? doTruncate(result) : result);
+                completed = true;
             }
-            if (targetSize >= 0) {
-                if (((SliceTask<P_IN, P_OUT>) getRoot()).leftSize() >= targetOffset + targetSize)
+            if (targetSize >= 0
+                && !isRoot()
+                && isLeftCompleted(targetOffset + targetSize))
                     cancelLaterNodes();
-            }
-            // Don't call super.onCompletion(), we don't look at the child nodes until farther up the tree
+
+            super.onCompletion(caller);
         }
 
-        /** Compute the cumulative size of the longest leading prefix of completed children */
-        private long leftSize() {
+        @Override
+        protected void cancel() {
+            super.cancel();
+            if (completed)
+                setLocalResult(getEmptyResult());
+        }
+
+        private Node<P_OUT> doTruncate(Node<P_OUT> input) {
+            long to = targetSize >= 0 ? Math.min(input.count(), targetOffset + targetSize) : thisNodeSize;
+            return input.truncate(targetOffset, to, generator);
+        }
+
+        /**
+         * Determine if the number of completed elements in this node and nodes
+         * to the left of this node is greater than or equal to the target size.
+         *
+         * @param target the target size
+         * @return true if the number of elements is greater than or equal to
+         *         the target size, otherwise false.
+         */
+        private boolean isLeftCompleted(long target) {
+            long size = completed ? thisNodeSize : completedSize(target);
+            if (size >= target)
+                return true;
+            for (SliceTask<P_IN, P_OUT> parent = getParent(), node = this;
+                 parent != null;
+                 node = parent, parent = parent.getParent()) {
+                if (node == parent.rightChild) {
+                    SliceTask<P_IN, P_OUT> left = parent.leftChild;
+                    if (left != null) {
+                        size += left.completedSize(target);
+                        if (size >= target)
+                            return true;
+                    }
+                }
+            }
+            return size >= target;
+        }
+
+        /**
+         * Compute the number of completed elements in this node.
+         * <p>
+         * Computation terminates if all nodes have been processed or the
+         * number of completed elements is greater than or equal to the target
+         * size.
+         *
+         * @param target the target size
+         * @return return the number of completed elements
+         */
+        private long completedSize(long target) {
             if (completed)
                 return thisNodeSize;
-            else if (isLeaf())
-                return 0;
             else {
-                long leftSize = 0;
-                for (SliceTask<P_IN, P_OUT> child = leftChild, p = null; child != p;
-                     p = child, child = rightChild) {
-                    if (child.completed)
-                        leftSize += child.thisNodeSize;
-                    else {
-                        leftSize += child.leftSize();
-                        break;
-                    }
-                }
-                return leftSize;
-            }
-        }
-
-        private void visit(List<Node<P_OUT>> results, int offset) {
-            if (!isLeaf()) {
-                for (SliceTask<P_IN, P_OUT> child = leftChild, p = null; child != p;
-                     p = child, child = rightChild) {
-                    child.visit(results, offset);
-                    offset += child.thisNodeSize;
-                }
-            }
-            else {
-                if (results.size() == 0) {
-                    if (offset + thisNodeSize >= targetOffset)
-                        results.add(truncateNode(getLocalResult(),
-                                                 Math.max(0, targetOffset - offset),
-                                                 targetSize >= 0 ? Math.max(0, offset + thisNodeSize - (targetOffset + targetSize)) : 0));
+                SliceTask<P_IN, P_OUT> left = leftChild;
+                SliceTask<P_IN, P_OUT> right = rightChild;
+                if (left == null || right == null) {
+                    // must be completed
+                    return thisNodeSize;
                 }
                 else {
-                    if (targetSize == -1 || offset < targetOffset + targetSize) {
-                        results.add(truncateNode(getLocalResult(),
-                                                 0,
-                                                 targetSize >= 0 ? Math.max(0, offset + thisNodeSize - (targetOffset + targetSize)) : 0));
-                    }
+                    long leftSize = left.completedSize(target);
+                    return (leftSize >= target) ? leftSize : leftSize + right.completedSize(target);
                 }
             }
         }
-
-        /**
-         * Return a new node describing the result of truncating an existing Node
-         * at the left and/or right.
-         */
-        private Node<P_OUT> truncateNode(Node<P_OUT> input,
-                                         long skipLeft, long skipRight) {
-            if (skipLeft == 0 && skipRight == 0)
-                return input;
-            else {
-                return truncateNode(input, skipLeft, thisNodeSize - skipRight, generator);
-            }
-        }
-        /**
-         * Truncate a {@link Node}, returning a node describing a subsequence of
-         * the contents of the input node.
-         *
-         * @param <T> the type of elements of the input node and truncated node
-         * @param input the input node
-         * @param from the starting offset to include in the truncated node (inclusive)
-         * @param to the ending offset ot include in the truncated node (exclusive)
-         * @param generator the array factory (only used for reference nodes)
-         * @return the truncated node
-         */
-        @SuppressWarnings("unchecked")
-        private static <T> Node<T> truncateNode(Node<T> input, long from, long to, IntFunction<T[]> generator) {
-            StreamShape shape = input.getShape();
-            long size = truncatedSize(input.count(), from, to);
-            if (size == 0)
-                return Nodes.emptyNode(shape);
-            else if (from == 0 && to >= input.count())
-                return input;
-
-            switch (shape) {
-                case REFERENCE: {
-                    Spliterator<T> spliterator = input.spliterator();
-                    Node.Builder<T> nodeBuilder = Nodes.builder(size, generator);
-                    nodeBuilder.begin(size);
-                    for (int i = 0; i < from && spliterator.tryAdvance(e -> { }); i++) { }
-                    for (int i = 0; (i < size) && spliterator.tryAdvance(nodeBuilder); i++) { }
-                    nodeBuilder.end();
-                    return nodeBuilder.build();
-                }
-                case INT_VALUE: {
-                    Spliterator.OfInt spliterator = ((Node.OfInt) input).spliterator();
-                    Node.Builder.OfInt nodeBuilder = Nodes.intBuilder(size);
-                    nodeBuilder.begin(size);
-                    for (int i = 0; i < from && spliterator.tryAdvance((IntConsumer) e -> { }); i++) { }
-                    for (int i = 0; (i < size) && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
-                    nodeBuilder.end();
-                    return (Node<T>) nodeBuilder.build();
-                }
-                case LONG_VALUE: {
-                    Spliterator.OfLong spliterator = ((Node.OfLong) input).spliterator();
-                    Node.Builder.OfLong nodeBuilder = Nodes.longBuilder(size);
-                    nodeBuilder.begin(size);
-                    for (int i = 0; i < from && spliterator.tryAdvance((LongConsumer) e -> { }); i++) { }
-                    for (int i = 0; (i < size) && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
-                    nodeBuilder.end();
-                    return (Node<T>) nodeBuilder.build();
-                }
-                case DOUBLE_VALUE: {
-                    Spliterator.OfDouble spliterator = ((Node.OfDouble) input).spliterator();
-                    Node.Builder.OfDouble nodeBuilder = Nodes.doubleBuilder(size);
-                    nodeBuilder.begin(size);
-                    for (int i = 0; i < from && spliterator.tryAdvance((DoubleConsumer) e -> { }); i++) { }
-                    for (int i = 0; (i < size) && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
-                    nodeBuilder.end();
-                    return (Node<T>) nodeBuilder.build();
-                }
-                default:
-                    throw new IllegalStateException("Unknown shape " + shape);
-            }
-        }
-
-        private static long truncatedSize(long size, long from, long to) {
-            if (from >= 0)
-                size = Math.max(0, size - from);
-            long limit = to - from;
-            if (limit >= 0)
-                size = Math.min(size, limit);
-            return size;
-        }
-
-        /**
-         * Produces a concatenated {@link Node} that has two or more children.
-         * <p>The count of the concatenated node is equal to the sum of the count
-         * of each child. Traversal of the concatenated node traverses the content
-         * of each child in encounter order of the list of children. Splitting a
-         * spliterator obtained from the concatenated node preserves the encounter
-         * order of the list of children.
-         *
-         * <p>The result may be a concatenated node, the input sole node if the size
-         * of the list is 1, or an empty node.
-         *
-         * @param <T> the type of elements of the concatenated node
-         * @param shape the shape of the concatenated node to be created
-         * @param nodes the input nodes
-         * @return a {@code Node} covering the elements of the input nodes
-         * @throws IllegalStateException if all {@link Node} elements of the list
-         * are an not instance of type supported by this factory.
-         */
-        @SuppressWarnings("unchecked")
-        private static <T> Node<T> conc(StreamShape shape, List<? extends Node<T>> nodes) {
-            int size = nodes.size();
-            if (size == 0)
-                return Nodes.emptyNode(shape);
-            else if (size == 1)
-                return nodes.get(0);
-            else {
-                // Create a right-balanced tree when there are more that 2 nodes
-                List<Node<T>> refNodes = (List<Node<T>>) nodes;
-                Node<T> c = Nodes.conc(shape, refNodes.get(size - 2), refNodes.get(size - 1));
-                for (int i = size - 3; i >= 0; i--) {
-                    c = Nodes.conc(shape, refNodes.get(i), c);
-                }
-                return c;
-            }
-        }
-
     }
-
 }

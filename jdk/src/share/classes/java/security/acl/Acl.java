@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,19 +66,19 @@ import java.security.Principal;
  *
  * </ul>
  *
- * The <code> java.security.acl </code> package provides the
+ * The {@code  java.security.acl } package provides the
  * interfaces to the ACL and related data structures (ACL entries,
- * groups, permissions, etc.), and the <code> sun.security.acl </code>
+ * groups, permissions, etc.), and the {@code  sun.security.acl }
  * classes provide a default implementation of the interfaces. For
- * example, <code> java.security.acl.Acl </code> provides the
- * interface to an ACL and the <code> sun.security.acl.AclImpl </code>
+ * example, {@code  java.security.acl.Acl } provides the
+ * interface to an ACL and the {@code  sun.security.acl.AclImpl }
  * class provides the default implementation of the interface.<p>
  *
- * The <code> java.security.acl.Acl </code> interface extends the
- * <code> java.security.acl.Owner </code> interface. The Owner
+ * The {@code  java.security.acl.Acl } interface extends the
+ * {@code  java.security.acl.Owner } interface. The Owner
  * interface is used to maintain a list of owners for each ACL.  Only
  * owners are allowed to modify an ACL. For example, only an owner can
- * call the ACL's <code>addEntry</code> method to add a new ACL entry
+ * call the ACL's {@code addEntry} method to add a new ACL entry
  * to the ACL.
  *
  * @see java.security.acl.AclEntry
@@ -217,7 +217,7 @@ public interface Acl extends Owner {
      * More specifically, this method checks whether the passed permission
      * is a member of the allowed permission set of the specified principal.
      * The allowed permission set is determined by the same algorithm as is
-     * used by the <code>getPermissions</code> method.
+     * used by the {@code getPermissions} method.
      *
      * @param principal the principal, assumed to be a valid authenticated
      * Principal.

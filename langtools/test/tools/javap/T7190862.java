@@ -96,8 +96,7 @@ public class T7190862 {
         PrintWriter pw = new PrintWriter(sw);
         JavaFileManager fm = JavapFileManager.create(dc, pw);
         JavapTask t = new JavapTask(pw, fm, dc, args, classes);
-        boolean ok = t.run();
-        if (!ok)
+        if (t.run() != 0)
             throw new Error("javap failed unexpectedly");
 
         List<Diagnostic<? extends JavaFileObject>> diags = dc.getDiagnostics();

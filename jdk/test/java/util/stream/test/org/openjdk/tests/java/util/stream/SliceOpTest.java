@@ -26,13 +26,16 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
@@ -192,6 +195,53 @@ public class SliceOpTest extends OpTestCase {
         }
     }
 
+    public void testSkipLimitOpsWithNonSplittingSpliterator() {
+        class NonSplittingNotSubsizedOrderedSpliterator<T> implements Spliterator<T> {
+            Spliterator<T> s;
+
+            NonSplittingNotSubsizedOrderedSpliterator(Spliterator<T> s) {
+                assert s.hasCharacteristics(Spliterator.ORDERED);
+                this.s = s;
+            }
+
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                return s.tryAdvance(action);
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super T> action) {
+                s.forEachRemaining(action);
+            }
+
+            @Override
+            public Spliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return s.estimateSize();
+            }
+
+            @Override
+            public int characteristics() {
+                return s.characteristics() & ~(Spliterator.SUBSIZED);
+            }
+
+            @Override
+            public Comparator<? super T> getComparator() {
+                return s.getComparator();
+            }
+        }
+        List<Integer> list = IntStream.range(0, 100).boxed().collect(Collectors.toList());
+        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier(
+                "Non splitting, not SUBSIZED, ORDERED, stream",
+                () -> StreamSupport.stream(new NonSplittingNotSubsizedOrderedSpliterator<>(list.spliterator())));
+
+        testSkipLimitOps("testSkipLimitOpsWithNonSplittingSpliterator", data);
+    }
+
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> limits = sizes(data.size());
@@ -270,7 +320,7 @@ public class SliceOpTest extends OpTestCase {
     public void testLimitSort() {
         List<Integer> l = countTo(100);
         Collections.reverse(l);
-        exerciseOps(l, s -> s.limit(10).sorted(Comparators.naturalOrder()));
+        exerciseOps(l, s -> s.limit(10).sorted(Comparator.naturalOrder()));
     }
 
     @Test(groups = { "serialization-hostile" })

@@ -41,6 +41,7 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import sun.security.util.SecurityConstants;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -70,6 +71,7 @@ public class MethodHandles {
      * including direct method handles to private fields and methods.
      * This lookup object is a <em>capability</em> which may be delegated to trusted agents.
      * Do not store it in place where untrusted code can access it.
+     * @return a lookup object for the caller of this method
      */
     @CallerSensitive
     public static Lookup lookup() {
@@ -88,6 +90,7 @@ public class MethodHandles {
      * {@linkplain Lookup#in <code>publicLookup().in(C.class)</code>}.
      * Since all classes have equal access to public names,
      * such a change would confer no new access rights.
+     * @return a lookup object which is trusted minimally
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
@@ -111,72 +114,74 @@ public class MethodHandles {
      * on the {@code Lookup} object to create method handles for access-checked members.
      * This includes all methods, constructors, and fields which are allowed to the lookup class,
      * even private ones.
-     * <p>
+     *
+     * <h1><a name="lookups"></a>Lookup Factory Methods</h1>
      * The factory methods on a {@code Lookup} object correspond to all major
      * use cases for methods, constructors, and fields.
      * Here is a summary of the correspondence between these factory methods and
      * the behavior the resulting method handles:
-     * <code>
      * <table border=1 cellpadding=5 summary="lookup method behaviors">
      * <tr><th>lookup expression</th><th>member</th><th>behavior</th></tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</td>
-     *     <td>FT f;</td><td>(T) this.f;</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</td>
+     *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</td>
-     *     <td>static<br>FT f;</td><td>(T) C.f;</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</td>
+     *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (T) C.f;}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findSetter lookup.findSetter(C.class,"f",FT.class)}</td>
-     *     <td>FT f;</td><td>this.f = x;</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findSetter lookup.findSetter(C.class,"f",FT.class)}</td>
+     *     <td>{@code FT f;}</td><td>{@code this.f = x;}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findStaticSetter lookup.findStaticSetter(C.class,"f",FT.class)}</td>
-     *     <td>static<br>FT f;</td><td>C.f = arg;</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStaticSetter lookup.findStaticSetter(C.class,"f",FT.class)}</td>
+     *     <td>{@code static}<br>{@code FT f;}</td><td>{@code C.f = arg;}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findVirtual lookup.findVirtual(C.class,"m",MT)}</td>
-     *     <td>T m(A*);</td><td>(T) this.m(arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findVirtual lookup.findVirtual(C.class,"m",MT)}</td>
+     *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findStatic lookup.findStatic(C.class,"m",MT)}</td>
-     *     <td>static<br>T m(A*);</td><td>(T) C.m(arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStatic lookup.findStatic(C.class,"m",MT)}</td>
+     *     <td>{@code static}<br>{@code T m(A*);}</td><td>{@code (T) C.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findSpecial lookup.findSpecial(C.class,"m",MT,this.class)}</td>
-     *     <td>T m(A*);</td><td>(T) super.m(arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findSpecial lookup.findSpecial(C.class,"m",MT,this.class)}</td>
+     *     <td>{@code T m(A*);}</td><td>{@code (T) super.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#findConstructor lookup.findConstructor(C.class,MT)}</td>
-     *     <td>C(A*);</td><td>(T) new C(arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findConstructor lookup.findConstructor(C.class,MT)}</td>
+     *     <td>{@code C(A*);}</td><td>{@code new C(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectGetter lookup.unreflectGetter(aField)}</td>
-     *     <td>(static)?<br>FT f;</td><td>(FT) aField.get(thisOrNull);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter lookup.unreflectGetter(aField)}</td>
+     *     <td>({@code static})?<br>{@code FT f;}</td><td>{@code (FT) aField.get(thisOrNull);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectSetter lookup.unreflectSetter(aField)}</td>
-     *     <td>(static)?<br>FT f;</td><td>aField.set(thisOrNull, arg);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter lookup.unreflectSetter(aField)}</td>
+     *     <td>({@code static})?<br>{@code FT f;}</td><td>{@code aField.set(thisOrNull, arg);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
-     *     <td>(static)?<br>T m(A*);</td><td>(T) aMethod.invoke(thisOrNull, arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
+     *     <td>({@code static})?<br>{@code T m(A*);}</td><td>{@code (T) aMethod.invoke(thisOrNull, arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#unreflectConstructor lookup.unreflectConstructor(aConstructor)}</td>
-     *     <td>C(A*);</td><td>(C) aConstructor.newInstance(arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor lookup.unreflectConstructor(aConstructor)}</td>
+     *     <td>{@code C(A*);}</td><td>{@code (C) aConstructor.newInstance(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@linkplain java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
-     *     <td>(static)?<br>T m(A*);</td><td>(T) aMethod.invoke(thisOrNull, arg*);</td>
+     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
+     *     <td>({@code static})?<br>{@code T m(A*);}</td><td>{@code (T) aMethod.invoke(thisOrNull, arg*);}</td>
      * </tr>
      * </table>
-     * </code>
+     *
      * Here, the type {@code C} is the class or interface being searched for a member,
      * documented as a parameter named {@code refc} in the lookup methods.
-     * The method or constructor type {@code MT} is composed from the return type {@code T}
+     * The method type {@code MT} is composed from the return type {@code T}
      * and the sequence of argument types {@code A*}.
+     * The constructor also has a sequence of argument types {@code A*} and
+     * is deemed to return the newly-created object of type {@code C}.
      * Both {@code MT} and the field type {@code FT} are documented as a parameter named {@code type}.
      * The formal parameter {@code this} stands for the self-reference of type {@code C};
      * if it is present, it is always the leading argument to the method handle invocation.
@@ -210,7 +215,7 @@ public class MethodHandles {
      * security manager checks.
      * </ul>
      *
-     * <h3><a name="access"></a>Access checking</h3>
+     * <h1><a name="access"></a>Access checking</h1>
      * Access checks are applied in the factory methods of {@code Lookup},
      * when a method handle is created.
      * This is a key difference from the Core Reflection API, since
@@ -297,40 +302,34 @@ public class MethodHandles {
      * with static methods of {@link MethodHandles},
      * independently of any {@code Lookup} object.
      *
-     * <h3>Security manager interactions</h3>
+     * <h1>Security manager interactions</h1>
      * <a name="secmgr"></a>
      * If a security manager is present, member lookups are subject to
      * additional checks.
-     * From one to four calls are made to the security manager.
+     * From one to three calls are made to the security manager.
      * Any of these calls can refuse access by throwing a
      * {@link java.lang.SecurityException SecurityException}.
      * Define {@code smgr} as the security manager,
+     * {@code lookc} as the lookup class of the current lookup object,
      * {@code refc} as the containing class in which the member
      * is being sought, and {@code defc} as the class in which the
      * member is actually defined.
+     * The value {@code lookc} is defined as <em>not present</em>
+     * if the current lookup object does not have
+     * {@linkplain java.lang.invoke.MethodHandles.Lookup#PRIVATE private access}.
      * The calls are made according to the following rules:
      * <ul>
-     * <li>In all cases, {@link SecurityManager#checkMemberAccess
-     *     smgr.checkMemberAccess(refc, Member.PUBLIC)} is called.
-     * <li>If the class loader of the lookup class is not
+     * <li>If {@code lookc} is not present, or if its class loader is not
      *     the same as or an ancestor of the class loader of {@code refc},
      *     then {@link SecurityManager#checkPackageAccess
      *     smgr.checkPackageAccess(refcPkg)} is called,
      *     where {@code refcPkg} is the package of {@code refc}.
+     * <li>If the retrieved member is not public and
+     *     {@code lookc} is not present, then
+     *     {@link SecurityManager#checkPermission smgr.checkPermission}
+     *     with {@code RuntimePermission("accessDeclaredMembers")} is called.
      * <li>If the retrieved member is not public,
-     *     {@link SecurityManager#checkMemberAccess
-     *     smgr.checkMemberAccess(defc, Member.DECLARED)} is called.
-     *     (Note that {@code defc} might be the same as {@code refc}.)
-     *     The default implementation of this security manager method
-     *     inspects the stack to determine the original caller of
-     *     the reflective request (such as {@code findStatic}),
-     *     and performs additional permission checks if the
-     *     class loader of {@code defc} differs from the class
-     *     loader of the class from which the reflective request came.
-     * <li>If the retrieved member is not public,
-     *     and if {@code defc} and {@code refc} are in different class loaders,
-     *     and if the class loader of the lookup class is not
-     *     the same as or an ancestor of the class loader of {@code defc},
+     *     and if {@code defc} and {@code refc} are different,
      *     then {@link SecurityManager#checkPackageAccess
      *     smgr.checkPackageAccess(defcPkg)} is called,
      *     where {@code defcPkg} is the package of {@code defc}.
@@ -388,6 +387,7 @@ public class MethodHandles {
          *  but the permissions may be additionally limited by the bitmask
          *  {@link #lookupModes lookupModes}, which controls whether non-public members
          *  can be accessed.
+         *  @return the lookup class, on behalf of which this lookup object finds members
          */
         public Class<?> lookupClass() {
             return lookupClass;
@@ -414,6 +414,7 @@ public class MethodHandles {
          *  The purpose of this is to restrict access via the new lookup object,
          *  so that it can access only names which can be reached by the original
          *  lookup object, and also by the new lookup class.
+         *  @return the lookup modes, which limit the kinds of access performed by this lookup object
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -1048,22 +1049,6 @@ return mh1;
         }
 
         /**
-         * Determine whether a security manager has an overridden
-         * SecurityManager.checkMemberAccess method.
-         */
-        private boolean isCheckMemberAccessOverridden(SecurityManager sm) {
-            final Class<? extends SecurityManager> cls = sm.getClass();
-            if (cls == SecurityManager.class) return false;
-
-            try {
-                return cls.getMethod("checkMemberAccess", Class.class, int.class).
-                    getDeclaringClass() != SecurityManager.class;
-            } catch (NoSuchMethodException e) {
-                throw new InternalError("should not reach here");
-            }
-        }
-
-        /**
          * Perform necessary <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
          * Determines a trustable caller class to compare with refc, the symbolic reference class.
          * If this lookup object has private access, then the caller class is the lookupClass.
@@ -1073,45 +1058,22 @@ return mh1;
             if (smgr == null)  return;
             if (allowedModes == TRUSTED)  return;
 
-            final boolean overridden = isCheckMemberAccessOverridden(smgr);
             // Step 1:
-            {
-                // Default policy is to allow Member.PUBLIC; no need to check
-                // permission if SecurityManager is the default implementation
-                final int which = Member.PUBLIC;
-                final Class<?> clazz = refc;
-                if (overridden) {
-                    // Don't refactor; otherwise break the stack depth for
-                    // checkMemberAccess of subclasses of SecurityManager as specified.
-                    smgr.checkMemberAccess(clazz, which);
-                }
-            }
-
-            // Step 2:
             if (!isFullPowerLookup() ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
-            // Step 3:
+            // Step 2:
             if (m.isPublic()) return;
             Class<?> defc = m.getDeclaringClass();
             {
-                // Inline SecurityManager.checkMemberAccess
-                final int which = Member.DECLARED;
-                final Class<?> clazz = defc;
-                if (!overridden) {
-                    if (!isFullPowerLookup()) {
-                        smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
-                    }
-                } else {
-                    // Don't refactor; otherwise break the stack depth for
-                    // checkMemberAccess of subclasses of SecurityManager as specified.
-                    smgr.checkMemberAccess(clazz, which);
+                if (!isFullPowerLookup()) {
+                    smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
                 }
             }
 
-            // Step 4:
+            // Step 3:
             if (defc != refc) {
                 ReflectUtil.checkPackageAccess(defc);
             }
@@ -1352,6 +1314,7 @@ return mh1;
      * The type of the method handle will have a void return type.
      * Its last argument will be the array's element type.
      * The first and second arguments will be the array type and int.
+     * @param arrayClass the class of an array
      * @return a method handle which can store values into the array type
      * @throws NullPointerException if the argument is null
      * @throws IllegalArgumentException if arrayClass is not an array type
@@ -1580,12 +1543,12 @@ import static java.lang.invoke.MethodType.*;
 ...
 MethodType intfn1 = methodType(int.class, int.class);
 MethodType intfn2 = methodType(int.class, int.class, int.class);
-MethodHandle sub = ... {int x, int y => x-y} ...;
+MethodHandle sub = ... (int x, int y) -> (x-y) ...;
 assert(sub.type().equals(intfn2));
 MethodHandle sub1 = permuteArguments(sub, intfn2, 0, 1);
 MethodHandle rsub = permuteArguments(sub, intfn2, 1, 0);
 assert((int)rsub.invokeExact(1, 100) == 99);
-MethodHandle add = ... {int x, int y => x+y} ...;
+MethodHandle add = ... (int x, int y) -> (x+y) ...;
 assert(add.type().equals(intfn2));
 MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
 assert(twice.type().equals(intfn1));
@@ -2261,6 +2224,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * The method type will nominally specify a return of {@code returnType}.
      * The return type may be anything convenient:  It doesn't matter to the
      * method handle's behavior, since it will never return normally.
+     * @param returnType the return type of the desired method handle
+     * @param exType the parameter type of the desired method handle
      * @return method handle which can throw the given exceptions
      * @throws NullPointerException if either argument is null
      */

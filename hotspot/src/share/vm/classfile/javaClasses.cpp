@@ -961,7 +961,7 @@ void java_lang_Thread::set_thread_status(oop java_thread,
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
 java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
-  assert(Thread::current()->is_VM_thread() ||
+  assert(Thread::current()->is_Watcher_thread() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
   // The threadStatus is only present starting in 1.5
@@ -2825,6 +2825,7 @@ void java_lang_invoke_CallSite::compute_offsets() {
 int java_security_AccessControlContext::_context_offset = 0;
 int java_security_AccessControlContext::_privilegedContext_offset = 0;
 int java_security_AccessControlContext::_isPrivileged_offset = 0;
+int java_security_AccessControlContext::_isAuthorized_offset = -1;
 
 void java_security_AccessControlContext::compute_offsets() {
   assert(_isPrivileged_offset == 0, "offsets should be initialized only once");
@@ -2845,8 +2846,19 @@ void java_security_AccessControlContext::compute_offsets() {
     fatal("Invalid layout of java.security.AccessControlContext");
   }
   _isPrivileged_offset = fd.offset();
+
+  // The offset may not be present for bootstrapping with older JDK.
+  if (ik->find_local_field(vmSymbols::isAuthorized_name(), vmSymbols::bool_signature(), &fd)) {
+    _isAuthorized_offset = fd.offset();
+  }
 }
 
+
+bool java_security_AccessControlContext::is_authorized(Handle context) {
+  assert(context.not_null() && context->klass() == SystemDictionary::AccessControlContext_klass(), "Invalid type");
+  assert(_isAuthorized_offset != -1, "should be set");
+  return context->bool_field(_isAuthorized_offset) != 0;
+}
 
 oop java_security_AccessControlContext::create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS) {
   assert(_isPrivileged_offset != 0, "offsets should have been initialized");
@@ -2858,6 +2870,10 @@ oop java_security_AccessControlContext::create(objArrayHandle context, bool isPr
   result->obj_field_put(_context_offset, context());
   result->obj_field_put(_privilegedContext_offset, privileged_context());
   result->bool_field_put(_isPrivileged_offset, isPrivileged);
+  // whitelist AccessControlContexts created by the JVM if present
+  if (_isAuthorized_offset != -1) {
+    result->bool_field_put(_isAuthorized_offset, true);
+  }
   return result;
 }
 
@@ -2967,6 +2983,15 @@ int java_lang_System::err_offset_in_bytes() {
 }
 
 
+bool java_lang_System::has_security_manager() {
+  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::System_klass());
+  address addr = ik->static_field_addr(static_security_offset);
+  if (UseCompressedOops) {
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr) != NULL;
+  } else {
+    return oopDesc::load_decode_heap_oop((oop*)addr) != NULL;
+  }
+}
 
 int java_lang_Class::_klass_offset;
 int java_lang_Class::_array_klass_offset;
@@ -3030,6 +3055,7 @@ int java_lang_ClassLoader::parent_offset;
 int java_lang_System::static_in_offset;
 int java_lang_System::static_out_offset;
 int java_lang_System::static_err_offset;
+int java_lang_System::static_security_offset;
 int java_lang_StackTraceElement::declaringClass_offset;
 int java_lang_StackTraceElement::methodName_offset;
 int java_lang_StackTraceElement::fileName_offset;
@@ -3155,6 +3181,7 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_System::static_in_offset  = java_lang_System::hc_static_in_offset  * x;
   java_lang_System::static_out_offset = java_lang_System::hc_static_out_offset * x;
   java_lang_System::static_err_offset = java_lang_System::hc_static_err_offset * x;
+  java_lang_System::static_security_offset = java_lang_System::hc_static_security_offset * x;
 
   // java_lang_StackTraceElement
   java_lang_StackTraceElement::declaringClass_offset = java_lang_StackTraceElement::hc_declaringClass_offset  * x + header;
@@ -3354,6 +3381,7 @@ void JavaClasses::check_offsets() {
   CHECK_STATIC_OFFSET("java/lang/System", java_lang_System,  in, "Ljava/io/InputStream;");
   CHECK_STATIC_OFFSET("java/lang/System", java_lang_System, out, "Ljava/io/PrintStream;");
   CHECK_STATIC_OFFSET("java/lang/System", java_lang_System, err, "Ljava/io/PrintStream;");
+  CHECK_STATIC_OFFSET("java/lang/System", java_lang_System, security, "Ljava/lang/SecurityManager;");
 
   // java.lang.StackTraceElement
 

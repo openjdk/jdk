@@ -316,6 +316,7 @@ abstract class AbstractTask<P_IN, P_OUT, R,
             else {
                 K l = task.leftChild = task.makeChild(split);
                 K r = task.rightChild = task.makeChild(task.spliterator);
+                task.spliterator = null;
                 task.setPendingCount(1);
                 l.fork();
                 task = r;

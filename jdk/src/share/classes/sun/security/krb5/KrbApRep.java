@@ -53,12 +53,10 @@ public class KrbApRep {
      */
      // Used in AcceptSecContextToken
     public KrbApRep(KrbApReq incomingReq,
-                    boolean useSeqNumber,
-        boolean useSubKey) throws KrbException, IOException {
+                     boolean useSeqNumber,
+                     EncryptionKey subKey)
+            throws KrbException, IOException {
 
-        EncryptionKey subKey =
-            (useSubKey?
-             new EncryptionKey(incomingReq.getCreds().getSessionKey()):null);
         SeqNumber seqNum = new LocalSeqNumber();
 
         init(incomingReq, subKey, seqNum);
