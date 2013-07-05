@@ -749,6 +749,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     @Override
     public Node leaveReturnNode(final ReturnNode returnNode) {
         final Node expr = returnNode.getExpression();
+        final Type returnType;
 
         if (expr != null) {
             //we can't do parameter specialization if we return something that hasn't been typed yet
@@ -757,10 +758,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 symbol.setType(Type.OBJECT);
             }
 
-            final Type returnType = Type.widest(returnTypes.pop(), symbol.getSymbolType());
-            returnTypes.push(returnType);
-            LOG.info("Returntype is now ", returnType);
+            returnType = Type.widest(returnTypes.pop(), symbol.getSymbolType());
+        } else {
+            returnType = Type.OBJECT; //undefined
         }
+        LOG.info("Returntype is now ", returnType);
+        returnTypes.push(returnType);
 
         end(returnNode);
 
