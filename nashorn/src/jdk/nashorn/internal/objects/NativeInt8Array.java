@@ -144,7 +144,7 @@ public final class NativeInt8Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getInt8ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getInt8ArrayPrototype();
     }
 }

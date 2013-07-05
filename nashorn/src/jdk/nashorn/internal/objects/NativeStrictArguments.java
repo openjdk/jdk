@@ -64,11 +64,15 @@ public final class NativeStrictArguments extends ScriptObject {
         map$ = map;
     }
 
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
     private Object   length;
     private final Object[] namedArgs;
 
-    NativeStrictArguments(final ScriptObject proto, final Object[] values, final int numParams) {
-        super(proto, map$);
+    NativeStrictArguments(final Object[] values, final int numParams,final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         setIsArguments();
 
         final ScriptFunction func = ScriptFunctionImpl.getTypeErrorThrower();
@@ -143,10 +147,6 @@ public final class NativeStrictArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeStrictArguments.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeStrictArguments.class, name, MH.type(rtype, types));
     }
 }

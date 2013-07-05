@@ -70,14 +70,18 @@ public final class NativeArguments extends ScriptObject {
         map$ = map;
     }
 
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
     private Object length;
     private Object callee;
     private ArrayData namedArgs;
     // This is lazily initialized - only when delete is invoked at all
     private BitSet deleted;
 
-    NativeArguments(final ScriptObject proto, final Object[] arguments, final Object callee, final int numParams) {
-        super(proto, map$);
+    NativeArguments(final Object[] arguments, final Object callee, final int numParams, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         setIsArguments();
 
         setArray(ArrayData.allocate(arguments));
@@ -550,8 +554,13 @@ public final class NativeArguments extends ScriptObject {
     public static ScriptObject allocate(final Object[] arguments, final ScriptFunction callee, final int numParams) {
         // Strict functions won't always have a callee for arguments, and will pass null instead.
         final boolean isStrict = callee == null || callee.isStrict();
-        final ScriptObject proto = Global.objectPrototype();
-        return isStrict ? new NativeStrictArguments(proto, arguments, numParams) : new NativeArguments(proto, arguments, callee, numParams);
+        final Global global = Global.instance();
+        final ScriptObject proto = global.getObjectPrototype();
+        if (isStrict) {
+            return new NativeStrictArguments(arguments, numParams, proto, global.getStrictArgumentsMap());
+        } else {
+            return new NativeArguments(arguments, callee, numParams, proto, global.getArgumentsMap());
+        }
     }
 
     /**
@@ -623,11 +632,6 @@ public final class NativeArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeArguments.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeArguments.class, name, MH.type(rtype, types));
     }
-
 }

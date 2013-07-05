@@ -169,7 +169,7 @@ public final class NativeUint32Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getUint32ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getUint32ArrayPrototype();
     }
 }

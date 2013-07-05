@@ -363,6 +363,35 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private ScriptObject   builtinFloat32Array;
     private ScriptObject   builtinFloat64Array;
 
+    private PropertyMap    accessorPropertyDescriptorMap;
+    private PropertyMap    arrayBufferViewMap;
+    private PropertyMap    dataPropertyDescriptorMap;
+    private PropertyMap    genericPropertyDescriptorMap;
+    private PropertyMap    nativeArgumentsMap;
+    private PropertyMap    nativeArrayMap;
+    private PropertyMap    nativeArrayBufferMap;
+    private PropertyMap    nativeBooleanMap;
+    private PropertyMap    nativeDateMap;
+    private PropertyMap    nativeErrorMap;
+    private PropertyMap    nativeEvalErrorMap;
+    private PropertyMap    nativeJSAdapterMap;
+    private PropertyMap    nativeJavaImporterMap;
+    private PropertyMap    nativeNumberMap;
+    private PropertyMap    nativeRangeErrorMap;
+    private PropertyMap    nativeReferenceErrorMap;
+    private PropertyMap    nativeRegExpMap;
+    private PropertyMap    nativeRegExpExecResultMap;
+    private PropertyMap    nativeStrictArgumentsMap;
+    private PropertyMap    nativeStringMap;
+    private PropertyMap    nativeSyntaxErrorMap;
+    private PropertyMap    nativeTypeErrorMap;
+    private PropertyMap    nativeURIErrorMap;
+    private PropertyMap    prototypeObjectMap;
+    private PropertyMap    objectMap;
+    private PropertyMap    functionMap;
+    private PropertyMap    strictFunctionMap;
+    private PropertyMap    boundFunctionMap;
+
     // Flag to indicate that a split method issued a return statement
     private int splitState = -1;
 
@@ -379,8 +408,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH("loadWithNewGlobal", Object.class, Object.class, Object[].class);
     private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
 
-    private final Context context;
-
     // initialized by nasgen
     @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
@@ -391,7 +418,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param context the context
      */
     public Global(final Context context) {
-        this.context = context;
+        this.setContext(context);
         this.setIsScope();
         /*
          * Duplicate global's map and use it. This way the initial Map filled
@@ -425,7 +452,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the script environment
      */
     static ScriptEnvironment getEnv() {
-        return instance().context.getEnv();
+        return instance().getContext().getEnv();
     }
 
     /**
@@ -434,7 +461,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @return the context
      */
     static Context getThisContext() {
-        return instance().context;
+        return instance().getContext();
     }
 
     // GlobalObject interface implementation
@@ -457,11 +484,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     @Override
     public Object wrapAsObject(final Object obj) {
         if (obj instanceof Boolean) {
-            return new NativeBoolean((Boolean)obj);
+            return new NativeBoolean((Boolean)obj, this);
         } else if (obj instanceof Number) {
-            return new NativeNumber(((Number)obj).doubleValue());
+            return new NativeNumber(((Number)obj).doubleValue(), this);
         } else if (obj instanceof String || obj instanceof ConsString) {
-            return new NativeString((CharSequence)obj);
+            return new NativeString((CharSequence)obj, this);
         } else if (obj instanceof Object[]) { // extension
             return new NativeArray((Object[])obj);
         } else if (obj instanceof double[]) { // extension
@@ -490,7 +517,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptObject newObject() {
-        return new JO(getObjectPrototype());
+        return new JO(getObjectPrototype(), getObjectMap());
     }
 
     @Override
@@ -567,52 +594,52 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
     @Override
     public ScriptObject newError(final String msg) {
-        return new NativeError(msg);
+        return new NativeError(msg, this);
     }
 
     @Override
     public ScriptObject newEvalError(final String msg) {
-        return new NativeEvalError(msg);
+        return new NativeEvalError(msg, this);
     }
 
     @Override
     public ScriptObject newRangeError(final String msg) {
-        return new NativeRangeError(msg);
+        return new NativeRangeError(msg, this);
     }
 
     @Override
     public ScriptObject newReferenceError(final String msg) {
-        return new NativeReferenceError(msg);
+        return new NativeReferenceError(msg, this);
     }
 
     @Override
     public ScriptObject newSyntaxError(final String msg) {
-        return new NativeSyntaxError(msg);
+        return new NativeSyntaxError(msg, this);
     }
 
     @Override
     public ScriptObject newTypeError(final String msg) {
-        return new NativeTypeError(msg);
+        return new NativeTypeError(msg, this);
     }
 
     @Override
     public ScriptObject newURIError(final String msg) {
-        return new NativeURIError(msg);
+        return new NativeURIError(msg, this);
     }
 
     @Override
     public PropertyDescriptor newGenericDescriptor(final boolean configurable, final boolean enumerable) {
-        return new GenericPropertyDescriptor(configurable, enumerable);
+        return new GenericPropertyDescriptor(configurable, enumerable, this);
     }
 
     @Override
     public PropertyDescriptor newDataDescriptor(final Object value, final boolean configurable, final boolean enumerable, final boolean writable) {
-        return new DataPropertyDescriptor(configurable, enumerable, writable, value);
+        return new DataPropertyDescriptor(configurable, enumerable, writable, value, this);
     }
 
     @Override
     public PropertyDescriptor newAccessorDescriptor(final Object get, final Object set, final boolean configurable, final boolean enumerable) {
-        final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set);
+        final AccessorPropertyDescriptor desc = new AccessorPropertyDescriptor(configurable, enumerable, get == null ? UNDEFINED : get, set == null ? UNDEFINED : set, this);
 
         if (get == null) {
             desc.delete(PropertyDescriptor.GET, false);
@@ -701,7 +728,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
 
-        return global.context.eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
+        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
     }
 
     /**
@@ -741,7 +768,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public static Object load(final Object self, final Object source) throws IOException {
         final Global global = Global.instance();
         final ScriptObject scope = (self instanceof ScriptObject) ? (ScriptObject)self : global;
-        return global.context.load(scope, source);
+        return global.getContext().load(scope, source);
     }
 
     /**
@@ -761,7 +788,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final Object from = hasArgs ? args[0] : UNDEFINED;
         final Object[] arguments = hasArgs ? Arrays.copyOfRange(args, 1, length) : args;
 
-        return global.context.loadWithNewGlobal(from, arguments);
+        return global.getContext().loadWithNewGlobal(from, arguments);
     }
 
     /**
@@ -777,6 +804,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return UNDEFINED;
     }
 
+    // builtin prototype accessors
     ScriptObject getFunctionPrototype() {
         return ScriptFunction.getPrototype(builtinFunction);
     }
@@ -885,10 +913,122 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return ScriptFunction.getPrototype(builtinFloat64Array);
     }
 
+    // Builtin PropertyMap accessors
+    PropertyMap getAccessorPropertyDescriptorMap() {
+        return accessorPropertyDescriptorMap;
+    }
+
+    PropertyMap getArrayBufferViewMap() {
+        return arrayBufferViewMap;
+    }
+
+    PropertyMap getDataPropertyDescriptorMap() {
+        return dataPropertyDescriptorMap;
+    }
+
+    PropertyMap getGenericPropertyDescriptorMap() {
+        return genericPropertyDescriptorMap;
+    }
+
+    PropertyMap getArgumentsMap() {
+        return nativeArgumentsMap;
+    }
+
+    PropertyMap getArrayMap() {
+        return nativeArrayMap;
+    }
+
+    PropertyMap getArrayBufferMap() {
+        return nativeArrayBufferMap;
+    }
+
+    PropertyMap getBooleanMap() {
+        return nativeBooleanMap;
+    }
+
+    PropertyMap getDateMap() {
+        return nativeDateMap;
+    }
+
+    PropertyMap getErrorMap() {
+        return nativeErrorMap;
+    }
+
+    PropertyMap getEvalErrorMap() {
+        return nativeEvalErrorMap;
+    }
+
+    PropertyMap getJSAdapterMap() {
+        return nativeJSAdapterMap;
+    }
+
+    PropertyMap getJavaImporterMap() {
+        return nativeJavaImporterMap;
+    }
+
+    PropertyMap getNumberMap() {
+        return nativeNumberMap;
+    }
+
+    PropertyMap getRangeErrorMap() {
+        return nativeRangeErrorMap;
+    }
+
+    PropertyMap getReferenceErrorMap() {
+        return nativeReferenceErrorMap;
+    }
+
+    PropertyMap getRegExpMap() {
+        return nativeRegExpMap;
+    }
+
+    PropertyMap getRegExpExecResultMap() {
+        return nativeRegExpExecResultMap;
+    }
+
+    PropertyMap getStrictArgumentsMap() {
+        return nativeStrictArgumentsMap;
+    }
+
+    PropertyMap getStringMap() {
+        return nativeStringMap;
+    }
+
+    PropertyMap getSyntaxErrorMap() {
+        return nativeSyntaxErrorMap;
+    }
+
+    PropertyMap getTypeErrorMap() {
+        return nativeTypeErrorMap;
+    }
+
+    PropertyMap getURIErrorMap() {
+        return nativeURIErrorMap;
+    }
+
+    PropertyMap getPrototypeObjectMap() {
+        return prototypeObjectMap;
+    }
+
+    PropertyMap getObjectMap() {
+        return objectMap;
+    }
+
+    PropertyMap getFunctionMap() {
+        return functionMap;
+    }
+
+    PropertyMap getStrictFunctionMap() {
+        return strictFunctionMap;
+    }
+
+    PropertyMap getBoundFunctionMap() {
+        return boundFunctionMap;
+    }
+
     private ScriptFunction getBuiltinArray() {
         return builtinArray;
     }
-
 
     /**
      * Called from compiled script code to test if builtin has been overridden
@@ -1395,7 +1535,11 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private void init() {
         assert Context.getGlobal() == this : "this global is not set as current";
 
-        final ScriptEnvironment env = context.getEnv();
+        final ScriptEnvironment env = getContext().getEnv();
+
+        // duplicate PropertyMaps of Native* classes
+        copyInitialMaps();
+
         // initialize Function and Object constructor
         initFunctionAndObject();
 
@@ -1441,10 +1585,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptObject arrayPrototype = getArrayPrototype();
         arrayPrototype.addOwnProperty("length", Attribute.NOT_ENUMERABLE|Attribute.NOT_CONFIGURABLE, 0.0);
 
-        this.DEFAULT_DATE = new NativeDate(Double.NaN);
+        this.DEFAULT_DATE = new NativeDate(Double.NaN, this);
 
         // initialize default regexp object
-        this.DEFAULT_REGEXP = new NativeRegExp("(?:)");
+        this.DEFAULT_REGEXP = new NativeRegExp("(?:)", this);
 
         // RegExp.prototype should behave like a RegExp object. So copy the
         // properties.
@@ -1560,7 +1704,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
         final ScriptObject options = newObject();
-        final ScriptEnvironment scriptEnv = context.getEnv();
+        final ScriptEnvironment scriptEnv = getContext().getEnv();
         copyOptions(options, scriptEnv);
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
 
@@ -1713,6 +1857,37 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         }
     }
 
+    private void copyInitialMaps() {
+        this.accessorPropertyDescriptorMap = AccessorPropertyDescriptor.getInitialMap().duplicate();
+        this.arrayBufferViewMap = ArrayBufferView.getInitialMap().duplicate();
+        this.dataPropertyDescriptorMap = DataPropertyDescriptor.getInitialMap().duplicate();
+        this.genericPropertyDescriptorMap = GenericPropertyDescriptor.getInitialMap().duplicate();
+        this.nativeArgumentsMap = NativeArguments.getInitialMap().duplicate();
+        this.nativeArrayMap = NativeArray.getInitialMap().duplicate();
+        this.nativeArrayBufferMap = NativeArrayBuffer.getInitialMap().duplicate();
+        this.nativeBooleanMap = NativeBoolean.getInitialMap().duplicate();
+        this.nativeDateMap = NativeDate.getInitialMap().duplicate();
+        this.nativeErrorMap = NativeError.getInitialMap().duplicate();
+        this.nativeEvalErrorMap = NativeEvalError.getInitialMap().duplicate();
+        this.nativeJSAdapterMap = NativeJSAdapter.getInitialMap().duplicate();
+        this.nativeJavaImporterMap = NativeJavaImporter.getInitialMap().duplicate();
+        this.nativeNumberMap = NativeNumber.getInitialMap().duplicate();
+        this.nativeRangeErrorMap = NativeRangeError.getInitialMap().duplicate();
+        this.nativeReferenceErrorMap = NativeReferenceError.getInitialMap().duplicate();
+        this.nativeRegExpMap = NativeRegExp.getInitialMap().duplicate();
+        this.nativeRegExpExecResultMap = NativeRegExpExecResult.getInitialMap().duplicate();
+        this.nativeStrictArgumentsMap = NativeStrictArguments.getInitialMap().duplicate();
+        this.nativeStringMap = NativeString.getInitialMap().duplicate();
+        this.nativeSyntaxErrorMap = NativeSyntaxError.getInitialMap().duplicate();
+        this.nativeTypeErrorMap = NativeTypeError.getInitialMap().duplicate();
+        this.nativeURIErrorMap = NativeURIError.getInitialMap().duplicate();
+        this.prototypeObjectMap = PrototypeObject.getInitialMap().duplicate();
+        this.objectMap = JO.getInitialMap().duplicate();
+        this.functionMap = ScriptFunctionImpl.getInitialMap();
+        this.strictFunctionMap = ScriptFunctionImpl.getInitialStrictMap().duplicate();
+        this.boundFunctionMap = ScriptFunctionImpl.getInitialBoundMap().duplicate();
+    }
+
     // Function and Object constructors are inter-dependent. Also,
     // Function.prototype
     // functions are not properly initialized. We fix the references here.
@@ -1793,13 +1968,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         }
     }
 
-
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(Global.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), Global.class, name, MH.type(rtype, types));
     }
 
     RegExpResult getLastRegExpResult() {

@@ -47,6 +47,7 @@ import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -446,7 +447,7 @@ public class Shell {
                 }
 
                 if (res != null && res != ScriptRuntime.UNDEFINED) {
-                    err.println(ScriptRuntime.safeToString(res));
+                    err.println(JSType.toString(res));
                 }
             }
         } finally {

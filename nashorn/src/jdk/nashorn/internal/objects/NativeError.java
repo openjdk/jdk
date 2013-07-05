@@ -87,13 +87,25 @@ public final class NativeError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeError(final Object msg) {
-        super(Global.instance().getErrorPrototype(), $nasgenmap$);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    private NativeError(final Object msg, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+    }
+
+    NativeError(final Object msg, final Global global) {
+        this(msg, global.getErrorPrototype(), global.getErrorMap());
+    }
+
+    private NativeError(final Object msg) {
+        this(msg, Global.instance());
     }
 
     @Override
@@ -354,11 +366,7 @@ public final class NativeError extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeError.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeError.class, name, MH.type(rtype, types));
     }
 
     private static String getScriptStackString(final ScriptObject sobj, final Throwable exp) {

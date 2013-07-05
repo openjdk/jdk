@@ -160,7 +160,7 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getUint8ClampedArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getUint8ClampedArrayPrototype();
     }
 }

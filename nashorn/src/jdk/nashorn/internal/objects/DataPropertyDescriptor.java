@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.objects;
 
-import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.sameValue;
 
 import java.util.Objects;
@@ -65,12 +64,12 @@ public final class DataPropertyDescriptor extends ScriptObject implements Proper
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    DataPropertyDescriptor() {
-        this(false, false, false, UNDEFINED);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    DataPropertyDescriptor(final boolean configurable, final boolean enumerable, final boolean writable, final Object value) {
-        super(Global.objectPrototype(), $nasgenmap$);
+    DataPropertyDescriptor(final boolean configurable, final boolean enumerable, final boolean writable, final Object value, final Global global) {
+        super(global.getObjectPrototype(), global.getDataPropertyDescriptorMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.writable     = writable;

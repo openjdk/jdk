@@ -109,6 +109,8 @@ import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
@@ -148,11 +150,9 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContext> {
 
-    /** Name of the Global object, cannot be referred to as .class, @see CodeGenerator */
-    private static final String GLOBAL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "Global";
+    private static final String GLOBAL_OBJECT = Type.getInternalName(Global.class);
 
-    /** Name of the ScriptFunctionImpl, cannot be referred to as .class @see FunctionObjectCreator */
-    private static final String SCRIPTFUNCTION_IMPL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
+    private static final String SCRIPTFUNCTION_IMPL_OBJECT = Type.getInternalName(ScriptFunctionImpl.class);
 
     /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
      *  by reflection in class installation */
@@ -3203,11 +3203,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }.makeObject(method);
     }
 
-    /*
-     * Globals are special. We cannot refer to any Global (or NativeObject) class by .class, as they are different
-     * for different contexts. As far as I can tell, the only NativeObject that we need to deal with like this
-     * is from the code pipeline is Global
-     */
+    // calls on Global class.
     private MethodEmitter globalInstance() {
         return method.invokestatic(GLOBAL_OBJECT, "instance", "()L" + GLOBAL_OBJECT + ';');
     }

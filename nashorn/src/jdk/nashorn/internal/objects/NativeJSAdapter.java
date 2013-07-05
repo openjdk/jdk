@@ -49,6 +49,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.scripts.JO;
 
 /**
  * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be
@@ -146,8 +147,12 @@ public final class NativeJSAdapter extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeJSAdapter(final ScriptObject proto, final Object overrides, final ScriptObject adaptee) {
-        super(proto, $nasgenmap$);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    NativeJSAdapter(final Object overrides, final ScriptObject adaptee, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         this.adaptee = wrapAdaptee(adaptee);
         if (overrides instanceof ScriptObject) {
             this.overrides = true;
@@ -159,9 +164,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        final ScriptObject sobj = new jdk.nashorn.internal.scripts.JO();
-        sobj.setProto(adaptee);
-        return sobj;
+        return new JO(adaptee, Global.instance().getObjectMap());
     }
 
     @Override
@@ -570,11 +573,12 @@ public final class NativeJSAdapter extends ScriptObject {
             throw typeError("not.an.object", ScriptRuntime.safeToString(adaptee));
         }
 
+        final Global global = Global.instance();
         if (proto != null && !(proto instanceof ScriptObject)) {
-            proto = Global.instance().getJSAdapterPrototype();
+            proto = global.getJSAdapterPrototype();
         }
 
-        return new NativeJSAdapter((ScriptObject)proto, overrides, (ScriptObject)adaptee);
+        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, global.getJSAdapterMap());
     }
 
     @Override
@@ -736,10 +740,6 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeJSAdapter.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeJSAdapter.class, name, MH.type(rtype, types));
     }
 }

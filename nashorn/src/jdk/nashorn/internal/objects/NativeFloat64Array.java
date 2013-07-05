@@ -202,7 +202,7 @@ public final class NativeFloat64Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getFloat64ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getFloat64ArrayPrototype();
     }
 }

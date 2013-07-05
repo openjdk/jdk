@@ -51,8 +51,9 @@ public final class NativeDebug extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeDebug() {
-        super(Global.objectPrototype(), $nasgenmap$);
+    private NativeDebug() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     @Override

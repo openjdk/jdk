@@ -61,6 +61,7 @@ public final class NativeFunction {
 
     // do *not* create me!
     private NativeFunction() {
+        throw new UnsupportedOperationException();
     }
 
     /**
