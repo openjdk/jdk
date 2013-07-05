@@ -303,7 +303,9 @@ public class CipherInputStream extends FilterInputStream {
         input.close();
         try {
             // throw away the unprocessed data
-            cipher.doFinal();
+            if (!done) {
+                cipher.doFinal();
+            }
         }
         catch (BadPaddingException | IllegalBlockSizeException ex) {
         }
