@@ -555,11 +555,6 @@ public class Attr extends JCTree.Visitor {
                 }
             });
         }
-
-        @Override
-        protected Type check(DiagnosticPosition pos, Type found) {
-            return chk.checkNonVoid(pos, super.check(pos, found));
-        }
     }
 
     final ResultInfo statInfo;
@@ -1697,7 +1692,8 @@ public class Attr extends JCTree.Visitor {
                               diags.fragment("unexpected.ret.val"));
                 }
                 attribTree(tree.expr, env, env.info.returnResult);
-            } else if (!env.info.returnResult.pt.hasTag(VOID)) {
+            } else if (!env.info.returnResult.pt.hasTag(VOID) &&
+                    !env.info.returnResult.pt.hasTag(NONE)) {
                 env.info.returnResult.checkContext.report(tree.pos(),
                               diags.fragment("missing.ret.val"));
             }

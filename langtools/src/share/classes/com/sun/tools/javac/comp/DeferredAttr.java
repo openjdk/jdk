@@ -95,7 +95,7 @@ public class DeferredAttr extends JCTree.Visitor {
         make = TreeMaker.instance(context);
         types = Types.instance(context);
         Names names = Names.instance(context);
-        stuckTree = make.Ident(names.empty).setType(Type.noType);
+        stuckTree = make.Ident(names.empty).setType(Type.stuckType);
     }
 
     /** shared tree for stuck expressions */
@@ -649,7 +649,12 @@ public class DeferredAttr extends JCTree.Visitor {
          * a default expected type (j.l.Object).
          */
         private Type recover(DeferredType dt) {
-            dt.check(attr.new RecoveryInfo(deferredAttrContext));
+            dt.check(attr.new RecoveryInfo(deferredAttrContext) {
+                @Override
+                protected Type check(DiagnosticPosition pos, Type found) {
+                    return chk.checkNonVoid(pos, super.check(pos, found));
+                }
+            });
             return super.apply(dt);
         }
     }
