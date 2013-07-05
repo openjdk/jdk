@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Properties;
  * The most significant component is at index 0.
  * An empty compound name has no components.
  *<p>
- * <h4>Compound Name Syntax</h4>
+ * <h1>Compound Name Syntax</h1>
  * The syntax of a compound name is specified using a set of properties:
  *<dl>
  *  <dt>jndi.syntax.direction
@@ -136,7 +136,7 @@ import java.util.Properties;
  * so that when the same string is parsed, it will yield the same components
  * of the original compound name.
  *<p>
- *<h4>Multithreaded Access</h4>
+ *<h1>Multithreaded Access</h1>
  * A <tt>CompoundName</tt> instance is not synchronized against concurrent
  * multithreaded access. Multiple threads trying to access and modify a
  * <tt>CompoundName</tt> should lock the object.

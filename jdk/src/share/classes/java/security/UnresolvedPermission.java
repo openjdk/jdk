@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,11 @@ import java.security.cert.*;
  * the class provides a zero, one, and/or two-argument constructor.
  * The zero-argument constructor would be used to instantiate
  * a permission without a name and without actions.
- * A one-arg constructor is assumed to take a <code>String</code>
+ * A one-arg constructor is assumed to take a {@code String}
  * name as input, and a two-arg constructor is assumed to take a
- * <code>String</code> name and <code>String</code> actions
+ * {@code String} name and {@code String} actions
  * as input.  UnresolvedPermission may invoke a
- * constructor with a <code>null</code> name and/or actions.
+ * constructor with a {@code null} name and/or actions.
  * If an appropriate permission constructor is not available,
  * the UnresolvedPermission is ignored and the relevant permission
  * will not be granted to executing code.
@@ -84,9 +84,9 @@ import java.security.cert.*;
  * <p> The newly created permission object replaces the
  * UnresolvedPermission, which is removed.
  *
- * <p> Note that the <code>getName</code> method for an
- * <code>UnresolvedPermission</code> returns the
- * <code>type</code> (class name) for the underlying permission
+ * <p> Note that the {@code getName} method for an
+ * {@code UnresolvedPermission} returns the
+ * {@code type} (class name) for the underlying permission
  * that has not been resolved.
  *
  * @see java.security.Permission
@@ -440,7 +440,7 @@ implements java.io.Serializable
      * has not been resolved.
      *
      * @return the target name of the underlying permission that
-     *          has not been resolved, or <code>null</code>,
+     *          has not been resolved, or {@code null},
      *          if there is no targe name
      *
      * @since 1.5
@@ -454,7 +454,7 @@ implements java.io.Serializable
      * has not been resolved.
      *
      * @return the actions for the underlying permission that
-     *          has not been resolved, or <code>null</code>
+     *          has not been resolved, or {@code null}
      *          if there are no actions
      *
      * @since 1.5
@@ -503,16 +503,16 @@ implements java.io.Serializable
     /**
      * Writes this object out to a stream (i.e., serializes it).
      *
-     * @serialData An initial <code>String</code> denoting the
-     * <code>type</code> is followed by a <code>String</code> denoting the
-     * <code>name</code> is followed by a <code>String</code> denoting the
-     * <code>actions</code> is followed by an <code>int</code> indicating the
+     * @serialData An initial {@code String} denoting the
+     * {@code type} is followed by a {@code String} denoting the
+     * {@code name} is followed by a {@code String} denoting the
+     * {@code actions} is followed by an {@code int} indicating the
      * number of certificates to follow
      * (a value of "zero" denotes that there are no certificates associated
      * with this object).
-     * Each certificate is written out starting with a <code>String</code>
+     * Each certificate is written out starting with a {@code String}
      * denoting the certificate type, followed by an
-     * <code>int</code> specifying the length of the certificate encoding,
+     * {@code int} specifying the length of the certificate encoding,
      * followed by the certificate encoding itself which is written out as an
      * array of bytes.
      */

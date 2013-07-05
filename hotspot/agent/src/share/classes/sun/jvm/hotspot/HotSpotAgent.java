@@ -25,6 +25,8 @@
 package sun.jvm.hotspot;
 
 import java.rmi.RemoteException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import sun.jvm.hotspot.debugger.Debugger;
 import sun.jvm.hotspot.debugger.DebuggerException;
@@ -63,7 +65,6 @@ public class HotSpotAgent {
 
     private String os;
     private String cpu;
-    private String fileSep;
 
     // The system can work in several ways:
     //  - Attaching to local process
@@ -151,6 +152,14 @@ public class HotSpotAgent {
         this.javaExecutableName = javaExecutableName;
         this.coreFileName = coreFileName;
         startupMode = CORE_FILE_MODE;
+        isServer = false;
+        go();
+    }
+
+    /** This uses a JVMDebugger that is already attached to the core or process */
+    public synchronized void attach(JVMDebugger d)
+    throws DebuggerException {
+        debugger = d;
         isServer = false;
         go();
     }
@@ -303,28 +312,37 @@ public class HotSpotAgent {
             // server, but not client attaching to server)
             //
 
-            try {
-                os  = PlatformInfo.getOS();
-                cpu = PlatformInfo.getCPU();
-            }
-            catch (UnsupportedPlatformException e) {
-                throw new DebuggerException(e);
-            }
-            fileSep = System.getProperty("file.separator");
+            // Handle existing or alternate JVMDebugger:
+            // these will set os, cpu independently of our PlatformInfo implementation.
+            String alternateDebugger = System.getProperty("sa.altDebugger");
+            if (debugger != null) {
+                setupDebuggerExisting();
 
-            if (os.equals("solaris")) {
-                setupDebuggerSolaris();
-            } else if (os.equals("win32")) {
-                setupDebuggerWin32();
-            } else if (os.equals("linux")) {
-                setupDebuggerLinux();
-            } else if (os.equals("bsd")) {
-                setupDebuggerBsd();
-            } else if (os.equals("darwin")) {
-                setupDebuggerDarwin();
+            } else if (alternateDebugger != null) {
+                setupDebuggerAlternate(alternateDebugger);
+
             } else {
-                // Add support for more operating systems here
-                throw new DebuggerException("Operating system " + os + " not yet supported");
+                // Otherwise, os, cpu are those of our current platform:
+                try {
+                    os  = PlatformInfo.getOS();
+                    cpu = PlatformInfo.getCPU();
+                } catch (UnsupportedPlatformException e) {
+                   throw new DebuggerException(e);
+                }
+                if (os.equals("solaris")) {
+                    setupDebuggerSolaris();
+                } else if (os.equals("win32")) {
+                    setupDebuggerWin32();
+                } else if (os.equals("linux")) {
+                    setupDebuggerLinux();
+                } else if (os.equals("bsd")) {
+                    setupDebuggerBsd();
+                } else if (os.equals("darwin")) {
+                    setupDebuggerDarwin();
+                } else {
+                    // Add support for more operating systems here
+                    throw new DebuggerException("Operating system " + os + " not yet supported");
+                }
             }
 
             if (isServer) {
@@ -423,6 +441,41 @@ public class HotSpotAgent {
     // OS-specific debugger setup/connect routines
     //
 
+    // Use the existing JVMDebugger, as passed to our constructor.
+    // Retrieve os and cpu from that debugger, not the current platform.
+    private void setupDebuggerExisting() {
+
+        os = debugger.getOS();
+        cpu = debugger.getCPU();
+        setupJVMLibNames(os);
+        machDesc = debugger.getMachineDescription();
+    }
+
+    // Given a classname, load an alternate implementation of JVMDebugger.
+    private void setupDebuggerAlternate(String alternateName) {
+
+        try {
+            Class c = Class.forName(alternateName);
+            Constructor cons = c.getConstructor();
+            debugger = (JVMDebugger) cons.newInstance();
+            attachDebugger();
+            setupDebuggerExisting();
+
+        } catch (ClassNotFoundException cnfe) {
+            throw new DebuggerException("Cannot find alternate SA Debugger: '" + alternateName + "'");
+        } catch (NoSuchMethodException nsme) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' has missing constructor.");
+        } catch (InstantiationException ie) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", ie);
+        } catch (IllegalAccessException iae) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
+        } catch (InvocationTargetException iae) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
+        }
+
+        System.err.println("Loaded alternate HotSpot SA Debugger: " + alternateName);
+    }
+
     //
     // Solaris
     //
@@ -466,6 +519,11 @@ public class HotSpotAgent {
         debugger = new RemoteDebuggerClient(remote);
         machDesc = ((RemoteDebuggerClient) debugger).getMachineDescription();
         os = debugger.getOS();
+        setupJVMLibNames(os);
+        cpu = debugger.getCPU();
+    }
+
+    private void setupJVMLibNames(String os) {
         if (os.equals("solaris")) {
             setupJVMLibNamesSolaris();
         } else if (os.equals("win32")) {
@@ -479,8 +537,6 @@ public class HotSpotAgent {
         } else {
             throw new RuntimeException("Unknown OS type");
         }
-
-        cpu = debugger.getCPU();
     }
 
     private void setupJVMLibNamesSolaris() {

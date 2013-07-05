@@ -145,6 +145,7 @@ public class IntSliceOpTest extends OpTestCase {
         List<Integer> skips = sizes(data.size());
 
         for (int s : skips) {
+            setContext("skip", s);
             Collection<Integer> sr = exerciseOps(data, st -> st.substream(s));
             assertEquals(sr.size(), sliceSize(data.size(), s));
 
@@ -159,7 +160,9 @@ public class IntSliceOpTest extends OpTestCase {
         List<Integer> limits = skips;
 
         for (int s : skips) {
+            setContext("skip", s);
             for (int limit : limits) {
+                setContext("limit", limit);
                 Collection<Integer> sr = exerciseOps(data, st -> st.substream(s).limit(limit));
                 assertEquals(sr.size(), sliceSize(sliceSize(data.size(), s), 0, limit));
 
@@ -174,6 +177,7 @@ public class IntSliceOpTest extends OpTestCase {
         List<Integer> limits = sizes(data.size());
 
         for (int limit : limits) {
+            setContext("limit", limit);
             Collection<Integer> sr = exerciseOps(data, st -> st.limit(limit));
             assertEquals(sr.size(), sliceSize(data.size(), 0, limit));
 
@@ -189,6 +193,7 @@ public class IntSliceOpTest extends OpTestCase {
     @Test(groups = { "serialization-hostile" })
     public void testLimitShortCircuit() {
         for (int l : Arrays.asList(0, 10)) {
+            setContext("limit", l);
             AtomicInteger ai = new AtomicInteger();
             IntStream.range(1, 101)
                     .peek(i -> ai.getAndIncrement())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ package java.security;
  * representation of the key is needed outside the Java Virtual Machine,
  * as when transmitting the key to some other party. The key
  * is encoded according to a standard format (such as
- * X.509 <code>SubjectPublicKeyInfo</code> or PKCS#8), and
+ * X.509 {@code SubjectPublicKeyInfo} or PKCS#8), and
  * is returned using the {@link #getEncoded() getEncoded} method.
- * Note: The syntax of the ASN.1 type <code>SubjectPublicKeyInfo</code>
+ * Note: The syntax of the ASN.1 type {@code SubjectPublicKeyInfo}
  * is defined as follows:
  *
  * <pre>
@@ -132,11 +132,11 @@ public interface Key extends java.io.Serializable {
      * For example, the name of the ASN.1 data format for public
      * keys is <I>SubjectPublicKeyInfo</I>, as
      * defined by the X.509 standard; in this case, the returned format is
-     * <code>"X.509"</code>. Similarly,
+     * {@code "X.509"}. Similarly,
      * the name of the ASN.1 data format for private keys is
      * <I>PrivateKeyInfo</I>,
      * as defined by the PKCS #8 standard; in this case, the returned format is
-     * <code>"PKCS#8"</code>.
+     * {@code "PKCS#8"}.
      *
      * @return the primary encoding format of the key.
      */
