@@ -117,11 +117,11 @@ public class Runtime {
      *
      *   <ul>
      *
-     *   <p> <li> The program <i>exits</i> normally, when the last non-daemon
+     *   <li> The program <i>exits</i> normally, when the last non-daemon
      *   thread exits or when the <tt>{@link #exit exit}</tt> (equivalently,
-     *   <tt>{@link System#exit(int) System.exit}</tt>) method is invoked, or
+     *   {@link System#exit(int) System.exit}) method is invoked, or
      *
-     *   <p> <li> The virtual machine is <i>terminated</i> in response to a
+     *   <li> The virtual machine is <i>terminated</i> in response to a
      *   user interrupt, such as typing <tt>^C</tt>, or a system-wide event,
      *   such as user logoff or system shutdown.
      *

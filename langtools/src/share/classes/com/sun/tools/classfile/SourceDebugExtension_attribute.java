@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.classfile;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * See JVMS, section 4.8.15.
@@ -38,6 +39,8 @@ import java.io.IOException;
  *  deletion without notice.</b>
  */
 public class SourceDebugExtension_attribute extends Attribute {
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+
     SourceDebugExtension_attribute(ClassReader cr, int name_index, int length) throws IOException {
         super(name_index, length);
         debug_extension = new byte[attribute_length];
@@ -55,12 +58,7 @@ public class SourceDebugExtension_attribute extends Attribute {
     }
 
     public String getValue() {
-        DataInputStream d  = new DataInputStream(new ByteArrayInputStream(debug_extension));
-        try {
-            return d.readUTF();
-        } catch (IOException e) {
-            return null;
-        }
+        return new String(debug_extension, UTF8);
     }
 
     public <R, D> R accept(Visitor<R, D> visitor, D data) {

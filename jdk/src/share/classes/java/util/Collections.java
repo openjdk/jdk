@@ -4304,6 +4304,11 @@ public class Collections {
         }
 
         private Object readResolve() { return Collections.reverseOrder(); }
+
+        @Override
+        public Comparator<Comparable<Object>> reversed() {
+            return Comparator.naturalOrder();
+        }
     }
 
     /**
@@ -4366,6 +4371,11 @@ public class Collections {
 
         public int hashCode() {
             return cmp.hashCode() ^ Integer.MIN_VALUE;
+        }
+
+        @Override
+        public Comparator<T> reversed() {
+            return cmp;
         }
     }
 

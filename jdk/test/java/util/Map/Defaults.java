@@ -271,14 +271,21 @@ public class Defaults {
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeIfPresentNulls(String description, Map<IntegerEnum, String> map) {
-        assertTrue(map.containsKey(null));
-        assertNull(map.get(null));
+        assertTrue(map.containsKey(null), description + ": null key absent");
+        assertNull(map.get(null), description + ": value not null");
         assertSame(map.computeIfPresent(null, (k, v) -> {
-            fail();
+            fail(description + ": null value is not deemed present");
             return EXTRA_VALUE;
         }), null, description);
         assertTrue(map.containsKey(null));
-        assertSame(map.get(null), null, description);
+        assertNull(map.get(null), description);
+        assertNull(map.remove(EXTRA_KEY), description + ": unexpected mapping");
+        assertNull(map.put(EXTRA_KEY, null), description + ": unexpected value");
+        assertSame(map.computeIfPresent(EXTRA_KEY, (k, v) -> {
+            fail(description + ": null value is not deemed present");
+            return EXTRA_VALUE;
+        }), null, description);
+        assertNull(map.get(EXTRA_KEY), description + ": null mapping gone");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
@@ -307,19 +314,59 @@ public class Defaults {
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
         assertSame(map.compute(null, (k, v) -> {
+            assertNull(k);
+            assertNull(v);
+            return null;
+        }), null, description);
+        assertFalse(map.containsKey(null), description + ": null key present.");
+        assertSame(map.compute(null, (k, v) -> {
             assertSame(k, null);
             assertNull(v);
             return EXTRA_VALUE;
         }), EXTRA_VALUE, description);
         assertTrue(map.containsKey(null));
         assertSame(map.get(null), EXTRA_VALUE, description);
-        assertSame(map.remove(null), EXTRA_VALUE, "removed value not expected");
-        assertFalse(map.containsKey(null), "null key present");
+        assertSame(map.remove(null), EXTRA_VALUE, description + ": removed value not expected");
+        // no mapping before and after
+        assertFalse(map.containsKey(null), description + ": null key present");
         assertSame(map.compute(null, (k, v) -> {
-            assertSame(k, null);
+            assertNull(k);
+            assertNull(v);
+            return null;
+        }), null, description + ": expected null result" );
+        assertFalse(map.containsKey(null), description + ": null key present");
+        // compute with map not containing value
+        assertNull(map.remove(EXTRA_KEY),  description + ": unexpected mapping");
+        assertFalse(map.containsKey(EXTRA_KEY),  description + ": key present");
+        assertSame(map.compute(EXTRA_KEY, (k, v) -> {
+            assertSame(k, EXTRA_KEY);
             assertNull(v);
             return null;
         }), null, description);
+        assertFalse(map.containsKey(EXTRA_KEY),  description + ": null key present");
+        // ensure removal.
+        assertNull(map.put(EXTRA_KEY, EXTRA_VALUE));
+        assertSame(map.compute(EXTRA_KEY, (k, v) -> {
+            assertSame(k, EXTRA_KEY);
+            assertSame(v, EXTRA_VALUE);
+            return null;
+        }), null, description + ": null resulted expected");
+        assertFalse(map.containsKey(EXTRA_KEY),  description + ": null key present");
+       // compute with map containing null value
+        assertNull(map.put(EXTRA_KEY, null),  description + ": unexpected value");
+        assertSame(map.compute(EXTRA_KEY, (k, v) -> {
+            assertSame(k, EXTRA_KEY);
+            assertNull(v);
+            return null;
+        }), null, description);
+        assertFalse(map.containsKey(EXTRA_KEY),  description + ": null key present");
+        assertNull(map.put(EXTRA_KEY, null),  description + ": unexpected value");
+        assertSame(map.compute(EXTRA_KEY, (k, v) -> {
+            assertSame(k, EXTRA_KEY);
+            assertNull(v);
+            return EXTRA_VALUE;
+        }), EXTRA_VALUE, description);
+        assertTrue(map.containsKey(EXTRA_KEY), "null key present");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")

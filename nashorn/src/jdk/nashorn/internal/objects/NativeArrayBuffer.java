@@ -32,12 +32,16 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 @ScriptClass("ArrayBuffer")
 final class NativeArrayBuffer extends ScriptObject {
     private final byte[] buffer;
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
@@ -49,8 +53,8 @@ final class NativeArrayBuffer extends ScriptObject {
     }
 
     protected NativeArrayBuffer(final byte[] byteArray) {
+        super(Global.instance().getArrayBufferPrototype(), $nasgenmap$);
         this.buffer = byteArray;
-        this.setProto(Global.instance().getArrayBufferPrototype());
     }
 
     protected NativeArrayBuffer(final int byteLength) {

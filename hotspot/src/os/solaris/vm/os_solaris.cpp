@@ -1924,12 +1924,13 @@ bool os::address_is_in_vm(address addr) {
   Dl_info dlinfo;
 
   if (libjvm_base_addr == NULL) {
-    dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo);
-    libjvm_base_addr = (address)dlinfo.dli_fbase;
+    if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
+      libjvm_base_addr = (address)dlinfo.dli_fbase;
+    }
     assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
   }
 
-  if (dladdr((void *)addr, &dlinfo)) {
+  if (dladdr((void *)addr, &dlinfo) != 0) {
     if (libjvm_base_addr == (address)dlinfo.dli_fbase) return true;
   }
 
@@ -1941,114 +1942,133 @@ static dladdr1_func_type dladdr1_func = NULL;
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int * offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
   // dladdr1_func was initialized in os::init()
-  if (dladdr1_func){
-      // yes, we have dladdr1
+  if (dladdr1_func != NULL) {
+    // yes, we have dladdr1
 
-      // Support for dladdr1 is checked at runtime; it may be
-      // available even if the vm is built on a machine that does
-      // not have dladdr1 support.  Make sure there is a value for
-      // RTLD_DL_SYMENT.
-      #ifndef RTLD_DL_SYMENT
-      #define RTLD_DL_SYMENT 1
-      #endif
+    // Support for dladdr1 is checked at runtime; it may be
+    // available even if the vm is built on a machine that does
+    // not have dladdr1 support.  Make sure there is a value for
+    // RTLD_DL_SYMENT.
+    #ifndef RTLD_DL_SYMENT
+    #define RTLD_DL_SYMENT 1
+    #endif
 #ifdef _LP64
-      Elf64_Sym * info;
+    Elf64_Sym * info;
 #else
-      Elf32_Sym * info;
+    Elf32_Sym * info;
 #endif
-      if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
-                       RTLD_DL_SYMENT)) {
-        if ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
-          if (buf != NULL) {
-            if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
-              jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
-            }
-            if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-            return true;
-        }
-      }
-      if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
-        if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-           buf, buflen, offset, dlinfo.dli_fname)) {
+    if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
+                     RTLD_DL_SYMENT) != 0) {
+      // see if we have a matching symbol that covers our address
+      if (dlinfo.dli_saddr != NULL &&
+          (char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
+        if (dlinfo.dli_sname != NULL) {
+          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+            jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
+          }
+          if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
           return true;
         }
       }
-      if (buf != NULL) buf[0] = '\0';
-      if (offset != NULL) *offset  = -1;
-      return false;
-  } else {
-      // no, only dladdr is available
-      if (dladdr((void *)addr, &dlinfo)) {
-        if (buf != NULL) {
-          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
-            jio_snprintf(buf, buflen, dlinfo.dli_sname);
-        }
-        if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-        return true;
-      } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
+      // no matching symbol so try for just file info
+      if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
         if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-          buf, buflen, offset, dlinfo.dli_fname)) {
+                            buf, buflen, offset, dlinfo.dli_fname)) {
           return true;
         }
       }
-      if (buf != NULL) buf[0] = '\0';
-      if (offset != NULL) *offset  = -1;
-      return false;
+    }
+    buf[0] = '\0';
+    if (offset != NULL) *offset  = -1;
+    return false;
   }
+
+  // no, only dladdr is available
+  if (dladdr((void *)addr, &dlinfo) != 0) {
+    // see if we have a matching symbol
+    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+        jio_snprintf(buf, buflen, dlinfo.dli_sname);
+      }
+      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      return true;
+    }
+    // no matching symbol so try for just file info
+    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname)) {
+        return true;
+      }
+    }
+  }
+  buf[0] = '\0';
+  if (offset != NULL) *offset  = -1;
+  return false;
 }
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != NULL) {
+      jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+      *offset = addr - (address)dlinfo.dli_fbase;
+    }
+    return true;
   }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
 // Prints the names and full paths of all opened dynamic libraries
 // for current process
 void os::print_dll_info(outputStream * st) {
-    Dl_info dli;
-    void *handle;
-    Link_map *map;
-    Link_map *p;
+  Dl_info dli;
+  void *handle;
+  Link_map *map;
+  Link_map *p;
 
-    st->print_cr("Dynamic libraries:"); st->flush();
+  st->print_cr("Dynamic libraries:"); st->flush();
 
-    if (!dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli)) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    handle = dlopen(dli.dli_fname, RTLD_LAZY);
-    if (handle == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    dlinfo(handle, RTLD_DI_LINKMAP, &map);
-    if (map == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
+  if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
+      dli.dli_fname == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  handle = dlopen(dli.dli_fname, RTLD_LAZY);
+  if (handle == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  if (map == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
 
-    while (map->l_prev != NULL)
-        map = map->l_prev;
+  while (map->l_prev != NULL)
+    map = map->l_prev;
 
-    while (map != NULL) {
-        st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
-        map = map->l_next;
-    }
+  while (map != NULL) {
+    st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
+    map = map->l_next;
+  }
 
-    dlclose(handle);
+  dlclose(handle);
 }
 
   // Loads .dll/.so and
@@ -2475,7 +2495,12 @@ void os::jvm_path(char *buf, jint buflen) {
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  realpath((char *)dlinfo.dli_fname, buf);
+  if (ret != 0 && dlinfo.dli_fname != NULL) {
+    realpath((char *)dlinfo.dli_fname, buf);
+  } else {
+    buf[0] = '\0';
+    return;
+  }
 
   if (Arguments::created_by_gamma_launcher()) {
     // Support for the gamma launcher.  Typical value for buf is
@@ -6077,24 +6102,20 @@ int os::loadavg(double loadavg[], int nelem) {
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
-  if (dladdr(addr, &dlinfo)) {
-#ifdef _LP64
-    st->print("0x%016lx: ", addr);
-#else
-    st->print("0x%08x: ", addr);
-#endif
-    if (dlinfo.dli_sname != NULL)
+  if (dladdr(addr, &dlinfo) != 0) {
+    st->print(PTR_FORMAT ": ", addr);
+    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#lx", dlinfo.dli_sname, addr-(intptr_t)dlinfo.dli_saddr);
-    else if (dlinfo.dli_fname)
+    } else if (dlinfo.dli_fbase != NULL)
       st->print("<offset %#lx>", addr-(intptr_t)dlinfo.dli_fbase);
     else
       st->print("<absolute address>");
-    if (dlinfo.dli_fname)  st->print(" in %s", dlinfo.dli_fname);
-#ifdef _LP64
-    if (dlinfo.dli_fbase)  st->print(" at 0x%016lx", dlinfo.dli_fbase);
-#else
-    if (dlinfo.dli_fbase)  st->print(" at 0x%08x", dlinfo.dli_fbase);
-#endif
+    if (dlinfo.dli_fname != NULL) {
+      st->print(" in %s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL) {
+      st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
+    }
     st->cr();
 
     if (Verbose) {
@@ -6105,7 +6126,7 @@ bool os::find(address addr, outputStream* st) {
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
-      if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
+      if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
       Disassembler::decode(begin, end, st);
