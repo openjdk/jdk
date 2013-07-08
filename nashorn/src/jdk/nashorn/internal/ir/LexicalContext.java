@@ -54,17 +54,43 @@ public class LexicalContext {
 
     /**
      * Set the flags for a lexical context node on the stack. Does not
-     * replace the flags, but rather adds to them
+     * replace the flags, but rather adds to them.
      *
      * @param node  node
      * @param flag  new flag to set
      */
     public void setFlag(final LexicalContextNode node, final int flag) {
         if (flag != 0) {
+            // Use setBlockNeedsScope() instead
+            assert !(flag == Block.NEEDS_SCOPE && node instanceof Block);
+
             for (int i = sp - 1; i >= 0; i--) {
                 if (stack[i] == node) {
                     flags[i] |= flag;
                     return;
+                }
+            }
+        }
+        assert false;
+    }
+
+    /**
+     * Marks the block as one that creates a scope. Note that this method must
+     * be used instead of {@link #setFlag(LexicalContextNode, int)} with
+     * {@link Block#NEEDS_SCOPE} because it atomically also sets the
+     * {@link FunctionNode#HAS_SCOPE_BLOCK} flag on the block's containing
+     * function.
+     * @param block the block that needs to be marked as creating a scope.
+     */
+    public void setBlockNeedsScope(final Block block) {
+        for (int i = sp - 1; i >= 0; i--) {
+            if (stack[i] == block) {
+                flags[i] |= Block.NEEDS_SCOPE;
+                for(int j = i - 1; j >=0; j --) {
+                    if(stack[j] instanceof FunctionNode) {
+                        flags[j] |= FunctionNode.HAS_SCOPE_BLOCK;
+                        return;
+                    }
                 }
             }
         }

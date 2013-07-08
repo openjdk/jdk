@@ -74,11 +74,6 @@ public final class ObjectClassGenerator {
     static final int FIELD_PADDING  = 4;
 
     /**
-     * Rounding when calculating the number of fields.
-     */
-    static final int FIELD_ROUNDING = 4;
-
-    /**
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */
@@ -325,7 +320,6 @@ public final class ObjectClassGenerator {
         final List<String> initFields   = addFields(classEmitter, fieldCount);
 
         final MethodEmitter init = newInitMethod(classEmitter);
-        initializeToUndefined(init, className, initFields);
         init.returnVoid();
         init.end();
 
@@ -707,6 +701,15 @@ public final class ObjectClassGenerator {
             assert false;
             return null;
         }
+    }
+
+    /**
+     * Add padding to field count to avoid creating too many classes and have some spare fields
+     * @param count the field count
+     * @return the padded field count
+     */
+    static int getPaddedFieldCount(final int count) {
+        return count / FIELD_PADDING * FIELD_PADDING + FIELD_PADDING;
     }
 
     //

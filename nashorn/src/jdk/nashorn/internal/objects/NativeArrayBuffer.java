@@ -43,6 +43,10 @@ final class NativeArrayBuffer extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
         if (args.length == 0) {
@@ -52,9 +56,13 @@ final class NativeArrayBuffer extends ScriptObject {
         return new NativeArrayBuffer(JSType.toInt32(args[0]));
     }
 
-    protected NativeArrayBuffer(final byte[] byteArray) {
-        super(Global.instance().getArrayBufferPrototype(), $nasgenmap$);
+    protected NativeArrayBuffer(final byte[] byteArray, final Global global) {
+        super(global.getArrayBufferPrototype(), global.getArrayBufferMap());
         this.buffer = byteArray;
+    }
+
+    protected NativeArrayBuffer(final byte[] byteArray) {
+        this(byteArray, Global.instance());
     }
 
     protected NativeArrayBuffer(final int byteLength) {

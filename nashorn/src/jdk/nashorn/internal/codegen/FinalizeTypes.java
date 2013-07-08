@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Assignment;
@@ -174,6 +173,14 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         Type destType = specialized.type;
         if (destType == null) {
             destType = specBinaryNode.getType();
+        }
+        // Register assignments to this object in case this is used as constructor
+        if (binaryNode.lhs() instanceof AccessNode) {
+            AccessNode accessNode = (AccessNode) binaryNode.lhs();
+
+            if (accessNode.getBase().getSymbol().isThis()) {
+                lc.getCurrentFunction().addThisProperty(accessNode.getProperty().getName());
+            }
         }
         return specBinaryNode.setRHS(convert(specBinaryNode.rhs(), destType));
     }
@@ -407,10 +414,10 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
         if (!functionNode.needsCallee()) {
             functionNode.compilerConstant(CALLEE).setNeedsSlot(false);
         }
-        // Similar reasoning applies to __scope__ symbol: if the function doesn't need either parent scope or its
-        // own scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope earlier than
-        // this phase.
-        if (!(functionNode.getBody().needsScope() || functionNode.needsParentScope())) {
+        // Similar reasoning applies to __scope__ symbol: if the function doesn't need either parent scope and none of
+        // its blocks create a scope, we ensure it doesn't get a slot, but we can't determine whether it needs a scope
+        // earlier than this phase.
+        if (!(functionNode.hasScopeBlock() || functionNode.needsParentScope())) {
             functionNode.compilerConstant(SCOPE).setNeedsSlot(false);
         }
 

@@ -49,6 +49,9 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /** Literal value */
     protected final T value;
 
+    /** Marker for values that must be computed at runtime */
+    public static final Object POSTSET_MARKER = new Object();
+
     /**
      * Constructor
      *
@@ -495,6 +498,30 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         return new LexerTokenLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
+    /**
+     * Get the constant value for an object, or {@link #POSTSET_MARKER} if the value can't be statically computed.
+     *
+     * @param object a node or value object
+     * @return the constant value or {@code POSTSET_MARKER}
+     */
+    public static Object objectAsConstant(final Object object) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof Number || object instanceof String || object instanceof Boolean) {
+            return object;
+        } else if (object instanceof LiteralNode) {
+            return objectAsConstant(((LiteralNode<?>)object).getValue());
+        } else if (object instanceof UnaryNode) {
+            final UnaryNode unaryNode = (UnaryNode)object;
+
+            if (unaryNode.isTokenType(TokenType.CONVERT) && unaryNode.getType().isObject()) {
+                return objectAsConstant(unaryNode.rhs());
+            }
+        }
+
+        return POSTSET_MARKER;
+    }
+
     private static final class NullLiteralNode extends LiteralNode<Object> {
 
         private NullLiteralNode(final long token, final int finish) {
@@ -525,11 +552,6 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * Array literal node class.
      */
     public static final class ArrayLiteralNode extends LiteralNode<Node[]> {
-        private static class PostsetMarker {
-            //empty
-        }
-
-        private static PostsetMarker POSTSET_MARKER = new PostsetMarker();
 
         /** Array element type. */
         private Type elementType;
@@ -738,24 +760,6 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
                     break;
                 }
             }
-        }
-
-        private Object objectAsConstant(final Object object) {
-            if (object == null) {
-                return null;
-            } else if (object instanceof Number || object instanceof String || object instanceof Boolean) {
-                return object;
-            } else if (object instanceof LiteralNode) {
-                return objectAsConstant(((LiteralNode<?>)object).getValue());
-            } else if (object instanceof UnaryNode) {
-                final UnaryNode unaryNode = (UnaryNode)object;
-
-                if (unaryNode.isTokenType(TokenType.CONVERT) && unaryNode.getType().isObject()) {
-                    return objectAsConstant(unaryNode.rhs());
-                }
-            }
-
-            return POSTSET_MARKER;
         }
 
         @Override

@@ -109,6 +109,8 @@ import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
@@ -148,11 +150,9 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContext> {
 
-    /** Name of the Global object, cannot be referred to as .class, @see CodeGenerator */
-    private static final String GLOBAL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "Global";
+    private static final String GLOBAL_OBJECT = Type.getInternalName(Global.class);
 
-    /** Name of the ScriptFunctionImpl, cannot be referred to as .class @see FunctionObjectCreator */
-    private static final String SCRIPTFUNCTION_IMPL_OBJECT = Compiler.OBJECTS_PACKAGE + '/' + "ScriptFunctionImpl";
+    private static final String SCRIPTFUNCTION_IMPL_OBJECT = Type.getInternalName(ScriptFunctionImpl.class);
 
     /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
      *  by reflection in class installation */
@@ -179,6 +179,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private static final DebugLogger LOG   = new DebugLogger("codegen", "nashorn.codegen.debug");
 
+    /** From what size should we use spill instead of fields for JavaScript objects? */
+    private static final int OBJECT_SPILL_THRESHOLD = 300;
 
     /**
      * Constructor.
@@ -578,6 +580,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Node         function        = callNode.getFunction();
         final Block        currentBlock    = lc.getCurrentBlock();
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
+        final Type         callNodeType    = callNode.getType();
 
         function.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
@@ -593,7 +596,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 loadArgs(args);
                 final Type[] paramTypes = method.getTypesFromStack(args.size());
-                final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol, identNode.getType(), callNode.getType(), paramTypes, scopeCallFlags);
+                final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol, identNode.getType(), callNodeType, paramTypes, scopeCallFlags);
                 return scopeCall.generateInvoke(method);
             }
 
@@ -602,7 +605,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.convert(Type.OBJECT); // foo() makes no sense if foo == 3
                 // ScriptFunction will see CALLSITE_SCOPE and will bind scope accordingly.
                 method.loadNull(); //the 'this'
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), flags);
             }
 
             private void evalCall(final IdentNode node, final int flags) {
@@ -634,14 +637,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 // direct call to Global.directEval
                 globalDirectEval();
-                method.convert(callNode.getType());
+                method.convert(callNodeType);
                 method._goto(eval_done);
 
                 method.label(not_eval);
                 // This is some scope 'eval' or global eval replaced by user
                 // but not the built-in ECMAScript 'eval' function call
                 method.loadNull();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), flags);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), flags);
 
                 method.label(eval_done);
             }
@@ -666,7 +669,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     } else {
                         sharedScopeCall(node, flags);
                     }
-                    assert method.peekType().equals(callNode.getType()) : method.peekType() + "!=" + callNode.getType();
+                    assert method.peekType().equals(callNodeType) : method.peekType() + "!=" + callNode.getType();
                 } else {
                     enterDefault(node);
                 }
@@ -681,8 +684,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.dup();
                 method.dynamicGet(node.getType(), node.getProperty().getName(), getCallSiteFlags(), true);
                 method.swap();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
-                assert method.peekType().equals(callNode.getType());
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
+                assert method.peekType().equals(callNodeType);
 
                 return false;
             }
@@ -707,6 +710,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 assert callee.getCompileUnit() != null : "no compile unit for " + callee.getName() + " " + Debug.id(callee) + " " + callNode;
                 method.invokestatic(callee.getCompileUnit().getUnitClassName(), callee.getName(), signature);
                 assert method.peekType().equals(callee.getReturnType()) : method.peekType() + " != " + callee.getReturnType();
+                method.convert(callNodeType);
                 return false;
             }
 
@@ -722,7 +726,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
                 method.dynamicGetIndex(node.getType(), getCallSiteFlags(), true);
                 method.swap();
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags());
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags());
                 assert method.peekType().equals(callNode.getType());
 
                 return false;
@@ -734,7 +738,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 load(function);
                 method.convert(Type.OBJECT); //TODO, e.g. booleans can be used as functions
                 method.loadNull(); // ScriptFunction will figure out the correct this when it sees CALLSITE_SCOPE
-                method.dynamicCall(callNode.getType(), 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
+                method.dynamicCall(callNodeType, 2 + loadArgs(args), getCallSiteFlags() | CALLSITE_SCOPE);
                 assert method.peekType().equals(callNode.getType());
 
                 return false;
@@ -877,9 +881,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final FunctionNode function = lc.getCurrentFunction();
         if (isFunctionBody) {
-            /* Fix the predefined slots so they have numbers >= 0, like varargs. */
-            if (function.needsParentScope()) {
-                initParentScope();
+            if(method.hasScope()) {
+                if (function.needsParentScope()) {
+                    method.loadCompilerConstant(CALLEE);
+                    method.invoke(ScriptFunction.GET_SCOPE);
+                } else {
+                    assert function.hasScopeBlock();
+                    method.loadNull();
+                }
+                method.storeCompilerConstant(SCOPE);
             }
             if (function.needsArguments()) {
                 initArguments(function);
@@ -940,22 +950,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * Create a new object based on the symbols and values, generate
              * bootstrap code for object
              */
-            final FieldObjectCreator<Symbol> foc = new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
+            new FieldObjectCreator<Symbol>(this, nameList, newSymbols, values, true, hasArguments) {
                 @Override
                 protected void loadValue(final Symbol value) {
                     method.load(value);
                 }
-
-                @Override
-                protected void loadScope(MethodEmitter m) {
-                    if (function.needsParentScope()) {
-                        m.loadCompilerConstant(SCOPE);
-                    } else {
-                        m.loadNull();
-                    }
-                }
-            };
-            foc.makeObject(method);
+            }.makeObject(method);
 
             // runScript(): merge scope into global
             if (isFunctionBody && function.isProgram()) {
@@ -993,12 +993,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.load(function.getParameters().size());
         globalAllocateArguments();
         method.storeCompilerConstant(ARGUMENTS);
-    }
-
-    private void initParentScope() {
-        method.loadCompilerConstant(CALLEE);
-        method.invoke(ScriptFunction.GET_SCOPE);
-        method.storeCompilerConstant(SCOPE);
     }
 
     @Override
@@ -1318,7 +1312,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return method;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public boolean enterLiteralNode(final LiteralNode literalNode) {
         assert literalNode.getSymbol() != null : literalNode + " has no symbol";
@@ -1350,73 +1343,71 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             values.add(value);
         }
 
-        new FieldObjectCreator<Node>(this, keys, symbols, values) {
-            @Override
-            protected void loadValue(final Node node) {
-                load(node);
-            }
+        if (elements.size() > OBJECT_SPILL_THRESHOLD) {
+            new SpillObjectCreator(this, keys, symbols, values).makeObject(method);
+        } else {
+            new FieldObjectCreator<Node>(this, keys, symbols, values) {
+                @Override
+                protected void loadValue(final Node node) {
+                    load(node);
+                }
 
-            /**
-             * Ensure that the properties start out as object types so that
-             * we can do putfield initializations instead of dynamicSetIndex
-             * which would be the case to determine initial property type
-             * otherwise.
-             *
-             * Use case, it's very expensive to do a million var x = {a:obj, b:obj}
-             * just to have to invalidate them immediately on initialization
-             *
-             * see NASHORN-594
-             */
-            @Override
-            protected MapCreator newMapCreator(final Class<?> fieldObjectClass) {
-                return new MapCreator(fieldObjectClass, keys, symbols) {
-                    @Override
-                    protected int getPropertyFlags(final Symbol symbol, final boolean isVarArg) {
-                        return super.getPropertyFlags(symbol, isVarArg) | Property.IS_ALWAYS_OBJECT;
-                    }
-                };
-            }
+                /**
+                 * Ensure that the properties start out as object types so that
+                 * we can do putfield initializations instead of dynamicSetIndex
+                 * which would be the case to determine initial property type
+                 * otherwise.
+                 *
+                 * Use case, it's very expensive to do a million var x = {a:obj, b:obj}
+                 * just to have to invalidate them immediately on initialization
+                 *
+                 * see NASHORN-594
+                 */
+                @Override
+                protected MapCreator newMapCreator(final Class<?> fieldObjectClass) {
+                    return new MapCreator(fieldObjectClass, keys, symbols) {
+                        @Override
+                        protected int getPropertyFlags(final Symbol symbol, final boolean hasArguments) {
+                            return super.getPropertyFlags(symbol, hasArguments) | Property.IS_ALWAYS_OBJECT;
+                        }
+                    };
+                }
 
-        }.makeObject(method);
+            }.makeObject(method);
+        }
 
         method.dup();
         globalObjectPrototype();
         method.invoke(ScriptObject.SET_PROTO);
 
-        if (!hasGettersSetters) {
-            method.store(objectNode.getSymbol());
-            return false;
-        }
+        if (hasGettersSetters) {
+            for (final PropertyNode propertyNode : elements) {
+                final FunctionNode getter       = propertyNode.getGetter();
+                final FunctionNode setter       = propertyNode.getSetter();
 
-        for (final Node element : elements) {
-            final PropertyNode propertyNode = (PropertyNode)element;
-            final Object       key          = propertyNode.getKey();
-            final FunctionNode getter       = propertyNode.getGetter();
-            final FunctionNode setter       = propertyNode.getSetter();
+                if (getter == null && setter == null) {
+                    continue;
+                }
 
-            if (getter == null && setter == null) {
-                continue;
+                method.dup().loadKey(propertyNode.getKey());
+
+                if (getter == null) {
+                    method.loadNull();
+                } else {
+                    getter.accept(this);
+                }
+
+                if (setter == null) {
+                    method.loadNull();
+                } else {
+                    setter.accept(this);
+                }
+
+                method.invoke(ScriptObject.SET_USER_ACCESSORS);
             }
-
-            method.dup().loadKey(key);
-
-            if (getter == null) {
-                method.loadNull();
-            } else {
-                getter.accept(this);
-            }
-
-            if (setter == null) {
-                method.loadNull();
-            } else {
-                setter.accept(this);
-            }
-
-            method.invoke(ScriptObject.SET_USER_ACCESSORS);
         }
 
         method.store(objectNode.getSymbol());
-
         return false;
     }
 
@@ -1847,7 +1838,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // If expression not int see if we can convert, if not use deflt to trigger default.
             if (!type.isInteger()) {
                 method.load(deflt);
-                final Class exprClass = type.getTypeClass();
+                final Class<?> exprClass = type.getTypeClass();
                 method.invoke(staticCallNoLookup(ScriptRuntime.class, "switchTagAsInt", int.class, exprClass.isPrimitive()? exprClass : Object.class, int.class));
             }
 
@@ -2331,6 +2322,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     @Override
     public boolean enterSUB(final UnaryNode unaryNode) {
         load(unaryNode.rhs()).neg().store(unaryNode.getSymbol());
+
+        return false;
+    }
+
+    @Override
+    public boolean enterVOID(final UnaryNode unaryNode) {
+        load(unaryNode.rhs()).pop();
+        method.loadUndefined(Type.OBJECT);
 
         return false;
     }
@@ -3173,31 +3172,24 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
 
-        final boolean isLazy  = functionNode.isLazy();
+        // Generate the object class and property map in case this function is ever used as constructor
+        final String      className          = SCRIPTFUNCTION_IMPL_OBJECT;
+        final int         fieldCount         = ObjectClassGenerator.getPaddedFieldCount(functionNode.countThisProperties());
+        final String      allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount));
+        final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
 
-        new ObjectCreator(this, new ArrayList<String>(), new ArrayList<Symbol>(), false, false) {
-            @Override
-            protected void makeObject(final MethodEmitter m) {
-                final String className = SCRIPTFUNCTION_IMPL_OBJECT;
+        method._new(className).dup();
+        loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), allocatorClassName, allocatorMap));
 
-                m._new(className).dup();
-                loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), Compiler.binaryName(getClassName()), makeMap()));
-
-                if (isLazy || functionNode.needsParentScope()) {
-                    m.loadCompilerConstant(SCOPE);
-                } else {
-                    m.loadNull();
-                }
-                m.invoke(constructorNoLookup(className, RecompilableScriptFunctionData.class, ScriptObject.class));
-            }
-        }.makeObject(method);
+        if (functionNode.isLazy() || functionNode.needsParentScope()) {
+            method.loadCompilerConstant(SCOPE);
+        } else {
+            method.loadNull();
+        }
+        method.invoke(constructorNoLookup(className, RecompilableScriptFunctionData.class, ScriptObject.class));
     }
 
-    /*
-     * Globals are special. We cannot refer to any Global (or NativeObject) class by .class, as they are different
-     * for different contexts. As far as I can tell, the only NativeObject that we need to deal with like this
-     * is from the code pipeline is Global
-     */
+    // calls on Global class.
     private MethodEmitter globalInstance() {
         return method.invokestatic(GLOBAL_OBJECT, "instance", "()L" + GLOBAL_OBJECT + ';');
     }

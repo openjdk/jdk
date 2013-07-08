@@ -27,7 +27,6 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -55,9 +54,12 @@ public final class NativeObject {
     private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private NativeObject() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     private static ECMAException notAnObject(final Object obj) {
