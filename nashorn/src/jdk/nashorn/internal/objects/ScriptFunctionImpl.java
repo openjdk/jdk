@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -36,6 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the
@@ -55,6 +57,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
     static PropertyMap getInitialMap() {
         return map$;
+    }
+
+    static PropertyMap getInitialAnonymousMap() {
+        return AnonymousFunction.getInitialMap();
     }
 
     static PropertyMap getInitialStrictMap() {
@@ -149,13 +155,18 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     static {
-        PropertyMap map = PropertyMap.newMap();
-        map = Lookup.newProperty(map, "prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE);
-        map = Lookup.newProperty(map, "length",    Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null);
-        map = Lookup.newProperty(map, "name",      Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null);
-        map$ = map;
+        final ArrayList<Property> properties = new ArrayList<>(3);
+        properties.add(AccessorProperty.create("prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE));
+        properties.add(AccessorProperty.create("length",  Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null));
+        properties.add(AccessorProperty.create("name", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null));
+        map$ = PropertyMap.newMap(properties);
         strictmodemap$ = createStrictModeMap(map$);
         boundfunctionmap$ = createBoundFunctionMap(strictmodemap$);
+        // There are order dependencies between normal map, struct map and bound map
+        // We can make these 'shared' only after initialization of all three.
+        map$.setIsShared();
+        strictmodemap$.setIsShared();
+        boundfunctionmap$.setIsShared();
     }
 
     // function object representing TypeErrorThrower
@@ -201,15 +212,19 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // Instance of this class is used as global anonymous function which
     // serves as Function.prototype object.
     private static class AnonymousFunction extends ScriptFunctionImpl {
-        private static final PropertyMap nasgenmap$$ = PropertyMap.newMap();
+        private static final PropertyMap map$ = PropertyMap.newMap().setIsShared();
 
-        AnonymousFunction() {
-            super("", GlobalFunctions.ANONYMOUS, nasgenmap$$, null);
+        static PropertyMap getInitialMap() {
+            return map$;
+        }
+
+        AnonymousFunction(final Global global) {
+            super("", GlobalFunctions.ANONYMOUS, global.getAnonymousFunctionMap(), null);
         }
     }
 
-    static ScriptFunctionImpl newAnonymousFunction() {
-        return new AnonymousFunction();
+    static ScriptFunctionImpl newAnonymousFunction(final Global global) {
+        return new AnonymousFunction(global);
     }
 
     /**

@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.nashorn.api.scripting.NashornException;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;

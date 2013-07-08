@@ -30,14 +30,14 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * ECMA 10.6 Arguments Object.
@@ -54,14 +54,15 @@ public final class NativeStrictArguments extends ScriptObject {
     private static final PropertyMap map$;
 
     static {
-        PropertyMap map = PropertyMap.newMap();
-        map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
+        final ArrayList<Property> properties = new ArrayList<>(1);
+        properties.add(AccessorProperty.create("length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH));
+        PropertyMap map = PropertyMap.newMap(properties);
         // In strict mode, the caller and callee properties should throw TypeError
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
         map = map.addProperty(map.newUserAccessors("caller", flags));
         map = map.addProperty(map.newUserAccessors("callee", flags));
-        map$ = map;
+        map$ = map.setIsShared();
     }
 
     static PropertyMap getInitialMap() {

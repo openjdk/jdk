@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -389,6 +388,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private PropertyMap    prototypeObjectMap;
     private PropertyMap    objectMap;
     private PropertyMap    functionMap;
+    private PropertyMap    anonymousFunctionMap;
     private PropertyMap    strictFunctionMap;
     private PropertyMap    boundFunctionMap;
 
@@ -409,7 +409,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     private static final MethodHandle EXIT              = findOwnMH("exit",              Object.class, Object.class, Object.class);
 
     // initialized by nasgen
-    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     /**
@@ -418,14 +417,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      * @param context the context
      */
     public Global(final Context context) {
-        this.setContext(context);
-        this.setIsScope();
         /*
          * Duplicate global's map and use it. This way the initial Map filled
          * by nasgen (referenced from static field in this class) is retained
-         * 'as is'. This allows multiple globals to be used within a context.
+         * 'as is' (as that one is process wide singleton.
          */
-        this.setMap(getMap().duplicate());
+        super($nasgenmap$.duplicate());
+        this.setContext(context);
+        this.setIsScope();
 
         final int cacheSize = context.getEnv()._class_cache_size;
         if (cacheSize > 0) {
@@ -1018,6 +1017,10 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         return functionMap;
     }
 
+    PropertyMap getAnonymousFunctionMap() {
+        return anonymousFunctionMap;
+    }
+
     PropertyMap getStrictFunctionMap() {
         return strictFunctionMap;
     }
@@ -1538,7 +1541,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         final ScriptEnvironment env = getContext().getEnv();
 
         // duplicate PropertyMaps of Native* classes
-        copyInitialMaps();
+        copyInitialMaps(env);
 
         // initialize Function and Object constructor
         initFunctionAndObject();
@@ -1599,12 +1602,16 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         initErrorObjects();
 
         // java access
-        initJavaAccess();
+        if (! env._no_java) {
+            initJavaAccess();
+        }
 
-        initTypedArray();
+        if (! env._no_typed_arrays) {
+            initTypedArray();
+        }
 
         if (env._scripting) {
-            initScripting();
+            initScripting(env);
         }
 
         if (Context.DEBUG && System.getSecurityManager() == null) {
@@ -1685,7 +1692,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.builtinJavaApi = initConstructor("Java");
     }
 
-    private void initScripting() {
+    private void initScripting(final ScriptEnvironment scriptEnv) {
         Object value;
         value = ScriptFunctionImpl.makeFunction("readLine", ScriptingFunctions.READLINE);
         addOwnProperty("readLine", Attribute.NOT_ENUMERABLE, value);
@@ -1704,7 +1711,6 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
         // Nashorn extension: global.$OPTIONS (scripting-mode-only)
         final ScriptObject options = newObject();
-        final ScriptEnvironment scriptEnv = getContext().getEnv();
         copyOptions(options, scriptEnv);
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
 
@@ -1857,20 +1863,17 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         }
     }
 
-    private void copyInitialMaps() {
+    private void copyInitialMaps(final ScriptEnvironment env) {
         this.accessorPropertyDescriptorMap = AccessorPropertyDescriptor.getInitialMap().duplicate();
-        this.arrayBufferViewMap = ArrayBufferView.getInitialMap().duplicate();
         this.dataPropertyDescriptorMap = DataPropertyDescriptor.getInitialMap().duplicate();
         this.genericPropertyDescriptorMap = GenericPropertyDescriptor.getInitialMap().duplicate();
         this.nativeArgumentsMap = NativeArguments.getInitialMap().duplicate();
         this.nativeArrayMap = NativeArray.getInitialMap().duplicate();
-        this.nativeArrayBufferMap = NativeArrayBuffer.getInitialMap().duplicate();
         this.nativeBooleanMap = NativeBoolean.getInitialMap().duplicate();
         this.nativeDateMap = NativeDate.getInitialMap().duplicate();
         this.nativeErrorMap = NativeError.getInitialMap().duplicate();
         this.nativeEvalErrorMap = NativeEvalError.getInitialMap().duplicate();
         this.nativeJSAdapterMap = NativeJSAdapter.getInitialMap().duplicate();
-        this.nativeJavaImporterMap = NativeJavaImporter.getInitialMap().duplicate();
         this.nativeNumberMap = NativeNumber.getInitialMap().duplicate();
         this.nativeRangeErrorMap = NativeRangeError.getInitialMap().duplicate();
         this.nativeReferenceErrorMap = NativeReferenceError.getInitialMap().duplicate();
@@ -1883,9 +1886,21 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.nativeURIErrorMap = NativeURIError.getInitialMap().duplicate();
         this.prototypeObjectMap = PrototypeObject.getInitialMap().duplicate();
         this.objectMap = JO.getInitialMap().duplicate();
-        this.functionMap = ScriptFunctionImpl.getInitialMap();
+        this.functionMap = ScriptFunctionImpl.getInitialMap().duplicate();
+        this.anonymousFunctionMap = ScriptFunctionImpl.getInitialAnonymousMap().duplicate();
         this.strictFunctionMap = ScriptFunctionImpl.getInitialStrictMap().duplicate();
         this.boundFunctionMap = ScriptFunctionImpl.getInitialBoundMap().duplicate();
+
+        // java
+        if (! env._no_java) {
+            this.nativeJavaImporterMap = NativeJavaImporter.getInitialMap().duplicate();
+        }
+
+        // typed arrays
+        if (! env._no_typed_arrays) {
+            this.arrayBufferViewMap = ArrayBufferView.getInitialMap().duplicate();
+            this.nativeArrayBufferMap = NativeArrayBuffer.getInitialMap().duplicate();
+        }
     }
 
     // Function and Object constructors are inter-dependent. Also,
@@ -1899,7 +1914,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         this.builtinFunction = (ScriptFunction)initConstructor("Function");
 
         // create global anonymous function
-        final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction();
+        final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction(this);
         // need to copy over members of Function.prototype to anon function
         anon.addBoundProperties(getFunctionPrototype());
 

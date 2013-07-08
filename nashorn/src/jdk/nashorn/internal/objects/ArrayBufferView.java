@@ -46,12 +46,15 @@ abstract class ArrayBufferView extends ScriptObject {
         return $nasgenmap$;
     }
 
-    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+    private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
+        super(global.getArrayBufferViewMap());
         checkConstructorArgs(buffer, byteOffset, elementLength);
-        final Global global = Global.instance();
-        this.setMap(global.getArrayBufferViewMap());
         this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));
+    }
+
+    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+        this(buffer, byteOffset, elementLength, Global.instance());
     }
 
     private void checkConstructorArgs(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {

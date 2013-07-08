@@ -213,7 +213,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                     final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
                     newMap = newMap.addProperty(prop);
                 } else {
-                    newMap = newMap.newPropertyBind((AccessorProperty)property, source);
+                    newMap = newMap.addPropertyBind((AccessorProperty)property, source);
                 }
             }
         }
