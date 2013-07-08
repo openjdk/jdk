@@ -79,6 +79,7 @@ le_int8 OpenTypeUtilities::highBit(le_int32 value)
 
 Offset OpenTypeUtilities::getTagOffset(LETag tag, const LEReferenceToArrayOf<TagAndOffsetRecord> &records, LEErrorCode &success)
 {
+  const TagAndOffsetRecord *r0 = (const TagAndOffsetRecord*)records.getAlias();
   if(LE_FAILURE(success)) return 0;
 
   le_uint32 recordCount = records.getCount();
@@ -89,17 +90,17 @@ Offset OpenTypeUtilities::getTagOffset(LETag tag, const LEReferenceToArrayOf<Tag
   le_int32 index = 0;
 
   {
-    const ATag &aTag = records.getAlias(extra,success)->tag;
+    const ATag &aTag = (r0+extra)->tag;
     if (SWAPT(aTag) <= tag) {
       index = extra;
     }
   }
 
-  while (probe > (1 << 0) && LE_SUCCESS(success)) {
+  while (probe > (1 << 0)) {
     probe >>= 1;
 
     {
-      const ATag &aTag = records.getAlias(index+probe,success)->tag;
+      const ATag &aTag = (r0+index+probe)->tag;
       if (SWAPT(aTag) <= tag) {
         index += probe;
       }
@@ -107,9 +108,9 @@ Offset OpenTypeUtilities::getTagOffset(LETag tag, const LEReferenceToArrayOf<Tag
   }
 
   {
-    const ATag &aTag = records.getAlias(index,success)->tag;
+    const ATag &aTag = (r0+index)->tag;
     if (SWAPT(aTag) == tag) {
-      return SWAPW(records.getAlias(index,success)->offset);
+      return SWAPW((r0+index)->offset);
     }
   }
 

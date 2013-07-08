@@ -2943,11 +2943,19 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* my_mem = in(MemBarNode::Precedent);
       // The MembarAquire may keep an unused LoadNode alive through the Precedent edge
       if ((my_mem != NULL) && (opc == Op_MemBarAcquire) && (my_mem->outcnt() == 1)) {
-        assert(my_mem->unique_out() == this, "sanity");
-        phase->hash_delete(this);
-        del_req(Precedent);
-        phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
-        my_mem = NULL;
+        // if the Precedent is a decodeN and its input (a Load) is used at more than one place,
+        // replace this Precedent (decodeN) with the Load instead.
+        if ((my_mem->Opcode() == Op_DecodeN) && (my_mem->in(1)->outcnt() > 1))  {
+          Node* load_node = my_mem->in(1);
+          set_req(MemBarNode::Precedent, load_node);
+          phase->is_IterGVN()->_worklist.push(my_mem);
+          my_mem = load_node;
+        } else {
+          assert(my_mem->unique_out() == this, "sanity");
+          del_req(Precedent);
+          phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
+          my_mem = NULL;
+        }
       }
       if (my_mem != NULL && my_mem->is_Mem()) {
         const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
