@@ -107,6 +107,20 @@ public class AccessorProperty extends Property {
         SPILL_ELEMENT_SETTER = MH.filterArguments(MH.arrayElementSetter(Object[].class), 0, spillGetter);
     }
 
+    /**
+     * Create a new accessor property. Factory method used by nasgen generated code.
+     *
+     * @param key           {@link Property} key.
+     * @param propertyFlags {@link Property} flags.
+     * @param getter        {@link Property} get accessor method.
+     * @param setter        {@link Property} set accessor method.
+     *
+     * @return  New {@link AccessorProperty} created.
+     */
+    public static AccessorProperty create(final String key, final int propertyFlags, final MethodHandle getter, final MethodHandle setter) {
+        return new AccessorProperty(key, propertyFlags, -1, getter, setter);
+    }
+
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
     private MethodHandle primitiveGetter;
 

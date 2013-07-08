@@ -435,6 +435,10 @@ public class Shell {
                     break;
                 }
 
+                if (source.isEmpty()) {
+                    continue;
+                }
+
                 Object res;
                 try {
                     res = context.eval(global, source, global, "<shell>", env._strict);

@@ -31,8 +31,10 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -41,8 +43,6 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * ECMA 10.6 Arguments Object.
@@ -64,10 +64,10 @@ public final class NativeArguments extends ScriptObject {
     private static final PropertyMap map$;
 
     static {
-        PropertyMap map = PropertyMap.newMap();
-        map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
-        map = Lookup.newProperty(map, "callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE);
-        map$ = map;
+        final ArrayList<Property> properties = new ArrayList<>(2);
+        properties.add(AccessorProperty.create("length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH));
+        properties.add(AccessorProperty.create("callee", Property.NOT_ENUMERABLE, G$CALLEE, S$CALLEE));
+        map$ = PropertyMap.newMap(properties).setIsShared();
     }
 
     static PropertyMap getInitialMap() {

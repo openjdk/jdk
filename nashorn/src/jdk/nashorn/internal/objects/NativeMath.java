@@ -43,6 +43,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class NativeMath extends ScriptObject {
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     private NativeMath() {

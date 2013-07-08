@@ -30,12 +30,12 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * Instances of this class serve as "prototype" object for script functions.
@@ -52,9 +52,9 @@ public class PrototypeObject extends ScriptObject {
     private static final MethodHandle SET_CONSTRUCTOR = findOwnMH("setConstructor", void.class, Object.class, Object.class);
 
     static {
-        PropertyMap map = PropertyMap.newMap();
-        map = Lookup.newProperty(map, "constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR);
-        map$ = map;
+        final ArrayList<Property> properties = new ArrayList<>(1);
+        properties.add(AccessorProperty.create("constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR));
+        map$ = PropertyMap.newMap(properties).setIsShared();
     }
 
     static PropertyMap getInitialMap() {

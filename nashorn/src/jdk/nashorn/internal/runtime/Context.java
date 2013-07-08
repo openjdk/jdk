@@ -253,13 +253,7 @@ public final class Context {
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
-        this.scriptLoader = (ScriptLoader)AccessController.doPrivileged(
-             new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    return new ScriptLoader(sharedLoader, Context.this);
-                }
-             });
+        this.scriptLoader = env._loader_per_compile? null : createNewLoader();
         this.errors    = errors;
 
         // if user passed -classpath option, make a class loader with that and set it as
