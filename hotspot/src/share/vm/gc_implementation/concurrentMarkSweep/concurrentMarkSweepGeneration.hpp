@@ -1273,7 +1273,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Iteration support and related enquiries
   void save_marks();
   bool no_allocs_since_save_marks();
-  void object_iterate_since_last_GC(ObjectClosure* cl);
   void younger_refs_iterate(OopsInGenClosure* cl);
 
   // Iteration support specific to CMS generations
