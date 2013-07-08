@@ -848,7 +848,7 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  Flag* found_flag = Flag::find_flag((char*)argname, arg_len, true);
+  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
     found_flag->get_locked_message(locked_message_buf, BUFLEN);
@@ -869,6 +869,14 @@ bool Arguments::process_argument(const char* arg,
   } else {
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
+    Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
+    if (fuzzy_matched != NULL) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Did you mean '%s%s%s'?\n",
+                  (fuzzy_matched->is_bool()) ? "(+/-)" : "",
+                  fuzzy_matched->name,
+                  (fuzzy_matched->is_bool()) ? "" : "=<value>");
+    }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -1570,7 +1578,9 @@ void Arguments::set_heap_base_min_address() {
     // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
     // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
     // some extra space for the C-heap compared to other collectors.
-    FLAG_SET_ERGO(uintx, HeapBaseMinAddress, 1*G);
+    // Use FLAG_SET_DEFAULT here rather than FLAG_SET_ERGO to make sure that
+    // code that checks for default values work correctly.
+    FLAG_SET_DEFAULT(HeapBaseMinAddress, 1*G);
   }
 }
 
@@ -2193,10 +2203,23 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+  // Check lower bounds of the code cache
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
+  if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Should be greater than InitialCodeCacheSize=%dK\n",
+                "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
+                os::vm_page_size()/K);
+    status = false;
+  } else if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
+    status = false;
+  } else if (ReservedCodeCacheSize < min_code_cache_size) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                min_code_cache_size/K);
     status = false;
   }
 
@@ -2598,10 +2621,20 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xoss
     } else if (match_option(option, "-Xoss", &tail)) {
           // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
-    // -Xmaxjitcodesize
+    } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
+      julong long_CodeCacheExpansionSize = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                   "Invalid argument: %s. Must be at least %luK.\n", option->optionString,
+                   os::vm_page_size()/K);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, CodeCacheExpansionSize, (uintx)long_CodeCacheExpansionSize);
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
+
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),

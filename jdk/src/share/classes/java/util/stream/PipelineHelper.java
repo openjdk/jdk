@@ -44,7 +44,7 @@ import java.util.function.IntFunction;
  * and {@link AbstractPipeline#opEvaluateParallel(PipelineHelper, java.util.Spliterator,
  * java.util.function.IntFunction)}, methods, which can use the
  * {@code PipelineHelper} to access information about the pipeline such as
- * input shape, output shape, stream flags, and size, and use the helper methods
+ * head shape, stream flags, and size, and use the helper methods
  * such as {@link #wrapAndCopyInto(Sink, Spliterator)},
  * {@link #copyInto(Sink, Spliterator)}, and {@link #wrapSink(Sink)} to execute
  * pipeline operations.
@@ -53,6 +53,13 @@ import java.util.function.IntFunction;
  * @since 1.8
  */
 abstract class PipelineHelper<P_OUT> {
+
+    /**
+     * Gets the stream shape for the source of the pipeline segment.
+     *
+     * @return the stream shape for the source of the pipeline segment.
+     */
+    abstract StreamShape getSourceShape();
 
     /**
      * Gets the combined stream and operation flags for the output of the described
@@ -144,6 +151,14 @@ abstract class PipelineHelper<P_OUT> {
      *         results to the provided {@code Sink}
      */
     abstract<P_IN> Sink<P_IN> wrapSink(Sink<P_OUT> sink);
+
+    /**
+     *
+     * @param spliterator
+     * @param <P_IN>
+     * @return
+     */
+    abstract<P_IN> Spliterator<P_OUT> wrapSpliterator(Spliterator<P_IN> spliterator);
 
     /**
      * Constructs a @{link Node.Builder} compatible with the output shape of

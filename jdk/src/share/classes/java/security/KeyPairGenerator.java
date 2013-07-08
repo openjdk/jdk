@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.security.jca.GetInstance.Instance;
 /**
  * The KeyPairGenerator class is used to generate pairs of
  * public and private keys. Key pair generators are constructed using the
- * <code>getInstance</code> factory methods (static methods that
+ * {@code getInstance} factory methods (static methods that
  * return instances of a given class).
  *
  * <p>A Key pair generator for a particular algorithm creates a public/private
@@ -58,21 +58,21 @@ import sun.security.jca.GetInstance.Instance;
  * {@link #initialize(int, java.security.SecureRandom) initialize}
  * method in this KeyPairGenerator class that takes these two universally
  * shared types of arguments. There is also one that takes just a
- * <code>keysize</code> argument, and uses the <code>SecureRandom</code>
+ * {@code keysize} argument, and uses the {@code SecureRandom}
  * implementation of the highest-priority installed provider as the source
  * of randomness. (If none of the installed providers supply an implementation
- * of <code>SecureRandom</code>, a system-provided source of randomness is
+ * of {@code SecureRandom}, a system-provided source of randomness is
  * used.)
  *
  * <p>Since no other parameters are specified when you call the above
- * algorithm-independent <code>initialize</code> methods, it is up to the
+ * algorithm-independent {@code initialize} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
  * associated with each of the keys.
  *
  * <p>If the algorithm is the <i>DSA</i> algorithm, and the keysize (modulus
  * size) is 512, 768, or 1024, then the <i>Sun</i> provider uses a set of
- * precomputed values for the <code>p</code>, <code>q</code>, and
- * <code>g</code> parameters. If the modulus size is not one of the above
+ * precomputed values for the {@code p}, {@code q}, and
+ * {@code g} parameters. If the modulus size is not one of the above
  * values, the <i>Sun</i> provider creates a new set of parameters. Other
  * providers might have precomputed parameter sets for more than just the
  * three modulus sizes mentioned above. Still others might not have a list of
@@ -83,35 +83,35 @@ import sun.security.jca.GetInstance.Instance;
  * <p>For situations where a set of algorithm-specific parameters already
  * exists (e.g., so-called <i>community parameters</i> in DSA), there are two
  * {@link #initialize(java.security.spec.AlgorithmParameterSpec)
- * initialize} methods that have an <code>AlgorithmParameterSpec</code>
- * argument. One also has a <code>SecureRandom</code> argument, while the
- * the other uses the <code>SecureRandom</code>
+ * initialize} methods that have an {@code AlgorithmParameterSpec}
+ * argument. One also has a {@code SecureRandom} argument, while the
+ * the other uses the {@code SecureRandom}
  * implementation of the highest-priority installed provider as the source
  * of randomness. (If none of the installed providers supply an implementation
- * of <code>SecureRandom</code>, a system-provided source of randomness is
+ * of {@code SecureRandom}, a system-provided source of randomness is
  * used.)
  * </ul>
  *
  * <p>In case the client does not explicitly initialize the KeyPairGenerator
- * (via a call to an <code>initialize</code> method), each provider must
+ * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
  * For example, the <i>Sun</i> provider uses a default modulus size (keysize)
  * of 1024 bits.
  *
  * <p>Note that this class is abstract and extends from
- * <code>KeyPairGeneratorSpi</code> for historical reasons.
+ * {@code KeyPairGeneratorSpi} for historical reasons.
  * Application developers should only take notice of the methods defined in
- * this <code>KeyPairGenerator</code> class; all the methods in
+ * this {@code KeyPairGenerator} class; all the methods in
  * the superclass are intended for cryptographic service providers who wish to
  * supply their own implementations of key pair generators.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>KeyPairGenerator</code> algorithms and keysizes in
+ * following standard {@code KeyPairGenerator} algorithms and keysizes in
  * parentheses:
  * <ul>
- * <li><tt>DiffieHellman</tt> (1024)</li>
- * <li><tt>DSA</tt> (1024)</li>
- * <li><tt>RSA</tt> (1024, 2048)</li>
+ * <li>{@code DiffieHellman} (1024)</li>
+ * <li>{@code DSA} (1024)</li>
+ * <li>{@code RSA} (1024, 2048)</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
@@ -322,18 +322,18 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
 
     /**
      * Initializes the key pair generator for a certain keysize using
-     * a default parameter set and the <code>SecureRandom</code>
+     * a default parameter set and the {@code SecureRandom}
      * implementation of the highest-priority installed provider as the source
      * of randomness.
      * (If none of the installed providers supply an implementation of
-     * <code>SecureRandom</code>, a system-provided source of randomness is
+     * {@code SecureRandom}, a system-provided source of randomness is
      * used.)
      *
      * @param keysize the keysize. This is an
      * algorithm-specific metric, such as modulus length, specified in
      * number of bits.
      *
-     * @exception InvalidParameterException if the <code>keysize</code> is not
+     * @exception InvalidParameterException if the {@code keysize} is not
      * supported by this KeyPairGenerator object.
      */
     public void initialize(int keysize) {
@@ -349,7 +349,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * number of bits.
      * @param random the source of randomness.
      *
-     * @exception InvalidParameterException if the <code>keysize</code> is not
+     * @exception InvalidParameterException if the {@code keysize} is not
      * supported by this KeyPairGenerator object.
      *
      * @since 1.2
@@ -369,11 +369,11 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
 
     /**
      * Initializes the key pair generator using the specified parameter
-     * set and the <code>SecureRandom</code>
+     * set and the {@code SecureRandom}
      * implementation of the highest-priority installed provider as the source
      * of randomness.
      * (If none of the installed providers supply an implementation of
-     * <code>SecureRandom</code>, a system-provided source of randomness is
+     * {@code SecureRandom}, a system-provided source of randomness is
      * used.).
      *
      * <p>This concrete method has been added to this previously-defined
@@ -382,10 +382,10 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * {@link KeyPairGeneratorSpi#initialize(
      * java.security.spec.AlgorithmParameterSpec,
      * java.security.SecureRandom) initialize} method,
-     * passing it <code>params</code> and a source of randomness (obtained
+     * passing it {@code params} and a source of randomness (obtained
      * from the highest-priority installed provider or system-provided if none
      * of the installed providers supply one).
-     * That <code>initialize</code> method always throws an
+     * That {@code initialize} method always throws an
      * UnsupportedOperationException if it is not overridden by the provider.
      *
      * @param params the parameter set used to generate the keys.
@@ -410,8 +410,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * KeyPairGeneratorSpi#initialize(
      * java.security.spec.AlgorithmParameterSpec,
      * java.security.SecureRandom) initialize} method,
-     * passing it <code>params</code> and <code>random</code>.
-     * That <code>initialize</code>
+     * passing it {@code params} and {@code random}.
+     * That {@code initialize}
      * method always throws an
      * UnsupportedOperationException if it is not overridden by the provider.
      *
