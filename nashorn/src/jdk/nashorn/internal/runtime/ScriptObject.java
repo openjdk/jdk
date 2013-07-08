@@ -170,7 +170,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
-        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.setMap(map == null ? PropertyMap.newMap() : map);
     }
 
     /**
@@ -188,7 +188,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
-        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.setMap(map == null ? PropertyMap.newMap() : map);
         this.proto = proto;
 
         if (proto != null) {
@@ -213,7 +213,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                     final UserAccessorProperty prop = this.newUserAccessors(key, property.getFlags(), property.getGetterFunction(source), property.getSetterFunction(source));
                     newMap = newMap.addProperty(prop);
                 } else {
-                    newMap = newMap.newPropertyBind((AccessorProperty)property, source);
+                    newMap = newMap.addPropertyBind((AccessorProperty)property, source);
                 }
             }
         }
@@ -1024,6 +1024,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             context = Context.fromClass(getClass());
         }
         return context;
+    }
+
+    /**
+     * Set the current context.
+     * @param ctx context instance to set
+     */
+    protected final void setContext(final Context ctx) {
+        ctx.getClass();
+        this.context = ctx;
     }
 
     /**

@@ -1084,6 +1084,12 @@ loop:
             switch (type) {
             case SEMICOLON:
                 // for (init; test; modify)
+
+                // for each (init; test; modify) is invalid
+                if (forNode.isForEach()) {
+                    throw error(AbstractParser.message("for.each.without.in"), token);
+                }
+
                 expect(SEMICOLON);
                 if (type != SEMICOLON) {
                     forNode = forNode.setTest(lc, expression());
@@ -2003,7 +2009,7 @@ loop:
                     }
 
                     if (!redefinitionOk) {
-                        throw error(AbstractParser.message("property.redefinition", key.toString()), property.getToken());
+                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                     }
 
                     PropertyNode newProperty = existingProperty;
@@ -2951,7 +2957,7 @@ loop:
             } else {
                 lc.setFlag(fn, FunctionNode.HAS_NESTED_EVAL);
             }
-            lc.setFlag(lc.getFunctionBody(fn), Block.NEEDS_SCOPE);
+            lc.setBlockNeedsScope(lc.getFunctionBody(fn));
         }
     }
 

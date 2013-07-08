@@ -234,10 +234,25 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             @Override
             public boolean enterVarNode(final VarNode varNode) {
                 final String name = varNode.getName().getName();
-                //if this is used the var node symbol needs to be tagged as can be undefined
+                //if this is used before the var node, the var node symbol needs to be tagged as can be undefined
                 if (uses.contains(name)) {
                     canBeUndefined.add(name);
                 }
+
+                // all uses of the declared varnode inside the var node are potentially undefined
+                // however this is a bit conservative as e.g. var x = 17; var x = 1 + x; does work
+                if (!varNode.isFunctionDeclaration() && varNode.getInit() != null) {
+                    varNode.getInit().accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                       @Override
+                       public boolean enterIdentNode(final IdentNode identNode) {
+                           if (name.equals(identNode.getName())) {
+                              canBeUndefined.add(name);
+                           }
+                           return false;
+                       }
+                    });
+                }
+
                 return true;
             }
 
@@ -257,6 +272,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     }
                     return varNode.setName((IdentNode)ident.setSymbol(lc, symbol));
                 }
+
                 return varNode;
             }
         });
@@ -326,10 +342,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         catchNestingLevel++;
 
         // define block-local exception variable
-        final Symbol def = defineSymbol(block, exception.getName(), IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
+        final String exname = exception.getName();
+        final Symbol def = defineSymbol(block, exname, IS_VAR | IS_LET | IS_ALWAYS_DEFINED);
         newType(def, Type.OBJECT); //we can catch anything, not just ecma exceptions
 
-        addLocalDef(exception.getName());
+        addLocalDef(exname);
 
         return true;
     }
@@ -661,7 +678,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
             if (scopeBlock != null) {
                 assert lc.contains(scopeBlock);
-                lc.setFlag(scopeBlock, Block.NEEDS_SCOPE);
+                lc.setBlockNeedsScope(scopeBlock);
             }
         }
     }
@@ -732,6 +749,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     @Override
     public Node leaveReturnNode(final ReturnNode returnNode) {
         final Node expr = returnNode.getExpression();
+        final Type returnType;
 
         if (expr != null) {
             //we can't do parameter specialization if we return something that hasn't been typed yet
@@ -740,10 +758,12 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 symbol.setType(Type.OBJECT);
             }
 
-            final Type returnType = Type.widest(returnTypes.pop(), symbol.getSymbolType());
-            returnTypes.push(returnType);
-            LOG.info("Returntype is now ", returnType);
+            returnType = Type.widest(returnTypes.pop(), symbol.getSymbolType());
+        } else {
+            returnType = Type.OBJECT; //undefined
         }
+        LOG.info("Returntype is now ", returnType);
+        returnTypes.push(returnType);
 
         end(returnNode);
 
@@ -774,6 +794,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 }
 
                 type = Type.widest(type, newCaseNode.getTest().getType());
+                if (type.isBoolean()) {
+                    type = Type.OBJECT; //booleans and integers aren't assignment compatible
+                }
             }
 
             newCases.add(newCaseNode);
@@ -1009,10 +1032,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveVOID(final UnaryNode unaryNode) {
-        final RuntimeNode runtimeNode = (RuntimeNode)new RuntimeNode(unaryNode, Request.VOID).accept(this);
-        assert runtimeNode.getSymbol().getSymbolType().isObject();
-        end(unaryNode);
-        return runtimeNode;
+        return end(ensureSymbol(Type.OBJECT, unaryNode));
     }
 
     /**

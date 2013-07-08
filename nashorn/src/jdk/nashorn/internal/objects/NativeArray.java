@@ -86,6 +86,10 @@ public final class NativeArray extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
     /*
      * Constructors.
      */
@@ -130,7 +134,11 @@ public final class NativeArray extends ScriptObject {
     }
 
     NativeArray(final ArrayData arrayData) {
-        super(Global.instance().getArrayPrototype(), $nasgenmap$);
+        this(arrayData, Global.instance());
+    }
+
+    NativeArray(final ArrayData arrayData, final Global global) {
+        super(global.getArrayPrototype(), global.getArrayMap());
         this.setArray(arrayData);
         this.setIsArray();
     }

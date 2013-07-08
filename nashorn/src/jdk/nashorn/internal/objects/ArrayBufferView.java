@@ -42,10 +42,19 @@ abstract class ArrayBufferView extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
+        super(global.getArrayBufferViewMap());
         checkConstructorArgs(buffer, byteOffset, elementLength);
-        this.setProto(getPrototype());
+        this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));
+    }
+
+    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+        this(buffer, byteOffset, elementLength, Global.instance());
     }
 
     private void checkConstructorArgs(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
@@ -282,7 +291,7 @@ abstract class ArrayBufferView extends ScriptObject {
 
     protected abstract Factory factory();
 
-    protected abstract ScriptObject getPrototype();
+    protected abstract ScriptObject getPrototype(final Global global);
 
     protected boolean isFloatArray() {
         return false;
