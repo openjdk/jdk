@@ -183,7 +183,7 @@ public final class CodeRangeBuffer {
 
     // add_code_range, be aware of it returning null!
     public static CodeRangeBuffer addCodeRange(CodeRangeBuffer pbuf, ScanEnvironment env, int from, int to) {
-        if (from >to) {
+        if (from > to) {
             if (env.syntax.allowEmptyRangeInCC()) {
                 return pbuf;
             } else {
