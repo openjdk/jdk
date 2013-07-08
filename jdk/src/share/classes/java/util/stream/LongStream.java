@@ -655,7 +655,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *
      * @return a stream builder
      */
-    public static StreamBuilder.OfLong builder() {
+    public static Builder builder() {
         return new Streams.LongStreamBuilderImpl();
     }
 
@@ -825,5 +825,62 @@ public interface LongStream extends BaseStream<Long, LongStream> {
         Spliterator.OfLong split = new Streams.ConcatSpliterator.OfLong(
                 a.spliterator(), b.spliterator());
         return StreamSupport.longStream(split, a.isParallel() || b.isParallel());
+    }
+
+    /**
+     * A mutable builder for a {@code LongStream}.
+     *
+     * <p>A stream builder has a lifecycle, where it starts in a building
+     * phase, during which elements can be added, and then transitions to a
+     * built phase, after which elements may not be added.  The built phase
+     * begins when the {@link #build()} method is called, which creates an
+     * ordered stream whose elements are the elements that were added to the
+     * stream builder, in the order they were added.
+     *
+     * @see LongStream#builder()
+     * @since 1.8
+     */
+    public interface Builder extends LongConsumer {
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        @Override
+        void accept(long t);
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @implSpec
+         * The default implementation behaves as if:
+         * <pre>{@code
+         *     accept(t)
+         *     return this;
+         * }</pre>
+         *
+         * @param t the element to add
+         * @return {@code this} builder
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        default Builder add(long t) {
+            accept(t);
+            return this;
+        }
+
+        /**
+         * Builds the stream, transitioning this builder to the built state.
+         * An {@code IllegalStateException} is thrown if there are further
+         * attempts to operate on the builder after it has entered the built
+         * state.
+         *
+         * @return the built stream
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        LongStream build();
     }
 }

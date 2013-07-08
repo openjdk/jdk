@@ -317,7 +317,7 @@ final class Streams {
 
     static final class StreamBuilderImpl<T>
             extends AbstractStreamBuilderImpl<T, Spliterator<T>>
-            implements StreamBuilder<T> {
+            implements Stream.Builder<T> {
         // The first element in the stream
         // valid if count == 1
         T first;
@@ -363,7 +363,7 @@ final class Streams {
             }
         }
 
-        public StreamBuilder<T> add(T t) {
+        public Stream.Builder<T> add(T t) {
             accept(t);
             return this;
         }
@@ -409,7 +409,7 @@ final class Streams {
 
     static final class IntStreamBuilderImpl
             extends AbstractStreamBuilderImpl<Integer, Spliterator.OfInt>
-            implements StreamBuilder.OfInt, Spliterator.OfInt {
+            implements IntStream.Builder, Spliterator.OfInt {
         // The first element in the stream
         // valid if count == 1
         int first;
@@ -496,7 +496,7 @@ final class Streams {
 
     static final class LongStreamBuilderImpl
             extends AbstractStreamBuilderImpl<Long, Spliterator.OfLong>
-            implements StreamBuilder.OfLong, Spliterator.OfLong {
+            implements LongStream.Builder, Spliterator.OfLong {
         // The first element in the stream
         // valid if count == 1
         long first;
@@ -583,7 +583,7 @@ final class Streams {
 
     static final class DoubleStreamBuilderImpl
             extends AbstractStreamBuilderImpl<Double, Spliterator.OfDouble>
-            implements StreamBuilder.OfDouble, Spliterator.OfDouble {
+            implements DoubleStream.Builder, Spliterator.OfDouble {
         // The first element in the stream
         // valid if count == 1
         double first;
