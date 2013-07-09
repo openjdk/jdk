@@ -27,18 +27,24 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
@@ -470,5 +476,115 @@ public final class NativeObject {
         }
 
         return false;
+    }
+
+    /**
+     * Nashorn extension: Object.bindProperties
+     *
+     * Binds the source object's properties to the target object. Binding
+     * properties allows two-way read/write for the properties of the source object.
+     *
+     * Example:
+     * <pre>
+     * var obj = { x: 34, y: 100 };
+     * var foo = {}
+     *
+     * // bind properties of "obj" to "foo" object
+     * Object.bindProperties(foo, obj);
+     *
+     * // now, we can access/write on 'foo' properties
+     * print(foo.x); // prints obj.x which is 34
+     *
+     * // update obj.x via foo.x
+     * foo.x = "hello";
+     * print(obj.x); // prints "hello" now
+     *
+     * obj.x = 42;   // foo.x also becomes 42
+     * print(foo.x); // prints 42
+     * </pre>
+     * <p>
+     * The source object bound can be a ScriptObject or a ScriptOjectMirror.
+     * null or undefined source object results in TypeError being thrown.
+     * </p>
+     * Example:
+     * <pre>
+     * var obj = loadWithNewGlobal({
+     *    name: "test",
+     *    script: "obj = { x: 33, y: 'hello' }"
+     * });
+     *
+     * // bind 'obj's properties to global scope 'this'
+     * Object.bindProperties(this, obj);
+     * print(x);         // prints 33
+     * print(y);         // prints "hello"
+     * x = Math.PI;      // changes obj.x to Math.PI
+     * print(obj.x);     // prints Math.PI
+     * </pre>
+     *
+     * Limitations of property binding:
+     * <ul>
+     * <li> Only enumerable, immediate (not proto inherited) properties of the source object are bound.
+     * <li> If the target object already contains a property called "foo", the source's "foo" is skipped (not bound).
+     * <li> Properties added to the source object after binding to the target are not bound.
+     * <li> Property configuration changes on the source object (or on the target) is not propagated.
+     * <li> Delete of property on the target (or the source) is not propagated -
+     * only the property value is set to 'undefined' if the property happens to be a data property.
+     * </ul>
+     * <p>
+     * It is recommended that the bound properties be treated as non-configurable
+     * properties to avoid surprises.
+     * </p>
+     *
+     * @param self self reference
+     * @param target the target object to which the source object's properties are bound
+     * @param source the source object whose properties are bound to the target
+     * @return the target object after property binding
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object bindProperties(final Object self, final Object target, final Object source) {
+        // target object has to be a ScriptObject
+        Global.checkObject(target);
+        // check null or undefined source object
+        Global.checkObjectCoercible(source);
+
+        final ScriptObject targetObj = (ScriptObject)target;
+
+        if (source instanceof ScriptObject) {
+            final ScriptObject sourceObj = (ScriptObject)source;
+            final Property[] properties = sourceObj.getMap().getProperties();
+
+            // filter non-enumerable properties
+            final ArrayList<Property> propList = new ArrayList<>();
+            for (Property prop : properties) {
+                if (prop.isEnumerable()) {
+                    propList.add(prop);
+                }
+            }
+
+            if (! propList.isEmpty()) {
+                targetObj.addBoundProperties(sourceObj, propList.toArray(new Property[propList.size()]));
+            }
+        } else if (source instanceof ScriptObjectMirror) {
+            // get enumerable, immediate properties of mirror
+            final ScriptObjectMirror mirror = (ScriptObjectMirror)source;
+            final String[] keys = mirror.getOwnKeys(false);
+            if (keys.length == 0) {
+                // nothing to bind
+                return target;
+            }
+
+            // make accessor properties using dynamic invoker getters and setters
+            final AccessorProperty[] props = new AccessorProperty[keys.length];
+            for (int idx = 0; idx < keys.length; idx++) {
+                final String name = keys[idx];
+                final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, Object.class, ScriptObjectMirror.class);
+                final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, Object.class, ScriptObjectMirror.class, Object.class);
+                props[idx] = (AccessorProperty.create(name, 0, getter, setter));
+            }
+
+            targetObj.addBoundProperties(source, props);
+        }
+
+        return target;
     }
 }

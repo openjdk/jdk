@@ -147,9 +147,9 @@ public class AccessorProperty extends Property {
      * and are thus rebound with that as receiver
      *
      * @param property  accessor property to rebind
-     * @param delegate  delegate script object to rebind receiver to
+     * @param delegate  delegate object to rebind receiver to
      */
-    public AccessorProperty(final AccessorProperty property, final ScriptObject delegate) {
+    public AccessorProperty(final AccessorProperty property, final Object delegate) {
         super(property);
 
         this.primitiveGetter = bindTo(property.primitiveGetter, delegate);
