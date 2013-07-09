@@ -262,7 +262,7 @@ public interface ChronoLocalDate
      * @see #isEqual
      */
     static Comparator<ChronoLocalDate> timeLineOrder() {
-        return Chronology.DATE_ORDER;
+        return AbstractChronology.DATE_ORDER;
     }
 
     //-----------------------------------------------------------------------
