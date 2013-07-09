@@ -59,13 +59,11 @@ package tck.java.time.chrono;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 
 import java.io.Serializable;
-
+import java.time.chrono.AbstractChronology;
+import java.time.chrono.Era;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.ValueRange;
-import java.time.chrono.Chronology;
-import java.time.chrono.Era;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -95,7 +93,7 @@ import java.util.Locale;
  * <h4>Implementation notes</h4>
  * This class is immutable and thread-safe.
  */
-public final class CopticChronology extends Chronology implements Serializable {
+public final class CopticChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the Coptic chronology.

@@ -136,7 +136,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoLocalDateTime<?>> timeLineOrder() {
-        return Chronology.DATE_TIME_ORDER;
+        return AbstractChronology.DATE_TIME_ORDER;
     }
 
     //-----------------------------------------------------------------------

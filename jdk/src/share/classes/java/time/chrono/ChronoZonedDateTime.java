@@ -137,7 +137,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoZonedDateTime<?>> timeLineOrder() {
-        return Chronology.INSTANT_ORDER;
+        return AbstractChronology.INSTANT_ORDER;
     }
 
     //-----------------------------------------------------------------------
