@@ -199,6 +199,7 @@ public final class Context {
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
+    private static final AccessControlContext NO_PERMISSIONS_CONTEXT;
 
     static {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
@@ -207,6 +208,7 @@ public final class Context {
                 return new StructureLoader(myLoader, null);
             }
         });
+        NO_PERMISSIONS_CONTEXT = new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     /**
@@ -564,7 +566,7 @@ public final class Context {
                         sm.checkPackageAccess(fullName.substring(0, index));
                         return null;
                     }
-                }, createNoPermissionsContext());
+                }, NO_PERMISSIONS_CONTEXT);
             }
         }
 
@@ -705,10 +707,6 @@ public final class Context {
         }
 
         return (context != null) ? context : Context.getContextTrusted();
-    }
-
-    private static AccessControlContext createNoPermissionsContext() {
-        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
