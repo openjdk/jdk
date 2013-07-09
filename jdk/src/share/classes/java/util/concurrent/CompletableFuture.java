@@ -1209,7 +1209,7 @@ public class CompletableFuture<T> implements Future<T> {
                 (r = a.result) != null &&
                 compareAndSet(0, 1)) {
                 if ((r instanceof AltResult) &&
-                    (ex = ((AltResult)r).ex) != null)  {
+                    (ex = ((AltResult)r).ex) != null) {
                     try {
                         t = fn.apply(ex);
                     } catch (Throwable rex) {
@@ -2892,7 +2892,7 @@ public class CompletableFuture<T> implements Future<T> {
         if (r != null && (d == null || d.compareAndSet(0, 1))) {
             T t = null; Throwable ex, dx = null;
             if (r instanceof AltResult) {
-                if ((ex = ((AltResult)r).ex) != null)  {
+                if ((ex = ((AltResult)r).ex) != null) {
                     try {
                         t = fn.apply(ex);
                     } catch (Throwable rex) {
