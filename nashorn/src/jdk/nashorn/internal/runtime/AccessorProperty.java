@@ -248,11 +248,10 @@ public class AccessorProperty extends Property {
         primitiveSetter = null;
 
         if (isParameter() && hasArguments()) {
-            final MethodHandle arguments   = MH.getter(lookup, structure, "arguments", Object.class);
-            final MethodHandle argumentsSO = MH.asType(arguments, arguments.type().changeReturnType(ScriptObject.class));
+            final MethodHandle arguments   = MH.getter(lookup, structure, "arguments", ScriptObject.class);
 
-            objectGetter = MH.asType(MH.insertArguments(MH.filterArguments(ScriptObject.GET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot), Lookup.GET_OBJECT_TYPE);
-            objectSetter = MH.asType(MH.insertArguments(MH.filterArguments(ScriptObject.SET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot), Lookup.SET_OBJECT_TYPE);
+            objectGetter = MH.asType(MH.insertArguments(MH.filterArguments(ScriptObject.GET_ARGUMENT.methodHandle(), 0, arguments), 1, slot), Lookup.GET_OBJECT_TYPE);
+            objectSetter = MH.asType(MH.insertArguments(MH.filterArguments(ScriptObject.SET_ARGUMENT.methodHandle(), 0, arguments), 1, slot), Lookup.SET_OBJECT_TYPE);
         } else {
             final GettersSetters gs = GETTERS_SETTERS.get(structure);
             objectGetter = gs.getters[slot];
