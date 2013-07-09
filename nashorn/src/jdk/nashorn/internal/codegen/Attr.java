@@ -94,7 +94,6 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * This is the attribution pass of the code generator. Attr takes Lowered IR,
@@ -166,19 +165,19 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private void initFunctionWideVariables(final FunctionNode functionNode, final Block body) {
-        initCompileConstant(CALLEE, body, IS_PARAM | IS_INTERNAL, FunctionNode.FUNCTION_TYPE);
+        initCompileConstant(CALLEE, body, IS_PARAM | IS_INTERNAL);
         initCompileConstant(THIS, body, IS_PARAM | IS_THIS, Type.OBJECT);
 
         if (functionNode.isVarArg()) {
-            initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL, Type.OBJECT_ARRAY);
+            initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL);
             if (functionNode.needsArguments()) {
-                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
+                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED);
                 addLocalDef(ARGUMENTS.symbolName());
             }
         }
 
         initParameters(functionNode, body);
-        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
+        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED);
         initCompileConstant(RETURN, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.OBJECT);
     }
 
@@ -1424,9 +1423,16 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return end(ensureSymbol(type, ternaryNode));
     }
 
+    private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags) {
+        final Class<?> type = cc.type();
+        // Must not call this method for constants with no explicit types; use the one with (..., Type) signature instead.
+        assert type != null;
+        initCompileConstant(cc, block, flags, Type.typeFor(type));
+    }
+
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags, final Type type) {
         final Symbol symbol = defineSymbol(block, cc.symbolName(), flags);
-        newType(symbol, type);
+        symbol.setTypeOverride(type);
         symbol.setNeedsSlot(true);
     }
 
