@@ -68,7 +68,6 @@ char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
-bool   Arguments::_has_alloc_profile            = false;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -1986,23 +1985,6 @@ bool Arguments::check_vm_args_consistency() {
   status = status && check_gc_consistency();
   status = status && check_stack_pages();
 
-  if (_has_alloc_profile) {
-    if (UseParallelGC || UseParallelOldGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "Allocation profiling (-Xaprof) cannot be used together with "
-                  "Parallel GC (-XX:+UseParallelGC or -XX:+UseParallelOldGC).\n");
-      status = false;
-    }
-    if (UseConcMarkSweepGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "Allocation profiling (-Xaprof) cannot be used together with "
-                  "the CMS collector (-XX:+UseConcMarkSweepGC).\n");
-      status = false;
-    }
-  }
-
   if (CMSIncrementalMode) {
     if (!UseConcMarkSweepGC) {
       jio_fprintf(defaultStream::error_stream(),
@@ -2700,9 +2682,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         "Flat profiling is not supported in this VM.\n");
       return JNI_ERR;
 #endif // INCLUDE_FPROF
-    // -Xaprof
-    } else if (match_option(option, "-Xaprof", &tail)) {
-      _has_alloc_profile = true;
     // -Xconcurrentio
     } else if (match_option(option, "-Xconcurrentio", &tail)) {
       FLAG_SET_CMDLINE(bool, UseLWPSynchronization, true);
