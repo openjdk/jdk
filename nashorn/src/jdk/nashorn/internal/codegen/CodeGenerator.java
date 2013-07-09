@@ -1869,6 +1869,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.store(tag);
                 method.conditionalJump(Condition.NE, true, defaultLabel);
             } else {
+                assert tag.getSymbolType().isObject();
+                method.convert(Type.OBJECT); //e.g. 1 literal pushed and tag is object
                 method.store(tag);
             }
 
