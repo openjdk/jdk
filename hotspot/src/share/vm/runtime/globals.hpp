@@ -3679,6 +3679,9 @@ class CommandLineFlags {
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
                                                                             \
+  product(bool, ParseGenericDefaults, false,                                \
+          "Parse generic signatures for default method handling")           \
+                                                                            \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
           "EINTR for I/O operations results in OS_INTRPT. The default value"\
