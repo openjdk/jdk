@@ -2760,7 +2760,7 @@ run:
       case T_BYTE:
       case T_CHAR:
       case T_INT:
-        SET_STACK_INT(->earlyret_value().i, 0);
+        SET_STACK_INT(ts->earlyret_value().i, 0);
         MORE_STACK(1);
         break;
       case T_LONG:
