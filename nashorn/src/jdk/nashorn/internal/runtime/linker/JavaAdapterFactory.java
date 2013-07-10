@@ -99,6 +99,17 @@ public final class JavaAdapterFactory {
      */
     public static StaticClass getAdapterClassFor(final Class<?>[] types, ScriptObject classOverrides) {
         assert types != null && types.length > 0;
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            for (Class type : types) {
+                // check for restricted package access
+                final String fullName = type.getName();
+                final int index = fullName.lastIndexOf('.');
+                if (index != -1) {
+                    sm.checkPackageAccess(fullName.substring(0, index));
+                }
+            }
+        }
         return getAdapterInfo(types).getAdapterClassFor(classOverrides);
     }
 

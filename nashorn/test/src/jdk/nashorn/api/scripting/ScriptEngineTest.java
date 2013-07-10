@@ -36,6 +36,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -342,6 +343,23 @@ public class ScriptEngineTest {
         foo2 = ((Invocable)engine).getInterface(Foo2.class);
         foo2.bar();
         foo2.bar2();
+    }
+
+    @Test
+    /**
+     * Try passing non-interface Class object for interface implementation.
+     */
+    public void getNonInterfaceGetInterfaceTest() {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
+        try {
+            log(Objects.toString(((Invocable)engine).getInterface(Object.class)));
+            fail("Should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                fail("IllegalArgumentException expected, got " + exp);
+            }
+        }
     }
 
     @Test
@@ -926,5 +944,36 @@ public class ScriptEngineTest {
         final VariableArityTestInterface itf = ((Invocable)e).getInterface(VariableArityTestInterface.class);
         Assert.assertEquals(itf.test1(42, "a", "b"), "i == 42, strings instanceof java.lang.String[] == true, strings == [a, b]");
         Assert.assertEquals(itf.test2(44, "c", "d", "e"), "arguments[0] == 44, arguments[1] instanceof java.lang.String[] == true, arguments[1] == [c, d, e]");
+    }
+
+    @Test
+    /**
+     * Check that script can't implement sensitive package interfaces.
+     */
+    public void checkSensitiveInterfaceImplTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Object[] holder = new Object[1];
+        e.put("holder", holder);
+        // put an empty script object into array
+        e.eval("holder[0] = {}");
+        // holder[0] is an object of some subclass of ScriptObject
+        Class ScriptObjectClass = holder[0].getClass().getSuperclass();
+        Class PropertyAccessClass = ScriptObjectClass.getInterfaces()[0];
+        // implementation methods for PropertyAccess class
+        e.eval("function set() {}; function get() {}; function getInt(){} " +
+               "function getDouble(){}; function getLong() {}; " +
+               "this.delete = function () {}; function has() {}; " +
+               "function hasOwnProperty() {}");
+
+        // get implementation of a restricted package interface
+        try {
+            log(Objects.toString(((Invocable)e).getInterface(PropertyAccessClass)));
+            fail("should have thrown SecurityException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof SecurityException)) {
+                fail("SecurityException expected, got " + exp);
+            }
+        }
     }
 }
