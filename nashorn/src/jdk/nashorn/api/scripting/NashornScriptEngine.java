@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.AccessController;
@@ -184,6 +185,23 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private <T> T getInterfaceInner(final Object self, final Class<T> clazz) {
+        if (clazz == null || !clazz.isInterface()) {
+            throw new IllegalArgumentException("interface Class expected");
+        }
+
+        // perform security access check as early as possible
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            if (! Modifier.isPublic(clazz.getModifiers())) {
+                throw new SecurityException("attempt to implement non-public interfce: " + clazz);
+            }
+            final String fullName = clazz.getName();
+            final int index = fullName.lastIndexOf('.');
+            if (index != -1) {
+                sm.checkPackageAccess(fullName.substring(0, index));
+            }
+        }
+
         final ScriptObject realSelf;
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
         if(self == null) {
@@ -193,6 +211,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         } else {
             realSelf = (ScriptObject)self;
         }
+
         try {
             final ScriptObject oldGlobal = getNashornGlobal();
             try {

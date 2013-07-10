@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
@@ -203,7 +204,7 @@ public final class Context {
     private final ErrorManager errors;
 
     /** Unique id for script. Used only when --loader-per-compile=false */
-    private long uniqueScriptId;
+    private final AtomicLong uniqueScriptId;
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
@@ -263,7 +264,13 @@ public final class Context {
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
-        this.scriptLoader = env._loader_per_compile? null : createNewLoader();
+        if (env._loader_per_compile) {
+            this.scriptLoader = null;
+            this.uniqueScriptId = null;
+        } else {
+            this.scriptLoader = createNewLoader();
+            this.uniqueScriptId = new AtomicLong();
+        }
         this.errors    = errors;
 
         // if user passed -classpath option, make a class loader with that and set it as
@@ -825,7 +832,7 @@ public final class Context {
         return new Global(this);
     }
 
-    private synchronized long getUniqueScriptId() {
-        return uniqueScriptId++;
+    private long getUniqueScriptId() {
+        return uniqueScriptId.getAndIncrement();
     }
 }
