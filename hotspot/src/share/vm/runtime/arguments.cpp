@@ -261,6 +261,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseSplitVerifier",              JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
@@ -2967,13 +2970,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, UseTLAB, true);
     } else if (match_option(option, "-XX:-UseTLE", &tail)) {
       FLAG_SET_CMDLINE(bool, UseTLAB, false);
-SOLARIS_ONLY(
-    } else if (match_option(option, "-XX:+UsePermISM", &tail)) {
-      warning("-XX:+UsePermISM is obsolete.");
-      FLAG_SET_CMDLINE(bool, UseISM, true);
-    } else if (match_option(option, "-XX:-UsePermISM", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseISM, false);
-)
     } else if (match_option(option, "-XX:+DisplayVMOutputToStderr", &tail)) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, true);
@@ -3146,8 +3142,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     // Note that large pages are enabled/disabled for both the
     // Java heap and the code cache.
     FLAG_SET_DEFAULT(UseLargePages, false);
-    SOLARIS_ONLY(FLAG_SET_DEFAULT(UseMPSS, false));
-    SOLARIS_ONLY(FLAG_SET_DEFAULT(UseISM, false));
   }
 
   // Tiered compilation is undefined with C1.
