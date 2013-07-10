@@ -177,7 +177,7 @@ $(C2_VM_TARGETS):
 
 $(CORE_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) BUILD_DIR=$(CORE_DIR) BUILD_FLAVOR=$(@:$core=%) VM_TARGET=$@ generic_buildcore $(ALT_OUT)
+	$(MAKE) BUILD_DIR=$(CORE_DIR) BUILD_FLAVOR=$(@:%core=%) VM_TARGET=$@ generic_buildcore $(ALT_OUT)
 
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
@@ -478,22 +478,22 @@ endif
 # Core
 ifeq ($(JVM_VARIANT_CORE), true)
 # Common
-$(EXPORT_LIB_DIR)/%.jar:			$(CORE_DIR)/../generated/%.jar
+$(EXPORT_LIB_DIR)/%.jar:			$(CORE_BUILD_DIR)/../generated/%.jar
 	$(install-file)
-$(EXPORT_INCLUDE_DIR)/%:			$(CORE_DIR)/../generated/jvmtifiles/%
+$(EXPORT_INCLUDE_DIR)/%:			$(CORE_BUILD_DIR)/../generated/jvmtifiles/%
 	$(install-file)
 # Unix
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(CORE_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:	$(CORE_DIR)/%.debuginfo
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(CORE_DIR)/%.diz
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz:		$(CORE_BUILD_DIR)/%.diz
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):      $(CORE_DIR)/%.$(LIBRARY_SUFFIX)
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):	$(CORE_BUILD_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.debuginfo:		$(CORE_DIR)/%.debuginfo
+$(EXPORT_SERVER_DIR)/%.debuginfo:		$(CORE_BUILD_DIR)/%.debuginfo
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.diz:			$(CORE_DIR)/%.diz
+$(EXPORT_SERVER_DIR)/%.diz:			$(CORE_BUILD_DIR)/%.diz
 	$(install-file)
 endif
 
