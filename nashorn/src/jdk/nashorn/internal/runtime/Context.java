@@ -96,6 +96,11 @@ public final class Context {
         public void verify(final byte[] code) {
             context.verify(code);
         }
+
+        @Override
+        public long getUniqueScriptId() {
+            return context.getUniqueScriptId();
+        }
     }
 
     /** Is Context global debug mode enabled ? */
@@ -196,6 +201,9 @@ public final class Context {
 
     /** Current error manager. */
     private final ErrorManager errors;
+
+    /** Unique id for script. Used only when --loader-per-compile=false */
+    private long uniqueScriptId;
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
@@ -815,5 +823,9 @@ public final class Context {
 
     private ScriptObject newGlobalTrusted() {
         return new Global(this);
+    }
+
+    private synchronized long getUniqueScriptId() {
+        return uniqueScriptId++;
     }
 }
