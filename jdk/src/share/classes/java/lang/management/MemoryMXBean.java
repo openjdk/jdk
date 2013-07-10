@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ import javax.management.openmbean.CompositeData;
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
  *
- * <h4> Memory </h4>
+ * <h3> Memory </h3>
  * The memory system of the Java virtual machine manages
  * the following kinds of memory:
  *
- * <h4> 1. Heap </h4>
+ * <h3> 1. Heap </h3>
  * The Java virtual machine has a <i>heap</i> that is the runtime
  * data area from which memory for all class instances and arrays
  * are allocated.  It is created at the Java virtual machine start-up.
@@ -63,7 +63,7 @@ import javax.management.openmbean.CompositeData;
  * <p>The heap may be of a fixed size or may be expanded and shrunk.
  * The memory for the heap does not need to be contiguous.
  *
- * <h4> 2. Non-Heap Memory</h4>
+ * <h3> 2. Non-Heap Memory</h3>
  * The Java virtual machine manages memory other than the heap
  * (referred as <i>non-heap memory</i>).
  *
@@ -87,7 +87,7 @@ import javax.management.openmbean.CompositeData;
  * machine code translated from the Java virtual machine code for
  * high performance.
  *
- * <h4>Memory Pools and Memory Managers</h4>
+ * <h3>Memory Pools and Memory Managers</h3>
  * {@link MemoryPoolMXBean Memory pools} and
  * {@link MemoryManagerMXBean memory managers} are the abstract entities
  * that monitor and manage the memory system
@@ -105,7 +105,7 @@ import javax.management.openmbean.CompositeData;
  * add or remove memory managers during execution.
  * A memory pool can be managed by more than one memory manager.
  *
- * <h4>Memory Usage Monitoring</h4>
+ * <h3>Memory Usage Monitoring</h3>
  *
  * Memory usage is a very important monitoring attribute for the memory system.
  * The memory usage, for example, could indicate:
@@ -131,7 +131,7 @@ import javax.management.openmbean.CompositeData;
  * certain threshold. It is not intended for an application to detect
  * and recover from a low memory condition.
  *
- * <h4>Notifications</h4>
+ * <h3>Notifications</h3>
  *
  * <p>This <tt>MemoryMXBean</tt> is a
  * {@link javax.management.NotificationEmitter NotificationEmitter}
@@ -169,7 +169,7 @@ import javax.management.openmbean.CompositeData;
  * MemoryNotificationInfo}.
  *
  * <hr>
- * <h4>NotificationEmitter</h4>
+ * <h3>NotificationEmitter</h3>
  * The <tt>MemoryMXBean</tt> object returned by
  * {@link ManagementFactory#getMemoryMXBean} implements
  * the {@link javax.management.NotificationEmitter NotificationEmitter}
