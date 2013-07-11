@@ -25,6 +25,8 @@
 
 package com.apple.eawt.event;
 
+import sun.awt.SunToolkit;
+
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -70,7 +72,7 @@ final class GestureHandler {
     static void handleGestureFromNative(final Window window, final int type, final double x, final double y, final double a, final double b) {
         if (window == null) return; // should never happen...
 
-        EventQueue.invokeLater(new Runnable() {
+        SunToolkit.executeOnEventHandlerThread(window, new Runnable() {
             public void run() {
                 final Component component = SwingUtilities.getDeepestComponentAt(window, (int)x, (int)y);
 
