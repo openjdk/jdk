@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6725036
+ * @ignore 8016760: failure of regression test langtools/tools/javac/T6725036.java
  * @summary javac returns incorrect value for lastModifiedTime() when
  *          source is a zip file archive
  */

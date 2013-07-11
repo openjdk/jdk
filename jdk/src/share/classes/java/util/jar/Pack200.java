@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public abstract class Pack200 {
     // Static methods of the Pack200 class.
     /**
      * Obtain new instance of a class that implements Packer.
-     *
+     * <ul>
      * <li><p>If the system property <tt>java.util.jar.Pack200.Packer</tt>
      * is defined, then the value is taken to be the fully-qualified name
      * of a concrete implementation class, which must implement Packer.
@@ -122,6 +122,7 @@ public abstract class Pack200 {
      * <li><p>If an implementation has not been specified with the system
      * property, then the system-default implementation class is instantiated,
      * and the result is returned.</p></li>
+     * </ul>
      *
      * <p>Note:  The returned object is not guaranteed to operate
      * correctly if multiple threads use it at the same time.
@@ -137,7 +138,7 @@ public abstract class Pack200 {
 
     /**
      * Obtain new instance of a class that implements Unpacker.
-     *
+     * <ul>
      * <li><p>If the system property <tt>java.util.jar.Pack200.Unpacker</tt>
      * is defined, then the value is taken to be the fully-qualified
      * name of a concrete implementation class, which must implement Unpacker.
@@ -147,6 +148,7 @@ public abstract class Pack200 {
      * <li><p>If an implementation has not been specified with the
      * system property, then the system-default implementation class
      * is instantiated, and the result is returned.</p></li>
+     * </ul>
      *
      * <p>Note:  The returned object is not guaranteed to operate
      * correctly if multiple threads use it at the same time.
@@ -350,14 +352,14 @@ public abstract class Pack200 {
          * directory will be passed also.
          * <p>
          * Examples:
-         * <pre><code>
+         * <pre>{@code
          *     Map p = packer.properties();
          *     p.put(PASS_FILE_PFX+0, "mutants/Rogue.class");
          *     p.put(PASS_FILE_PFX+1, "mutants/Wolverine.class");
          *     p.put(PASS_FILE_PFX+2, "mutants/Storm.class");
          *     # Pass all files in an entire directory hierarchy:
          *     p.put(PASS_FILE_PFX+3, "police/");
-         * </pre></code>.
+         * }</pre>
          */
         String PASS_FILE_PFX            = "pack.pass.file.";
 
@@ -378,12 +380,12 @@ public abstract class Pack200 {
          * This is the default value for this property.
          * <p>
          * Examples:
-         * <pre><code>
+         * <pre>{@code
          *     Map p = pack200.getProperties();
          *     p.put(UNKNOWN_ATTRIBUTE, ERROR);
          *     p.put(UNKNOWN_ATTRIBUTE, STRIP);
          *     p.put(UNKNOWN_ATTRIBUTE, PASS);
-         * </pre></code>
+         * }</pre>
          */
         String UNKNOWN_ATTRIBUTE        = "pack.unknown.attribute";
 

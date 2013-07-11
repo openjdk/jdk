@@ -2994,6 +2994,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_Reference_get(x);
     break;
 
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+    do_update_CRC32(x);
+    break;
+
   default: ShouldNotReachHere(); break;
   }
 }

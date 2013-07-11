@@ -1749,24 +1749,24 @@ public class HashMap<K,V>
                 V oldValue = pEntry.value;
                 if (oldValue != null) {
                     V newValue = remappingFunction.apply(key, oldValue);
-                    if (newValue == null) { // remove mapping
-                        modCount++;
-                        size--;
-                        tb.deleteTreeNode(p);
-                        pEntry.recordRemoval(this);
-                        if (tb.root == null || tb.first == null) {
-                            // assert tb.root == null && tb.first == null :
-                            //     "TreeBin.first and root should both be null";
-                            // TreeBin is now empty, we should blank this bin
-                            table[i] = null;
-                        }
-                    } else {
-                        pEntry.value = newValue;
-                        pEntry.recordAccess(this);
+                if (newValue == null) { // remove mapping
+                    modCount++;
+                    size--;
+                    tb.deleteTreeNode(p);
+                    pEntry.recordRemoval(this);
+                    if (tb.root == null || tb.first == null) {
+                        // assert tb.root == null && tb.first == null :
+                        //     "TreeBin.first and root should both be null";
+                        // TreeBin is now empty, we should blank this bin
+                        table[i] = null;
                     }
-                    return newValue;
+                } else {
+                    pEntry.value = newValue;
+                    pEntry.recordAccess(this);
                 }
+                return newValue;
             }
+        }
         }
         return null;
     }
@@ -1779,7 +1779,7 @@ public class HashMap<K,V>
         if (key == null) {
             V oldValue = nullKeyEntry == null ? null : nullKeyEntry.value;
             V newValue = remappingFunction.apply(key, oldValue);
-            if (newValue != oldValue) {
+            if (newValue != oldValue || (oldValue == null && nullKeyEntry != null)) {
                 if (newValue == null) {
                     removeNullKey();
                 } else {
@@ -1803,7 +1803,7 @@ public class HashMap<K,V>
                 if (e.hash == hash && Objects.equals(e.key, key)) {
                     V oldValue = e.value;
                     V newValue = remappingFunction.apply(key, oldValue);
-                    if (newValue != oldValue) {
+                    if (newValue != oldValue || oldValue == null) {
                         if (newValue == null) {
                             modCount++;
                             size--;
@@ -1829,7 +1829,7 @@ public class HashMap<K,V>
             TreeNode p = tb.getTreeNode(hash, key);
             V oldValue = p == null ? null : (V)p.entry.value;
             V newValue = remappingFunction.apply(key, oldValue);
-            if (newValue != oldValue) {
+            if (newValue != oldValue || (oldValue == null && p != null)) {
                 if (newValue == null) {
                     Entry<K,V> pEntry = (Entry<K,V>)p.entry;
                     modCount++;

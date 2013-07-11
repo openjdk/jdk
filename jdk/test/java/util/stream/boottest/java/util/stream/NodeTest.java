@@ -137,4 +137,18 @@ public class NodeTest extends OpTestCase {
     public void testSpliterator(Integer[] array, Node<Integer> n) {
         SpliteratorTestHelper.testSpliterator(n::spliterator);
     }
+
+    @Test(dataProvider = "nodes")
+    public void testTruncate(Integer[] array, Node<Integer> n) {
+        int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
+        for (int start : nums)
+            for (int end : nums) {
+                if (start < 0 || end < 0 || end < start || end > array.length)
+                    continue;
+                Node<Integer> slice = n.truncate(start, end, Integer[]::new);
+                Integer[] asArray = slice.asArray(Integer[]::new);
+                for (int k = start; k < end; k++)
+                    assertEquals(array[k], asArray[k - start]);
+            }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import sun.security.jca.JCAUtil;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>Signature</code> class, which is used to provide the
+ * for the {@code Signature} class, which is used to provide the
  * functionality of a digital signature algorithm. Digital signatures are used
  * for authentication and integrity assurance of digital data.
  *.
@@ -130,8 +130,8 @@ public abstract class SignatureSpi {
 
     /**
      * Updates the data to be signed or verified using the specified
-     * ByteBuffer. Processes the <code>data.remaining()</code> bytes
-     * starting at at <code>data.position()</code>.
+     * ByteBuffer. Processes the {@code data.remaining()} bytes
+     * starting at at {@code data.position()}.
      * Upon return, the buffer's position will be equal to its limit;
      * its limit will not have changed.
      *
@@ -183,14 +183,14 @@ public abstract class SignatureSpi {
 
     /**
      * Finishes this signature operation and stores the resulting signature
-     * bytes in the provided buffer <code>outbuf</code>, starting at
-     * <code>offset</code>.
+     * bytes in the provided buffer {@code outbuf}, starting at
+     * {@code offset}.
      * The format of the signature depends on the underlying
      * signature scheme.
      *
      * <p>The signature implementation is reset to its initial state
      * (the state it was in after a call to one of the
-     * <code>engineInitSign</code> methods)
+     * {@code engineInitSign} methods)
      * and can be reused to generate further signatures with the same private
      * key.
      *
@@ -200,10 +200,10 @@ public abstract class SignatureSpi {
      *
      * @param outbuf buffer for the signature result.
      *
-     * @param offset offset into <code>outbuf</code> where the signature is
+     * @param offset offset into {@code outbuf} where the signature is
      * stored.
      *
-     * @param len number of bytes within <code>outbuf</code> allotted for the
+     * @param len number of bytes within {@code outbuf} allotted for the
      * signature.
      * Both this default implementation and the SUN provider do not
      * return partial digests. If the value of this parameter is less
@@ -212,11 +212,11 @@ public abstract class SignatureSpi {
      * This parameter is ignored if its value is greater than or equal to
      * the actual signature length.
      *
-     * @return the number of bytes placed into <code>outbuf</code>
+     * @return the number of bytes placed into {@code outbuf}
      *
      * @exception SignatureException if the engine is not
      * initialized properly, if this signature algorithm is unable to
-     * process the input data provided, or if <code>len</code> is less
+     * process the input data provided, or if {@code len} is less
      * than the actual signature length.
      *
      * @since 1.2
@@ -293,7 +293,7 @@ public abstract class SignatureSpi {
      *
      * @param value the parameter value.
      *
-     * @exception InvalidParameterException if <code>param</code> is an
+     * @exception InvalidParameterException if {@code param} is an
      * invalid parameter for this signature algorithm engine,
      * the parameter is already set
      * and cannot be set again, a security exception occurs, and so on.
@@ -362,7 +362,7 @@ public abstract class SignatureSpi {
      * @return the object that represents the parameter value, or null if
      * there is none.
      *
-     * @exception InvalidParameterException if <code>param</code> is an
+     * @exception InvalidParameterException if {@code param} is an
      * invalid parameter for this engine, or another exception occurs while
      * trying to get this parameter.
      *
@@ -378,7 +378,7 @@ public abstract class SignatureSpi {
      * @return a clone if the implementation is cloneable.
      *
      * @exception CloneNotSupportedException if this is called
-     * on an implementation that does not support <code>Cloneable</code>.
+     * on an implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {

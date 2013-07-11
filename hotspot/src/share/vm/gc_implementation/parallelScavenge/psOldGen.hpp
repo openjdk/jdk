@@ -110,7 +110,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   virtual void initialize(ReservedSpace rs, size_t alignment,
                   const char* perf_data_name, int level);
   void initialize_virtual_space(ReservedSpace rs, size_t alignment);
-  void initialize_work(const char* perf_data_name, int level);
+  virtual void initialize_work(const char* perf_data_name, int level);
   virtual void initialize_performance_counters(const char* perf_data_name, int level);
 
   MemRegion reserved() const                { return _reserved; }

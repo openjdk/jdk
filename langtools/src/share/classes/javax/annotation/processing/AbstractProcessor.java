@@ -38,7 +38,7 @@ import javax.tools.Diagnostic;
  * superclass for most concrete annotation processors.  This class
  * examines annotation values to compute the {@linkplain
  * #getSupportedOptions options}, {@linkplain
- * #getSupportedAnnotationTypes annotations}, and {@linkplain
+ * #getSupportedAnnotationTypes annotation types}, and {@linkplain
  * #getSupportedSourceVersion source version} supported by its
  * subtypes.
  *

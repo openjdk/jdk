@@ -40,6 +40,17 @@
 #include "nio.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
+
+/**
+ * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
+ * build time.
+ */
+#ifdef __linux__
+  #ifndef IP_MULTICAST_ALL
+  #define IP_MULTICAST_ALL    49
+  #endif
+#endif
+
 #ifdef _ALLBSD_SOURCE
 
 #ifndef IP_BLOCK_SOURCE
@@ -175,7 +186,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                        sizeof(int)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
-                                         "sun.nio.ch.Net.setIntOption");
+                                         "Unable to set IPV6_V6ONLY");
             close(fd);
             return -1;
         }
@@ -188,11 +199,27 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                        sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
-                                         "sun.nio.ch.Net.setIntOption");
+                                         "Unable to set SO_REUSEADDR");
             close(fd);
             return -1;
         }
     }
+
+#if defined(__linux__)
+    if (type == SOCK_DGRAM) {
+        int arg = 0;
+        int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
+        if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+            (errno != ENOPROTOOPT)) {
+            JNU_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "SocketException",
+                                         "Unable to set IP_MULTICAST_ALL");
+            close(fd);
+            return -1;
+        }
+    }
+#endif
+
 #if defined(__linux__) && defined(AF_INET6)
     /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
@@ -201,7 +228,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                        sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
-                                         "sun.nio.ch.Net.setIntOption");
+                                         "Unable to set IPV6_MULTICAST_HOPS");
             close(fd);
             return -1;
         }
@@ -646,7 +673,7 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
         return pfd.revents;
     } else if (errno == EINTR) {
         return IOS_INTERRUPTED;
-    } else if (rv < 0) {
+    } else {
         handleSocketError(env, errno);
         return IOS_THROWN;
     }

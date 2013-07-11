@@ -288,7 +288,7 @@ public class AccessorProperty extends Property {
     }
 
     @Override
-    protected void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict)  {
+    public void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict)  {
         if (isSpill()) {
             self.spill[getSlot()] = value;
         } else {
@@ -303,7 +303,7 @@ public class AccessorProperty extends Property {
     }
 
     @Override
-    protected Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
+    public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
         if (isSpill()) {
             return self.spill[getSlot()];
         }

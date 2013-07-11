@@ -25,7 +25,6 @@
 package java.util.stream;
 
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
@@ -166,6 +165,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(P_OUT u) {
                         if (predicate.test(u))
                             downstream.accept(u);
@@ -252,6 +256,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         Stream<? extends R> result = mapper.apply(u);
@@ -273,6 +283,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     IntConsumer downstreamAsInt = downstream::accept;
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         IntStream result = mapper.apply(u);
@@ -294,6 +310,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     DoubleConsumer downstreamAsDouble = downstream::accept;
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         DoubleStream result = mapper.apply(u);
@@ -315,6 +337,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     LongConsumer downstreamAsLong = downstream::accept;
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         LongStream result = mapper.apply(u);
@@ -483,12 +511,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     public final Optional<P_OUT> max(Comparator<? super P_OUT> comparator) {
-        return reduce(Comparators.greaterOf(comparator));
+        return reduce(BinaryOperator.maxBy(comparator));
     }
 
     @Override
     public final Optional<P_OUT> min(Comparator<? super P_OUT> comparator) {
-        return reduce(Comparators.lesserOf(comparator));
+        return reduce(BinaryOperator.minBy(comparator));
 
     }
 

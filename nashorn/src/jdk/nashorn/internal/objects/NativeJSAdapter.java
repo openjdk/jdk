@@ -42,6 +42,7 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -142,9 +143,12 @@ public final class NativeJSAdapter extends ScriptObject {
 
     private static final MethodHandle IS_JSADAPTOR = findOwnMH("isJSAdaptor", boolean.class, Object.class, Object.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeJSAdapter(final ScriptObject proto, final Object overrides, final ScriptObject adaptee) {
+        super(proto, $nasgenmap$);
         this.adaptee = wrapAdaptee(adaptee);
-        this.setProto(proto);
         if (overrides instanceof ScriptObject) {
             this.overrides = true;
             final ScriptObject sobj = (ScriptObject)overrides;
