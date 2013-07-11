@@ -66,7 +66,7 @@ import sun.security.action.GetPropertyAction;
  *
  *
  * <a name="names"><a name="charenc">
- * <h4>Charset names</h4>
+ * <h2>Charset names</h2>
  *
  * <p> Charsets are named by strings composed of the following characters:
  *
@@ -140,7 +140,7 @@ import sun.security.action.GetPropertyAction;
  * previous canonical name be made into an alias.
  *
  *
- * <h4>Standard charsets</h4>
+ * <h2>Standard charsets</h2>
  *
  * <a name="standard">
  *
@@ -217,7 +217,7 @@ import sun.security.action.GetPropertyAction;
  * <p>The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
  *
- * <h4>Terminology</h4>
+ * <h2>Terminology</h2>
  *
  * <p> The name of this class is taken from the terms used in
  * <a href="http://www.ietf.org/rfc/rfc2278.txt"><i>RFC&nbsp;2278</i></a>.
@@ -736,6 +736,9 @@ public abstract class Charset
      * contained by this charset; if it returns <tt>false</tt>, however, then
      * it is not necessarily the case that the given charset is not contained
      * in this charset.
+     *
+     * @param   cs
+     *          The given charset
      *
      * @return  <tt>true</tt> if the given charset is contained in this charset
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,6 +446,7 @@ void VM_Version::get_processor_features() {
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
                (supports_aes()    ? ", aes" : ""),
+               (supports_clmul()    ? ", clmul" : ""),
                (supports_erms()   ? ", erms" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
@@ -487,6 +488,27 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseAES))
       warning("AES instructions not available on this CPU");
     FLAG_SET_DEFAULT(UseAES, false);
+  }
+
+  // Use CLMUL instructions if available.
+  if (supports_clmul()) {
+    if (FLAG_IS_DEFAULT(UseCLMUL)) {
+      UseCLMUL = true;
+    }
+  } else if (UseCLMUL) {
+    if (!FLAG_IS_DEFAULT(UseCLMUL))
+      warning("CLMUL instructions not available on this CPU (AVX may also be required)");
+    FLAG_SET_DEFAULT(UseCLMUL, false);
+  }
+
+  if (UseCLMUL && (UseAVX > 0) && (UseSSE > 2)) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      UseCRC32Intrinsics = true;
+    }
+  } else if (UseCRC32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
+      warning("CRC32 Intrinsics requires AVX and CLMUL instructions (not available on this CPU)");
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
   // The AES intrinsic stubs require AES instruction support (of course)

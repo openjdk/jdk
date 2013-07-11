@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,12 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     private final RSAOtherPrimeInfo otherPrimeInfo[];
 
    /**
-    * Creates a new <code>RSAMultiPrimePrivateCrtKeySpec</code>
+    * Creates a new {@code RSAMultiPrimePrivateCrtKeySpec}
     * given the modulus, publicExponent, privateExponent,
     * primeP, primeQ, primeExponentP, primeExponentQ,
     * crtCoefficient, and otherPrimeInfo as defined in PKCS#1 v2.1.
     *
-    * <p>Note that the contents of <code>otherPrimeInfo</code>
+    * <p>Note that the contents of {@code otherPrimeInfo}
     * are copied to protect against subsequent modification when
     * constructing this object.
     *
@@ -78,13 +78,13 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     * @param otherPrimeInfo triplets of the rest of primes, null can be
     * specified if there are only two prime factors (p and q).
     * @exception NullPointerException if any of the parameters, i.e.
-    * <code>modulus</code>,
-    * <code>publicExponent</code>, <code>privateExponent</code>,
-    * <code>primeP</code>, <code>primeQ</code>,
-    * <code>primeExponentP</code>, <code>primeExponentQ</code>,
-    * <code>crtCoefficient</code>, is null.
+    * {@code modulus},
+    * {@code publicExponent}, {@code privateExponent},
+    * {@code primeP}, {@code primeQ},
+    * {@code primeExponentP}, {@code primeExponentQ},
+    * {@code crtCoefficient}, is null.
     * @exception IllegalArgumentException if an empty, i.e. 0-length,
-    * <code>otherPrimeInfo</code> is specified.
+    * {@code otherPrimeInfo} is specified.
     */
     public RSAMultiPrimePrivateCrtKeySpec(BigInteger modulus,
                                 BigInteger publicExponent,

@@ -33,7 +33,7 @@ package java.sql;
  * directly by applications. A JDBC Driver  may choose
  * to create its {@code DriverAction} implementation in a private class
  * to avoid it being called directly.
- * <o>
+ * <p>
  * The JDBC driver's static initialization block must call
  * {@linkplain DriverManager#registerDriver(java.sql.Driver, java.sql.DriverAction) } in order
  * to inform {@code DriverManager} which {@code DriverAction} implementation to

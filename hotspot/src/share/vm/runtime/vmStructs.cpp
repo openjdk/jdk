@@ -440,10 +440,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
      static_field(Universe,                    _main_thread_group,                            oop)                                   \
      static_field(Universe,                    _system_thread_group,                          oop)                                   \
      static_field(Universe,                    _the_empty_class_klass_array,                  objArrayOop)                           \
-     static_field(Universe,                    _out_of_memory_error_java_heap,                oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_perm_gen,                 oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_array_size,               oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_gc_overhead_limit,        oop)                                   \
      static_field(Universe,                    _null_ptr_exception_instance,                  oop)                                   \
      static_field(Universe,                    _arithmetic_exception_instance,                oop)                                   \
      static_field(Universe,                    _vm_exception,                                 oop)                                   \

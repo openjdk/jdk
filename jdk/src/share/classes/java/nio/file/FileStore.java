@@ -173,6 +173,8 @@ public abstract class FileStore {
      * The {@code type} parameter is the type of the attribute view required and
      * the method returns an instance of that type if supported.
      *
+     * @param   <V>
+     *          The {@code FileStoreAttributeView} type
      * @param   type
      *          the {@code Class} object corresponding to the attribute view
      *
