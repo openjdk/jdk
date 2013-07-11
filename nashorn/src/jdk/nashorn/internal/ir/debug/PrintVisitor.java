@@ -41,6 +41,7 @@ import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.TryNode;
+import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
@@ -201,6 +202,17 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
         sb.append(binaryNode.tokenType());
         sb.append(' ');
         binaryNode.rhs().accept(this);
+        return false;
+    }
+
+    @Override
+    public boolean enterUnaryNode(final UnaryNode unaryNode) {
+        unaryNode.toString(sb, new Runnable() {
+            @Override
+            public void run() {
+                unaryNode.rhs().accept(PrintVisitor.this);
+            }
+        });
         return false;
     }
 
