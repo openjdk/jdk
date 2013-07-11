@@ -21,6 +21,7 @@ import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.CallNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
@@ -256,17 +257,20 @@ enum CompilationPhase {
 
                 @Override
                 public Node leaveDefault(final Node node) {
-                    final Symbol symbol = node.getSymbol();
-                    if (symbol != null) {
-                        final Range range  = symbol.getRange();
-                        final Type  symbolType = symbol.getSymbolType();
-                        if (!symbolType.isNumeric()) {
-                            return node;
-                        }
-                        final Type  rangeType  = range.getType();
-                        if (!Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                            RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
-                            return node.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
+                    if(node instanceof Expression) {
+                        final Expression expr = (Expression)node;
+                        final Symbol symbol = expr.getSymbol();
+                        if (symbol != null) {
+                            final Range range  = symbol.getRange();
+                            final Type  symbolType = symbol.getSymbolType();
+                            if (!symbolType.isNumeric()) {
+                                return expr;
+                            }
+                            final Type  rangeType  = range.getType();
+                            if (!Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
+                                RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
+                                return expr.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
+                            }
                         }
                     }
                     return node;

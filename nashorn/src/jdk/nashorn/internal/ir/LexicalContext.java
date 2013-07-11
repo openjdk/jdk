@@ -576,19 +576,20 @@ public class LexicalContext {
         final StringBuffer sb = new StringBuffer();
         sb.append("[ ");
         for (int i = 0; i < sp; i++) {
-            final Node node = stack[i];
+            final Object node = stack[i];
             sb.append(node.getClass().getSimpleName());
             sb.append('@');
             sb.append(Debug.id(node));
             sb.append(':');
             if (node instanceof FunctionNode) {
-                final Source source = ((FunctionNode)node).getSource();
+                final FunctionNode fn = (FunctionNode)node;
+                final Source source = fn.getSource();
                 String src = source.toString();
                 if (src.indexOf(File.pathSeparator) != -1) {
                     src = src.substring(src.lastIndexOf(File.pathSeparator));
                 }
                 src += ' ';
-                src += source.getLine(node.getStart());
+                src += source.getLine(fn.getStart());
                 sb.append(src);
             }
             sb.append(' ');
@@ -631,7 +632,7 @@ public class LexicalContext {
 
         private T findNext() {
             for (int i = index; i >= 0; i--) {
-                final Node node = stack[i];
+                final Object node = stack[i];
                 if (node == until) {
                     return null;
                 }

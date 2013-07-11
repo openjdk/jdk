@@ -25,32 +25,31 @@
 
 package jdk.nashorn.internal.ir;
 
-/**
- * Can a node be an assignment under certain circumstances?
- * Then it should implement this interface
- *
- * @param <D> the destination type
- */
-public interface Assignment<D extends Expression> {
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
+abstract class LexicalContextStatement extends Statement implements LexicalContextNode {
     /**
-     * Get assignment destination
+     * Constructor
      *
-     * @return get the assignment destination node
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
      */
-    public D getAssignmentDest();
+    protected LexicalContextStatement(final int lineNumber, final long token, final int finish) {
+        super(lineNumber, token, finish);
+    }
 
     /**
-     * Get the assignment source
+     * Copy constructor
      *
-     * @return get the assignment source node
+     * @param node source node
      */
-    public Expression getAssignmentSource();
+    protected LexicalContextStatement(final LexicalContextStatement node) {
+        super(node);
+    }
 
-    /**
-     * Set assignment destination node.
-     * @param n the assignment destination node.
-     * @return a node equivalent to this one except for the requested change.
-     */
-    public Node setAssignmentDest(D n);
+    @Override
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
+        return Acceptor.accept(this, visitor);
+    }
 }
