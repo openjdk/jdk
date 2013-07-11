@@ -39,21 +39,19 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
-var forName = java.lang.Class["forName(String)"]
-
-var Parser            = forName("jdk.nashorn.internal.parser.Parser").static
-var Compiler          = forName("jdk.nashorn.internal.codegen.Compiler").static
-var Context           = forName("jdk.nashorn.internal.runtime.Context").static
-var ScriptEnvironment = forName("jdk.nashorn.internal.runtime.ScriptEnvironment").static
-var Source            = forName("jdk.nashorn.internal.runtime.Source").static
-var FunctionNode      = forName("jdk.nashorn.internal.ir.FunctionNode").static
-var Block             = forName("jdk.nashorn.internal.ir.Block").static
-var VarNode           = forName("jdk.nashorn.internal.ir.VarNode").static
-var ExecuteNode       = forName("jdk.nashorn.internal.ir.ExecuteNode").static
-var UnaryNode         = forName("jdk.nashorn.internal.ir.UnaryNode").static
-var BinaryNode        = forName("jdk.nashorn.internal.ir.BinaryNode").static
-var ThrowErrorManager = forName("jdk.nashorn.internal.runtime.Context$ThrowErrorManager").static
-var Debug             = forName("jdk.nashorn.internal.runtime.Debug").static
+var Parser            = Java.type("jdk.nashorn.internal.parser.Parser")
+var Compiler          = Java.type("jdk.nashorn.internal.codegen.Compiler")
+var Context           = Java.type("jdk.nashorn.internal.runtime.Context")
+var ScriptEnvironment = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
+var Source            = Java.type("jdk.nashorn.internal.runtime.Source")
+var FunctionNode      = Java.type("jdk.nashorn.internal.ir.FunctionNode")
+var Block             = Java.type("jdk.nashorn.internal.ir.Block")
+var VarNode           = Java.type("jdk.nashorn.internal.ir.VarNode")
+var ExecuteNode       = Java.type("jdk.nashorn.internal.ir.ExecuteNode")
+var UnaryNode         = Java.type("jdk.nashorn.internal.ir.UnaryNode")
+var BinaryNode        = Java.type("jdk.nashorn.internal.ir.BinaryNode")
+var ThrowErrorManager = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager")
+var Debug             = Java.type("jdk.nashorn.internal.runtime.Debug")
 
 var parseMethod = Parser.class.getMethod("parse");
 var compileMethod = Compiler.class.getMethod("compile", FunctionNode.class);

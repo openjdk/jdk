@@ -1313,7 +1313,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     @Override
-    public boolean enterLiteralNode(final LiteralNode literalNode) {
+    public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
         assert literalNode.getSymbol() != null : literalNode + " has no symbol";
         load(literalNode).store(literalNode.getSymbol());
         return false;

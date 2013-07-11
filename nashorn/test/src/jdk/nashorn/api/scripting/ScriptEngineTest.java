@@ -968,7 +968,7 @@ public class ScriptEngineTest {
 
         // get implementation of a restricted package interface
         try {
-            log(Objects.toString(((Invocable)e).getInterface(PropertyAccessClass)));
+            log(Objects.toString(((Invocable)e).getInterface((Class<?>)PropertyAccessClass)));
             fail("should have thrown SecurityException");
         } catch (final Exception exp) {
             if (! (exp instanceof SecurityException)) {
