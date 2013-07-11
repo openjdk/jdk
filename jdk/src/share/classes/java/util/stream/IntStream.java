@@ -745,15 +745,8 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      */
     public static IntStream generate(IntSupplier s) {
         Objects.requireNonNull(s);
-        return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(
-                new PrimitiveIterator.OfInt() {
-                    @Override
-                    public boolean hasNext() { return true; }
-
-                    @Override
-                    public int nextInt() { return s.getAsInt(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+        return StreamSupport.intStream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfInt(Long.MAX_VALUE, s));
     }
 
     /**

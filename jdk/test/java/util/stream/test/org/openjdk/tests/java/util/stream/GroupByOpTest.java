@@ -133,9 +133,16 @@ public class GroupByOpTest extends OpTestCase {
             Collector<Integer, Map<Object, List<Integer>>> tab = Collectors.groupingBy(md.m);
             Map<Object, List<Integer>> result =
                     withData(data)
-                            .terminal(s -> s, s -> s.collect(tab))
-                            .parallelEqualityAsserter(s -> StreamOpFlagTestHelper.isStreamOrdered(s) ? GroupByOpTest::assertObjectEquals : GroupByOpTest::assertMultiMapEquals)
-                            .exercise();
+                    .terminal(s -> s, s -> s.collect(tab))
+                    .resultAsserter((act, exp, ord, par) -> {
+                        if (par & !ord) {
+                            GroupByOpTest.assertMultiMapEquals(act, exp);
+                        }
+                        else {
+                            GroupByOpTest.assertObjectEquals(act, exp);
+                        }
+                    })
+                    .exercise();
             assertEquals(result.keySet().size(), md.expectedSize);
         }
     }

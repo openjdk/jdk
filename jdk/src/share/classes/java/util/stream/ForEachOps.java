@@ -342,7 +342,7 @@ final class ForEachOps {
             doCompute(this);
         }
 
-        private static<S, T> void doCompute(ForEachOrderedTask<S, T> task) {
+        private static <S, T> void doCompute(ForEachOrderedTask<S, T> task) {
             while (true) {
                 Spliterator<S> split;
                 if (!AbstractTask.suggestSplit(task.spliterator, task.targetSize)

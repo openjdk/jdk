@@ -227,6 +227,16 @@ access the variable - for example, it can call public methods on
 it. Note that the syntax to access Java objects, methods and fields
 is dependent on the scripting language. JavaScript supports the
 most "natural" Java-like syntax.</p>
+<p>
+Nashorn script engine pre-defines two global variables named "context"
+and "engine". The "context" variable is of type javax.script.ScriptContext
+and refers to the current ScriptContext instance passed to script engine's
+eval method. The "engine" variable is of type javax.script.ScriptEngine and
+refers to the current nashorn script engine instance evaluating the script.
+Both of these variables are non-writable, non-enumerable and non-configurable
+- which implies script code can not write overwrite the value, for..loop iteration
+on global object will not iterate these variables and these variables can not be
+deleted by script.
 <pre><code>
 // <a href="source/ScriptVars.java">ScriptVars.java</a>
 

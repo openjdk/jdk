@@ -38,6 +38,7 @@ import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -52,6 +53,10 @@ import jdk.nashorn.internal.runtime.Source;
  */
 @ScriptClass("Function")
 public final class NativeFunction {
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     // do *not* create me!
     private NativeFunction() {
     }
