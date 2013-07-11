@@ -25,26 +25,25 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
+import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
+
+import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.scripts.JO;
 
-import java.util.List;
-
-import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
-import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
-
 /**
  * An object creator that uses spill properties.
  */
 public class SpillObjectCreator extends ObjectCreator {
 
-    private final List<Node> values;
+    private final List<Expression> values;
 
     /**
      * Constructor
@@ -54,7 +53,7 @@ public class SpillObjectCreator extends ObjectCreator {
      * @param symbols  symbols for fields in object
      * @param values   list of values corresponding to keys
      */
-    protected SpillObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<Node> values) {
+    protected SpillObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final List<Expression> values) {
         super(codegen, keys, symbols, false, false);
         this.values = values;
         makeMap();
@@ -107,7 +106,7 @@ public class SpillObjectCreator extends ObjectCreator {
         for (int i = 0; i < length; i++) {
             final String key = keys.get(i);
             final Property property = propertyMap.findProperty(key);
-            final Node value = values.get(i);
+            final Expression value = values.get(i);
 
             if (property == null && value != null) {
                 method.dup();

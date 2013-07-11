@@ -39,26 +39,26 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
-var Parser            = Java.type("jdk.nashorn.internal.parser.Parser")
-var Compiler          = Java.type("jdk.nashorn.internal.codegen.Compiler")
-var Context           = Java.type("jdk.nashorn.internal.runtime.Context")
-var ScriptEnvironment = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
-var Source            = Java.type("jdk.nashorn.internal.runtime.Source")
-var FunctionNode      = Java.type("jdk.nashorn.internal.ir.FunctionNode")
-var Block             = Java.type("jdk.nashorn.internal.ir.Block")
-var VarNode           = Java.type("jdk.nashorn.internal.ir.VarNode")
-var ExecuteNode       = Java.type("jdk.nashorn.internal.ir.ExecuteNode")
-var UnaryNode         = Java.type("jdk.nashorn.internal.ir.UnaryNode")
-var BinaryNode        = Java.type("jdk.nashorn.internal.ir.BinaryNode")
-var ThrowErrorManager = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager")
-var Debug             = Java.type("jdk.nashorn.internal.runtime.Debug")
+var Parser              = Java.type("jdk.nashorn.internal.parser.Parser")
+var Compiler            = Java.type("jdk.nashorn.internal.codegen.Compiler")
+var Context             = Java.type("jdk.nashorn.internal.runtime.Context")
+var ScriptEnvironment   = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
+var Source              = Java.type("jdk.nashorn.internal.runtime.Source")
+var FunctionNode        = Java.type("jdk.nashorn.internal.ir.FunctionNode")
+var Block               = Java.type("jdk.nashorn.internal.ir.Block")
+var VarNode             = Java.type("jdk.nashorn.internal.ir.VarNode")
+var ExpressionStatement = Java.type("jdk.nashorn.internal.ir.ExpressionStatement")
+var UnaryNode           = Java.type("jdk.nashorn.internal.ir.UnaryNode")
+var BinaryNode          = Java.type("jdk.nashorn.internal.ir.BinaryNode")
+var ThrowErrorManager   = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager")
+var Debug               = Java.type("jdk.nashorn.internal.runtime.Debug")
 
 var parseMethod = Parser.class.getMethod("parse");
 var compileMethod = Compiler.class.getMethod("compile", FunctionNode.class);
 var getBodyMethod = FunctionNode.class.getMethod("getBody");
 var getStatementsMethod = Block.class.getMethod("getStatements");
 var getInitMethod = VarNode.class.getMethod("getInit");
-var getExpressionMethod = ExecuteNode.class.getMethod("getExpression")
+var getExpressionMethod = ExpressionStatement.class.getMethod("getExpression")
 var rhsMethod = UnaryNode.class.getMethod("rhs")
 var lhsMethod = BinaryNode.class.getMethod("lhs")
 var binaryRhsMethod = BinaryNode.class.getMethod("rhs")
@@ -101,7 +101,7 @@ function findFunction(node) {
         return findFunction(rhsMethod.invoke(node))
     } else if(node instanceof BinaryNode) {
         return findFunction(lhsMethod.invoke(node)) || findFunction(binaryRhsMethod.invoke(node))
-	} else if(node instanceof ExecuteNode) {
+	} else if(node instanceof ExpressionStatement) {
 		return findFunction(getExpressionMethod.invoke(node))
     } else if(node instanceof FunctionNode) {
         return node

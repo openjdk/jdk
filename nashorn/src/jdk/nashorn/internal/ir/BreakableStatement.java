@@ -25,28 +25,58 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.Label;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 
-/**
- * This class represents a node from which control flow can execute
- * a {@code break} statement
- */
-public interface BreakableNode extends LexicalContextNode {
-    public abstract Node ensureUniqueLabels(final LexicalContext lc);
+@Immutable
+abstract class BreakableStatement extends LexicalContextStatement implements BreakableNode {
+
+    /** break label. */
+    protected final Label breakLabel;
+
+    /**
+     * Constructor
+     *
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param breakLabel break label
+     */
+    protected BreakableStatement(final int lineNumber, final long token, final int finish, final Label breakLabel) {
+        super(lineNumber, token, finish);
+        this.breakLabel = breakLabel;
+    }
+
+    /**
+     * Copy constructor
+     *
+     * @param breakableNode source node
+     */
+    protected BreakableStatement(final BreakableStatement breakableNode) {
+        super(breakableNode);
+        this.breakLabel = new Label(breakableNode.getBreakLabel());
+    }
 
     /**
      * Check whether this can be broken out from without using a label,
      * e.g. everything but Blocks, basically
      * @return true if breakable without label
      */
-    public boolean isBreakableWithoutLabel();
+    @Override
+    public boolean isBreakableWithoutLabel() {
+        return true;
+    }
 
     /**
      * Return the break label, i.e. the location to go to on break.
      * @return the break label
      */
-    public Label getBreakLabel();
+    @Override
+    public Label getBreakLabel() {
+        return breakLabel;
+    }
 
     /**
      * Return the labels associated with this node. Breakable nodes that
@@ -54,5 +84,8 @@ public interface BreakableNode extends LexicalContextNode {
      * afterwards the node in code
      * @return list of labels representing locations around this node
      */
-    public List<Label> getLabels();
+    @Override
+    public List<Label> getLabels() {
+        return Collections.singletonList(breakLabel);
+    }
 }

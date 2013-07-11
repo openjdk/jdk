@@ -69,6 +69,7 @@ import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.BreakableNode;
 import jdk.nashorn.internal.ir.CallNode;
@@ -76,7 +77,8 @@ import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
-import jdk.nashorn.internal.ir.ExecuteNode;
+import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -350,11 +352,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      *
      * @return the method emitter used
      */
-    MethodEmitter load(final Node node) {
+    MethodEmitter load(final Expression node) {
         return load(node, false);
     }
 
-    private MethodEmitter load(final Node node, final boolean baseAlreadyOnStack) {
+    private MethodEmitter load(final Expression node, final boolean baseAlreadyOnStack) {
         final Symbol symbol = node.getSymbol();
 
         // If we lack symbols, we just generate what we see.
@@ -539,11 +541,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
-    private int loadArgs(final List<Node> args) {
+    private int loadArgs(final List<Expression> args) {
         return loadArgs(args, null, false, args.size());
     }
 
-    private int loadArgs(final List<Node> args, final String signature, final boolean isVarArg, final int argCount) {
+    private int loadArgs(final List<Expression> args, final String signature, final boolean isVarArg, final int argCount) {
         // arg have already been converted to objects here.
         if (isVarArg || argCount > LinkerCallSite.ARGLIMIT) {
             loadArgsArray(args);
@@ -553,7 +555,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // pad with undefined if size is too short. argCount is the real number of args
         int n = 0;
         final Type[] params = signature == null ? null : Type.getMethodArguments(signature);
-        for (final Node arg : args) {
+        for (final Expression arg : args) {
             assert arg != null;
             load(arg);
             if (n >= argCount) {
@@ -574,13 +576,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterCallNode(final CallNode callNode) {
-        lineNumber(callNode);
+        lineNumber(callNode.getLineNumber());
 
-        final List<Node>   args            = callNode.getArgs();
-        final Node         function        = callNode.getFunction();
-        final Block        currentBlock    = lc.getCurrentBlock();
+        final List<Expression> args = callNode.getArgs();
+        final Expression function = callNode.getFunction();
+        final Block currentBlock = lc.getCurrentBlock();
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
-        final Type         callNodeType    = callNode.getType();
+        final Type callNodeType = callNode.getType();
 
         function.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
@@ -771,11 +773,19 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     @Override
-    public boolean enterExecuteNode(final ExecuteNode executeNode) {
-        lineNumber(executeNode);
+    public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
+        lineNumber(expressionStatement);
 
-        final Node expression = executeNode.getExpression();
-        expression.accept(this);
+        expressionStatement.getExpression().accept(this);
+
+        return false;
+    }
+
+    @Override
+    public boolean enterBlockStatement(final BlockStatement blockStatement) {
+        lineNumber(blockStatement);
+
+        blockStatement.getBlock().accept(this);
 
         return false;
     }
@@ -794,10 +804,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void enterFor(final ForNode forNode) {
-        final Node  init   = forNode.getInit();
-        final Node  test   = forNode.getTest();
-        final Block body   = forNode.getBody();
-        final Node  modify = forNode.getModify();
+        final Expression init   = forNode.getInit();
+        final Expression test   = forNode.getTest();
+        final Block      body   = forNode.getBody();
+        final Expression modify = forNode.getModify();
 
         if (init != null) {
             init.accept(this);
@@ -827,19 +837,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private void enterForIn(final ForNode forNode) {
         final Block body   = forNode.getBody();
-        final Node  modify = forNode.getModify();
+        final Expression  modify = forNode.getModify();
 
         final Symbol iter      = forNode.getIterator();
         final Label  loopLabel = new Label("loop");
 
-        Node init = forNode.getInit();
-
-        // We have to evaluate the optional initializer expression
-        // of the iterator variable of the for-in statement.
-        if (init instanceof VarNode) {
-            init.accept(this);
-            init = ((VarNode)init).getName();
-        }
+        final Expression init = forNode.getInit();
+        assert init instanceof IdentNode;
 
         load(modify);
         assert modify.getType().isObject();
@@ -848,7 +852,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method._goto(forNode.getContinueLabel());
         method.label(loopLabel);
 
-        new Store<Node>(init) {
+        new Store<Expression>(init) {
             @Override
             protected void storeNonDiscard() {
                 return;
@@ -1047,7 +1051,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterIfNode(final IfNode ifNode) {
         lineNumber(ifNode);
 
-        final Node  test = ifNode.getTest();
+        final Expression test = ifNode.getTest();
         final Block pass = ifNode.getPass();
         final Block fail = ifNode.getFail();
 
@@ -1087,7 +1091,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void lineNumber(final Statement statement) {
-        final int lineNumber = statement.getLineNumber();
+        lineNumber(statement.getLineNumber());
+    }
+
+    private void lineNumber(int lineNumber) {
         if (lineNumber != lastLineNumber) {
             method.lineNumber(lineNumber);
         }
@@ -1106,7 +1113,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private MethodEmitter loadArray(final ArrayLiteralNode arrayLiteralNode, final ArrayType arrayType) {
         assert arrayType == Type.INT_ARRAY || arrayType == Type.LONG_ARRAY || arrayType == Type.NUMBER_ARRAY || arrayType == Type.OBJECT_ARRAY;
 
-        final Node[]          nodes    = arrayLiteralNode.getValue();
+        final Expression[]    nodes    = arrayLiteralNode.getValue();
         final Object          presets  = arrayLiteralNode.getPresets();
         final int[]           postsets = arrayLiteralNode.getPostsets();
         final Class<?>        type     = arrayType.getTypeClass();
@@ -1166,11 +1173,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return method;
     }
 
-    private void storeElement(final Node[] nodes, final Type elementType, final int index) {
+    private void storeElement(final Expression[] nodes, final Type elementType, final int index) {
         method.dup();
         method.load(index);
 
-        final Node element = nodes[index];
+        final Expression element = nodes[index];
 
         if (element == null) {
             method.loadEmpty(elementType);
@@ -1182,7 +1189,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.arraystore();
     }
 
-    private MethodEmitter loadArgsArray(final List<Node> args) {
+    private MethodEmitter loadArgsArray(final List<Expression> args) {
         final Object[] array = new Object[args.size()];
         loadConstant(array);
 
@@ -1323,16 +1330,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterObjectNode(final ObjectNode objectNode) {
         final List<PropertyNode> elements = objectNode.getElements();
 
-        final List<String> keys    = new ArrayList<>();
-        final List<Symbol> symbols = new ArrayList<>();
-        final List<Node>   values  = new ArrayList<>();
+        final List<String>     keys    = new ArrayList<>();
+        final List<Symbol>     symbols = new ArrayList<>();
+        final List<Expression> values  = new ArrayList<>();
 
         boolean hasGettersSetters = false;
 
         for (PropertyNode propertyNode: elements) {
-            final Node         value        = propertyNode.getValue();
+            final Expression   value        = propertyNode.getValue();
             final String       key          = propertyNode.getKeyName();
-            final Symbol       symbol       = value == null ? null : propertyNode.getSymbol();
+            final Symbol       symbol       = value == null ? null : propertyNode.getKey().getSymbol();
 
             if (value == null) {
                 hasGettersSetters = true;
@@ -1346,9 +1353,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (elements.size() > OBJECT_SPILL_THRESHOLD) {
             new SpillObjectCreator(this, keys, symbols, values).makeObject(method);
         } else {
-            new FieldObjectCreator<Node>(this, keys, symbols, values) {
+            new FieldObjectCreator<Expression>(this, keys, symbols, values) {
                 @Override
-                protected void loadValue(final Node node) {
+                protected void loadValue(final Expression node) {
                     load(node);
                 }
 
@@ -1419,7 +1426,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Type returnType = lc.getCurrentFunction().getReturnType();
 
-        final Node expression = returnNode.getExpression();
+        final Expression expression = returnNode.getExpression();
         if (expression != null) {
             load(expression);
         } else {
@@ -1435,7 +1442,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return node instanceof LiteralNode<?> && ((LiteralNode<?>) node).isNull();
     }
 
-    private boolean nullCheck(final RuntimeNode runtimeNode, final List<Node> args, final String signature) {
+    private boolean nullCheck(final RuntimeNode runtimeNode, final List<Expression> args, final String signature) {
         final Request request = runtimeNode.getRequest();
 
         if (!Request.isEQ(request) && !Request.isNE(request)) {
@@ -1444,11 +1451,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         assert args.size() == 2 : "EQ or NE or TYPEOF need two args";
 
-        Node lhs = args.get(0);
-        Node rhs = args.get(1);
+        Expression lhs = args.get(0);
+        Expression rhs = args.get(1);
 
         if (isNullLiteral(lhs)) {
-            final Node tmp = lhs;
+            final Expression tmp = lhs;
             lhs = rhs;
             rhs = tmp;
         }
@@ -1502,7 +1509,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
-    private boolean specializationCheck(final RuntimeNode.Request request, final Node node, final List<Node> args) {
+    private boolean specializationCheck(final RuntimeNode.Request request, final Expression node, final List<Expression> args) {
         if (!request.canSpecialize()) {
             return false;
         }
@@ -1555,10 +1562,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          *
          * TODO - remove this - Access Specializer will always know after Attr/Lower
          */
+        final List<Expression> args = runtimeNode.getArgs();
         if (runtimeNode.isPrimitive() && !runtimeNode.isFinal() && isReducible(runtimeNode.getRequest())) {
-            final Node lhs = runtimeNode.getArgs().get(0);
-            assert runtimeNode.getArgs().size() > 1 : runtimeNode + " must have two args";
-            final Node rhs = runtimeNode.getArgs().get(1);
+            final Expression lhs = args.get(0);
+            assert args.size() > 1 : runtimeNode + " must have two args";
+            final Expression rhs = args.get(1);
 
             final Type   type   = runtimeNode.getType();
             final Symbol symbol = runtimeNode.getSymbol();
@@ -1595,9 +1603,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
         }
 
-        // Get the request arguments.
-        final List<Node> args = runtimeNode.getArgs();
-
         if (nullCheck(runtimeNode, args, new FunctionSignature(false, false, runtimeNode.getType(), args).toString())) {
             return false;
         }
@@ -1606,7 +1611,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        for (final Node arg : runtimeNode.getArgs()) {
+        for (final Expression arg : args) {
             load(arg).convert(Type.OBJECT); //TODO this should not be necessary below Lower
         }
 
@@ -1617,7 +1622,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 false,
                 false,
                 runtimeNode.getType(),
-                runtimeNode.getArgs().size()).toString());
+                args.size()).toString());
         method.convert(runtimeNode.getType());
         method.store(runtimeNode.getSymbol());
 
@@ -1626,8 +1631,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterSplitNode(final SplitNode splitNode) {
-        lineNumber(splitNode);
-
         final CompileUnit splitCompileUnit = splitNode.getCompileUnit();
 
         final FunctionNode fn   = lc.getCurrentFunction();
@@ -1772,7 +1775,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterSwitchNode(final SwitchNode switchNode) {
         lineNumber(switchNode);
 
-        final Node           expression  = switchNode.getExpression();
+        final Expression     expression  = switchNode.getExpression();
         final Symbol         tag         = switchNode.getTag();
         final boolean        allInteger  = tag.getSymbolType().isInteger();
         final List<CaseNode> cases       = switchNode.getCases();
@@ -1875,7 +1878,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             for (final CaseNode caseNode : cases) {
-                final Node test = caseNode.getTest();
+                final Expression test = caseNode.getTest();
 
                 if (test != null) {
                     method.load(tag);
@@ -1915,10 +1918,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         final Source source     = lc.getCurrentFunction().getSource();
 
-        final Node   expression = throwNode.getExpression();
-        final int    position   = throwNode.position();
-        final int    line       = source.getLine(position);
-        final int    column     = source.getColumn(position);
+        final Expression expression = throwNode.getExpression();
+        final int        position   = throwNode.position();
+        final int        line       = source.getLine(position);
+        final int        column     = source.getColumn(position);
 
         load(expression);
         assert expression.getType().isObject();
@@ -1967,10 +1970,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             lc.push(catchBlock);
             enterBlock(catchBlock);
 
-            final CatchNode catchNode          = (CatchNode)catchBlocks.get(i).getStatements().get(0);
-            final IdentNode exception          = catchNode.getException();
-            final Node      exceptionCondition = catchNode.getExceptionCondition();
-            final Block     catchBody          = catchNode.getBody();
+            final CatchNode  catchNode          = (CatchNode)catchBlocks.get(i).getStatements().get(0);
+            final IdentNode  exception          = catchNode.getException();
+            final Expression exceptionCondition = catchNode.getExceptionCondition();
+            final Block      catchBody          = catchNode.getBody();
 
             new Store<IdentNode>(exception) {
                 @Override
@@ -2038,7 +2041,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     @Override
     public boolean enterVarNode(final VarNode varNode) {
 
-        final Node init = varNode.getInit();
+        final Expression init = varNode.getInit();
 
         if (init == null) {
             return false;
@@ -2046,8 +2049,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         lineNumber(varNode);
 
-        final Symbol varSymbol = varNode.getSymbol();
-        assert varSymbol != null : "variable node " + varNode + " requires a symbol";
+        final Symbol varSymbol = varNode.getName().getSymbol();
+        assert varSymbol != null : "variable node " + varNode + " requires a name with a symbol";
 
         assert method != null;
 
@@ -2067,9 +2070,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method.dynamicSet(type, identNode.getName(), flags);
             }
         } else {
-            assert varNode.getType() == varNode.getName().getType() : "varNode type=" + varNode.getType() + " nametype=" + varNode.getName().getType() + " inittype=" + init.getType();
-
-            method.convert(varNode.getType()); // aw: convert moved here
+            method.convert(varNode.getName().getType()); // aw: convert moved here
             method.store(varSymbol);
         }
 
@@ -2080,11 +2081,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     public boolean enterWhileNode(final WhileNode whileNode) {
         lineNumber(whileNode);
 
-        final Node  test          = whileNode.getTest();
-        final Block body          = whileNode.getBody();
-        final Label breakLabel    = whileNode.getBreakLabel();
-        final Label continueLabel = whileNode.getContinueLabel();
-        final Label loopLabel     = new Label("loop");
+        final Expression test          = whileNode.getTest();
+        final Block      body          = whileNode.getBody();
+        final Label      breakLabel    = whileNode.getBreakLabel();
+        final Label      continueLabel = whileNode.getContinueLabel();
+        final Label      loopLabel     = new Label("loop");
 
         if (!whileNode.isDoWhile()) {
             method._goto(continueLabel);
@@ -2111,8 +2112,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterWithNode(final WithNode withNode) {
-        final Node expression = withNode.getExpression();
-        final Node body       = withNode.getBody();
+        final Expression expression = withNode.getExpression();
+        final Node       body       = withNode.getBody();
 
         // It is possible to have a "pathological" case where the with block does not reference *any* identifiers. It's
         // pointless, but legal. In that case, if nothing else in the method forced the assignment of a slot to the
@@ -2187,7 +2188,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     // do this better with convert calls to method. TODO
     @Override
     public boolean enterCONVERT(final UnaryNode unaryNode) {
-        final Node rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.rhs();
         final Type to  = unaryNode.getType();
 
         if (to.isObject() && rhs instanceof LiteralNode) {
@@ -2224,11 +2225,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterDECINC(final UnaryNode unaryNode) {
-        final Node      rhs         = unaryNode.rhs();
-        final Type      type        = unaryNode.getType();
-        final TokenType tokenType   = unaryNode.tokenType();
-        final boolean   isPostfix   = tokenType == TokenType.DECPOSTFIX || tokenType == TokenType.INCPOSTFIX;
-        final boolean   isIncrement = tokenType == TokenType.INCPREFIX || tokenType == TokenType.INCPOSTFIX;
+        final Expression rhs         = unaryNode.rhs();
+        final Type       type        = unaryNode.getType();
+        final TokenType  tokenType   = unaryNode.tokenType();
+        final boolean    isPostfix   = tokenType == TokenType.DECPOSTFIX || tokenType == TokenType.INCPOSTFIX;
+        final boolean    isIncrement = tokenType == TokenType.INCPREFIX || tokenType == TokenType.INCPOSTFIX;
 
         assert !type.isObject();
 
@@ -2272,7 +2273,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterDISCARD(final UnaryNode unaryNode) {
-        final Node rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.rhs();
 
         lc.pushDiscard(rhs);
         load(rhs);
@@ -2289,7 +2290,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     @Override
     public boolean enterNEW(final UnaryNode unaryNode) {
         final CallNode callNode = (CallNode)unaryNode.rhs();
-        final List<Node> args   = callNode.getArgs();
+        final List<Expression> args   = callNode.getArgs();
 
         // Load function reference.
         load(callNode.getFunction()).convert(Type.OBJECT); // must detect type error
@@ -2302,7 +2303,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterNOT(final UnaryNode unaryNode) {
-        final Node rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.rhs();
 
         load(rhs);
 
@@ -2336,19 +2337,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
-    private Node enterNumericAdd(final Node lhs, final Node rhs, final Type type, final Symbol symbol) {
+    private void enterNumericAdd(final Expression lhs, final Expression rhs, final Type type, final Symbol symbol) {
         assert lhs.getType().equals(rhs.getType()) && lhs.getType().equals(type) : lhs.getType() + " != " + rhs.getType() + " != " + type + " " + new ASTWriter(lhs) + " " + new ASTWriter(rhs);
         load(lhs);
         load(rhs);
         method.add(); //if the symbol is optimistic, it always needs to be written, not on the stack?
         method.store(symbol);
-        return null;
     }
 
     @Override
     public boolean enterADD(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         final Type type = binaryNode.getType();
         if (type.isNumeric()) {
@@ -2364,8 +2364,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private boolean enterAND_OR(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         final Label skip = new Label("skip");
 
@@ -2392,8 +2392,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterASSIGN(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         final Type lhsType = lhs.getType();
         final Type rhsType = rhs.getType();
@@ -2661,8 +2661,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private boolean enterComma(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         load(lhs);
         load(rhs);
@@ -2693,7 +2693,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         return false;
     }
 
-    private boolean enterCmp(final Node lhs, final Node rhs, final Condition cond, final Type type, final Symbol symbol) {
+    private boolean enterCmp(final Expression lhs, final Expression rhs, final Condition cond, final Type type, final Symbol symbol) {
         final Type lhsType = lhs.getType();
         final Type rhsType = rhs.getType();
 
@@ -2846,21 +2846,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterTernaryNode(final TernaryNode ternaryNode) {
-        final Node lhs   = ternaryNode.lhs();
-        final Node rhs   = ternaryNode.rhs();
-        final Node third = ternaryNode.third();
+        final Expression test      = ternaryNode.getTest();
+        final Expression trueExpr  = ternaryNode.getTrueExpression();
+        final Expression falseExpr = ternaryNode.getFalseExpression();
 
         final Symbol symbol     = ternaryNode.getSymbol();
         final Label  falseLabel = new Label("ternary_false");
         final Label  exitLabel  = new Label("ternary_exit");
 
-        Type widest = Type.widest(rhs.getType(), third.getType());
-        if (rhs.getType().isArray() || third.getType().isArray()) { //loadArray creates a Java array type on the stack, calls global allocate, which creates a native array type
+        Type widest = Type.widest(trueExpr.getType(), falseExpr.getType());
+        if (trueExpr.getType().isArray() || falseExpr.getType().isArray()) { //loadArray creates a Java array type on the stack, calls global allocate, which creates a native array type
             widest = Type.OBJECT;
         }
 
-        load(lhs);
-        assert lhs.getType().isBoolean() : "lhs in ternary must be boolean";
+        load(test);
+        assert test.getType().isBoolean() : "lhs in ternary must be boolean";
 
         // we still keep the conversion here as the AccessSpecializer can have separated the types, e.g. var y = x ? x=55 : 17
         // will left as (Object)x=55 : (Object)17 by Lower. Then the first term can be {I}x=55 of type int, which breaks the
@@ -2868,11 +2868,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // to early, or Apply the AccessSpecializer too late. We are mostly probably looking for a separate type pass to
         // do this property. Then we never need any conversions in CodeGenerator
         method.ifeq(falseLabel);
-        load(rhs);
+        load(trueExpr);
         method.convert(widest);
         method._goto(exitLabel);
         method.label(falseLabel);
-        load(third);
+        load(falseExpr);
         method.convert(widest);
         method.label(exitLabel);
         method.store(symbol);
@@ -2925,8 +2925,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      *
      * @param <T>
      */
-    private abstract class SelfModifyingStore<T extends Node> extends Store<T> {
-        protected SelfModifyingStore(final T assignNode, final Node target) {
+    private abstract class SelfModifyingStore<T extends Expression> extends Store<T> {
+        protected SelfModifyingStore(final T assignNode, final Expression target) {
             super(assignNode, target);
         }
 
@@ -2939,13 +2939,13 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /**
      * Helper class to generate stores
      */
-    private abstract class Store<T extends Node> {
+    private abstract class Store<T extends Expression> {
 
         /** An assignment node, e.g. x += y */
         protected final T assignNode;
 
         /** The target node to store to, e.g. x */
-        private final Node target;
+        private final Expression target;
 
         /** How deep on the stack do the arguments go if this generates an indy call */
         private int depth;
@@ -2959,7 +2959,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          * @param assignNode the node representing the whole assignment
          * @param target     the target node of the assignment (destination)
          */
-        protected Store(final T assignNode, final Node target) {
+        protected Store(final T assignNode, final Expression target) {
             this.assignNode = assignNode;
             this.target = target;
         }
@@ -3002,8 +3002,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                 private void enterBaseNode() {
                     assert target instanceof BaseNode : "error - base node " + target + " must be instanceof BaseNode";
-                    final BaseNode baseNode = (BaseNode)target;
-                    final Node     base     = baseNode.getBase();
+                    final BaseNode   baseNode = (BaseNode)target;
+                    final Expression base     = baseNode.getBase();
 
                     load(base);
                     method.convert(Type.OBJECT);
@@ -3024,7 +3024,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 public boolean enterIndexNode(final IndexNode node) {
                     enterBaseNode();
 
-                    final Node index = node.getIndex();
+                    final Expression index = node.getIndex();
                     // could be boolean here as well
                     load(index);
                     if (!index.getType().isNumeric()) {
