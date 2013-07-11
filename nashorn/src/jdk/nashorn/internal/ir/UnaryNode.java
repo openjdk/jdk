@@ -131,6 +131,22 @@ public final class UnaryNode extends Expression implements Assignment<Expression
 
     @Override
     public void toString(final StringBuilder sb) {
+        toString(sb, new Runnable() {
+            @Override
+            public void run() {
+                sb.append(rhs().toString());
+            }
+        });
+    }
+
+    /**
+     * Creates the string representation of this unary node, delegating the creation of the string representation of its
+     * operand to a specified runnable.
+     * @param sb the string builder to use
+     * @param rhsStringBuilder the runnable that appends the string representation of the operand to the string builder
+     * when invoked.
+     */
+    public void toString(final StringBuilder sb, final Runnable rhsStringBuilder) {
         final TokenType type      = tokenType();
         final String    name      = type.getName();
         final boolean   isPostfix = type == DECPOSTFIX || type == INCPOSTFIX;
@@ -162,7 +178,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         if (rhsParen) {
             sb.append('(');
         }
-        rhs().toString(sb);
+        rhsStringBuilder.run();
         if (rhsParen) {
             sb.append(')');
         }
