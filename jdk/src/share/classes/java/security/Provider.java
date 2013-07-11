@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,20 +62,21 @@ import java.lang.reflect.*;
  * security token. A {@link ProviderException} should be used to indicate
  * such errors.
  *
- * <p>The service type <code>Provider</code> is reserved for use by the
+ * <p>The service type {@code Provider} is reserved for use by the
  * security framework. Services of this type cannot be added, removed,
  * or modified by applications.
  * The following attributes are automatically placed in each Provider object:
  * <table cellspacing=4>
+ * <caption><b>Attributes Automatically Placed in a Provider Object</b></caption>
  * <tr><th>Name</th><th>Value</th>
- * <tr><td><code>Provider.id name</code></td>
-  *    <td><code>String.valueOf(provider.getName())</code></td>
- * <tr><td><code>Provider.id version</code></td>
- *     <td><code>String.valueOf(provider.getVersion())</code></td>
- * <tr><td><code>Provider.id info</code></td>
-       <td><code>String.valueOf(provider.getInfo())</code></td>
- * <tr><td><code>Provider.id className</code></td>
- *     <td><code>provider.getClass().getName()</code></td>
+ * <tr><td>{@code Provider.id name}</td>
+  *    <td>{@code String.valueOf(provider.getName())}</td>
+ * <tr><td>{@code Provider.id version}</td>
+ *     <td>{@code String.valueOf(provider.getVersion())}</td>
+ * <tr><td>{@code Provider.id info}</td>
+       <td>{@code String.valueOf(provider.getInfo())}</td>
+ * <tr><td>{@code Provider.id className}</td>
+ *     <td>{@code provider.getClass().getName()}</td>
  * </table>
  *
  * @author Benjamin Renaud
@@ -185,18 +186,18 @@ public abstract class Provider extends Properties {
      * used to look up facilities implemented by the provider.
      *
      * <p>First, if there is a security manager, its
-     * <code>checkSecurityAccess</code> method is called with the string
-     * <code>"clearProviderProperties."+name</code> (where <code>name</code>
+     * {@code checkSecurityAccess} method is called with the string
+     * {@code "clearProviderProperties."+name} (where {@code name}
      * is the provider name) to see if it's ok to clear this provider.
-     * If the default implementation of <code>checkSecurityAccess</code>
+     * If the default implementation of {@code checkSecurityAccess}
      * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's <code>checkPermission</code> method
-     * with a <code>SecurityPermission("clearProviderProperties."+name)</code>
+     * a call to the security manager's {@code checkPermission} method
+     * with a {@code SecurityPermission("clearProviderProperties."+name)}
      * permission.
      *
      * @throws  SecurityException
-     *          if a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkSecurityAccess}</code> method
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to clear this provider
      *
      * @since 1.2
@@ -292,17 +293,17 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Sets the <code>key</code> property to have the specified
-     * <code>value</code>.
+     * Sets the {@code key} property to have the specified
+     * {@code value}.
      *
      * <p>First, if there is a security manager, its
-     * <code>checkSecurityAccess</code> method is called with the string
-     * <code>"putProviderProperty."+name</code>, where <code>name</code> is the
+     * {@code checkSecurityAccess} method is called with the string
+     * {@code "putProviderProperty."+name}, where {@code name} is the
      * provider name, to see if it's ok to set this provider's property values.
-     * If the default implementation of <code>checkSecurityAccess</code>
+     * If the default implementation of {@code checkSecurityAccess}
      * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's <code>checkPermission</code> method
-     * with a <code>SecurityPermission("putProviderProperty."+name)</code>
+     * a call to the security manager's {@code checkPermission} method
+     * with a {@code SecurityPermission("putProviderProperty."+name)}
      * permission.
      *
      * @param key the property key.
@@ -310,11 +311,11 @@ public abstract class Provider extends Properties {
      * @param value the property value.
      *
      * @return the previous value of the specified property
-     * (<code>key</code>), or null if it did not have one.
+     * ({@code key}), or null if it did not have one.
      *
      * @throws  SecurityException
-     *          if a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkSecurityAccess}</code> method
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to set property values.
      *
      * @since 1.2
@@ -329,18 +330,18 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Removes the <code>key</code> property (and its corresponding
-     * <code>value</code>).
+     * Removes the {@code key} property (and its corresponding
+     * {@code value}).
      *
      * <p>First, if there is a security manager, its
-     * <code>checkSecurityAccess</code> method is called with the string
-     * <code>"removeProviderProperty."+name</code>, where <code>name</code> is
+     * {@code checkSecurityAccess} method is called with the string
+     * {@code "removeProviderProperty."+name}, where {@code name} is
      * the provider name, to see if it's ok to remove this provider's
      * properties. If the default implementation of
-     * <code>checkSecurityAccess</code> is used (that is, that method is not
+     * {@code checkSecurityAccess} is used (that is, that method is not
      * overriden), then this results in a call to the security manager's
-     * <code>checkPermission</code> method with a
-     * <code>SecurityPermission("removeProviderProperty."+name)</code>
+     * {@code checkPermission} method with a
+     * {@code SecurityPermission("removeProviderProperty."+name)}
      * permission.
      *
      * @param key the key for the property to be removed.
@@ -349,8 +350,8 @@ public abstract class Provider extends Properties {
      * or null if the key did not have a mapping.
      *
      * @throws  SecurityException
-     *          if a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkSecurityAccess}</code> method
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method
      *          denies access to remove this provider's properties.
      *
      * @since 1.2
@@ -662,9 +663,9 @@ public abstract class Provider extends Properties {
      * the service added via {@link #putService putService()} is returned.
      *
      * @param type the type of {@link Service service} requested
-     * (for example, <code>MessageDigest</code>)
+     * (for example, {@code MessageDigest})
      * @param algorithm the case insensitive algorithm name (or alternate
-     * alias) of the service requested (for example, <code>SHA-1</code>)
+     * alias) of the service requested (for example, {@code SHA-1})
      *
      * @return the service describing this Provider's matching service
      * or null if no such service exists
@@ -739,20 +740,20 @@ public abstract class Provider extends Properties {
      * Java Cryptography Architecture API Specification &amp; Reference </a>.
      *
      * <p>Also, if there is a security manager, its
-     * <code>checkSecurityAccess</code> method is called with the string
-     * <code>"putProviderProperty."+name</code>, where <code>name</code> is
+     * {@code checkSecurityAccess} method is called with the string
+     * {@code "putProviderProperty."+name}, where {@code name} is
      * the provider name, to see if it's ok to set this provider's property
-     * values. If the default implementation of <code>checkSecurityAccess</code>
+     * values. If the default implementation of {@code checkSecurityAccess}
      * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's <code>checkPermission</code> method with
-     * a <code>SecurityPermission("putProviderProperty."+name)</code>
+     * a call to the security manager's {@code checkPermission} method with
+     * a {@code SecurityPermission("putProviderProperty."+name)}
      * permission.
      *
      * @param s the Service to add
      *
      * @throws SecurityException
-     *      if a security manager exists and its <code>{@link
-     *      java.lang.SecurityManager#checkSecurityAccess}</code> method denies
+     *      if a security manager exists and its {@link
+     *      java.lang.SecurityManager#checkSecurityAccess} method denies
      *      access to set property values.
      * @throws NullPointerException if s is null
      *
@@ -830,21 +831,21 @@ public abstract class Provider extends Properties {
      * from this provider's Hashtable.
      *
      * <p>Also, if there is a security manager, its
-     * <code>checkSecurityAccess</code> method is called with the string
-     * <code>"removeProviderProperty."+name</code>, where <code>name</code> is
+     * {@code checkSecurityAccess} method is called with the string
+     * {@code "removeProviderProperty."+name}, where {@code name} is
      * the provider name, to see if it's ok to remove this provider's
      * properties. If the default implementation of
-     * <code>checkSecurityAccess</code> is used (that is, that method is not
+     * {@code checkSecurityAccess} is used (that is, that method is not
      * overriden), then this results in a call to the security manager's
-     * <code>checkPermission</code> method with a
-     * <code>SecurityPermission("removeProviderProperty."+name)</code>
+     * {@code checkPermission} method with a
+     * {@code SecurityPermission("removeProviderProperty."+name)}
      * permission.
      *
      * @param s the Service to be removed
      *
      * @throws  SecurityException
-     *          if a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkSecurityAccess}</code> method denies
+     *          if a security manager exists and its {@link
+     *          java.lang.SecurityManager#checkSecurityAccess} method denies
      *          access to remove this provider's properties.
      * @throws NullPointerException if s is null
      *
@@ -1122,7 +1123,7 @@ public abstract class Provider extends Properties {
         }
 
         /**
-         * Get the type of this service. For example, <code>MessageDigest</code>.
+         * Get the type of this service. For example, {@code MessageDigest}.
          *
          * @return the type of this service
          */
@@ -1132,7 +1133,7 @@ public abstract class Provider extends Properties {
 
         /**
          * Return the name of the algorithm of this service. For example,
-         * <code>SHA-1</code>.
+         * {@code SHA-1}.
          *
          * @return the algorithm of this service
          */

@@ -96,7 +96,7 @@ public class Infer {
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
-    public static final Type anyPoly = new Type(NONE, null);
+    public static final Type anyPoly = new JCNoType();
 
    /**
     * This exception class is design to store a list of diagnostics corresponding

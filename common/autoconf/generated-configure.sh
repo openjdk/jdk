@@ -800,6 +800,7 @@ OS_VERSION_MAJOR
 PKG_CONFIG
 CODESIGN
 XATTR
+IS_GNU_TIME
 TIME
 STAT
 HG
@@ -3089,6 +3090,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Also set JVM_ARG_OK to true/false depending on outcome.
 
 
+# Appends a string to a path variable, only adding the : when needed.
+
+
 # This will make sure the given variable points to a full and proper
 # path. This means:
 # 1) There will be no spaces in the path. On posix platforms,
@@ -3790,7 +3794,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1372808067
+DATE_WHEN_GENERATED=1373572212
 
 ###############################################################################
 #
@@ -7465,6 +7469,7 @@ fi
 # Check whether --with-tools-dir was given.
 if test "${with_tools_dir+set}" = set; then :
   withval=$with_tools_dir; TOOLS_DIR=$with_tools_dir
+
 fi
 
 
@@ -7475,10 +7480,135 @@ if test "${with_devkit+set}" = set; then :
     if test "x$with_sys_root" != x; then
       as_fn_error $? "Cannot specify both --with-devkit and --with-sys-root at the same time" "$LINENO" 5
     fi
-    if test "x$with_tools_dir" != x; then
-      as_fn_error $? "Cannot specify both --with-devkit and --with-tools-dir at the same time" "$LINENO" 5
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$with_devkit"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of with_devkit" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
     fi
-    TOOLS_DIR=$with_devkit/bin
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    with_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$with_devkit"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    with_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$with_devkit"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    with_devkit="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+
+  if test "x$TOOLS_DIR" = x; then
+    TOOLS_DIR="$with_devkit/bin"
+  else
+    TOOLS_DIR="$TOOLS_DIR:$with_devkit/bin"
+  fi
+
     if test -d "$with_devkit/$host_alias/libc"; then
       SYS_ROOT=$with_devkit/$host_alias/libc
     elif test -d "$with_devkit/$host/sys-root"; then
@@ -7486,7 +7616,6 @@ if test "${with_devkit+set}" = set; then :
     fi
 
 fi
-
 
 
 
@@ -10270,6 +10399,14 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# Check if it's GNU time
+IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+if test "x$IS_GNU_TIME" != x; then
+  IS_GNU_TIME=yes
+else
+  IS_GNU_TIME=no
+fi
 
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
@@ -17231,6 +17368,8 @@ $as_echo "ok" >&6; }
       # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
       VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
       VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
+      # Remove any paths containing # (typically F#) as that messes up make
+      PATH=`$ECHO "$PATH" | $SED 's/[^:#]*#[^:]*://g'`
       VS_PATH="$PATH"
 
 
@@ -18982,15 +19121,6 @@ $as_echo "$as_me: Downloading build dependency devkit from $with_builddeps_serve
     fi
 
 
-if test "x$SYS_ROOT" != "x/" ; then
-    CFLAGS="--sysroot=$SYS_ROOT $CFLAGS"
-    CXXFLAGS="--sysroot=$SYS_ROOT $CXXFLAGS"
-    OBJCFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    OBJCXXFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    CPPFLAGS="--sysroot=$SYS_ROOT $CPPFLAGS"
-    LDFLAGS="--sysroot=$SYS_ROOT $LDFLAGS"
-fi
-
 # Store the CFLAGS etal passed to the configure script.
 ORG_CFLAGS="$CFLAGS"
 ORG_CXXFLAGS="$CXXFLAGS"
@@ -19941,7 +20071,7 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
-    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1`
+    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*Version \([1-9][0-9.]*\) .*/\1/p"`
     COMPILER_VENDOR="Microsoft CL.EXE"
     COMPILER_CPU_TEST=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.* for \(.*\)$/\1/p"`
@@ -21514,7 +21644,7 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
-    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1`
+    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*Version \([1-9][0-9.]*\) .*/\1/p"`
     COMPILER_VENDOR="Microsoft CL.EXE"
     COMPILER_CPU_TEST=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.* for \(.*\)$/\1/p"`
@@ -23774,19 +23904,20 @@ $as_echo "$as_me: Rewriting RC to \"$new_complete\"" >&6;}
         RC_FLAGS="$RC_FLAGS -d NDEBUG"
 
 fi
-    JDK_UPDATE_VERSION_NOTNULL=$JDK_UPDATE_VERSION
-    if test "x$JDK_UPDATE_VERSION" = x; then :
 
-        JDK_UPDATE_VERSION_NOTNULL=0
-
-fi
-    RC_FLAGS="$RC_FLAGS -d \"JDK_BUILD_ID=$FULL_VERSION\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPANY=$COMPANY_NAME\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPONENT=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME binary\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_VER=$JDK_MINOR_VERSION.$JDK_MICRO_VERSION.$JDK_UPDATE_VERSION_NOTNULL.$COOKED_BUILD_NUMBER\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_NAME=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME $JDK_MINOR_VERSION $JDK_UPDATE_META_TAG\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_FVER=$JDK_MINOR_VERSION,$JDK_MICRO_VERSION,$JDK_UPDATE_VERSION_NOTNULL,$COOKED_BUILD_NUMBER\""
+    # The version variables used to create RC_FLAGS may be overridden
+    # in a custom configure script, or possibly the command line.
+    # Let those variables be expanded at make time in spec.gmk.
+    # The \$ are escaped to the shell, and the $(...) variables
+    # are evaluated by make.
+    RC_FLAGS="$RC_FLAGS \
+        -d \"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -d \"JDK_COMPANY=\$(COMPANY_NAME)\" \
+        -d \"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
+        -d \"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
+        -d \"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
+        -d \"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
 
     # lib.exe is used to create static libraries.
     # Extract the first word of "lib", so it can be a program name with args.

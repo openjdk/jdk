@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,13 @@ import java.sql.SQLException;
  * <code>SyncProviderException</code> method <code>getSyncResolver</code> to get
  * the <code>SyncResolver</code> object <i>resolver</i>.
  * <PRE>
+ * {@code
  *     } catch (SyncProviderException spe) {
  *         SyncResolver resolver = spe.getSyncResolver();
  *     ...
  *     }
+ *
+ * }
  * </PRE>
  * <P>
  * With <i>resolver</i> in hand, an application can use it to get the information
@@ -97,7 +100,7 @@ import java.sql.SQLException;
  * The following kinds of information can be obtained from a <code>SyncResolver</code>
  * object:
  * <P>
- *    <LI>What operation was being attempted when a conflict occurred<BR>
+ *    <h3>What operation was being attempted when a conflict occurred</h3>
  * The <code>SyncProvider</code> interface defines four constants
  * describing states that may occur. Three
  * constants describe the type of operation (update, delete, or insert) that a
@@ -106,10 +109,10 @@ import java.sql.SQLException;
  * These constants are the possible return values when a <code>SyncResolver</code> object
  * calls the method <code>getStatus</code>.
  * <PRE>
- *     int operation = resolver.getStatus();
+ *     {@code int operation = resolver.getStatus(); }
  * </PRE>
  * <P>
- *    <LI>The value in the data source that caused a conflict<BR>
+ *    <h3>The value in the data source that caused a conflict</h3>
  * A conflict exists when a value that a <code>RowSet</code> object has changed
  * and is attempting to write to the data source
  * has also been changed in the data source since the last synchronization.  An
@@ -122,7 +125,6 @@ import java.sql.SQLException;
  * </PRE>
  * Note that the column in <i>resolver</i> can be designated by the column number,
  * as is done in the preceding line of code, or by the column name.
- * </UL>
  * <P>
  * With the information retrieved from the methods <code>getStatus</code> and
  * <code>getConflictValue</code>, the application may make a determination as to
@@ -193,7 +195,8 @@ import java.sql.SQLException;
  * code fragment, the value in <i>crs</i> is the one set as the resolved value, which means
  * that it will be used to overwrite the conflict value in the data source.
  *
- * <PRE>{@code
+ * <PRE>
+ * {@code
  *     try {
  *
  *         crs.acceptChanges(con);

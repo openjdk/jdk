@@ -37,14 +37,13 @@ package java.util.concurrent.atomic;
 import java.util.function.IntUnaryOperator;
 import java.util.function.IntBinaryOperator;
 import sun.misc.Unsafe;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * A reflection-based utility that enables atomic updates to
@@ -81,8 +80,10 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * access control
      */
     @CallerSensitive
-    public static <U> AtomicIntegerFieldUpdater<U> newUpdater(Class<U> tclass, String fieldName) {
-        return new AtomicIntegerFieldUpdaterImpl<U>(tclass, fieldName, Reflection.getCallerClass());
+    public static <U> AtomicIntegerFieldUpdater<U> newUpdater(Class<U> tclass,
+                                                              String fieldName) {
+        return new AtomicIntegerFieldUpdaterImpl<U>
+            (tclass, fieldName, Reflection.getCallerClass());
     }
 
     /**
@@ -101,7 +102,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      * @throws ClassCastException if {@code obj} is not an instance
      * of the class possessing the field established in the constructor
      */
@@ -114,14 +115,14 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * other calls to {@code compareAndSet} and {@code set}, but not
      * necessarily with respect to other changes in the field.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      * @throws ClassCastException if {@code obj} is not an instance
      * of the class possessing the field established in the constructor
      */
@@ -363,7 +364,8 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     /**
      * Standard hotspot implementation using intrinsics
      */
-    private static class AtomicIntegerFieldUpdaterImpl<T> extends AtomicIntegerFieldUpdater<T> {
+    private static class AtomicIntegerFieldUpdaterImpl<T>
+            extends AtomicIntegerFieldUpdater<T> {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
@@ -371,8 +373,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         AtomicIntegerFieldUpdaterImpl(final Class<T> tclass,
                                       final String fieldName,
-                                      final Class<?> caller)
-        {
+                                      final Class<?> caller) {
             final Field field;
             final int modifiers;
             try {

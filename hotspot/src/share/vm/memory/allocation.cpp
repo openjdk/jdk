@@ -71,13 +71,6 @@ bool MetaspaceObj::is_shared() const {
   return MetaspaceShared::is_in_shared_space(this);
 }
 
-bool MetaspaceObj::is_metadata() const {
-  // GC Verify checks use this in guarantees.
-  // TODO: either replace them with is_metaspace_object() or remove them.
-  // is_metaspace_object() is slower than this test.  This test doesn't
-  // seem very useful for metaspace objects anymore though.
-  return !Universe::heap()->is_in_reserved(this);
-}
 
 bool MetaspaceObj::is_metaspace_object() const {
   return Metaspace::contains((void*)this);
@@ -243,10 +236,11 @@ class ChunkPool: public CHeapObj<mtInternal> {
   size_t       _num_used;     // number of chunks currently checked out
   const size_t _size;         // size of each chunk (must be uniform)
 
-  // Our three static pools
+  // Our four static pools
   static ChunkPool* _large_pool;
   static ChunkPool* _medium_pool;
   static ChunkPool* _small_pool;
+  static ChunkPool* _tiny_pool;
 
   // return first element or null
   void* get_first() {
@@ -326,15 +320,18 @@ class ChunkPool: public CHeapObj<mtInternal> {
   static ChunkPool* large_pool()  { assert(_large_pool  != NULL, "must be initialized"); return _large_pool;  }
   static ChunkPool* medium_pool() { assert(_medium_pool != NULL, "must be initialized"); return _medium_pool; }
   static ChunkPool* small_pool()  { assert(_small_pool  != NULL, "must be initialized"); return _small_pool;  }
+  static ChunkPool* tiny_pool()   { assert(_tiny_pool   != NULL, "must be initialized"); return _tiny_pool;   }
 
   static void initialize() {
     _large_pool  = new ChunkPool(Chunk::size        + Chunk::aligned_overhead_size());
     _medium_pool = new ChunkPool(Chunk::medium_size + Chunk::aligned_overhead_size());
     _small_pool  = new ChunkPool(Chunk::init_size   + Chunk::aligned_overhead_size());
+    _tiny_pool   = new ChunkPool(Chunk::tiny_size   + Chunk::aligned_overhead_size());
   }
 
   static void clean() {
     enum { BlocksToKeep = 5 };
+     _tiny_pool->free_all_but(BlocksToKeep);
      _small_pool->free_all_but(BlocksToKeep);
      _medium_pool->free_all_but(BlocksToKeep);
      _large_pool->free_all_but(BlocksToKeep);
@@ -344,6 +341,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
 ChunkPool* ChunkPool::_large_pool  = NULL;
 ChunkPool* ChunkPool::_medium_pool = NULL;
 ChunkPool* ChunkPool::_small_pool  = NULL;
+ChunkPool* ChunkPool::_tiny_pool   = NULL;
 
 void chunkpool_init() {
   ChunkPool::initialize();
@@ -383,6 +381,7 @@ void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, 
    case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
    case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
    case Chunk::init_size:   return ChunkPool::small_pool()->allocate(bytes, alloc_failmode);
+   case Chunk::tiny_size:   return ChunkPool::tiny_pool()->allocate(bytes, alloc_failmode);
    default: {
      void* p = os::malloc(bytes, mtChunk, CALLER_PC);
      if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
@@ -399,6 +398,7 @@ void Chunk::operator delete(void* p) {
    case Chunk::size:        ChunkPool::large_pool()->free(c); break;
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
+   case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
    default:                 os::free(c, mtChunk);
   }
 }

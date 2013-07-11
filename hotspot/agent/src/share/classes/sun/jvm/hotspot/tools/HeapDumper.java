@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.utilities.HeapHprofBinWriter;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import java.io.IOException;
 
 /*
@@ -39,6 +40,11 @@ public class HeapDumper extends Tool {
     private String dumpFile;
 
     public HeapDumper(String dumpFile) {
+        this.dumpFile = dumpFile;
+    }
+
+    public HeapDumper(String dumpFile, JVMDebugger d) {
+        super(d);
         this.dumpFile = dumpFile;
     }
 
