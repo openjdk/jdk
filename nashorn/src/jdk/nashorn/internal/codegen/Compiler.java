@@ -528,8 +528,8 @@ public final class Compiler {
         return this.env;
     }
 
-    private String safeSourceName(final Source source) {
-        String baseName = new File(source.getName()).getName();
+    private String safeSourceName(final Source src) {
+        String baseName = new File(src.getName()).getName();
 
         final int index = baseName.lastIndexOf(".js");
         if (index != -1) {

@@ -39,13 +39,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -208,7 +205,6 @@ public final class Context {
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
-    private static final AccessControlContext NO_PERMISSIONS_CONTEXT;
 
     static {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
@@ -217,7 +213,6 @@ public final class Context {
                 return new StructureLoader(myLoader, null);
             }
         });
-        NO_PERMISSIONS_CONTEXT = new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     /**
@@ -560,6 +555,21 @@ public final class Context {
     }
 
     /**
+     * Checks that the given package can be accessed from current call stack.
+     *
+     * @param fullName fully qualified package name
+     */
+    public static void checkPackageAccess(final String fullName) {
+        final int index = fullName.lastIndexOf('.');
+        if (index != -1) {
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPackageAccess(fullName.substring(0, index));
+            }
+        }
+    }
+
+    /**
      * Lookup a Java class. This is used for JSR-223 stuff linking in from
      * {@code jdk.nashorn.internal.objects.NativeJava} and {@code jdk.nashorn.internal.runtime.NativeJavaPackage}
      *
@@ -571,19 +581,7 @@ public final class Context {
      */
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
         // check package access as soon as possible!
-        final int index = fullName.lastIndexOf('.');
-        if (index != -1) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        sm.checkPackageAccess(fullName.substring(0, index));
-                        return null;
-                    }
-                }, NO_PERMISSIONS_CONTEXT);
-            }
-        }
+        checkPackageAccess(fullName);
 
         // try the script -classpath loader, if that is set
         if (classPathLoader != null) {

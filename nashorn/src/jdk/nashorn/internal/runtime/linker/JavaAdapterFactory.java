@@ -43,6 +43,7 @@ import java.util.Map;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.nashorn.internal.objects.NativeJava;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -101,13 +102,9 @@ public final class JavaAdapterFactory {
         assert types != null && types.length > 0;
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            for (Class type : types) {
+            for (Class<?> type : types) {
                 // check for restricted package access
-                final String fullName = type.getName();
-                final int index = fullName.lastIndexOf('.');
-                if (index != -1) {
-                    sm.checkPackageAccess(fullName.substring(0, index));
-                }
+                Context.checkPackageAccess(type.getName());
             }
         }
         return getAdapterInfo(types).getAdapterClassFor(classOverrides);
