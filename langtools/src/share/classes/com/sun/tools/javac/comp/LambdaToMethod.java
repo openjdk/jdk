@@ -100,6 +100,9 @@ public class LambdaToMethod extends TreeTranslator {
     /** Flag for alternate metafactories indicating the lambda object has multiple targets */
     public static final int FLAG_MARKERS = 1 << 1;
 
+    /** Flag for alternate metafactories indicating the lambda object requires multiple bridges */
+    public static final int FLAG_BRIDGES = 1 << 2;
+
     private class KlassInfo {
 
         /**
@@ -321,7 +324,7 @@ public class LambdaToMethod extends TreeTranslator {
         int refKind = referenceKind(sym);
 
         //convert to an invokedynamic call
-        result = makeMetaFactoryIndyCall(tree, context.needsAltMetafactory(), context.isSerializable(), refKind, sym, indy_args);
+        result = makeMetafactoryIndyCall(context, refKind, sym, indy_args);
     }
 
     private JCIdent makeThis(Type type, Symbol owner) {
@@ -382,7 +385,7 @@ public class LambdaToMethod extends TreeTranslator {
 
 
         //build a sam instance using an indy call to the meta-factory
-        result = makeMetaFactoryIndyCall(tree, localContext.needsAltMetafactory(), localContext.isSerializable(), localContext.referenceKind(), refSym, indy_args);
+        result = makeMetafactoryIndyCall(localContext, localContext.referenceKind(), refSym, indy_args);
     }
 
     /**
@@ -606,8 +609,8 @@ public class LambdaToMethod extends TreeTranslator {
                 make.Return(makeIndyCall(
                     pos,
                     syms.lambdaMetafactory,
-                    names.altMetaFactory,
-                    staticArgs, indyType, serArgs.toList())),
+                    names.altMetafactory,
+                    staticArgs, indyType, serArgs.toList(), samSym.name)),
                 null);
         ListBuffer<JCStatement> stmts = kInfo.deserializeCases.get(implMethodName);
         if (stmts == null) {
@@ -905,22 +908,26 @@ public class LambdaToMethod extends TreeTranslator {
         kInfo.addMethod(new MemberReferenceBridger(tree, localContext).bridge());
     }
 
+    private MethodType typeToMethodType(Type mt) {
+        Type type = types.erasure(mt);
+        return new MethodType(type.getParameterTypes(),
+                        type.getReturnType(),
+                        type.getThrownTypes(),
+                        syms.methodClass);
+    }
+
     /**
      * Generate an indy method call to the meta factory
      */
-    private JCExpression makeMetaFactoryIndyCall(JCFunctionalExpression tree, boolean needsAltMetafactory,
-            boolean isSerializable, int refKind, Symbol refSym, List<JCExpression> indy_args) {
+    private JCExpression makeMetafactoryIndyCall(TranslationContext<?> context,
+            int refKind, Symbol refSym, List<JCExpression> indy_args) {
+        JCFunctionalExpression tree = context.tree;
         //determine the static bsm args
-        Type mtype = types.erasure(tree.descriptorType);
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.type.tsym);
         List<Object> staticArgs = List.<Object>of(
-                new Pool.MethodHandle(ClassFile.REF_invokeInterface,
-                    types.findDescriptorSymbol(tree.type.tsym), types),
+                typeToMethodType(samSym.type),
                 new Pool.MethodHandle(refKind, refSym, types),
-                new MethodType(mtype.getParameterTypes(),
-                        mtype.getReturnType(),
-                        mtype.getThrownTypes(),
-                        syms.methodClass));
+                typeToMethodType(tree.getDescriptorType(types)));
 
         //computed indy arg types
         ListBuffer<Type> indy_args_types = ListBuffer.lb();
@@ -934,31 +941,46 @@ public class LambdaToMethod extends TreeTranslator {
                 List.<Type>nil(),
                 syms.methodClass);
 
-        Name metafactoryName = needsAltMetafactory ?
-                names.altMetaFactory : names.metaFactory;
+        Name metafactoryName = context.needsAltMetafactory() ?
+                names.altMetafactory : names.metafactory;
 
-        if (needsAltMetafactory) {
+        if (context.needsAltMetafactory()) {
             ListBuffer<Object> markers = ListBuffer.lb();
-            for (Symbol t : tree.targets.tail) {
-                if (t != syms.serializableType.tsym) {
-                    markers.append(t);
+            for (Type t : tree.targets.tail) {
+                if (t.tsym != syms.serializableType.tsym) {
+                    markers.append(t.tsym);
                 }
             }
-            int flags = isSerializable? FLAG_SERIALIZABLE : 0;
+            int flags = context.isSerializable() ? FLAG_SERIALIZABLE : 0;
             boolean hasMarkers = markers.nonEmpty();
-            flags |= hasMarkers ? FLAG_MARKERS : 0;
+            boolean hasBridges = context.bridges.nonEmpty();
+            if (hasMarkers) {
+                flags |= FLAG_MARKERS;
+            }
+            if (hasBridges) {
+                flags |= FLAG_BRIDGES;
+            }
             staticArgs = staticArgs.append(flags);
             if (hasMarkers) {
                 staticArgs = staticArgs.append(markers.length());
                 staticArgs = staticArgs.appendList(markers.toList());
             }
-            if (isSerializable) {
+            if (hasBridges) {
+                staticArgs = staticArgs.append(context.bridges.length() - 1);
+                for (Symbol s : context.bridges) {
+                    Type s_erasure = s.erasure(types);
+                    if (!types.isSameType(s_erasure, samSym.erasure(types))) {
+                        staticArgs = staticArgs.append(s.erasure(types));
+                    }
+                }
+            }
+            if (context.isSerializable()) {
                 addDeserializationCase(refKind, refSym, tree.type, samSym,
                         tree, staticArgs, indyType);
             }
         }
 
-        return makeIndyCall(tree, syms.lambdaMetafactory, metafactoryName, staticArgs, indyType, indy_args);
+        return makeIndyCall(tree, syms.lambdaMetafactory, metafactoryName, staticArgs, indyType, indy_args, samSym.name);
     }
 
     /**
@@ -966,7 +988,8 @@ public class LambdaToMethod extends TreeTranslator {
      * arguments types
      */
     private JCExpression makeIndyCall(DiagnosticPosition pos, Type site, Name bsmName,
-            List<Object> staticArgs, MethodType indyType, List<JCExpression> indyArgs) {
+            List<Object> staticArgs, MethodType indyType, List<JCExpression> indyArgs,
+            Name methName) {
         int prevPos = make.pos;
         try {
             make.at(pos);
@@ -978,7 +1001,7 @@ public class LambdaToMethod extends TreeTranslator {
                     bsmName, bsm_staticArgs, List.<Type>nil());
 
             DynamicMethodSymbol dynSym =
-                    new DynamicMethodSymbol(names.lambda,
+                    new DynamicMethodSymbol(methName,
                                             syms.noSymbol,
                                             bsm.isStatic() ?
                                                 ClassFile.REF_invokeStatic :
@@ -1299,7 +1322,6 @@ public class LambdaToMethod extends TreeTranslator {
 
                 // Make lambda holding the new-class call
                 JCLambda slam = make.Lambda(params, nc);
-                slam.descriptorType = tree.descriptorType;
                 slam.targets = tree.targets;
                 slam.type = tree.type;
                 slam.pos = tree.pos;
@@ -1634,23 +1656,30 @@ public class LambdaToMethod extends TreeTranslator {
             /** the enclosing translation context (set for nested lambdas/mref) */
             TranslationContext<?> prev;
 
+            /** list of methods to be bridged by the meta-factory */
+            List<Symbol> bridges;
+
             TranslationContext(T tree) {
                 this.tree = tree;
                 this.owner = owner();
                 this.depth = frameStack.size() - 1;
                 this.prev = context();
+                ClassSymbol csym =
+                        types.makeFunctionalInterfaceClass(attrEnv, names.empty, tree.targets, ABSTRACT | INTERFACE);
+                this.bridges = types.functionalInterfaceBridges(csym);
             }
 
             /** does this functional expression need to be created using alternate metafactory? */
             boolean needsAltMetafactory() {
-                return (tree.targets.length() > 1 ||
-                        isSerializable());
+                return tree.targets.length() > 1 ||
+                        isSerializable() ||
+                        bridges.length() > 1;
             }
 
             /** does this functional expression require serialization support? */
             boolean isSerializable() {
-                for (Symbol target : tree.targets) {
-                    if (types.asSuper(target.type, syms.serializableType.tsym) != null) {
+                for (Type target : tree.targets) {
+                    if (types.asSuper(target, syms.serializableType.tsym) != null) {
                         return true;
                     }
                 }
@@ -1833,7 +1862,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type generatedLambdaSig() {
-                return types.erasure(tree.descriptorType);
+                return types.erasure(tree.getDescriptorType(types));
             }
         }
 
@@ -1909,7 +1938,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             Type bridgedRefSig() {
-                return types.erasure(types.findDescriptorSymbol(tree.targets.head).type);
+                return types.erasure(types.findDescriptorSymbol(tree.targets.head.tsym).type);
             }
         }
     }
