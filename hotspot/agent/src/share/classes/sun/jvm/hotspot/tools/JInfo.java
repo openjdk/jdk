@@ -25,10 +25,19 @@
 package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 
 public class JInfo extends Tool {
+    public JInfo() {
+        super();
+    }
+
     public JInfo(int m) {
         mode = m;
+    }
+
+    public JInfo(JVMDebugger d) {
+        super(d);
     }
 
     protected boolean needsJavaPrefix() {

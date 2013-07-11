@@ -36,6 +36,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.DUP_X2;
 import static jdk.internal.org.objectweb.asm.Opcodes.IALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.LALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.LASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.NEWARRAY;
 import static jdk.internal.org.objectweb.asm.Opcodes.POP;
@@ -43,6 +44,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.POP2;
 import static jdk.internal.org.objectweb.asm.Opcodes.SWAP;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_DOUBLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
+import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Collections;
@@ -729,19 +731,19 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
 
         @Override
         public Type aload(final MethodVisitor method) {
-            method.visitInsn(IALOAD);
-            return INT;
+            method.visitInsn(LALOAD);
+            return LONG;
         }
 
         @Override
         public Type newarray(final MethodVisitor method) {
-            method.visitIntInsn(NEWARRAY, T_INT);
+            method.visitIntInsn(NEWARRAY, T_LONG);
             return this;
         }
 
         @Override
         public Type getElementType() {
-            return INT;
+            return LONG;
         }
     };
 

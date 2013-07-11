@@ -42,132 +42,107 @@ import static com.sun.tools.javac.code.TypeTag.NumericClasses.*;
 public enum TypeTag {
     /** The tag of the basic type `byte'.
      */
-    BYTE(BYTE_CLASS, BYTE_SUPERCLASSES,
-            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
+    BYTE(BYTE_CLASS, BYTE_SUPERCLASSES, true),
 
     /** The tag of the basic type `char'.
      */
-    CHAR(CHAR_CLASS, CHAR_SUPERCLASSES,
-            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
+    CHAR(CHAR_CLASS, CHAR_SUPERCLASSES, true),
 
     /** The tag of the basic type `short'.
      */
-    SHORT(SHORT_CLASS, SHORT_SUPERCLASSES,
-            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
-
-    /** The tag of the basic type `int'.
-     */
-    INT(INT_CLASS, INT_SUPERCLASSES,
-            TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
+    SHORT(SHORT_CLASS, SHORT_SUPERCLASSES, true),
 
     /** The tag of the basic type `long'.
      */
-    LONG(LONG_CLASS, LONG_SUPERCLASSES, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
+    LONG(LONG_CLASS, LONG_SUPERCLASSES, true),
 
     /** The tag of the basic type `float'.
      */
-    FLOAT(FLOAT_CLASS, FLOAT_SUPERCLASSES, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
-
+    FLOAT(FLOAT_CLASS, FLOAT_SUPERCLASSES, true),
+    /** The tag of the basic type `int'.
+     */
+    INT(INT_CLASS, INT_SUPERCLASSES, true),
     /** The tag of the basic type `double'.
      */
-    DOUBLE(DOUBLE_CLASS, DOUBLE_CLASS, TypeTagKind.PRIMITIVE | TypeTagKind.NUMERIC),
-
+    DOUBLE(DOUBLE_CLASS, DOUBLE_CLASS, true),
     /** The tag of the basic type `boolean'.
      */
-    BOOLEAN(TypeTagKind.PRIMITIVE),
+    BOOLEAN(0, 0, true),
 
     /** The tag of the type `void'.
      */
-    VOID(TypeTagKind.VOID),
+    VOID,
 
     /** The tag of all class and interface types.
      */
-    CLASS(TypeTagKind.REFERENCE),
+    CLASS,
 
     /** The tag of all array types.
      */
-    ARRAY(TypeTagKind.REFERENCE),
+    ARRAY,
 
     /** The tag of all (monomorphic) method types.
      */
-    METHOD(TypeTagKind.OTHER),
+    METHOD,
 
     /** The tag of all package "types".
      */
-    PACKAGE(TypeTagKind.OTHER),
+    PACKAGE,
 
     /** The tag of all (source-level) type variables.
      */
-    TYPEVAR(TypeTagKind.REFERENCE),
+    TYPEVAR,
 
     /** The tag of all type arguments.
      */
-    WILDCARD(TypeTagKind.REFERENCE),
+    WILDCARD,
 
     /** The tag of all polymorphic (method-) types.
      */
-    FORALL(TypeTagKind.OTHER),
+    FORALL,
 
     /** The tag of deferred expression types in method context
      */
-    DEFERRED(TypeTagKind.OTHER),
+    DEFERRED,
 
     /** The tag of the bottom type {@code <null>}.
      */
-    BOT(TypeTagKind.OTHER),
+    BOT,
 
     /** The tag of a missing type.
      */
-    NONE(TypeTagKind.OTHER),
+    NONE,
 
     /** The tag of the error type.
      */
-    ERROR(TypeTagKind.REFERENCE | TypeTagKind.PARTIAL),
+    ERROR,
 
     /** The tag of an unknown type
      */
-    UNKNOWN(TypeTagKind.PARTIAL),
+    UNKNOWN,
 
     /** The tag of all instantiatable type variables.
      */
-    UNDETVAR(TypeTagKind.PARTIAL),
+    UNDETVAR,
 
     /** Pseudo-types, these are special tags
      */
-    UNINITIALIZED_THIS(TypeTagKind.OTHER),
+    UNINITIALIZED_THIS,
 
-    UNINITIALIZED_OBJECT(TypeTagKind.OTHER);
+    UNINITIALIZED_OBJECT;
 
-    final boolean isPrimitive;
-    final boolean isNumeric;
-    final boolean isPartial;
-    final boolean isReference;
-    final boolean isPrimitiveOrVoid;
     final int superClasses;
     final int numericClass;
+    final boolean isPrimitive;
 
-    private TypeTag(int kind) {
-        this(0, 0, kind);
+    private TypeTag() {
+        this(0, 0, false);
     }
 
-    private TypeTag(int numericClass, int superClasses, int kind) {
-         isPrimitive = (kind & TypeTagKind.PRIMITIVE) != 0;
-         isNumeric = (kind & TypeTagKind.NUMERIC) != 0;
-         isPartial = (kind & TypeTagKind.PARTIAL) != 0;
-         isReference = (kind & TypeTagKind.REFERENCE) != 0;
-         isPrimitiveOrVoid = ((kind & TypeTagKind.PRIMITIVE) != 0) ||
-                 ((kind & TypeTagKind.VOID) != 0);
-         this.superClasses = superClasses;
-         this.numericClass = numericClass;
-     }
-
-    static class TypeTagKind {
-        static final int PRIMITIVE = 1;
-        static final int NUMERIC = 2;
-        static final int REFERENCE = 4;
-        static final int PARTIAL = 8;
-        static final int OTHER = 16;
-        static final int VOID = 32;
+    private TypeTag(int numericClass, int superClasses, boolean isPrimitive) {
+        this.superClasses = superClasses;
+        this.numericClass = numericClass;
+        this.isPrimitive = isPrimitive;
     }
 
     public static class NumericClasses {
@@ -261,4 +236,5 @@ public enum TypeTag {
             throw new AssertionError("unknown primitive type " + this);
         }
     }
+
 }

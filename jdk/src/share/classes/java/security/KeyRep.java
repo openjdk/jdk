@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,17 +116,17 @@ public class KeyRep implements Serializable {
      *
      * @param type either one of Type.SECRET, Type.PUBLIC, or Type.PRIVATE
      * @param algorithm the algorithm returned from
-     *          <code>Key.getAlgorithm()</code>
+     *          {@code Key.getAlgorithm()}
      * @param format the encoding format returned from
-     *          <code>Key.getFormat()</code>
+     *          {@code Key.getFormat()}
      * @param encoded the encoded bytes returned from
-     *          <code>Key.getEncoded()</code>
+     *          {@code Key.getEncoded()}
      *
      * @exception NullPointerException
-     *          if type is <code>null</code>,
-     *          if algorithm is <code>null</code>,
-     *          if format is <code>null</code>,
-     *          or if encoded is <code>null</code>
+     *          if type is {@code null},
+     *          if algorithm is {@code null},
+     *          if format is {@code null},
+     *          or if encoded is {@code null}
      */
     public KeyRep(Type type, String algorithm,
                 String format, byte[] encoded) {

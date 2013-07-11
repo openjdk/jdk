@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,28 +32,28 @@ import java.security.spec.InvalidParameterSpecException;
 /**
  * This class is used as an opaque representation of cryptographic parameters.
  *
- * <p>An <code>AlgorithmParameters</code> object for managing the parameters
+ * <p>An {@code AlgorithmParameters} object for managing the parameters
  * for a particular algorithm can be obtained by
- * calling one of the <code>getInstance</code> factory methods
+ * calling one of the {@code getInstance} factory methods
  * (static methods that return instances of a given class).
  *
- * <p>Once an <code>AlgorithmParameters</code> object is obtained, it must be
- * initialized via a call to <code>init</code>, using an appropriate parameter
+ * <p>Once an {@code AlgorithmParameters} object is obtained, it must be
+ * initialized via a call to {@code init}, using an appropriate parameter
  * specification or parameter encoding.
  *
  * <p>A transparent parameter specification is obtained from an
- * <code>AlgorithmParameters</code> object via a call to
- * <code>getParameterSpec</code>, and a byte encoding of the parameters is
- * obtained via a call to <code>getEncoded</code>.
+ * {@code AlgorithmParameters} object via a call to
+ * {@code getParameterSpec}, and a byte encoding of the parameters is
+ * obtained via a call to {@code getEncoded}.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>AlgorithmParameters</code> algorithms:
+ * following standard {@code AlgorithmParameters} algorithms:
  * <ul>
- * <li><tt>AES</tt></li>
- * <li><tt>DES</tt></li>
- * <li><tt>DESede</tt></li>
- * <li><tt>DiffieHellman</tt></li>
- * <li><tt>DSA</tt></li>
+ * <li>{@code AES}</li>
+ * <li>{@code DES}</li>
+ * <li>{@code DESede}</li>
+ * <li>{@code DiffieHellman}</li>
+ * <li>{@code DSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameters">
@@ -123,7 +123,7 @@ public class AlgorithmParameters {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p> The returned parameter object must be initialized via a call to
-     * <code>init</code>, using an appropriate parameter specification or
+     * {@code init}, using an appropriate parameter specification or
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
@@ -165,7 +165,7 @@ public class AlgorithmParameters {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p>The returned parameter object must be initialized via a call to
-     * <code>init</code>, using an appropriate parameter specification or
+     * {@code init}, using an appropriate parameter specification or
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
@@ -212,7 +212,7 @@ public class AlgorithmParameters {
      * does not have to be registered in the provider list.
      *
      * <p>The returned parameter object must be initialized via a call to
-     * <code>init</code>, using an appropriate parameter specification or
+     * {@code init}, using an appropriate parameter specification or
      * parameter encoding.
      *
      * @param algorithm the name of the algorithm requested.
@@ -259,7 +259,7 @@ public class AlgorithmParameters {
 
     /**
      * Initializes this parameter object using the parameters
-     * specified in <code>paramSpec</code>.
+     * specified in {@code paramSpec}.
      *
      * @param paramSpec the parameter specification.
      *
@@ -295,9 +295,9 @@ public class AlgorithmParameters {
     }
 
     /**
-     * Imports the parameters from <code>params</code> and decodes them
+     * Imports the parameters from {@code params} and decodes them
      * according to the specified decoding scheme.
-     * If <code>format</code> is null, the
+     * If {@code format} is null, the
      * primary decoding format for parameters is used. The primary decoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.
@@ -318,11 +318,11 @@ public class AlgorithmParameters {
 
     /**
      * Returns a (transparent) specification of this parameter object.
-     * <code>paramSpec</code> identifies the specification class in which
+     * {@code paramSpec} identifies the specification class in which
      * the parameters should be returned. It could, for example, be
-     * <code>DSAParameterSpec.class</code>, to indicate that the
+     * {@code DSAParameterSpec.class}, to indicate that the
      * parameters should be returned in an instance of the
-     * <code>DSAParameterSpec</code> class.
+     * {@code DSAParameterSpec} class.
      *
      * @param paramSpec the specification class in which
      * the parameters should be returned.
@@ -363,7 +363,7 @@ public class AlgorithmParameters {
 
     /**
      * Returns the parameters encoded in the specified scheme.
-     * If <code>format</code> is null, the
+     * If {@code format} is null, the
      * primary encoding format for parameters is used. The primary encoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.

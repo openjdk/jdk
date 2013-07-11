@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,8 @@ import java.util.Hashtable;
  * <h4>Context Request Controls</h4>
  * There are two ways in which a context instance gets its request controls:
  * <ol>
- * <tt>
- * <li>ldapContext.newInstance(<strong>reqCtls</strong>)
- * <li>ldapContext.setRequestControls(<strong>reqCtls</strong>)
- * </tt>
+ * <li><tt>ldapContext.newInstance(<strong>reqCtls</strong>)</tt>
+ * <li><tt>ldapContext.setRequestControls(<strong>reqCtls</strong>)</tt>
  * </ol>
  * where <tt>ldapContext</tt> is an instance of <tt>LdapContext</tt>.
  * Specifying <tt>null</tt> or an empty array for <tt>reqCtls</tt>
@@ -102,12 +100,10 @@ import java.util.Hashtable;
  * <h4>Connection Request Controls</h4>
  * There are three ways in which connection request controls are set:
  * <ol>
- * <tt>
- * <li>
- * new InitialLdapContext(env, <strong>connCtls</strong>)
- * <li>refException.getReferralContext(env, <strong>connCtls</strong>)
- * <li>ldapContext.reconnect(<strong>connCtls</strong>);
- * </tt>
+ * <li><tt>
+ * new InitialLdapContext(env, <strong>connCtls</strong>)</tt>
+ * <li><tt>refException.getReferralContext(env, <strong>connCtls</strong>)</tt>
+ * <li><tt>ldapContext.reconnect(<strong>connCtls</strong>);</tt>
  * </ol>
  * where <tt>refException</tt> is an instance of
  * <tt>LdapReferralException</tt>, and <tt>ldapContext</tt> is an

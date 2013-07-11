@@ -2445,6 +2445,7 @@ public interface CallableStatement extends PreparedStatement {
      * @param parameterIndex the first parameter is 1, the second is 2, and so on
      * @param type Class representing the Java data type to convert the
      * designated parameter to.
+     * @param <T> the type of the class modeled by this Class object
      * @return an instance of {@code type} holding the OUT parameter value
      * @throws SQLException if conversion is not supported, type is null or
      *         another error occurs. The getCause() method of the
@@ -2473,6 +2474,7 @@ public interface CallableStatement extends PreparedStatement {
      * @param parameterName the name of the parameter
      * @param type Class representing the Java data type to convert
      * the designated parameter to.
+     * @param <T> the type of the class modeled by this Class object
      * @return an instance of {@code type} holding the OUT parameter
      * value
      * @throws SQLException if conversion is not supported, type is null or
