@@ -112,15 +112,15 @@ public class AtomicStampedReference<V> {
      * current reference is {@code ==} to the expected reference
      * and the current stamp is equal to the expected stamp.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param expectedReference the expected value of the reference
      * @param newReference the new value for the reference
      * @param expectedStamp the expected value of the stamp
      * @param newStamp the new value for the stamp
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public boolean weakCompareAndSet(V   expectedReference,
                                      V   newReference,
@@ -140,7 +140,7 @@ public class AtomicStampedReference<V> {
      * @param newReference the new value for the reference
      * @param expectedStamp the expected value of the stamp
      * @param newStamp the new value for the stamp
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public boolean compareAndSet(V   expectedReference,
                                  V   newReference,
@@ -178,7 +178,7 @@ public class AtomicStampedReference<V> {
      *
      * @param expectedReference the expected value of the reference
      * @param newStamp the new value for the stamp
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public boolean attemptStamp(V expectedReference, int newStamp) {
         Pair<V> current = pair;

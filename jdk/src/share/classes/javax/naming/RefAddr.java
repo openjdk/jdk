@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,8 @@ public abstract class RefAddr implements java.io.Serializable {
       * Determines whether obj is equal to this RefAddr.
       *<p>
       * obj is equal to this RefAddr all of these conditions are true
-      *<ul> non-null
+      *<ul>
+      *<li> non-null
       *<li> instance of RefAddr
       *<li> obj has the same address type as this RefAddr (using String.compareTo())
       *<li> both obj and this RefAddr's contents are null or they are equal

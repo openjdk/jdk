@@ -1993,12 +1993,21 @@ class Thread implements Runnable {
 
 
     // The following three initially uninitialized fields are exclusively
-    // managed by class java.util.concurrent.ThreadLocalRandom.
+    // managed by class java.util.concurrent.ThreadLocalRandom. These
+    // fields are used to build the high-performance PRNGs in the
+    // concurrent code, and we can not risk accidental false sharing.
+    // Hence, the fields are isolated with @Contended.
+
     /** The current seed for a ThreadLocalRandom */
+    @sun.misc.Contended("tlr")
     long threadLocalRandomSeed;
+
     /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
+    @sun.misc.Contended("tlr")
     int threadLocalRandomProbe;
+
     /** Secondary seed isolated from public ThreadLocalRandom sequence */
+    @sun.misc.Contended("tlr")
     int threadLocalRandomSecondarySeed;
 
     /* Some private helper methods */

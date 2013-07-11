@@ -29,6 +29,7 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
@@ -37,6 +38,9 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 
 @ScriptClass("ArrayBufferView")
 abstract class ArrayBufferView extends ScriptObject {
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
         checkConstructorArgs(buffer, byteOffset, elementLength);

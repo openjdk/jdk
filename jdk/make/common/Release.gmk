@@ -252,7 +252,7 @@ images:: sanity-images post-sanity-images  \
 	 $(INITIAL_IMAGE_JRE) $(INITIAL_IMAGE_JDK) \
 	 trim-image-jre trim-image-jdk \
          identify-image-jre identify-image-jdk \
-	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files 
+	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files
 endif
 
 # Don't use these
@@ -400,7 +400,8 @@ TOOLS = \
 # classes that go into jfr.jar
 JFR_CLASSES_DIRS= \
 	com/oracle/jrockit/jfr \
-	oracle/jrockit/jfr
+	oracle/jrockit/jfr \
+	jdk/jfr
 
 # classes that go into jsse.jar
 JSSE_CLASSES_DIRS = \
@@ -612,6 +613,7 @@ ifndef JAVASE_EMBEDDED
 	$(ECHO) "oracle/jrockit/jfr/parser/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/settings/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/tools/" >> $@
+	$(ECHO) "jdk/jfr/" >> $@
 endif
 endif
 
