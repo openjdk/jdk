@@ -65,6 +65,8 @@ import sun.security.util.ECUtil;
  */
 abstract class P11Key implements Key, Length {
 
+    private static final long serialVersionUID = -2575874101938349339L;
+
     private final static String PUBLIC = "public";
     private final static String PRIVATE = "private";
     private final static String SECRET = "secret";
