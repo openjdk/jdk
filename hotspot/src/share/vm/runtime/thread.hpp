@@ -86,6 +86,8 @@ class GCTaskQueue;
 class ThreadClosure;
 class IdealGraphPrinter;
 
+DEBUG_ONLY(class ResourceMark;)
+
 class WorkerThread;
 
 // Class hierarchy
@@ -531,6 +533,8 @@ public:
   // Thread local resource area for temporary allocation within the VM
   ResourceArea* _resource_area;
 
+  DEBUG_ONLY(ResourceMark* _current_resource_mark;)
+
   // Thread local handle area for allocation of handles within the VM
   HandleArea* _handle_area;
   GrowableArray<Metadata*>* _metadata_handles;
@@ -585,6 +589,8 @@ public:
 
   // Deadlock detection
   bool allow_allocation()                        { return _allow_allocation_count == 0; }
+  ResourceMark* current_resource_mark()          { return _current_resource_mark; }
+  void set_current_resource_mark(ResourceMark* rm) { _current_resource_mark = rm; }
 #endif
 
   void check_for_valid_safepoint_state(bool potential_vm_operation) PRODUCT_RETURN;
