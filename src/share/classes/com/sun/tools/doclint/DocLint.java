@@ -328,6 +328,14 @@ public class DocLint implements Plugin {
         abstract void visitDecl(Tree tree, Name name);
 
         @Override
+        public Void visitCompilationUnit(CompilationUnitTree tree, Void ignore) {
+            if (tree.getPackageName() != null) {
+                visitDecl(tree, null);
+            }
+            return super.visitCompilationUnit(tree, ignore);
+        }
+
+        @Override
         public Void visitClass(ClassTree tree, Void ignore) {
             visitDecl(tree, tree.getSimpleName());
             return super.visitClass(tree, ignore);
