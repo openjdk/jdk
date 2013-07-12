@@ -1978,7 +1978,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return noSuchProperty(desc, request);
         }
 
-        final ScriptFunction func = (ScriptFunction)getObjectValue(find);
+        final Object value = getObjectValue(find);
+        if (! (value instanceof ScriptFunction)) {
+            return createEmptyGetter(desc, name);
+        }
+
+        final ScriptFunction func = (ScriptFunction)value;
         final Object thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
         // TODO: It'd be awesome if we could bind "name" without binding "this".
         return new GuardedInvocation(MH.dropArguments(MH.constant(ScriptFunction.class,
@@ -1998,8 +2003,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final ScriptFunction func = (ScriptFunction)getObjectValue(find);
-            MethodHandle methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
+            final Object value = getObjectValue(find);
+            ScriptFunction func = null;
+            MethodHandle methodHandle = null;
+            if (value instanceof ScriptFunction) {
+                func = (ScriptFunction)value;
+                methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
+            }
 
             if (methodHandle != null) {
                 if (scopeAccess && func.isStrict()) {
