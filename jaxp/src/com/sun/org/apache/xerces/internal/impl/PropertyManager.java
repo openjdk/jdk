@@ -142,7 +142,7 @@ public class PropertyManager {
      */
     public boolean containsProperty(String property){
         return supportedProps.containsKey(property) ||
-                fSecurityPropertyMgr.getIndex(property) > -1 ;
+                (fSecurityPropertyMgr!=null && fSecurityPropertyMgr.getIndex(property) > -1) ;
     }
 
     public Object getProperty(String property){
@@ -169,7 +169,7 @@ public class PropertyManager {
             supportedProps.put( Constants.XERCES_PROPERTY_PREFIX + Constants.STAX_ENTITY_RESOLVER_PROPERTY , new StaxEntityResolverWrapper((XMLResolver)value)) ;
         }
 
-        int index = fSecurityPropertyMgr.getIndex(property);
+        int index = (fSecurityPropertyMgr != null) ? fSecurityPropertyMgr.getIndex(property) : -1;
         if (index > -1) {
             fSecurityPropertyMgr.setValue(index,
                     XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
