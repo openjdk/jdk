@@ -71,7 +71,6 @@ Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature) cons
 }
 
 ArrayKlass::ArrayKlass(Symbol* name) {
-  set_alloc_size(0);
   set_name(name);
 
   set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
@@ -160,12 +159,6 @@ void ArrayKlass::array_klasses_do(void f(Klass* k)) {
     k = ArrayKlass::cast(k)->higher_dimension();
   }
 }
-
-
-void ArrayKlass::with_array_klasses_do(void f(Klass* k)) {
-  array_klasses_do(f);
-}
-
 
 // GC support
 
