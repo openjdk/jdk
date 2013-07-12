@@ -765,10 +765,8 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             // Split the range in two and concatenate
             // Note: if the range is [Long.MIN_VALUE, Long.MAX_VALUE) then
             // the lower range, [Long.MIN_VALUE, 0) will be further split in two
-//            long m = startInclusive + Long.divideUnsigned(endExclusive - startInclusive, 2) + 1;
-//            return Streams.concat(range(startInclusive, m), range(m, endExclusive));
-            // This is temporary until Streams.concat is supported
-            throw new UnsupportedOperationException();
+            long m = startInclusive + Long.divideUnsigned(endExclusive - startInclusive, 2) + 1;
+            return concat(range(startInclusive, m), range(m, endExclusive));
         } else {
             return StreamSupport.longStream(
                     new Streams.RangeLongSpliterator(startInclusive, endExclusive, false));
@@ -801,13 +799,33 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             // Note: if the range is [Long.MIN_VALUE, Long.MAX_VALUE] then
             // the lower range, [Long.MIN_VALUE, 0), and upper range,
             // [0, Long.MAX_VALUE], will both be further split in two
-//            long m = startInclusive + Long.divideUnsigned(endInclusive - startInclusive, 2) + 1;
-//            return Streams.concat(range(startInclusive, m), rangeClosed(m, endInclusive));
-            // This is temporary until Streams.concat is supported
-            throw new UnsupportedOperationException();
+            long m = startInclusive + Long.divideUnsigned(endInclusive - startInclusive, 2) + 1;
+            return concat(range(startInclusive, m), rangeClosed(m, endInclusive));
         } else {
             return StreamSupport.longStream(
                     new Streams.RangeLongSpliterator(startInclusive, endInclusive, true));
         }
+    }
+
+    /**
+     * Creates a lazy concatenated {@code LongStream} whose elements are all the
+     * elements of a first {@code LongStream} succeeded by all the elements of the
+     * second {@code LongStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static LongStream concat(LongStream a, LongStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfLong split = new Streams.ConcatSpliterator.OfLong(
+                a.spliterator(), b.spliterator());
+        return (a.isParallel() || b.isParallel())
+               ? StreamSupport.longParallelStream(split)
+               : StreamSupport.longStream(split);
     }
 }
