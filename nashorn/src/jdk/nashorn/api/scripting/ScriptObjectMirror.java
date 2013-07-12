@@ -52,11 +52,6 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     private final ScriptObject sobj;
     private final ScriptObject global;
 
-    ScriptObjectMirror(final ScriptObject sobj, final ScriptObject global) {
-        this.sobj = sobj;
-        this.global = global;
-    }
-
     @Override
     public boolean equals(final Object other) {
         if (other instanceof ScriptObjectMirror) {
@@ -79,25 +74,6 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                 return ScriptRuntime.safeToString(sobj);
             }
         });
-    }
-
-    private <V> V inGlobal(final Callable<V> callable) {
-        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
-        final boolean globalChanged = (oldGlobal != global);
-        if (globalChanged) {
-            NashornScriptEngine.setNashornGlobal(global);
-        }
-        try {
-            return callable.call();
-        } catch (final RuntimeException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new AssertionError("Cannot happen", e);
-        } finally {
-            if (globalChanged) {
-                NashornScriptEngine.setNashornGlobal(oldGlobal);
-            }
-        }
     }
 
     // JSObject methods
@@ -211,6 +187,8 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             }
         });
     }
+
+    // javax.script.Bindings methods
 
     @Override
     public void clear() {
@@ -379,7 +357,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public Object getProto() {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(getScriptObject().getProto(), global);
+                return wrap(sobj.getProto(), global);
             }
         });
     }
@@ -395,7 +373,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public Object getOwnPropertyDescriptor(final String key) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(getScriptObject().getOwnPropertyDescriptor(key), global);
+                return wrap(sobj.getOwnPropertyDescriptor(key), global);
             }
         });
     }
@@ -409,7 +387,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public String[] getOwnKeys(final boolean all) {
         return inGlobal(new Callable<String[]>() {
             @Override public String[] call() {
-                return getScriptObject().getOwnKeys(all);
+                return sobj.getOwnKeys(all);
             }
         });
     }
@@ -422,7 +400,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public ScriptObjectMirror preventExtensions() {
         return inGlobal(new Callable<ScriptObjectMirror>() {
             @Override public ScriptObjectMirror call() {
-                getScriptObject().preventExtensions();
+                sobj.preventExtensions();
                 return ScriptObjectMirror.this;
             }
         });
@@ -435,7 +413,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public boolean isExtensible() {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return getScriptObject().isExtensible();
+                return sobj.isExtensible();
             }
         });
     }
@@ -447,7 +425,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public ScriptObjectMirror seal() {
         return inGlobal(new Callable<ScriptObjectMirror>() {
             @Override public ScriptObjectMirror call() {
-                getScriptObject().seal();
+                sobj.seal();
                 return ScriptObjectMirror.this;
             }
         });
@@ -460,7 +438,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public boolean isSealed() {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return getScriptObject().isSealed();
+                return sobj.isSealed();
             }
         });
     }
@@ -472,7 +450,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public ScriptObjectMirror freeze() {
         return inGlobal(new Callable<ScriptObjectMirror>() {
             @Override public ScriptObjectMirror call() {
-                getScriptObject().freeze();
+                sobj.freeze();
                 return ScriptObjectMirror.this;
             }
         });
@@ -485,7 +463,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public boolean isFrozen() {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return getScriptObject().isFrozen();
+                return sobj.isFrozen();
             }
         });
     }
@@ -507,9 +485,36 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
 
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return getScriptObject().isInstance(instance.getScriptObject());
+                return sobj.isInstance(instance.sobj);
             }
         });
+    }
+
+    /**
+     * is this a function object?
+     *
+     * @return if this mirror wraps a ECMAScript function instance
+     */
+    public boolean isFunction() {
+        return sobj instanceof ScriptFunction;
+    }
+
+    /**
+     * is this a 'use strict' function object?
+     *
+     * @return true if this mirror represents a ECMAScript 'use strict' function
+     */
+    public boolean isStrictFunction() {
+        return isFunction() && ((ScriptFunction)sobj).isStrict();
+    }
+
+    /**
+     * is this an array object?
+     *
+     * @return if this mirror wraps a ECMAScript array object
+     */
+    public boolean isArray() {
+        return sobj.isArray();
     }
 
     /**
@@ -521,35 +526,6 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public static boolean isUndefined(final Object obj) {
         return obj == ScriptRuntime.UNDEFINED;
     }
-
-    /**
-     * is this a function object?
-     *
-     * @return if this mirror wraps a ECMAScript function instance
-     */
-    public boolean isFunction() {
-        return getScriptObject() instanceof ScriptFunction;
-    }
-
-    /**
-     * is this a 'use strict' function object?
-     *
-     * @return true if this mirror represents a ECMAScript 'use strict' function
-     */
-    public boolean isStrictFunction() {
-        return isFunction() && ((ScriptFunction)getScriptObject()).isStrict();
-    }
-
-    /**
-     * is this an array object?
-     *
-     * @return if this mirror wraps a ECMAScript array object
-     */
-    public boolean isArray() {
-        return getScriptObject().isArray();
-    }
-
-    // These are public only so that Context can access these.
 
     /**
      * Make a script object mirror on given object if needed.
@@ -621,6 +597,12 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     }
 
     // package-privates below this.
+
+    ScriptObjectMirror(final ScriptObject sobj, final ScriptObject global) {
+        this.sobj = sobj;
+        this.global = global;
+    }
+
     ScriptObject getScriptObject() {
         return sobj;
     }
@@ -628,4 +610,25 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     static Object translateUndefined(Object obj) {
         return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }
+
+    // internals only below this.
+    private <V> V inGlobal(final Callable<V> callable) {
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
+        final boolean globalChanged = (oldGlobal != global);
+        if (globalChanged) {
+            NashornScriptEngine.setNashornGlobal(global);
+        }
+        try {
+            return callable.call();
+        } catch (final RuntimeException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new AssertionError("Cannot happen", e);
+        } finally {
+            if (globalChanged) {
+                NashornScriptEngine.setNashornGlobal(oldGlobal);
+            }
+        }
+    }
+
 }
