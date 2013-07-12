@@ -800,4 +800,26 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
                     new Streams.RangeIntSpliterator(startInclusive, endInclusive, true));
         }
     }
+
+    /**
+     * Creates a lazy concatenated {@code IntStream} whose elements are all the
+     * elements of a first {@code IntStream} succeeded by all the elements of the
+     * second {@code IntStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static IntStream concat(IntStream a, IntStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfInt split = new Streams.ConcatSpliterator.OfInt(
+                a.spliterator(), b.spliterator());
+        return (a.isParallel() || b.isParallel())
+               ? StreamSupport.intParallelStream(split)
+               : StreamSupport.intStream(split);
+    }
 }
