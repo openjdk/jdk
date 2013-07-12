@@ -303,7 +303,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * @throws ClassCastException       {@inheritDoc}
      * @throws NullPointerException     {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-na     */
+     */
     SortedSet<E> headSet(E toElement);
 
     /**
