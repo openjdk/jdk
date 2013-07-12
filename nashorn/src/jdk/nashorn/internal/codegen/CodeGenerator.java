@@ -55,10 +55,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TreeMap;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -183,6 +185,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     /** From what size should we use spill instead of fields for JavaScript objects? */
     private static final int OBJECT_SPILL_THRESHOLD = 300;
+
+    private final Set<String> emittedMethods = new HashSet<>();
 
     /**
      * Constructor.
@@ -490,6 +494,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterBlock(final Block block) {
+        if(lc.isFunctionBody() && emittedMethods.contains(lc.getCurrentFunction().getName())) {
+            return false;
+        }
         method.label(block.getEntryLabel());
         initLocals(block);
 
@@ -1007,17 +1014,28 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        LOG.info("=== BEGIN ", functionNode.getName());
+        final String fnName = functionNode.getName();
+        // NOTE: we only emit the method for a function with the given name once. We can have multiple functions with
+        // the same name as a result of inlining finally blocks. However, in the future -- with type specialization,
+        // notably -- we might need to check for both name *and* signature. Of course, even that might not be
+        // sufficient; the function might have a code dependency on the type of the variables in its enclosing scopes,
+        // and the type of such a variable can be different in catch and finally blocks. So, in the future we will have
+        // to decide to either generate a unique method for each inlined copy of the function, maybe figure out its
+        // exact type closure and deduplicate based on that, or just decide that functions in finally blocks aren't
+        // worth it, and generate one method with most generic type closure.
+        if(!emittedMethods.contains(fnName)) {
+            LOG.info("=== BEGIN ", fnName);
 
-        assert functionNode.getCompileUnit() != null : "no compile unit for " + functionNode.getName() + " " + Debug.id(functionNode);
-        unit = lc.pushCompileUnit(functionNode.getCompileUnit());
-        assert lc.hasCompileUnits();
+            assert functionNode.getCompileUnit() != null : "no compile unit for " + fnName + " " + Debug.id(functionNode);
+            unit = lc.pushCompileUnit(functionNode.getCompileUnit());
+            assert lc.hasCompileUnits();
 
-        method = lc.pushMethodEmitter(unit.getClassEmitter().method(functionNode));
-        // new method - reset last line number
-        lastLineNumber = -1;
-        // Mark end for variable tables.
-        method.begin();
+            method = lc.pushMethodEmitter(unit.getClassEmitter().method(functionNode));
+            // new method - reset last line number
+            lastLineNumber = -1;
+            // Mark end for variable tables.
+            method.begin();
+        }
 
         return true;
     }
@@ -1025,13 +1043,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         try {
-            method.end(); // wrap up this method
-            unit   = lc.popCompileUnit(functionNode.getCompileUnit());
-            method = lc.popMethodEmitter(method);
-            LOG.info("=== END ", functionNode.getName());
+            if(emittedMethods.add(functionNode.getName())) {
+                method.end(); // wrap up this method
+                unit   = lc.popCompileUnit(functionNode.getCompileUnit());
+                method = lc.popMethodEmitter(method);
+                LOG.info("=== END ", functionNode.getName());
+            }
 
             final FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.EMITTED);
-
             newFunctionObject(newFunctionNode, functionNode);
             return newFunctionNode;
         } catch (final Throwable t) {
