@@ -179,6 +179,9 @@ public final class NativeDebug extends ScriptObject {
 
     /**
      * Returns the property listener count for a script object
+     *
+     * @param self self reference
+     * @param obj  script object whose listener count is returned
      * @return listener count
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)

@@ -125,32 +125,8 @@ class Parser extends Lexer {
                 break;
 
             case RAW_BYTE:
-                if (token.base != 0) { /* tok->base != 0 : octal or hexadec. */
-                    byte[] buf = new byte[4];
-                    int psave = p;
-                    int base = token.base;
-                    buf[0] = (byte)token.getC();
-                    int i;
-                    for (i=1; i<4; i++) {
-                        fetchTokenInCC();
-                        if (token.type != TokenType.RAW_BYTE || token.base != base) {
-                            fetched = true;
-                            break;
-                        }
-                        buf[i] = (byte)token.getC();
-                    }
-
-                    if (i == 1) {
-                        arg.v = buf[0] & 0xff;
-                        arg.inType = CCVALTYPE.SB; // goto raw_single
-                    } else {
-                        arg.v = EncodingHelper.mbcToCode(buf, 0, buf.length);
-                        arg.inType = CCVALTYPE.CODE_POINT;
-                    }
-                } else {
-                    arg.v = token.getC();
-                    arg.inType = CCVALTYPE.SB; // raw_single:
-                }
+                arg.v = token.getC();
+                arg.inType = CCVALTYPE.SB; // raw_single:
                 arg.vIsRaw = true;
                 parseCharClassValEntry2(cc, arg); // goto val_entry2
                 break;
@@ -615,31 +591,10 @@ class Parser extends Lexer {
         StringNode node = new StringNode((char)token.getC());
         node.setRaw();
 
-        int len = 1;
-        while (true) {
-            if (len >= 1) {
-                if (len == 1) {
-                    fetchToken();
-                    node.clearRaw();
-                    // !goto string_end;!
-                    return parseExpRepeat(node, group);
-                }
-            }
-
-            fetchToken();
-            if (token.type != TokenType.RAW_BYTE) {
-                /* Don't use this, it is wrong for little endian encodings. */
-                // USE_PAD_TO_SHORT_BYTE_CHAR ...
-
-                newValueException(ERR_TOO_SHORT_MULTI_BYTE_STRING);
-            }
-
-            // important: we don't use 0xff mask here neither in the compiler
-            // (in the template string) so we won't have to mask target
-            // strings when comparing against them in the matcher
-            node.cat((char)token.getC());
-            len++;
-        } // while
+        fetchToken();
+        node.clearRaw();
+        // !goto string_end;!
+        return parseExpRepeat(node, group);
     }
 
     private Node parseExpRepeat(Node target, boolean group) {

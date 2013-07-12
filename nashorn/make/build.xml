@@ -219,8 +219,10 @@
            target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
-           includeantruntime="false">
-        <compilerarg line="-extdirs &quot;&quot;"/>
+           includeantruntime="false" fork="true">
+        <compilerarg value="-J-Djava.ext.dirs="/>
+        <compilerarg value="-Xlint:unchecked"/>
+        <compilerarg value="-Xlint:deprecation"/>
     </javac>
 
     <!-- tests that check nashorn internals and internal API -->

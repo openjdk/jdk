@@ -36,15 +36,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -95,6 +93,11 @@ public final class Context {
         @Override
         public void verify(final byte[] code) {
             context.verify(code);
+        }
+
+        @Override
+        public long getUniqueScriptId() {
+            return context.getUniqueScriptId();
         }
     }
 
@@ -197,6 +200,9 @@ public final class Context {
     /** Current error manager. */
     private final ErrorManager errors;
 
+    /** Unique id for script. Used only when --loader-per-compile=false */
+    private final AtomicLong uniqueScriptId;
+
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
@@ -253,7 +259,13 @@ public final class Context {
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
-        this.scriptLoader = env._loader_per_compile? null : createNewLoader();
+        if (env._loader_per_compile) {
+            this.scriptLoader = null;
+            this.uniqueScriptId = null;
+        } else {
+            this.scriptLoader = createNewLoader();
+            this.uniqueScriptId = new AtomicLong();
+        }
         this.errors    = errors;
 
         // if user passed -classpath option, make a class loader with that and set it as
@@ -543,6 +555,21 @@ public final class Context {
     }
 
     /**
+     * Checks that the given package can be accessed from current call stack.
+     *
+     * @param fullName fully qualified package name
+     */
+    public static void checkPackageAccess(final String fullName) {
+        final int index = fullName.lastIndexOf('.');
+        if (index != -1) {
+            final SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPackageAccess(fullName.substring(0, index));
+            }
+        }
+    }
+
+    /**
      * Lookup a Java class. This is used for JSR-223 stuff linking in from
      * {@code jdk.nashorn.internal.objects.NativeJava} and {@code jdk.nashorn.internal.runtime.NativeJavaPackage}
      *
@@ -554,19 +581,7 @@ public final class Context {
      */
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
         // check package access as soon as possible!
-        final int index = fullName.lastIndexOf('.');
-        if (index != -1) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        sm.checkPackageAccess(fullName.substring(0, index));
-                        return null;
-                    }
-                }, createNoPermissionsContext());
-            }
-        }
+        checkPackageAccess(fullName);
 
         // try the script -classpath loader, if that is set
         if (classPathLoader != null) {
@@ -707,10 +722,6 @@ public final class Context {
         return (context != null) ? context : Context.getContextTrusted();
     }
 
-    private static AccessControlContext createNoPermissionsContext() {
-        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
-    }
-
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
         ScriptFunction script = null;
 
@@ -817,5 +828,9 @@ public final class Context {
 
     private ScriptObject newGlobalTrusted() {
         return new Global(this);
+    }
+
+    private long getUniqueScriptId() {
+        return uniqueScriptId.getAndIncrement();
     }
 }

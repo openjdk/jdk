@@ -435,13 +435,13 @@ public final class ObjectClassGenerator {
      * @return Open method emitter.
      */
     private static MethodEmitter newInitScopeWithArgumentsMethod(final ClassEmitter classEmitter) {
-        final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, Object.class);
+        final MethodEmitter init = classEmitter.init(PropertyMap.class, ScriptObject.class, ScriptObject.class);
         init.begin();
         init.load(Type.OBJECT, JAVA_THIS.slot());
         init.load(Type.OBJECT, INIT_MAP.slot());
         init.load(Type.OBJECT, INIT_SCOPE.slot());
         init.load(Type.OBJECT, INIT_ARGUMENTS.slot());
-        init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, Object.class));
+        init.invoke(constructorNoLookup(FunctionScope.class, PropertyMap.class, ScriptObject.class, ScriptObject.class));
 
         return init;
     }

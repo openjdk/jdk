@@ -622,12 +622,15 @@ public final class NativeJSAdapter extends ScriptObject {
         case "getMethod":
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
-                final ScriptFunctionImpl func = (ScriptFunctionImpl)getObjectValue(find);
-                // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
-                // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
-                return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
-                        func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
-                        adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__), testJSAdaptor(adaptee, null, null, null));
+                final Object value = getObjectValue(find);
+                if (value instanceof ScriptFunction) {
+                    final ScriptFunctionImpl func = (ScriptFunctionImpl)value;
+                    // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
+                    // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
+                    return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
+                            func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
+                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__), testJSAdaptor(adaptee, null, null, null));
+                }
             }
             throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
         default:
@@ -687,16 +690,19 @@ public final class NativeJSAdapter extends ScriptObject {
         final MethodType type = desc.getMethodType();
         if (findData != null) {
             final String name = desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null;
-            final ScriptFunction func = (ScriptFunction)getObjectValue(findData);
+            final Object value = getObjectValue(findData);
+            if (value instanceof ScriptFunction) {
+                final ScriptFunction func = (ScriptFunction)value;
 
-            final MethodHandle methodHandle = getCallMethodHandle(findData, type,
+                final MethodHandle methodHandle = getCallMethodHandle(findData, type,
                     useName ? name : null);
-            if (methodHandle != null) {
-                return new GuardedInvocation(
-                        methodHandle,
-                        adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook),
-                        testJSAdaptor(adaptee, findData.getGetter(Object.class), findData.getOwner(), func));
-            }
+                if (methodHandle != null) {
+                    return new GuardedInvocation(
+                            methodHandle,
+                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook),
+                            testJSAdaptor(adaptee, findData.getGetter(Object.class), findData.getOwner(), func));
+                }
+             }
         }
 
         switch (hook) {

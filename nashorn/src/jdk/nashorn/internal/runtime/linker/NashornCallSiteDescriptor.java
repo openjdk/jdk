@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime.linker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -111,7 +110,7 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
         final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(lookup, operator, operand, methodType, flags);
         // Many of these call site descriptors are identical (e.g. every getter for a property color will be
         // "dyn:getProp:color(Object)Object", so it makes sense canonicalizing them.
-        final Map<NashornCallSiteDescriptor, NashornCallSiteDescriptor> classCanonicals = canonicals.get(lookup.lookupClass());
+        final ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> classCanonicals = canonicals.get(lookup.lookupClass());
         final NashornCallSiteDescriptor canonical = classCanonicals.putIfAbsent(csd, csd);
         return canonical != null ? canonical : csd;
     }

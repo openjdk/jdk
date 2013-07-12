@@ -212,10 +212,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // Instance of this class is used as global anonymous function which
     // serves as Function.prototype object.
     private static class AnonymousFunction extends ScriptFunctionImpl {
-        private static final PropertyMap map$ = PropertyMap.newMap().setIsShared();
+        private static final PropertyMap anonmap$ = PropertyMap.newMap().setIsShared();
 
         static PropertyMap getInitialMap() {
-            return map$;
+            return anonmap$;
         }
 
         AnonymousFunction(final Global global) {

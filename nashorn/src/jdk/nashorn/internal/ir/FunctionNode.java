@@ -47,7 +47,7 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  * IR representation for function (or script.)
  */
 @Immutable
-public final class FunctionNode extends LexicalContextNode implements Flags<FunctionNode> {
+public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode> {
 
     /** Type used for all FunctionNodes */
     public static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
@@ -137,6 +137,8 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
 
     /** Function flags. */
     private final int flags;
+
+    private final int lineNumber;
 
     /** Is anonymous function flag. */
     public static final int IS_ANONYMOUS                = 1 << 0;
@@ -234,9 +236,10 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
         final int flags) {
-        super(lineNumber, token, finish);
+        super(token, finish);
 
         this.source           = source;
+        this.lineNumber       = lineNumber;
         this.ident            = ident;
         this.name             = name;
         this.kind             = kind;
@@ -266,7 +269,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final FunctionNode snapshot,
         final Compiler.Hints hints) {
         super(functionNode);
-
+        this.lineNumber       = functionNode.lineNumber;
         this.flags            = flags;
         this.name             = name;
         this.returnType       = returnType;
@@ -302,6 +305,14 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public Source getSource() {
         return source;
+    }
+
+    /**
+     * Returns the line number.
+     * @return the line number.
+     */
+    public int getLineNumber() {
+        return lineNumber;
     }
 
     /**

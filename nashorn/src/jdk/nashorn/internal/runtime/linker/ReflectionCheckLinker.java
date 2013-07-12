@@ -25,10 +25,14 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.reflect.Modifier;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.nashorn.internal.runtime.Context;
 
 /**
  * Check java reflection permission for java reflective and java.lang.invoke access from scripts
@@ -52,6 +56,25 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
             throws Exception {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
+            final LinkRequest requestWithoutContext = origRequest.withoutRuntimeContext(); // Nashorn has no runtime context
+            final Object self = requestWithoutContext.getReceiver();
+            // allow 'static' access on Class objects representing public classes of non-restricted packages
+            if ((self instanceof Class) && Modifier.isPublic(((Class<?>)self).getModifiers())) {
+                final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
+                final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+                // check for 'get' on 'static' property
+                switch (operator) {
+                    case "getProp":
+                    case "getMethod": {
+                       if ("static".equals(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
+                           Context.checkPackageAccess(((Class)self).getName());
+                           // let bean linker do the actual linking part
+                           return null;
+                       }
+                    }
+                    break;
+                } // fall through for all other stuff
+            }
             sm.checkPermission(new RuntimePermission("nashorn.JavaReflection"));
         }
         // let the next linker deal with actual linking
