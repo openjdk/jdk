@@ -746,4 +746,26 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
         return StreamSupport.doubleStream(
                 new StreamSpliterators.InfiniteSupplyingSpliterator.OfDouble(Long.MAX_VALUE, s));
     }
+
+    /**
+     * Creates a lazy concatenated {@code DoubleStream} whose elements are all the
+     * elements of a first {@code DoubleStream} succeeded by all the elements of the
+     * second {@code DoubleStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static DoubleStream concat(DoubleStream a, DoubleStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfDouble split = new Streams.ConcatSpliterator.OfDouble(
+                a.spliterator(), b.spliterator());
+        return (a.isParallel() || b.isParallel())
+               ? StreamSupport.doubleParallelStream(split)
+               : StreamSupport.doubleStream(split);
+    }
 }

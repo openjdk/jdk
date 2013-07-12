@@ -883,4 +883,29 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
         return StreamSupport.stream(
                 new StreamSpliterators.InfiniteSupplyingSpliterator.OfRef<>(Long.MAX_VALUE, s));
     }
+
+    /**
+     * Creates a lazy concatenated {@code Stream} whose elements are all the
+     * elements of a first {@code Stream} succeeded by all the elements of the
+     * second {@code Stream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param <T> The type of stream elements
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first
+     *        stream
+     * @return the concatenation of the two input streams
+     */
+    public static <T> Stream<T> concat(Stream<? extends T> a, Stream<? extends T> b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        @SuppressWarnings("unchecked")
+        Spliterator<T> split = new Streams.ConcatSpliterator.OfRef<>(
+                (Spliterator<T>) a.spliterator(), (Spliterator<T>) b.spliterator());
+        return (a.isParallel() || b.isParallel())
+               ? StreamSupport.parallelStream(split)
+               : StreamSupport.stream(split);
+    }
 }
