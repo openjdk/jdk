@@ -218,6 +218,7 @@ Thread::Thread() {
   // allocated data structures
   set_osthread(NULL);
   set_resource_area(new (mtThread)ResourceArea());
+  DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, true));
   set_active_handles(NULL);
