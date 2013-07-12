@@ -102,7 +102,7 @@ abstract class AbstractTask<P_IN, P_OUT, R,
     protected Spliterator<P_IN> spliterator;
 
     /** Target leaf size, common to all tasks in a computation */
-    protected final long targetSize;
+    protected long targetSize; // may be laziliy initialized
 
     /**
      * The left child.
@@ -134,7 +134,7 @@ abstract class AbstractTask<P_IN, P_OUT, R,
         super(null);
         this.helper = helper;
         this.spliterator = spliterator;
-        this.targetSize = suggestTargetSize(spliterator.estimateSize());
+        this.targetSize = 0L;
     }
 
     /**
@@ -182,27 +182,13 @@ abstract class AbstractTask<P_IN, P_OUT, R,
     }
 
     /**
-     * Returns a suggestion whether it is advisable to split the provided
-     * spliterator based on target size and other considerations, such as pool
-     * state.
-      *
-     * @return {@code true} if a split is advised otherwise {@code false}
+     * Returns the targetSize, initializing it via the supplied
+     * size estimate if not already initialized.
      */
-    public static boolean suggestSplit(Spliterator spliterator,
-                                       long targetSize) {
-        long remaining = spliterator.estimateSize();
-        return (remaining > targetSize);
-        // @@@ May additionally want to fold in pool characteristics such as surplus task count
-    }
-
-    /**
-     * Returns a suggestion whether it is adviseable to split this task based on
-     * target size and other considerations.
-      *
-     *  @return {@code true} if a split is advised otherwise {@code false}
-     */
-    public boolean suggestSplit() {
-        return suggestSplit(spliterator, targetSize);
+    protected final long getTargetSize(long sizeEstimate) {
+        long s;
+        return ((s = targetSize) != 0 ? s :
+                (targetSize = suggestTargetSize(sizeEstimate)));
     }
 
     /**
@@ -285,43 +271,46 @@ abstract class AbstractTask<P_IN, P_OUT, R,
     }
 
     /**
-     * Decides whether or not to split a task further or compute it directly. If
-     * computing directly, call {@code doLeaf} and pass the result to
-     * {@code setRawResult}.  If splitting, set up the child-related fields,
-     * create the child tasks, fork the leftmost (prefix) child tasks, and
-     * compute the rightmost (remaining) child tasks.
+     * Decides whether or not to split a task further or compute it
+     * directly. If computing directly, calls {@code doLeaf} and pass
+     * the result to {@code setRawResult}. Otherwise splits off
+     * subtasks, forking one and continuing as the other.
      *
-     * <p>
-     * Computing will continue for rightmost tasks while a task can be computed
-     * as determined by {@link #canCompute()} and that task should and can be
-     * split into left and right tasks.
-     *
-     * <p>
-     * The rightmost tasks are computed in a loop rather than recursively to
-     * avoid potential stack overflows when computing with a right-balanced
-     * tree, such as that produced when splitting with a {@link Spliterator}
-     * created from an {@link java.util.Iterator}.
+     * <p> The method is structured to conserve resources across a
+     * range of uses.  The loop continues with one of the child tasks
+     * when split, to avoid deep recursion. To cope with spliterators
+     * that may be systematically biased toward left-heavy or
+     * right-heavy splits, we alternate which child is forked versus
+     * continued in the loop.
      */
     @Override
-    public final void compute() {
-        @SuppressWarnings("unchecked")
-        K task = (K) this;
-        while (task.canCompute()) {
-            Spliterator<P_IN> split;
-            if (!task.suggestSplit() || (split = task.spliterator.trySplit()) == null) {
-                task.setLocalResult(task.doLeaf());
-                task.tryComplete();
-                return;
+    public void compute() {
+        Spliterator<P_IN> rs = spliterator, ls; // right, left spliterators
+        long sizeEstimate = rs.estimateSize();
+        long sizeThreshold = getTargetSize(sizeEstimate);
+        boolean forkRight = false;
+        @SuppressWarnings("unchecked") K task = (K) this;
+        while (sizeEstimate > sizeThreshold && (ls = rs.trySplit()) != null) {
+            K leftChild, rightChild, taskToFork;
+            task.leftChild  = leftChild = task.makeChild(ls);
+            task.rightChild = rightChild = task.makeChild(rs);
+            task.setPendingCount(1);
+            if (forkRight) {
+                forkRight = false;
+                rs = ls;
+                task = leftChild;
+                taskToFork = rightChild;
             }
             else {
-                K l = task.leftChild = task.makeChild(split);
-                K r = task.rightChild = task.makeChild(task.spliterator);
-                task.spliterator = null;
-                task.setPendingCount(1);
-                l.fork();
-                task = r;
+                forkRight = true;
+                task = rightChild;
+                taskToFork = leftChild;
             }
+            taskToFork.fork();
+            sizeEstimate = rs.estimateSize();
         }
+        task.setLocalResult(task.doLeaf());
+        task.tryComplete();
     }
 
     /**
@@ -336,21 +325,6 @@ abstract class AbstractTask<P_IN, P_OUT, R,
     public void onCompletion(CountedCompleter<?> caller) {
         spliterator = null;
         leftChild = rightChild = null;
-    }
-
-    /**
-     * Determines if the task can be computed.
-     *
-     * @implSpec The default always returns true
-     *
-     * @return {@code true} if this task can be computed to either calculate the
-     *         leaf via {@link #doLeaf()} or split, otherwise false if this task
-     *         cannot be computed, for example if this task has been canceled
-     *         and/or a result for the computation has been found by another
-     *         task.
-     */
-    protected boolean canCompute() {
-        return true;
     }
 
     /**
