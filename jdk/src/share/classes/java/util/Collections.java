@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -1510,6 +1512,86 @@ public class Collections {
                 // Need to cast to raw in order to work around a limitation in the type system
                 super((Set)s);
             }
+
+            static <K, V> Consumer<Map.Entry<K, V>> entryConsumer(Consumer<? super Entry<K, V>> action) {
+                return e -> action.accept(new UnmodifiableEntry<>(e));
+            }
+
+            public void forEach(Consumer<? super Entry<K, V>> action) {
+                Objects.requireNonNull(action);
+                c.forEach(entryConsumer(action));
+            }
+
+            static final class UnmodifiableEntrySetSpliterator<K, V>
+                    implements Spliterator<Entry<K,V>> {
+                final Spliterator<Map.Entry<K, V>> s;
+
+                UnmodifiableEntrySetSpliterator(Spliterator<Entry<K, V>> s) {
+                    this.s = s;
+                }
+
+                @Override
+                public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
+                    Objects.requireNonNull(action);
+                    return s.tryAdvance(entryConsumer(action));
+                }
+
+                @Override
+                public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                    Objects.requireNonNull(action);
+                    s.forEachRemaining(entryConsumer(action));
+                }
+
+                @Override
+                public Spliterator<Entry<K, V>> trySplit() {
+                    Spliterator<Entry<K, V>> split = s.trySplit();
+                    return split == null
+                           ? null
+                           : new UnmodifiableEntrySetSpliterator<>(split);
+                }
+
+                @Override
+                public long estimateSize() {
+                    return s.estimateSize();
+                }
+
+                @Override
+                public long getExactSizeIfKnown() {
+                    return s.getExactSizeIfKnown();
+                }
+
+                @Override
+                public int characteristics() {
+                    return s.characteristics();
+                }
+
+                @Override
+                public boolean hasCharacteristics(int characteristics) {
+                    return s.hasCharacteristics(characteristics);
+                }
+
+                @Override
+                public Comparator<? super Entry<K, V>> getComparator() {
+                    return s.getComparator();
+                }
+            }
+
+            @SuppressWarnings("unchecked")
+            public Spliterator<Entry<K,V>> spliterator() {
+                return new UnmodifiableEntrySetSpliterator<>(
+                        (Spliterator<Map.Entry<K, V>>) c.spliterator());
+            }
+
+            @Override
+            public Stream<Entry<K,V>> stream() {
+                return StreamSupport.stream(spliterator());
+            }
+
+            @Override
+            public Stream<Entry<K,V>> parallelStream() {
+                return StreamSupport.parallelStream(spliterator());
+            }
+
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new Iterator<Map.Entry<K,V>>() {
                     private final Iterator<? extends Map.Entry<? extends K, ? extends V>> i = c.iterator();
