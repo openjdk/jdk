@@ -203,9 +203,19 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param source The source object to copy from.
      */
     public void addBoundProperties(final ScriptObject source) {
+        addBoundProperties(source, source.getMap().getProperties());
+    }
+
+    /**
+     * Copy all properties from the array with their receiver bound to the source.
+     *
+     * @param source The source object to copy from.
+     * @param properties The array of properties to copy.
+     */
+    public void addBoundProperties(final ScriptObject source, final Property[] properties) {
         PropertyMap newMap = this.getMap();
 
-        for (final Property property : source.getMap().getProperties()) {
+        for (final Property property : properties) {
             final String key = property.getKey();
 
             if (newMap.findProperty(key) == null) {
@@ -215,6 +225,26 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
                 } else {
                     newMap = newMap.addPropertyBind((AccessorProperty)property, source);
                 }
+            }
+        }
+
+        this.setMap(newMap);
+    }
+
+    /**
+     * Copy all properties from the array with their receiver bound to the source.
+     *
+     * @param source The source object to copy from.
+     * @param properties The collection of accessor properties to copy.
+     */
+    public void addBoundProperties(final Object source, final AccessorProperty[] properties) {
+        PropertyMap newMap = this.getMap();
+
+        for (final AccessorProperty property : properties) {
+            final String key = property.getKey();
+
+            if (newMap.findProperty(key) == null) {
+                newMap = newMap.addPropertyBind(property, source);
             }
         }
 
@@ -1948,7 +1978,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return noSuchProperty(desc, request);
         }
 
-        final ScriptFunction func = (ScriptFunction)getObjectValue(find);
+        final Object value = getObjectValue(find);
+        if (! (value instanceof ScriptFunction)) {
+            return createEmptyGetter(desc, name);
+        }
+
+        final ScriptFunction func = (ScriptFunction)value;
         final Object thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
         // TODO: It'd be awesome if we could bind "name" without binding "this".
         return new GuardedInvocation(MH.dropArguments(MH.constant(ScriptFunction.class,
@@ -1968,8 +2003,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final ScriptFunction func = (ScriptFunction)getObjectValue(find);
-            MethodHandle methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
+            final Object value = getObjectValue(find);
+            ScriptFunction func = null;
+            MethodHandle methodHandle = null;
+            if (value instanceof ScriptFunction) {
+                func = (ScriptFunction)value;
+                methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
+            }
 
             if (methodHandle != null) {
                 if (scopeAccess && func.isStrict()) {

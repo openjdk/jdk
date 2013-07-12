@@ -34,7 +34,7 @@ import static jdk.nashorn.internal.codegen.Condition.NE;
 
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
-import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 
@@ -52,16 +52,16 @@ final class BranchOptimizer {
         this.method  = method;
     }
 
-    void execute(final Node node, final Label label, final boolean state) {
+    void execute(final Expression node, final Label label, final boolean state) {
         branchOptimizer(node, label, state);
     }
 
-    private void load(final Node node) {
+    private void load(final Expression node) {
         codegen.load(node);
     }
 
     private void branchOptimizer(final UnaryNode unaryNode, final Label label, final boolean state) {
-        final Node rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.rhs();
 
         switch (unaryNode.tokenType()) {
         case NOT:
@@ -88,8 +88,8 @@ final class BranchOptimizer {
     }
 
     private void branchOptimizer(final BinaryNode binaryNode, final Label label, final boolean state) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         switch (binaryNode.tokenType()) {
         case AND:
@@ -173,7 +173,7 @@ final class BranchOptimizer {
         }
     }
 
-    private void branchOptimizer(final Node node, final Label label, final boolean state) {
+    private void branchOptimizer(final Expression node, final Label label, final boolean state) {
         if (!(node instanceof TernaryNode)) {
 
             if (node instanceof BinaryNode) {

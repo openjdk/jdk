@@ -260,7 +260,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      *
      * @return New {@link PropertyMap} with {@link Property} added.
      */
-    PropertyMap addPropertyBind(final AccessorProperty property, final ScriptObject bindTo) {
+    PropertyMap addPropertyBind(final AccessorProperty property, final Object bindTo) {
         return addProperty(new AccessorProperty(property, bindTo));
     }
 

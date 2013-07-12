@@ -61,6 +61,7 @@ import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -72,7 +73,6 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
-import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
@@ -94,7 +94,6 @@ import jdk.nashorn.internal.runtime.DebugLogger;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * This is the attribution pass of the code generator. Attr takes Lowered IR,
@@ -166,19 +165,19 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private void initFunctionWideVariables(final FunctionNode functionNode, final Block body) {
-        initCompileConstant(CALLEE, body, IS_PARAM | IS_INTERNAL, FunctionNode.FUNCTION_TYPE);
+        initCompileConstant(CALLEE, body, IS_PARAM | IS_INTERNAL);
         initCompileConstant(THIS, body, IS_PARAM | IS_THIS, Type.OBJECT);
 
         if (functionNode.isVarArg()) {
-            initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL, Type.OBJECT_ARRAY);
+            initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL);
             if (functionNode.needsArguments()) {
-                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
+                initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED);
                 addLocalDef(ARGUMENTS.symbolName());
             }
         }
 
         initParameters(functionNode, body);
-        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.typeFor(ScriptObject.class));
+        initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED);
         initCompileConstant(RETURN, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED, Type.OBJECT);
     }
 
@@ -513,7 +512,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             assert nameSymbol != null;
 
             selfInit = selfInit.setName((IdentNode)name.setSymbol(lc, nameSymbol));
-            selfInit = (VarNode)selfInit.setSymbol(lc, nameSymbol);
 
             newStatements.add(selfInit);
             newStatements.addAll(body.getStatements());
@@ -741,14 +739,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leavePropertyNode(final PropertyNode propertyNode) {
-        // assign a pseudo symbol to property name, see NASHORN-710
-        return propertyNode.setSymbol(lc, new Symbol(propertyNode.getKeyName(), 0, Type.OBJECT));
-    }
-
-    @Override
     public Node leaveReturnNode(final ReturnNode returnNode) {
-        final Node expr = returnNode.getExpression();
+        final Expression expr = returnNode.getExpression();
         final Type returnType;
 
         if (expr != null) {
@@ -785,7 +777,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     final LiteralNode<?> lit = (LiteralNode<?>)test;
                     if (lit.isNumeric() && !(lit.getValue() instanceof Integer)) {
                         if (JSType.isRepresentableAsInt(lit.getNumber())) {
-                            newCaseNode = caseNode.setTest(LiteralNode.newInstance(lit, lit.getInt32()).accept(this));
+                            newCaseNode = caseNode.setTest((Expression)LiteralNode.newInstance(lit, lit.getInt32()).accept(this));
                         }
                     }
                 } else {
@@ -848,19 +840,18 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveVarNode(final VarNode varNode) {
-        VarNode newVarNode = varNode;
+        final Expression init  = varNode.getInit();
+        final IdentNode  ident = varNode.getName();
+        final String     name  = ident.getName();
 
-        final Node      init  = newVarNode.getInit();
-        final IdentNode ident = newVarNode.getName();
-        final String    name  = ident.getName();
-
-        final Symbol  symbol = findSymbol(lc.getCurrentBlock(), ident.getName());
+        final Symbol  symbol = findSymbol(lc.getCurrentBlock(), name);
+        assert ident.getSymbol() == symbol;
 
         if (init == null) {
             // var x; with no init will be treated like a use of x by
             // leaveIdentNode unless we remove the name from the localdef list.
             removeLocalDef(name);
-            return end(newVarNode.setSymbol(lc, symbol));
+            return end(varNode);
         }
 
         addLocalDef(name);
@@ -869,8 +860,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
         final IdentNode newIdent = (IdentNode)ident.setSymbol(lc, symbol);
 
-        newVarNode = newVarNode.setName(newIdent);
-        newVarNode = (VarNode)newVarNode.setSymbol(lc, symbol);
+        final VarNode newVarNode = varNode.setName(newIdent);
 
         final boolean isScript = lc.getDefiningFunction(symbol).isProgram(); //see NASHORN-56
         if ((init.getType().isNumeric() || init.getType().isBoolean()) && !isScript) {
@@ -880,7 +870,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             newType(symbol, Type.OBJECT);
         }
 
-        assert newVarNode.hasType() : newVarNode + " has no type";
+        assert newVarNode.getName().hasType() : newVarNode + " has no type";
 
         return end(newVarNode);
     }
@@ -908,11 +898,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     public Node leaveDELETE(final UnaryNode unaryNode) {
         final FunctionNode   currentFunctionNode = lc.getCurrentFunction();
         final boolean        strictMode          = currentFunctionNode.isStrict();
-        final Node           rhs                 = unaryNode.rhs();
-        final Node           strictFlagNode      = LiteralNode.newInstance(unaryNode, strictMode).accept(this);
+        final Expression     rhs                 = unaryNode.rhs();
+        final Expression     strictFlagNode      = (Expression)LiteralNode.newInstance(unaryNode, strictMode).accept(this);
 
         Request request = Request.DELETE;
-        final List<Node> args = new ArrayList<>();
+        final List<Expression> args = new ArrayList<>();
 
         if (rhs instanceof IdentNode) {
             // If this is a declared variable or a function parameter, delete always fails (except for globals).
@@ -923,7 +913,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             if (failDelete && rhs.getSymbol().isThis()) {
                 return LiteralNode.newInstance(unaryNode, true).accept(this);
             }
-            final Node literalNode = LiteralNode.newInstance(unaryNode, name).accept(this);
+            final Expression literalNode = (Expression)LiteralNode.newInstance(unaryNode, name).accept(this);
 
             if (!failDelete) {
                 args.add(compilerConstant(SCOPE));
@@ -935,16 +925,17 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 request = Request.FAIL_DELETE;
             }
         } else if (rhs instanceof AccessNode) {
-            final Node      base     = ((AccessNode)rhs).getBase();
-            final IdentNode property = ((AccessNode)rhs).getProperty();
+            final Expression base     = ((AccessNode)rhs).getBase();
+            final IdentNode  property = ((AccessNode)rhs).getProperty();
 
             args.add(base);
-            args.add(LiteralNode.newInstance(unaryNode, property.getName()).accept(this));
+            args.add((Expression)LiteralNode.newInstance(unaryNode, property.getName()).accept(this));
             args.add(strictFlagNode);
 
         } else if (rhs instanceof IndexNode) {
-            final Node base  = ((IndexNode)rhs).getBase();
-            final Node index = ((IndexNode)rhs).getIndex();
+            final IndexNode indexNode = (IndexNode)rhs;
+            final Expression base  = indexNode.getBase();
+            final Expression index = indexNode.getIndex();
 
             args.add(base);
             args.add(index);
@@ -999,15 +990,15 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveTYPEOF(final UnaryNode unaryNode) {
-        final Node rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.rhs();
 
-        List<Node> args = new ArrayList<>();
+        List<Expression> args = new ArrayList<>();
         if (rhs instanceof IdentNode && !rhs.getSymbol().isParam() && !rhs.getSymbol().isVar()) {
             args.add(compilerConstant(SCOPE));
-            args.add(LiteralNode.newInstance(rhs, ((IdentNode)rhs).getName()).accept(this)); //null
+            args.add((Expression)LiteralNode.newInstance(rhs, ((IdentNode)rhs).getName()).accept(this)); //null
         } else {
             args.add(rhs);
-            args.add(LiteralNode.newInstance(unaryNode).accept(this)); //null, do not reuse token of identifier rhs, it can be e.g. 'this'
+            args.add((Expression)LiteralNode.newInstance(unaryNode).accept(this)); //null, do not reuse token of identifier rhs, it can be e.g. 'this'
         }
 
         RuntimeNode runtimeNode = new RuntimeNode(unaryNode, Request.TYPEOF, args);
@@ -1041,8 +1032,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      */
     @Override
     public Node leaveADD(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         ensureTypeNotUnknown(lhs);
         ensureTypeNotUnknown(rhs);
@@ -1097,8 +1088,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     private Node leaveAssignmentNode(final BinaryNode binaryNode) {
         BinaryNode newBinaryNode = binaryNode;
 
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
         final Type type;
 
         if (rhs.getType().isNumeric()) {
@@ -1134,8 +1125,8 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveASSIGN_ADD(final BinaryNode binaryNode) {
-        final Node lhs = binaryNode.lhs();
-        final Node rhs = binaryNode.rhs();
+        final Expression lhs = binaryNode.lhs();
+        final Expression rhs = binaryNode.rhs();
 
         final Type widest = Type.widest(lhs.getType(), rhs.getType());
         //Type.NUMBER if we can't prove that the add doesn't overflow. todo
@@ -1414,19 +1405,26 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
-        final Node lhs  = ternaryNode.rhs();
-        final Node rhs  = ternaryNode.third();
+        final Expression trueExpr  = ternaryNode.getTrueExpression();
+        final Expression falseExpr = ternaryNode.getFalseExpression();
 
-        ensureTypeNotUnknown(lhs);
-        ensureTypeNotUnknown(rhs);
+        ensureTypeNotUnknown(trueExpr);
+        ensureTypeNotUnknown(falseExpr);
 
-        final Type type = Type.widest(lhs.getType(), rhs.getType());
+        final Type type = Type.widest(trueExpr.getType(), falseExpr.getType());
         return end(ensureSymbol(type, ternaryNode));
+    }
+
+    private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags) {
+        final Class<?> type = cc.type();
+        // Must not call this method for constants with no explicit types; use the one with (..., Type) signature instead.
+        assert type != null;
+        initCompileConstant(cc, block, flags, Type.typeFor(type));
     }
 
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags, final Type type) {
         final Symbol symbol = defineSymbol(block, cc.symbolName(), flags);
-        newType(symbol, type);
+        symbol.setTypeOverride(type);
         symbol.setNeedsSlot(true);
     }
 
@@ -1531,7 +1529,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         }
     }
 
-    private static void ensureTypeNotUnknown(final Node node) {
+    private static void ensureTypeNotUnknown(final Expression node) {
 
         final Symbol symbol = node.getSymbol();
 
@@ -1588,13 +1586,13 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
      *
      * @param assignmentDest the destination node of the assignment, e.g. lhs for binary nodes
      */
-    private Node ensureAssignmentSlots(final Node assignmentDest) {
+    private Expression ensureAssignmentSlots(final Expression assignmentDest) {
         final LexicalContext attrLexicalContext = lc;
-        return assignmentDest.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        return (Expression)assignmentDest.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveIndexNode(final IndexNode indexNode) {
                 assert indexNode.getSymbol().isTemp();
-                final Node index = indexNode.getIndex();
+                final Expression index = indexNode.getIndex();
                 //only temps can be set as needing slots. the others will self resolve
                 //it is illegal to take a scope var and force it to be a slot, that breaks
                 Symbol indexSymbol = index.getSymbol();
@@ -1636,7 +1634,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             changed.clear();
             final FunctionNode newFunctionNode = (FunctionNode)currentFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
 
-                private Node widen(final Node node, final Type to) {
+                private Expression widen(final Expression node, final Type to) {
                     if (node instanceof LiteralNode) {
                         return node;
                     }
@@ -1648,7 +1646,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                             symbol = temporarySymbols.getTypedTemporarySymbol(to);
                         }
                         newType(symbol, to);
-                        final Node newNode = node.setSymbol(lc, symbol);
+                        final Expression newNode = node.setSymbol(lc, symbol);
                         changed.add(newNode);
                         return newNode;
                     }
@@ -1703,7 +1701,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
 
     private Node leaveSelfModifyingAssignmentNode(final BinaryNode binaryNode, final Type destType) {
         //e.g. for -=, Number, no wider, destType (binaryNode.getWidestOperationType())  is the coerce type
-        final Node lhs = binaryNode.lhs();
+        final Expression lhs = binaryNode.lhs();
 
         newType(lhs.getSymbol(), destType); //may not narrow if dest is already wider than destType
 //        ensureSymbol(destType, binaryNode); //for OP= nodes, the node can carry a narrower types than its lhs rhs. This is perfectly fine
@@ -1711,9 +1709,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return end(ensureSymbol(destType, ensureAssignmentSlots(binaryNode)));
     }
 
-    private Node ensureSymbol(final Type type, final Node node) {
+    private Expression ensureSymbol(final Type type, final Expression expr) {
         LOG.info("New TEMPORARY added to ", lc.getCurrentFunction().getName(), " type=", type);
-        return temporarySymbols.ensureSymbol(lc, type, node);
+        return temporarySymbols.ensureSymbol(lc, type, expr);
     }
 
     private Symbol newInternal(final String name, final Type type) {
@@ -1835,11 +1833,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         return true;
     }
 
-    private Node end(final Node node) {
+    private <T extends Node> T end(final T node) {
         return end(node, true);
     }
 
-    private Node end(final Node node, final boolean printNode) {
+    private <T extends Node> T end(final T node, final boolean printNode) {
         if(node instanceof Statement) {
             // If we're done with a statement, all temporaries can be reused.
             temporarySymbols.reuse();
@@ -1854,10 +1852,13 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 append(" in '").
                 append(lc.getCurrentFunction().getName());
 
-            if (node.getSymbol() == null) {
-                sb.append(" <NO SYMBOL>");
-            } else {
-                sb.append(" <symbol=").append(node.getSymbol()).append('>');
+            if(node instanceof Expression) {
+                final Symbol symbol = ((Expression)node).getSymbol();
+                if (symbol == null) {
+                    sb.append(" <NO SYMBOL>");
+                } else {
+                    sb.append(" <symbol=").append(symbol).append('>');
+                }
             }
 
             LOG.unindent();

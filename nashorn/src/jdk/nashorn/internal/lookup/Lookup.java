@@ -32,8 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.Property;
-import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
