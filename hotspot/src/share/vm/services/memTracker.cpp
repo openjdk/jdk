@@ -385,6 +385,7 @@ void MemTracker::enqueue_pending_recorder(MemRecorder* rec) {
 #define SAFE_SEQUENCE_THRESHOLD    30
 #define HIGH_GENERATION_THRESHOLD  60
 #define MAX_RECORDER_THREAD_RATIO  30
+#define MAX_RECORDER_PER_THREAD    100
 
 void MemTracker::sync() {
   assert(_tracking_level > NMT_off, "NMT is not enabled");
@@ -437,6 +438,11 @@ void MemTracker::sync() {
         // means that worker thread is lagging behind in processing them.
         if (!AutoShutdownNMT) {
           _slowdown_calling_thread = (MemRecorder::_instance_count > MAX_RECORDER_THREAD_RATIO * _thread_count);
+        } else {
+          // If auto shutdown is on, enforce MAX_RECORDER_PER_THREAD threshold to prevent OOM
+          if (MemRecorder::_instance_count >= _thread_count * MAX_RECORDER_PER_THREAD) {
+            shutdown(NMT_out_of_memory);
+          }
         }
 
         // check _worker_thread with lock to avoid racing condition
