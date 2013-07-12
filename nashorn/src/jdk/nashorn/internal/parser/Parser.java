@@ -130,6 +130,9 @@ public class Parser extends AbstractParser {
 
     private static final DebugLogger LOG = new DebugLogger("parser");
 
+    /** to receive line information from Lexer when scanning multine literals. */
+    protected final Lexer.LineInfoReceiver lineInfoReceiver;
+
     /**
      * Constructor
      *
@@ -154,6 +157,19 @@ public class Parser extends AbstractParser {
         this.env       = env;
         this.namespace = new Namespace(env.getNamespace());
         this.scripting = env._scripting;
+        if (this.scripting) {
+            this.lineInfoReceiver = new Lexer.LineInfoReceiver() {
+                @Override
+                public void lineInfo(final int line, final int linePosition) {
+                    // update the parser maintained line information
+                    Parser.this.line = line;
+                    Parser.this.linePosition = linePosition;
+                }
+            };
+        } else {
+            // non-scripting mode script can't have multi-line literals
+            this.lineInfoReceiver = null;
+        }
     }
 
     /**
@@ -1802,7 +1818,7 @@ loop:
 
         default:
             // In this context some operator tokens mark the start of a literal.
-            if (lexer.scanLiteral(primaryToken, type)) {
+            if (lexer.scanLiteral(primaryToken, type, lineInfoReceiver)) {
                 next();
                 return getLiteral();
             }
