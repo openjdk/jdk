@@ -57,7 +57,7 @@ public final class Bootstrap {
     static {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
         factory.setPrioritizedLinkers(new NashornLinker(), new NashornPrimitiveLinker(), new NashornStaticClassLinker(),
-                new JSObjectLinker(), new ReflectionCheckLinker());
+                new BoundDynamicMethodLinker(), new JSObjectLinker(), new ReflectionCheckLinker());
         factory.setFallbackLinkers(new BeansLinker(), new NashornBottomLinker());
         factory.setSyncOnRelink(true);
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", -1);
@@ -207,6 +207,16 @@ public final class Bootstrap {
         return bootstrap(MethodHandles.publicLookup(), opDesc, type, 0).dynamicInvoker();
     }
 
+    /**
+     * Binds a bean dynamic method (returned by invoking {@code dyn:getMethod} on an object linked with
+     * {@code BeansLinker} to a receiver.
+     * @param dynamicMethod the dynamic method to bind
+     * @param boundThis the bound "this" value.
+     * @return a bound dynamic method.
+     */
+    public static Object bindDynamicMethod(Object dynamicMethod, Object boundThis) {
+        return new BoundDynamicMethod(dynamicMethod, boundThis);
+    }
     /**
      * Returns the Nashorn's internally used dynamic linker's services object. Note that in code that is processing a
      * linking request, you will normally use the {@code LinkerServices} object passed by whatever top-level linker
