@@ -50,7 +50,6 @@ public class CheckPackageAccess {
      */
     private static final String[] packages = {
         "sun.",
-        "com.sun.corba.se.impl.",
         "com.sun.xml.internal.",
         "com.sun.imageio.",
         "com.sun.istack.internal.",
