@@ -78,6 +78,10 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+// Executable parameter flag for os::commit_memory() and
+// os::commit_memory_or_exit().
+const bool ExecMem = true;
+
 // Typedef for structured exception handling support
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
@@ -104,9 +108,16 @@ class os: AllStatic {
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
-  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable = false);
+                                 bool executable);
+  // Same as pd_commit_memory() that either succeeds or calls
+  // vm_exit_out_of_memory() with the specified mesg.
+  static void   pd_commit_memory_or_exit(char* addr, size_t bytes,
+                                         bool executable, const char* mesg);
+  static void   pd_commit_memory_or_exit(char* addr, size_t size,
+                                         size_t alignment_hint,
+                                         bool executable, const char* mesg);
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
@@ -261,9 +272,16 @@ class os: AllStatic {
   static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
-  static bool   commit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable = false);
+                              bool executable);
+  // Same as commit_memory() that either succeeds or calls
+  // vm_exit_out_of_memory() with the specified mesg.
+  static void   commit_memory_or_exit(char* addr, size_t bytes,
+                                      bool executable, const char* mesg);
+  static void   commit_memory_or_exit(char* addr, size_t size,
+                                      size_t alignment_hint,
+                                      bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
 
@@ -489,16 +507,16 @@ class os: AllStatic {
 
   // Symbol lookup, find nearest function name; basically it implements
   // dladdr() for all platforms. Name of the nearest function is copied
-  // to buf. Distance from its base address is returned as offset.
+  // to buf. Distance from its base address is optionally returned as offset.
   // If function name is not found, buf[0] is set to '\0' and offset is
-  // set to -1.
+  // set to -1 (if offset is non-NULL).
   static bool dll_address_to_function_name(address addr, char* buf,
                                            int buflen, int* offset);
 
   // Locate DLL/DSO. On success, full path of the library is copied to
-  // buf, and offset is set to be the distance between addr and the
-  // library's base address. On failure, buf[0] is set to '\0' and
-  // offset is set to -1.
+  // buf, and offset is optionally set to be the distance between addr
+  // and the library's base address. On failure, buf[0] is set to '\0'
+  // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 

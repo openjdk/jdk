@@ -130,14 +130,14 @@ public abstract class TimerTask implements Runnable {
      * <p>This method is typically invoked from within a task's run method, to
      * determine whether the current execution of the task is sufficiently
      * timely to warrant performing the scheduled activity:
-     * <pre>
+     * <pre>{@code
      *   public void run() {
      *       if (System.currentTimeMillis() - scheduledExecutionTime() >=
      *           MAX_TARDINESS)
      *               return;  // Too late; skip this execution.
      *       // Perform the task
      *   }
-     * </pre>
+     * }</pre>
      * This method is typically <i>not</i> used in conjunction with
      * <i>fixed-delay execution</i> repeating tasks, as their scheduled
      * execution times are allowed to drift over time, and so are not terribly

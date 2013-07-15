@@ -130,7 +130,7 @@ bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records)
       if (malloc_ptr->is_arena_record()) {
         // see if arena memory record present
         MemPointerRecord* next_malloc_ptr = (MemPointerRecordEx*)malloc_itr.peek_next();
-        if (next_malloc_ptr->is_arena_memory_record()) {
+        if (next_malloc_ptr != NULL && next_malloc_ptr->is_arena_memory_record()) {
           assert(next_malloc_ptr->is_memory_record_of_arena(malloc_ptr),
              "Arena records do not match");
           size = next_malloc_ptr->size();
@@ -486,7 +486,7 @@ int MemBaseline::malloc_sort_by_addr(const void* p1, const void* p2) {
   const MemPointerRecord* mp1 = (const MemPointerRecord*)p1;
   const MemPointerRecord* mp2 = (const MemPointerRecord*)p2;
   int delta = UNSIGNED_COMPARE(mp1->addr(), mp2->addr());
-  assert(delta != 0, "dup pointer");
+  assert(p1 == p2 || delta != 0, "dup pointer");
   return delta;
 }
 

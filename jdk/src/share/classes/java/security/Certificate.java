@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public interface Certificate {
 
     /**
      * Encodes the certificate to an output stream in a format that can
-     * be decoded by the <code>decode</code> method.
+     * be decoded by the {@code decode} method.
      *
      * @param stream the output stream to which to encode the
      * certificate.
@@ -115,8 +115,8 @@ public interface Certificate {
 
     /**
      * Decodes a certificate from an input stream. The format should be
-     * that returned by <code>getFormat</code> and produced by
-     * <code>encode</code>.
+     * that returned by {@code getFormat} and produced by
+     * {@code encode}.
      *
      * @param stream the input stream from which to fetch the data
      * being decoded.
@@ -137,8 +137,8 @@ public interface Certificate {
     /**
      * Returns the name of the coding format. This is used as a hint to find
      * an appropriate parser. It could be "X.509", "PGP", etc. This is
-     * the format produced and understood by the <code>encode</code>
-     * and <code>decode</code> methods.
+     * the format produced and understood by the {@code encode}
+     * and {@code decode} methods.
      *
      * @return the name of the coding format.
      */

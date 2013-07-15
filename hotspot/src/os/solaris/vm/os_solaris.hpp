@@ -106,8 +106,8 @@ class Solaris {
 
   static meminfo_func_t _meminfo;
 
-  // Large Page Support--mpss.
-  static bool set_mpss_range(caddr_t start, size_t bytes, size_t align);
+  // Large Page Support
+  static bool setup_large_pages(caddr_t start, size_t bytes, size_t align);
 
   static void init_thread_fpu_state(void);
 
@@ -168,10 +168,12 @@ class Solaris {
   static int _dev_zero_fd;
   static int get_dev_zero_fd() { return _dev_zero_fd; }
   static void set_dev_zero_fd(int fd) { _dev_zero_fd = fd; }
+  static int commit_memory_impl(char* addr, size_t bytes, bool exec);
+  static int commit_memory_impl(char* addr, size_t bytes,
+                                size_t alignment_hint, bool exec);
   static char* mmap_chunk(char *addr, size_t size, int flags, int prot);
   static char* anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed);
   static bool mpss_sanity_check(bool warn, size_t * page_size);
-  static bool ism_sanity_check (bool warn, size_t * page_size);
 
   // Workaround for 4352906. thr_stksegment sometimes returns
   // a bad value for the primordial thread's stack base when

@@ -33,11 +33,13 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CountedCompleter;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
 
 /**
  * Factory methods for constructing implementations of {@link Node} and
@@ -97,129 +99,26 @@ final class Nodes {
      *
      * @param <T> the type of elements of the concatenated node
      * @param shape the shape of the concatenated node to be created
-     * @param nodes the input nodes
+     * @param left the left input node
+     * @param right the right input node
      * @return a {@code Node} covering the elements of the input nodes
      * @throws IllegalStateException if all {@link Node} elements of the list
      * are an not instance of type supported by this factory.
      */
     @SuppressWarnings("unchecked")
-    static <T> Node<T> conc(StreamShape shape, List<? extends Node<T>> nodes) {
-        int size = nodes.size();
-        if (size == 0)
-            return emptyNode(shape);
-        else if (size == 1)
-            return nodes.get(0);
-        else {
-            // Create a right-balanced tree when there are more that 2 nodes
-            switch (shape) {
-                case REFERENCE: {
-                    List<Node<T>> refNodes = (List<Node<T>>) nodes;
-                    ConcNode<T> c = new ConcNode<>(refNodes.get(size - 2), refNodes.get(size - 1));
-                    for (int i = size - 3; i >= 0; i--) {
-                        c = new ConcNode<>(refNodes.get(i), c);
-                    }
-                    return c;
-                }
-                case INT_VALUE: {
-                    List<? extends Node.OfInt> intNodes = (List<? extends Node.OfInt>) nodes;
-                    IntConcNode c = new IntConcNode(intNodes.get(size - 2), intNodes.get(size - 1));
-                    for (int i = size - 3; i >= 0; i--) {
-                        c = new IntConcNode(intNodes.get(i), c);
-                    }
-                    return (Node<T>) c;
-                }
-                case LONG_VALUE: {
-                    List<? extends Node.OfLong> longNodes = (List<? extends Node.OfLong>) nodes;
-                    LongConcNode c = new LongConcNode(longNodes.get(size - 2), longNodes.get(size - 1));
-                    for (int i = size - 3; i >= 0; i--) {
-                        c = new LongConcNode(longNodes.get(i), c);
-                    }
-                    return (Node<T>) c;
-                }
-                case DOUBLE_VALUE: {
-                    List<? extends Node.OfDouble> doubleNodes = (List<? extends Node.OfDouble>) nodes;
-                    DoubleConcNode c = new DoubleConcNode(doubleNodes.get(size - 2), doubleNodes.get(size - 1));
-                    for (int i = size - 3; i >= 0; i--) {
-                        c = new DoubleConcNode(doubleNodes.get(i), c);
-                    }
-                    return (Node<T>) c;
-                }
-                default:
-                    throw new IllegalStateException("Unknown shape " + shape);
-            }
-        }
-
-    }
-
-    /**
-     * Truncate a {@link Node}, returning a node describing a subsequence of
-     * the contents of the input node.
-     *
-     * @param <T> the type of elements of the input node and truncated node
-     * @param input the input node
-     * @param from the starting offset to include in the truncated node (inclusive)
-     * @param to the ending offset ot include in the truncated node (exclusive)
-     * @param generator the array factory (only used for reference nodes)
-     * @return the truncated node
-     */
-    @SuppressWarnings("unchecked")
-    static <T> Node<T> truncateNode(Node<T> input, long from, long to, IntFunction<T[]> generator) {
-        StreamShape shape = input.getShape();
-        long size = truncatedSize(input.count(), from, to);
-        if (size == 0)
-            return emptyNode(shape);
-        else if (from == 0 && to >= input.count())
-            return input;
-
+    static <T> Node<T> conc(StreamShape shape, Node<T> left, Node<T> right) {
         switch (shape) {
-            case REFERENCE: {
-                Spliterator<T> spliterator = input.spliterator();
-                Node.Builder<T> nodeBuilder = Nodes.builder(size, generator);
-                nodeBuilder.begin(size);
-                for (int i = 0; i < from && spliterator.tryAdvance(e -> { }); i++) { }
-                for (int i = 0; (i < size) && spliterator.tryAdvance(nodeBuilder); i++) { }
-                nodeBuilder.end();
-                return nodeBuilder.build();
-            }
-            case INT_VALUE: {
-                Spliterator.OfInt spliterator = ((Node.OfInt) input).spliterator();
-                Node.Builder.OfInt nodeBuilder = Nodes.intBuilder(size);
-                nodeBuilder.begin(size);
-                for (int i = 0; i < from && spliterator.tryAdvance((IntConsumer) e -> { }); i++) { }
-                for (int i = 0; (i < size) && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
-                nodeBuilder.end();
-                return (Node<T>) nodeBuilder.build();
-            }
-            case LONG_VALUE: {
-                Spliterator.OfLong spliterator = ((Node.OfLong) input).spliterator();
-                Node.Builder.OfLong nodeBuilder = Nodes.longBuilder(size);
-                nodeBuilder.begin(size);
-                for (int i = 0; i < from && spliterator.tryAdvance((LongConsumer) e -> { }); i++) { }
-                for (int i = 0; (i < size) && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
-                nodeBuilder.end();
-                return (Node<T>) nodeBuilder.build();
-            }
-            case DOUBLE_VALUE: {
-                Spliterator.OfDouble spliterator = ((Node.OfDouble) input).spliterator();
-                Node.Builder.OfDouble nodeBuilder = Nodes.doubleBuilder(size);
-                nodeBuilder.begin(size);
-                for (int i = 0; i < from && spliterator.tryAdvance((DoubleConsumer) e -> { }); i++) { }
-                for (int i = 0; (i < size) && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
-                nodeBuilder.end();
-                return (Node<T>) nodeBuilder.build();
-            }
+            case REFERENCE:
+                return new ConcNode<>(left, right);
+            case INT_VALUE:
+                return (Node<T>) new ConcNode.OfInt((Node.OfInt) left, (Node.OfInt) right);
+            case LONG_VALUE:
+                return (Node<T>) new ConcNode.OfLong((Node.OfLong) left, (Node.OfLong) right);
+            case DOUBLE_VALUE:
+                return (Node<T>) new ConcNode.OfDouble((Node.OfDouble) left, (Node.OfDouble) right);
             default:
                 throw new IllegalStateException("Unknown shape " + shape);
         }
-    }
-
-    private static long truncatedSize(long size, long from, long to) {
-        if (from >= 0)
-            size = Math.max(0, size - from);
-        long limit = to - from;
-        if (limit >= 0)
-            size = Math.min(size, limit);
-        return size;
     }
 
     // Reference-based node methods
@@ -422,7 +321,7 @@ final class Nodes {
             new SizedCollectorTask.OfRef<>(spliterator, helper, array).invoke();
             return node(array);
         } else {
-            Node<P_OUT> node = new CollectorTask<>(helper, generator, spliterator).invoke();
+            Node<P_OUT> node = new CollectorTask.OfRef<>(helper, generator, spliterator).invoke();
             return flattenTree ? flatten(node, generator) : node;
         }
     }
@@ -460,7 +359,7 @@ final class Nodes {
             return node(array);
         }
         else {
-            Node.OfInt node = new IntCollectorTask<>(helper, spliterator).invoke();
+            Node.OfInt node = new CollectorTask.OfInt<>(helper, spliterator).invoke();
             return flattenTree ? flattenInt(node) : node;
         }
     }
@@ -498,7 +397,7 @@ final class Nodes {
             return node(array);
         }
         else {
-            Node.OfLong node = new LongCollectorTask<>(helper, spliterator).invoke();
+            Node.OfLong node = new CollectorTask.OfLong<>(helper, spliterator).invoke();
             return flattenTree ? flattenLong(node) : node;
         }
     }
@@ -536,7 +435,7 @@ final class Nodes {
             return node(array);
         }
         else {
-            Node.OfDouble node = new DoubleCollectorTask<>(helper, spliterator).invoke();
+            Node.OfDouble node = new CollectorTask.OfDouble<>(helper, spliterator).invoke();
             return flattenTree ? flattenDouble(node) : node;
         }
     }
@@ -679,7 +578,7 @@ final class Nodes {
             }
 
             @Override
-            public int[] asIntArray() {
+            public int[] asPrimitiveArray() {
                 return EMPTY_INT_ARRAY;
             }
         }
@@ -696,7 +595,7 @@ final class Nodes {
             }
 
             @Override
-            public long[] asLongArray() {
+            public long[] asPrimitiveArray() {
                 return EMPTY_LONG_ARRAY;
             }
         }
@@ -713,7 +612,7 @@ final class Nodes {
             }
 
             @Override
-            public double[] asDoubleArray() {
+            public double[] asPrimitiveArray() {
                 return EMPTY_DOUBLE_ARRAY;
             }
         }
@@ -762,8 +661,6 @@ final class Nodes {
         public long count() {
             return curSize;
         }
-
-        // Traversable
 
         @Override
         public void forEach(Consumer<? super T> consumer) {
@@ -829,13 +726,12 @@ final class Nodes {
     /**
      * Node class for an internal node with two or more children
      */
-    static final class ConcNode<T> implements Node<T> {
-        private final Node<T> left;
-        private final Node<T> right;
-
+    private static abstract class AbstractConcNode<T, T_NODE extends Node<T>> implements Node<T> {
+        protected final T_NODE left;
+        protected final T_NODE right;
         private final long size;
 
-        ConcNode(Node<T> left, Node<T> right) {
+        AbstractConcNode(T_NODE left, T_NODE right) {
             this.left = left;
             this.right = right;
             // The Node count will be required when the Node spliterator is
@@ -845,23 +741,35 @@ final class Nodes {
             this.size = left.count() + right.count();
         }
 
-        // Node
-
-        @Override
-        public Spliterator<T> spliterator() {
-            return new Nodes.InternalNodeSpliterator.OfRef<>(this);
-        }
-
         @Override
         public int getChildCount() {
             return 2;
         }
 
         @Override
-        public Node<T> getChild(int i) {
+        public T_NODE getChild(int i) {
             if (i == 0) return left;
             if (i == 1) return right;
             throw new IndexOutOfBoundsException();
+        }
+
+        @Override
+        public long count() {
+            return size;
+        }
+    }
+
+    static final class ConcNode<T>
+            extends AbstractConcNode<T, Node<T>>
+            implements Node<T> {
+
+        ConcNode(Node<T> left, Node<T> right) {
+            super(left, right);
+        }
+
+        @Override
+        public Spliterator<T> spliterator() {
+            return new Nodes.InternalNodeSpliterator.OfRef<>(this);
         }
 
         @Override
@@ -879,14 +787,24 @@ final class Nodes {
         }
 
         @Override
-        public long count() {
-            return size;
-        }
-
-        @Override
         public void forEach(Consumer<? super T> consumer) {
             left.forEach(consumer);
             right.forEach(consumer);
+        }
+
+        @Override
+        public Node<T> truncate(long from, long to, IntFunction<T[]> generator) {
+            if (from == 0 && to == count())
+                return this;
+            long leftCount = left.count();
+            if (from >= leftCount)
+                return right.truncate(from - leftCount, to - leftCount, generator);
+            else if (to <= leftCount)
+                return left.truncate(from, to, generator);
+            else {
+                return Nodes.conc(getShape(), left.truncate(from, leftCount, generator),
+                                  right.truncate(0, to - leftCount, generator));
+            }
         }
 
         @Override
@@ -897,12 +815,92 @@ final class Nodes {
                 return String.format("ConcNode[size=%d]", count());
             }
         }
+
+        private abstract static class OfPrimitive<E, T_CONS, T_ARR,
+                                                  T_SPLITR extends Spliterator.OfPrimitive<E, T_CONS, T_SPLITR>,
+                                                  T_NODE extends Node.OfPrimitive<E, T_CONS, T_ARR, T_SPLITR, T_NODE>>
+                extends AbstractConcNode<E, T_NODE>
+                implements Node.OfPrimitive<E, T_CONS, T_ARR, T_SPLITR, T_NODE> {
+
+            OfPrimitive(T_NODE left, T_NODE right) {
+                super(left, right);
+            }
+
+            @Override
+            public void forEach(T_CONS consumer) {
+                left.forEach(consumer);
+                right.forEach(consumer);
+            }
+
+            @Override
+            public void copyInto(T_ARR array, int offset) {
+                left.copyInto(array, offset);
+                right.copyInto(array, offset + (int) left.count());
+            }
+
+            @Override
+            public T_ARR asPrimitiveArray() {
+                T_ARR array = newArray((int) count());
+                copyInto(array, 0);
+                return array;
+            }
+
+            @Override
+            public String toString() {
+                if (count() < 32)
+                    return String.format("%s[%s.%s]", this.getClass().getName(), left, right);
+                else
+                    return String.format("%s[size=%d]", this.getClass().getName(), count());
+            }
+        }
+
+        static final class OfInt
+                extends ConcNode.OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, Node.OfInt>
+                implements Node.OfInt {
+
+            OfInt(Node.OfInt left, Node.OfInt right) {
+                super(left, right);
+            }
+
+            @Override
+            public Spliterator.OfInt spliterator() {
+                return new InternalNodeSpliterator.OfInt(this);
+            }
+        }
+
+        static final class OfLong
+                extends ConcNode.OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, Node.OfLong>
+                implements Node.OfLong {
+
+            OfLong(Node.OfLong left, Node.OfLong right) {
+                super(left, right);
+            }
+
+            @Override
+            public Spliterator.OfLong spliterator() {
+                return new InternalNodeSpliterator.OfLong(this);
+            }
+        }
+
+        static final class OfDouble
+                extends ConcNode.OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, Node.OfDouble>
+                implements Node.OfDouble {
+
+            OfDouble(Node.OfDouble left, Node.OfDouble right) {
+                super(left, right);
+            }
+
+            @Override
+            public Spliterator.OfDouble spliterator() {
+                return new InternalNodeSpliterator.OfDouble(this);
+            }
+        }
     }
 
     /** Abstract class for spliterator for all internal node classes */
     private static abstract class InternalNodeSpliterator<T,
                                                           S extends Spliterator<T>,
-                                                          N extends Node<T>, C>
+                                                          N extends Node<T>>
             implements Spliterator<T> {
         // Node we are pointing to
         // null if full traversal has occurred
@@ -960,7 +958,7 @@ final class Nodes {
             return null;
         }
 
-        protected final boolean internalTryAdvance(C consumer) {
+        protected final boolean initTryAdvance() {
             if (curNode == null)
                 return false;
 
@@ -981,29 +979,12 @@ final class Nodes {
                 else
                     tryAdvanceSpliterator = lastNodeSpliterator;
             }
-
-            boolean hasNext = tryAdvance(tryAdvanceSpliterator, consumer);
-            if (!hasNext) {
-                if (lastNodeSpliterator == null) {
-                    // Advance to the spliterator of the next non-empty leaf node
-                    Node<T> leaf = findNextLeafNode(tryAdvanceStack);
-                    if (leaf != null) {
-                        tryAdvanceSpliterator = (S) leaf.spliterator();
-                        // Since the node is not-empty the spliterator can be advanced
-                        return tryAdvance(tryAdvanceSpliterator, consumer);
-                    }
-                }
-                // No more elements to traverse
-                curNode = null;
-            }
-            return hasNext;
+            return true;
         }
-
-        protected abstract boolean tryAdvance(S spliterator, C consumer);
 
         @Override
         @SuppressWarnings("unchecked")
-        public S trySplit() {
+        public final S trySplit() {
             if (curNode == null || tryAdvanceSpliterator != null)
                 return null; // Cannot split if fully or partially traversed
             else if (lastNodeSpliterator != null)
@@ -1024,7 +1005,7 @@ final class Nodes {
         }
 
         @Override
-        public long estimateSize() {
+        public final long estimateSize() {
             if (curNode == null)
                 return 0;
 
@@ -1041,12 +1022,12 @@ final class Nodes {
         }
 
         @Override
-        public int characteristics() {
+        public final int characteristics() {
             return Spliterator.SIZED;
         }
 
         private static final class OfRef<T>
-                extends InternalNodeSpliterator<T, Spliterator<T>, Node<T>, Consumer<? super T>> {
+                extends InternalNodeSpliterator<T, Spliterator<T>, Node<T>> {
 
             OfRef(Node<T> curNode) {
                 super(curNode);
@@ -1054,13 +1035,24 @@ final class Nodes {
 
             @Override
             public boolean tryAdvance(Consumer<? super T> consumer) {
-                return internalTryAdvance(consumer);
-            }
+                if (!initTryAdvance())
+                    return false;
 
-            @Override
-            protected boolean tryAdvance(Spliterator<T> spliterator,
-                                         Consumer<? super T> consumer) {
-                return spliterator.tryAdvance(consumer);
+                boolean hasNext = tryAdvanceSpliterator.tryAdvance(consumer);
+                if (!hasNext) {
+                    if (lastNodeSpliterator == null) {
+                        // Advance to the spliterator of the next non-empty leaf node
+                        Node<T> leaf = findNextLeafNode(tryAdvanceStack);
+                        if (leaf != null) {
+                            tryAdvanceSpliterator = leaf.spliterator();
+                            // Since the node is not-empty the spliterator can be advanced
+                            return tryAdvanceSpliterator.tryAdvance(consumer);
+                        }
+                    }
+                    // No more elements to traverse
+                    curNode = null;
+                }
+                return hasNext;
             }
 
             @Override
@@ -1085,126 +1077,84 @@ final class Nodes {
             }
         }
 
+        private static abstract class OfPrimitive<T, T_CONS, T_ARR,
+                                                  T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>,
+                                                  N extends Node.OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, N>>
+                extends InternalNodeSpliterator<T, T_SPLITR, N>
+                implements Spliterator.OfPrimitive<T, T_CONS, T_SPLITR> {
+
+            OfPrimitive(N cur) {
+                super(cur);
+            }
+
+            @Override
+            public boolean tryAdvance(T_CONS consumer) {
+                if (!initTryAdvance())
+                    return false;
+
+                boolean hasNext = tryAdvanceSpliterator.tryAdvance(consumer);
+                if (!hasNext) {
+                    if (lastNodeSpliterator == null) {
+                        // Advance to the spliterator of the next non-empty leaf node
+                        N leaf = findNextLeafNode(tryAdvanceStack);
+                        if (leaf != null) {
+                            tryAdvanceSpliterator = leaf.spliterator();
+                            // Since the node is not-empty the spliterator can be advanced
+                            return tryAdvanceSpliterator.tryAdvance(consumer);
+                        }
+                    }
+                    // No more elements to traverse
+                    curNode = null;
+                }
+                return hasNext;
+            }
+
+            @Override
+            public void forEachRemaining(T_CONS consumer) {
+                if (curNode == null)
+                    return;
+
+                if (tryAdvanceSpliterator == null) {
+                    if (lastNodeSpliterator == null) {
+                        Deque<N> stack = initStack();
+                        N leaf;
+                        while ((leaf = findNextLeafNode(stack)) != null) {
+                            leaf.forEach(consumer);
+                        }
+                        curNode = null;
+                    }
+                    else
+                        lastNodeSpliterator.forEachRemaining(consumer);
+                }
+                else
+                    while(tryAdvance(consumer)) { }
+            }
+        }
+
         private static final class OfInt
-                extends InternalNodeSpliterator<Integer, Spliterator.OfInt, Node.OfInt, IntConsumer>
+                extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, Node.OfInt>
                 implements Spliterator.OfInt {
 
             OfInt(Node.OfInt cur) {
                 super(cur);
             }
-
-            @Override
-            public boolean tryAdvance(IntConsumer consumer) {
-                return internalTryAdvance(consumer);
-            }
-
-            @Override
-            protected boolean tryAdvance(Spliterator.OfInt spliterator,
-                                         IntConsumer consumer) {
-                return spliterator.tryAdvance(consumer);
-            }
-
-            @Override
-            public void forEachRemaining(IntConsumer consumer) {
-                if (curNode == null)
-                    return;
-
-                if (tryAdvanceSpliterator == null) {
-                    if (lastNodeSpliterator == null) {
-                        Deque<Node.OfInt> stack = initStack();
-                        Node.OfInt leaf;
-                        while ((leaf = findNextLeafNode(stack)) != null) {
-                            leaf.forEach(consumer);
-                        }
-                        curNode = null;
-                    }
-                    else
-                        lastNodeSpliterator.forEachRemaining(consumer);
-                }
-                else
-                    while(tryAdvance(consumer)) { }
-            }
         }
 
         private static final class OfLong
-                extends InternalNodeSpliterator<Long, Spliterator.OfLong, Node.OfLong, LongConsumer>
+                extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, Node.OfLong>
                 implements Spliterator.OfLong {
 
             OfLong(Node.OfLong cur) {
                 super(cur);
             }
-
-            @Override
-            public boolean tryAdvance(LongConsumer consumer) {
-                return internalTryAdvance(consumer);
-            }
-
-            @Override
-            protected boolean tryAdvance(Spliterator.OfLong spliterator,
-                                         LongConsumer consumer) {
-                return spliterator.tryAdvance(consumer);
-            }
-
-            @Override
-            public void forEachRemaining(LongConsumer consumer) {
-                if (curNode == null)
-                    return;
-
-                if (tryAdvanceSpliterator == null) {
-                    if (lastNodeSpliterator == null) {
-                        Deque<Node.OfLong> stack = initStack();
-                        Node.OfLong leaf;
-                        while ((leaf = findNextLeafNode(stack)) != null) {
-                            leaf.forEach(consumer);
-                        }
-                        curNode = null;
-                    }
-                    else
-                        lastNodeSpliterator.forEachRemaining(consumer);
-                }
-                else
-                    while(tryAdvance(consumer)) { }
-            }
         }
 
         private static final class OfDouble
-                extends InternalNodeSpliterator<Double, Spliterator.OfDouble, Node.OfDouble, DoubleConsumer>
+                extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, Node.OfDouble>
                 implements Spliterator.OfDouble {
 
             OfDouble(Node.OfDouble cur) {
                 super(cur);
-            }
-
-            @Override
-            public boolean tryAdvance(DoubleConsumer consumer) {
-                return internalTryAdvance(consumer);
-            }
-
-            @Override
-            protected boolean tryAdvance(Spliterator.OfDouble spliterator,
-                                         DoubleConsumer consumer) {
-                return spliterator.tryAdvance(consumer);
-            }
-
-            @Override
-            public void forEachRemaining(DoubleConsumer consumer) {
-                if (curNode == null)
-                    return;
-
-                if (tryAdvanceSpliterator == null) {
-                    if (lastNodeSpliterator == null) {
-                        Deque<Node.OfDouble> stack = initStack();
-                        Node.OfDouble leaf;
-                        while ((leaf = findNextLeafNode(stack)) != null) {
-                            leaf.forEach(consumer);
-                        }
-                        curNode = null;
-                    }
-                    else
-                        lastNodeSpliterator.forEachRemaining(consumer);
-                }
-                else
-                    while(tryAdvance(consumer)) { }
             }
         }
     }
@@ -1330,47 +1280,6 @@ final class Nodes {
     private static final long[] EMPTY_LONG_ARRAY = new long[0];
     private static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
 
-    private abstract static class AbstractPrimitiveConcNode<E, N extends Node<E>>
-            implements Node<E> {
-        final N left;
-        final N right;
-        final long size;
-
-        AbstractPrimitiveConcNode(N left, N right) {
-            this.left = left;
-            this.right = right;
-            // The Node count will be required when the Node spliterator is
-            // obtained and it is cheaper to aggressively calculate bottom up as
-            // the tree is built rather than later on by traversing the tree
-            this.size = left.count() + right.count();
-        }
-
-        @Override
-        public int getChildCount() {
-            return 2;
-        }
-
-        @Override
-        public N getChild(int i) {
-            if (i == 0) return left;
-            if (i == 1) return right;
-            throw new IndexOutOfBoundsException();
-        }
-
-        @Override
-        public long count() {
-            return size;
-        }
-
-        @Override
-        public String toString() {
-            if (count() < 32)
-                return String.format("%s[%s.%s]", this.getClass().getName(), left, right);
-            else
-                return String.format("%s[size=%d]", this.getClass().getName(), count());
-        }
-    }
-
     private static class IntArrayNode implements Node.OfInt {
         final int[] array;
         int curSize;
@@ -1395,7 +1304,7 @@ final class Nodes {
         }
 
         @Override
-        public int[] asIntArray() {
+        public int[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1449,7 +1358,7 @@ final class Nodes {
         }
 
         @Override
-        public long[] asLongArray() {
+        public long[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1503,7 +1412,7 @@ final class Nodes {
         }
 
         @Override
-        public double[] asDoubleArray() {
+        public double[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1532,105 +1441,6 @@ final class Nodes {
         public String toString() {
             return String.format("DoubleArrayNode[%d][%s]",
                                  array.length - curSize, Arrays.toString(array));
-        }
-    }
-
-    static final class IntConcNode
-            extends AbstractPrimitiveConcNode<Integer, Node.OfInt>
-            implements Node.OfInt {
-
-        IntConcNode(Node.OfInt left, Node.OfInt right) {
-            super(left, right);
-        }
-
-        @Override
-        public void forEach(IntConsumer consumer) {
-            left.forEach(consumer);
-            right.forEach(consumer);
-        }
-
-        @Override
-        public Spliterator.OfInt spliterator() {
-            return new InternalNodeSpliterator.OfInt(this);
-        }
-
-        @Override
-        public void copyInto(int[] array, int offset) {
-            left.copyInto(array, offset);
-            right.copyInto(array, offset + (int) left.count());
-        }
-
-        @Override
-        public int[] asIntArray() {
-            int[] array = new int[(int) count()];
-            copyInto(array, 0);
-            return array;
-        }
-    }
-
-    static final class LongConcNode
-            extends AbstractPrimitiveConcNode<Long, Node.OfLong>
-            implements Node.OfLong {
-
-        LongConcNode(Node.OfLong left, Node.OfLong right) {
-            super(left, right);
-        }
-
-        @Override
-        public void forEach(LongConsumer consumer) {
-            left.forEach(consumer);
-            right.forEach(consumer);
-        }
-
-        @Override
-        public Spliterator.OfLong spliterator() {
-            return new InternalNodeSpliterator.OfLong(this);
-        }
-
-        @Override
-        public void copyInto(long[] array, int offset) {
-            left.copyInto(array, offset);
-            right.copyInto(array, offset + (int) left.count());
-        }
-
-        @Override
-        public long[] asLongArray() {
-            long[] array = new long[(int) count()];
-            copyInto(array, 0);
-            return array;
-        }
-    }
-
-    static final class DoubleConcNode
-            extends AbstractPrimitiveConcNode<Double, Node.OfDouble>
-            implements Node.OfDouble {
-
-        DoubleConcNode(Node.OfDouble left, Node.OfDouble right) {
-            super(left, right);
-        }
-
-        @Override
-        public void forEach(DoubleConsumer consumer) {
-            left.forEach(consumer);
-            right.forEach(consumer);
-        }
-
-        @Override
-        public Spliterator.OfDouble spliterator() {
-            return new InternalNodeSpliterator.OfDouble(this);
-        }
-
-        @Override
-        public void copyInto(double[] array, int offset) {
-            left.copyInto(array, offset);
-            right.copyInto(array, offset + (int) left.count());
-        }
-
-        @Override
-        public double[] asDoubleArray() {
-            double[] array = new double[(int) count()];
-            copyInto(array, 0);
-            return array;
         }
     }
 
@@ -1844,9 +1654,9 @@ final class Nodes {
         }
 
         @Override
-        public int[] asIntArray() {
+        public int[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asIntArray();
+            return super.asPrimitiveArray();
         }
 
         @Override
@@ -1904,9 +1714,9 @@ final class Nodes {
         }
 
         @Override
-        public long[] asLongArray() {
+        public long[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asLongArray();
+            return super.asPrimitiveArray();
         }
 
         @Override
@@ -1964,9 +1774,9 @@ final class Nodes {
         }
 
         @Override
-        public double[] asDoubleArray() {
+        public double[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asDoubleArray();
+            return super.asPrimitiveArray();
         }
 
         @Override
@@ -2245,223 +2055,125 @@ final class Nodes {
             }
         }
 
-        private static final class OfInt
-                extends ToArrayTask<Integer, Node.OfInt, OfInt> {
-            private final int[] array;
+        private static class OfPrimitive<T, T_CONS, T_ARR,
+                                         T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>,
+                                         T_NODE extends Node.OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, T_NODE>>
+                extends ToArrayTask<T, T_NODE, OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, T_NODE>> {
+            private final T_ARR array;
 
-            private OfInt(Node.OfInt node, int[] array, int offset) {
+            private OfPrimitive(T_NODE node, T_ARR array, int offset) {
                 super(node, offset);
                 this.array = array;
             }
 
-            private OfInt(OfInt parent, Node.OfInt node, int offset) {
+            private OfPrimitive(OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, T_NODE> parent, T_NODE node, int offset) {
                 super(parent, node, offset);
                 this.array = parent.array;
             }
 
             @Override
-            OfInt makeChild(int childIndex, int offset) {
-                return new OfInt(this, node.getChild(childIndex), offset);
+            OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, T_NODE> makeChild(int childIndex, int offset) {
+                return new OfPrimitive<>(this, node.getChild(childIndex), offset);
             }
 
             @Override
             void copyNodeToArray() {
                 node.copyInto(array, offset);
+            }
+        }
+
+        private static final class OfInt
+                extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, Node.OfInt> {
+            private OfInt(Node.OfInt node, int[] array, int offset) {
+                super(node, array, offset);
             }
         }
 
         private static final class OfLong
-                extends ToArrayTask<Long, Node.OfLong, OfLong> {
-            private final long[] array;
-
+                extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, Node.OfLong> {
             private OfLong(Node.OfLong node, long[] array, int offset) {
-                super(node, offset);
-                this.array = array;
-            }
-
-            private OfLong(OfLong parent, Node.OfLong node, int offset) {
-                super(parent, node, offset);
-                this.array = parent.array;
-            }
-
-            @Override
-            OfLong makeChild(int childIndex, int offset) {
-                return new OfLong(this, node.getChild(childIndex), offset);
-            }
-
-            @Override
-            void copyNodeToArray() {
-                node.copyInto(array, offset);
+                super(node, array, offset);
             }
         }
 
         private static final class OfDouble
-                extends ToArrayTask<Double, Node.OfDouble, OfDouble> {
-            private final double[] array;
-
+                extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, Node.OfDouble> {
             private OfDouble(Node.OfDouble node, double[] array, int offset) {
-                super(node, offset);
-                this.array = array;
-            }
-
-            private OfDouble(OfDouble parent, Node.OfDouble node, int offset) {
-                super(parent, node, offset);
-                this.array = parent.array;
-            }
-
-            @Override
-            OfDouble makeChild(int childIndex, int offset) {
-                return new OfDouble(this, node.getChild(childIndex), offset);
-            }
-
-            @Override
-            void copyNodeToArray() {
-                node.copyInto(array, offset);
+                super(node, array, offset);
             }
         }
     }
 
-    private static final class CollectorTask<P_IN, P_OUT>
-            extends AbstractTask<P_IN, P_OUT, Node<P_OUT>, CollectorTask<P_IN, P_OUT>> {
-        private final PipelineHelper<P_OUT> helper;
-        private final IntFunction<P_OUT[]> generator;
+    private static class CollectorTask<P_IN, P_OUT, T_NODE extends Node<P_OUT>, T_BUILDER extends Node.Builder<P_OUT>>
+            extends AbstractTask<P_IN, P_OUT, T_NODE, CollectorTask<P_IN, P_OUT, T_NODE, T_BUILDER>> {
+        protected final PipelineHelper<P_OUT> helper;
+        protected final LongFunction<T_BUILDER> builderFactory;
+        protected final BinaryOperator<T_NODE> concFactory;
 
         CollectorTask(PipelineHelper<P_OUT> helper,
-                      IntFunction<P_OUT[]> generator,
-                      Spliterator<P_IN> spliterator) {
+                      Spliterator<P_IN> spliterator,
+                      LongFunction<T_BUILDER> builderFactory,
+                      BinaryOperator<T_NODE> concFactory) {
             super(helper, spliterator);
             this.helper = helper;
-            this.generator = generator;
+            this.builderFactory = builderFactory;
+            this.concFactory = concFactory;
         }
 
-        CollectorTask(CollectorTask<P_IN, P_OUT> parent, Spliterator<P_IN> spliterator) {
+        CollectorTask(CollectorTask<P_IN, P_OUT, T_NODE, T_BUILDER> parent,
+                      Spliterator<P_IN> spliterator) {
             super(parent, spliterator);
             helper = parent.helper;
-            generator = parent.generator;
+            builderFactory = parent.builderFactory;
+            concFactory = parent.concFactory;
         }
 
         @Override
-        protected CollectorTask<P_IN, P_OUT> makeChild(Spliterator<P_IN> spliterator) {
+        protected CollectorTask<P_IN, P_OUT, T_NODE, T_BUILDER> makeChild(Spliterator<P_IN> spliterator) {
             return new CollectorTask<>(this, spliterator);
         }
 
         @Override
-        protected Node<P_OUT> doLeaf() {
-            Node.Builder<P_OUT> builder
-                    = builder(helper.exactOutputSizeIfKnown(spliterator),
-                                    generator);
-            return helper.wrapAndCopyInto(builder, spliterator).build();
+        protected T_NODE doLeaf() {
+            T_BUILDER builder = builderFactory.apply(helper.exactOutputSizeIfKnown(spliterator));
+            return (T_NODE) helper.wrapAndCopyInto(builder, spliterator).build();
         }
 
         @Override
         public void onCompletion(CountedCompleter caller) {
-            if (!isLeaf()) {
-                setLocalResult(new ConcNode<>(leftChild.getLocalResult(), rightChild.getLocalResult()));
-            }
+            if (!isLeaf())
+                setLocalResult(concFactory.apply(leftChild.getLocalResult(), rightChild.getLocalResult()));
             super.onCompletion(caller);
         }
-    }
 
-    private static final class IntCollectorTask<P_IN>
-            extends AbstractTask<P_IN, Integer, Node.OfInt, IntCollectorTask<P_IN>> {
-        private final PipelineHelper<Integer> helper;
-
-        IntCollectorTask(PipelineHelper<Integer> helper, Spliterator<P_IN> spliterator) {
-            super(helper, spliterator);
-            this.helper = helper;
-        }
-
-        IntCollectorTask(IntCollectorTask<P_IN> parent, Spliterator<P_IN> spliterator) {
-            super(parent, spliterator);
-            helper = parent.helper;
-        }
-
-        @Override
-        protected IntCollectorTask<P_IN> makeChild(Spliterator<P_IN> spliterator) {
-            return new IntCollectorTask<>(this, spliterator);
-        }
-
-        @Override
-        protected Node.OfInt doLeaf() {
-            Node.Builder.OfInt builder = intBuilder(helper.exactOutputSizeIfKnown(spliterator));
-            return helper.wrapAndCopyInto(builder, spliterator).build();
-        }
-
-        @Override
-        public void onCompletion(CountedCompleter caller) {
-            if (!isLeaf()) {
-                setLocalResult(new IntConcNode(leftChild.getLocalResult(), rightChild.getLocalResult()));
+        private static final class OfRef<P_IN, P_OUT>
+                extends CollectorTask<P_IN, P_OUT, Node<P_OUT>, Node.Builder<P_OUT>> {
+            OfRef(PipelineHelper<P_OUT> helper,
+                  IntFunction<P_OUT[]> generator,
+                  Spliterator<P_IN> spliterator) {
+                super(helper, spliterator, s -> builder(s, generator), ConcNode::new);
             }
-            super.onCompletion(caller);
-        }
-    }
-
-    private static final class LongCollectorTask<P_IN>
-            extends AbstractTask<P_IN, Long, Node.OfLong, LongCollectorTask<P_IN>> {
-        private final PipelineHelper<Long> helper;
-
-        LongCollectorTask(PipelineHelper<Long> helper, Spliterator<P_IN> spliterator) {
-            super(helper, spliterator);
-            this.helper = helper;
         }
 
-        LongCollectorTask(LongCollectorTask<P_IN> parent, Spliterator<P_IN> spliterator) {
-            super(parent, spliterator);
-            helper = parent.helper;
-        }
-
-        @Override
-        protected LongCollectorTask<P_IN> makeChild(Spliterator<P_IN> spliterator) {
-            return new LongCollectorTask<>(this, spliterator);
-        }
-
-        @Override
-        protected Node.OfLong doLeaf() {
-            Node.Builder.OfLong builder = longBuilder(helper.exactOutputSizeIfKnown(spliterator));
-            return helper.wrapAndCopyInto(builder, spliterator).build();
-        }
-
-        @Override
-        public void onCompletion(CountedCompleter caller) {
-            if (!isLeaf()) {
-                setLocalResult(new LongConcNode(leftChild.getLocalResult(), rightChild.getLocalResult()));
+        private static final class OfInt<P_IN>
+                extends CollectorTask<P_IN, Integer, Node.OfInt, Node.Builder.OfInt> {
+            OfInt(PipelineHelper<Integer> helper, Spliterator<P_IN> spliterator) {
+                super(helper, spliterator, Nodes::intBuilder, ConcNode.OfInt::new);
             }
-            super.onCompletion(caller);
-        }
-    }
-
-    private static final class DoubleCollectorTask<P_IN>
-            extends AbstractTask<P_IN, Double, Node.OfDouble, DoubleCollectorTask<P_IN>> {
-        private final PipelineHelper<Double> helper;
-
-        DoubleCollectorTask(PipelineHelper<Double> helper, Spliterator<P_IN> spliterator) {
-            super(helper, spliterator);
-            this.helper = helper;
         }
 
-        DoubleCollectorTask(DoubleCollectorTask<P_IN> parent, Spliterator<P_IN> spliterator) {
-            super(parent, spliterator);
-            helper = parent.helper;
-        }
-
-        @Override
-        protected DoubleCollectorTask<P_IN> makeChild(Spliterator<P_IN> spliterator) {
-            return new DoubleCollectorTask<>(this, spliterator);
-        }
-
-        @Override
-        protected Node.OfDouble doLeaf() {
-            Node.Builder.OfDouble builder
-                    = doubleBuilder(helper.exactOutputSizeIfKnown(spliterator));
-            return helper.wrapAndCopyInto(builder, spliterator).build();
-        }
-
-        @Override
-        public void onCompletion(CountedCompleter caller) {
-            if (!isLeaf()) {
-                setLocalResult(new DoubleConcNode(leftChild.getLocalResult(), rightChild.getLocalResult()));
+        private static final class OfLong<P_IN>
+                extends CollectorTask<P_IN, Long, Node.OfLong, Node.Builder.OfLong> {
+            OfLong(PipelineHelper<Long> helper, Spliterator<P_IN> spliterator) {
+                super(helper, spliterator, Nodes::longBuilder, ConcNode.OfLong::new);
             }
-            super.onCompletion(caller);
+        }
+
+        private static final class OfDouble<P_IN>
+                extends CollectorTask<P_IN, Double, Node.OfDouble, Node.Builder.OfDouble> {
+            OfDouble(PipelineHelper<Double> helper, Spliterator<P_IN> spliterator) {
+                super(helper, spliterator, Nodes::doubleBuilder, ConcNode.OfDouble::new);
+            }
         }
     }
 }

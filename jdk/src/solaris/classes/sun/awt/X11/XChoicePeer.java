@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -892,7 +892,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 if (transX > 0 && transX < width &&
                     transY > 0 && transY < height) {
                     int newIdx = helper.y2index(transY);
-                    if (log.isLoggable(PlatformLogger.FINE)) {
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("transX=" + transX + ", transY=" + transY
                                  + ",width=" + width + ", height=" + height
                                  + ", newIdx=" + newIdx + " on " + target);
@@ -1033,15 +1033,17 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
             //fix 6252982: PIT: Keyboard FocusTraversal not working when choice's drop-down is visible, on XToolkit
             if (e instanceof KeyEvent){
                 // notify XWindow that this event had been already handled and no need to post it again
-                EventQueue.invokeLater(new Runnable() {
-                        public void run() {
-                            if(target.isFocusable() &&
-                               getParentTopLevel().isFocusableWindow() )
-                            {
-                                handleJavaKeyEvent((KeyEvent)e);
-                            }
+                InvocationEvent ev = new InvocationEvent(target, new Runnable() {
+                    public void run() {
+                        if(target.isFocusable() &&
+                                getParentTopLevel().isFocusableWindow() )
+                        {
+                            handleJavaKeyEvent((KeyEvent)e);
                         }
-                    });
+                    }
+                });
+                postEvent(ev);
+
                 return true;
             } else {
                 if (e instanceof MouseEvent){
@@ -1083,11 +1085,13 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
     //convenient method
     //do not generate this kind of Events
     public boolean handleMouseEventByChoice(final MouseEvent me){
-        EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    handleJavaMouseEvent(me);
-                }
-            });
+        InvocationEvent ev = new InvocationEvent(target, new Runnable() {
+            public void run() {
+                handleJavaMouseEvent(me);
+            }
+        });
+        postEvent(ev);
+
         return true;
     }
 

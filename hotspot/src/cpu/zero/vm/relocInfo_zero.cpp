@@ -52,22 +52,6 @@ address* Relocation::pd_address_in_code() {
   return (address *) addr();
 }
 
-int Relocation::pd_breakpoint_size() {
-  ShouldNotCallThis();
-}
-
-void Relocation::pd_swap_in_breakpoint(address x,
-                                       short*  instrs,
-                                       int     instrlen) {
-  ShouldNotCallThis();
-}
-
-void Relocation::pd_swap_out_breakpoint(address x,
-                                        short*  instrs,
-                                        int     instrlen) {
-  ShouldNotCallThis();
-}
-
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src,
                                                 CodeBuffer*       dst) {
   ShouldNotCallThis();

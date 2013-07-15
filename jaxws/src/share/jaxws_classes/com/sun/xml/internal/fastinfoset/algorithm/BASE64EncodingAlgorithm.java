@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class BASE64EncodingAlgorithm extends BuiltInEncodingAlgorithm {
             return new byte[0];
         }
 
-        StringBuffer encodedValue = removeWhitespace(ch, start, length);
+        StringBuilder encodedValue = removeWhitespace(ch, start, length);
         int encodedLength = encodedValue.length();
         if (encodedLength == 0) {
             return new byte[0];

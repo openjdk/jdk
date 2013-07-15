@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ public abstract class AudioFloatInputStream {
 
         private int pos = 0;
         private int markpos = 0;
-        private AudioFloatConverter converter;
-        private AudioFormat format;
-        private byte[] buffer;
-        private int buffer_offset;
-        private int buffer_len;
-        private int framesize_pc;
+        private final AudioFloatConverter converter;
+        private final AudioFormat format;
+        private final byte[] buffer;
+        private final int buffer_offset;
+        private final int buffer_len;
+        private final int framesize_pc;
 
-        public BytaArrayAudioFloatInputStream(AudioFloatConverter converter,
+        BytaArrayAudioFloatInputStream(AudioFloatConverter converter,
                 byte[] buffer, int offset, int len) {
             this.converter = converter;
             this.format = converter.getFormat();
@@ -125,12 +125,12 @@ public abstract class AudioFloatInputStream {
     private static class DirectAudioFloatInputStream
             extends AudioFloatInputStream {
 
-        private AudioInputStream stream;
+        private final AudioInputStream stream;
         private AudioFloatConverter converter;
-        private int framesize_pc; // framesize / channels
+        private final int framesize_pc; // framesize / channels
         private byte[] buffer;
 
-        public DirectAudioFloatInputStream(AudioInputStream stream) {
+        DirectAudioFloatInputStream(AudioInputStream stream) {
             converter = AudioFloatConverter.getConverter(stream.getFormat());
             if (converter == null) {
                 AudioFormat format = stream.getFormat();
@@ -255,11 +255,11 @@ public abstract class AudioFloatInputStream {
 
     public abstract int read(float[] b, int off, int len) throws IOException;
 
-    public int read(float[] b) throws IOException {
+    public final int read(float[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
-    public float read() throws IOException {
+    public final float read() throws IOException {
         float[] b = new float[1];
         int ret = read(b, 0, 1);
         if (ret == -1 || ret == 0)

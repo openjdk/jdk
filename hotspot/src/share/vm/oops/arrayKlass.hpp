@@ -39,7 +39,6 @@ class ArrayKlass: public Klass {
   Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
   int      _vtable_len;        // size of vtable for this klass
-  juint    _alloc_size;        // allocation profiling support
   oop      _component_mirror;  // component type, as a java/lang/Class
 
  protected:
@@ -64,10 +63,6 @@ class ArrayKlass: public Klass {
   Klass* lower_dimension() const      { return _lower_dimension; }
   void set_lower_dimension(Klass* k)  { _lower_dimension = k; }
   Klass** adr_lower_dimension()       { return (Klass**)&this->_lower_dimension;}
-
-  // Allocation profiling support
-  juint alloc_size() const              { return _alloc_size; }
-  void set_alloc_size(juint n)          { _alloc_size = n; }
 
   // offset of first element, including any padding for the sake of alignment
   int  array_header_in_bytes() const    { return layout_helper_header_size(layout_helper()); }
@@ -126,7 +121,6 @@ class ArrayKlass: public Klass {
   // Iterators
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
-  void with_array_klasses_do(void f(Klass* k));
 
   // GC support
   virtual void oops_do(OopClosure* cl);
@@ -152,7 +146,7 @@ class ArrayKlass: public Klass {
   void oop_print_on(oop obj, outputStream* st);
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st, bool check_dictionary);
 
   void oop_verify_on(oop obj, outputStream* st);
 };

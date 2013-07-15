@@ -45,7 +45,7 @@ import java.util.Collection;
  * <ul>
  * <li><b>Acquisition order</b>
  *
- * <p> This class does not impose a reader or writer preference
+ * <p>This class does not impose a reader or writer preference
  * ordering for lock access.  However, it does support an optional
  * <em>fairness</em> policy.
  *
@@ -59,7 +59,7 @@ import java.util.Collection;
  * <p>
  *
  * <dt><b><i>Fair mode</i></b>
- * <dd> When constructed as fair, threads contend for entry using an
+ * <dd>When constructed as fair, threads contend for entry using an
  * approximately arrival-order policy. When the currently held lock
  * is released, either the longest-waiting single writer thread will
  * be assigned the write lock, or if there is a group of reader threads
@@ -277,7 +277,7 @@ public class ReentrantReadWriteLock
         static final class HoldCounter {
             int count = 0;
             // Use id, not reference, to avoid garbage retention
-            final long tid = Thread.currentThread().getId();
+            final long tid = getThreadId(Thread.currentThread());
         }
 
         /**
@@ -420,7 +420,7 @@ public class ReentrantReadWriteLock
                     firstReaderHoldCount--;
             } else {
                 HoldCounter rh = cachedHoldCounter;
-                if (rh == null || rh.tid != current.getId())
+                if (rh == null || rh.tid != getThreadId(current))
                     rh = readHolds.get();
                 int count = rh.count;
                 if (count <= 1) {
@@ -478,7 +478,7 @@ public class ReentrantReadWriteLock
                     firstReaderHoldCount++;
                 } else {
                     HoldCounter rh = cachedHoldCounter;
-                    if (rh == null || rh.tid != current.getId())
+                    if (rh == null || rh.tid != getThreadId(current))
                         cachedHoldCounter = rh = readHolds.get();
                     else if (rh.count == 0)
                         readHolds.set(rh);
@@ -515,7 +515,7 @@ public class ReentrantReadWriteLock
                     } else {
                         if (rh == null) {
                             rh = cachedHoldCounter;
-                            if (rh == null || rh.tid != current.getId()) {
+                            if (rh == null || rh.tid != getThreadId(current)) {
                                 rh = readHolds.get();
                                 if (rh.count == 0)
                                     readHolds.remove();
@@ -536,7 +536,7 @@ public class ReentrantReadWriteLock
                     } else {
                         if (rh == null)
                             rh = cachedHoldCounter;
-                        if (rh == null || rh.tid != current.getId())
+                        if (rh == null || rh.tid != getThreadId(current))
                             rh = readHolds.get();
                         else if (rh.count == 0)
                             readHolds.set(rh);
@@ -592,7 +592,7 @@ public class ReentrantReadWriteLock
                         firstReaderHoldCount++;
                     } else {
                         HoldCounter rh = cachedHoldCounter;
-                        if (rh == null || rh.tid != current.getId())
+                        if (rh == null || rh.tid != getThreadId(current))
                             cachedHoldCounter = rh = readHolds.get();
                         else if (rh.count == 0)
                             readHolds.set(rh);
@@ -643,7 +643,7 @@ public class ReentrantReadWriteLock
                 return firstReaderHoldCount;
 
             HoldCounter rh = cachedHoldCounter;
-            if (rh != null && rh.tid == current.getId())
+            if (rh != null && rh.tid == getThreadId(current))
                 return rh.count;
 
             int count = readHolds.get().count;
@@ -875,7 +875,7 @@ public class ReentrantReadWriteLock
         /**
          * Attempts to release this lock.
          *
-         * <p> If the number of readers is now zero then the lock
+         * <p>If the number of readers is now zero then the lock
          * is made available for write lock attempts.
          */
         public void unlock() {
@@ -1017,7 +1017,7 @@ public class ReentrantReadWriteLock
          * #tryLock(long, TimeUnit) tryLock(0, TimeUnit.SECONDS) }
          * which is almost equivalent (it also detects interruption).
          *
-         * <p> If the current thread already holds this lock then the
+         * <p>If the current thread already holds this lock then the
          * hold count is incremented by one and the method returns
          * {@code true}.
          *
@@ -1126,7 +1126,7 @@ public class ReentrantReadWriteLock
          * IllegalMonitorStateException} is thrown.
          *
          * @throws IllegalMonitorStateException if the current thread does not
-         * hold this lock.
+         * hold this lock
          */
         public void unlock() {
             sync.release(1);
@@ -1254,7 +1254,7 @@ public class ReentrantReadWriteLock
      * Queries the number of read locks held for this lock. This
      * method is designed for use in monitoring system state, not for
      * synchronization control.
-     * @return the number of read locks held.
+     * @return the number of read locks held
      */
     public int getReadLockCount() {
         return sync.getReadLockCount();
@@ -1482,6 +1482,30 @@ public class ReentrantReadWriteLock
 
         return super.toString() +
             "[Write locks = " + w + ", Read locks = " + r + "]";
+    }
+
+    /**
+     * Returns the thread id for the given thread.  We must access
+     * this directly rather than via method Thread.getId() because
+     * getId() is not final, and has been known to be overridden in
+     * ways that do not preserve unique mappings.
+     */
+    static final long getThreadId(Thread thread) {
+        return UNSAFE.getLongVolatile(thread, TID_OFFSET);
+    }
+
+    // Unsafe mechanics
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long TID_OFFSET;
+    static {
+        try {
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class<?> tk = Thread.class;
+            TID_OFFSET = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("tid"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
     }
 
 }

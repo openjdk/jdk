@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public abstract class ModelInstrument extends Instrument {
     }
 
     // Get General MIDI 2 Alias patch for this instrument.
-    public Patch getPatchAlias() {
+    public final Patch getPatchAlias() {
         Patch patch = getPatch();
         int program = patch.getProgram();
         int bank = patch.getBank();
@@ -87,7 +87,7 @@ public abstract class ModelInstrument extends Instrument {
     // Return name of all the keys.
     // This information is generated from ModelPerformer.getName()
     // returned from getPerformers().
-    public String[] getKeys() {
+    public final String[] getKeys() {
         String[] keys = new String[128];
         for (ModelPerformer performer : getPerformers()) {
             for (int k = performer.getKeyFrom(); k <= performer.getKeyTo(); k++) {
@@ -104,7 +104,7 @@ public abstract class ModelInstrument extends Instrument {
 
     // Return what channels this instrument will probably response
     // on General MIDI synthesizer.
-    public boolean[] getChannels() {
+    public final boolean[] getChannels() {
         boolean percussion = false;
         if (getPatch() instanceof ModelPatch)
             percussion = ((ModelPatch)getPatch()).isPercussion();

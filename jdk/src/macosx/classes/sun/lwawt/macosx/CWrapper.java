@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,8 @@ public final class CWrapper {
         public static native void exitFullScreenMode(long view);
 
         public static native void setHidden(long view, boolean hidden);
+
+        public static native void setToolTip(long view, String msg);
     }
 
     public static final class NSObject {

@@ -48,7 +48,7 @@ public class IntNodeTest extends OpTestCase {
             List<Node<Integer>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toIntArray(l))));
             nodes.add(fill(array, Nodes.intBuilder(array.length)));
             nodes.add(fill(array, Nodes.intBuilder()));
@@ -102,7 +102,7 @@ public class IntNodeTest extends OpTestCase {
 
         int i = it.nextInt();
         if (it.hasNext()) {
-            return new Nodes.IntConcNode(Nodes.node(new int[] {i}), degenerateTree(it));
+            return new Nodes.ConcNode.OfInt(Nodes.node(new int[] {i}), degenerateTree(it));
         }
         else {
             return Nodes.node(new int[] {i});
@@ -114,7 +114,7 @@ public class IntNodeTest extends OpTestCase {
             return m.apply(l);
         }
         else {
-            return new Nodes.IntConcNode(
+            return new Nodes.ConcNode.OfInt(
                     tree(l.subList(0, l.size() / 2), m),
                     tree(l.subList(l.size() / 2, l.size()), m));
         }
@@ -122,12 +122,12 @@ public class IntNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(int[] array, Node.OfInt n) {
-        assertEquals(n.asIntArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(int[] array, Node.OfInt n) {
-        assertEquals(Nodes.flattenInt(n).asIntArray(), array);
+        assertEquals(Nodes.flattenInt(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
@@ -159,5 +159,19 @@ public class IntNodeTest extends OpTestCase {
     @Test(dataProvider = "nodes")
     public void testSpliterator(int[] array, Node.OfInt n) {
         SpliteratorTestHelper.testIntSpliterator(n::spliterator);
+    }
+
+    @Test(dataProvider = "nodes")
+    public void testTruncate(int[] array, Node.OfInt n) {
+        int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
+        for (int start : nums)
+            for (int end : nums) {
+                if (start < 0 || end < 0 || end < start || end > array.length)
+                    continue;
+                Node.OfInt slice = n.truncate(start, end, Integer[]::new);
+                int[] asArray = slice.asPrimitiveArray();
+                for (int k = start; k < end; k++)
+                    assertEquals(array[k], asArray[k - start]);
+            }
     }
 }

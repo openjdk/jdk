@@ -262,7 +262,6 @@ class Arguments : AllStatic {
 
   // Option flags
   static bool   _has_profile;
-  static bool   _has_alloc_profile;
   static const char*  _gc_log_filename;
   static uintx  _min_heap_size;
 
@@ -315,6 +314,8 @@ class Arguments : AllStatic {
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
   static julong limit_by_allocatable_memory(julong size);
+  // Setup HeapBaseMinAddress
+  static void set_heap_base_min_address();
   // Setup heap size
   static void set_heap_size();
   // Based on automatic selection criteria, should the
@@ -462,9 +463,8 @@ class Arguments : AllStatic {
   // -Xloggc:<file>, if not specified will be NULL
   static const char* gc_log_filename()      { return _gc_log_filename; }
 
-  // -Xprof/-Xaprof
+  // -Xprof
   static bool has_profile()                 { return _has_profile; }
-  static bool has_alloc_profile()           { return _has_alloc_profile; }
 
   // -Xms, -Xmx
   static uintx min_heap_size()              { return _min_heap_size; }

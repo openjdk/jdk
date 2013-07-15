@@ -67,7 +67,7 @@ public class LambdaConv01 {
         assertTrue(3 == f1.foo());
         //Covariant returns:
         TU<Number, Integer> f2 = (Integer x) -> x;
-        assertTrue(3 == f2.foo(3));
+        assertTrue(3 == f2.foo(3).intValue());
         //Method resolution with boxing:
         int res = LambdaConv01.<Integer,Integer>exec((Integer x) -> x, 3);
         assertTrue(3 == res);
@@ -86,7 +86,7 @@ public class LambdaConv01 {
         assertTrue(3 == f1.foo());
         //Covariant returns:
         TU<Number, Integer> f2 = (Integer x) -> x;
-        assertTrue(3 == f2.foo(3));
+        assertTrue(3 == f2.foo(3).intValue());
         //Method resolution with boxing:
         int res = LambdaConv01.<Integer,Integer>exec((Integer x) -> x, 3);
         assertTrue(3 == res);
@@ -105,7 +105,7 @@ public class LambdaConv01 {
         assertTrue(3 == f1.foo());
         //Covariant returns:
         TU<Number, Integer> f2 = (Integer x) -> x;
-        assertTrue(3 == f2.foo(3));
+        assertTrue(3 == f2.foo(3).intValue());
         //Method resolution with boxing:
         int res = LambdaConv01.<Integer,Integer>exec((Integer x) -> x, 3);
         assertTrue(3 == res);
@@ -124,7 +124,7 @@ public class LambdaConv01 {
         assertTrue(3 == f1.foo());
         //Covariant returns:
         TU<Number, Integer> f2 = (Integer x) -> x;
-        assertTrue(3 == f2.foo(3));
+        assertTrue(3 == f2.foo(3).intValue());
         //Method resolution with boxing:
         int res = LambdaConv01.<Integer,Integer>exec((Integer x) -> x, 3);
         assertTrue(3 == res);

@@ -193,13 +193,27 @@ public class LogManager {
 
                     // Create and retain Logger for the root of the namespace.
                     manager.rootLogger = manager.new RootLogger();
+                    // since by design the global manager's userContext and
+                    // systemContext don't have their requiresDefaultLoggers
+                    // flag set - we make sure to add the root logger to
+                    // the global manager's default contexts here.
                     manager.addLogger(manager.rootLogger);
-                    manager.systemContext.addLocalLogger(manager.rootLogger);
+                    manager.systemContext.addLocalLogger(manager.rootLogger, false);
+                    manager.userContext.addLocalLogger(manager.rootLogger, false);
 
                     // Adding the global Logger. Doing so in the Logger.<clinit>
                     // would deadlock with the LogManager.<clinit>.
-                    Logger.global.setLogManager(manager);
-                    manager.addLogger(Logger.global);
+                    // Do not call Logger.getGlobal() here as this might trigger
+                    // the deadlock too.
+                    @SuppressWarnings("deprecation")
+                    final Logger global = Logger.global;
+                    global.setLogManager(manager);
+
+                    // Make sure the global logger will be registered in the
+                    // global manager's default contexts.
+                    manager.addLogger(global);
+                    manager.systemContext.addLocalLogger(global, false);
+                    manager.userContext.addLocalLogger(global, false);
 
                     // We don't call readConfiguration() here, as we may be running
                     // very early in the JVM startup sequence.  Instead readConfiguration
@@ -257,7 +271,8 @@ public class LogManager {
     }
 
     /**
-     * Return the global LogManager object.
+     * Returns the global LogManager object.
+     * @return the global LogManager object
      */
     public static LogManager getLogManager() {
         if (manager != null) {
@@ -391,27 +406,27 @@ public class LogManager {
                 // from the execution stack.
                 Object ecx = javaAwtAccess.getExecutionContext();
                 if (ecx == null) {
-                    // fall back to AppContext.getAppContext()
+                    // fall back to thread group seach of AppContext
                     ecx = javaAwtAccess.getContext();
                 }
-                context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
-                if (context == null) {
-                    if (javaAwtAccess.isMainAppContext()) {
-                        context = userContext;
-                    } else {
-                        context = new LoggerContext();
-                        // during initialization, rootLogger is null when
-                        // instantiating itself RootLogger
-                        if (manager.rootLogger != null)
-                            context.addLocalLogger(manager.rootLogger);
+                if (ecx != null) {
+                    context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
+                    if (context == null) {
+                        if (javaAwtAccess.isMainAppContext()) {
+                            context = userContext;
+                        } else {
+                            // Create a new LoggerContext for the applet.
+                            // The new logger context has its requiresDefaultLoggers
+                            // flag set to true - so that these loggers will be
+                            // lazily added when the context is firt accessed.
+                            context = new LoggerContext(true);
+                        }
+                        javaAwtAccess.put(ecx, LoggerContext.class, context);
                     }
-                    javaAwtAccess.put(ecx, LoggerContext.class, context);
                 }
             }
-        } else {
-            context = userContext;
         }
-        return context;
+        return context != null ? context : userContext;
     }
 
     private List<LoggerContext> contexts() {
@@ -511,9 +526,13 @@ public class LogManager {
         private final Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
         // Tree of named Loggers
         private final LogNode root;
-
+        private final boolean requiresDefaultLoggers;
         private LoggerContext() {
+            this(false);
+        }
+        private LoggerContext(boolean requiresDefaultLoggers) {
             this.root = new LogNode(null, this);
+            this.requiresDefaultLoggers = requiresDefaultLoggers;
         }
 
         Logger demandLogger(String name, String resourceBundleName) {
@@ -522,7 +541,27 @@ public class LogManager {
             return manager.demandLogger(name, resourceBundleName, null);
         }
 
+
+        // Due to subtle deadlock issues getUserContext() no longer
+        // calls addLocalLogger(rootLogger);
+        // Therefore - we need to add the default loggers later on.
+        // Checks that the context is properly initialized
+        // This is necessary before calling e.g. find(name)
+        // or getLoggerNames()
+        //
+        private void ensureInitialized() {
+            if (requiresDefaultLoggers) {
+                // Ensure that the root and global loggers are set.
+                ensureDefaultLogger(manager.rootLogger);
+                ensureDefaultLogger(Logger.global);
+            }
+        }
+
+
         synchronized Logger findLogger(String name) {
+            // ensure that this context is properly initialized before
+            // looking for loggers.
+            ensureInitialized();
             LoggerWeakRef ref = namedLoggers.get(name);
             if (ref == null) {
                 return null;
@@ -536,14 +575,81 @@ public class LogManager {
             return logger;
         }
 
+        // This method is called before adding a logger to the
+        // context.
+        // 'logger' is the context that will be added.
+        // This method will ensure that the defaults loggers are added
+        // before adding 'logger'.
+        //
+        private void ensureAllDefaultLoggers(Logger logger) {
+            if (requiresDefaultLoggers) {
+                final String name = logger.getName();
+                if (!name.isEmpty()) {
+                    ensureDefaultLogger(manager.rootLogger);
+                }
+                if (!Logger.GLOBAL_LOGGER_NAME.equals(name)) {
+                    ensureDefaultLogger(Logger.global);
+                }
+            }
+        }
+
+        private void ensureDefaultLogger(Logger logger) {
+            // Used for lazy addition of root logger and global logger
+            // to a LoggerContext.
+
+            // This check is simple sanity: we do not want that this
+            // method be called for anything else than Logger.global
+            // or owner.rootLogger.
+            if (!requiresDefaultLoggers || logger == null
+                    || logger != Logger.global && logger != manager.rootLogger) {
+
+                // the case where we have a non null logger which is neither
+                // Logger.global nor manager.rootLogger indicates a serious
+                // issue - as ensureDefaultLogger should never be called
+                // with any other loggers than one of these two (or null - if
+                // e.g manager.rootLogger is not yet initialized)...
+                assert logger == null;
+
+                return;
+            }
+
+            // Adds the logger if it's not already there.
+            if (!namedLoggers.containsKey(logger.getName())) {
+                // It is important to prevent addLocalLogger to
+                // call ensureAllDefaultLoggers when we're in the process
+                // off adding one of those default loggers - as this would
+                // immediately cause a stack overflow.
+                // Therefore we must pass addDefaultLoggersIfNeeded=false,
+                // even if requiresDefaultLoggers is true.
+                addLocalLogger(logger, false);
+            }
+        }
+
+        boolean addLocalLogger(Logger logger) {
+            // no need to add default loggers if it's not required
+            return addLocalLogger(logger, requiresDefaultLoggers);
+        }
+
         // Add a logger to this context.  This method will only set its level
         // and process parent loggers.  It doesn't set its handlers.
-        synchronized boolean addLocalLogger(Logger logger) {
+        synchronized boolean addLocalLogger(Logger logger, boolean addDefaultLoggersIfNeeded) {
+            // addDefaultLoggersIfNeeded serves to break recursion when adding
+            // default loggers. If we're adding one of the default loggers
+            // (we're being called from ensureDefaultLogger()) then
+            // addDefaultLoggersIfNeeded will be false: we don't want to
+            // call ensureAllDefaultLoggers again.
+            //
+            // Note: addDefaultLoggersIfNeeded can also be false when
+            //       requiresDefaultLoggers is false - since calling
+            //       ensureAllDefaultLoggers would have no effect in this case.
+            if (addDefaultLoggersIfNeeded) {
+                ensureAllDefaultLoggers(logger);
+            }
+
             final String name = logger.getName();
             if (name == null) {
                 throw new NullPointerException();
             }
-
             LoggerWeakRef ref = namedLoggers.get(name);
             if (ref != null) {
                 if (ref.get() == null) {
@@ -606,6 +712,9 @@ public class LogManager {
         }
 
         synchronized Enumeration<String> getLoggerNames() {
+            // ensure that this context is properly initialized before
+            // returning logger names.
+            ensureInitialized();
             return namedLoggers.keys();
         }
 

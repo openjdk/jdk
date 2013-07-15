@@ -138,7 +138,7 @@ class EventDispatchThread extends Thread {
     }
 
     void addEventFilter(EventFilter filter) {
-        if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest("adding the event filter: " + filter);
         }
         synchronized (eventFilters) {
@@ -164,7 +164,7 @@ class EventDispatchThread extends Thread {
     }
 
     void removeEventFilter(EventFilter filter) {
-        if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest("removing the event filter: " + filter);
         }
         synchronized (eventFilters) {
@@ -209,7 +209,7 @@ class EventDispatchThread extends Thread {
             }
             while (eventOK == false);
 
-            if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
                 eventLog.finest("Dispatching: " + event);
             }
 
@@ -236,7 +236,7 @@ class EventDispatchThread extends Thread {
     }
 
     private void processException(Throwable e) {
-        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
             eventLog.fine("Processing exception: " + e);
         }
         getUncaughtExceptionHandler().uncaughtException(this, e);

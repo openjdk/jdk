@@ -295,6 +295,29 @@ public abstract class ArrayData {
     public abstract ArrayData set(int index, double value, boolean strict);
 
     /**
+     * Set an empty value at a given index. Should only affect Object array.
+     *
+     * @param index the index
+     * @return new array data (or same)
+     */
+    public ArrayData setEmpty(final int index) {
+        // Do nothing.
+        return this;
+    }
+
+    /**
+     * Set an empty value for a given range. Should only affect Object array.
+     *
+     * @param lo range low end
+     * @param hi range high end
+     * @return new array data (or same)
+     */
+    public ArrayData setEmpty(final long lo, final long hi) {
+        // Do nothing.
+        return this;
+    }
+
+    /**
      * Get an int value from a given index
      *
      * @param index the index

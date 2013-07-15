@@ -66,58 +66,77 @@ import com.sun.xml.internal.ws.wsdl.OperationDispatcher;
  *
  * @author shih-chang.chen@oracle.com
  */
-public class DatabindingImpl implements Databinding {
+public final class DatabindingImpl implements Databinding {
 
     AbstractSEIModelImpl seiModel;
-        Map<Method, StubHandler> stubHandlers;
+    Map<Method, StubHandler> stubHandlers;
 //    QNameMap<TieHandler> wsdlOpMap = new QNameMap<TieHandler>();
-        Map<JavaMethodImpl, TieHandler> wsdlOpMap = new HashMap<JavaMethodImpl, TieHandler>();
-        Map<Method, TieHandler> tieHandlers = new HashMap<Method, TieHandler>();
+    Map<JavaMethodImpl, TieHandler> wsdlOpMap = new HashMap<JavaMethodImpl, TieHandler>();
+    Map<Method, TieHandler> tieHandlers = new HashMap<Method, TieHandler>();
     OperationDispatcher operationDispatcher;
     OperationDispatcher operationDispatcherNoWsdl;
     boolean clientConfig = false;
     Codec codec;
     MessageContextFactory packetFactory = null;
 
-        public DatabindingImpl(DatabindingProviderImpl p, DatabindingConfig config) {
-                RuntimeModeler modeler = new RuntimeModeler(config);
-                modeler.setClassLoader(config.getClassLoader());
-                seiModel = modeler.buildRuntimeModel();
-                WSDLPort wsdlport = config.getWsdlPort();
-                packetFactory = new MessageContextFactory(seiModel.getWSBinding().getFeatures());
-                clientConfig = isClientConfig(config);
-                if ( clientConfig ) initStubHandlers();
-                seiModel.setDatabinding(this);
-                if (wsdlport != null) freeze(wsdlport);
-                if (operationDispatcher == null) operationDispatcherNoWsdl = new OperationDispatcher(null, seiModel.getWSBinding(), seiModel);
+    public DatabindingImpl(DatabindingProviderImpl p, DatabindingConfig config) {
+        RuntimeModeler modeler = new RuntimeModeler(config);
+        modeler.setClassLoader(config.getClassLoader());
+        seiModel = modeler.buildRuntimeModel();
+        WSDLPort wsdlport = config.getWsdlPort();
+        packetFactory = new MessageContextFactory(seiModel.getWSBinding().getFeatures());
+        clientConfig = isClientConfig(config);
+        if (clientConfig) {
+            initStubHandlers();
+        }
+        seiModel.setDatabinding(this);
+        if (wsdlport != null) {
+            freeze(wsdlport);
+        }
+        if (operationDispatcher == null) {
+            operationDispatcherNoWsdl = new OperationDispatcher(null, seiModel.getWSBinding(), seiModel);
+        }
 //    if(!clientConfig) {
-                for(JavaMethodImpl jm: seiModel.getJavaMethods()) if (!jm.isAsync()) {
-            TieHandler th = new TieHandler(jm, seiModel.getWSBinding(), packetFactory);
-            wsdlOpMap.put(jm, th);
-            tieHandlers.put(th.getMethod(), th);
+        for (JavaMethodImpl jm : seiModel.getJavaMethods()) {
+            if (!jm.isAsync()) {
+                TieHandler th = new TieHandler(jm, seiModel.getWSBinding(), packetFactory);
+                wsdlOpMap.put(jm, th);
+                tieHandlers.put(th.getMethod(), th);
+            }
         }
 //    }
-        }
+    }
 
-        //TODO isClientConfig
-        private boolean isClientConfig(DatabindingConfig config) {
-                if (config.getContractClass() == null) return false;
-                if (!config.getContractClass().isInterface()) return false;
-                return (config.getEndpointClass() == null || config.getEndpointClass().isInterface());
+    //TODO isClientConfig
+    private boolean isClientConfig(DatabindingConfig config) {
+        if (config.getContractClass() == null) {
+            return false;
         }
-        //TODO fix freeze
-        public synchronized void freeze(WSDLPort port) {
-                if (clientConfig) return;
-                if (operationDispatcher != null) return;
+        if (!config.getContractClass().isInterface()) {
+            return false;
+        }
+        return (config.getEndpointClass() == null || config.getEndpointClass().isInterface());
+    }
+    //TODO fix freeze
+
+    public void freeze(WSDLPort port) {
+        if (clientConfig) {
+            return;
+        }
+        synchronized(this) {
+            if (operationDispatcher == null) {
                 operationDispatcher = (port == null) ? null : new OperationDispatcher(port, seiModel.getWSBinding(), seiModel);
+            }
         }
+    }
 
-        public SEIModel getModel() {
-                return seiModel;
-        }
+    public SEIModel getModel() {
+        return seiModel;
+    }
 //Refactored from SEIStub
+
     private void initStubHandlers() {
-                stubHandlers = new HashMap<Method, StubHandler>();
+        stubHandlers = new HashMap<Method, StubHandler>();
         Map<ActionBasedOperationSignature, JavaMethodImpl> syncs = new HashMap<ActionBasedOperationSignature, JavaMethodImpl>();
         // fill in methodHandlers.
         // first fill in sychronized versions
@@ -138,29 +157,33 @@ public class DatabindingImpl implements Databinding {
         }
     }
 
-    public JavaMethodImpl resolveJavaMethod(Packet req) throws DispatchException {
+    JavaMethodImpl resolveJavaMethod(Packet req) throws DispatchException {
         WSDLOperationMapping m = req.getWSDLOperationMapping();
-        if (m == null) m = (operationDispatcher != null) ?
-                operationDispatcher.getWSDLOperationMapping(req):
-                operationDispatcherNoWsdl.getWSDLOperationMapping(req);
+        if (m == null) {
+            synchronized (this) {
+                m = (operationDispatcher != null)
+                        ? operationDispatcher.getWSDLOperationMapping(req)
+                        : operationDispatcherNoWsdl.getWSDLOperationMapping(req);
+            }
+        }
         return (JavaMethodImpl) m.getJavaMethod();
     }
 
-        public JavaCallInfo deserializeRequest(Packet req) {
-            com.sun.xml.internal.ws.api.databinding.JavaCallInfo call = new com.sun.xml.internal.ws.api.databinding.JavaCallInfo();
-                try {
-                    JavaMethodImpl wsdlOp = resolveJavaMethod(req);
-                        TieHandler tie = wsdlOpMap.get(wsdlOp);
-                        call.setMethod(tie.getMethod());
-                        Object[] args = tie.readRequest(req.getMessage());
-                        call.setParameters(args);
-                } catch (DispatchException e) {
-                        call.setException(e);
-                }
-                return call;
+    public JavaCallInfo deserializeRequest(Packet req) {
+        com.sun.xml.internal.ws.api.databinding.JavaCallInfo call = new com.sun.xml.internal.ws.api.databinding.JavaCallInfo();
+        try {
+            JavaMethodImpl wsdlOp = resolveJavaMethod(req);
+            TieHandler tie = wsdlOpMap.get(wsdlOp);
+            call.setMethod(tie.getMethod());
+            Object[] args = tie.readRequest(req.getMessage());
+            call.setParameters(args);
+        } catch (DispatchException e) {
+            call.setException(e);
         }
+        return call;
+    }
 
-        public JavaCallInfo deserializeResponse(Packet res, JavaCallInfo call) {
+    public JavaCallInfo deserializeResponse(Packet res, JavaCallInfo call) {
         StubHandler stubHandler = stubHandlers.get(call.getMethod());
         try {
             return stubHandler.readResponse(res, call);
@@ -168,86 +191,97 @@ public class DatabindingImpl implements Databinding {
             call.setException(e);
             return call;
         }
-        }
+    }
 
-        public WebServiceFeature[] getFeatures() {
-                // TODO Auto-generated method stub
-                return null;
-        }
+    public WebServiceFeature[] getFeatures() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-        public Packet serializeRequest(JavaCallInfo call) {
+    @Override
+    public Packet serializeRequest(JavaCallInfo call) {
         StubHandler stubHandler = stubHandlers.get(call.getMethod());
         Packet p = stubHandler.createRequestPacket(call);
         p.setState(Packet.State.ClientRequest);
         return p;
-        }
+    }
 
-        public Packet serializeResponse(JavaCallInfo call) {
-                Method method = call.getMethod();
-                Message message = null;
-                if (method != null) {
-                        TieHandler th = tieHandlers.get(method);
-                        if (th != null) {
-                            return th.serializeResponse(call);
-                        }
-                }
-                if (call.getException() instanceof DispatchException) {
-                    message = ((DispatchException)call.getException()).fault;
-                }
-        Packet p = (Packet)packetFactory.createContext(message);
+    @Override
+    public Packet serializeResponse(JavaCallInfo call) {
+        Method method = call.getMethod();
+        Message message = null;
+        if (method != null) {
+            TieHandler th = tieHandlers.get(method);
+            if (th != null) {
+                return th.serializeResponse(call);
+            }
+        }
+        if (call.getException() instanceof DispatchException) {
+            message = ((DispatchException) call.getException()).fault;
+        }
+        Packet p = (Packet) packetFactory.createContext(message);
         p.setState(Packet.State.ServerResponse);
         return p;
-        }
+    }
 
-        public ClientCallBridge getClientBridge(Method method) {
-                return stubHandlers.get(method);
-        }
+    @Override
+    public ClientCallBridge getClientBridge(Method method) {
+        return stubHandlers.get(method);
+    }
 
-
-        public void generateWSDL(WSDLGenInfo info) {
-            com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator wsdlGen = new com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator(
-                    seiModel,
-                    info.getWsdlResolver(),
-                    seiModel.getWSBinding(),
-                    info.getContainer(), seiModel.getEndpointClass(),
-                    info.isInlineSchemas(),
-            info.isSecureXmlProcessingDisabled(),
-            info.getExtensions());
+    @Override
+    public void generateWSDL(WSDLGenInfo info) {
+        com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator wsdlGen = new com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator(
+                seiModel,
+                info.getWsdlResolver(),
+                seiModel.getWSBinding(),
+                info.getContainer(), seiModel.getEndpointClass(),
+                info.isInlineSchemas(),
+                info.isSecureXmlProcessingDisabled(),
+                info.getExtensions());
         wsdlGen.doGeneration();
-        }
+    }
 
-        public EndpointCallBridge getEndpointBridge(Packet req) throws DispatchException {
+    @Override
+    public EndpointCallBridge getEndpointBridge(Packet req) throws DispatchException {
         JavaMethodImpl wsdlOp = resolveJavaMethod(req);
-                return wsdlOpMap.get(wsdlOp);
+        return wsdlOpMap.get(wsdlOp);
+    }
+
+    Codec getCodec() {
+        if (codec == null) {
+            codec = ((BindingImpl) seiModel.getWSBinding()).createCodec();
         }
+        return codec;
+    }
 
-
-        Codec getCodec() {
-                if (codec == null) codec = ((BindingImpl)seiModel.getWSBinding()).createCodec();
-                return codec;
-        }
-
-        public ContentType encode( Packet packet, OutputStream out ) throws IOException {
+    @Override
+    public ContentType encode(Packet packet, OutputStream out) throws IOException {
         return getCodec().encode(packet, out);
     }
 
-        public void decode( InputStream in, String ct, Packet p ) throws IOException{
+    @Override
+    public void decode(InputStream in, String ct, Packet p) throws IOException {
         getCodec().decode(in, ct, p);
     }
 
+    @Override
     public com.oracle.webservices.internal.api.databinding.JavaCallInfo createJavaCallInfo(Method method, Object[] args) {
         return new com.sun.xml.internal.ws.api.databinding.JavaCallInfo(method, args);
     }
 
+    @Override
     public com.oracle.webservices.internal.api.databinding.JavaCallInfo deserializeResponse(
             MessageContext message, com.oracle.webservices.internal.api.databinding.JavaCallInfo call) {
-        return deserializeResponse((Packet)message, (JavaCallInfo)call);
+        return deserializeResponse((Packet) message, (JavaCallInfo) call);
     }
 
+    @Override
     public com.oracle.webservices.internal.api.databinding.JavaCallInfo deserializeRequest(MessageContext message) {
-        return deserializeRequest((Packet)message);
+        return deserializeRequest((Packet) message);
     }
 
+    @Override
     public MessageContextFactory getMessageContextFactory() {
         return packetFactory;
     }

@@ -159,7 +159,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * @param property <code>true</code> if the given column is
      *                 automatically incremented; <code>false</code>
      *                 otherwise
-     * @throws <code>SQLException</code> if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      *         the given index is out of bounds
      */
     public void setAutoIncrement(int columnIndex, boolean property) throws SQLException {
@@ -195,7 +195,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      *                 value can be used in a <code>WHERE</code> clause;
      *                 <code>false</code> otherwise
      *
-     * @throws <code>SQLException</code> if a database access error occurs or
+     * @throws SQLException if a database access error occurs or
      *         the given column number is out of bounds
      */
     public void setSearchable(int columnIndex, boolean property)
@@ -212,7 +212,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      * must be between <code>1</code> and the number of columns,
      * inclusive between <code>1</code> and the number of columns, inclusive
      * @param property true if the value is a cash value; false otherwise.
-     * @throws <code>SQLException</code> if a database access error occurs
+     * @throws SQLException if a database access error occurs
      *         or the given column number is out of bounds
      */
     public void setCurrency(int columnIndex, boolean property)
@@ -233,7 +233,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      *                 <code>columnNullable</code>, or
      *                 <code>columnNullableUnknown</code>
      *
-     * @throws <code>SQLException</code> if a database access error occurs,
+     * @throws SQLException if a database access error occurs,
      *         the given column number is out of bounds, or the value supplied
      *         for the <i>property</i> parameter is not one of the following
      *         constants:

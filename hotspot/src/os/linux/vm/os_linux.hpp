@@ -76,6 +76,10 @@ class Linux {
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
+  static int commit_memory_impl(char* addr, size_t bytes, bool exec);
+  static int commit_memory_impl(char* addr, size_t bytes,
+                                size_t alignment_hint, bool exec);
+
   static void set_glibc_version(const char *s)      { _glibc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 

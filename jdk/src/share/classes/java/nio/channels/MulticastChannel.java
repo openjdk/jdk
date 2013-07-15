@@ -71,7 +71,7 @@ import java.net.StandardSocketOptions;      // javadoc
  * MembershipKey#drop drop} method drops membership so that datagrams from the
  * source address can no longer be received.
  *
- * <h4>Platform dependencies</h4>
+ * <h2>Platform dependencies</h2>
  *
  * The multicast implementation is intended to map directly to the native
  * multicasting facility. Consequently, the following items should be considered

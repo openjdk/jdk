@@ -115,45 +115,6 @@
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
-#ifdef _GNU_SOURCE
-// See bug #6514594
-extern "C" int madvise(caddr_t, size_t, int);
-extern "C" int memcntl(caddr_t addr, size_t len, int cmd, caddr_t arg,
-                       int attr, int mask);
-#endif //_GNU_SOURCE
-
-/*
-  MPSS Changes Start.
-  The JVM binary needs to be built and run on pre-Solaris 9
-  systems, but the constants needed by MPSS are only in Solaris 9
-  header files.  They are textually replicated here to allow
-  building on earlier systems.  Once building on Solaris 8 is
-  no longer a requirement, these #defines can be replaced by ordinary
-  system .h inclusion.
-
-  In earlier versions of the  JDK and Solaris, we used ISM for large pages.
-  But ISM requires shared memory to achieve this and thus has many caveats.
-  MPSS is a fully transparent and is a cleaner way to get large pages.
-  Although we still require keeping ISM for backward compatiblitiy as well as
-  giving the opportunity to use large pages on older systems it is
-  recommended that MPSS be used for Solaris 9 and above.
-
-*/
-
-#ifndef MC_HAT_ADVISE
-
-struct memcntl_mha {
-  uint_t          mha_cmd;        /* command(s) */
-  uint_t          mha_flags;
-  size_t          mha_pagesize;
-};
-#define MC_HAT_ADVISE   7       /* advise hat map size */
-#define MHA_MAPSIZE_VA  0x1     /* set preferred page size */
-#define MAP_ALIGN       0x200   /* addr specifies alignment */
-
-#endif
-// MPSS Changes End.
-
 
 // Here are some liblgrp types from sys/lgrp_user.h to be able to
 // compile on older systems without this header file.
@@ -170,32 +131,6 @@ struct memcntl_mha {
 #endif
 #ifndef LGRP_RSRC_MEM
 # define LGRP_RSRC_MEM           1       /* memory resources */
-#endif
-
-// Some more macros from sys/mman.h that are not present in Solaris 8.
-
-#ifndef MAX_MEMINFO_CNT
-/*
- * info_req request type definitions for meminfo
- * request types starting with MEMINFO_V are used for Virtual addresses
- * and should not be mixed with MEMINFO_PLGRP which is targeted for Physical
- * addresses
- */
-# define MEMINFO_SHIFT           16
-# define MEMINFO_MASK            (0xFF << MEMINFO_SHIFT)
-# define MEMINFO_VPHYSICAL       (0x01 << MEMINFO_SHIFT) /* get physical addr */
-# define MEMINFO_VLGRP           (0x02 << MEMINFO_SHIFT) /* get lgroup */
-# define MEMINFO_VPAGESIZE       (0x03 << MEMINFO_SHIFT) /* size of phys page */
-# define MEMINFO_VREPLCNT        (0x04 << MEMINFO_SHIFT) /* no. of replica */
-# define MEMINFO_VREPL           (0x05 << MEMINFO_SHIFT) /* physical replica */
-# define MEMINFO_VREPL_LGRP      (0x06 << MEMINFO_SHIFT) /* lgrp of replica */
-# define MEMINFO_PLGRP           (0x07 << MEMINFO_SHIFT) /* lgroup for paddr */
-
-/* maximum number of addresses meminfo() can process at a time */
-# define MAX_MEMINFO_CNT 256
-
-/* maximum number of request types */
-# define MAX_MEMINFO_REQ 31
 #endif
 
 // see thr_setprio(3T) for the basis of these numbers
@@ -1924,12 +1859,13 @@ bool os::address_is_in_vm(address addr) {
   Dl_info dlinfo;
 
   if (libjvm_base_addr == NULL) {
-    dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo);
-    libjvm_base_addr = (address)dlinfo.dli_fbase;
+    if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
+      libjvm_base_addr = (address)dlinfo.dli_fbase;
+    }
     assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
   }
 
-  if (dladdr((void *)addr, &dlinfo)) {
+  if (dladdr((void *)addr, &dlinfo) != 0) {
     if (libjvm_base_addr == (address)dlinfo.dli_fbase) return true;
   }
 
@@ -1941,114 +1877,133 @@ static dladdr1_func_type dladdr1_func = NULL;
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int * offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
   // dladdr1_func was initialized in os::init()
-  if (dladdr1_func){
-      // yes, we have dladdr1
+  if (dladdr1_func != NULL) {
+    // yes, we have dladdr1
 
-      // Support for dladdr1 is checked at runtime; it may be
-      // available even if the vm is built on a machine that does
-      // not have dladdr1 support.  Make sure there is a value for
-      // RTLD_DL_SYMENT.
-      #ifndef RTLD_DL_SYMENT
-      #define RTLD_DL_SYMENT 1
-      #endif
+    // Support for dladdr1 is checked at runtime; it may be
+    // available even if the vm is built on a machine that does
+    // not have dladdr1 support.  Make sure there is a value for
+    // RTLD_DL_SYMENT.
+    #ifndef RTLD_DL_SYMENT
+    #define RTLD_DL_SYMENT 1
+    #endif
 #ifdef _LP64
-      Elf64_Sym * info;
+    Elf64_Sym * info;
 #else
-      Elf32_Sym * info;
+    Elf32_Sym * info;
 #endif
-      if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
-                       RTLD_DL_SYMENT)) {
-        if ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
-          if (buf != NULL) {
-            if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
-              jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
-            }
-            if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-            return true;
-        }
-      }
-      if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
-        if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-           buf, buflen, offset, dlinfo.dli_fname)) {
+    if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
+                     RTLD_DL_SYMENT) != 0) {
+      // see if we have a matching symbol that covers our address
+      if (dlinfo.dli_saddr != NULL &&
+          (char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
+        if (dlinfo.dli_sname != NULL) {
+          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+            jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
+          }
+          if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
           return true;
         }
       }
-      if (buf != NULL) buf[0] = '\0';
-      if (offset != NULL) *offset  = -1;
-      return false;
-  } else {
-      // no, only dladdr is available
-      if (dladdr((void *)addr, &dlinfo)) {
-        if (buf != NULL) {
-          if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen))
-            jio_snprintf(buf, buflen, dlinfo.dli_sname);
-        }
-        if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-        return true;
-      } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
+      // no matching symbol so try for just file info
+      if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
         if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-          buf, buflen, offset, dlinfo.dli_fname)) {
+                            buf, buflen, offset, dlinfo.dli_fname)) {
           return true;
         }
       }
-      if (buf != NULL) buf[0] = '\0';
-      if (offset != NULL) *offset  = -1;
-      return false;
+    }
+    buf[0] = '\0';
+    if (offset != NULL) *offset  = -1;
+    return false;
   }
+
+  // no, only dladdr is available
+  if (dladdr((void *)addr, &dlinfo) != 0) {
+    // see if we have a matching symbol
+    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+        jio_snprintf(buf, buflen, dlinfo.dli_sname);
+      }
+      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      return true;
+    }
+    // no matching symbol so try for just file info
+    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname)) {
+        return true;
+      }
+    }
+  }
+  buf[0] = '\0';
+  if (offset != NULL) *offset  = -1;
+  return false;
 }
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != NULL) {
+      jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+      *offset = addr - (address)dlinfo.dli_fbase;
+    }
+    return true;
   }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
 // Prints the names and full paths of all opened dynamic libraries
 // for current process
 void os::print_dll_info(outputStream * st) {
-    Dl_info dli;
-    void *handle;
-    Link_map *map;
-    Link_map *p;
+  Dl_info dli;
+  void *handle;
+  Link_map *map;
+  Link_map *p;
 
-    st->print_cr("Dynamic libraries:"); st->flush();
+  st->print_cr("Dynamic libraries:"); st->flush();
 
-    if (!dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli)) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    handle = dlopen(dli.dli_fname, RTLD_LAZY);
-    if (handle == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    dlinfo(handle, RTLD_DI_LINKMAP, &map);
-    if (map == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
+  if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
+      dli.dli_fname == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  handle = dlopen(dli.dli_fname, RTLD_LAZY);
+  if (handle == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  if (map == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
 
-    while (map->l_prev != NULL)
-        map = map->l_prev;
+  while (map->l_prev != NULL)
+    map = map->l_prev;
 
-    while (map != NULL) {
-        st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
-        map = map->l_next;
-    }
+  while (map != NULL) {
+    st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
+    map = map->l_next;
+  }
 
-    dlclose(handle);
+  dlclose(handle);
 }
 
   // Loads .dll/.so and
@@ -2475,7 +2430,12 @@ void os::jvm_path(char *buf, jint buflen) {
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  realpath((char *)dlinfo.dli_fname, buf);
+  if (ret != 0 && dlinfo.dli_fname != NULL) {
+    realpath((char *)dlinfo.dli_fname, buf);
+  } else {
+    buf[0] = '\0';
+    return;
+  }
 
   if (Arguments::created_by_gamma_launcher()) {
     // Support for the gamma launcher.  Typical value for buf is
@@ -2784,7 +2744,42 @@ int os::vm_allocation_granularity() {
   return page_size;
 }
 
-bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
+static bool recoverable_mmap_error(int err) {
+  // See if the error is one we can let the caller handle. This
+  // list of errno values comes from the Solaris mmap(2) man page.
+  switch (err) {
+  case EBADF:
+  case EINVAL:
+  case ENOTSUP:
+    // let the caller deal with these errors
+    return true;
+
+  default:
+    // Any remaining errors on this OS can cause our reserved mapping
+    // to be lost. That can cause confusion where different data
+    // structures think they have the same memory mapped. The worst
+    // scenario is if both the VM and a library think they have the
+    // same memory mapped.
+    return false;
+  }
+}
+
+static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", addr, bytes, exec,
+          strerror(err), err);
+}
+
+static void warn_fail_commit_memory(char* addr, size_t bytes,
+                                    size_t alignment_hint, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", addr, bytes,
+          alignment_hint, exec, strerror(err), err);
+}
+
+int os::Solaris::commit_memory_impl(char* addr, size_t bytes, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
   char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
@@ -2792,15 +2787,39 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
     if (UseNUMAInterleaving) {
       numa_make_global(addr, bytes);
     }
-    return true;
+    return 0;
   }
-  return false;
+
+  int err = errno;  // save errno from mmap() call in mmap_chunk()
+
+  if (!recoverable_mmap_error(err)) {
+    warn_fail_commit_memory(addr, bytes, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "committing reserved memory.");
+  }
+
+  return err;
 }
 
-bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
-                       bool exec) {
-  if (commit_memory(addr, bytes, exec)) {
-    if (UseMPSS && alignment_hint > (size_t)vm_page_size()) {
+bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
+  return Solaris::commit_memory_impl(addr, bytes, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t bytes, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Solaris::commit_memory_impl(addr, bytes, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, bytes, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+  }
+}
+
+int os::Solaris::commit_memory_impl(char* addr, size_t bytes,
+                                    size_t alignment_hint, bool exec) {
+  int err = Solaris::commit_memory_impl(addr, bytes, exec);
+  if (err == 0) {
+    if (UseLargePages && (alignment_hint > (size_t)vm_page_size())) {
       // If the large page size has been set and the VM
       // is using large pages, use the large page size
       // if it is smaller than the alignment hint. This is
@@ -2819,11 +2838,27 @@ bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
         page_size = alignment_hint;
       }
       // Since this is a hint, ignore any failures.
-      (void)Solaris::set_mpss_range(addr, bytes, page_size);
+      (void)Solaris::setup_large_pages(addr, bytes, page_size);
     }
-    return true;
   }
-  return false;
+  return err;
+}
+
+bool os::pd_commit_memory(char* addr, size_t bytes, size_t alignment_hint,
+                          bool exec) {
+  return Solaris::commit_memory_impl(addr, bytes, alignment_hint, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t bytes,
+                                  size_t alignment_hint, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Solaris::commit_memory_impl(addr, bytes, alignment_hint, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, bytes, alignment_hint, exec, err);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+  }
 }
 
 // Uncommit the pages in a specified region.
@@ -2835,7 +2870,7 @@ void os::pd_free_memory(char* addr, size_t bytes, size_t alignment_hint) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
@@ -2846,8 +2881,8 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   assert((intptr_t)addr % alignment_hint == 0, "Address should be aligned.");
   assert((intptr_t)(addr + bytes) % alignment_hint == 0, "End should be aligned.");
-  if (UseLargePages && UseMPSS) {
-    Solaris::set_mpss_range(addr, bytes, alignment_hint);
+  if (UseLargePages) {
+    Solaris::setup_large_pages(addr, bytes, alignment_hint);
   }
 }
 
@@ -3246,46 +3281,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 // Large page support
-
-// UseLargePages is the master flag to enable/disable large page memory.
-// UseMPSS and UseISM are supported for compatibility reasons. Their combined
-// effects can be described in the following table:
-//
-// UseLargePages UseMPSS UseISM
-//    false         *       *   => UseLargePages is the master switch, turning
-//                                 it off will turn off both UseMPSS and
-//                                 UseISM. VM will not use large page memory
-//                                 regardless the settings of UseMPSS/UseISM.
-//     true      false    false => Unless future Solaris provides other
-//                                 mechanism to use large page memory, this
-//                                 combination is equivalent to -UseLargePages,
-//                                 VM will not use large page memory
-//     true      true     false => JVM will use MPSS for large page memory.
-//                                 This is the default behavior.
-//     true      false    true  => JVM will use ISM for large page memory.
-//     true      true     true  => JVM will use ISM if it is available.
-//                                 Otherwise, JVM will fall back to MPSS.
-//                                 Becaues ISM is now available on all
-//                                 supported Solaris versions, this combination
-//                                 is equivalent to +UseISM -UseMPSS.
-
 static size_t _large_page_size = 0;
-
-bool os::Solaris::ism_sanity_check(bool warn, size_t * page_size) {
-  // x86 uses either 2M or 4M page, depending on whether PAE (Physical Address
-  // Extensions) mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. Sparc
-  // can support multiple page sizes.
-
-  // Don't bother to probe page size because getpagesizes() comes with MPSS.
-  // ISM is only recommended on old Solaris where there is no MPSS support.
-  // Simply choose a conservative value as default.
-  *page_size = LargePageSizeInBytes ? LargePageSizeInBytes :
-               SPARC_ONLY(4 * M) IA32_ONLY(4 * M) AMD64_ONLY(2 * M)
-               ARM_ONLY(2 * M);
-
-  // ISM is available on all supported Solaris versions
-  return true;
-}
 
 // Insertion sort for small arrays (descending order).
 static void insertion_sort_descending(size_t* array, int len) {
@@ -3299,7 +3295,7 @@ static void insertion_sort_descending(size_t* array, int len) {
   }
 }
 
-bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
+bool os::Solaris::mpss_sanity_check(bool warn, size_t* page_size) {
   const unsigned int usable_count = VM_Version::page_size_count();
   if (usable_count == 1) {
     return false;
@@ -3365,41 +3361,24 @@ bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
 }
 
 void os::large_page_init() {
-  if (!UseLargePages) {
-    UseISM = false;
-    UseMPSS = false;
-    return;
+  if (UseLargePages) {
+    // print a warning if any large page related flag is specified on command line
+    bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages)        ||
+                           !FLAG_IS_DEFAULT(LargePageSizeInBytes);
+
+    UseLargePages = Solaris::mpss_sanity_check(warn_on_failure, &_large_page_size);
   }
-
-  // print a warning if any large page related flag is specified on command line
-  bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages)        ||
-                         !FLAG_IS_DEFAULT(UseISM)               ||
-                         !FLAG_IS_DEFAULT(UseMPSS)              ||
-                         !FLAG_IS_DEFAULT(LargePageSizeInBytes);
-  UseISM = UseISM &&
-           Solaris::ism_sanity_check(warn_on_failure, &_large_page_size);
-  if (UseISM) {
-    // ISM disables MPSS to be compatible with old JDK behavior
-    UseMPSS = false;
-    _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = vm_page_size();
-  }
-
-  UseMPSS = UseMPSS &&
-            Solaris::mpss_sanity_check(warn_on_failure, &_large_page_size);
-
-  UseLargePages = UseISM || UseMPSS;
 }
 
-bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
+bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
   // Signal to OS that we want large pages for addresses
   // from addr, addr + bytes
   struct memcntl_mha mpss_struct;
   mpss_struct.mha_cmd = MHA_MAPSIZE_VA;
   mpss_struct.mha_pagesize = align;
   mpss_struct.mha_flags = 0;
-  if (memcntl(start, bytes, MC_HAT_ADVISE,
-              (caddr_t) &mpss_struct, 0, 0) < 0) {
+  // Upon successful completion, memcntl() returns 0
+  if (memcntl(start, bytes, MC_HAT_ADVISE, (caddr_t) &mpss_struct, 0, 0)) {
     debug_only(warning("Attempt to use MPSS failed."));
     return false;
   }
@@ -3407,73 +3386,13 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
 }
 
 char* os::reserve_memory_special(size_t size, char* addr, bool exec) {
-  // "exec" is passed in but not used.  Creating the shared image for
-  // the code cache doesn't have an SHM_X executable permission to check.
-  assert(UseLargePages && UseISM, "only for ISM large pages");
-
-  char* retAddr = NULL;
-  int shmid;
-  key_t ismKey;
-
-  bool warn_on_failure = UseISM &&
-                        (!FLAG_IS_DEFAULT(UseLargePages)         ||
-                         !FLAG_IS_DEFAULT(UseISM)                ||
-                         !FLAG_IS_DEFAULT(LargePageSizeInBytes)
-                        );
-  char msg[128];
-
-  ismKey = IPC_PRIVATE;
-
-  // Create a large shared memory region to attach to based on size.
-  // Currently, size is the total size of the heap
-  shmid = shmget(ismKey, size, SHM_R | SHM_W | IPC_CREAT);
-  if (shmid == -1){
-     if (warn_on_failure) {
-       jio_snprintf(msg, sizeof(msg), "Failed to reserve shared memory (errno = %d).", errno);
-       warning(msg);
-     }
-     return NULL;
-  }
-
-  // Attach to the region
-  retAddr = (char *) shmat(shmid, 0, SHM_SHARE_MMU | SHM_R | SHM_W);
-  int err = errno;
-
-  // Remove shmid. If shmat() is successful, the actual shared memory segment
-  // will be deleted when it's detached by shmdt() or when the process
-  // terminates. If shmat() is not successful this will remove the shared
-  // segment immediately.
-  shmctl(shmid, IPC_RMID, NULL);
-
-  if (retAddr == (char *) -1) {
-    if (warn_on_failure) {
-      jio_snprintf(msg, sizeof(msg), "Failed to attach shared memory (errno = %d).", err);
-      warning(msg);
-    }
-    return NULL;
-  }
-  if ((retAddr != NULL) && UseNUMAInterleaving) {
-    numa_make_global(retAddr, size);
-  }
-
-  // The memory is committed
-  address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)retAddr, size, pc);
-  MemTracker::record_virtual_memory_commit((address)retAddr, size, pc);
-
-  return retAddr;
+  fatal("os::reserve_memory_special should not be called on Solaris.");
+  return NULL;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  // detaching the SHM segment will also delete it, see reserve_memory_special()
-  int rslt = shmdt(base);
-  if (rslt == 0) {
-    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
-    MemTracker::record_virtual_memory_release((address)base, bytes);
-    return true;
-  } else {
-   return false;
-  }
+  fatal("os::release_memory_special should not be called on Solaris.");
+  return false;
 }
 
 size_t os::large_page_size() {
@@ -3483,11 +3402,11 @@ size_t os::large_page_size() {
 // MPSS allows application to commit large page memory on demand; with ISM
 // the entire memory region must be allocated as shared memory.
 bool os::can_commit_large_page_memory() {
-  return UseISM ? false : true;
+  return true;
 }
 
 bool os::can_execute_large_page_memory() {
-  return UseISM ? false : true;
+  return true;
 }
 
 static int os_sleep(jlong millis, bool interruptible) {
@@ -3761,28 +3680,6 @@ static bool priocntl_enable = false;
 static const int criticalPrio = 60; // FX/60 is critical thread class/priority on T4
 static int java_MaxPriority_to_os_priority = 0; // Saved mapping
 
-// Call the version of priocntl suitable for all supported versions
-// of Solaris. We need to call through this wrapper so that we can
-// build on Solaris 9 and run on Solaris 8, 9 and 10.
-//
-// This code should be removed if we ever stop supporting Solaris 8
-// and earlier releases.
-
-static long priocntl_stub(int pcver, idtype_t idtype, id_t id, int cmd, caddr_t arg);
-typedef long (*priocntl_type)(int pcver, idtype_t idtype, id_t id, int cmd, caddr_t arg);
-static priocntl_type priocntl_ptr = priocntl_stub;
-
-// Stub to set the value of the real pointer, and then call the real
-// function.
-
-static long priocntl_stub(int pcver, idtype_t idtype, id_t id, int cmd, caddr_t arg) {
-  // Try Solaris 8- name only.
-  priocntl_type tmp = (priocntl_type)dlsym(RTLD_DEFAULT, "__priocntl");
-  guarantee(tmp != NULL, "priocntl function not found.");
-  priocntl_ptr = tmp;
-  return (*priocntl_ptr)(PC_VERSION, idtype, id, cmd, arg);
-}
-
 
 // lwp_priocntl_init
 //
@@ -3790,9 +3687,7 @@ static long priocntl_stub(int pcver, idtype_t idtype, id_t id, int cmd, caddr_t 
 //
 // Return errno or 0 if OK.
 //
-static
-int     lwp_priocntl_init ()
-{
+static int lwp_priocntl_init () {
   int rslt;
   pcinfo_t ClassInfo;
   pcparms_t ParmInfo;
@@ -3832,7 +3727,7 @@ int     lwp_priocntl_init ()
 
   strcpy(ClassInfo.pc_clname, "TS");
   ClassInfo.pc_cid = -1;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
+  rslt = priocntl(P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
   if (rslt < 0) return errno;
   assert(ClassInfo.pc_cid != -1, "cid for TS class is -1");
   tsLimits.schedPolicy = ClassInfo.pc_cid;
@@ -3841,7 +3736,7 @@ int     lwp_priocntl_init ()
 
   strcpy(ClassInfo.pc_clname, "IA");
   ClassInfo.pc_cid = -1;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
+  rslt = priocntl(P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
   if (rslt < 0) return errno;
   assert(ClassInfo.pc_cid != -1, "cid for IA class is -1");
   iaLimits.schedPolicy = ClassInfo.pc_cid;
@@ -3850,7 +3745,7 @@ int     lwp_priocntl_init ()
 
   strcpy(ClassInfo.pc_clname, "RT");
   ClassInfo.pc_cid = -1;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
+  rslt = priocntl(P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
   if (rslt < 0) return errno;
   assert(ClassInfo.pc_cid != -1, "cid for RT class is -1");
   rtLimits.schedPolicy = ClassInfo.pc_cid;
@@ -3859,7 +3754,7 @@ int     lwp_priocntl_init ()
 
   strcpy(ClassInfo.pc_clname, "FX");
   ClassInfo.pc_cid = -1;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
+  rslt = priocntl(P_ALL, 0, PC_GETCID, (caddr_t)&ClassInfo);
   if (rslt < 0) return errno;
   assert(ClassInfo.pc_cid != -1, "cid for FX class is -1");
   fxLimits.schedPolicy = ClassInfo.pc_cid;
@@ -3870,7 +3765,7 @@ int     lwp_priocntl_init ()
   // This will normally be IA, TS or, rarely, FX or RT.
   memset(&ParmInfo, 0, sizeof(ParmInfo));
   ParmInfo.pc_cid = PC_CLNULL;
-  rslt = (*priocntl_ptr) (PC_VERSION, P_PID, P_MYID, PC_GETPARMS, (caddr_t)&ParmInfo);
+  rslt = priocntl(P_PID, P_MYID, PC_GETPARMS, (caddr_t)&ParmInfo);
   if (rslt < 0) return errno;
   myClass = ParmInfo.pc_cid;
 
@@ -3878,7 +3773,7 @@ int     lwp_priocntl_init ()
   // about the class.
   ClassInfo.pc_cid = myClass;
   ClassInfo.pc_clname[0] = 0;
-  rslt = (*priocntl_ptr) (PC_VERSION, (idtype)0, 0, PC_GETCLINFO, (caddr_t)&ClassInfo);
+  rslt = priocntl((idtype)0, 0, PC_GETCLINFO, (caddr_t)&ClassInfo);
   if (rslt < 0) return errno;
 
   if (ThreadPriorityVerbose) {
@@ -3887,7 +3782,7 @@ int     lwp_priocntl_init ()
 
   memset(&ParmInfo, 0, sizeof(pcparms_t));
   ParmInfo.pc_cid = PC_CLNULL;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_PID, P_MYID, PC_GETPARMS, (caddr_t)&ParmInfo);
+  rslt = priocntl(P_PID, P_MYID, PC_GETPARMS, (caddr_t)&ParmInfo);
   if (rslt < 0) return errno;
 
   if (ParmInfo.pc_cid == rtLimits.schedPolicy) {
@@ -3991,7 +3886,7 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
 
   memset(&ParmInfo, 0, sizeof(pcparms_t));
   ParmInfo.pc_cid = PC_CLNULL;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_LWPID, lwpid, PC_GETPARMS, (caddr_t)&ParmInfo);
+  rslt = priocntl(P_LWPID, lwpid, PC_GETPARMS, (caddr_t)&ParmInfo);
   if (rslt < 0) return errno;
 
   int cur_class = ParmInfo.pc_cid;
@@ -4059,7 +3954,7 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
     return EINVAL;    // no clue, punt
   }
 
-  rslt = (*priocntl_ptr)(PC_VERSION, P_LWPID, lwpid, PC_SETPARMS, (caddr_t)&ParmInfo);
+  rslt = priocntl(P_LWPID, lwpid, PC_SETPARMS, (caddr_t)&ParmInfo);
   if (ThreadPriorityVerbose && rslt) {
     tty->print_cr ("PC_SETPARMS ->%d %d\n", rslt, errno);
   }
@@ -4078,7 +3973,7 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
 
   memset(&ReadBack, 0, sizeof(pcparms_t));
   ReadBack.pc_cid = PC_CLNULL;
-  rslt = (*priocntl_ptr)(PC_VERSION, P_LWPID, lwpid, PC_GETPARMS, (caddr_t)&ReadBack);
+  rslt = priocntl(P_LWPID, lwpid, PC_GETPARMS, (caddr_t)&ReadBack);
   assert(rslt >= 0, "priocntl failed");
   Actual = Expected = 0xBAD;
   assert(ParmInfo.pc_cid == ReadBack.pc_cid, "cid's don't match");
@@ -5170,11 +5065,6 @@ uint_t os::Solaris::getisax(uint32_t* array, uint_t n) {
   return _getisax(array, n);
 }
 
-// Symbol doesn't exist in Solaris 8 pset.h
-#ifndef PS_MYID
-#define PS_MYID -3
-#endif
-
 // int pset_getloadavg(psetid_t pset, double loadavg[], int nelem);
 typedef long (*pset_getloadavg_type)(psetid_t pset, double loadavg[], int nelem);
 static pset_getloadavg_type pset_getloadavg_ptr = NULL;
@@ -5341,20 +5231,6 @@ jint os::init_2(void) {
       FREE_C_HEAP_ARRAY(int, lgrp_ids, mtInternal);
       if (lgrp_num < 2) {
         // There's only one locality group, disable NUMA.
-        UseNUMA = false;
-      }
-    }
-    // ISM is not compatible with the NUMA allocator - it always allocates
-    // pages round-robin across the lgroups.
-    if (UseNUMA && UseLargePages && UseISM) {
-      if (!FLAG_IS_DEFAULT(UseNUMA)) {
-        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseISM)) {
-          UseLargePages = false;
-        } else {
-          warning("UseNUMA is not compatible with ISM large pages, disabling NUMA allocator");
-          UseNUMA = false;
-        }
-      } else {
         UseNUMA = false;
       }
     }
@@ -6003,24 +5879,20 @@ int os::loadavg(double loadavg[], int nelem) {
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
-  if (dladdr(addr, &dlinfo)) {
-#ifdef _LP64
-    st->print("0x%016lx: ", addr);
-#else
-    st->print("0x%08x: ", addr);
-#endif
-    if (dlinfo.dli_sname != NULL)
+  if (dladdr(addr, &dlinfo) != 0) {
+    st->print(PTR_FORMAT ": ", addr);
+    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#lx", dlinfo.dli_sname, addr-(intptr_t)dlinfo.dli_saddr);
-    else if (dlinfo.dli_fname)
+    } else if (dlinfo.dli_fbase != NULL)
       st->print("<offset %#lx>", addr-(intptr_t)dlinfo.dli_fbase);
     else
       st->print("<absolute address>");
-    if (dlinfo.dli_fname)  st->print(" in %s", dlinfo.dli_fname);
-#ifdef _LP64
-    if (dlinfo.dli_fbase)  st->print(" at 0x%016lx", dlinfo.dli_fbase);
-#else
-    if (dlinfo.dli_fbase)  st->print(" at 0x%08x", dlinfo.dli_fbase);
-#endif
+    if (dlinfo.dli_fname != NULL) {
+      st->print(" in %s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL) {
+      st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
+    }
     st->cr();
 
     if (Verbose) {
@@ -6031,7 +5903,7 @@ bool os::find(address addr, outputStream* st) {
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
-      if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
+      if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
       Disassembler::decode(begin, end, st);
@@ -6604,11 +6476,11 @@ size_t os::write(int fd, const void *buf, unsigned int nBytes) {
 }
 
 int os::close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 int os::socket_close(int fd) {
-  RESTARTABLE_RETURN_INT(::close(fd));
+  return ::close(fd);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {

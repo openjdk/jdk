@@ -35,7 +35,7 @@ import java.net.*;
  * <p>
  * <b>Configuration:</b>
  * By default each <tt>ConsoleHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties where <tt><handler-name></tt>
+ * <tt>LogManager</tt> configuration properties where {@code <handler-name>}
  * refers to the fully-qualified class name of the handler.
  * If properties are not defined
  * (or have invalid values) then the specified default values are used.

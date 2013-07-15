@@ -1234,12 +1234,13 @@ bool os::address_is_in_vm(address addr) {
   Dl_info dlinfo;
 
   if (libjvm_base_addr == NULL) {
-    dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo);
-    libjvm_base_addr = (address)dlinfo.dli_fbase;
+    if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
+      libjvm_base_addr = (address)dlinfo.dli_fbase;
+    }
     assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
   }
 
-  if (dladdr((void *)addr, &dlinfo)) {
+  if (dladdr((void *)addr, &dlinfo) != 0) {
     if (libjvm_base_addr == (address)dlinfo.dli_fbase) return true;
   }
 
@@ -1251,35 +1252,40 @@ bool os::address_is_in_vm(address addr) {
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
   char localbuf[MACH_MAXSYMLEN];
 
-  // dladdr will find names of dynamic functions only, but does
-  // it set dli_fbase with mach_header address when it "fails" ?
-  if (dladdr((void*)addr, &dlinfo) && dlinfo.dli_sname != NULL) {
-    if (buf != NULL) {
-      if(!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    // see if we have a matching symbol
+    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
+      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      return true;
     }
-    if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-    return true;
-  } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
-    if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-       buf, buflen, offset, dlinfo.dli_fname)) {
-       return true;
+    // no matching symbol so try for just file info
+    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname)) {
+         return true;
+      }
     }
-  }
 
-  // Handle non-dymanic manually:
-  if (dlinfo.dli_fbase != NULL &&
-      Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
-    if(!Decoder::demangle(localbuf, buf, buflen)) {
-      jio_snprintf(buf, buflen, "%s", localbuf);
+    // Handle non-dynamic manually:
+    if (dlinfo.dli_fbase != NULL &&
+        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
+                        dlinfo.dli_fbase)) {
+      if (!Decoder::demangle(localbuf, buf, buflen)) {
+        jio_snprintf(buf, buflen, "%s", localbuf);
+      }
+      return true;
     }
-    return true;
   }
-  if (buf != NULL) buf[0] = '\0';
+  buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
 }
@@ -1287,17 +1293,24 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 // ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != NULL) {
+      jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+      *offset = addr - (address)dlinfo.dli_fbase;
+    }
+    return true;
   }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
 // Loads .dll/.so and
@@ -1520,49 +1533,50 @@ static bool _print_ascii_file(const char* filename, outputStream* st) {
 }
 
 void os::print_dll_info(outputStream *st) {
-   st->print_cr("Dynamic libraries:");
+  st->print_cr("Dynamic libraries:");
 #ifdef RTLD_DI_LINKMAP
-    Dl_info dli;
-    void *handle;
-    Link_map *map;
-    Link_map *p;
+  Dl_info dli;
+  void *handle;
+  Link_map *map;
+  Link_map *p;
 
-    if (!dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli)) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    handle = dlopen(dli.dli_fname, RTLD_LAZY);
-    if (handle == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    dlinfo(handle, RTLD_DI_LINKMAP, &map);
-    if (map == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
+  if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
+      dli.dli_fname == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  handle = dlopen(dli.dli_fname, RTLD_LAZY);
+  if (handle == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  if (map == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
 
-    while (map->l_prev != NULL)
-        map = map->l_prev;
+  while (map->l_prev != NULL)
+    map = map->l_prev;
 
-    while (map != NULL) {
-        st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
-        map = map->l_next;
-    }
+  while (map != NULL) {
+    st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
+    map = map->l_next;
+  }
 
-    dlclose(handle);
+  dlclose(handle);
 #elif defined(__APPLE__)
-    uint32_t count;
-    uint32_t i;
+  uint32_t count;
+  uint32_t i;
 
-    count = _dyld_image_count();
-    for (i = 1; i < count; i++) {
-        const char *name = _dyld_get_image_name(i);
-        intptr_t slide = _dyld_get_image_vmaddr_slide(i);
-        st->print_cr(PTR_FORMAT " \t%s", slide, name);
-    }
+  count = _dyld_image_count();
+  for (i = 1; i < count; i++) {
+    const char *name = _dyld_get_image_name(i);
+    intptr_t slide = _dyld_get_image_vmaddr_slide(i);
+    st->print_cr(PTR_FORMAT " \t%s", slide, name);
+  }
 #else
-   st->print_cr("Error: Cannot print dynamic libraries.");
+  st->print_cr("Error: Cannot print dynamic libraries.");
 #endif
 }
 
@@ -1707,8 +1721,11 @@ void os::jvm_path(char *buf, jint buflen) {
   bool ret = dll_address_to_library_name(
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
-  assert(ret != 0, "cannot locate libjvm");
-  char *rp = realpath(dli_fname, buf);
+  assert(ret, "cannot locate libjvm");
+  char *rp = NULL;
+  if (ret && dli_fname[0] != '\0') {
+    rp = realpath(dli_fname, buf);
+  }
   if (rp == NULL)
     return;
 
@@ -2074,6 +2091,13 @@ void bsd_wrap_code(char* base, size_t size) {
   }
 }
 
+static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
+          strerror(err), err);
+}
+
 // NOTE: Bsd kernel does not really reserve the pages for us.
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
@@ -2082,18 +2106,45 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #ifdef __OpenBSD__
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  return ::mprotect(addr, size, prot) == 0;
+  if (::mprotect(addr, size, prot) == 0) {
+    return true;
+  }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-  return res != (uintptr_t) MAP_FAILED;
+  if (res != (uintptr_t) MAP_FAILED) {
+    return true;
+  }
 #endif
-}
 
+  // Warn about any commit errors we see in non-product builds just
+  // in case mmap() doesn't work as described on the man page.
+  NOT_PRODUCT(warn_fail_commit_memory(addr, size, exec, errno);)
+
+  return false;
+}
 
 bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
-  return commit_memory(addr, size, exec);
+  // alignment_hint is ignored on this OS
+  return pd_commit_memory(addr, size, exec);
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  if (!pd_commit_memory(addr, size, exec)) {
+    // add extra info in product mode for vm_exit_out_of_memory():
+    PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+  }
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size,
+                                  size_t alignment_hint, bool exec,
+                                  const char* mesg) {
+  // alignment_hint is ignored on this OS
+  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2148,7 +2199,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
@@ -2320,21 +2371,20 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   }
 
   // The memory is committed
-  address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)addr, bytes, pc);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, pc);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
 
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
   if (rslt == 0) {
-    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
-    MemTracker::record_virtual_memory_release((address)base, bytes);
+    tkr.record((address)base, bytes);
     return true;
   } else {
+    tkr.discard();
     return false;
   }
 
@@ -3512,7 +3562,7 @@ jint os::init_2(void)
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    guarantee( mem_serialize_page != NULL, "mmap Failed for memory serialize page");
+    guarantee( mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page( mem_serialize_page );
 
 #ifndef PRODUCT
@@ -3714,20 +3764,20 @@ int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex,
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
-  if (dladdr(addr, &dlinfo)) {
+  if (dladdr(addr, &dlinfo) != 0) {
     st->print(PTR_FORMAT ": ", addr);
-    if (dlinfo.dli_sname != NULL) {
+    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#x", dlinfo.dli_sname,
                  addr - (intptr_t)dlinfo.dli_saddr);
-    } else if (dlinfo.dli_fname) {
+    } else if (dlinfo.dli_fbase != NULL) {
       st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
     } else {
       st->print("<absolute address>");
     }
-    if (dlinfo.dli_fname) {
+    if (dlinfo.dli_fname != NULL) {
       st->print(" in %s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase) {
+    if (dlinfo.dli_fbase != NULL) {
       st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
     }
     st->cr();
@@ -3740,7 +3790,7 @@ bool os::find(address addr, outputStream* st) {
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
-      if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
+      if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
       Disassembler::decode(begin, end, st);

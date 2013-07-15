@@ -1682,12 +1682,13 @@ bool os::address_is_in_vm(address addr) {
   Dl_info dlinfo;
 
   if (libjvm_base_addr == NULL) {
-    dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo);
-    libjvm_base_addr = (address)dlinfo.dli_fbase;
+    if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
+      libjvm_base_addr = (address)dlinfo.dli_fbase;
+    }
     assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
   }
 
-  if (dladdr((void *)addr, &dlinfo)) {
+  if (dladdr((void *)addr, &dlinfo) != 0) {
     if (libjvm_base_addr == (address)dlinfo.dli_fbase) return true;
   }
 
@@ -1696,24 +1697,30 @@ bool os::address_is_in_vm(address addr) {
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo) && dlinfo.dli_sname != NULL) {
-    if (buf != NULL) {
-      if(!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    // see if we have a matching symbol
+    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
+      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      return true;
     }
-    if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-    return true;
-  } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
-    if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-        buf, buflen, offset, dlinfo.dli_fname)) {
-       return true;
+    // no matching symbol so try for just file info
+    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname)) {
+        return true;
+      }
     }
   }
 
-  if (buf != NULL) buf[0] = '\0';
+  buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
 }
@@ -1764,6 +1771,9 @@ static int address_to_library_name_callback(struct dl_phdr_info *info,
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
   struct _address_to_library_name data;
 
@@ -1782,15 +1792,20 @@ bool os::dll_address_to_library_name(address addr, char* buf,
      // buf already contains library name
      if (offset) *offset = addr - data.base;
      return true;
-  } else if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
   }
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != NULL) {
+      jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+      *offset = addr - (address)dlinfo.dli_fbase;
+    }
+    return true;
+  }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
   // Loads .dll/.so and
@@ -2317,8 +2332,11 @@ void os::jvm_path(char *buf, jint buflen) {
   bool ret = dll_address_to_library_name(
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
-  assert(ret != 0, "cannot locate libjvm");
-  char *rp = realpath(dli_fname, buf);
+  assert(ret, "cannot locate libjvm");
+  char *rp = NULL;
+  if (ret && dli_fname[0] != '\0') {
+    rp = realpath(dli_fname, buf);
+  }
   if (rp == NULL)
     return;
 
@@ -2612,11 +2630,49 @@ void linux_wrap_code(char* base, size_t size) {
   }
 }
 
+static bool recoverable_mmap_error(int err) {
+  // See if the error is one we can let the caller handle. This
+  // list of errno values comes from JBS-6843484. I can't find a
+  // Linux man page that documents this specific set of errno
+  // values so while this list currently matches Solaris, it may
+  // change as we gain experience with this failure mode.
+  switch (err) {
+  case EBADF:
+  case EINVAL:
+  case ENOTSUP:
+    // let the caller deal with these errors
+    return true;
+
+  default:
+    // Any remaining errors on this OS can cause our reserved mapping
+    // to be lost. That can cause confusion where different data
+    // structures think they have the same memory mapped. The worst
+    // scenario is if both the VM and a library think they have the
+    // same memory mapped.
+    return false;
+  }
+}
+
+static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
+          strerror(err), err);
+}
+
+static void warn_fail_commit_memory(char* addr, size_t size,
+                                    size_t alignment_hint, bool exec,
+                                    int err) {
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", addr, size,
+          alignment_hint, exec, strerror(err), err);
+}
+
 // NOTE: Linux kernel does not really reserve the pages for us.
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
+int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
@@ -2624,9 +2680,32 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     if (UseNUMAInterleaving) {
       numa_make_global(addr, size);
     }
-    return true;
+    return 0;
   }
-  return false;
+
+  int err = errno;  // save errno from mmap() call above
+
+  if (!recoverable_mmap_error(err)) {
+    warn_fail_commit_memory(addr, size, exec, err);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
+  }
+
+  return err;
+}
+
+bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
+  return os::Linux::commit_memory_impl(addr, size, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Linux::commit_memory_impl(addr, size, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, size, exec, err);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+  }
 }
 
 // Define MAP_HUGETLB here so we can build HotSpot on old systems.
@@ -2639,8 +2718,9 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 #define MADV_HUGEPAGE 14
 #endif
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                       bool exec) {
+int os::Linux::commit_memory_impl(char* addr, size_t size,
+                                  size_t alignment_hint, bool exec) {
+  int err;
   if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
     int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
     uintptr_t res =
@@ -2651,16 +2731,46 @@ bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
       if (UseNUMAInterleaving) {
         numa_make_global(addr, size);
       }
-      return true;
+      return 0;
+    }
+
+    err = errno;  // save errno from mmap() call above
+
+    if (!recoverable_mmap_error(err)) {
+      // However, it is not clear that this loss of our reserved mapping
+      // happens with large pages on Linux or that we cannot recover
+      // from the loss. For now, we just issue a warning and we don't
+      // call vm_exit_out_of_memory(). This issue is being tracked by
+      // JBS-8007074.
+      warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
+//    vm_exit_out_of_memory(size, OOM_MMAP_ERROR,
+//                          "committing reserved memory.");
     }
     // Fall through and try to use small pages
   }
 
-  if (commit_memory(addr, size, exec)) {
+  err = os::Linux::commit_memory_impl(addr, size, exec);
+  if (err == 0) {
     realign_memory(addr, size, alignment_hint);
-    return true;
   }
-  return false;
+  return err;
+}
+
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
+                          bool exec) {
+  return os::Linux::commit_memory_impl(addr, size, alignment_hint, exec) == 0;
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size,
+                                  size_t alignment_hint, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  int err = os::Linux::commit_memory_impl(addr, size, alignment_hint, exec);
+  if (err != 0) {
+    // the caller wants all commit errors to exit with the specified mesg:
+    warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+  }
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2678,7 +2788,7 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   // small pages on top of the SHM segment. This method always works for small pages, so we
   // allow that in any case.
   if (alignment_hint <= (size_t)os::vm_page_size() || !UseSHM) {
-    commit_memory(addr, bytes, alignment_hint, false);
+    commit_memory(addr, bytes, alignment_hint, !ExecMem);
   }
 }
 
@@ -2931,7 +3041,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
       ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
   }
 
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
@@ -3053,7 +3163,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
                   MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB,
                   -1, 0);
 
-  if (p != (void *) -1) {
+  if (p != MAP_FAILED) {
     // We don't know if this really is a huge page or not.
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp) {
@@ -3271,22 +3381,21 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   }
 
   // The memory is committed
-  address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)addr, bytes, pc);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, pc);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
 
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
+  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
   // detaching the SHM segment will also delete it, see reserve_memory_special()
   int rslt = shmdt(base);
   if (rslt == 0) {
-    MemTracker::record_virtual_memory_uncommit((address)base, bytes);
-    MemTracker::record_virtual_memory_release((address)base, bytes);
+    tkr.record((address)base, bytes);
     return true;
   } else {
-   return false;
+    tkr.discard();
+    return false;
   }
 }
 
@@ -4393,7 +4502,7 @@ jint os::init_2(void)
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Linux::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    guarantee( mem_serialize_page != NULL, "mmap Failed for memory serialize page");
+    guarantee( mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
     os::set_memory_serialize_page( mem_serialize_page );
 
 #ifndef PRODUCT
@@ -4639,20 +4748,20 @@ int os::Linux::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mute
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
-  if (dladdr(addr, &dlinfo)) {
+  if (dladdr(addr, &dlinfo) != 0) {
     st->print(PTR_FORMAT ": ", addr);
-    if (dlinfo.dli_sname != NULL) {
+    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#x", dlinfo.dli_sname,
                  addr - (intptr_t)dlinfo.dli_saddr);
-    } else if (dlinfo.dli_fname) {
+    } else if (dlinfo.dli_fbase != NULL) {
       st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
     } else {
       st->print("<absolute address>");
     }
-    if (dlinfo.dli_fname) {
+    if (dlinfo.dli_fname != NULL) {
       st->print(" in %s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase) {
+    if (dlinfo.dli_fbase != NULL) {
       st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
     }
     st->cr();
@@ -4665,7 +4774,7 @@ bool os::find(address addr, outputStream* st) {
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
-      if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
+      if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
       Disassembler::decode(begin, end, st);

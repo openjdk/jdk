@@ -30,6 +30,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -51,14 +52,17 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     @Property
     public Object enumerable;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     GenericPropertyDescriptor() {
         this(false, false);
     }
 
     GenericPropertyDescriptor(final boolean configurable, final boolean enumerable) {
+        super(Global.objectPrototype(), $nasgenmap$);
         this.configurable = configurable;
         this.enumerable   = enumerable;
-        setProto(Global.objectPrototype());
     }
 
     @Override
@@ -124,17 +128,16 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
 
     @Override
     public PropertyDescriptor fillFrom(final ScriptObject sobj) {
-        final boolean strict = isStrictContext();
         if (sobj.has(CONFIGURABLE)) {
             this.configurable = JSType.toBoolean(sobj.get(CONFIGURABLE));
         } else {
-            delete(CONFIGURABLE, strict);
+            delete(CONFIGURABLE, false);
         }
 
         if (sobj.has(ENUMERABLE)) {
             this.enumerable = JSType.toBoolean(sobj.get(ENUMERABLE));
         } else {
-            delete(ENUMERABLE, strict);
+            delete(ENUMERABLE, false);
         }
 
         return this;

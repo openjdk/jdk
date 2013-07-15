@@ -80,8 +80,8 @@ public class MinMaxTest extends OpTestCase {
     public void testDoubleMinMax() {
         assertEquals(DoubleStream.empty().min(), OptionalDouble.empty());
         assertEquals(DoubleStream.empty().max(), OptionalDouble.empty());
-        assertEquals(1.0, LongStream.range(1, 1001).doubles().min().getAsDouble());
-        assertEquals(1000.0, LongStream.range(1, 1001).doubles().max().getAsDouble());
+        assertEquals(1.0, LongStream.range(1, 1001).asDoubleStream().min().getAsDouble());
+        assertEquals(1000.0, LongStream.range(1, 1001).asDoubleStream().max().getAsDouble());
     }
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)

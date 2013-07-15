@@ -118,7 +118,7 @@ abstract class XScrollbar {
     abstract protected void rebuildArrows();
 
     public void setSize(int width, int height) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Setting scroll bar " + this + " size to " + width + "x" + height);
         }
         this.width = width;
@@ -166,7 +166,7 @@ abstract class XScrollbar {
      * @param paintAll paint the whole scrollbar if true, just the thumb is false
      */
     void paint(Graphics g, Color colors[], boolean paintAll) {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Painting scrollbar " + this);
         }
 
@@ -339,7 +339,7 @@ abstract class XScrollbar {
      * Tell the scroller to start scrolling.
      */
     void startScrolling() {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Start scrolling on " + this);
         }
         // Make sure that we scroll at least once
@@ -361,7 +361,7 @@ abstract class XScrollbar {
      * See 6243382 for more information
      */
     void startScrollingInstance() {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Start scrolling on " + this);
         }
         // Make sure that we scroll at least once
@@ -376,7 +376,7 @@ abstract class XScrollbar {
      * See 6243382 for more information
      */
     void stopScrollingInstance() {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Stop scrolling on " + this);
         }
 
@@ -464,7 +464,7 @@ abstract class XScrollbar {
             return;
         }
 
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
              String type;
              switch (id) {
                 case MouseEvent.MOUSE_PRESSED:

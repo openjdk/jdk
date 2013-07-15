@@ -47,6 +47,7 @@ public class StreamLinkTest extends OpTestCase {
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testManyStreams(String name, TestData.OfRef<Integer> data) {
         for (int n : sizes) {
+            setContext("n", n);
             List<Integer> expected = data.stream().map(e -> (Integer) (e + n)).collect(Collectors.toList());
 
             withData(data).
@@ -59,6 +60,7 @@ public class StreamLinkTest extends OpTestCase {
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
     public void testIntManyStreams(String name, TestData.OfInt data) {
         for (int n : sizes) {
+            setContext("n", n);
             int[] expected = data.stream().map(e -> e + n).toArray();
 
             withData(data).
@@ -71,6 +73,7 @@ public class StreamLinkTest extends OpTestCase {
     @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
     public void testLongManyStreams(String name, TestData.OfLong data) {
         for (int n : sizes) {
+            setContext("n", n);
             long[] expected = data.stream().map(e -> e + n).toArray();
 
             withData(data).
@@ -83,6 +86,7 @@ public class StreamLinkTest extends OpTestCase {
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
     public void testDoubleManyStreams(String name, TestData.OfDouble data) {
         for (int n : sizes) {
+            setContext("n", n);
             double[] expected = data.stream().map(e -> accumulate(e, n)).toArray();
 
             withData(data).

@@ -625,7 +625,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return a {@code LongStream} consisting of the elements of this stream,
      * converted to {@code long}
      */
-    LongStream longs();
+    LongStream asLongStream();
 
     /**
      * Returns a {@code DoubleStream} consisting of the elements of this stream,
@@ -634,7 +634,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @return a {@code DoubleStream} consisting of the elements of this stream,
      * converted to {@code double}
      */
-    DoubleStream doubles();
+    DoubleStream asDoubleStream();
 
     /**
      * Returns a {@code Stream} consisting of the elements of this stream,
@@ -745,26 +745,20 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      */
     public static IntStream generate(IntSupplier s) {
         Objects.requireNonNull(s);
-        return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(
-                new PrimitiveIterator.OfInt() {
-                    @Override
-                    public boolean hasNext() { return true; }
-
-                    @Override
-                    public int nextInt() { return s.getAsInt(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+        return StreamSupport.intStream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfInt(Long.MAX_VALUE, s));
     }
 
     /**
      * Returns a sequential {@code IntStream} from {@code startInclusive}
      * (inclusive) to {@code endExclusive} (exclusive) by an incremental step of
-     * 1.
+     * {@code 1}.
      *
-     * @implSpec
-     * The implementation behaves as if:
+     * @apiNote
+     * <p>An equivalent sequence of increasing values can be produced
+     * sequentially using a {@code for} loop as follows:
      * <pre>{@code
-     *     intRange(startInclusive, endExclusive, 1);
+     *     for (int i = startInclusive; i < endExclusive ; i++) { ... }
      * }</pre>
      *
      * @param startInclusive the (inclusive) initial value
@@ -773,36 +767,37 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      *         elements
      */
     public static IntStream range(int startInclusive, int endExclusive) {
-        return range(startInclusive, endExclusive, 1);
+        if (startInclusive >= endExclusive) {
+            return empty();
+        } else {
+            return StreamSupport.intStream(
+                    new Streams.RangeIntSpliterator(startInclusive, endExclusive, false));
+        }
     }
 
     /**
      * Returns a sequential {@code IntStream} from {@code startInclusive}
-     * (inclusive) to {@code endExclusive} (exclusive) by a positive {@code
-     * step}.  If {@code startInclusive} is greater than or equal to {@code
-     * endExclusive}, an empty stream is returned.
+     * (inclusive) to {@code endInclusive} (inclusive) by an incremental step of
+     * {@code 1}.
      *
+     * @apiNote
      * <p>An equivalent sequence of increasing values can be produced
      * sequentially using a {@code for} loop as follows:
      * <pre>{@code
-     *     for (int i = startInclusive; i < endExclusive ; i += step) { ... }
+     *     for (int i = startInclusive; i <= endInclusive ; i++) { ... }
      * }</pre>
      *
      * @param startInclusive the (inclusive) initial value
-     * @param endExclusive the exclusive upper bound
-     * @param step the positive difference between consecutive values
+     * @param endInclusive the inclusive upper bound
      * @return a sequential {@code IntStream} for the range of {@code int}
      *         elements
-     * @throws IllegalArgumentException if {@code step} is less than or equal to
-     *                                  0
      */
-    public static IntStream range(int startInclusive, int endExclusive, int step) {
-        if (step <= 0) {
-            throw new IllegalArgumentException(String.format("Illegal step: %d", step));
-        } else if (startInclusive >= endExclusive) {
+    public static IntStream rangeClosed(int startInclusive, int endInclusive) {
+        if (startInclusive > endInclusive) {
             return empty();
         } else {
-            return StreamSupport.intStream(new Streams.RangeIntSpliterator(startInclusive, endExclusive, step));
+            return StreamSupport.intStream(
+                    new Streams.RangeIntSpliterator(startInclusive, endInclusive, true));
         }
     }
 }
