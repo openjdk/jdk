@@ -279,7 +279,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      ExternalAddress mxcsr_std(StubRoutines::x86::mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
       __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
@@ -729,17 +729,18 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls) {
       Label ok_ret;
+      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      __ cmpl(rax, *(int *)(StubRoutines::x86::mxcsr_std()));
+      __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, ok_ret);
 
       __ warn("MXCSR changed by native JNI code, use -XX:+RestoreMXCSROnJNICall");
 
-      __ ldmxcsr(ExternalAddress(StubRoutines::x86::mxcsr_std()));
+      __ ldmxcsr(mxcsr_std);
 
       __ bind(ok_ret);
       __ addptr(rsp, wordSize);
@@ -3729,12 +3730,35 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+  void create_control_words() {
+    // Round to nearest, 53-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_std   = 0x027F;
+    // Round to zero, 53-bit mode, exception mased
+    StubRoutines::_fpu_cntrl_wrd_trunc = 0x0D7F;
+    // Round to nearest, 24-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_24    = 0x007F;
+    // Round to nearest, 64-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_64    = 0x037F;
+    // Round to nearest, 64-bit mode, exceptions masked
+    StubRoutines::_mxcsr_std           = 0x1F80;
+    // Note: the following two constants are 80-bit values
+    //       layout is critical for correct loading by FPU.
+    // Bias for strict fp multiply/divide
+    StubRoutines::_fpu_subnormal_bias1[0]= 0x00000000; // 2^(-15360) == 0x03ff 8000 0000 0000 0000
+    StubRoutines::_fpu_subnormal_bias1[1]= 0x80000000;
+    StubRoutines::_fpu_subnormal_bias1[2]= 0x03ff;
+    // Un-Bias for strict fp multiply/divide
+    StubRoutines::_fpu_subnormal_bias2[0]= 0x00000000; // 2^(+15360) == 0x7bff 8000 0000 0000 0000
+    StubRoutines::_fpu_subnormal_bias2[1]= 0x80000000;
+    StubRoutines::_fpu_subnormal_bias2[2]= 0x7bff;
+  }
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
-    // This platform-specific stub is needed by generate_call_stub()
-    StubRoutines::x86::_mxcsr_std        = generate_fp_mask("mxcsr_std",        0x0000000000001F80);
+    // This platform-specific settings are needed by generate_call_stub()
+    create_control_words();
 
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
