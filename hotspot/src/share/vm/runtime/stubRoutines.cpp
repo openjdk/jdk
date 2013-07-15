@@ -136,6 +136,13 @@ double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
 double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
 double (* StubRoutines::_intrinsic_tan   )(double) = NULL;
 
+address StubRoutines::_safefetch32_entry                 = NULL;
+address StubRoutines::_safefetch32_fault_pc              = NULL;
+address StubRoutines::_safefetch32_continuation_pc       = NULL;
+address StubRoutines::_safefetchN_entry                  = NULL;
+address StubRoutines::_safefetchN_fault_pc               = NULL;
+address StubRoutines::_safefetchN_continuation_pc        = NULL;
+
 // Initialization
 //
 // Note: to break cycle with universe initialization, stubs are generated in two phases.

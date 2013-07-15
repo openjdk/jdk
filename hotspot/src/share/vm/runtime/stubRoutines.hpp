@@ -221,6 +221,14 @@ class StubRoutines: AllStatic {
   static double (*_intrinsic_cos)(double);
   static double (*_intrinsic_tan)(double);
 
+  // Safefetch stubs.
+  static address _safefetch32_entry;
+  static address _safefetch32_fault_pc;
+  static address _safefetch32_continuation_pc;
+  static address _safefetchN_entry;
+  static address _safefetchN_fault_pc;
+  static address _safefetchN_continuation_pc;
+
  public:
   // Initialization/Testing
   static void    initialize1();                            // must happen before universe::genesis
@@ -382,6 +390,34 @@ class StubRoutines: AllStatic {
   }
 
   //
+  // Safefetch stub support
+  //
+
+  typedef int      (*SafeFetch32Stub)(int*      adr, int      errValue);
+  typedef intptr_t (*SafeFetchNStub) (intptr_t* adr, intptr_t errValue);
+
+  static SafeFetch32Stub SafeFetch32_stub() { return CAST_TO_FN_PTR(SafeFetch32Stub, _safefetch32_entry); }
+  static SafeFetchNStub  SafeFetchN_stub()  { return CAST_TO_FN_PTR(SafeFetchNStub,  _safefetchN_entry); }
+
+  static bool is_safefetch_fault(address pc) {
+    return pc != NULL &&
+          (pc == _safefetch32_fault_pc ||
+           pc == _safefetchN_fault_pc);
+  }
+
+  static address continuation_for_safefetch_fault(address pc) {
+    assert(_safefetch32_continuation_pc != NULL &&
+           _safefetchN_continuation_pc  != NULL,
+           "not initialized");
+
+    if (pc == _safefetch32_fault_pc) return _safefetch32_continuation_pc;
+    if (pc == _safefetchN_fault_pc)  return _safefetchN_continuation_pc;
+
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+  //
   // Default versions of the above arraycopy functions for platforms which do
   // not have specialized versions
   //
@@ -399,5 +435,16 @@ class StubRoutines: AllStatic {
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 };
+
+// Safefetch allows to load a value from a location that's not known
+// to be valid. If the load causes a fault, the error value is returned.
+inline int SafeFetch32(int* adr, int errValue) {
+  assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
+  return StubRoutines::SafeFetch32_stub()(adr, errValue);
+}
+inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
+  assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
+  return StubRoutines::SafeFetchN_stub()(adr, errValue);
+}
 
 #endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP
