@@ -218,6 +218,7 @@ Thread::Thread() {
   // allocated data structures
   set_osthread(NULL);
   set_resource_area(new (mtThread)ResourceArea());
+  DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, true));
   set_active_handles(NULL);
@@ -3636,6 +3637,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
   if (!DisableAttachMechanism) {
+    AttachListener::vm_start();
     if (StartAttachListener || AttachListener::init_at_startup()) {
       AttachListener::init();
     }
