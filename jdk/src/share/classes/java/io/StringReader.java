@@ -163,7 +163,7 @@ public class StringReader extends Reader {
      *                         is no actual limit, so this argument must not
      *                         be negative, but is otherwise ignored.
      *
-     * @exception  IllegalArgumentException  If readAheadLimit is < 0
+     * @exception  IllegalArgumentException  If {@code readAheadLimit < 0}
      * @exception  IOException  If an I/O error occurs
      */
     public void mark(int readAheadLimit) throws IOException {

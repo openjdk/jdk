@@ -23,17 +23,105 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389
+ * @bug 4160406 4705734 4707389 6358355 7032154
  * @summary Tests for Float.parseFloat method
  */
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 public class ParseFloat {
+
+    private static final BigDecimal HALF = BigDecimal.valueOf(0.5);
+
+    private static void fail(String val, float n) {
+        throw new RuntimeException("Float.parseFloat failed. String:" +
+                                                val + " Result:" + n);
+    }
+
+    private static void check(String val) {
+        float n = Float.parseFloat(val);
+        boolean isNegativeN = n < 0 || n == 0 && 1/n < 0;
+        float na = Math.abs(n);
+        String s = val.trim().toLowerCase();
+        switch (s.charAt(s.length() - 1)) {
+            case 'd':
+            case 'f':
+                s = s.substring(0, s.length() - 1);
+                break;
+        }
+        boolean isNegative = false;
+        if (s.charAt(0) == '+') {
+            s = s.substring(1);
+        } else if (s.charAt(0) == '-') {
+            s = s.substring(1);
+            isNegative = true;
+        }
+        if (s.equals("nan")) {
+            if (!Float.isNaN(n)) {
+                fail(val, n);
+            }
+            return;
+        }
+        if (Float.isNaN(n)) {
+            fail(val, n);
+        }
+        if (isNegativeN != isNegative)
+            fail(val, n);
+        if (s.equals("infinity")) {
+            if (na != Float.POSITIVE_INFINITY) {
+                fail(val, n);
+            }
+            return;
+        }
+        BigDecimal bd;
+        if (s.startsWith("0x")) {
+            s = s.substring(2);
+            int indP = s.indexOf('p');
+            long exp = Long.parseLong(s.substring(indP + 1));
+            int indD = s.indexOf('.');
+            String significand;
+            if (indD >= 0) {
+                significand = s.substring(0, indD) + s.substring(indD + 1, indP);
+                exp -= 4*(indP - indD - 1);
+            } else {
+                significand = s.substring(0, indP);
+            }
+            bd = new BigDecimal(new BigInteger(significand, 16));
+            if (exp >= 0) {
+                bd = bd.multiply(BigDecimal.valueOf(2).pow((int)exp));
+            } else {
+                bd = bd.divide(BigDecimal.valueOf(2).pow((int)-exp));
+            }
+        } else {
+            bd = new BigDecimal(s);
+        }
+        BigDecimal l, u;
+        if (Float.isInfinite(na)) {
+            l = new BigDecimal(Float.MAX_VALUE).add(new BigDecimal(Math.ulp(Float.MAX_VALUE)).multiply(HALF));
+            u = null;
+        } else {
+            l = new BigDecimal(na).subtract(new BigDecimal(Math.ulp(-Math.nextUp(-na))).multiply(HALF));
+            u = new BigDecimal(na).add(new BigDecimal(Math.ulp(n)).multiply(HALF));
+        }
+        int cmpL = bd.compareTo(l);
+        int cmpU = u != null ? bd.compareTo(u) : -1;
+        if ((Float.floatToIntBits(n) & 1) != 0) {
+            if (cmpL <= 0 || cmpU >= 0) {
+                fail(val, n);
+            }
+        } else {
+            if (cmpL < 0 || cmpU > 0) {
+                fail(val, n);
+            }
+        }
+    }
 
     private static void check(String val, float expected) {
         float n = Float.parseFloat(val);
         if (n != expected)
-            throw new RuntimeException("Float.parseFloat failed. String:" +
-                                                val + " Result:" + n);
+            fail(val, n);
+        check(val);
     }
 
     private static void rudimentaryTest() {
@@ -47,6 +135,17 @@ public class ParseFloat {
         check("-10",    (float) -10.0);
         check("-10.00", (float) -10.0);
         check("-10.01", (float) -10.01);
+
+        // bug 6358355
+        check("144115196665790480", 0x1.000002p57f);
+        check("144115196665790481", 0x1.000002p57f);
+        check("0.050000002607703203", 0.05f);
+        check("0.050000002607703204", 0.05f);
+        check("0.050000002607703205", 0.05f);
+        check("0.050000002607703206", 0.05f);
+        check("0.050000002607703207", 0.05f);
+        check("0.050000002607703208", 0.05f);
+        check("0.050000002607703209", 0.050000004f);
     }
 
     static  String badStrings[] = {
@@ -182,6 +281,7 @@ public class ParseFloat {
 
             try {
                 d = Float.parseFloat(input[i]);
+                check(input[i]);
             }
             catch (NumberFormatException e) {
                 if (! exceptionalInput) {
@@ -199,6 +299,24 @@ public class ParseFloat {
         }
     }
 
+    /**
+     * For each power of two, test at boundaries of
+     * region that should convert to that value.
+     */
+    private static void testPowers() {
+        for(int i = -149; i <= +127; i++) {
+            float f = Math.scalb(1.0f, i);
+            BigDecimal f_BD = new BigDecimal(f);
+
+            BigDecimal lowerBound = f_BD.subtract(new BigDecimal(Math.ulp(-Math.nextUp(-f))).multiply(HALF));
+            BigDecimal upperBound = f_BD.add(new BigDecimal(Math.ulp(f)).multiply(HALF));
+
+            check(lowerBound.toString());
+            check(upperBound.toString());
+        }
+        check(new BigDecimal(Float.MAX_VALUE).add(new BigDecimal(Math.ulp(Float.MAX_VALUE)).multiply(HALF)).toString());
+    }
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -206,5 +324,7 @@ public class ParseFloat {
         testParsing(paddedGoodStrings, false);
         testParsing(badStrings, true);
         testParsing(paddedBadStrings, true);
+
+        testPowers();
     }
 }

@@ -41,5 +41,6 @@ public class TestTypeAnnotations {
                 "-C", Utils.TEST_CLS_DIR.getAbsolutePath(),
                 ".");
         Utils.testWithRepack(testFile, "--unknown-attribute=error");
+        Utils.cleanup();
     }
 }

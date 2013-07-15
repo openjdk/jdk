@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,8 @@
  * questions.
  */
 
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
-import org.xml.sax.SAXException;
-import com.sun.org.apache.xml.internal.security.c14n.*;
-import com.sun.org.apache.xml.internal.security.exceptions.*;
-import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.transforms.*;
+import com.sun.org.apache.xml.internal.security.transforms.Transform;
+import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 
 public class MyTransform extends TransformSpi {
 
@@ -37,21 +32,13 @@ public class MyTransform extends TransformSpi {
     public MyTransform() {
         try {
             System.out.println("Registering Transform");
-            Transform.init();
             Transform.register(URI, "MyTransform");
-        } catch (AlgorithmAlreadyRegisteredException e) {
-            // should not occur, so ignore
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     protected String engineGetURI() {
         return URI;
-    }
-
-    protected XMLSignatureInput enginePerformTransform(XMLSignatureInput input)
-        throws IOException, CanonicalizationException,
-               InvalidCanonicalizerException, TransformationException,
-               ParserConfigurationException, SAXException {
-        throw new TransformationException("Unsupported Operation");
     }
 }

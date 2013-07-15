@@ -199,7 +199,6 @@ public final class NativeJavaPackage extends ScriptObject {
         final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
 
         final Context context = getContext();
-        final boolean strict  = context._strict;
 
         Class<?> javaClass = null;
         try {
@@ -209,9 +208,9 @@ public final class NativeJavaPackage extends ScriptObject {
         }
 
         if (javaClass == null) {
-            set(propertyName, new NativeJavaPackage(fullName, getProto()), strict);
+            set(propertyName, new NativeJavaPackage(fullName, getProto()), false);
         } else {
-            set(propertyName, StaticClass.forClass(javaClass), strict);
+            set(propertyName, StaticClass.forClass(javaClass), false);
         }
 
         return super.lookup(desc, request);

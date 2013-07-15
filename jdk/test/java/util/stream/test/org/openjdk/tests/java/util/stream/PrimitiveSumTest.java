@@ -34,7 +34,7 @@ public class PrimitiveSumTest extends OpTestCase {
 
         withData(data).
                 terminal(s -> (long) s.sum()).
-                expectedResult(data.stream().longs().reduce(0, LambdaTestHelpers.lrPlus)).
+                expectedResult(data.stream().asLongStream().reduce(0, LambdaTestHelpers.lrPlus)).
                 exercise();
     }
 

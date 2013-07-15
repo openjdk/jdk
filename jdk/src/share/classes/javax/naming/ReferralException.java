@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Hashtable;
  * constructors and/or corresponding "set" methods).
  * <p>
  * The following code sample shows how <tt>ReferralException</tt> can be used.
- * <p><blockquote><pre>
+ * <blockquote>{@code
  *      while (true) {
  *          try {
  *              bindings = ctx.listBindings(name);
@@ -51,7 +51,7 @@ import java.util.Hashtable;
  *              ctx = e.getReferralContext();
  *          }
  *      }
- * </pre></blockquote></p>
+ * }</blockquote>
  *<p>
  * <tt>ReferralException</tt> is an abstract class. Concrete implementations
  * determine its synchronization and serialization properties.

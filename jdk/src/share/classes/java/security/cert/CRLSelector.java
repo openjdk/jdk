@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package java.security.cert;
 
 /**
- * A selector that defines a set of criteria for selecting <code>CRL</code>s.
+ * A selector that defines a set of criteria for selecting {@code CRL}s.
  * Classes that implement this interface are often used to specify
- * which <code>CRL</code>s should be retrieved from a <code>CertStore</code>.
+ * which {@code CRL}s should be retrieved from a {@code CertStore}.
  * <p>
  * <b>Concurrent Access</b>
  * <p>
@@ -48,19 +48,19 @@ package java.security.cert;
 public interface CRLSelector extends Cloneable {
 
     /**
-     * Decides whether a <code>CRL</code> should be selected.
+     * Decides whether a {@code CRL} should be selected.
      *
-     * @param   crl     the <code>CRL</code> to be checked
-     * @return  <code>true</code> if the <code>CRL</code> should be selected,
-     * <code>false</code> otherwise
+     * @param   crl     the {@code CRL} to be checked
+     * @return  {@code true} if the {@code CRL} should be selected,
+     * {@code false} otherwise
      */
     boolean match(CRL crl);
 
     /**
-     * Makes a copy of this <code>CRLSelector</code>. Changes to the
+     * Makes a copy of this {@code CRLSelector}. Changes to the
      * copy will not affect the original and vice versa.
      *
-     * @return a copy of this <code>CRLSelector</code>
+     * @return a copy of this {@code CRLSelector}
      */
     Object clone();
 }

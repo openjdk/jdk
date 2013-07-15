@@ -23,11 +23,12 @@ package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.utils.IdResolver;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 
@@ -54,52 +55,55 @@ public class ResolverXPointer extends ResourceResolverSpi {
                             ResolverXPointer.class.getName());
 
     public boolean engineIsThreadSafe() {
-           return true;
-   }
-   /**
-    * @inheritDoc
-    */
-   public XMLSignatureInput engineResolve(Attr uri, String BaseURI)
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public XMLSignatureInput engineResolve(Attr uri, String baseURI)
            throws ResourceResolverException {
 
-      Node resultNode = null;
-      Document doc = uri.getOwnerElement().getOwnerDocument();
+        Node resultNode = null;
+        Document doc = uri.getOwnerElement().getOwnerDocument();
 
-        String uriStr=uri.getNodeValue();
-         if (isXPointerSlash(uriStr)) {
+        String uriStr = uri.getNodeValue();
+        if (isXPointerSlash(uriStr)) {
             resultNode = doc;
 
-         } else if (isXPointerId(uriStr)) {
+        } else if (isXPointerId(uriStr)) {
             String id = getXPointerId(uriStr);
-            resultNode =IdResolver.getElementById(doc, id);
+            resultNode = doc.getElementById(id);
 
-            // log.log(java.util.logging.Level.FINE, "Use #xpointer(id('" + id + "')) on element " + selectedElem);
+            if (secureValidation) {
+                Element start = uri.getOwnerDocument().getDocumentElement();
+                if (!XMLUtils.protectAgainstWrappingAttack(start, id)) {
+                    Object exArgs[] = { id };
+                    throw new ResourceResolverException(
+                        "signature.Verification.MultipleIDs", exArgs,
+                        uri, baseURI);
+                }
+            }
 
             if (resultNode == null) {
                Object exArgs[] = { id };
 
                throw new ResourceResolverException(
-                  "signature.Verification.MissingID", exArgs, uri, BaseURI);
+                  "signature.Verification.MissingID", exArgs, uri, baseURI);
             }
-            /*
-            resultNodes =
-               cXPathAPI
-                  .selectNodeList(selectedElem, Canonicalizer
-                     .XPATH_C14N_WITH_COMMENTS_SINGLE_NODE);*/
-         }
+        }
 
+        XMLSignatureInput result = new XMLSignatureInput(resultNode);
 
-      XMLSignatureInput result = new XMLSignatureInput(resultNode);
+        result.setMIMEType("text/xml");
+        if (baseURI != null && baseURI.length() > 0) {
+            result.setSourceURI(baseURI.concat(uri.getNodeValue()));
+        } else {
+            result.setSourceURI(uri.getNodeValue());
+        }
 
-      result.setMIMEType("text/xml");
-      if (BaseURI != null && BaseURI.length() > 0) {
-          result.setSourceURI(BaseURI.concat(uri.getNodeValue()));
-      } else {
-          result.setSourceURI(uri.getNodeValue());
-      }
-
-      return result;
-   }
+        return result;
+    }
 
    /**
     * @inheritDoc

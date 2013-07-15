@@ -28,12 +28,15 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -51,7 +54,14 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 public final class NativeObject {
     private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     private NativeObject() {
+    }
+
+    private static ECMAException notAnObject(final Object obj) {
+        return typeError("not.an.object", ScriptRuntime.safeToString(obj));
     }
 
     /**
@@ -63,9 +73,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object getPrototypeOf(final Object self, final Object obj) {
-        Global.checkObject(obj);
-
-        return ((ScriptObject)obj).getProto();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).getProto();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).getProto();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -78,12 +92,19 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object getOwnPropertyDescriptor(final Object self, final Object obj, final Object prop) {
-        Global.checkObject(obj);
+        if (obj instanceof ScriptObject) {
+            final String       key  = JSType.toString(prop);
+            final ScriptObject sobj = (ScriptObject)obj;
 
-        final String       key  = JSType.toString(prop);
-        final ScriptObject sobj = (ScriptObject)obj;
+            return sobj.getOwnPropertyDescriptor(key);
+        } else if (obj instanceof ScriptObjectMirror) {
+            final String       key  = JSType.toString(prop);
+            final ScriptObjectMirror sobjMirror = (ScriptObjectMirror)obj;
 
-        return sobj.getOwnPropertyDescriptor(key);
+            return sobjMirror.getOwnPropertyDescriptor(key);
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -95,9 +116,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object getOwnPropertyNames(final Object self, final Object obj) {
-        Global.checkObject(obj);
-
-        return new NativeArray(((ScriptObject)obj).getOwnKeys(true));
+        if (obj instanceof ScriptObject) {
+            return new NativeArray(((ScriptObject)obj).getOwnKeys(true));
+        } else if (obj instanceof ScriptObjectMirror) {
+            return new NativeArray(((ScriptObjectMirror)obj).getOwnKeys(true));
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -175,8 +200,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object seal(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).seal();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).seal();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).seal();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
 
@@ -189,8 +219,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object freeze(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).freeze();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).freeze();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).freeze();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -202,8 +237,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object preventExtensions(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).preventExtensions();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).preventExtensions();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).preventExtensions();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -215,8 +255,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isSealed(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).isSealed();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).isSealed();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).isSealed();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -228,8 +273,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isFrozen(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).isFrozen();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).isFrozen();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).isFrozen();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -241,8 +291,13 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object isExtensible(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        return ((ScriptObject)obj).isExtensible();
+        if (obj instanceof ScriptObject) {
+            return ((ScriptObject)obj).isExtensible();
+        } else if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).isExtensible();
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**
@@ -254,9 +309,15 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object keys(final Object self, final Object obj) {
-        Global.checkObject(obj);
-        final ScriptObject sobj = (ScriptObject)obj;
-        return new NativeArray(sobj.getOwnKeys(false));
+        if (obj instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)obj;
+            return new NativeArray(sobj.getOwnKeys(false));
+        } else if (obj instanceof ScriptObjectMirror) {
+            final ScriptObjectMirror sobjMirror = (ScriptObjectMirror)obj;
+            return new NativeArray(sobjMirror.getOwnKeys(false));
+        } else {
+            throw notAnObject(obj);
+        }
     }
 
     /**

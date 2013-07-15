@@ -169,7 +169,7 @@ abstract class LongPipeline<E_IN>
 
     @Override
     public final PrimitiveIterator.OfLong iterator() {
-        return Spliterators.iteratorFromSpliterator(spliterator());
+        return Spliterators.iterator(spliterator());
     }
 
     @Override
@@ -180,7 +180,7 @@ abstract class LongPipeline<E_IN>
     // Stateless intermediate ops from LongStream
 
     @Override
-    public final DoubleStream doubles() {
+    public final DoubleStream asDoubleStream() {
         return new DoublePipeline.StatelessOp<Long>(this, StreamShape.LONG_VALUE,
                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -275,6 +275,12 @@ abstract class LongPipeline<E_IN>
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(long t) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         LongStream result = mapper.apply(t);
@@ -306,6 +312,11 @@ abstract class LongPipeline<E_IN>
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
                     @Override
                     public void accept(long t) {
                         if (predicate.test(t))
@@ -479,7 +490,8 @@ abstract class LongPipeline<E_IN>
 
     @Override
     public final long[] toArray() {
-        return Nodes.flattenLong((Node.OfLong) evaluateToArrayNode(Long[]::new)).asLongArray();
+        return Nodes.flattenLong((Node.OfLong) evaluateToArrayNode(Long[]::new))
+                .asPrimitiveArray();
     }
 
 

@@ -32,6 +32,8 @@
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.util.JCDiagnostic;
 
@@ -154,7 +156,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         //check all candidates have been used up
         for (Map.Entry<ElementKey, Candidate> entry : candidatesMap.entrySet()) {
             if (!seenCandidates.contains(entry.getKey())) {
-                error("Redundant @Candidate annotation on method " + entry.getKey().elem);
+                error("Redundant @Candidate annotation on method " + entry.getKey().elem + " sig = " + entry.getKey().elem.asType());
             }
         }
     }
@@ -250,7 +252,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         void process(Diagnostic<? extends JavaFileObject> diagnostic) {
             Element siteSym = getSiteSym(diagnostic);
             if (siteSym.getSimpleName().length() != 0 &&
-                    siteSym.getAnnotation(TraceResolve.class) == null) {
+                    ((Symbol)siteSym).outermostClass().getAnnotation(TraceResolve.class) == null) {
                 return;
             }
             int candidateIdx = 0;
@@ -308,7 +310,11 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
         @Override
         void process(Diagnostic<? extends JavaFileObject> diagnostic) {
-            Element methodSym = methodSym(diagnostic);
+            Symbol methodSym = (Symbol)methodSym(diagnostic);
+            if ((methodSym.flags() & Flags.GENERATEDCONSTR) != 0) {
+                //skip resolution of default constructor (put there by javac)
+                return;
+            }
             Candidate c = getCandidateAtPos(methodSym,
                     asJCDiagnostic(diagnostic).getLineNumber(),
                     asJCDiagnostic(diagnostic).getColumnNumber());
@@ -470,23 +476,10 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         }
 
         String computeKey(Element e) {
-            StringBuilder buf = new StringBuilder();
-            if (predefTranslationMap.containsKey(e.getSimpleName().toString())) {
-                //predef element
-                buf.append("<predef>.");
-                String replacedName = predefTranslationMap.get(e.getSimpleName().toString());
-                buf.append(e.toString().replace(e.getSimpleName().toString(), replacedName));
-            } else if (e.getSimpleName().toString().startsWith("_")) {
-                buf.append("<predef>.");
-                buf.append(e.toString());
-            } else {
-                while (e != null) {
-                    buf.append(e.toString());
-                    e = e.getEnclosingElement();
-                }
-                buf.append(jfo.getName());
-            }
-            return buf.toString();
+            String simpleName = e.getSimpleName().toString();
+            String opName = predefTranslationMap.get(simpleName);
+            String name = opName != null ? opName : simpleName;
+            return name + e.asType();
         }
 
         @Override

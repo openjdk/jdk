@@ -37,8 +37,9 @@ function error() {
   try {
       throw new Error('foo');
   } catch (e) {
-      for (i in e.stack) {
-          printFrame(e.stack[i]);
+      var frames = e.getStackTrace();
+      for (i in frames) {
+          printFrame(frames[i]);
       }
   }
 }

@@ -171,7 +171,7 @@ class SDE {
         }
 
         public boolean equals(Object obj) {
-            if ((obj != null) && (obj instanceof LineStratum)) {
+            if (obj instanceof LineStratum) {
                 LineStratum other = (LineStratum)obj;
                 return (lti == other.lti) &&
                        (sti == other.sti) &&
@@ -180,6 +180,11 @@ class SDE {
             } else {
                 return false;
             }
+        }
+
+        @Override
+        public int hashCode() {
+            return (lineNumber() * 17) ^ refType.hashCode();
         }
 
         int lineNumber() {

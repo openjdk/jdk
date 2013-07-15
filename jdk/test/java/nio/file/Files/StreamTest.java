@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
-import java.util.Comparators;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -139,7 +139,7 @@ public class StreamTest {
 
     public void testBasic() {
         try (CloseableStream<Path> s = Files.list(testFolder)) {
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             assertEquals(actual, level1);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
@@ -155,7 +155,7 @@ public class StreamTest {
 
     public void testWalk() {
         try (CloseableStream<Path> s = Files.walk(testFolder)) {
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             assertEquals(actual, all);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
@@ -165,7 +165,7 @@ public class StreamTest {
     public void testWalkOneLevel() {
         try (CloseableStream<Path> s = Files.walk(testFolder, 1)) {
             Object[] actual = s.filter(path -> ! path.equals(testFolder))
-                               .sorted(Comparators.naturalOrder())
+                               .sorted(Comparator.naturalOrder())
                                .toArray();
             assertEquals(actual, level1);
         } catch (IOException ioe) {
@@ -177,7 +177,7 @@ public class StreamTest {
         // If link is not supported, the directory structure won't have link.
         // We still want to test the behavior with FOLLOW_LINKS option.
         try (CloseableStream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             assertEquals(actual, all_folowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
@@ -637,13 +637,13 @@ public class StreamTest {
     public void testClosedStream() throws IOException {
         try (CloseableStream<Path> s = Files.list(testFolder)) {
             s.close();
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             assertTrue(actual.length <= level1.length);
         }
 
         try (CloseableStream<Path> s = Files.walk(testFolder)) {
             s.close();
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             fail("Operate on closed stream should throw IllegalStateException");
         } catch (IllegalStateException ex) {
             // expected
@@ -652,7 +652,7 @@ public class StreamTest {
         try (CloseableStream<Path> s = Files.find(testFolder, Integer.MAX_VALUE,
                     (p, attr) -> true)) {
             s.close();
-            Object[] actual = s.sorted(Comparators.naturalOrder()).toArray();
+            Object[] actual = s.sorted(Comparator.naturalOrder()).toArray();
             fail("Operate on closed stream should throw IllegalStateException");
         } catch (IllegalStateException ex) {
             // expected

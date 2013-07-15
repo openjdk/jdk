@@ -57,6 +57,7 @@ public class C {
      * Defines the direction/speed at which the {@code Timeline} is expected to
      * be played.
      * @defaultValue 11
+     * @since JavaFX 8.0
      */
     private DoubleProperty rate;
 

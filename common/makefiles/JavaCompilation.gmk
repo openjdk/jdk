@@ -155,7 +155,7 @@ define SetupArchive
         # lines, but not here for use in make dependencies.
         $1_DEPS+=$$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
         ifeq (,$$($1_SKIP_METAINF))
-            $1_DEPS+=$$(call CacheFind $$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
+            $1_DEPS+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
         endif
     endif
 
@@ -255,12 +255,21 @@ define SetupZipArchive
     $(call LogSetupMacroEntry,SetupZipArchive($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
     $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
 
+    # To avoid running find over too large sets of files, which causes make to crash
+    # on some configurations (cygwin), use INCLUDES and INCLUDE_FILES to build a set
+    # of directories to run find in, if available.
+    ifneq ($$($1_INCLUDES)$$($1_INCLUDE_FILES),)
+	$1_FIND_LIST := $$(wildcard $$(foreach i,$$($1_SRC),\
+		$$(addprefix $$i/,$$($1_INCLUDES) $$($1_INCLUDE_FILES))))
+    else
+        $1_FIND_LIST := $$($1_SRC)
+    endif
+
     # Find all files in the source tree.
     $1_ALL_SRCS := $$(call not-containing,_the.,\
-            $$(filter $$(addprefix %,$$($1_SUFFIXES)),$$(call CacheFind $$($1_SRC))))
+            $$(filter $$(addprefix %,$$($1_SUFFIXES)),$$(call CacheFind,$$($1_FIND_LIST))))
 
     ifneq ($$($1_INCLUDES),)
-        $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
         ifneq ($$($1_SUFFIXES),)
             $1_ZIP_INCLUDES := $$(foreach s,$$($1_SUFFIXES),\
 		$$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$$s$(DQUOTE),$$($1_INCLUDES))))
@@ -269,11 +278,7 @@ define SetupZipArchive
         endif
     endif
     ifneq ($$($1_INCLUDE_FILES),)
-        $1_SRC_INCLUDES += $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
         $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
-    endif
-    ifneq ($$($1_SRC_INCLUDES),)
-        $1_ALL_SRCS     := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_SRCS))
     endif
     ifneq ($$($1_EXCLUDES),)
         $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))

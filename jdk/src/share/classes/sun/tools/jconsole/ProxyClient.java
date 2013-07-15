@@ -307,10 +307,10 @@ public class ProxyClient implements JConsoleContext {
         }
     }
 
-    void connect() {
+    void connect(boolean requireSSL) {
         setConnectionState(ConnectionState.CONNECTING);
         try {
-            tryConnect();
+            tryConnect(requireSSL);
             setConnectionState(ConnectionState.CONNECTED);
         } catch (Exception e) {
             if (JConsole.isDebug()) {
@@ -320,7 +320,7 @@ public class ProxyClient implements JConsoleContext {
         }
     }
 
-    private void tryConnect() throws IOException {
+    private void tryConnect(boolean requireRemoteSSL) throws IOException {
         if (jmxUrl == null && "localhost".equals(hostName) && port == 0) {
             // Monitor self
             this.jmxc = null;
@@ -340,6 +340,10 @@ public class ProxyClient implements JConsoleContext {
                     this.jmxUrl = new JMXServiceURL(lvm.connectorAddress());
                 }
             }
+            Map<String, Object> env = new HashMap<String, Object>();
+            if (requireRemoteSSL) {
+                env.put("jmx.remote.x.check.stub", "true");
+            }
             // Need to pass in credentials ?
             if (userName == null && password == null) {
                 if (isVmConnector()) {
@@ -348,12 +352,11 @@ public class ProxyClient implements JConsoleContext {
                         checkSslConfig();
                     }
                     this.jmxc = new RMIConnector(stub, null);
-                    jmxc.connect();
+                    jmxc.connect(env);
                 } else {
-                    this.jmxc = JMXConnectorFactory.connect(jmxUrl);
+                    this.jmxc = JMXConnectorFactory.connect(jmxUrl, env);
                 }
             } else {
-                Map<String, String[]> env = new HashMap<String, String[]>();
                 env.put(JMXConnector.CREDENTIALS,
                         new String[] {userName, password});
                 if (isVmConnector()) {

@@ -52,7 +52,7 @@ import java.util.Spliterator;
  * <p> There is one subclass of this class for each non-boolean primitive type.
  *
  *
- * <h4> Transferring data </h4>
+ * <h2> Transferring data </h2>
  *
  * <p> Each subclass of this class defines two categories of <i>get</i> and
  * <i>put</i> operations: </p>
@@ -78,7 +78,7 @@ import java.util.Spliterator;
  * current position.
  *
  *
- * <h4> Marking and resetting </h4>
+ * <h2> Marking and resetting </h2>
  *
  * <p> A buffer's <i>mark</i> is the index to which its position will be reset
  * when the {@link #reset reset} method is invoked.  The mark is not always
@@ -89,7 +89,7 @@ import java.util.Spliterator;
  * {@link InvalidMarkException} to be thrown.
  *
  *
- * <h4> Invariants </h4>
+ * <h2> Invariants </h2>
  *
  * <p> The following invariant holds for the mark, position, limit, and
  * capacity values:
@@ -109,7 +109,7 @@ import java.util.Spliterator;
  * to zero.
  *
  *
- * <h4> Clearing, flipping, and rewinding </h4>
+ * <h2> Clearing, flipping, and rewinding </h2>
  *
  * <p> In addition to methods for accessing the position, limit, and capacity
  * values and for marking and resetting, this class also defines the following
@@ -132,7 +132,7 @@ import java.util.Spliterator;
  * </ul>
  *
  *
- * <h4> Read-only buffers </h4>
+ * <h2> Read-only buffers </h2>
  *
  * <p> Every buffer is readable, but not every buffer is writable.  The
  * mutation methods of each buffer class are specified as <i>optional
@@ -143,14 +143,14 @@ import java.util.Spliterator;
  * {@link #isReadOnly isReadOnly} method.
  *
  *
- * <h4> Thread safety </h4>
+ * <h2> Thread safety </h2>
  *
  * <p> Buffers are not safe for use by multiple concurrent threads.  If a
  * buffer is to be used by more than one thread then access to the buffer
  * should be controlled by appropriate synchronization.
  *
  *
- * <h4> Invocation chaining </h4>
+ * <h2> Invocation chaining </h2>
  *
  * <p> Methods in this class that do not otherwise have a value to return are
  * specified to return the buffer upon which they are invoked.  This allows
@@ -209,7 +209,7 @@ public abstract class Buffer {
     }
 
     /**
-     * Returns this buffer's capacity. </p>
+     * Returns this buffer's capacity.
      *
      * @return  The capacity of this buffer
      */
@@ -218,7 +218,7 @@ public abstract class Buffer {
     }
 
     /**
-     * Returns this buffer's position. </p>
+     * Returns this buffer's position.
      *
      * @return  The position of this buffer
      */
@@ -228,7 +228,7 @@ public abstract class Buffer {
 
     /**
      * Sets this buffer's position.  If the mark is defined and larger than the
-     * new position then it is discarded. </p>
+     * new position then it is discarded.
      *
      * @param  newPosition
      *         The new position value; must be non-negative
@@ -248,7 +248,7 @@ public abstract class Buffer {
     }
 
     /**
-     * Returns this buffer's limit. </p>
+     * Returns this buffer's limit.
      *
      * @return  The limit of this buffer
      */
@@ -259,7 +259,7 @@ public abstract class Buffer {
     /**
      * Sets this buffer's limit.  If the position is larger than the new limit
      * then it is set to the new limit.  If the mark is defined and larger than
-     * the new limit then it is discarded. </p>
+     * the new limit then it is discarded.
      *
      * @param  newLimit
      *         The new limit value; must be non-negative
@@ -280,7 +280,7 @@ public abstract class Buffer {
     }
 
     /**
-     * Sets this buffer's mark at its position. </p>
+     * Sets this buffer's mark at its position.
      *
      * @return  This buffer
      */
@@ -383,7 +383,7 @@ public abstract class Buffer {
 
     /**
      * Returns the number of elements between the current position and the
-     * limit. </p>
+     * limit.
      *
      * @return  The number of elements remaining in this buffer
      */
@@ -393,7 +393,7 @@ public abstract class Buffer {
 
     /**
      * Tells whether there are any elements between the current position and
-     * the limit. </p>
+     * the limit.
      *
      * @return  <tt>true</tt> if, and only if, there is at least one element
      *          remaining in this buffer
@@ -403,7 +403,7 @@ public abstract class Buffer {
     }
 
     /**
-     * Tells whether or not this buffer is read-only. </p>
+     * Tells whether or not this buffer is read-only.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is read-only
      */
@@ -477,7 +477,7 @@ public abstract class Buffer {
 
     /**
      * Tells whether or not this buffer is
-     * <a href="ByteBuffer.html#direct"><i>direct</i></a>. </p>
+     * <a href="ByteBuffer.html#direct"><i>direct</i></a>.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is direct
      *
@@ -491,7 +491,7 @@ public abstract class Buffer {
     /**
      * Checks the current position against the limit, throwing a {@link
      * BufferUnderflowException} if it is not smaller than the limit, and then
-     * increments the position. </p>
+     * increments the position.
      *
      * @return  The current position value, before it is incremented
      */
@@ -512,7 +512,7 @@ public abstract class Buffer {
     /**
      * Checks the current position against the limit, throwing a {@link
      * BufferOverflowException} if it is not smaller than the limit, and then
-     * increments the position. </p>
+     * increments the position.
      *
      * @return  The current position value, before it is incremented
      */

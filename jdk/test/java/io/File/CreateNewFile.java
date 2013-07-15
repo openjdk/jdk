@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4130498 4391178
+   @bug 4130498 4391178 6198547
    @summary Basic test for createNewFile method
  */
 
@@ -51,5 +51,20 @@ public class CreateNewFile {
         } catch (IOException e) {
             // Exception expected
         }
+
+        testCreateExistingDir();
+    }
+
+    // Test JDK-6198547
+    private static void testCreateExistingDir() throws IOException {
+        File tmpFile = new File("hugo");
+        if (tmpFile.exists() && !tmpFile.delete())
+            throw new RuntimeException("Cannot delete " + tmpFile);
+        if (!tmpFile.mkdir())
+            throw new RuntimeException("Cannot create dir " + tmpFile);
+        if (!tmpFile.exists())
+            throw new RuntimeException("Cannot see created dir " + tmpFile);
+        if (tmpFile.createNewFile())
+            throw new RuntimeException("Should fail to create file " + tmpFile);
     }
 }
