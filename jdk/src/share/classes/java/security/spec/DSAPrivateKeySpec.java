@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,36 +69,36 @@ public class DSAPrivateKeySpec implements KeySpec {
     }
 
     /**
-     * Returns the private key <code>x</code>.
+     * Returns the private key {@code x}.
      *
-     * @return the private key <code>x</code>.
+     * @return the private key {@code x}.
      */
     public BigInteger getX() {
         return this.x;
     }
 
     /**
-     * Returns the prime <code>p</code>.
+     * Returns the prime {@code p}.
      *
-     * @return the prime <code>p</code>.
+     * @return the prime {@code p}.
      */
     public BigInteger getP() {
         return this.p;
     }
 
     /**
-     * Returns the sub-prime <code>q</code>.
+     * Returns the sub-prime {@code q}.
      *
-     * @return the sub-prime <code>q</code>.
+     * @return the sub-prime {@code q}.
      */
     public BigInteger getQ() {
         return this.q;
     }
 
     /**
-     * Returns the base <code>g</code>.
+     * Returns the base {@code g}.
      *
-     * @return the base <code>g</code>.
+     * @return the base {@code g}.
      */
     public BigInteger getG() {
         return this.g;

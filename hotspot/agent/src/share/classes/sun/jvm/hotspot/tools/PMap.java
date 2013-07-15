@@ -31,6 +31,15 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.runtime.*;
 
 public class PMap extends Tool {
+
+   public PMap() {
+       super();
+   }
+
+   public PMap(JVMDebugger d) {
+       super(d);
+   }
+
    public void run() {
       run(System.out);
    }

@@ -30,13 +30,23 @@ package jdk.nashorn.api.scripting;
  */
 public abstract class JSObject {
     /**
-     * Call a JavaScript method
+     * Call a JavaScript function
      *
-     * @param methodName name of method
+     * @param functionName name of function
      * @param args arguments to method
      * @return result of call
      */
-    public abstract Object call(String methodName, Object args[]);
+    public abstract Object call(String functionName, Object... args);
+
+    /**
+     * Call a JavaScript method as a constructor. This is equivalent to
+     * calling new obj.Method(arg1, arg2...) in JavaScript.
+     *
+     * @param functionName name of function
+     * @param args arguments to method
+     * @return result of constructor call
+     */
+    public abstract Object newObject(String functionName, Object... args);
 
     /**
      * Evaluate a JavaScript expression

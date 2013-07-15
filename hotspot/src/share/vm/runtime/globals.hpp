@@ -220,7 +220,8 @@ struct Flag {
   // number of flags
   static size_t numFlags;
 
-  static Flag* find_flag(char* name, size_t length, bool allow_locked = false);
+  static Flag* find_flag(const char* name, size_t length, bool allow_locked = false);
+  static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
   bool is_bool() const        { return strcmp(type, "bool") == 0; }
   bool get_bool() const       { return *((bool*) addr); }
@@ -643,6 +644,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseAESIntrinsics, false,                                    \
           "use intrinsics for AES versions of crypto")                      \
+                                                                            \
+  product(bool, UseCRC32Intrinsics, false,                                  \
+          "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -2311,6 +2315,10 @@ class CommandLineFlags {
           "Print diagnostic message when GC is stalled"                     \
           "by JNI critical section")                                        \
                                                                             \
+  experimental(double, ObjectCountCutOffPercent, 0.5,                       \
+          "The percentage of the used heap that the instances of a class "  \
+          "must occupy for the class to generate a trace event.")           \
+                                                                            \
   /* GC log rotation setting */                                             \
                                                                             \
   product(bool, UseGCLogFileRotation, false,                                \
@@ -3156,6 +3164,9 @@ class CommandLineFlags {
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
                                                                             \
+  develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
+          "Minimum code cache size (in bytes) required to start VM.")       \
+                                                                            \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
                                                                             \
@@ -3688,7 +3699,13 @@ class CommandLineFlags {
   experimental(uintx, ArrayAllocatorMallocLimit,                            \
           SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
           "Allocation less than this value will be allocated "              \
-          "using malloc. Larger allocations will use mmap.")
+          "using malloc. Larger allocations will use mmap.")                \
+                                                                            \
+  product(bool, EnableTracing, false,                                       \
+          "Enable event-based tracing")                                     \
+  product(bool, UseLockedTracing, false,                                    \
+          "Use locked-tracing when doing event-based tracing")
+
 
 /*
  *  Macros for factoring of globals

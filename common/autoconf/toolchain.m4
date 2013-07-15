@@ -47,7 +47,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
-    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1`
+    COMPILER_VERSION_TEST=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*Version \(@<:@1-9@:>@@<:@0-9.@:>@*\) .*/\1/p"`
     COMPILER_VENDOR="Microsoft CL.EXE"
     COMPILER_CPU_TEST=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.* for \(.*\)$/\1/p"`
@@ -226,15 +226,6 @@ BDEPS_CHECK_MODULE(DEVKIT, devkit, xxx,
                     ],
                     [])
 
-if test "x$SYS_ROOT" != "x/" ; then
-    CFLAGS="--sysroot=$SYS_ROOT $CFLAGS"
-    CXXFLAGS="--sysroot=$SYS_ROOT $CXXFLAGS"
-    OBJCFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    OBJCXXFLAGS="--sysroot=$SYS_ROOT $OBJCFLAGS"
-    CPPFLAGS="--sysroot=$SYS_ROOT $CPPFLAGS"
-    LDFLAGS="--sysroot=$SYS_ROOT $LDFLAGS"
-fi
-
 # Store the CFLAGS etal passed to the configure script.
 ORG_CFLAGS="$CFLAGS"
 ORG_CXXFLAGS="$CXXFLAGS"
@@ -378,17 +369,20 @@ AS_IF([test "x$OPENJDK_TARGET_OS" = xwindows], [
     AS_IF([test "x$VARIANT" = xOPT], [
         RC_FLAGS="$RC_FLAGS -d NDEBUG"
     ])
-    JDK_UPDATE_VERSION_NOTNULL=$JDK_UPDATE_VERSION
-    AS_IF([test "x$JDK_UPDATE_VERSION" = x], [
-        JDK_UPDATE_VERSION_NOTNULL=0
-    ])
-    RC_FLAGS="$RC_FLAGS -d \"JDK_BUILD_ID=$FULL_VERSION\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPANY=$COMPANY_NAME\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COMPONENT=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME binary\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_VER=$JDK_MINOR_VERSION.$JDK_MICRO_VERSION.$JDK_UPDATE_VERSION_NOTNULL.$COOKED_BUILD_NUMBER\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_NAME=$PRODUCT_NAME $JDK_RC_PLATFORM_NAME $JDK_MINOR_VERSION $JDK_UPDATE_META_TAG\""
-    RC_FLAGS="$RC_FLAGS -d \"JDK_FVER=$JDK_MINOR_VERSION,$JDK_MICRO_VERSION,$JDK_UPDATE_VERSION_NOTNULL,$COOKED_BUILD_NUMBER\""
+
+    # The version variables used to create RC_FLAGS may be overridden
+    # in a custom configure script, or possibly the command line.  
+    # Let those variables be expanded at make time in spec.gmk.
+    # The \$ are escaped to the shell, and the $(...) variables
+    # are evaluated by make.
+    RC_FLAGS="$RC_FLAGS \
+        -d \"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -d \"JDK_COMPANY=\$(COMPANY_NAME)\" \
+        -d \"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
+        -d \"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
+        -d \"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
+        -d \"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
 
     # lib.exe is used to create static libraries.
     AC_CHECK_PROG([WINAR], [lib],[lib],,,)
@@ -629,7 +623,6 @@ CXX_FLAG_DEPS="-MMD -MF"
 
 case $COMPILER_TYPE in
   CC )
-    D_FLAG="-g"
     case $COMPILER_NAME in
       gcc )
       	case $OPENJDK_TARGET_OS in
@@ -644,17 +637,17 @@ case $COMPILER_TYPE in
 	    C_O_FLAG_HI="-O3"
 	    C_O_FLAG_NORM="-O2"
 	    C_O_FLAG_NONE="-O0"
-	    CFLAGS_DEBUG_SYMBOLS="-g"
-	    CXXFLAGS_DEBUG_SYMBOLS="-g"
-	    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
-	       CFLAGS_DEBUG_SYMBOLS="-g1"
-	       CXXFLAGS_DEBUG_SYMBOLS="-g1"
-	    fi
 	    ;;
 	esac
         CXX_O_FLAG_HI="$C_O_FLAG_HI"
         CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
         CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
+        CFLAGS_DEBUG_SYMBOLS="-g"
+        CXXFLAGS_DEBUG_SYMBOLS="-g"
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
+            CFLAGS_DEBUG_SYMBOLS="-g1"
+            CXXFLAGS_DEBUG_SYMBOLS="-g1"
+        fi
         ;;
       ossc )
         #
@@ -735,7 +728,6 @@ case $COMPILER_TYPE in
     esac
     ;;
   CL )
-    D_FLAG=
     C_O_FLAG_HIGHEST="-O2"
     C_O_FLAG_HI="-O1"
     C_O_FLAG_NORM="-O1"
@@ -860,6 +852,28 @@ case $COMPILER_NAME in
 esac
 
 ###############################################################################
+
+# Adjust flags according to debug level.
+case $DEBUG_LEVEL in
+      fastdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NORM"
+	      C_O_FLAG_NORM="$C_O_FLAG_NORM"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NORM"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NORM"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+      slowdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NONE"
+	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+esac
 
 CCXXFLAGS_JDK="$CCXXFLAGS_JDK $ADD_LP64"
 
@@ -1003,23 +1017,6 @@ else
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
     fi
 fi
-
-# Adjust flags according to debug level.
-case $DEBUG_LEVEL in
-      fastdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-      slowdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-	      C_O_FLAG_HI="$C_O_FLAG_NONE"
-	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
-	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
-	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-esac
-
 
 AC_SUBST(CFLAGS_JDKLIB)
 AC_SUBST(CFLAGS_JDKEXE)

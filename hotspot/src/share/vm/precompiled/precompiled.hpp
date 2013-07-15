@@ -26,7 +26,6 @@
 // or if the user passes USE_PRECOMPILED_HEADER=0 to the makefiles.
 
 #ifndef DONT_USE_PRECOMPILED_HEADER
-
 # include "asm/assembler.hpp"
 # include "asm/assembler.inline.hpp"
 # include "asm/codeBuffer.hpp"

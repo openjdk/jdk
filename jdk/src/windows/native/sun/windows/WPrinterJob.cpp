@@ -750,7 +750,7 @@ Java_sun_print_Win32PrintService_getCapabilities(JNIEnv *env,
 
 
 #define GETDEFAULT_ERROR        -50
-#define NDEFAULT 8
+#define NDEFAULT 9
 
 JNIEXPORT jintArray JNICALL
 Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
@@ -858,6 +858,11 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
   if (pDevMode->dmFields & DM_COLLATE) {
       defIndices[7] = pDevMode->dmCollate;
   }
+
+  if (pDevMode->dmFields & DM_COLOR) {
+      defIndices[8] = pDevMode->dmColor;
+  }
+
 
   GlobalFree(pDevMode);
   ::ClosePrinter(hPrinter);

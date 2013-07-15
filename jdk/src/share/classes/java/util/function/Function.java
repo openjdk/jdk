@@ -87,6 +87,7 @@ public interface Function<T, R> {
      * Returns a {@code Function} whose {@code apply} method returns its input.
      *
      * @param <T> the type of the input and output objects to the function
+     * @return a {@code Function} whose {@code apply} method returns its input
      */
     static <T> Function<T, T> identity() {
         return t -> t;

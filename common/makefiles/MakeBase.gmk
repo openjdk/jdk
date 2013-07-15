@@ -332,9 +332,11 @@ define SetupLogging
         # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
         # For each target executed, will print
         # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
-        # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much (and causing a crash on Cygwin).
-        OLD_SHELL:=$$(SHELL)
-        WRAPPER_SHELL:=$$(OLD_SHELL) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(TIME),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(OLD_SHELL)
+        # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much 
+        # (and causing a crash on Cygwin).
+        # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
+        # Only use time if it's GNU time which supports format and output file.
+        WRAPPER_SHELL:=/bin/bash $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log /bin/bash
         SHELL=$$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
     endif
     # Never remove warning messages; this is just for completeness

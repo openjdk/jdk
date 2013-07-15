@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ package com.sun.corba.se.impl.corba;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List ;
 import java.util.ArrayList ;
 
@@ -504,7 +506,13 @@ public class AnyImpl extends Any
     public org.omg.CORBA.portable.OutputStream create_output_stream()
     {
         //debug.log ("create_output_stream");
-        return new AnyOutputStream(orb);
+        final ORB finalorb = this.orb;
+        return AccessController.doPrivileged(new PrivilegedAction<AnyOutputStream>() {
+            @Override
+            public AnyOutputStream run() {
+                return new AnyOutputStream(finalorb);
+            }
+        });
     }
 
     /**

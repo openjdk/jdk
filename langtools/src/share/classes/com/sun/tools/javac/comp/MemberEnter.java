@@ -109,7 +109,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         source = Source.instance(context);
         target = Target.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
+        allowTypeAnnos = source.allowTypeAnnotations();
     }
+
+    /** Switch: support type annotations.
+     */
+    boolean allowTypeAnnos;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -117,7 +122,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     ListBuffer<Env<AttrContext>> halfcompleted = new ListBuffer<Env<AttrContext>>();
 
     /** Set to true only when the first of a set of classes is
-     *  processed from the halfcompleted queue.
+     *  processed from the half completed queue.
      */
     boolean isFirst = true;
 
@@ -558,6 +563,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                                localEnv);
         } finally {
             chk.setDeferredLintHandler(prevLintHandler);
+        }
+
+        if (types.isSignaturePolymorphic(m)) {
+            m.flags_field |= SIGNATURE_POLYMORPHIC;
         }
 
         // Set m.params
@@ -1068,7 +1077,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 isFirst = true;
             }
         }
-        TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+        if (allowTypeAnnos) {
+            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+        }
     }
 
     /*
@@ -1113,7 +1124,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     public void typeAnnotate(final JCTree tree, final Env<AttrContext> env, final Symbol sym) {
-        tree.accept(new TypeAnnotate(env, sym));
+        if (allowTypeAnnos) {
+            tree.accept(new TypeAnnotate(env, sym));
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineFrequencyCount,     100);
 define_pd_global(intx, InlineSmallCode,          1000);
 
-define_pd_global(intx, StackYellowPages, 2);
+define_pd_global(intx, StackYellowPages, NOT_WINDOWS(2) WINDOWS_ONLY(3));
 define_pd_global(intx, StackRedPages, 1);
 #ifdef AMD64
 // Very large C++ stack frames using solaris-amd64 optimized builds
@@ -95,6 +95,9 @@ define_pd_global(uintx, CMSYoungGenPerWorker, 64*M);  // default max size of CMS
                                                                             \
   product(intx, UseAVX, 99,                                                 \
           "Highest supported AVX instructions set on x86/x64")              \
+                                                                            \
+  product(bool, UseCLMUL, false,                                            \
+          "Control whether CLMUL instructions can be used on x86/x64")      \
                                                                             \
   diagnostic(bool, UseIncDec, true,                                         \
           "Use INC, DEC instructions on x86")                               \

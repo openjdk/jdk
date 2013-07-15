@@ -1332,7 +1332,7 @@ LIBFONTMANAGER_OPTIMIZATION:=HIGH
 ifeq ($(OPENJDK_TARGET_OS),windows)
     LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
 				    X11TextRenderer.c
-    LIBFONTMANAGER_OPTIMIZATION:=LOW
+LIBFONTMANAGER_OPTIMIZATION:=HIGHEST
 else
     LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c \
 				    lcdglyph.c
@@ -2916,7 +2916,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA,\
 				PLATFORM_API_LinuxOS_ALSA_Ports.c,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
-		CFLAGS:=$(CFLAGS_JDKLIB) \
+		CFLAGS:=$(CFLAGS_JDKLIB) $(ALSA_CFLAGS) \
 			$(LIBJSOUND_CFLAGS) \
 			-DUSE_DAUDIO=TRUE \
 			-DUSE_PORTS=TRUE  \
@@ -2925,7 +2925,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjsoundalsa/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB)\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX:=-lasound -ljava -ljvm,\
+		LDFLAGS_SUFFIX:=$(ALSA_LIBS) -ljava -ljvm,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundalsa,\
 		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 

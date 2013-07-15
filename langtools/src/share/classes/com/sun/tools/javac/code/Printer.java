@@ -215,7 +215,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     @Override
     public String visitClassType(ClassType t, Locale locale) {
         StringBuilder buf = new StringBuilder();
-        if (t.getEnclosingType().tag == CLASS && t.tsym.owner.kind == Kinds.TYP) {
+        if (t.getEnclosingType().hasTag(CLASS) && t.tsym.owner.kind == Kinds.TYP) {
             buf.append(visit(t.getEnclosingType(), locale));
             buf.append('.');
             buf.append(className(t, false, locale));
@@ -379,7 +379,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
                     ? s.owner.name.toString()
                     : s.name.toString();
             if (s.type != null) {
-                if (s.type.tag == FORALL) {
+                if (s.type.hasTag(FORALL)) {
                     ms = "<" + visitTypes(s.type.getTypeArguments(), locale) + ">" + ms;
                 }
                 ms += "(" + printMethodArgs(

@@ -33,18 +33,19 @@ import java.awt.event.*;
 import java.awt.font.*;
 import java.awt.geom.*;
 import java.awt.print.PrinterGraphics;
-import java.text.Bidi;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
 import javax.swing.*;
-import javax.swing.plaf.*;
+import javax.swing.event.TreeModelEvent;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.DefaultCaret;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 
 import sun.swing.PrintColorUIResource;
 import sun.swing.ImageIconUIResource;
@@ -1899,5 +1900,23 @@ public class SwingUtilities2 {
             return ((SunToolkit) toolkit).getFocusAcceleratorKeyMask();
         }
         return InputEvent.ALT_MASK;
+    }
+
+    /**
+     * Returns the {@link TreePath} that identifies the changed nodes.
+     *
+     * @param event  changes in a tree model
+     * @param model  corresponing tree model
+     * @return  the path to the changed nodes
+     */
+    public static TreePath getTreePath(TreeModelEvent event, TreeModel model) {
+        TreePath path = event.getTreePath();
+        if ((path == null) && (model != null)) {
+            Object root = model.getRoot();
+            if (root != null) {
+                path = new TreePath(root);
+            }
+        }
+        return path;
     }
 }

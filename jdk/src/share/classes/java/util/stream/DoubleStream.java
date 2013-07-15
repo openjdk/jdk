@@ -743,14 +743,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      */
     public static DoubleStream generate(DoubleSupplier s) {
         Objects.requireNonNull(s);
-        return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(
-                new PrimitiveIterator.OfDouble() {
-                    @Override
-                    public boolean hasNext() { return true; }
-
-                    @Override
-                    public double nextDouble() { return s.getAsDouble(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+        return StreamSupport.doubleStream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfDouble(Long.MAX_VALUE, s));
     }
 }

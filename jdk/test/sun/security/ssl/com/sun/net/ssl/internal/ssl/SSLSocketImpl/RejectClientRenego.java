@@ -216,7 +216,8 @@ public class RejectClientRenego implements
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
         // reject client initialized SSL renegotiation.
-        System.setProperty("jdk.tls.rejectClientInitializedRenego", "true");
+        System.setProperty(
+            "jdk.tls.rejectClientInitiatedRenegotiation", "true");
 
         if (debug)
             System.setProperty("javax.net.debug", "all");
