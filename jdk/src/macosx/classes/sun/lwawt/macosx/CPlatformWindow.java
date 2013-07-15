@@ -896,8 +896,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             nativePeer = ((CPlatformWindow) platformWindow).getContentView().getAWTView();
         } else if (platformWindow instanceof CViewPlatformEmbeddedFrame){
             nativePeer = ((CViewPlatformEmbeddedFrame) platformWindow).getNSViewPtr();
-        } else {
-            throw new IllegalArgumentException("Unsupported platformWindow implementation");
         }
         return nativePeer;
     }
