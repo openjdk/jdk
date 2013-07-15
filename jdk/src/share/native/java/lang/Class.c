@@ -69,7 +69,7 @@ static JNINativeMethod methods[] = {
     {"getDeclaredConstructors0","(Z)[" CTR, (void *)&JVM_GetClassDeclaredConstructors},
     {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
     {"getDeclaredClasses0",  "()[" CLS,      (void *)&JVM_GetDeclaredClasses},
-    {"getDeclaringClass",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
+    {"getDeclaringClass0",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
     {"getGenericSignature0", "()" STR,      (void *)&JVM_GetClassSignature},
     {"getRawAnnotations",      "()" BA,        (void *)&JVM_GetClassAnnotations},
     {"getConstantPool",     "()" CPL,       (void *)&JVM_GetClassConstantPool},
