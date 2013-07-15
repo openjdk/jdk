@@ -395,6 +395,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: C c = new C(); c.m() == 88;
      * TEST: I i = new C(); i.m() == 88;
      */
+    @Test(enabled=false)
     public void testSelfFill() {
         // This test ensures that a concrete method overrides a default method
         // that matches at the language-level, but has a different method
@@ -484,6 +485,7 @@ public class DefaultMethodsTest extends TestHarness {
      * TEST: J<String,String> j = new C(); j.m("A","B","C") == 88;
      * TEST: K<String> k = new C(); k.m("A","B","C") == 88;
      */
+    @Test(enabled=false)
     public void testBridges() {
         DefaultMethod dm = new DefaultMethod("int", stdMethodName, "return 99;",
             new MethodParameter("T", "t"), new MethodParameter("V", "v"),
@@ -672,6 +674,7 @@ public class DefaultMethodsTest extends TestHarness {
      * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
      * TEST: S s = new S(); s.foo() == new Integer(99)
      */
+    @Test(enabled=false)
     public void testCovarBridge() {
         Interface I = new Interface("I", new DefaultMethod(
             "Integer", "m", "return new Integer(88);"));
@@ -754,6 +757,7 @@ public class DefaultMethodsTest extends TestHarness {
      * Test that a erased-signature-matching method does not implement
      * non-language-level matching methods
      */
+    @Test(enabled=false)
     public void testNonConcreteFill() {
         AbstractMethod ipm = new AbstractMethod("int", "m",
             new MethodParameter("T", "t"),

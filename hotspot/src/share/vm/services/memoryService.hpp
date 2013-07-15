@@ -73,6 +73,9 @@ private:
   // Code heap memory pool
   static MemoryPool*                    _code_heap_pool;
 
+  static MemoryPool*                    _metaspace_pool;
+  static MemoryPool*                    _compressed_class_pool;
+
   static void add_generation_memory_pool(Generation* gen,
                                          MemoryManager* major_mgr,
                                          MemoryManager* minor_mgr);
@@ -121,6 +124,7 @@ private:
 public:
   static void set_universe_heap(CollectedHeap* heap);
   static void add_code_heap_memory_pool(CodeHeap* heap);
+  static void add_metaspace_memory_pools();
 
   static MemoryPool*    get_memory_pool(instanceHandle pool);
   static MemoryManager* get_memory_manager(instanceHandle mgr);

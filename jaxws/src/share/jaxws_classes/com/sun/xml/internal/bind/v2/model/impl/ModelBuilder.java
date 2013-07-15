@@ -289,10 +289,21 @@ public class ModelBuilder<T,C,F,M> implements ModelBuilderI<T,C,F,M> {
         String pkg = nav.getPackageName(clazz);
         if (!registries.containsKey(pkg)) {
             // insert the package's object factory
-            C c = nav.findClass(pkg + ".ObjectFactory", clazz);
+            C c = loadObjectFactory(clazz, pkg);
             if (c != null)
                 addRegistry(c, p);
         }
+    }
+
+    private C loadObjectFactory(C clazz, String pkg) {
+        C c;
+        try {
+            c = nav.findClass(pkg + ".ObjectFactory", clazz);
+        } catch (SecurityException ignored) {
+            // treat SecurityException in same way as ClassNotFoundException in this case
+            c = null;
+        }
+        return c;
     }
 
     /**

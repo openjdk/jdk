@@ -59,6 +59,7 @@
 import org.ietf.jgss.GSSName;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
+import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.crypto.EType;
 
 /**
@@ -84,12 +85,10 @@ public class BasicKrb5Test {
 
         // Creates and starts the KDC. This line must be put ahead of etype check
         // since the check needs a krb5.conf.
-        new OneKDC(etype).writeJAASConf();
-
-        System.out.println("Testing etype " + etype);
-        if (etype != null && !EType.isSupported(Config.getType(etype))) {
-            // aes256 is not enabled on all systems
-            System.out.println("Not supported.");
+        try {
+            new OneKDC(etype).writeJAASConf();
+        } catch (KrbException ke) {
+            System.out.println("Testing etype " + etype + "Not supported.");
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,12 @@ public final class CodeSigner implements Serializable {
      * Constructs a CodeSigner object.
      *
      * @param signerCertPath The signer's certificate path.
-     *                       It must not be <code>null</code>.
+     *                       It must not be {@code null}.
      * @param timestamp A signature timestamp.
-     *                  If <code>null</code> then no timestamp was generated
+     *                  If {@code null} then no timestamp was generated
      *                  for the signature.
-     * @throws NullPointerException if <code>signerCertPath</code> is
-     *                              <code>null</code>.
+     * @throws NullPointerException if {@code signerCertPath} is
+     *                              {@code null}.
      */
     public CodeSigner(CertPath signerCertPath, Timestamp timestamp) {
         if (signerCertPath == null) {
@@ -90,7 +90,7 @@ public final class CodeSigner implements Serializable {
     /**
      * Returns the signature timestamp.
      *
-     * @return The timestamp or <code>null</code> if none is present.
+     * @return The timestamp or {@code null} if none is present.
      */
     public Timestamp getTimestamp() {
         return timestamp;

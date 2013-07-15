@@ -924,9 +924,9 @@ public class Collections {
      * Returns the starting position of the first occurrence of the specified
      * target list within the specified source list, or -1 if there is no
      * such occurrence.  More formally, returns the lowest index <tt>i</tt>
-     * such that <tt>source.subList(i, i+target.size()).equals(target)</tt>,
+     * such that {@code source.subList(i, i+target.size()).equals(target)},
      * or -1 if there is no such index.  (Returns -1 if
-     * <tt>target.size() > source.size()</tt>.)
+     * {@code target.size() > source.size()})
      *
      * <p>This implementation uses the "brute force" technique of scanning
      * over the source list, looking for a match with the target at each
@@ -977,9 +977,9 @@ public class Collections {
      * Returns the starting position of the last occurrence of the specified
      * target list within the specified source list, or -1 if there is no such
      * occurrence.  More formally, returns the highest index <tt>i</tt>
-     * such that <tt>source.subList(i, i+target.size()).equals(target)</tt>,
+     * such that {@code source.subList(i, i+target.size()).equals(target)},
      * or -1 if there is no such index.  (Returns -1 if
-     * <tt>target.size() > source.size()</tt>.)
+     * {@code target.size() > source.size()})
      *
      * <p>This implementation uses the "brute force" technique of iterating
      * over the source list, looking for a match with the target at each
@@ -4304,6 +4304,11 @@ public class Collections {
         }
 
         private Object readResolve() { return Collections.reverseOrder(); }
+
+        @Override
+        public Comparator<Comparable<Object>> reversed() {
+            return Comparator.naturalOrder();
+        }
     }
 
     /**
@@ -4366,6 +4371,11 @@ public class Collections {
 
         public int hashCode() {
             return cmp.hashCode() ^ Integer.MIN_VALUE;
+        }
+
+        @Override
+        public Comparator<T> reversed() {
+            return cmp;
         }
     }
 

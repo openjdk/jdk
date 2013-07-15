@@ -702,7 +702,7 @@ public abstract class ClassLoader {
      * bootstrap class loader.  If <tt>name</tt> is not <tt>null</tt>, it
      * must be equal to the <a href="#name">binary name</a> of the class
      * specified by the byte array "<tt>b</tt>", otherwise a {@link
-     * <tt>NoClassDefFoundError</tt>} will be thrown.  </p>
+     * NoClassDefFoundError <tt>NoClassDefFoundError</tt>} will be thrown. </p>
      *
      * @param  name
      *         The expected <a href="#name">binary name</a> of the class, or

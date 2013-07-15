@@ -31,7 +31,7 @@ package java.sql;
  * <P>
  * This interface is implemented by driver vendors to let users know the capabilities
  * of a Database Management System (DBMS) in combination with
- * the driver based on JDBC<sup><font size=-2>TM</font></sup> technology
+ * the driver based on JDBC&trade; technology
  * ("JDBC driver") that is used with it.  Different relational DBMSs often support
  * different features, implement features in different ways, and use different
  * data types.  In addition, a driver may implement a feature on top of what the
@@ -1218,21 +1218,21 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each procedure description has the the following columns:
      *  <OL>
-     *  <LI><B>PROCEDURE_CAT</B> String => procedure catalog (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_SCHEM</B> String => procedure schema (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_NAME</B> String => procedure name
+     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_NAME</B> String {@code =>} procedure name
      *  <LI> reserved for future use
      *  <LI> reserved for future use
      *  <LI> reserved for future use
-     *  <LI><B>REMARKS</B> String => explanatory comment on the procedure
-     *  <LI><B>PROCEDURE_TYPE</B> short => kind of procedure:
+     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the procedure
+     *  <LI><B>PROCEDURE_TYPE</B> short {@code =>} kind of procedure:
      *      <UL>
      *      <LI> procedureResultUnknown - Cannot determine if  a return value
      *       will be returned
      *      <LI> procedureNoResult - Does not return a return value
      *      <LI> procedureReturnsResult - Returns a return value
      *      </UL>
-     *  <LI><B>SPECIFIC_NAME</B> String  => The name which uniquely identifies this
+     *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} The name which uniquely identifies this
      * procedure within its schema.
      *  </OL>
      * <p>
@@ -1297,11 +1297,11 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>Each row in the <code>ResultSet</code> is a parameter description or
      * column description with the following fields:
      *  <OL>
-     *  <LI><B>PROCEDURE_CAT</B> String => procedure catalog (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_SCHEM</B> String => procedure schema (may be <code>null</code>)
-     *  <LI><B>PROCEDURE_NAME</B> String => procedure name
-     *  <LI><B>COLUMN_NAME</B> String => column/parameter name
-     *  <LI><B>COLUMN_TYPE</B> Short => kind of column/parameter:
+     *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be <code>null</code>)
+     *  <LI><B>PROCEDURE_NAME</B> String {@code =>} procedure name
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column/parameter name
+     *  <LI><B>COLUMN_TYPE</B> Short {@code =>} kind of column/parameter:
      *      <UL>
      *      <LI> procedureColumnUnknown - nobody knows
      *      <LI> procedureColumnIn - IN parameter
@@ -1310,44 +1310,44 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> procedureColumnReturn - procedure return value
      *      <LI> procedureColumnResult - result column in <code>ResultSet</code>
      *      </UL>
-     *  <LI><B>DATA_TYPE</B> int => SQL type from java.sql.Types
-     *  <LI><B>TYPE_NAME</B> String => SQL type name, for a UDT type the
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
+     *  <LI><B>TYPE_NAME</B> String {@code =>} SQL type name, for a UDT type the
      *  type name is fully qualified
-     *  <LI><B>PRECISION</B> int => precision
-     *  <LI><B>LENGTH</B> int => length in bytes of data
-     *  <LI><B>SCALE</B> short => scale -  null is returned for data types where
+     *  <LI><B>PRECISION</B> int {@code =>} precision
+     *  <LI><B>LENGTH</B> int {@code =>} length in bytes of data
+     *  <LI><B>SCALE</B> short {@code =>} scale -  null is returned for data types where
      * SCALE is not applicable.
-     *  <LI><B>RADIX</B> short => radix
-     *  <LI><B>NULLABLE</B> short => can it contain NULL.
+     *  <LI><B>RADIX</B> short {@code =>} radix
+     *  <LI><B>NULLABLE</B> short {@code =>} can it contain NULL.
      *      <UL>
      *      <LI> procedureNoNulls - does not allow NULL values
      *      <LI> procedureNullable - allows NULL values
      *      <LI> procedureNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String => comment describing parameter/column
-     *  <LI><B>COLUMN_DEF</B> String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing parameter/column
+     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
      *      <UL>
      *      <LI> The string NULL (not enclosed in quotes) - if NULL was specified as the default value
      *      <LI> TRUNCATE (not enclosed in quotes)        - if the specified default value cannot be represented without truncation
      *      <LI> NULL                                     - if a default value was not specified
      *      </UL>
-     *  <LI><B>SQL_DATA_TYPE</B> int  => reserved for future use
-     *  <LI><B>SQL_DATETIME_SUB</B> int  => reserved for future use
-     *  <LI><B>CHAR_OCTET_LENGTH</B> int  => the maximum length of binary and character based columns.  For any other datatype the returned value is a
+     *  <LI><B>SQL_DATA_TYPE</B> int  {@code =>} reserved for future use
+     *  <LI><B>SQL_DATETIME_SUB</B> int  {@code =>} reserved for future use
+     *  <LI><B>CHAR_OCTET_LENGTH</B> int  {@code =>} the maximum length of binary and character based columns.  For any other datatype the returned value is a
      * NULL
-     *  <LI><B>ORDINAL_POSITION</B> int  => the ordinal position, starting from 1, for the input and output parameters for a procedure. A value of 0
+     *  <LI><B>ORDINAL_POSITION</B> int  {@code =>} the ordinal position, starting from 1, for the input and output parameters for a procedure. A value of 0
      *is returned if this row describes the procedure's return value.  For result set columns, it is the
      *ordinal position of the column in the result set starting from 1.  If there are
      *multiple result sets, the column ordinal positions are implementation
      * defined.
-     *  <LI><B>IS_NULLABLE</B> String  => ISO rules are used to determine the nullability for a column.
+     *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine the nullability for a column.
      *       <UL>
      *       <LI> YES           --- if the column can include NULLs
      *       <LI> NO            --- if the column cannot include NULLs
      *       <LI> empty string  --- if the nullability for the
      * column is unknown
      *       </UL>
-     *  <LI><B>SPECIFIC_NAME</B> String  => the name which uniquely identifies this procedure within its schema.
+     *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} the name which uniquely identifies this procedure within its schema.
      *  </OL>
      *
      * <P><B>Note:</B> Some databases may not return the column
@@ -1481,19 +1481,19 @@ public interface DatabaseMetaData extends Wrapper {
      * <P>
      * Each table description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>TABLE_TYPE</B> String => table type.  Typical types are "TABLE",
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>TABLE_TYPE</B> String {@code =>} table type.  Typical types are "TABLE",
      *                  "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
      *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
-     *  <LI><B>REMARKS</B> String => explanatory comment on the table
-     *  <LI><B>TYPE_CAT</B> String => the types catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String => the types schema (may be <code>null</code>)
-     *  <LI><B>TYPE_NAME</B> String => type name (may be <code>null</code>)
-     *  <LI><B>SELF_REFERENCING_COL_NAME</B> String => name of the designated
+     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the table
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the types catalog (may be <code>null</code>)
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} the types schema (may be <code>null</code>)
+     *  <LI><B>TYPE_NAME</B> String {@code =>} type name (may be <code>null</code>)
+     *  <LI><B>SELF_REFERENCING_COL_NAME</B> String {@code =>} name of the designated
      *                  "identifier" column of a typed table (may be <code>null</code>)
-     *  <LI><B>REF_GENERATION</B> String => specifies how values in
+     *  <LI><B>REF_GENERATION</B> String {@code =>} specifies how values in
      *                  SELF_REFERENCING_COL_NAME are created. Values are
      *                  "SYSTEM", "USER", "DERIVED". (may be <code>null</code>)
      *  </OL>
@@ -1528,8 +1528,8 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>The schema columns are:
      *  <OL>
-     *  <LI><B>TABLE_SCHEM</B> String => schema name
-     *  <LI><B>TABLE_CATALOG</B> String => catalog name (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} schema name
+     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be <code>null</code>)
      *  </OL>
      *
      * @return a <code>ResultSet</code> object in which each row is a
@@ -1545,7 +1545,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>The catalog column is:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => catalog name
+     *  <LI><B>TABLE_CAT</B> String {@code =>} catalog name
      *  </OL>
      *
      * @return a <code>ResultSet</code> object in which each row has a
@@ -1560,7 +1560,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>The table type is:
      *  <OL>
-     *  <LI><B>TABLE_TYPE</B> String => table type.  Typical types are "TABLE",
+     *  <LI><B>TABLE_TYPE</B> String {@code =>} table type.  Typical types are "TABLE",
      *                  "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
      *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
      *  </OL>
@@ -1582,55 +1582,55 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>DATA_TYPE</B> int => SQL type from java.sql.Types
-     *  <LI><B>TYPE_NAME</B> String => Data source dependent type name,
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
+     *  <LI><B>TYPE_NAME</B> String {@code =>} Data source dependent type name,
      *  for a UDT the type name is fully qualified
-     *  <LI><B>COLUMN_SIZE</B> int => column size.
+     *  <LI><B>COLUMN_SIZE</B> int {@code =>} column size.
      *  <LI><B>BUFFER_LENGTH</B> is not used.
-     *  <LI><B>DECIMAL_DIGITS</B> int => the number of fractional digits. Null is returned for data types where
+     *  <LI><B>DECIMAL_DIGITS</B> int {@code =>} the number of fractional digits. Null is returned for data types where
      * DECIMAL_DIGITS is not applicable.
-     *  <LI><B>NUM_PREC_RADIX</B> int => Radix (typically either 10 or 2)
-     *  <LI><B>NULLABLE</B> int => is NULL allowed.
+     *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} Radix (typically either 10 or 2)
+     *  <LI><B>NULLABLE</B> int {@code =>} is NULL allowed.
      *      <UL>
      *      <LI> columnNoNulls - might not allow <code>NULL</code> values
      *      <LI> columnNullable - definitely allows <code>NULL</code> values
      *      <LI> columnNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String => comment describing column (may be <code>null</code>)
-     *  <LI><B>COLUMN_DEF</B> String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
-     *  <LI><B>SQL_DATA_TYPE</B> int => unused
-     *  <LI><B>SQL_DATETIME_SUB</B> int => unused
-     *  <LI><B>CHAR_OCTET_LENGTH</B> int => for char types the
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
+     *  <LI><B>COLUMN_DEF</B> String {@code =>} default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be <code>null</code>)
+     *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
+     *  <LI><B>SQL_DATETIME_SUB</B> int {@code =>} unused
+     *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
      *       maximum number of bytes in the column
-     *  <LI><B>ORDINAL_POSITION</B> int => index of column in table
+     *  <LI><B>ORDINAL_POSITION</B> int {@code =>} index of column in table
      *      (starting at 1)
-     *  <LI><B>IS_NULLABLE</B> String  => ISO rules are used to determine the nullability for a column.
+     *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine the nullability for a column.
      *       <UL>
      *       <LI> YES           --- if the column can include NULLs
      *       <LI> NO            --- if the column cannot include NULLs
      *       <LI> empty string  --- if the nullability for the
      * column is unknown
      *       </UL>
-     *  <LI><B>SCOPE_CATALOG</B> String => catalog of table that is the scope
+     *  <LI><B>SCOPE_CATALOG</B> String {@code =>} catalog of table that is the scope
      *      of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
-     *  <LI><B>SCOPE_SCHEMA</B> String => schema of table that is the scope
+     *  <LI><B>SCOPE_SCHEMA</B> String {@code =>} schema of table that is the scope
      *      of a reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
-     *  <LI><B>SCOPE_TABLE</B> String => table name that this the scope
+     *  <LI><B>SCOPE_TABLE</B> String {@code =>} table name that this the scope
      *      of a reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
-     *  <LI><B>SOURCE_DATA_TYPE</B> short => source type of a distinct type or user-generated
+     *  <LI><B>SOURCE_DATA_TYPE</B> short {@code =>} source type of a distinct type or user-generated
      *      Ref type, SQL type from java.sql.Types (<code>null</code> if DATA_TYPE
      *      isn't DISTINCT or user-generated REF)
-     *   <LI><B>IS_AUTOINCREMENT</B> String  => Indicates whether this column is auto incremented
+     *   <LI><B>IS_AUTOINCREMENT</B> String  {@code =>} Indicates whether this column is auto incremented
      *       <UL>
      *       <LI> YES           --- if the column is auto incremented
      *       <LI> NO            --- if the column is not auto incremented
      *       <LI> empty string  --- if it cannot be determined whether the column is auto incremented
      *       </UL>
-     *   <LI><B>IS_GENERATEDCOLUMN</B> String  => Indicates whether this is a generated column
+     *   <LI><B>IS_GENERATEDCOLUMN</B> String  {@code =>} Indicates whether this is a generated column
      *       <UL>
      *       <LI> YES           --- if this a generated column
      *       <LI> NO            --- if this not a generated column
@@ -1703,15 +1703,15 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each privilige description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>GRANTOR</B> String => grantor of access (may be <code>null</code>)
-     *  <LI><B>GRANTEE</B> String => grantee of access
-     *  <LI><B>PRIVILEGE</B> String => name of access (SELECT,
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
+     *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
+     *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
      *      INSERT, UPDATE, REFRENCES, ...)
-     *  <LI><B>IS_GRANTABLE</B> String => "YES" if grantee is permitted
+     *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
      *      to grant to others; "NO" if not; <code>null</code> if unknown
      *  </OL>
      *
@@ -1749,14 +1749,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each privilige description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>GRANTOR</B> String => grantor of access (may be <code>null</code>)
-     *  <LI><B>GRANTEE</B> String => grantee of access
-     *  <LI><B>PRIVILEGE</B> String => name of access (SELECT,
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
+     *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
+     *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
      *      INSERT, UPDATE, REFRENCES, ...)
-     *  <LI><B>IS_GRANTABLE</B> String => "YES" if grantee is permitted
+     *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
      *      to grant to others; "NO" if not; <code>null</code> if unknown
      *  </OL>
      *
@@ -1783,21 +1783,21 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>SCOPE</B> short => actual scope of result
+     *  <LI><B>SCOPE</B> short {@code =>} actual scope of result
      *      <UL>
      *      <LI> bestRowTemporary - very temporary, while using row
      *      <LI> bestRowTransaction - valid for remainder of current transaction
      *      <LI> bestRowSession - valid for remainder of current session
      *      </UL>
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
-     *  <LI><B>TYPE_NAME</B> String => Data source dependent type name,
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from java.sql.Types
+     *  <LI><B>TYPE_NAME</B> String {@code =>} Data source dependent type name,
      *  for a UDT the type name is fully qualified
-     *  <LI><B>COLUMN_SIZE</B> int => precision
-     *  <LI><B>BUFFER_LENGTH</B> int => not used
-     *  <LI><B>DECIMAL_DIGITS</B> short  => scale - Null is returned for data types where
+     *  <LI><B>COLUMN_SIZE</B> int {@code =>} precision
+     *  <LI><B>BUFFER_LENGTH</B> int {@code =>} not used
+     *  <LI><B>DECIMAL_DIGITS</B> short  {@code =>} scale - Null is returned for data types where
      * DECIMAL_DIGITS is not applicable.
-     *  <LI><B>PSEUDO_COLUMN</B> short => is this a pseudo column
+     *  <LI><B>PSEUDO_COLUMN</B> short {@code =>} is this a pseudo column
      *      like an Oracle ROWID
      *      <UL>
      *      <LI> bestRowUnknown - may or may not be pseudo column
@@ -1902,15 +1902,15 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>SCOPE</B> short => is not used
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>DATA_TYPE</B> int => SQL data type from <code>java.sql.Types</code>
-     *  <LI><B>TYPE_NAME</B> String => Data source-dependent type name
-     *  <LI><B>COLUMN_SIZE</B> int => precision
-     *  <LI><B>BUFFER_LENGTH</B> int => length of column value in bytes
-     *  <LI><B>DECIMAL_DIGITS</B> short  => scale - Null is returned for data types where
+     *  <LI><B>SCOPE</B> short {@code =>} is not used
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from <code>java.sql.Types</code>
+     *  <LI><B>TYPE_NAME</B> String {@code =>} Data source-dependent type name
+     *  <LI><B>COLUMN_SIZE</B> int {@code =>} precision
+     *  <LI><B>BUFFER_LENGTH</B> int {@code =>} length of column value in bytes
+     *  <LI><B>DECIMAL_DIGITS</B> short  {@code =>} scale - Null is returned for data types where
      * DECIMAL_DIGITS is not applicable.
-     *  <LI><B>PSEUDO_COLUMN</B> short => whether this is pseudo column
+     *  <LI><B>PSEUDO_COLUMN</B> short {@code =>} whether this is pseudo column
      *      like an Oracle ROWID
      *      <UL>
      *      <LI> versionColumnUnknown - may or may not be pseudo column
@@ -1978,14 +1978,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each primary key column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>KEY_SEQ</B> short => sequence number within primary key( a value
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within primary key( a value
      *  of 1 represents the first column of the primary key, a value of 2 would
      *  represent the second column within the primary key).
-     *  <LI><B>PK_NAME</B> String => primary key name (may be <code>null</code>)
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
      *  </OL>
      *
      * @param catalog a catalog name; must match the catalog name as it
@@ -2012,22 +2012,22 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each primary key column description has the following columns:
      *  <OL>
-     *  <LI><B>PKTABLE_CAT</B> String => primary key table catalog
+     *  <LI><B>PKTABLE_CAT</B> String {@code =>} primary key table catalog
      *      being imported (may be <code>null</code>)
-     *  <LI><B>PKTABLE_SCHEM</B> String => primary key table schema
+     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} primary key table schema
      *      being imported (may be <code>null</code>)
-     *  <LI><B>PKTABLE_NAME</B> String => primary key table name
+     *  <LI><B>PKTABLE_NAME</B> String {@code =>} primary key table name
      *      being imported
-     *  <LI><B>PKCOLUMN_NAME</B> String => primary key column name
+     *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} primary key column name
      *      being imported
-     *  <LI><B>FKTABLE_CAT</B> String => foreign key table catalog (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String => foreign key table schema (may be <code>null</code>)
-     *  <LI><B>FKTABLE_NAME</B> String => foreign key table name
-     *  <LI><B>FKCOLUMN_NAME</B> String => foreign key column name
-     *  <LI><B>KEY_SEQ</B> short => sequence number within a foreign key( a value
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
+     *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
+     *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
+     *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within a foreign key( a value
      *  of 1 represents the first column of the foreign key, a value of 2 would
      *  represent the second column within the foreign key).
-     *  <LI><B>UPDATE_RULE</B> short => What happens to a
+     *  <LI><B>UPDATE_RULE</B> short {@code =>} What happens to a
      *       foreign key when the primary key is updated:
      *      <UL>
      *      <LI> importedNoAction - do not allow update of primary
@@ -2041,7 +2041,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeyRestrict - same as importedKeyNoAction
      *                                 (for ODBC 2.x compatibility)
      *      </UL>
-     *  <LI><B>DELETE_RULE</B> short => What happens to
+     *  <LI><B>DELETE_RULE</B> short {@code =>} What happens to
      *      the foreign key when primary is deleted.
      *      <UL>
      *      <LI> importedKeyNoAction - do not allow delete of primary
@@ -2054,9 +2054,9 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its primary key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String => foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String => primary key name (may be <code>null</code>)
-     *  <LI><B>DEFERRABILITY</B> short => can the evaluation of foreign key
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
+     *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
      *      <LI> importedKeyInitiallyDeferred - see SQL92 for definition
@@ -2195,22 +2195,22 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each foreign key column description has the following columns:
      *  <OL>
-     *  <LI><B>PKTABLE_CAT</B> String => primary key table catalog (may be <code>null</code>)
-     *  <LI><B>PKTABLE_SCHEM</B> String => primary key table schema (may be <code>null</code>)
-     *  <LI><B>PKTABLE_NAME</B> String => primary key table name
-     *  <LI><B>PKCOLUMN_NAME</B> String => primary key column name
-     *  <LI><B>FKTABLE_CAT</B> String => foreign key table catalog (may be <code>null</code>)
+     *  <LI><B>PKTABLE_CAT</B> String {@code =>} primary key table catalog (may be <code>null</code>)
+     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} primary key table schema (may be <code>null</code>)
+     *  <LI><B>PKTABLE_NAME</B> String {@code =>} primary key table name
+     *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} primary key column name
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
      *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String => foreign key table schema (may be <code>null</code>)
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
      *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_NAME</B> String => foreign key table name
+     *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
      *      being exported
-     *  <LI><B>FKCOLUMN_NAME</B> String => foreign key column name
+     *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
      *      being exported
-     *  <LI><B>KEY_SEQ</B> short => sequence number within foreign key( a value
+     *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within foreign key( a value
      *  of 1 represents the first column of the foreign key, a value of 2 would
      *  represent the second column within the foreign key).
-     *  <LI><B>UPDATE_RULE</B> short => What happens to
+     *  <LI><B>UPDATE_RULE</B> short {@code =>} What happens to
      *       foreign key when primary is updated:
      *      <UL>
      *      <LI> importedNoAction - do not allow update of primary
@@ -2224,7 +2224,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeyRestrict - same as importedKeyNoAction
      *                                 (for ODBC 2.x compatibility)
      *      </UL>
-     *  <LI><B>DELETE_RULE</B> short => What happens to
+     *  <LI><B>DELETE_RULE</B> short {@code =>} What happens to
      *      the foreign key when primary is deleted.
      *      <UL>
      *      <LI> importedKeyNoAction - do not allow delete of primary
@@ -2237,9 +2237,9 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its primary key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String => foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String => primary key name (may be <code>null</code>)
-     *  <LI><B>DEFERRABILITY</B> short => can the evaluation of foreign key
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
+     *  <LI><B>PK_NAME</B> String {@code =>} primary key name (may be <code>null</code>)
+     *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
      *      <LI> importedKeyInitiallyDeferred - see SQL92 for definition
@@ -2276,22 +2276,22 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each foreign key column description has the following columns:
      *  <OL>
-     *  <LI><B>PKTABLE_CAT</B> String => parent key table catalog (may be <code>null</code>)
-     *  <LI><B>PKTABLE_SCHEM</B> String => parent key table schema (may be <code>null</code>)
-     *  <LI><B>PKTABLE_NAME</B> String => parent key table name
-     *  <LI><B>PKCOLUMN_NAME</B> String => parent key column name
-     *  <LI><B>FKTABLE_CAT</B> String => foreign key table catalog (may be <code>null</code>)
+     *  <LI><B>PKTABLE_CAT</B> String {@code =>} parent key table catalog (may be <code>null</code>)
+     *  <LI><B>PKTABLE_SCHEM</B> String {@code =>} parent key table schema (may be <code>null</code>)
+     *  <LI><B>PKTABLE_NAME</B> String {@code =>} parent key table name
+     *  <LI><B>PKCOLUMN_NAME</B> String {@code =>} parent key column name
+     *  <LI><B>FKTABLE_CAT</B> String {@code =>} foreign key table catalog (may be <code>null</code>)
      *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_SCHEM</B> String => foreign key table schema (may be <code>null</code>)
+     *  <LI><B>FKTABLE_SCHEM</B> String {@code =>} foreign key table schema (may be <code>null</code>)
      *      being exported (may be <code>null</code>)
-     *  <LI><B>FKTABLE_NAME</B> String => foreign key table name
+     *  <LI><B>FKTABLE_NAME</B> String {@code =>} foreign key table name
      *      being exported
-     *  <LI><B>FKCOLUMN_NAME</B> String => foreign key column name
+     *  <LI><B>FKCOLUMN_NAME</B> String {@code =>} foreign key column name
      *      being exported
-     *  <LI><B>KEY_SEQ</B> short => sequence number within foreign key( a value
+     *  <LI><B>KEY_SEQ</B> short {@code =>} sequence number within foreign key( a value
      *  of 1 represents the first column of the foreign key, a value of 2 would
      *  represent the second column within the foreign key).
-     *  <LI><B>UPDATE_RULE</B> short => What happens to
+     *  <LI><B>UPDATE_RULE</B> short {@code =>} What happens to
      *       foreign key when parent key is updated:
      *      <UL>
      *      <LI> importedNoAction - do not allow update of parent
@@ -2305,7 +2305,7 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeyRestrict - same as importedKeyNoAction
      *                                 (for ODBC 2.x compatibility)
      *      </UL>
-     *  <LI><B>DELETE_RULE</B> short => What happens to
+     *  <LI><B>DELETE_RULE</B> short {@code =>} What happens to
      *      the foreign key when parent key is deleted.
      *      <UL>
      *      <LI> importedKeyNoAction - do not allow delete of parent
@@ -2318,9 +2318,9 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> importedKeySetDefault - change imported key to default if
      *               its parent key has been deleted
      *      </UL>
-     *  <LI><B>FK_NAME</B> String => foreign key name (may be <code>null</code>)
-     *  <LI><B>PK_NAME</B> String => parent key name (may be <code>null</code>)
-     *  <LI><B>DEFERRABILITY</B> short => can the evaluation of foreign key
+     *  <LI><B>FK_NAME</B> String {@code =>} foreign key name (may be <code>null</code>)
+     *  <LI><B>PK_NAME</B> String {@code =>} parent key name (may be <code>null</code>)
+     *  <LI><B>DEFERRABILITY</B> short {@code =>} can the evaluation of foreign key
      *      constraints be deferred until commit
      *      <UL>
      *      <LI> importedKeyInitiallyDeferred - see SQL92 for definition
@@ -2371,40 +2371,40 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each type description has the following columns:
      *  <OL>
-     *  <LI><B>TYPE_NAME</B> String => Type name
-     *  <LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
-     *  <LI><B>PRECISION</B> int => maximum precision
-     *  <LI><B>LITERAL_PREFIX</B> String => prefix used to quote a literal
+     *  <LI><B>TYPE_NAME</B> String {@code =>} Type name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL data type from java.sql.Types
+     *  <LI><B>PRECISION</B> int {@code =>} maximum precision
+     *  <LI><B>LITERAL_PREFIX</B> String {@code =>} prefix used to quote a literal
      *      (may be <code>null</code>)
-     *  <LI><B>LITERAL_SUFFIX</B> String => suffix used to quote a literal
+     *  <LI><B>LITERAL_SUFFIX</B> String {@code =>} suffix used to quote a literal
      (may be <code>null</code>)
-     *  <LI><B>CREATE_PARAMS</B> String => parameters used in creating
+     *  <LI><B>CREATE_PARAMS</B> String {@code =>} parameters used in creating
      *      the type (may be <code>null</code>)
-     *  <LI><B>NULLABLE</B> short => can you use NULL for this type.
+     *  <LI><B>NULLABLE</B> short {@code =>} can you use NULL for this type.
      *      <UL>
      *      <LI> typeNoNulls - does not allow NULL values
      *      <LI> typeNullable - allows NULL values
      *      <LI> typeNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>CASE_SENSITIVE</B> boolean=> is it case sensitive.
-     *  <LI><B>SEARCHABLE</B> short => can you use "WHERE" based on this type:
+     *  <LI><B>CASE_SENSITIVE</B> boolean{@code =>} is it case sensitive.
+     *  <LI><B>SEARCHABLE</B> short {@code =>} can you use "WHERE" based on this type:
      *      <UL>
      *      <LI> typePredNone - No support
      *      <LI> typePredChar - Only supported with WHERE .. LIKE
      *      <LI> typePredBasic - Supported except for WHERE .. LIKE
      *      <LI> typeSearchable - Supported for all WHERE ..
      *      </UL>
-     *  <LI><B>UNSIGNED_ATTRIBUTE</B> boolean => is it unsigned.
-     *  <LI><B>FIXED_PREC_SCALE</B> boolean => can it be a money value.
-     *  <LI><B>AUTO_INCREMENT</B> boolean => can it be used for an
+     *  <LI><B>UNSIGNED_ATTRIBUTE</B> boolean {@code =>} is it unsigned.
+     *  <LI><B>FIXED_PREC_SCALE</B> boolean {@code =>} can it be a money value.
+     *  <LI><B>AUTO_INCREMENT</B> boolean {@code =>} can it be used for an
      *      auto-increment value.
-     *  <LI><B>LOCAL_TYPE_NAME</B> String => localized version of type name
+     *  <LI><B>LOCAL_TYPE_NAME</B> String {@code =>} localized version of type name
      *      (may be <code>null</code>)
-     *  <LI><B>MINIMUM_SCALE</B> short => minimum scale supported
-     *  <LI><B>MAXIMUM_SCALE</B> short => maximum scale supported
-     *  <LI><B>SQL_DATA_TYPE</B> int => unused
-     *  <LI><B>SQL_DATETIME_SUB</B> int => unused
-     *  <LI><B>NUM_PREC_RADIX</B> int => usually 2 or 10
+     *  <LI><B>MINIMUM_SCALE</B> short {@code =>} minimum scale supported
+     *  <LI><B>MAXIMUM_SCALE</B> short {@code =>} maximum scale supported
+     *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
+     *  <LI><B>SQL_DATETIME_SUB</B> int {@code =>} unused
+     *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} usually 2 or 10
      *  </OL>
      *
      * <p>The PRECISION column represents the maximum column size that the server supports for the given datatype.
@@ -2498,16 +2498,16 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each index column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>NON_UNIQUE</B> boolean => Can index values be non-unique.
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>NON_UNIQUE</B> boolean {@code =>} Can index values be non-unique.
      *      false when TYPE is tableIndexStatistic
-     *  <LI><B>INDEX_QUALIFIER</B> String => index catalog (may be <code>null</code>);
+     *  <LI><B>INDEX_QUALIFIER</B> String {@code =>} index catalog (may be <code>null</code>);
      *      <code>null</code> when TYPE is tableIndexStatistic
-     *  <LI><B>INDEX_NAME</B> String => index name; <code>null</code> when TYPE is
+     *  <LI><B>INDEX_NAME</B> String {@code =>} index name; <code>null</code> when TYPE is
      *      tableIndexStatistic
-     *  <LI><B>TYPE</B> short => index type:
+     *  <LI><B>TYPE</B> short {@code =>} index type:
      *      <UL>
      *      <LI> tableIndexStatistic - this identifies table statistics that are
      *           returned in conjuction with a table's index descriptions
@@ -2515,20 +2515,20 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> tableIndexHashed - this is a hashed index
      *      <LI> tableIndexOther - this is some other style of index
      *      </UL>
-     *  <LI><B>ORDINAL_POSITION</B> short => column sequence number
+     *  <LI><B>ORDINAL_POSITION</B> short {@code =>} column sequence number
      *      within index; zero when TYPE is tableIndexStatistic
-     *  <LI><B>COLUMN_NAME</B> String => column name; <code>null</code> when TYPE is
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name; <code>null</code> when TYPE is
      *      tableIndexStatistic
-     *  <LI><B>ASC_OR_DESC</B> String => column sort sequence, "A" => ascending,
-     *      "D" => descending, may be <code>null</code> if sort sequence is not supported;
+     *  <LI><B>ASC_OR_DESC</B> String {@code =>} column sort sequence, "A" {@code =>} ascending,
+     *      "D" {@code =>} descending, may be <code>null</code> if sort sequence is not supported;
      *      <code>null</code> when TYPE is tableIndexStatistic
-     *  <LI><B>CARDINALITY</B> long => When TYPE is tableIndexStatistic, then
+     *  <LI><B>CARDINALITY</B> long {@code =>} When TYPE is tableIndexStatistic, then
      *      this is the number of rows in the table; otherwise, it is the
      *      number of unique values in the index.
-     *  <LI><B>PAGES</B> long => When TYPE is  tableIndexStatisic then
+     *  <LI><B>PAGES</B> long {@code =>} When TYPE is  tableIndexStatisic then
      *      this is the number of pages used for the table, otherwise it
      *      is the number of pages used for the current index.
-     *  <LI><B>FILTER_CONDITION</B> String => Filter condition, if any.
+     *  <LI><B>FILTER_CONDITION</B> String {@code =>} Filter condition, if any.
      *      (may be <code>null</code>)
      *  </OL>
      *
@@ -2781,14 +2781,14 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each type description has the following columns:
      *  <OL>
-     *  <LI><B>TYPE_CAT</B> String => the type's catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String => type's schema (may be <code>null</code>)
-     *  <LI><B>TYPE_NAME</B> String => type name
-     *  <LI><B>CLASS_NAME</B> String => Java class name
-     *  <LI><B>DATA_TYPE</B> int => type value defined in java.sql.Types.
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the type's catalog (may be <code>null</code>)
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type's schema (may be <code>null</code>)
+     *  <LI><B>TYPE_NAME</B> String {@code =>} type name
+     *  <LI><B>CLASS_NAME</B> String {@code =>} Java class name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} type value defined in java.sql.Types.
      *     One of JAVA_OBJECT, STRUCT, or DISTINCT
-     *  <LI><B>REMARKS</B> String => explanatory comment on the type
-     *  <LI><B>BASE_TYPE</B> short => type code of the source type of a
+     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the type
+     *  <LI><B>BASE_TYPE</B> short {@code =>} type code of the source type of a
      *     DISTINCT type or the type that implements the user-generated
      *     reference type of the SELF_REFERENCING_COLUMN of a structured
      *     type as defined in java.sql.Types (<code>null</code> if DATA_TYPE is not
@@ -2894,14 +2894,14 @@ public interface DatabaseMetaData extends Wrapper {
      * describes the designated UDT and a direct supertype. A row has the following
      * columns:
      *  <OL>
-     *  <LI><B>TYPE_CAT</B> String => the UDT's catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String => UDT's schema (may be <code>null</code>)
-     *  <LI><B>TYPE_NAME</B> String => type name of the UDT
-     *  <LI><B>SUPERTYPE_CAT</B> String => the direct super type's catalog
+     *  <LI><B>TYPE_CAT</B> String {@code =>} the UDT's catalog (may be <code>null</code>)
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} UDT's schema (may be <code>null</code>)
+     *  <LI><B>TYPE_NAME</B> String {@code =>} type name of the UDT
+     *  <LI><B>SUPERTYPE_CAT</B> String {@code =>} the direct super type's catalog
      *                           (may be <code>null</code>)
-     *  <LI><B>SUPERTYPE_SCHEM</B> String => the direct super type's schema
+     *  <LI><B>SUPERTYPE_SCHEM</B> String {@code =>} the direct super type's schema
      *                             (may be <code>null</code>)
-     *  <LI><B>SUPERTYPE_NAME</B> String => the direct super type's name
+     *  <LI><B>SUPERTYPE_NAME</B> String {@code =>} the direct super type's name
      *  </OL>
      *
      * <P><B>Note:</B> If the driver does not support type hierarchies, an
@@ -2936,10 +2936,10 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each type description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => the type's catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => type's schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => type name
-     *  <LI><B>SUPERTABLE_NAME</B> String => the direct super type's name
+     *  <LI><B>TABLE_CAT</B> String {@code =>} the type's catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} type's schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} type name
+     *  <LI><B>SUPERTABLE_NAME</B> String {@code =>} the direct super type's name
      *  </OL>
      *
      * <P><B>Note:</B> If the driver does not support type hierarchies, an
@@ -3001,35 +3001,35 @@ public interface DatabaseMetaData extends Wrapper {
      * The <code>ResultSet</code> object that is returned has the following
      * columns:
      * <OL>
-     *  <LI><B>TYPE_CAT</B> String => type catalog (may be <code>null</code>)
-     *  <LI><B>TYPE_SCHEM</B> String => type schema (may be <code>null</code>)
-     *  <LI><B>TYPE_NAME</B> String => type name
-     *  <LI><B>ATTR_NAME</B> String => attribute name
-     *  <LI><B>DATA_TYPE</B> int => attribute type SQL type from java.sql.Types
-     *  <LI><B>ATTR_TYPE_NAME</B> String => Data source dependent type name.
+     *  <LI><B>TYPE_CAT</B> String {@code =>} type catalog (may be <code>null</code>)
+     *  <LI><B>TYPE_SCHEM</B> String {@code =>} type schema (may be <code>null</code>)
+     *  <LI><B>TYPE_NAME</B> String {@code =>} type name
+     *  <LI><B>ATTR_NAME</B> String {@code =>} attribute name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} attribute type SQL type from java.sql.Types
+     *  <LI><B>ATTR_TYPE_NAME</B> String {@code =>} Data source dependent type name.
      *  For a UDT, the type name is fully qualified. For a REF, the type name is
      *  fully qualified and represents the target type of the reference type.
-     *  <LI><B>ATTR_SIZE</B> int => column size.  For char or date
+     *  <LI><B>ATTR_SIZE</B> int {@code =>} column size.  For char or date
      *      types this is the maximum number of characters; for numeric or
      *      decimal types this is precision.
-     *  <LI><B>DECIMAL_DIGITS</B> int => the number of fractional digits. Null is returned for data types where
+     *  <LI><B>DECIMAL_DIGITS</B> int {@code =>} the number of fractional digits. Null is returned for data types where
      * DECIMAL_DIGITS is not applicable.
-     *  <LI><B>NUM_PREC_RADIX</B> int => Radix (typically either 10 or 2)
-     *  <LI><B>NULLABLE</B> int => whether NULL is allowed
+     *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} Radix (typically either 10 or 2)
+     *  <LI><B>NULLABLE</B> int {@code =>} whether NULL is allowed
      *      <UL>
      *      <LI> attributeNoNulls - might not allow NULL values
      *      <LI> attributeNullable - definitely allows NULL values
      *      <LI> attributeNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String => comment describing column (may be <code>null</code>)
-     *  <LI><B>ATTR_DEF</B> String => default value (may be <code>null</code>)
-     *  <LI><B>SQL_DATA_TYPE</B> int => unused
-     *  <LI><B>SQL_DATETIME_SUB</B> int => unused
-     *  <LI><B>CHAR_OCTET_LENGTH</B> int => for char types the
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
+     *  <LI><B>ATTR_DEF</B> String {@code =>} default value (may be <code>null</code>)
+     *  <LI><B>SQL_DATA_TYPE</B> int {@code =>} unused
+     *  <LI><B>SQL_DATETIME_SUB</B> int {@code =>} unused
+     *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
      *       maximum number of bytes in the column
-     *  <LI><B>ORDINAL_POSITION</B> int => index of the attribute in the UDT
+     *  <LI><B>ORDINAL_POSITION</B> int {@code =>} index of the attribute in the UDT
      *      (starting at 1)
-     *  <LI><B>IS_NULLABLE</B> String  => ISO rules are used to determine
+     *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine
      * the nullability for a attribute.
      *       <UL>
      *       <LI> YES           --- if the attribute can include NULLs
@@ -3037,13 +3037,13 @@ public interface DatabaseMetaData extends Wrapper {
      *       <LI> empty string  --- if the nullability for the
      * attribute is unknown
      *       </UL>
-     *  <LI><B>SCOPE_CATALOG</B> String => catalog of table that is the
+     *  <LI><B>SCOPE_CATALOG</B> String {@code =>} catalog of table that is the
      *      scope of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
-     *  <LI><B>SCOPE_SCHEMA</B> String => schema of table that is the
+     *  <LI><B>SCOPE_SCHEMA</B> String {@code =>} schema of table that is the
      *      scope of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
-     *  <LI><B>SCOPE_TABLE</B> String => table name that is the scope of a
+     *  <LI><B>SCOPE_TABLE</B> String {@code =>} table name that is the scope of a
      *      reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
-     * <LI><B>SOURCE_DATA_TYPE</B> short => source type of a distinct type or user-generated
+     * <LI><B>SOURCE_DATA_TYPE</B> short {@code =>} source type of a distinct type or user-generated
      *      Ref type,SQL type from java.sql.Types (<code>null</code> if DATA_TYPE
      *      isn't DISTINCT or user-generated REF)
      *  </OL>
@@ -3074,7 +3074,7 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * @param holdability one of the following constants:
      *          <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-     *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT<code>
+     *          <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
      * @return <code>true</code> if so; <code>false</code> otherwise
      * @exception SQLException if a database access error occurs
      * @see Connection
@@ -3203,14 +3203,14 @@ public interface DatabaseMetaData extends Wrapper {
      * and if so  the lifetime for which a <code>RowId</code> object remains valid.
      * <p>
      * The returned int values have the following relationship:
-     * <pre>
+     * <pre>{@code
      *     ROWID_UNSUPPORTED < ROWID_VALID_OTHER < ROWID_VALID_TRANSACTION
      *         < ROWID_VALID_SESSION < ROWID_VALID_FOREVER
-     * </pre>
+     * }</pre>
      * so conditional logic such as
-     * <pre>
+     * <pre>{@code
      *     if (metadata.getRowIdLifetime() > DatabaseMetaData.ROWID_VALID_TRANSACTION)
-     * </pre>
+     * }</pre>
      * can be used. Valid Forever means valid across all Sessions, and valid for
      * a Session means valid across all its contained Transactions.
      *
@@ -3227,8 +3227,8 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>The schema columns are:
      *  <OL>
-     *  <LI><B>TABLE_SCHEM</B> String => schema name
-     *  <LI><B>TABLE_CATALOG</B> String => catalog name (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} schema name
+     *  <LI><B>TABLE_CATALOG</B> String {@code =>} catalog name (may be <code>null</code>)
      *  </OL>
      *
      *
@@ -3273,10 +3273,10 @@ public interface DatabaseMetaData extends Wrapper {
          * that the driver supports.  The result set contains the following columns
          * <p>
          * <ol>
-         * <li><b>NAME</b> String=> The name of the client info property<br>
-         * <li><b>MAX_LEN</b> int=> The maximum length of the value for the property<br>
-         * <li><b>DEFAULT_VALUE</b> String=> The default value of the property<br>
-         * <li><b>DESCRIPTION</b> String=> A description of the property.  This will typically
+         * <li><b>NAME</b> String{@code =>} The name of the client info property<br>
+         * <li><b>MAX_LEN</b> int{@code =>} The maximum length of the value for the property<br>
+         * <li><b>DEFAULT_VALUE</b> String{@code =>} The default value of the property<br>
+         * <li><b>DESCRIPTION</b> String{@code =>} A description of the property.  This will typically
          *                                              contain information as to where this property is
          *                                              stored in the database.
          * </ol>
@@ -3305,19 +3305,19 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each function description has the the following columns:
      *  <OL>
-     *  <LI><B>FUNCTION_CAT</B> String => function catalog (may be <code>null</code>)
-     *  <LI><B>FUNCTION_SCHEM</B> String => function schema (may be <code>null</code>)
-     *  <LI><B>FUNCTION_NAME</B> String => function name.  This is the name
+     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be <code>null</code>)
+     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be <code>null</code>)
+     *  <LI><B>FUNCTION_NAME</B> String {@code =>} function name.  This is the name
      * used to invoke the function
-     *  <LI><B>REMARKS</B> String => explanatory comment on the function
-     * <LI><B>FUNCTION_TYPE</B> short => kind of function:
+     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the function
+     * <LI><B>FUNCTION_TYPE</B> short {@code =>} kind of function:
      *      <UL>
      *      <LI>functionResultUnknown - Cannot determine if a return value
      *       or table will be returned
      *      <LI> functionNoTable- Does not return a table
      *      <LI> functionReturnsTable - Returns a table
      *      </UL>
-     *  <LI><B>SPECIFIC_NAME</B> String  => the name which uniquely identifies
+     *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} the name which uniquely identifies
      *  this function within its schema.  This is a user specified, or DBMS
      * generated, name that may be different then the <code>FUNCTION_NAME</code>
      * for example with overload functions
@@ -3359,12 +3359,12 @@ public interface DatabaseMetaData extends Wrapper {
      * is a parameter description, column description or
      * return type description with the following fields:
      *  <OL>
-     *  <LI><B>FUNCTION_CAT</B> String => function catalog (may be <code>null</code>)
-     *  <LI><B>FUNCTION_SCHEM</B> String => function schema (may be <code>null</code>)
-     *  <LI><B>FUNCTION_NAME</B> String => function name.  This is the name
+     *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be <code>null</code>)
+     *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be <code>null</code>)
+     *  <LI><B>FUNCTION_NAME</B> String {@code =>} function name.  This is the name
      * used to invoke the function
-     *  <LI><B>COLUMN_NAME</B> String => column/parameter name
-     *  <LI><B>COLUMN_TYPE</B> Short => kind of column/parameter:
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column/parameter name
+     *  <LI><B>COLUMN_TYPE</B> Short {@code =>} kind of column/parameter:
      *      <UL>
      *      <LI> functionColumnUnknown - nobody knows
      *      <LI> functionColumnIn - IN parameter
@@ -3374,30 +3374,30 @@ public interface DatabaseMetaData extends Wrapper {
      *      <LI> functionColumnResult - Indicates that the parameter or column
      *  is a column in the <code>ResultSet</code>
      *      </UL>
-     *  <LI><B>DATA_TYPE</B> int => SQL type from java.sql.Types
-     *  <LI><B>TYPE_NAME</B> String => SQL type name, for a UDT type the
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
+     *  <LI><B>TYPE_NAME</B> String {@code =>} SQL type name, for a UDT type the
      *  type name is fully qualified
-     *  <LI><B>PRECISION</B> int => precision
-     *  <LI><B>LENGTH</B> int => length in bytes of data
-     *  <LI><B>SCALE</B> short => scale -  null is returned for data types where
+     *  <LI><B>PRECISION</B> int {@code =>} precision
+     *  <LI><B>LENGTH</B> int {@code =>} length in bytes of data
+     *  <LI><B>SCALE</B> short {@code =>} scale -  null is returned for data types where
      * SCALE is not applicable.
-     *  <LI><B>RADIX</B> short => radix
-     *  <LI><B>NULLABLE</B> short => can it contain NULL.
+     *  <LI><B>RADIX</B> short {@code =>} radix
+     *  <LI><B>NULLABLE</B> short {@code =>} can it contain NULL.
      *      <UL>
      *      <LI> functionNoNulls - does not allow NULL values
      *      <LI> functionNullable - allows NULL values
      *      <LI> functionNullableUnknown - nullability unknown
      *      </UL>
-     *  <LI><B>REMARKS</B> String => comment describing column/parameter
-     *  <LI><B>CHAR_OCTET_LENGTH</B> int  => the maximum length of binary
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column/parameter
+     *  <LI><B>CHAR_OCTET_LENGTH</B> int  {@code =>} the maximum length of binary
      * and character based parameters or columns.  For any other datatype the returned value
      * is a NULL
-     *  <LI><B>ORDINAL_POSITION</B> int  => the ordinal position, starting
+     *  <LI><B>ORDINAL_POSITION</B> int  {@code =>} the ordinal position, starting
      * from 1, for the input and output parameters. A value of 0
      * is returned if this row describes the function's return value.
      * For result set columns, it is the
      * ordinal position of the column in the result set starting from 1.
-     *  <LI><B>IS_NULLABLE</B> String  => ISO rules are used to determine
+     *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine
      * the nullability for a parameter or column.
      *       <UL>
      *       <LI> YES           --- if the parameter or column can include NULLs
@@ -3405,7 +3405,7 @@ public interface DatabaseMetaData extends Wrapper {
      *       <LI> empty string  --- if the nullability for the
      * parameter  or column is unknown
      *       </UL>
-     *  <LI><B>SPECIFIC_NAME</B> String  => the name which uniquely identifies
+     *  <LI><B>SPECIFIC_NAME</B> String  {@code =>} the name which uniquely identifies
      * this function within its schema.  This is a user specified, or DBMS
      * generated, name that may be different then the <code>FUNCTION_NAME</code>
      * for example with overload functions
@@ -3591,21 +3591,21 @@ public interface DatabaseMetaData extends Wrapper {
      *
      * <P>Each column description has the following columns:
      *  <OL>
-     *  <LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
-     *  <LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
-     *  <LI><B>TABLE_NAME</B> String => table name
-     *  <LI><B>COLUMN_NAME</B> String => column name
-     *  <LI><B>DATA_TYPE</B> int => SQL type from java.sql.Types
-     *  <LI><B>COLUMN_SIZE</B> int => column size.
-     *  <LI><B>DECIMAL_DIGITS</B> int => the number of fractional digits. Null is returned for data types where
+     *  <LI><B>TABLE_CAT</B> String {@code =>} table catalog (may be <code>null</code>)
+     *  <LI><B>TABLE_SCHEM</B> String {@code =>} table schema (may be <code>null</code>)
+     *  <LI><B>TABLE_NAME</B> String {@code =>} table name
+     *  <LI><B>COLUMN_NAME</B> String {@code =>} column name
+     *  <LI><B>DATA_TYPE</B> int {@code =>} SQL type from java.sql.Types
+     *  <LI><B>COLUMN_SIZE</B> int {@code =>} column size.
+     *  <LI><B>DECIMAL_DIGITS</B> int {@code =>} the number of fractional digits. Null is returned for data types where
      * DECIMAL_DIGITS is not applicable.
-     *  <LI><B>NUM_PREC_RADIX</B> int => Radix (typically either 10 or 2)
-     *  <LI><B>COLUMN_USAGE</B> String => The allowed usage for the column.  The
+     *  <LI><B>NUM_PREC_RADIX</B> int {@code =>} Radix (typically either 10 or 2)
+     *  <LI><B>COLUMN_USAGE</B> String {@code =>} The allowed usage for the column.  The
      *  value returned will correspond to the enum name returned by {@link PseudoColumnUsage#name PseudoColumnUsage.name()}
-     *  <LI><B>REMARKS</B> String => comment describing column (may be <code>null</code>)
-     *  <LI><B>CHAR_OCTET_LENGTH</B> int => for char types the
+     *  <LI><B>REMARKS</B> String {@code =>} comment describing column (may be <code>null</code>)
+     *  <LI><B>CHAR_OCTET_LENGTH</B> int {@code =>} for char types the
      *       maximum number of bytes in the column
-     *  <LI><B>IS_NULLABLE</B> String  => ISO rules are used to determine the nullability for a column.
+     *  <LI><B>IS_NULLABLE</B> String  {@code =>} ISO rules are used to determine the nullability for a column.
      *       <UL>
      *       <LI> YES           --- if the column can include NULLs
      *       <LI> NO            --- if the column cannot include NULLs

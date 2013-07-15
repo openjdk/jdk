@@ -68,7 +68,6 @@ char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
-bool   Arguments::_has_alloc_profile            = false;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -261,6 +260,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "PrintRevisitStats",             JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseVectoredExceptions",         JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseSplitVerifier",              JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
@@ -849,7 +851,7 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  Flag* found_flag = Flag::find_flag((char*)argname, arg_len, true);
+  Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
     found_flag->get_locked_message(locked_message_buf, BUFLEN);
@@ -870,6 +872,14 @@ bool Arguments::process_argument(const char* arg,
   } else {
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
+    Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
+    if (fuzzy_matched != NULL) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Did you mean '%s%s%s'?\n",
+                  (fuzzy_matched->is_bool()) ? "(+/-)" : "",
+                  fuzzy_matched->name,
+                  (fuzzy_matched->is_bool()) ? "" : "=<value>");
+    }
   }
 
   // allow for commandline "commenting out" options like -XX:#+Verbose
@@ -1566,6 +1576,17 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
   return result;
 }
 
+void Arguments::set_heap_base_min_address() {
+  if (FLAG_IS_DEFAULT(HeapBaseMinAddress) && UseG1GC && HeapBaseMinAddress < 1*G) {
+    // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
+    // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
+    // some extra space for the C-heap compared to other collectors.
+    // Use FLAG_SET_DEFAULT here rather than FLAG_SET_ERGO to make sure that
+    // code that checks for default values work correctly.
+    FLAG_SET_DEFAULT(HeapBaseMinAddress, 1*G);
+  }
+}
+
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
     // Deprecated flag
@@ -1836,8 +1857,13 @@ bool Arguments::check_gc_consistency() {
                 "please refer to the release notes for the combinations "
                 "allowed\n");
     status = false;
+  } else if (ReservedCodeCacheSize > 2*G) {
+    // Code cache size larger than MAXINT is not supported.
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
+                (2*G)/M);
+    status = false;
   }
-
   return status;
 }
 
@@ -1884,21 +1910,6 @@ bool Arguments::check_vm_args_consistency() {
   // before returning an error.
   // Note: Needs platform-dependent factoring.
   bool status = true;
-
-#if ( (defined(COMPILER2) && defined(SPARC)))
-  // NOTE: The call to VM_Version_init depends on the fact that VM_Version_init
-  // on sparc doesn't require generation of a stub as is the case on, e.g.,
-  // x86.  Normally, VM_Version_init must be called from init_globals in
-  // init.cpp, which is called by the initial java thread *after* arguments
-  // have been parsed.  VM_Version_init gets called twice on sparc.
-  extern void VM_Version_init();
-  VM_Version_init();
-  if (!VM_Version::has_v9()) {
-    jio_fprintf(defaultStream::error_stream(),
-                "V8 Machine detected, Server requires V9\n");
-    status = false;
-  }
-#endif /* COMPILER2 && SPARC */
 
   // Allow both -XX:-UseStackBanging and -XX:-UseBoundThreads in non-product
   // builds so the cost of stack banging can be measured.
@@ -1981,23 +1992,6 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && check_gc_consistency();
   status = status && check_stack_pages();
-
-  if (_has_alloc_profile) {
-    if (UseParallelGC || UseParallelOldGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "Allocation profiling (-Xaprof) cannot be used together with "
-                  "Parallel GC (-XX:+UseParallelGC or -XX:+UseParallelOldGC).\n");
-      status = false;
-    }
-    if (UseConcMarkSweepGC) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "error:  invalid argument combination.\n"
-                  "Allocation profiling (-Xaprof) cannot be used together with "
-                  "the CMS collector (-XX:+UseConcMarkSweepGC).\n");
-      status = false;
-    }
-  }
 
   if (CMSIncrementalMode) {
     if (!UseConcMarkSweepGC) {
@@ -2217,13 +2211,31 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
-  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+  // Check lower bounds of the code cache
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
+  if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Should be greater than InitialCodeCacheSize=%dK\n",
+                "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
+                os::vm_page_size()/K);
+    status = false;
+  } else if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
     status = false;
+  } else if (ReservedCodeCacheSize < min_code_cache_size) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                min_code_cache_size/K);
+    status = false;
+  } else if (ReservedCodeCacheSize > 2*G) {
+    // Code cache size larger than MAXINT is not supported.
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
+                (2*G)/M);
+    status = false;
   }
-
   return status;
 }
 
@@ -2622,10 +2634,20 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xoss
     } else if (match_option(option, "-Xoss", &tail)) {
           // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
-    // -Xmaxjitcodesize
+    } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
+      julong long_CodeCacheExpansionSize = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                   "Invalid argument: %s. Must be at least %luK.\n", option->optionString,
+                   os::vm_page_size()/K);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, CodeCacheExpansionSize, (uintx)long_CodeCacheExpansionSize);
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
+
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2673,9 +2695,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         "Flat profiling is not supported in this VM.\n");
       return JNI_ERR;
 #endif // INCLUDE_FPROF
-    // -Xaprof
-    } else if (match_option(option, "-Xaprof", &tail)) {
-      _has_alloc_profile = true;
     // -Xconcurrentio
     } else if (match_option(option, "-Xconcurrentio", &tail)) {
       FLAG_SET_CMDLINE(bool, UseLWPSynchronization, true);
@@ -2930,13 +2949,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, UseTLAB, true);
     } else if (match_option(option, "-XX:-UseTLE", &tail)) {
       FLAG_SET_CMDLINE(bool, UseTLAB, false);
-SOLARIS_ONLY(
-    } else if (match_option(option, "-XX:+UsePermISM", &tail)) {
-      warning("-XX:+UsePermISM is obsolete.");
-      FLAG_SET_CMDLINE(bool, UseISM, true);
-    } else if (match_option(option, "-XX:-UsePermISM", &tail)) {
-      FLAG_SET_CMDLINE(bool, UseISM, false);
-)
     } else if (match_option(option, "-XX:+DisplayVMOutputToStderr", &tail)) {
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, true);
@@ -3109,8 +3121,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     // Note that large pages are enabled/disabled for both the
     // Java heap and the code cache.
     FLAG_SET_DEFAULT(UseLargePages, false);
-    SOLARIS_ONLY(FLAG_SET_DEFAULT(UseMPSS, false));
-    SOLARIS_ONLY(FLAG_SET_DEFAULT(UseISM, false));
   }
 
   // Tiered compilation is undefined with C1.
@@ -3524,6 +3534,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
         "Incompatible compilation policy selected", NULL);
     }
   }
+
+  set_heap_base_min_address();
 
   // Set heap size based on available physical memory
   set_heap_size();

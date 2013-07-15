@@ -27,10 +27,13 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 import java.lang.ref.WeakReference;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.invoke.util.BytecodeDescriptor;
 import static java.lang.invoke.MethodHandleStatics.*;
 import sun.invoke.util.VerifyType;
@@ -171,7 +174,7 @@ class MethodType implements java.io.Serializable {
         return new IndexOutOfBoundsException(num.toString());
     }
 
-    static final WeakInternSet internTable = new WeakInternSet();
+    static final ConcurrentWeakInternSet<MethodType> internTable = new ConcurrentWeakInternSet<>();
 
     static final Class<?>[] NO_PTYPES = {};
 
@@ -191,6 +194,8 @@ class MethodType implements java.io.Serializable {
     /**
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * @param rtype  the return type
+     * @param ptypes the parameter types
      * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
@@ -211,6 +216,9 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The leading parameter type is prepended to the remaining array.
+     * @param rtype  the return type
+     * @param ptype0 the first parameter type
+     * @param ptypes the remaining parameter types
      * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is null
      * @throws IllegalArgumentException if {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is {@code void.class}
@@ -227,6 +235,7 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has no parameter types.
+     * @param rtype  the return type
      * @return a method type with the given return value
      * @throws NullPointerException if {@code rtype} is null
      */
@@ -239,6 +248,8 @@ class MethodType implements java.io.Serializable {
      * Finds or creates a method type with the given components.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has the single given parameter type.
+     * @param rtype  the return type
+     * @param ptype0 the parameter type
      * @return a method type with the given return value and parameter type
      * @throws NullPointerException if {@code rtype} or {@code ptype0} is null
      * @throws IllegalArgumentException if {@code ptype0} is {@code void.class}
@@ -253,6 +264,9 @@ class MethodType implements java.io.Serializable {
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * The resulting method has the same parameter types as {@code ptypes},
      * and the specified return type.
+     * @param rtype  the return type
+     * @param ptypes the method type which supplies the parameter types
+     * @return a method type with the given components
      * @throws NullPointerException if {@code rtype} or {@code ptypes} is null
      */
     public static
@@ -935,7 +949,8 @@ s.writeObject(this.parameterArray());
      * provided to the factory method {@link #methodType(Class,Class[]) methodType}.
      * For example, null values, or {@code void} parameter types,
      * will lead to exceptions during deserialization.
-     * @param the stream to write the object to
+     * @param s the stream to write the object to
+     * @throws java.io.IOException if there is a problem writing the object
      */
     private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
         s.defaultWriteObject();  // requires serialPersistentFields to be an empty array
@@ -950,7 +965,9 @@ s.writeObject(this.parameterArray());
      * It provides the parameters to the factory method called by
      * {@link #readResolve readResolve}.
      * After that call it is discarded.
-     * @param the stream to read the object from
+     * @param s the stream to read the object from
+     * @throws java.io.IOException if there is a problem reading the object
+     * @throws ClassNotFoundException if one of the component classes cannot be resolved
      * @see #MethodType()
      * @see #readResolve
      * @see #writeObject
@@ -1013,267 +1030,104 @@ s.writeObject(this.parameterArray());
     }
 
     /**
-     * Weak intern set based on implementation of the <tt>HashSet</tt> and
-     * <tt>WeakHashMap</tt>, with <em>weak values</em>.  Note: <tt>null</tt>
-     * values will yield <tt>NullPointerException</tt>
-     * Refer to implementation of WeakInternSet for details.
+     * Simple implementation of weak concurrent intern set.
      *
-     * @see         java.util.HashMap
-     * @see         java.util.HashSet
-     * @see         java.util.WeakHashMap
-     * @see         java.lang.ref.WeakReference
+     * @param <T> interned type
      */
-    private static class WeakInternSet {
-        // The default initial capacity -- MUST be a power of two.
-        private static final int DEFAULT_INITIAL_CAPACITY = 16;
+    private static class ConcurrentWeakInternSet<T> {
 
-        // The maximum capacity, used if a higher value is implicitly specified
-        // by either of the constructors with arguments.
-        // MUST be a power of two <= 1<<30.
-        private static final int MAXIMUM_CAPACITY = 1 << 30;
+        private final ConcurrentMap<WeakEntry<T>, WeakEntry<T>> map;
+        private final ReferenceQueue<T> stale;
 
-        // The load factor used when none specified in constructor.
-        private static final float DEFAULT_LOAD_FACTOR = 0.75f;
-
-        // The table, resized as necessary. Length MUST Always be a power of two.
-        private Entry[] table;
-
-        // The number of entries contained in this set.
-        private int size;
-
-        // The next size value at which to resize (capacity * load factor).
-        private int threshold;
-
-        // The load factor for the hash table.
-        private final float loadFactor;
-
-        // Reference queue for cleared WeakEntries
-        private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
-
-        private Entry[] newTable(int n) {
-            return new Entry[n];
+        public ConcurrentWeakInternSet() {
+            this.map = new ConcurrentHashMap<>();
+            this.stale = new ReferenceQueue<>();
         }
 
         /**
-         * Constructs a new, empty <tt>WeakInternSet</tt> with the default initial
-         * capacity (16) and load factor (0.75).
+         * Get the existing interned element.
+         * This method returns null if no element is interned.
+         *
+         * @param elem element to look up
+         * @return the interned element
          */
-        WeakInternSet() {
-            this.loadFactor = DEFAULT_LOAD_FACTOR;
-            threshold = DEFAULT_INITIAL_CAPACITY;
-            table = newTable(DEFAULT_INITIAL_CAPACITY);
-        }
+        public T get(T elem) {
+            if (elem == null) throw new NullPointerException();
+            expungeStaleElements();
 
-        /**
-         * Applies a supplemental hash function to a given hashCode, which
-         * defends against poor quality hash functions.  This is critical
-         * because hashing uses power-of-two length hash tables, that
-         * otherwise encounter collisions for hashCodes that do not differ
-         * in lower bits.
-         * @param h preliminary hash code value
-         * @return supplemental hash code value
-         */
-        private static int hash(int h) {
-            // This function ensures that hashCodes that differ only by
-            // constant multiples at each bit position have a bounded
-            // number of collisions (approximately 8 at default load factor).
-            h ^= (h >>> 20) ^ (h >>> 12);
-            return h ^ (h >>> 7) ^ (h >>> 4);
-        }
-
-        /**
-         * Checks for equality of non-null reference x and possibly-null y.  By
-         * default uses Object.equals.
-         * @param x first object to compare
-         * @param y second object to compare
-         * @return <tt>true</tt> if objects are equal
-         */
-        private static boolean eq(Object x, Object y) {
-            return x == y || x.equals(y);
-        }
-
-        /**
-         * Returns index for hash code h.
-         * @param h      raw hash code
-         * @param length length of table (power of 2)
-         * @return index in table
-         */
-        private static int indexFor(int h, int length) {
-            return h & (length-1);
-        }
-
-        /**
-         * Expunges stale entries from the table.
-         */
-        private void expungeStaleEntries() {
-            for (Object x; (x = queue.poll()) != null; ) {
-                synchronized (queue) {
-                    Entry entry = (Entry) x;
-                    int i = indexFor(entry.hash, table.length);
-                    Entry prev = table[i];
-                    Entry p = prev;
-                    while (p != null) {
-                        Entry next = p.next;
-                        if (p == entry) {
-                            if (prev == entry)
-                                table[i] = next;
-                            else
-                                prev.next = next;
-                            entry.next = null;
-                            size--;
-                            break;
-                        }
-                        prev = p;
-                        p = next;
-                    }
+            WeakEntry<T> value = map.get(new WeakEntry<>(elem));
+            if (value != null) {
+                T res = value.get();
+                if (res != null) {
+                    return res;
                 }
-            }
-        }
-
-        /**
-         * Returns the table after first expunging stale entries.
-         * @return an expunged hash table
-         */
-        private Entry[] getTable() {
-            expungeStaleEntries();
-            return table;
-        }
-
-        /**
-         * Returns the entry to which the specified value is mapped,
-         * or {@code null} if this set contains no entry for the value.
-         *
-         * <p>More formally, if this set contains an entry for value
-         * {@code entry} to a value {@code value} such that
-         * {@code entry.equals(value)}, then this method returns {@code entry};
-         * otherwise it returns {@code null}.
-         *
-         * @param value value to search for in set
-         * @return interned value if in set, otherwise <tt>null</tt>
-         */
-        synchronized MethodType get(MethodType value) {
-            int h = hash(value.hashCode());
-            Entry[] tab = getTable();
-            int index = indexFor(h, tab.length);
-            Entry e = tab[index];
-            MethodType g;
-            while (e != null) {
-                if (e.hash == h && eq(value, g = e.get()))
-                    return g;
-                e = e.next;
             }
             return null;
         }
 
         /**
-         * Attempts to add the specified value to the set and returns same value.
-         * If the set previously contained an entry for this value, the old
-         * value is left untouched and returned as the result.
+         * Interns the element.
+         * Always returns non-null element, matching the one in the intern set.
+         * Under the race against another add(), it can return <i>different</i>
+         * element, if another thread beats us to interning it.
          *
-         * @param value value to be added
-         * @return the previous entry associated with <tt>value</tt>, or
-         *         <tt>value</tt> if there was no previous entry found
+         * @param elem element to add
+         * @return element that was actually added
          */
-        synchronized MethodType add(MethodType value) {
-            int h = hash(value.hashCode());
-            Entry[] tab = getTable();
-            int i = indexFor(h, tab.length);
-            MethodType g;
-            for (Entry e = tab[i]; e != null; e = e.next) {
-                if (h == e.hash && eq(value, g = e.get())) {
-                    return g;
-                }
-            }
-            Entry e = tab[i];
-            tab[i] = new Entry(value, queue, h, e);
-            if (++size >= threshold)
-                resize(tab.length * 2);
-            return value;
+        public T add(T elem) {
+            if (elem == null) throw new NullPointerException();
+
+            // Playing double race here, and so spinloop is required.
+            // First race is with two concurrent updaters.
+            // Second race is with GC purging weak ref under our feet.
+            // Hopefully, we almost always end up with a single pass.
+            T interned;
+            WeakEntry<T> e = new WeakEntry<>(elem, stale);
+            do {
+                expungeStaleElements();
+                WeakEntry<T> exist = map.putIfAbsent(e, e);
+                interned = (exist == null) ? elem : exist.get();
+            } while (interned == null);
+            return interned;
         }
 
-        /**
-         * Rehashes the contents of this set into a new array with a
-         * larger capacity.  This method is called automatically when the
-         * number of keys in this set reaches its threshold.
-         *
-         * If current capacity is MAXIMUM_CAPACITY, this method does not
-         * resize the set, but sets threshold to Integer.MAX_VALUE.
-         * This has the effect of preventing future calls.
-         *
-         * @param newCapacity the new capacity, MUST be a power of two;
-         *        must be greater than current capacity unless current
-         *        capacity is MAXIMUM_CAPACITY (in which case value
-         *        is irrelevant)
-         */
-        private void resize(int newCapacity) {
-            Entry[] oldTable = getTable();
-            int oldCapacity = oldTable.length;
-            if (oldCapacity == MAXIMUM_CAPACITY) {
-                threshold = Integer.MAX_VALUE;
-                return;
-            }
-
-            Entry[] newTable = newTable(newCapacity);
-            transfer(oldTable, newTable);
-            table = newTable;
-
-            /*
-             * If ignoring null elements and processing ref queue caused massive
-             * shrinkage, then restore old table.  This should be rare, but avoids
-             * unbounded expansion of garbage-filled tables.
-             */
-            if (size >= threshold / 2) {
-                threshold = (int)(newCapacity * loadFactor);
-            } else {
-                expungeStaleEntries();
-                transfer(newTable, oldTable);
-                table = oldTable;
+        private void expungeStaleElements() {
+            Reference<? extends T> reference;
+            while ((reference = stale.poll()) != null) {
+                map.remove(reference);
             }
         }
 
-        /**
-         * Transfers all entries from src to dest tables
-         * @param src  original table
-         * @param dest new table
-         */
-        private void transfer(Entry[] src, Entry[] dest) {
-            for (int j = 0; j < src.length; ++j) {
-                Entry e = src[j];
-                src[j] = null;
-                while (e != null) {
-                    Entry next = e.next;
-                    MethodType key = e.get();
-                    if (key == null) {
-                        e.next = null;  // Help GC
-                        size--;
-                    } else {
-                        int i = indexFor(e.hash, dest.length);
-                        e.next = dest[i];
-                        dest[i] = e;
-                    }
-                    e = next;
-                }
-            }
-        }
+        private static class WeakEntry<T> extends WeakReference<T> {
 
-        /**
-         * The entries in this hash table extend WeakReference, using its main ref
-         * field as the key.
-         */
-        private static class Entry extends WeakReference<MethodType> {
-            final int hash;
-            Entry next;
+            public final int hashcode;
 
-            /**
-             * Creates new entry.
-             */
-            Entry(MethodType key,
-                  ReferenceQueue<Object> queue,
-                  int hash, Entry next) {
+            public WeakEntry(T key, ReferenceQueue<T> queue) {
                 super(key, queue);
-                this.hash  = hash;
-                this.next  = next;
+                hashcode = key.hashCode();
             }
+
+            public WeakEntry(T key) {
+                super(key);
+                hashcode = key.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof WeakEntry) {
+                    Object that = ((WeakEntry) obj).get();
+                    Object mine = get();
+                    return (that == null || mine == null) ? (this == obj) : mine.equals(that);
+                }
+                return false;
+            }
+
+            @Override
+            public int hashCode() {
+                return hashcode;
+            }
+
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,7 @@ import java.sql.*;
  * and application motivated implementations of <code>Predicate</code> to emerge.
  * <p>
  * A sample implementation would look something like this:
- * <pre>
- * <code>
+ * <pre>{@code
  *    public class Range implements Predicate {
  *
  *       private Object lo[];
@@ -79,19 +78,19 @@ import java.sql.*;
  *              if ((rs.getObject(idx[i]) >= lo[i]) &&
  *                  (rs.getObject(idx[i]) >= hi[i]) {
  *                  bool1 = true; // within filter constraints
+ *              } else {
+ *                  bool2 = true; // outside of filter constraints
+ *              }
+ *          }
+ *
+ *          if (bool2) {
+ *             return false;
  *          } else {
- *            bool2 = true; // outside of filter constraints
+ *             return true;
  *          }
  *      }
- *
- *      if (bool2) {
- *         return false;
- *      } else {
- *         return true;
- *      }
  *  }
- * </code>
- * </pre>
+ * }</pre>
  * <P>
  * The example above implements a simple range predicate. Note, that
  * implementations should but are not required to provider <code>String</code>
@@ -112,7 +111,7 @@ public interface Predicate {
      * cursor moving  from row to the next. In addition, if this internal method
      * moves the cursor onto a row that has been deleted, the internal method will
      * continue to ove the cursor until a valid row is found.
-     *
+     * @param rs The {@code RowSet} to be evaluated
      * @return <code>true</code> if there are more rows in the filter;
      *     <code>false</code> otherwise
      */

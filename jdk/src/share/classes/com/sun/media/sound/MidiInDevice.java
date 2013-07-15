@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.sound.midi.*;
 
 
@@ -39,7 +36,7 @@ import javax.sound.midi.*;
  * @author Kara Kytle
  * @author Florian Bomers
  */
-class MidiInDevice extends AbstractMidiDevice implements Runnable {
+final class MidiInDevice extends AbstractMidiDevice implements Runnable {
 
     private Thread midiInThread = null;
 
@@ -127,7 +124,7 @@ class MidiInDevice extends AbstractMidiDevice implements Runnable {
       * An own class to distinguish the class name from
       * the transmitter of other devices
       */
-    private class MidiInTransmitter extends BasicTransmitter {
+    private final class MidiInTransmitter extends BasicTransmitter {
         private MidiInTransmitter() {
             super();
         }

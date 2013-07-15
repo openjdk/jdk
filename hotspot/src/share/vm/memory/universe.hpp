@@ -176,11 +176,14 @@ class Universe: AllStatic {
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodOopCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodOopCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
+  static LatestMethodOopCache* _pd_implies_cache;         // method for checking protection domain attributes
   static ActiveMethodOopsCache* _reflect_invoke_cache;    // method for security checks
-  static oop          _out_of_memory_error_java_heap; // preallocated error object (no backtrace)
-  static oop          _out_of_memory_error_perm_gen;  // preallocated error object (no backtrace)
-  static oop          _out_of_memory_error_array_size;// preallocated error object (no backtrace)
-  static oop          _out_of_memory_error_gc_overhead_limit; // preallocated error object (no backtrace)
+  // preallocated error objects (no backtrace)
+  static oop          _out_of_memory_error_java_heap;
+  static oop          _out_of_memory_error_metaspace;
+  static oop          _out_of_memory_error_class_metaspace;
+  static oop          _out_of_memory_error_array_size;
+  static oop          _out_of_memory_error_gc_overhead_limit;
 
   static Array<int>*       _the_empty_int_array;    // Canonicalized int array
   static Array<u2>*        _the_empty_short_array;  // Canonicalized short array
@@ -333,7 +336,10 @@ class Universe: AllStatic {
   static oop          the_min_jint_string()          { return _the_min_jint_string;          }
   static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_Method(); }
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_Method(); }
+
+  static Method*      protection_domain_implies_method() { return _pd_implies_cache->get_Method(); }
   static ActiveMethodOopsCache* reflect_invoke_cache() { return _reflect_invoke_cache; }
+
   static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
@@ -348,7 +354,8 @@ class Universe: AllStatic {
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
   static oop out_of_memory_error_java_heap()          { return gen_out_of_memory_error(_out_of_memory_error_java_heap);  }
-  static oop out_of_memory_error_perm_gen()           { return gen_out_of_memory_error(_out_of_memory_error_perm_gen);   }
+  static oop out_of_memory_error_metaspace()          { return gen_out_of_memory_error(_out_of_memory_error_metaspace);   }
+  static oop out_of_memory_error_class_metaspace()    { return gen_out_of_memory_error(_out_of_memory_error_class_metaspace);   }
   static oop out_of_memory_error_array_size()         { return gen_out_of_memory_error(_out_of_memory_error_array_size); }
   static oop out_of_memory_error_gc_overhead_limit()  { return gen_out_of_memory_error(_out_of_memory_error_gc_overhead_limit);  }
 

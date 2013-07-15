@@ -130,7 +130,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * for information about standard algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null, empty, or too short,
-     * i.e. <code>key.length-offset<len</code>.
+     * i.e. {@code key.length-offset<len}.
      * @exception ArrayIndexOutOfBoundsException is thrown if
      * <code>offset</code> or <code>len</code> index bytes outside the
      * <code>key</code>.

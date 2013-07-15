@@ -74,6 +74,8 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
+import sun.reflect.misc.MethodUtil;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  *   <p>A converter between Java types and the limited set of classes
@@ -299,6 +301,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
 
     private static <T extends Enum<T>> MXBeanMapping
             makeEnumMapping(Class<?> enumClass, Class<T> fake) {
+        ReflectUtil.checkPackageAccess(enumClass);
         return new EnumMapping<T>(Util.<Class<T>>cast(enumClass));
     }
 
@@ -423,6 +426,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             (c.getName().equals("com.sun.management.GcInfo") &&
                 c.getClassLoader() == null);
 
+        ReflectUtil.checkPackageAccess(c);
         final List<Method> methods =
                 MBeanAnalyzer.eliminateCovariantMethods(Arrays.asList(c.getMethods()));
         final SortedMap<String,Method> getterMap = newSortedMap();
@@ -828,7 +832,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             Object[] values = new Object[getters.length];
             for (int i = 0; i < getters.length; i++) {
                 try {
-                    Object got = getters[i].invoke(value, (Object[]) null);
+                    Object got = MethodUtil.invoke(getters[i], value, (Object[]) null);
                     values[i] = getterMappings[i].toOpenValue(got);
                 } catch (Exception e) {
                     throw openDataException("Error calling getter for " +
@@ -1011,7 +1015,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                                        MXBeanMapping[] converters)
                 throws InvalidObjectException {
             try {
-                return fromMethod.invoke(null, cd);
+                return MethodUtil.invoke(fromMethod, null, new Object[] {cd});
             } catch (Exception e) {
                 final String msg = "Failed to invoke from(CompositeData)";
                 throw invalidObjectException(msg, e);
@@ -1107,13 +1111,15 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 throws InvalidObjectException {
             Object o;
             try {
-                o = getTargetClass().newInstance();
+                final Class<?> targetClass = getTargetClass();
+                ReflectUtil.checkPackageAccess(targetClass);
+                o = targetClass.newInstance();
                 for (int i = 0; i < itemNames.length; i++) {
                     if (cd.containsKey(itemNames[i])) {
                         Object openItem = cd.get(itemNames[i]);
                         Object javaItem =
                             converters[i].fromOpenValue(openItem);
-                        setters[i].invoke(o, javaItem);
+                        MethodUtil.invoke(setters[i], o, new Object[] {javaItem});
                     }
                 }
             } catch (Exception e) {
@@ -1363,6 +1369,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             }
 
             try {
+                ReflectUtil.checkPackageAccess(max.constructor.getDeclaringClass());
                 return max.constructor.newInstance(params);
             } catch (Exception e) {
                 final String msg =

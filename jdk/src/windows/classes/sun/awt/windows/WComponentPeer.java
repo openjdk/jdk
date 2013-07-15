@@ -177,7 +177,7 @@ public abstract class WComponentPeer extends WObjectPeer
     void dynamicallyLayoutContainer() {
         // If we got the WM_SIZING, this must be a Container, right?
         // In fact, it must be the top-level Container.
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             Container parent = WToolkit.getNativeContainer((Component)target);
             if (parent != null) {
                 log.fine("Assertion (parent == null) failed");
@@ -282,7 +282,7 @@ public abstract class WComponentPeer extends WObjectPeer
             paintArea.add(r, e.getID());
         }
 
-        if (log.isLoggable(PlatformLogger.FINEST)) {
+        if (log.isLoggable(PlatformLogger.Level.FINEST)) {
             switch(e.getID()) {
             case PaintEvent.UPDATE:
                 log.finest("coalescePaintEvent: UPDATE: add: x = " +
@@ -360,7 +360,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     void handleJavaFocusEvent(FocusEvent fe) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer(fe.toString());
         }
         setFocus(fe.getID() == FocusEvent.FOCUS_GAINED);
@@ -682,7 +682,7 @@ public abstract class WComponentPeer extends WObjectPeer
           case WKeyboardFocusManagerPeer.SNFH_FAILURE:
               return false;
           case WKeyboardFocusManagerPeer.SNFH_SUCCESS_PROCEED:
-              if (focusLog.isLoggable(PlatformLogger.FINER)) {
+              if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                   focusLog.finer("Proceeding with request to " + lightweightChild + " in " + target);
               }
               Window parentWindow = SunToolkit.getContainingWindow((Component)target);
@@ -695,7 +695,7 @@ public abstract class WComponentPeer extends WObjectPeer
               }
               boolean res = wpeer.requestWindowFocus(cause);
 
-              if (focusLog.isLoggable(PlatformLogger.FINER)) {
+              if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                   focusLog.finer("Requested window focus: " + res);
               }
               // If parent window can be made focused and has been made focused(synchronously)
@@ -717,7 +717,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     private boolean rejectFocusRequestHelper(String logMsg) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer(logMsg);
         }
         WKeyboardFocusManagerPeer.removeLastFocusRequest((Component)target);
@@ -1094,7 +1094,7 @@ public abstract class WComponentPeer extends WObjectPeer
      */
     @SuppressWarnings("deprecation")
     public void applyShape(Region shape) {
-        if (shapeLog.isLoggable(PlatformLogger.FINER)) {
+        if (shapeLog.isLoggable(PlatformLogger.Level.FINER)) {
             shapeLog.finer("*** INFO: Setting shape: PEER: " + this
                             + "; TARGET: " + target
                             + "; SHAPE: " + shape);

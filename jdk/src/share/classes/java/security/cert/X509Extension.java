@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ import java.util.Set;
  *                   -- the extnId object identifier value
  * }
  * </pre>
- * Since not all extensions are known, the <code>getExtensionValue</code>
+ * Since not all extensions are known, the {@code getExtensionValue}
  * method returns the DER-encoded OCTET STRING of the
- * extension value (i.e., the <code>extnValue</code>). This can then
+ * extension value (i.e., the {@code extnValue}). This can then
  * be handled by a <em>Class</em> that understands the extension.
  *
  * @author Hemma Prafullchandra
@@ -72,8 +72,8 @@ public interface X509Extension {
     /**
      * Check if there is a critical extension that is not supported.
      *
-     * @return <tt>true</tt> if a critical extension is found that is
-     * not supported, otherwise <tt>false</tt>.
+     * @return {@code true} if a critical extension is found that is
+     * not supported, otherwise {@code false}.
      */
     public boolean hasUnsupportedCriticalExtension();
 
@@ -84,12 +84,12 @@ public interface X509Extension {
      *
      * Here is sample code to get a Set of critical extensions from an
      * X509Certificate and print the OIDs:
-     * <pre><code>
+     * <pre>{@code
      * X509Certificate cert = null;
      * try (InputStream inStrm = new FileInputStream("DER-encoded-Cert")) {
      *     CertificateFactory cf = CertificateFactory.getInstance("X.509");
      *     cert = (X509Certificate)cf.generateCertificate(inStrm);
-     * }<p>
+     * }
      *
      * Set<String> critSet = cert.getCriticalExtensionOIDs();
      * if (critSet != null && !critSet.isEmpty()) {
@@ -98,7 +98,7 @@ public interface X509Extension {
      *         System.out.println(oid);
      *     }
      * }
-     * </code></pre>
+     * }</pre>
      * @return a Set (or an empty Set if none are marked critical) of
      * the extension OID strings for extensions that are marked critical.
      * If there are no extensions present at all, then this method returns
@@ -113,28 +113,28 @@ public interface X509Extension {
      *
      * Here is sample code to get a Set of non-critical extensions from an
      * X509CRL revoked certificate entry and print the OIDs:
-     * <pre><code>
+     * <pre>{@code
      * CertificateFactory cf = null;
      * X509CRL crl = null;
      * try (InputStream inStrm = new FileInputStream("DER-encoded-CRL")) {
      *     cf = CertificateFactory.getInstance("X.509");
      *     crl = (X509CRL)cf.generateCRL(inStrm);
-     * }<p>
+     * }
      *
-     * byte[] certData = &lt;DER-encoded certificate data&gt;
+     * byte[] certData = <DER-encoded certificate data>
      * ByteArrayInputStream bais = new ByteArrayInputStream(certData);
      * X509Certificate cert = (X509Certificate)cf.generateCertificate(bais);
      * X509CRLEntry badCert =
-     *              crl.getRevokedCertificate(cert.getSerialNumber());<p>
+     *              crl.getRevokedCertificate(cert.getSerialNumber());
      *
      * if (badCert != null) {
-     *     Set<String> nonCritSet = badCert.getNonCriticalExtensionOIDs();<p>
+     *     Set<String> nonCritSet = badCert.getNonCriticalExtensionOIDs();
      *     if (nonCritSet != null)
      *         for (String oid : nonCritSet) {
      *             System.out.println(oid);
      *         }
      * }
-     * </code></pre>
+     * }</pre>
      *
      * @return a Set (or an empty Set if none are marked non-critical) of
      * the extension OID strings for extensions that are marked non-critical.
@@ -145,9 +145,9 @@ public interface X509Extension {
 
     /**
      * Gets the DER-encoded OCTET string for the extension value
-     * (<em>extnValue</em>) identified by the passed-in <code>oid</code>
+     * (<em>extnValue</em>) identified by the passed-in {@code oid}
      * String.
-     * The <code>oid</code> string is
+     * The {@code oid} string is
      * represented by a set of nonnegative whole numbers separated
      * by periods.
      *

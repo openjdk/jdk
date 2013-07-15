@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ import sun.security.jca.GetInstance.Instance;
  *
  * <p> The signature algorithm can be, among others, the NIST standard
  * DSA, using DSA and SHA-1. The DSA algorithm using the
- * SHA-1 message digest algorithm can be specified as <tt>SHA1withDSA</tt>.
+ * SHA-1 message digest algorithm can be specified as {@code SHA1withDSA}.
  * In the case of RSA, there are multiple choices for the message digest
  * algorithm, so the signing algorithm could be specified as, for example,
- * <tt>MD2withRSA</tt>, <tt>MD5withRSA</tt>, or <tt>SHA1withRSA</tt>.
+ * {@code MD2withRSA}, {@code MD5withRSA}, or {@code SHA1withRSA}.
  * The algorithm name must be specified, as there is no default.
  *
  * <p> A Signature object can be used to generate and verify digital
@@ -92,18 +92,18 @@ import sun.security.jca.GetInstance.Instance;
  * </ol>
  *
  * <p>Note that this class is abstract and extends from
- * <code>SignatureSpi</code> for historical reasons.
+ * {@code SignatureSpi} for historical reasons.
  * Application developers should only take notice of the methods defined in
- * this <code>Signature</code> class; all the methods in
+ * this {@code Signature} class; all the methods in
  * the superclass are intended for cryptographic service providers who wish to
  * supply their own implementations of digital signature algorithms.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>Signature</code> algorithms:
+ * following standard {@code Signature} algorithms:
  * <ul>
- * <li><tt>SHA1withDSA</tt></li>
- * <li><tt>SHA1withRSA</tt></li>
- * <li><tt>SHA256withRSA</tt></li>
+ * <li>{@code SHA1withDSA}</li>
+ * <li>{@code SHA1withRSA}</li>
+ * <li>{@code SHA256withRSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
@@ -248,6 +248,7 @@ public abstract class Signature extends SignatureSpi {
         Signature sig;
         if (instance.impl instanceof Signature) {
             sig = (Signature)instance.impl;
+            sig.algorithm = algorithm;
         } else {
             SignatureSpi spi = (SignatureSpi)instance.impl;
             sig = new Delegate(spi, algorithm);
@@ -460,7 +461,7 @@ public abstract class Signature extends SignatureSpi {
      * extension field implies that the public key in
      * the certificate and its corresponding private key are not
      * supposed to be used for digital signatures, an
-     * <code>InvalidKeyException</code> is thrown.
+     * {@code InvalidKeyException} is thrown.
      *
      * @param certificate the certificate of the identity whose signature is
      * going to be verified.
@@ -537,10 +538,10 @@ public abstract class Signature extends SignatureSpi {
      *
      * <p>A call to this method resets this signature object to the state
      * it was in when previously initialized for signing via a
-     * call to <code>initSign(PrivateKey)</code>. That is, the object is
+     * call to {@code initSign(PrivateKey)}. That is, the object is
      * reset and available to generate another signature from the same
-     * signer, if desired, via new calls to <code>update</code> and
-     * <code>sign</code>.
+     * signer, if desired, via new calls to {@code update} and
+     * {@code sign}.
      *
      * @return the signature bytes of the signing operation's result.
      *
@@ -558,28 +559,28 @@ public abstract class Signature extends SignatureSpi {
 
     /**
      * Finishes the signature operation and stores the resulting signature
-     * bytes in the provided buffer <code>outbuf</code>, starting at
-     * <code>offset</code>.
+     * bytes in the provided buffer {@code outbuf}, starting at
+     * {@code offset}.
      * The format of the signature depends on the underlying
      * signature scheme.
      *
      * <p>This signature object is reset to its initial state (the state it
-     * was in after a call to one of the <code>initSign</code> methods) and
+     * was in after a call to one of the {@code initSign} methods) and
      * can be reused to generate further signatures with the same private key.
      *
      * @param outbuf buffer for the signature result.
      *
-     * @param offset offset into <code>outbuf</code> where the signature is
+     * @param offset offset into {@code outbuf} where the signature is
      * stored.
      *
-     * @param len number of bytes within <code>outbuf</code> allotted for the
+     * @param len number of bytes within {@code outbuf} allotted for the
      * signature.
      *
-     * @return the number of bytes placed into <code>outbuf</code>.
+     * @return the number of bytes placed into {@code outbuf}.
      *
      * @exception SignatureException if this signature object is not
      * initialized properly, if this signature algorithm is unable to
-     * process the input data provided, or if <code>len</code> is less
+     * process the input data provided, or if {@code len} is less
      * than the actual signature length.
      *
      * @since 1.2
@@ -605,9 +606,9 @@ public abstract class Signature extends SignatureSpi {
      *
      * <p>A call to this method resets this signature object to the state
      * it was in when previously initialized for verification via a
-     * call to <code>initVerify(PublicKey)</code>. That is, the object is
+     * call to {@code initVerify(PublicKey)}. That is, the object is
      * reset and available to verify another signature from the identity
-     * whose public key was specified in the call to <code>initVerify</code>.
+     * whose public key was specified in the call to {@code initVerify}.
      *
      * @param signature the signature bytes to be verified.
      *
@@ -632,9 +633,9 @@ public abstract class Signature extends SignatureSpi {
      *
      * <p>A call to this method resets this signature object to the state
      * it was in when previously initialized for verification via a
-     * call to <code>initVerify(PublicKey)</code>. That is, the object is
+     * call to {@code initVerify(PublicKey)}. That is, the object is
      * reset and available to verify another signature from the identity
-     * whose public key was specified in the call to <code>initVerify</code>.
+     * whose public key was specified in the call to {@code initVerify}.
      *
      *
      * @param signature the signature bytes to be verified.
@@ -647,11 +648,11 @@ public abstract class Signature extends SignatureSpi {
      * initialized properly, the passed-in signature is improperly
      * encoded or of the wrong type, if this signature algorithm is unable to
      * process the input data provided, etc.
-     * @exception IllegalArgumentException if the <code>signature</code>
-     * byte array is null, or the <code>offset</code> or <code>length</code>
-     * is less than 0, or the sum of the <code>offset</code> and
-     * <code>length</code> is greater than the length of the
-     * <code>signature</code> byte array.
+     * @exception IllegalArgumentException if the {@code signature}
+     * byte array is null, or the {@code offset} or {@code length}
+     * is less than 0, or the sum of the {@code offset} and
+     * {@code length} is greater than the length of the
+     * {@code signature} byte array.
      * @since 1.4
      */
     public final boolean verify(byte[] signature, int offset, int length)
@@ -721,8 +722,8 @@ public abstract class Signature extends SignatureSpi {
 
     /**
      * Updates the data to be signed or verified using the specified
-     * ByteBuffer. Processes the <code>data.remaining()</code> bytes
-     * starting at at <code>data.position()</code>.
+     * ByteBuffer. Processes the {@code data.remaining()} bytes
+     * starting at at {@code data.position()}.
      * Upon return, the buffer's position will be equal to its limit;
      * its limit will not have changed.
      *
@@ -789,7 +790,7 @@ public abstract class Signature extends SignatureSpi {
      * @param param the string identifier of the parameter.
      * @param value the parameter value.
      *
-     * @exception InvalidParameterException if <code>param</code> is an
+     * @exception InvalidParameterException if {@code param} is an
      * invalid parameter for this signature algorithm engine,
      * the parameter is already set
      * and cannot be set again, a security exception occurs, and so on.
@@ -855,7 +856,7 @@ public abstract class Signature extends SignatureSpi {
      * @return the object that represents the parameter value, or null if
      * there is none.
      *
-     * @exception InvalidParameterException if <code>param</code> is an invalid
+     * @exception InvalidParameterException if {@code param} is an invalid
      * parameter for this engine, or another exception occurs while
      * trying to get this parameter.
      *
@@ -875,7 +876,7 @@ public abstract class Signature extends SignatureSpi {
      * @return a clone if the implementation is cloneable.
      *
      * @exception CloneNotSupportedException if this is called
-     * on an implementation that does not support <code>Cloneable</code>.
+     * on an implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {
@@ -939,7 +940,7 @@ public abstract class Signature extends SignatureSpi {
          * @return a clone if the delegate is cloneable.
          *
          * @exception CloneNotSupportedException if this is called on a
-         * delegate that does not support <code>Cloneable</code>.
+         * delegate that does not support {@code Cloneable}.
          */
         public Object clone() throws CloneNotSupportedException {
             chooseFirstProvider();

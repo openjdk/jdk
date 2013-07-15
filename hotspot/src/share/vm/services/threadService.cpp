@@ -327,27 +327,30 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
     while (waitingToLockMonitor != NULL || waitingToLockBlocker != NULL) {
       cycle->add_thread(currentThread);
       if (waitingToLockMonitor != NULL) {
-        currentThread = Threads::owning_thread_from_monitor_owner(
-                          (address)waitingToLockMonitor->owner(),
-                          false /* no locking needed */);
-        if (currentThread == NULL) {
-          // This function is called at a safepoint so the JavaThread
-          // that owns waitingToLockMonitor should be findable, but
-          // if it is not findable, then the previous currentThread is
-          // blocked permanently. We record this as a deadlock.
-          num_deadlocks++;
+        address currentOwner = (address)waitingToLockMonitor->owner();
+        if (currentOwner != NULL) {
+          currentThread = Threads::owning_thread_from_monitor_owner(
+                            currentOwner,
+                            false /* no locking needed */);
+          if (currentThread == NULL) {
+            // This function is called at a safepoint so the JavaThread
+            // that owns waitingToLockMonitor should be findable, but
+            // if it is not findable, then the previous currentThread is
+            // blocked permanently. We record this as a deadlock.
+            num_deadlocks++;
 
-          cycle->set_deadlock(true);
+            cycle->set_deadlock(true);
 
-          // add this cycle to the deadlocks list
-          if (deadlocks == NULL) {
-            deadlocks = cycle;
-          } else {
-            last->set_next(cycle);
+            // add this cycle to the deadlocks list
+            if (deadlocks == NULL) {
+              deadlocks = cycle;
+            } else {
+              last->set_next(cycle);
+            }
+            last = cycle;
+            cycle = new DeadlockCycle();
+            break;
           }
-          last = cycle;
-          cycle = new DeadlockCycle();
-          break;
         }
       } else {
         if (concurrent_locks) {

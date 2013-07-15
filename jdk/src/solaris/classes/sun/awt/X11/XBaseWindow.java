@@ -160,7 +160,7 @@ public class XBaseWindow {
      * with class-specific values and perform post-initialization actions.
      */
     void postInit(XCreateWindowParams params) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("WM name is " + getWMName());
         }
         updateWMName();
@@ -362,7 +362,7 @@ public class XBaseWindow {
                     value_mask |= XConstants.CWBitGravity;
                 }
 
-                if (log.isLoggable(PlatformLogger.FINE)) {
+                if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("Creating window for " + this + " with the following attributes: \n" + params);
                 }
                 window = XlibWrapper.XCreateWindow(XToolkit.getDisplay(),
@@ -482,7 +482,7 @@ public class XBaseWindow {
     }
 
     public void setSizeHints(long flags, int x, int y, int width, int height) {
-        if (insLog.isLoggable(PlatformLogger.FINER)) {
+        if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
             insLog.finer("Setting hints, flags " + XlibWrapper.hintsToString(flags));
         }
         XToolkit.awtLock();
@@ -545,7 +545,7 @@ public class XBaseWindow {
             flags |= XUtilConstants.PWinGravity;
             hints.set_flags(flags);
             hints.set_win_gravity((int)XConstants.NorthWestGravity);
-            if (insLog.isLoggable(PlatformLogger.FINER)) {
+            if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
                 insLog.finer("Setting hints, resulted flags " + XlibWrapper.hintsToString(flags) +
                              ", values " + hints);
             }
@@ -599,7 +599,7 @@ public class XBaseWindow {
     public void xRequestFocus(long time) {
         XToolkit.awtLock();
         try {
-            if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                 focusLog.finer("XSetInputFocus on " + Long.toHexString(getWindow()) + " with time " + time);
             }
             XlibWrapper.XSetInputFocus2(XToolkit.getDisplay(), getWindow(), time);
@@ -610,7 +610,7 @@ public class XBaseWindow {
     public void xRequestFocus() {
         XToolkit.awtLock();
         try {
-            if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                 focusLog.finer("XSetInputFocus on " + Long.toHexString(getWindow()));
             }
              XlibWrapper.XSetInputFocus(XToolkit.getDisplay(), getWindow());
@@ -629,7 +629,7 @@ public class XBaseWindow {
     }
 
     public void xSetVisible(boolean visible) {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Setting visible on " + this + " to " + visible);
         }
         XToolkit.awtLock();
@@ -716,7 +716,7 @@ public class XBaseWindow {
             insLog.warning("Attempt to resize uncreated window");
             throw new IllegalStateException("Attempt to resize uncreated window");
         }
-        if (insLog.isLoggable(PlatformLogger.FINE)) {
+        if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
             insLog.fine("Setting bounds on " + this + " to (" + x + ", " + y + "), " + width + "x" + height);
         }
         width = Math.max(MIN_SIZE, width);
@@ -834,7 +834,7 @@ public class XBaseWindow {
      * The active grab overrides activated automatic grab.
      */
     public boolean grabInput() {
-        if (grabLog.isLoggable(PlatformLogger.FINE)) {
+        if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
             grabLog.fine("Grab input on {0}", this);
         }
 
@@ -899,7 +899,7 @@ public class XBaseWindow {
         XToolkit.awtLock();
         try {
             XBaseWindow grabWindow = XAwtState.getGrabWindow();
-            if (grabLog.isLoggable(PlatformLogger.FINE)) {
+            if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
                 grabLog.fine("UnGrab input on {0}", grabWindow);
             }
             if (grabWindow != null) {
@@ -943,7 +943,7 @@ public class XBaseWindow {
         mapped = false;
     }
     public void handleReparentNotifyEvent(XEvent xev) {
-        if (eventLog.isLoggable(PlatformLogger.FINER)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
             XReparentEvent msg = xev.get_xreparent();
             eventLog.finer(msg.toString());
         }
@@ -953,7 +953,7 @@ public class XBaseWindow {
         if (XPropertyCache.isCachingSupported()) {
             XPropertyCache.clearCache(window, XAtom.get(msg.get_atom()));
         }
-        if (eventLog.isLoggable(PlatformLogger.FINER)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
             eventLog.finer("{0}", msg);
         }
     }
@@ -983,7 +983,7 @@ public class XBaseWindow {
     }
 
     public void handleClientMessage(XEvent xev) {
-        if (eventLog.isLoggable(PlatformLogger.FINER)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
             XClientMessageEvent msg = xev.get_xclient();
             eventLog.finer(msg.toString());
         }
@@ -1039,7 +1039,7 @@ public class XBaseWindow {
     }
     public void handleConfigureNotifyEvent(XEvent xev) {
         XConfigureEvent xe = xev.get_xconfigure();
-        if (insLog.isLoggable(PlatformLogger.FINER)) {
+        if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
             insLog.finer("Configure, {0}", xe);
         }
         x = xe.get_x();
@@ -1092,7 +1092,7 @@ public class XBaseWindow {
     }
 
     public void dispatchEvent(XEvent xev) {
-        if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest(xev.toString());
         }
         int type = xev.get_type();

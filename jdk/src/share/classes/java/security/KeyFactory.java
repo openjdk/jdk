@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.security.jca.GetInstance.Instance;
 
 /**
  * Key factories are used to convert <I>keys</I> (opaque
- * cryptographic keys of type <code>Key</code>) into <I>key specifications</I>
+ * cryptographic keys of type {@code Key}) into <I>key specifications</I>
  * (transparent representations of the underlying key material), and vice
  * versa.
  *
@@ -47,8 +47,8 @@ import sun.security.jca.GetInstance.Instance;
  *
  * <P> Multiple compatible key specifications may exist for the same key.
  * For example, a DSA public key may be specified using
- * <code>DSAPublicKeySpec</code> or
- * <code>X509EncodedKeySpec</code>. A key factory can be used to translate
+ * {@code DSAPublicKeySpec} or
+ * {@code X509EncodedKeySpec}. A key factory can be used to translate
  * between compatible key specifications.
  *
  * <P> The following is an example of how to use a key factory in order to
@@ -68,11 +68,11 @@ import sun.security.jca.GetInstance.Instance;
  * </pre>
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard <code>KeyFactory</code> algorithms:
+ * following standard {@code KeyFactory} algorithms:
  * <ul>
- * <li><tt>DiffieHellman</tt></li>
- * <li><tt>DSA</tt></li>
- * <li><tt>RSA</tt></li>
+ * <li>{@code DiffieHellman}</li>
+ * <li>{@code DSA}</li>
+ * <li>{@code RSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
@@ -120,7 +120,7 @@ public class KeyFactory {
      * @param keyFacSpi the delegate
      * @param provider the provider
      * @param algorithm the name of the algorithm
-     * to associate with this <tt>KeyFactory</tt>
+     * to associate with this {@code KeyFactory}
      */
     protected KeyFactory(KeyFactorySpi keyFacSpi, Provider provider,
                          String algorithm) {
@@ -266,10 +266,10 @@ public class KeyFactory {
 
     /**
      * Gets the name of the algorithm
-     * associated with this <tt>KeyFactory</tt>.
+     * associated with this {@code KeyFactory}.
      *
      * @return the name of the algorithm associated with this
-     * <tt>KeyFactory</tt>
+     * {@code KeyFactory}
      */
     public final String getAlgorithm() {
         return this.algorithm;
@@ -389,11 +389,11 @@ public class KeyFactory {
 
     /**
      * Returns a specification (key material) of the given key object.
-     * <code>keySpec</code> identifies the specification class in which
+     * {@code keySpec} identifies the specification class in which
      * the key material should be returned. It could, for example, be
-     * <code>DSAPublicKeySpec.class</code>, to indicate that the
+     * {@code DSAPublicKeySpec.class}, to indicate that the
      * key material should be returned in an instance of the
-     * <code>DSAPublicKeySpec</code> class.
+     * {@code DSAPublicKeySpec} class.
      *
      * @param key the key.
      *

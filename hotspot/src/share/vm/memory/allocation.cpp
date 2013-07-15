@@ -71,13 +71,6 @@ bool MetaspaceObj::is_shared() const {
   return MetaspaceShared::is_in_shared_space(this);
 }
 
-bool MetaspaceObj::is_metadata() const {
-  // GC Verify checks use this in guarantees.
-  // TODO: either replace them with is_metaspace_object() or remove them.
-  // is_metaspace_object() is slower than this test.  This test doesn't
-  // seem very useful for metaspace objects anymore though.
-  return !Universe::heap()->is_in_reserved(this);
-}
 
 bool MetaspaceObj::is_metaspace_object() const {
   return Metaspace::contains((void*)this);
@@ -243,10 +236,11 @@ class ChunkPool: public CHeapObj<mtInternal> {
   size_t       _num_used;     // number of chunks currently checked out
   const size_t _size;         // size of each chunk (must be uniform)
 
-  // Our three static pools
+  // Our four static pools
   static ChunkPool* _large_pool;
   static ChunkPool* _medium_pool;
   static ChunkPool* _small_pool;
+  static ChunkPool* _tiny_pool;
 
   // return first element or null
   void* get_first() {
@@ -263,7 +257,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
    ChunkPool(size_t size) : _size(size) { _first = NULL; _num_chunks = _num_used = 0; }
 
   // Allocate a new chunk from the pool (might expand the pool)
-  _NOINLINE_ void* allocate(size_t bytes) {
+  _NOINLINE_ void* allocate(size_t bytes, AllocFailType alloc_failmode) {
     assert(bytes == _size, "bad size");
     void* p = NULL;
     // No VM lock can be taken inside ThreadCritical lock, so os::malloc
@@ -273,9 +267,9 @@ class ChunkPool: public CHeapObj<mtInternal> {
       p = get_first();
     }
     if (p == NULL) p = os::malloc(bytes, mtChunk, CURRENT_PC);
-    if (p == NULL)
+    if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "ChunkPool::allocate");
-
+    }
     return p;
   }
 
@@ -326,15 +320,18 @@ class ChunkPool: public CHeapObj<mtInternal> {
   static ChunkPool* large_pool()  { assert(_large_pool  != NULL, "must be initialized"); return _large_pool;  }
   static ChunkPool* medium_pool() { assert(_medium_pool != NULL, "must be initialized"); return _medium_pool; }
   static ChunkPool* small_pool()  { assert(_small_pool  != NULL, "must be initialized"); return _small_pool;  }
+  static ChunkPool* tiny_pool()   { assert(_tiny_pool   != NULL, "must be initialized"); return _tiny_pool;   }
 
   static void initialize() {
     _large_pool  = new ChunkPool(Chunk::size        + Chunk::aligned_overhead_size());
     _medium_pool = new ChunkPool(Chunk::medium_size + Chunk::aligned_overhead_size());
     _small_pool  = new ChunkPool(Chunk::init_size   + Chunk::aligned_overhead_size());
+    _tiny_pool   = new ChunkPool(Chunk::tiny_size   + Chunk::aligned_overhead_size());
   }
 
   static void clean() {
     enum { BlocksToKeep = 5 };
+     _tiny_pool->free_all_but(BlocksToKeep);
      _small_pool->free_all_but(BlocksToKeep);
      _medium_pool->free_all_but(BlocksToKeep);
      _large_pool->free_all_but(BlocksToKeep);
@@ -344,6 +341,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
 ChunkPool* ChunkPool::_large_pool  = NULL;
 ChunkPool* ChunkPool::_medium_pool = NULL;
 ChunkPool* ChunkPool::_small_pool  = NULL;
+ChunkPool* ChunkPool::_tiny_pool   = NULL;
 
 void chunkpool_init() {
   ChunkPool::initialize();
@@ -372,7 +370,7 @@ class ChunkPoolCleaner : public PeriodicTask {
 //--------------------------------------------------------------------------------------
 // Chunk implementation
 
-void* Chunk::operator new(size_t requested_size, size_t length) {
+void* Chunk::operator new (size_t requested_size, AllocFailType alloc_failmode, size_t length) {
   // requested_size is equal to sizeof(Chunk) but in order for the arena
   // allocations to come out aligned as expected the size must be aligned
   // to expected arena alignment.
@@ -380,13 +378,15 @@ void* Chunk::operator new(size_t requested_size, size_t length) {
   assert(ARENA_ALIGN(requested_size) == aligned_overhead_size(), "Bad alignment");
   size_t bytes = ARENA_ALIGN(requested_size) + length;
   switch (length) {
-   case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes);
-   case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes);
-   case Chunk::init_size:   return ChunkPool::small_pool()->allocate(bytes);
+   case Chunk::size:        return ChunkPool::large_pool()->allocate(bytes, alloc_failmode);
+   case Chunk::medium_size: return ChunkPool::medium_pool()->allocate(bytes, alloc_failmode);
+   case Chunk::init_size:   return ChunkPool::small_pool()->allocate(bytes, alloc_failmode);
+   case Chunk::tiny_size:   return ChunkPool::tiny_pool()->allocate(bytes, alloc_failmode);
    default: {
-     void *p =  os::malloc(bytes, mtChunk, CALLER_PC);
-     if (p == NULL)
+     void* p = os::malloc(bytes, mtChunk, CALLER_PC);
+     if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
        vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
+     }
      return p;
    }
   }
@@ -398,6 +398,7 @@ void Chunk::operator delete(void* p) {
    case Chunk::size:        ChunkPool::large_pool()->free(c); break;
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
+   case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
    default:                 os::free(c, mtChunk);
   }
 }
@@ -440,7 +441,7 @@ NOT_PRODUCT(volatile jint Arena::_instance_count = 0;)
 Arena::Arena(size_t init_size) {
   size_t round_size = (sizeof (char *)) - 1;
   init_size = (init_size+round_size) & ~round_size;
-  _first = _chunk = new (init_size) Chunk(init_size);
+  _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(init_size);
@@ -448,7 +449,7 @@ Arena::Arena(size_t init_size) {
 }
 
 Arena::Arena() {
-  _first = _chunk = new (Chunk::init_size) Chunk(Chunk::init_size);
+  _first = _chunk = new (AllocFailStrategy::EXIT_OOM, Chunk::init_size) Chunk(Chunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(Chunk::init_size);
@@ -555,12 +556,9 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   size_t len = MAX2(x, (size_t) Chunk::size);
 
   Chunk *k = _chunk;            // Get filled-up chunk address
-  _chunk = new (len) Chunk(len);
+  _chunk = new (alloc_failmode, len) Chunk(len);
 
   if (_chunk == NULL) {
-    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-      signal_out_of_memory(len * Chunk::aligned_overhead_size(), "Arena::grow");
-    }
     return NULL;
   }
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list

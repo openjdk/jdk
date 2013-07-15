@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,8 @@ package sun.print;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.HashMap;
-
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
 import javax.print.PrintService;
@@ -69,22 +66,14 @@ import javax.print.attribute.standard.Severity;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.standard.ColorSupported;
 import javax.print.attribute.standard.PrintQuality;
-import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.event.PrintServiceAttributeListener;
-import java.util.ArrayList;
-
-import sun.print.SunPrinterJobService;
 
 public class Win32PrintService implements PrintService, AttributeUpdater,
                                           SunPrinterJobService {
 
-    public static MediaSize[] predefMedia;
-
-    static {
-        Class c = Win32MediaSize.class;
-    }
+    public static MediaSize[] predefMedia = Win32MediaSize.getPredefMedia();
 
     private static final DocFlavor[] supportedFlavors = {
         DocFlavor.BYTE_ARRAY.GIF,
@@ -180,6 +169,9 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private static final int DMDUP_VERTICAL = 2;
     private static final int DMDUP_HORIZONTAL = 3;
     private static final int DMCOLLATE_TRUE = 1;
+    private static final int DMCOLOR_MONOCHROME = 1;
+    private static final int DMCOLOR_COLOR = 2;
+
 
     // media sizes with indices above dmPaperToPrintService' length
     private static final int DMPAPER_A2 = 66;
@@ -310,7 +302,9 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
     public MediaSizeName findWin32Media(int dmIndex) {
         if (dmIndex >= 1 && dmIndex <= dmPaperToPrintService.length) {
-           switch(dmIndex) {
+            return dmPaperToPrintService[dmIndex - 1];
+        }
+        switch(dmIndex) {
             /* matching media sizes with indices beyond
                dmPaperToPrintService's length */
             case DMPAPER_A2:
@@ -320,11 +314,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             case DMPAPER_B6_JIS:
                 return MediaSizeName.JIS_B6;
             default:
-                return dmPaperToPrintService[dmIndex - 1];
-            }
+                return null;
         }
-
-        return null;
     }
 
     private boolean addToUniqueList(ArrayList msnList, MediaSizeName mediaName) {
@@ -350,6 +341,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
 
         ArrayList msnList = new ArrayList();
+        ArrayList<Win32MediaSize> trailingWmsList = new ArrayList<Win32MediaSize>();
         ArrayList printableList = new ArrayList();
         MediaSizeName mediaName;
         boolean added;
@@ -368,7 +360,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             idList.add(Integer.valueOf(media[i]));
         }
 
-        mediaSizes = getMediaSizes(idList, media);
+        ArrayList<String> dmPaperNameList = new ArrayList<String>();
+        mediaSizes = getMediaSizes(idList, media, dmPaperNameList);
         for (int i = 0; i < idList.size(); i++) {
 
             // match Win ID with our predefined ID using table
@@ -387,6 +380,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                    mediaName = null;
                 }
             }
+            boolean dmPaperIDMatched = (mediaName != null);
 
             // No match found, then we get the MediaSizeName out of the MediaSize
             // This requires 1-1 correspondence, lengths must be checked.
@@ -395,9 +389,32 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             }
 
             // Add mediaName to the msnList
+            added = false;
             if (mediaName != null) {
                 added = addToUniqueList(msnList, mediaName);
             }
+            if ((!dmPaperIDMatched || !added) && (idList.size() == dmPaperNameList.size())) {
+                /* The following block allows to add such media names to the list, whose sizes
+                 * matched with media sizes predefined in JDK, while whose paper IDs did not,
+                 * or whose sizes and paper IDs both did not match with any predefined in JDK.
+                 */
+                Win32MediaSize wms = Win32MediaSize.findMediaName(dmPaperNameList.get(i));
+                if ((wms == null) && (idList.size() == mediaSizes.length)) {
+                    wms = new Win32MediaSize(dmPaperNameList.get(i), (Integer)idList.get(i));
+                    mediaSizes[i] = new MediaSize(mediaSizes[i].getX(MediaSize.MM),
+                        mediaSizes[i].getY(MediaSize.MM), MediaSize.MM, wms);
+                }
+                if ((wms != null) && (wms != mediaName)) {
+                    if (!added) {
+                        added = addToUniqueList(msnList, mediaName = wms);
+                    } else {
+                        trailingWmsList.add(wms);
+                    }
+                }
+            }
+        }
+        for (Win32MediaSize wms : trailingWmsList) {
+            added = addToUniqueList(msnList, wms);
         }
 
         // init mediaSizeNames
@@ -588,7 +605,11 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     }
 
 
-    private MediaSize[] getMediaSizes(ArrayList idList, int[] media) {
+    private MediaSize[] getMediaSizes(ArrayList idList, int[] media, ArrayList<String> dmPaperNameList) {
+        if (dmPaperNameList == null) {
+            dmPaperNameList = new ArrayList<String>();
+        }
+
         String prnPort = getPort();
         int[] mediaSz = getAllMediaSizes(printer, prnPort);
         String[] winMediaNames = getAllMediaNames(printer, prnPort);
@@ -607,40 +628,43 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             wid = mediaSz[i*2]/10f;
             ht = mediaSz[i*2+1]/10f;
 
-          // Make sure to validate wid & ht.
-          // HP LJ 4050 (german) causes IAE in Sonderformat paper, wid & ht
-          // returned is not constant.
-          if ((wid <= 0) || (ht <= 0)) {
-            //Remove corresponding ID from list
-            if (nMedia == media.length) {
-                Integer remObj = Integer.valueOf(media[i]);
-              idList.remove(idList.indexOf(remObj));
+            // Make sure to validate wid & ht.
+            // HP LJ 4050 (german) causes IAE in Sonderformat paper, wid & ht
+            // returned is not constant.
+            if ((wid <= 0) || (ht <= 0)) {
+                //Remove corresponding ID from list
+                if (nMedia == media.length) {
+                    Integer remObj = Integer.valueOf(media[i]);
+                    idList.remove(idList.indexOf(remObj));
+                }
+                continue;
             }
-            continue;
-          }
-          // Find matching media using dimensions.
-          // This call matches only with our own predefined sizes.
-          msn = findMatchingMediaSizeNameMM(wid, ht);
-          if (msn != null) {
-            ms = MediaSize.getMediaSizeForName(msn);
-          }
-
-          if (ms != null) {
-            msList.add(ms);
-          } else {
-              Win32MediaSize wms =
-                new Win32MediaSize(winMediaNames[i], media[i]);
-            try {
-              ms = new MediaSize(wid, ht, MediaSize.MM, wms);
-              msList.add(ms);
-            } catch(IllegalArgumentException e) {
-              if (nMedia == media.length) {
-                  Integer remObj = Integer.valueOf(media[i]);
-                idList.remove(idList.indexOf(remObj));
-              }
+            // Find matching media using dimensions.
+            // This call matches only with our own predefined sizes.
+            msn = findMatchingMediaSizeNameMM(wid, ht);
+            if (msn != null) {
+                ms = MediaSize.getMediaSizeForName(msn);
             }
-          }
 
+            if (ms != null) {
+                msList.add(ms);
+                dmPaperNameList.add(winMediaNames[i]);
+            } else {
+                Win32MediaSize wms = Win32MediaSize.findMediaName(winMediaNames[i]);
+                if (wms == null) {
+                    wms = new Win32MediaSize(winMediaNames[i], media[i]);
+                }
+                try {
+                    ms = new MediaSize(wid, ht, MediaSize.MM, wms);
+                    msList.add(ms);
+                    dmPaperNameList.add(winMediaNames[i]);
+                } catch(IllegalArgumentException e) {
+                    if (nMedia == media.length) {
+                        Integer remObj = Integer.valueOf(media[i]);
+                        idList.remove(idList.indexOf(remObj));
+                    }
+                }
+            }
         }
 
         MediaSize[] arr2 = new MediaSize[msList.size()];
@@ -1041,6 +1065,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         int defOrient = defaults[5];
         int defSides = defaults[6];
         int defCollate = defaults[7];
+        int defColor = defaults[8];
 
         if (category == Copies.class) {
             if (defCopies > 0) {
@@ -1049,11 +1074,10 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                 return new Copies(1);
             }
         } else if (category == Chromaticity.class) {
-            int caps = getPrinterCapabilities();
-            if ((caps & DEVCAP_COLOR) == 0) {
-                return Chromaticity.MONOCHROME;
-            } else {
+            if (defColor == DMCOLOR_COLOR) {
                 return Chromaticity.COLOR;
+            } else {
+                return Chromaticity.MONOCHROME;
             }
         } else if (category == JobName.class) {
             return new JobName("Java Printing", null);
@@ -1614,6 +1638,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 class Win32MediaSize extends MediaSizeName {
     private static ArrayList winStringTable = new ArrayList();
     private static ArrayList winEnumTable = new ArrayList();
+    private static MediaSize[] predefMedia;
 
     private int dmPaperID; // driver ID for this paper.
 
@@ -1627,6 +1652,18 @@ class Win32MediaSize extends MediaSizeName {
       return (winStringTable.size()-1);
     }
 
+    public static synchronized Win32MediaSize findMediaName(String name) {
+        int nameIndex = winStringTable.indexOf(name);
+        if (nameIndex != -1) {
+            return (Win32MediaSize)winEnumTable.get(nameIndex);
+        }
+        return null;
+    }
+
+    public static MediaSize[] getPredefMedia() {
+        return predefMedia;
+    }
+
     public Win32MediaSize(String name, int dmPaper) {
         super(nextValue(name));
         dmPaperID = dmPaper;
@@ -1638,18 +1675,17 @@ class Win32MediaSize extends MediaSizeName {
     }
 
     static {
-         /* initialize Win32PrintService.predefMedia */
+         /* initialize predefMedia */
         {
             Win32MediaSize winMedia = new Win32MediaSize(-1);
 
             // cannot call getSuperEnumTable directly because of static context
             MediaSizeName[] enumMedia = winMedia.getSuperEnumTable();
             if (enumMedia != null) {
-                Win32PrintService.predefMedia = new MediaSize[enumMedia.length];
+                predefMedia = new MediaSize[enumMedia.length];
 
                 for (int i=0; i<enumMedia.length; i++) {
-                    Win32PrintService.predefMedia[i] =
-                        MediaSize.getMediaSizeForName(enumMedia[i]);
+                    predefMedia[i] = MediaSize.getMediaSizeForName(enumMedia[i]);
                 }
             }
         }

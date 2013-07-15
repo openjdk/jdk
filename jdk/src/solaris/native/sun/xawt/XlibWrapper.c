@@ -38,6 +38,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jlong.h>
+#include <sizecalc.h>
 
 #include <awt.h>
 #include <jvm.h>
@@ -2228,6 +2229,10 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
     RECT_T * pRect;
     int numrects;
 
+    if (!IS_SAFE_SIZE_MUL(width / 2 + 1, height)) {
+        return;
+    }
+
     AWT_CHECK_HAVE_LOCK();
 
     len = (*env)->GetArrayLength(env, bitmap);
@@ -2240,7 +2245,10 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
         return;
     }
 
-    pRect = (RECT_T *)malloc(worstBufferSize * sizeof(RECT_T));
+    pRect = (RECT_T *)SAFE_SIZE_ARRAY_ALLOC(malloc, worstBufferSize, sizeof(RECT_T));
+    if (!pRect) {
+        return;
+    }
 
     /* Note: the values[0] and values[1] are supposed to contain the width
      * and height (see XIconInfo.getIntData() for details). So, we do +2.

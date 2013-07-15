@@ -71,7 +71,6 @@ Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature) cons
 }
 
 ArrayKlass::ArrayKlass(Symbol* name) {
-  set_alloc_size(0);
   set_name(name);
 
   set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
@@ -161,12 +160,6 @@ void ArrayKlass::array_klasses_do(void f(Klass* k)) {
   }
 }
 
-
-void ArrayKlass::with_array_klasses_do(void f(Klass* k)) {
-  array_klasses_do(f);
-}
-
-
 // GC support
 
 void ArrayKlass::oops_do(OopClosure* cl) {
@@ -221,8 +214,8 @@ void ArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 // Verification
 
-void ArrayKlass::verify_on(outputStream* st) {
-  Klass::verify_on(st);
+void ArrayKlass::verify_on(outputStream* st, bool check_dictionary) {
+  Klass::verify_on(st, check_dictionary);
 
   if (component_mirror() != NULL) {
     guarantee(component_mirror()->klass() != NULL, "should have a class");

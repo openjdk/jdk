@@ -621,8 +621,10 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
             elementType = Type.INT;
             analyzeElements();
 
-            if (elementType == Type.INT) {
+            if (elementType.isInteger()) {
                 presetIntArray();
+            } else if (elementType.isLong()) {
+                presetLongArray();
             } else if (elementType.isNumeric()) {
                 presetNumberArray();
             } else {
@@ -640,6 +642,25 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
                 if (element instanceof Number) {
                     array[i] = ((Number)element).intValue();
+                } else {
+                    computed[nComputed++] = i;
+                }
+            }
+
+            presets = array;
+            postsets = Arrays.copyOf(computed, nComputed);
+        }
+
+        private void presetLongArray() {
+            final long[] array = new long[value.length];
+            final int[] computed = new int[value.length];
+            int nComputed = 0;
+
+            for (int i = 0; i < value.length; i++) {
+                final Object element = objectAsConstant(value[i]);
+
+                if (element instanceof Number) {
+                    array[i] = ((Number)element).longValue();
                 } else {
                     computed[nComputed++] = i;
                 }
@@ -746,6 +767,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         public Type getType() {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
+            } else if (elementType.isLong()) {
+                return Type.LONG_ARRAY;
             } else if (elementType.isNumeric()) {
                 return Type.NUMBER_ARRAY;
             } else {

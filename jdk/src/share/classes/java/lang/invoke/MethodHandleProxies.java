@@ -108,8 +108,9 @@ public class MethodHandleProxies {
      * Future versions of this API may also equip wrapper instances
      * with one or more additional public "marker" interfaces.
      *
+     * @param <T> the desired type of the wrapper, a single-method interface
+     * @param intfc a class object representing {@code T}
      * @param target the method handle to invoke from the wrapper
-     * @param intfc the desired type of the wrapper, a single-method interface
      * @return a correctly-typed wrapper for the given target
      * @throws NullPointerException if either argument is null
      * @throws IllegalArgumentException if the {@code intfc} is not a

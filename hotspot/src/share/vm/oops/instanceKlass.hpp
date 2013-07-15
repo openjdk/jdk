@@ -794,7 +794,6 @@ class InstanceKlass: public Klass {
   void methods_do(void f(Method* method));
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
-  void with_array_klasses_do(void f(Klass* k));
   bool super_types_do(SuperTypeClosure* blk);
 
   // Casting from Klass*
@@ -873,10 +872,6 @@ class InstanceKlass: public Klass {
       return NULL;
     }
   }
-
-  // Allocation profiling support
-  juint alloc_size() const            { return _alloc_count * size_helper(); }
-  void set_alloc_size(juint n)        {}
 
   // Use this to return the size of an instance in heap words:
   int size_helper() const {
@@ -1050,7 +1045,7 @@ public:
   const char* internal_name() const;
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st, bool check_dictionary);
 
   void oop_verify_on(oop obj, outputStream* st);
 };

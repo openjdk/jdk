@@ -40,7 +40,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * then the search operation is not performed and an error is returned.
  * <p>
  * The following code sample shows how the class may be used:
- * <pre>
+ * <pre>{@code
  *
  *     // Open an LDAP association
  *     LdapContext ctx = new InitialLdapContext();
@@ -85,7 +85,7 @@ import com.sun.jndi.ldap.BerEncoder;
  *     ctx.close();
  *     ...
  *
- * </pre>
+ * }</pre>
  * <p>
  * This class implements the LDAPv3 Request Control for server-side sorting
  * as defined in

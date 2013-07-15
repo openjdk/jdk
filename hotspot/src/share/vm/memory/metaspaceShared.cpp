@@ -826,35 +826,15 @@ public:
   bool reading() const { return true; }
 };
 
-
-// Save bounds of shared spaces mapped in.
-static char* _ro_base = NULL;
-static char* _rw_base = NULL;
-static char* _md_base = NULL;
-static char* _mc_base = NULL;
-
 // Return true if given address is in the mapped shared space.
 bool MetaspaceShared::is_in_shared_space(const void* p) {
-  if (_ro_base == NULL || _rw_base == NULL) {
-    return false;
-  } else {
-    return ((p >= _ro_base && p < (_ro_base + SharedReadOnlySize)) ||
-            (p >= _rw_base && p < (_rw_base + SharedReadWriteSize)));
-  }
+  return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_space(p);
 }
 
 void MetaspaceShared::print_shared_spaces() {
-  gclog_or_tty->print_cr("Shared Spaces:");
-  gclog_or_tty->print("  read-only " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _ro_base, _ro_base + SharedReadOnlySize);
-  gclog_or_tty->print("  read-write " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _rw_base, _rw_base + SharedReadWriteSize);
-  gclog_or_tty->cr();
-  gclog_or_tty->print("  misc-data " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _md_base, _md_base + SharedMiscDataSize);
-  gclog_or_tty->print("  misc-code " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _mc_base, _mc_base + SharedMiscCodeSize);
-  gclog_or_tty->cr();
+  if (UseSharedSpaces) {
+    FileMapInfo::current_info()->print_shared_spaces();
+  }
 }
 
 
@@ -873,6 +853,11 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 #endif
 
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
+
+  char* _ro_base = NULL;
+  char* _rw_base = NULL;
+  char* _md_base = NULL;
+  char* _mc_base = NULL;
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&
