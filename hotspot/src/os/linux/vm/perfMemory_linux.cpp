@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ static char* create_standard_memory(size_t size) {
   }
 
   // commit memory
-  if (!os::commit_memory(mapAddress, size)) {
+  if (!os::commit_memory(mapAddress, size, !ExecMem)) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not commit PerfData memory\n");
     }
@@ -120,7 +120,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       addr += result;
     }
 
-    RESTARTABLE(::close(fd), result);
+    result = ::close(fd);
     if (PrintMiscellaneous && Verbose) {
       if (result == OS_ERR) {
         warning("Could not close %s: %s\n", destfile, strerror(errno));
@@ -632,7 +632,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     if (PrintMiscellaneous && Verbose) {
       warning("could not set shared memory file size: %s\n", strerror(errno));
     }
-    RESTARTABLE(::close(fd), result);
+    ::close(fd);
     return -1;
   }
 
@@ -656,7 +656,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   if (result != -1) {
     return fd;
   } else {
-    RESTARTABLE(::close(fd), result);
+    ::close(fd);
     return -1;
   }
 }
@@ -734,9 +734,7 @@ static char* mmap_create_shared(size_t size) {
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-  // attempt to close the file - restart it if it was interrupted,
-  // but ignore other failures
-  RESTARTABLE(::close(fd), result);
+  result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -755,8 +753,7 @@ static char* mmap_create_shared(size_t size) {
   (void)::memset((void*) mapAddress, 0, size);
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, CURRENT_PC);
-  MemTracker::record_virtual_memory_type((address)mapAddress, mtInternal);
+  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
 
   return mapAddress;
 }
@@ -907,9 +904,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 
-  // attempt to close the file - restart if it gets interrupted,
-  // but ignore other failures
-  RESTARTABLE(::close(fd), result);
+  result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -921,8 +916,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   }
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, CURRENT_PC);
-  MemTracker::record_virtual_memory_type((address)mapAddress, mtInternal);
+  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
 
   *addr = mapAddress;
   *sizep = size;

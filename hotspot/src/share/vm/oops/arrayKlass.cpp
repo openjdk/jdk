@@ -221,8 +221,8 @@ void ArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 // Verification
 
-void ArrayKlass::verify_on(outputStream* st) {
-  Klass::verify_on(st);
+void ArrayKlass::verify_on(outputStream* st, bool check_dictionary) {
+  Klass::verify_on(st, check_dictionary);
 
   if (component_mirror() != NULL) {
     guarantee(component_mirror()->klass() != NULL, "should have a class");

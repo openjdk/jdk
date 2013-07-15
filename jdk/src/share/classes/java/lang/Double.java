@@ -201,7 +201,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return a string representation of the argument.
      */
     public static String toString(double d) {
-        return new FloatingDecimal(d).toJavaFormatString();
+        return FloatingDecimal.toJavaFormatString(d);
     }
 
     /**
@@ -453,8 +453,7 @@ public final class Double extends Number implements Comparable<Double> {
      * a {@code NumberFormatException} be thrown, the regular
      * expression below can be used to screen the input string:
      *
-     * <code>
-     * <pre>
+     * <pre>{@code
      *  final String Digits     = "(\\p{Digit}+)";
      *  final String HexDigits  = "(\\p{XDigit}+)";
      *  // an exponent is 'e' or 'E' followed by an optionally
@@ -474,7 +473,7 @@ public final class Double extends Number implements Comparable<Double> {
      *       // in addition to strings of floating-point literals, the
      *       // two sub-patterns below are simplifications of the grammar
      *       // productions from section 3.10.2 of
-     *       // <cite>The Java&trade; Language Specification</cite>.
+     *       // The Java Language Specification.
      *
      *       // Digits ._opt Digits_opt ExponentPart_opt FloatTypeSuffix_opt
      *       "((("+Digits+"(\\.)?("+Digits+"?)("+Exp+")?)|"+
@@ -499,8 +498,7 @@ public final class Double extends Number implements Comparable<Double> {
      *  else {
      *      // Perform suitable alternative action
      *  }
-     * </pre>
-     * </code>
+     * }</pre>
      *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value
@@ -509,7 +507,7 @@ public final class Double extends Number implements Comparable<Double> {
      *             parsable number.
      */
     public static Double valueOf(String s) throws NumberFormatException {
-        return new Double(FloatingDecimal.readJavaFormatString(s).doubleValue());
+        return new Double(parseDouble(s));
     }
 
     /**
@@ -545,7 +543,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @since 1.2
      */
     public static double parseDouble(String s) throws NumberFormatException {
-        return FloatingDecimal.readJavaFormatString(s).doubleValue();
+        return FloatingDecimal.parseDouble(s);
     }
 
     /**
@@ -756,9 +754,9 @@ public final class Double extends Number implements Comparable<Double> {
      * Returns a hash code for a {@code double} value; compatible with
      * {@code Double.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code double} value.
+     * @since 1.8
      */
     public static int hashCode(double value) {
         long bits = doubleToLongBits(value);
@@ -917,13 +915,13 @@ public final class Double extends Number implements Comparable<Double> {
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>
-     * int s = ((bits &gt;&gt; 63) == 0) ? 1 : -1;
-     * int e = (int)((bits &gt;&gt; 52) & 0x7ffL);
+     * <blockquote><pre>{@code
+     * int s = ((bits >> 63) == 0) ? 1 : -1;
+     * int e = (int)((bits >> 52) & 0x7ffL);
      * long m = (e == 0) ?
-     *                 (bits & 0xfffffffffffffL) &lt;&lt; 1 :
+     *                 (bits & 0xfffffffffffffL) << 1 :
      *                 (bits & 0xfffffffffffffL) | 0x10000000000000L;
-     * </pre></blockquote>
+     * }</pre></blockquote>
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-1075</sup>.

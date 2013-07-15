@@ -29,11 +29,20 @@ import sun.jvm.hotspot.gc_interface.*;
 import sun.jvm.hotspot.gc_implementation.g1.*;
 import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
 import sun.jvm.hotspot.gc_implementation.shared.*;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
 public class HeapSummary extends Tool {
+
+   public HeapSummary() {
+      super();
+   }
+
+   public HeapSummary(JVMDebugger d) {
+      super(d);
+   }
 
    public static void main(String[] args) {
       HeapSummary hs = new HeapSummary();

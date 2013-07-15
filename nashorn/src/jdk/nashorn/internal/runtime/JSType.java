@@ -911,7 +911,7 @@ public enum JSType {
 
         for (int i = start; i < length ; i++) {
             if (digit(chars[i], radix) == -1) {
-                break;
+                return Double.NaN;
             }
             pos++;
         }

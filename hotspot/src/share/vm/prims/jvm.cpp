@@ -3310,24 +3310,10 @@ JVM_ENTRY(jobject, JVM_CurrentClassLoader(JNIEnv *env))
 JVM_END
 
 
-// Utility object for collecting method holders walking down the stack
-class KlassLink: public ResourceObj {
- public:
-  KlassHandle klass;
-  KlassLink*  next;
-
-  KlassLink(KlassHandle k) { klass = k; next = NULL; }
-};
-
-
 JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   JVMWrapper("JVM_GetClassContext");
   ResourceMark rm(THREAD);
   JvmtiVMObjectAllocEventCollector oam;
-  // Collect linked list of (handles to) method holders
-  KlassLink* first = NULL;
-  KlassLink* last  = NULL;
-  int depth = 0;
   vframeStream vfst(thread);
 
   if (SystemDictionary::reflect_CallerSensitive_klass() != NULL) {
@@ -3341,32 +3327,23 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   }
 
   // Collect method holders
+  GrowableArray<KlassHandle>* klass_array = new GrowableArray<KlassHandle>();
   for (; !vfst.at_end(); vfst.security_next()) {
     Method* m = vfst.method();
     // Native frames are not returned
     if (!m->is_ignored_by_security_stack_walk() && !m->is_native()) {
       Klass* holder = m->method_holder();
       assert(holder->is_klass(), "just checking");
-      depth++;
-      KlassLink* l = new KlassLink(KlassHandle(thread, holder));
-      if (first == NULL) {
-        first = last = l;
-      } else {
-        last->next = l;
-        last = l;
-      }
+      klass_array->append(holder);
     }
   }
 
   // Create result array of type [Ljava/lang/Class;
-  objArrayOop result = oopFactory::new_objArray(SystemDictionary::Class_klass(), depth, CHECK_NULL);
+  objArrayOop result = oopFactory::new_objArray(SystemDictionary::Class_klass(), klass_array->length(), CHECK_NULL);
   // Fill in mirrors corresponding to method holders
-  int index = 0;
-  while (first != NULL) {
-    result->obj_at_put(index++, first->klass()->java_mirror());
-    first = first->next;
+  for (int i = 0; i < klass_array->length(); i++) {
+    result->obj_at_put(i, klass_array->at(i)->java_mirror());
   }
-  assert(index == depth, "just checking");
 
   return (jobjectArray) JNIHandles::make_local(env, result);
 JVM_END

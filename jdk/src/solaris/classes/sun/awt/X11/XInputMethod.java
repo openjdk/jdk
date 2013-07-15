@@ -102,7 +102,7 @@ public class XInputMethod extends X11InputMethod {
     protected ComponentPeer getPeer(Component client) {
         XComponentPeer peer;
 
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Client is " + client);
         }
         peer = (XComponentPeer)XToolkit.targetToPeer(client);
@@ -110,7 +110,7 @@ public class XInputMethod extends X11InputMethod {
             client = getParent(client);
             peer = (XComponentPeer)XToolkit.targetToPeer(client);
         }
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Peer is {0}, client is {1}", peer, client);
         }
 

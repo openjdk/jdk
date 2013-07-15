@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,12 @@ public class WrapperBeanGenerator {
             super(annReader, nav, beanMemberFactory);
         }
 
+        @Override
         protected java.lang.reflect.Type getSafeType(java.lang.reflect.Type type) {
             return type;
         }
 
+        @Override
         protected java.lang.reflect.Type getHolderValueType(java.lang.reflect.Type paramType) {
             if (paramType instanceof ParameterizedType) {
                 ParameterizedType p = (ParameterizedType)paramType;
@@ -83,6 +85,7 @@ public class WrapperBeanGenerator {
             return null;
         }
 
+        @Override
         protected boolean isVoidType(java.lang.reflect.Type type) {
             return type == Void.TYPE;
         }
@@ -90,6 +93,7 @@ public class WrapperBeanGenerator {
     }
 
     private static final class FieldFactory implements BeanMemberFactory<java.lang.reflect.Type, Field> {
+        @Override
         public Field createWrapperBeanMember(java.lang.reflect.Type paramType,
                 String paramName, List<Annotation> jaxb) {
             return new Field(paramName, paramType, getASMType(paramType), jaxb);
@@ -257,7 +261,9 @@ public class WrapperBeanGenerator {
 
     static Class createRequestWrapperBean(String className, Method method, QName reqElemName, ClassLoader cl) {
 
-        LOGGER.log(Level.FINE, "Request Wrapper Class : {0}", className);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Request Wrapper Class : {0}", className);
+        }
 
         List<Field> requestMembers = RUNTIME_GENERATOR.collectRequestBeanMembers(
                 method);
@@ -276,7 +282,9 @@ public class WrapperBeanGenerator {
 
     static Class createResponseWrapperBean(String className, Method method, QName resElemName, ClassLoader cl) {
 
-        LOGGER.log(Level.FINE, "Response Wrapper Class : {0}", className);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "Response Wrapper Class : {0}", className);
+        }
 
         List<Field> responseMembers = RUNTIME_GENERATOR.collectResponseBeanMembers(method);
 
@@ -346,6 +354,9 @@ public class WrapperBeanGenerator {
         return Injector.inject(cl, className, image);
     }
 
+    /**
+     * Note: this class has a natural ordering that is inconsistent with equals.
+     */
     private static class Field implements Comparable<Field> {
         private final java.lang.reflect.Type reflectType;
         private final Type asmType;
@@ -370,10 +381,10 @@ public class WrapperBeanGenerator {
             return FieldSignature.vms(reflectType);
         }
 
+        @Override
         public int compareTo(Field o) {
             return fieldName.compareTo(o.fieldName);
         }
-
     }
 
     static void write(byte[] b, String className) {
@@ -384,8 +395,7 @@ public class WrapperBeanGenerator {
             fo.flush();
             fo.close();
         } catch (java.io.IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.log(Level.INFO, "Error Writing class", e);
         }
     }
 

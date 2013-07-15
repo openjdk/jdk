@@ -83,7 +83,7 @@ public abstract class Attribute implements AnnotationValue {
                 return v.visitString((String) value, p);
             if (value instanceof Integer) {
                 int i = (Integer) value;
-                switch (type.tag) {
+                switch (type.getTag()) {
                 case BOOLEAN:   return v.visitBoolean(i != 0, p);
                 case CHAR:      return v.visitChar((char) i, p);
                 case BYTE:      return v.visitByte((byte) i, p);
@@ -91,7 +91,7 @@ public abstract class Attribute implements AnnotationValue {
                 case INT:       return v.visitInt(i, p);
                 }
             }
-            switch (type.tag) {
+            switch (type.getTag()) {
             case LONG:          return v.visitLong((Long) value, p);
             case FLOAT:         return v.visitFloat((Float) value, p);
             case DOUBLE:        return v.visitDouble((Double) value, p);

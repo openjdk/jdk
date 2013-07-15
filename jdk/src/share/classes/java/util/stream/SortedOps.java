@@ -27,7 +27,6 @@ package java.util.stream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.ForkJoinTask;
@@ -114,7 +113,7 @@ final class SortedOps {
                   StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SORTED);
             this.isNaturalSort = true;
             // Will throw CCE when we try to sort if T is not Comparable
-            this.comparator = (Comparator<? super T>) Comparators.naturalOrder();
+            this.comparator = (Comparator<? super T>) Comparator.naturalOrder();
         }
 
         /**
@@ -192,7 +191,7 @@ final class SortedOps {
             else {
                 Node.OfInt n = (Node.OfInt) helper.evaluate(spliterator, true, generator);
 
-                int[] content = n.asIntArray();
+                int[] content = n.asPrimitiveArray();
                 Arrays.parallelSort(content);
 
                 return Nodes.node(content);
@@ -231,7 +230,7 @@ final class SortedOps {
             else {
                 Node.OfLong n = (Node.OfLong) helper.evaluate(spliterator, true, generator);
 
-                long[] content = n.asLongArray();
+                long[] content = n.asPrimitiveArray();
                 Arrays.parallelSort(content);
 
                 return Nodes.node(content);
@@ -270,7 +269,7 @@ final class SortedOps {
             else {
                 Node.OfDouble n = (Node.OfDouble) helper.evaluate(spliterator, true, generator);
 
-                double[] content = n.asDoubleArray();
+                double[] content = n.asPrimitiveArray();
                 Arrays.parallelSort(content);
 
                 return Nodes.node(content);
@@ -401,7 +400,7 @@ final class SortedOps {
 
         @Override
         public void end() {
-            int[] ints = b.asIntArray();
+            int[] ints = b.asPrimitiveArray();
             Arrays.sort(ints);
             downstream.begin(ints.length);
             for (int anInt : ints)
@@ -466,7 +465,7 @@ final class SortedOps {
 
         @Override
         public void end() {
-            long[] longs = b.asLongArray();
+            long[] longs = b.asPrimitiveArray();
             Arrays.sort(longs);
             downstream.begin(longs.length);
             for (long aLong : longs)
@@ -531,7 +530,7 @@ final class SortedOps {
 
         @Override
         public void end() {
-            double[] doubles = b.asDoubleArray();
+            double[] doubles = b.asPrimitiveArray();
             Arrays.sort(doubles);
             downstream.begin(doubles.length);
             for (double aDouble : doubles)

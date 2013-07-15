@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.sound.sampled.spi.AudioFileReader;
  *
  * @author Karl Helgason
  */
-public class WaveExtensibleFileReader extends AudioFileReader {
+public final class WaveExtensibleFileReader extends AudioFileReader {
 
     static private class GUID {
         long i1;
@@ -74,7 +74,7 @@ public class WaveExtensibleFileReader extends AudioFileReader {
         private GUID() {
         }
 
-        public GUID(long i1, int s1, int s2, int x1, int x2, int x3, int x4,
+        GUID(long i1, int s1, int s2, int x1, int x2, int x3, int x4,
                 int x5, int x6, int x7, int x8) {
             this.i1 = i1;
             this.s1 = s1;
@@ -140,13 +140,13 @@ public class WaveExtensibleFileReader extends AudioFileReader {
 
     }
 
-    private static String[] channelnames = { "FL", "FR", "FC", "LF",
+    private static final String[] channelnames = { "FL", "FR", "FC", "LF",
             "BL",
             "BR", // 5.1
             "FLC", "FLR", "BC", "SL", "SR", "TC", "TFL", "TFC", "TFR", "TBL",
             "TBC", "TBR" };
 
-    private static String[] allchannelnames = { "w1", "w2", "w3", "w4", "w5",
+    private static final String[] allchannelnames = { "w1", "w2", "w3", "w4", "w5",
             "w6", "w7", "w8", "w9", "w10", "w11", "w12", "w13", "w14", "w15",
             "w16", "w17", "w18", "w19", "w20", "w21", "w22", "w23", "w24",
             "w25", "w26", "w27", "w28", "w29", "w30", "w31", "w32", "w33",
@@ -155,10 +155,10 @@ public class WaveExtensibleFileReader extends AudioFileReader {
             "w52", "w53", "w54", "w55", "w56", "w57", "w58", "w59", "w60",
             "w61", "w62", "w63", "w64" };
 
-    private static GUID SUBTYPE_PCM = new GUID(0x00000001, 0x0000, 0x0010,
+    private static final GUID SUBTYPE_PCM = new GUID(0x00000001, 0x0000, 0x0010,
             0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
-    private static GUID SUBTYPE_IEEE_FLOAT = new GUID(0x00000003, 0x0000,
+    private static final GUID SUBTYPE_IEEE_FLOAT = new GUID(0x00000003, 0x0000,
             0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
     private String decodeChannelMask(long channelmask) {

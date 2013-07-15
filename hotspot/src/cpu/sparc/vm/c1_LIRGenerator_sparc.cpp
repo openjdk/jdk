@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,6 +782,10 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
                length.result(), rlock_callee_saved(T_INT),
                expected_type, flags, info);
   set_no_result(x);
+}
+
+void LIRGenerator::do_update_CRC32(Intrinsic* x) {
+  fatal("CRC32 intrinsic is not implemented on this platform");
 }
 
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f

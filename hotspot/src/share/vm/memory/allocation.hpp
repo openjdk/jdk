@@ -264,7 +264,6 @@ class ClassLoaderData;
 
 class MetaspaceObj {
  public:
-  bool is_metadata() const;
   bool is_metaspace_object() const;  // more specific test but slower
   bool is_shared() const;
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
@@ -643,8 +642,15 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define NEW_RESOURCE_ARRAY_IN_THREAD(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type))
 
+#define NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(thread, type, size)\
+  (type*) resource_allocate_bytes(thread, (size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
+
 #define REALLOC_RESOURCE_ARRAY(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type) )
+  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type))
+
+#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(type, old, old_size, new_size)\
+  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type),\
+                                    (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
 #define FREE_RESOURCE_ARRAY(type, old, size)\
   resource_free_bytes((char*)(old), (size) * sizeof(type))
@@ -655,27 +661,39 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define NEW_RESOURCE_OBJ(type)\
   NEW_RESOURCE_ARRAY(type, 1)
 
-#define NEW_C_HEAP_ARRAY(type, size, memflags)\
-  (type*) (AllocateHeap((size) * sizeof(type), memflags))
+#define NEW_RESOURCE_OBJ_RETURN_NULL(type)\
+  NEW_RESOURCE_ARRAY_RETURN_NULL(type, 1)
 
-#define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
-  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
-
-#define FREE_C_HEAP_ARRAY(type, old, memflags) \
-  FreeHeap((char*)(old), memflags)
+#define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)\
+  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail)
 
 #define NEW_C_HEAP_ARRAY2(type, size, memflags, pc)\
   (type*) (AllocateHeap((size) * sizeof(type), memflags, pc))
 
-#define REALLOC_C_HEAP_ARRAY2(type, old, size, memflags, pc)\
-  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, pc))
+#define NEW_C_HEAP_ARRAY(type, size, memflags)\
+  (type*) (AllocateHeap((size) * sizeof(type), memflags))
 
-#define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)         \
-  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail)
+#define NEW_C_HEAP_ARRAY2_RETURN_NULL(type, size, memflags, pc)\
+  NEW_C_HEAP_ARRAY3(type, size, memflags, pc, AllocFailStrategy::RETURN_NULL)
+
+#define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, memflags)\
+  NEW_C_HEAP_ARRAY3(type, size, memflags, (address)0, AllocFailStrategy::RETURN_NULL)
+
+#define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
+  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
+
+#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, memflags)\
+   (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, AllocFailStrategy::RETURN_NULL))
+
+#define FREE_C_HEAP_ARRAY(type, old, memflags) \
+  FreeHeap((char*)(old), memflags)
 
 // allocate type in heap without calling ctor
 #define NEW_C_HEAP_OBJ(type, memflags)\
   NEW_C_HEAP_ARRAY(type, 1, memflags)
+
+#define NEW_C_HEAP_OBJ_RETURN_NULL(type, memflags)\
+  NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, memflags)
 
 // deallocate obj of type in heap without calling dtor
 #define FREE_C_HEAP_OBJ(objname, memflags)\
@@ -721,13 +739,21 @@ public:
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
 template <class E, MEMFLAGS F>
-class ArrayAllocator : StackObj {
+class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
   char* _addr;
   bool _use_malloc;
   size_t _size;
+  bool _free_in_destructor;
  public:
-  ArrayAllocator() : _addr(NULL), _use_malloc(false), _size(0) { }
-  ~ArrayAllocator() { free(); }
+  ArrayAllocator(bool free_in_destructor = true) :
+    _addr(NULL), _use_malloc(false), _size(0), _free_in_destructor(free_in_destructor) { }
+
+  ~ArrayAllocator() {
+    if (_free_in_destructor) {
+      free();
+    }
+  }
+
   E* allocate(size_t length);
   void free();
 };

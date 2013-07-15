@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,13 +485,13 @@ public class CodeSource implements java.io.Serializable {
     /**
      * Writes this object out to a stream (i.e., serializes it).
      *
-     * @serialData An initial <code>URL</code> is followed by an
-     * <code>int</code> indicating the number of certificates to follow
+     * @serialData An initial {@code URL} is followed by an
+     * {@code int} indicating the number of certificates to follow
      * (a value of "zero" denotes that there are no certificates associated
      * with this object).
-     * Each certificate is written out starting with a <code>String</code>
+     * Each certificate is written out starting with a {@code String}
      * denoting the certificate type, followed by an
-     * <code>int</code> specifying the length of the certificate encoding,
+     * {@code int} specifying the length of the certificate encoding,
      * followed by the certificate encoding itself which is written out as an
      * array of bytes. Finally, if any code signers are present then the array
      * of code signers is serialized and written out too.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -799,6 +799,14 @@ void VMError::report(outputStream* st) {
 VMError* volatile VMError::first_error = NULL;
 volatile jlong VMError::first_error_tid = -1;
 
+// An error could happen before tty is initialized or after it has been
+// destroyed. Here we use a very simple unbuffered fdStream for printing.
+// Only out.print_raw() and out.print_raw_cr() should be used, as other
+// printing methods need to allocate large buffer on stack. To format a
+// string, use jio_snprintf() with a static buffer or use staticBufferStream.
+fdStream VMError::out(defaultStream::output_fd());
+fdStream VMError::log; // error log used by VMError::report_and_die()
+
 /** Expand a pattern into a buffer starting at pos and open a file using constructed path */
 static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
@@ -853,13 +861,6 @@ void VMError::report_and_die() {
   // Don't allocate large buffer on stack
   static char buffer[O_BUFLEN];
 
-  // An error could happen before tty is initialized or after it has been
-  // destroyed. Here we use a very simple unbuffered fdStream for printing.
-  // Only out.print_raw() and out.print_raw_cr() should be used, as other
-  // printing methods need to allocate large buffer on stack. To format a
-  // string, use jio_snprintf() with a static buffer or use staticBufferStream.
-  static fdStream out(defaultStream::output_fd());
-
   // How many errors occurred in error handler when reporting first_error.
   static int recursive_error_count;
 
@@ -868,7 +869,6 @@ void VMError::report_and_die() {
   static bool out_done = false;         // done printing to standard out
   static bool log_done = false;         // done saving error log
   static bool transmit_report_done = false; // done error reporting
-  static fdStream log;                  // error log
 
   // disble NMT to avoid further exception
   MemTracker::shutdown(MemTracker::NMT_error_reporting);

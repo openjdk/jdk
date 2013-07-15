@@ -36,13 +36,13 @@ import java.util.Set;
  *
  * <p> A selector may be created by invoking the {@link #open open} method of
  * this class, which will use the system's default {@link
- * java.nio.channels.spi.SelectorProvider </code>selector provider<code>} to
+ * java.nio.channels.spi.SelectorProvider selector provider} to
  * create a new selector.  A selector may also be created by invoking the
  * {@link java.nio.channels.spi.SelectorProvider#openSelector openSelector}
  * method of a custom selector provider.  A selector remains open until it is
  * closed via its {@link #close close} method.
  *
- * <a name="ks">
+ * <a name="ks"></a>
  *
  * <p> A selectable channel's registration with a selector is represented by a
  * {@link SelectionKey} object.  A selector maintains three sets of selection
@@ -80,18 +80,18 @@ import java.util.Set;
  * during the next selection operation, at which time the key will removed from
  * all of the selector's key sets.
  *
- * <a name="sks"><p> Keys are added to the selected-key set by selection
+ * <a name="sks"></a><p> Keys are added to the selected-key set by selection
  * operations.  A key may be removed directly from the selected-key set by
  * invoking the set's {@link java.util.Set#remove(java.lang.Object) remove}
  * method or by invoking the {@link java.util.Iterator#remove() remove} method
- * of an {@link java.util.Iterator </code>iterator<code>} obtained from the
+ * of an {@link java.util.Iterator iterator} obtained from the
  * set.  Keys are never removed from the selected-key set in any other way;
  * they are not, in particular, removed as a side effect of selection
  * operations.  Keys may not be added directly to the selected-key set. </p>
  *
  *
- * <a name="selop">
- * <h4>Selection</h4>
+ * <a name="selop"></a>
+ * <h2>Selection</h2>
  *
  * <p> During each selection operation, keys may be added to and removed from a
  * selector's selected-key set and may be removed from its key and
@@ -111,7 +111,7 @@ import java.util.Set;
  *   operation began.  For a channel that is ready for at least one such
  *   operation, one of the following two actions is performed: </p>
  *
- *   <ol type=a>
+ *   <ol>
  *
  *     <li><p> If the channel's key is not already in the selected-key set then
  *     it is added to that set and its ready-operation set is modified to
@@ -126,7 +126,7 @@ import java.util.Set;
  *     words, the ready set returned by the underlying system is
  *     bitwise-disjoined into the key's current ready set. </p></li>
  *
- *   </ol></li>
+ *   </ol>
  *
  *   If all of the keys in the key set at the start of this step have empty
  *   interest sets then neither the selected-key set nor any of the keys'
@@ -142,7 +142,7 @@ import java.util.Set;
  * difference between the three selection methods. </p>
  *
  *
- * <h4>Concurrency</h4>
+ * <h2>Concurrency</h2>
  *
  * <p> Selectors are themselves safe for use by multiple concurrent threads;
  * their key sets, however, are not.
@@ -183,7 +183,7 @@ import java.util.Set;
  * <p> The {@link #close close} method synchronizes on the selector and all
  * three key sets in the same order as in a selection operation.
  *
- * <a name="ksc">
+ * <a name="ksc"></a>
  *
  * <p> A selector's key and selected-key sets are not, in general, safe for use
  * by multiple concurrent threads.  If such a thread might modify one of these
@@ -228,14 +228,14 @@ public abstract class Selector implements Closeable {
     }
 
     /**
-     * Tells whether or not this selector is open.  </p>
+     * Tells whether or not this selector is open.
      *
      * @return <tt>true</tt> if, and only if, this selector is open
      */
     public abstract boolean isOpen();
 
     /**
-     * Returns the provider that created this channel.  </p>
+     * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
      */

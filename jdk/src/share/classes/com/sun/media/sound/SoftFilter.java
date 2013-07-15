@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SoftFilter {
+public final class SoftFilter {
 
     public final static int FILTERTYPE_LP6 = 0x00;
     public final static int FILTERTYPE_LP12 = 0x01;
@@ -55,7 +55,7 @@ public class SoftFilter {
     // 0x30 = NP, Notch or Band Elimination Filter
     //
     private int filtertype = FILTERTYPE_LP6;
-    private float samplerate;
+    private final float samplerate;
     private float x1;
     private float x2;
     private float y1;

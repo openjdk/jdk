@@ -2323,9 +2323,9 @@ public abstract class ResourceBundle {
          * is returned. And if the resource bundles for the "ja" and
          * "" <code>Locale</code>s are found, then the runtime resource
          * lookup path (parent chain) is:
-         * <pre>
+         * <pre>{@code
          *     Messages_ja -> Messages
-         * </pre>
+         * }</pre>
          *
          * @param baseName
          *        the base name of the resource bundle, a fully
