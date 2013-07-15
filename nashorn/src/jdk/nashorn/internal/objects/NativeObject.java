@@ -619,6 +619,7 @@ public final class NativeObject {
         propertyNames.addAll(writablePropertyNames);
 
         final Class<?> clazz = source.getClass();
+        Bootstrap.checkReflectionAccess(clazz);
 
         final MethodType getterType = MethodType.methodType(Object.class, clazz);
         final MethodType setterType = MethodType.methodType(Object.class, clazz, Object.class);

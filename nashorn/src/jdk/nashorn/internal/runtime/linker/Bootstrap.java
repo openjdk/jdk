@@ -217,6 +217,17 @@ public final class Bootstrap {
     public static Object bindDynamicMethod(Object dynamicMethod, Object boundThis) {
         return new BoundDynamicMethod(dynamicMethod, boundThis);
     }
+
+    /**
+     * If the given class is a reflection-specific class (anything in {@code java.lang.reflect} and
+     * {@code java.lang.invoke} package, as well a {@link Class} and any subclass of {@link ClassLoader}) and there is
+     * a security manager in the system, then it checks the {@code nashorn.JavaReflection} {@code RuntimePermission}.
+     * @param clazz the class being tested
+     */
+    public static void checkReflectionAccess(Class<?> clazz) {
+        ReflectionCheckLinker.checkReflectionAccess(clazz);
+    }
+
     /**
      * Returns the Nashorn's internally used dynamic linker's services object. Note that in code that is processing a
      * linking request, you will normally use the {@code LinkerServices} object passed by whatever top-level linker
