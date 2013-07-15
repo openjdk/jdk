@@ -486,7 +486,7 @@ int MemBaseline::malloc_sort_by_addr(const void* p1, const void* p2) {
   const MemPointerRecord* mp1 = (const MemPointerRecord*)p1;
   const MemPointerRecord* mp2 = (const MemPointerRecord*)p2;
   int delta = UNSIGNED_COMPARE(mp1->addr(), mp2->addr());
-  assert(delta != 0, "dup pointer");
+  assert(p1 == p2 || delta != 0, "dup pointer");
   return delta;
 }
 
