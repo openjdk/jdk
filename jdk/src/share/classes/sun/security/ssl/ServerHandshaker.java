@@ -281,7 +281,15 @@ final class ServerHandshaker extends Handshaker {
 
         // Reject client initiated renegotiation?
         //
-        // Should not have any impact on server initiated renegotiation.
+        // If server side should reject client-initiated renegotiation,
+        // send an alert_handshake_failure fatal alert, not a no_renegotiation
+        // warning alert (no_renegotiation must be a warning: RFC 2246).
+        // no_renegotiation might seem more natural at first, but warnings
+        // are not appropriate because the sending party does not know how
+        // the receiving party will behave.  This state must be treated as
+        // a fatal server condition.
+        //
+        // This will not have any impact on server initiated renegotiation.
         if (rejectClientInitiatedRenego && !isInitialHandshake &&
                 state != HandshakeMessage.ht_hello_request) {
             fatalSE(Alerts.alert_handshake_failure,

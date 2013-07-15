@@ -2806,9 +2806,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         if (SET_COOKIE.equalsIgnoreCase(name) ||
             SET_COOKIE2.equalsIgnoreCase(name)) {
+
             // Filtering only if there is a cookie handler. [Assumption: the
             // cookie handler will store/retrieve the HttpOnly cookies]
-            if (cookieHandler == null)
+            if (cookieHandler == null || value.length() == 0)
                 return value;
 
             sun.misc.JavaNetHttpCookieAccess access =

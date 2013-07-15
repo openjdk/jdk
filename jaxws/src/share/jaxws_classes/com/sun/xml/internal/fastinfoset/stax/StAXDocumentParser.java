@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,7 +499,7 @@ public class StAXDocumentParser extends Decoder
         }
     }
 
-    private final void popStack() {
+    private void popStack() {
         // Pop information off the stack
         _qualifiedName = _qNameStack[_stackCount];
         _currentNamespaceAIIsStart = _namespaceAIIsStartStack[_stackCount];
@@ -522,8 +522,6 @@ public class StAXDocumentParser extends Decoder
             throw new XMLStreamException(CommonResourceBundle.getInstance().getString("message.namespaceURINotMatch", new Object[]{namespaceURI}));
         if(localName != null && !localName.equals(getLocalName()))
             throw new XMLStreamException(CommonResourceBundle.getInstance().getString("message.localNameNotMatch", new Object[]{localName}));
-
-        return;
     }
 
     /** Reads the content of a text-only element. Precondition:
@@ -551,7 +549,7 @@ public class StAXDocumentParser extends Decoder
                     CommonResourceBundle.getInstance().getString("message.mustBeOnSTARTELEMENT"), getLocation());
         }
         int eventType = getEventType();
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         while(eventType != END_ELEMENT ) {
             if(eventType == CHARACTERS
                     || eventType == CDATA
@@ -1624,6 +1622,11 @@ public class StAXDocumentParser extends Decoder
         ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
         String public_identifier = ((b & EncodingConstants.UNEXPANDED_ENTITY_PUBLIC_IDENTIFIER_FLAG) > 0)
         ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "processUnexpandedEntityReference: entity_reference_name={0} system_identifier={1}public_identifier={2}",
+                    new Object[]{entity_reference_name, system_identifier, public_identifier});
+        }
     }
 
     protected final void processCIIEncodingAlgorithm(boolean addToTable) throws FastInfosetException, IOException {

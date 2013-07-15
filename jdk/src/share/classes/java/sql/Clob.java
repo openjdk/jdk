@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.sql;
 import java.io.Reader;
 
 /**
- * The mapping in the Java<sup><font size=-2>TM</font></sup> programming language
+ * The mapping in the Java&trade; programming language
  * for the SQL <code>CLOB</code> type.
  * An SQL <code>CLOB</code> is a built-in type
  * that stores a Character Large Object as a column value in a row of

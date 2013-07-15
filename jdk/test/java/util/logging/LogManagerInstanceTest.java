@@ -63,7 +63,7 @@ public class LogManagerInstanceTest {
                 if (!super.addLogger(root))
                     throw new RuntimeException("Fail to addLogger " + root);
             } else {
-                System.out.println("Root logger already exists");
+                throw new RuntimeException("Root logger already exists");
             }
             this.base = root;
         }

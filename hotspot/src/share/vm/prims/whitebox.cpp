@@ -159,7 +159,7 @@ WB_END
 
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
-  os::commit_memory((char *)(uintptr_t)addr, size);
+  os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
   MemTracker::record_virtual_memory_type((address)(uintptr_t)addr, mtTest);
 WB_END
 

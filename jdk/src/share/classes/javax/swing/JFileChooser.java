@@ -1146,9 +1146,25 @@ public class JFileChooser extends JComponent implements Accessible {
      * @see #resetChoosableFileFilters
      */
     public boolean removeChoosableFileFilter(FileFilter f) {
-        if(filters.contains(f)) {
+        int index = filters.indexOf(f);
+        if (index >= 0) {
             if(getFileFilter() == f) {
-                setFileFilter(null);
+                if (isAcceptAllFileFilterUsed()) {
+                    // choose default filter if it is used
+                    setFileFilter(getAcceptAllFileFilter());
+                }
+                else if (index > 0) {
+                    // choose the first filter, because it is not removed
+                    setFileFilter(filters.get(0));
+                }
+                else if (filters.size() > 1) {
+                    // choose the second filter, because the first one is removed
+                    setFileFilter(filters.get(1));
+                }
+                else {
+                    // no more filters
+                    setFileFilter(null);
+                }
             }
             FileFilter[] oldValue = getChoosableFileFilters();
             filters.removeElement(f);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ import java.util.Properties;
  * @author Benjamin Renaud
  *
  * @deprecated This class is no longer used. Its functionality has been
- * replaced by <code>java.security.KeyStore</code>, the
- * <code>java.security.cert</code> package, and
- * <code>java.security.Principal</code>.
+ * replaced by {@code java.security.KeyStore}, the
+ * {@code java.security.cert} package, and
+ * {@code java.security.Principal}.
  */
 @Deprecated
 public abstract
@@ -146,14 +146,14 @@ class IdentityScope extends Identity {
      * Sets the system's identity scope.
      *
      * <p>First, if there is a security manager, its
-     * <code>checkSecurityAccess</code>
-     * method is called with <code>"setSystemScope"</code>
+     * {@code checkSecurityAccess}
+     * method is called with {@code "setSystemScope"}
      * as its argument to see if it's ok to set the identity scope.
      *
      * @param scope the scope to set.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * setting the identity scope.
      *
      * @see #getSystemScope
@@ -176,8 +176,8 @@ class IdentityScope extends Identity {
      *
      * @param name the name of the identity to be retrieved.
      *
-     * @return the identity named <code>name</code>, or null if there are
-     * no identities named <code>name</code> in this scope.
+     * @return the identity named {@code name}, or null if there are
+     * no identities named {@code name} in this scope.
      */
     public abstract Identity getIdentity(String name);
 

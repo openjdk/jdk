@@ -45,12 +45,12 @@ import sun.misc.Unsafe;
  * synchronizers (semaphores, events, etc) that rely on
  * first-in-first-out (FIFO) wait queues.  This class is designed to
  * be a useful basis for most kinds of synchronizers that rely on a
- * single atomic <tt>int</tt> value to represent state. Subclasses
+ * single atomic {@code int} value to represent state. Subclasses
  * must define the protected methods that change this state, and which
  * define what that state means in terms of this object being acquired
  * or released.  Given these, the other methods in this class carry
  * out all queuing and blocking mechanics. Subclasses can maintain
- * other state fields, but only the atomically updated <tt>int</tt>
+ * other state fields, but only the atomically updated {@code int}
  * value manipulated using methods {@link #getState}, {@link
  * #setState} and {@link #compareAndSetState} is tracked with respect
  * to synchronization.
@@ -58,7 +58,7 @@ import sun.misc.Unsafe;
  * <p>Subclasses should be defined as non-public internal helper
  * classes that are used to implement the synchronization properties
  * of their enclosing class.  Class
- * <tt>AbstractQueuedSynchronizer</tt> does not implement any
+ * {@code AbstractQueuedSynchronizer} does not implement any
  * synchronization interface.  Instead it defines methods such as
  * {@link #acquireInterruptibly} that can be invoked as
  * appropriate by concrete locks and related synchronizers to
@@ -85,7 +85,7 @@ import sun.misc.Unsafe;
  * invoked with the current {@link #getState} value fully releases
  * this object, and {@link #acquire}, given this saved state value,
  * eventually restores this object to its previous acquired state.  No
- * <tt>AbstractQueuedSynchronizer</tt> method otherwise creates such a
+ * {@code AbstractQueuedSynchronizer} method otherwise creates such a
  * condition, so if this constraint cannot be met, do not use it.  The
  * behavior of {@link ConditionObject} depends of course on the
  * semantics of its synchronizer implementation.
@@ -93,13 +93,13 @@ import sun.misc.Unsafe;
  * <p>This class provides inspection, instrumentation, and monitoring
  * methods for the internal queue, as well as similar methods for
  * condition objects. These can be exported as desired into classes
- * using an <tt>AbstractQueuedSynchronizer</tt> for their
+ * using an {@code AbstractQueuedSynchronizer} for their
  * synchronization mechanics.
  *
  * <p>Serialization of this class stores only the underlying atomic
  * integer maintaining state, so deserialized objects have empty
  * thread queues. Typical subclasses requiring serializability will
- * define a <tt>readObject</tt> method that restores this to a known
+ * define a {@code readObject} method that restores this to a known
  * initial state upon deserialization.
  *
  * <h3>Usage</h3>
@@ -115,14 +115,14 @@ import sun.misc.Unsafe;
  * <li> {@link #tryAcquireShared}
  * <li> {@link #tryReleaseShared}
  * <li> {@link #isHeldExclusively}
- *</ul>
+ * </ul>
  *
  * Each of these methods by default throws {@link
  * UnsupportedOperationException}.  Implementations of these methods
  * must be internally thread-safe, and should in general be short and
  * not block. Defining these methods is the <em>only</em> supported
  * means of using this class. All other methods are declared
- * <tt>final</tt> because they cannot be independently varied.
+ * {@code final} because they cannot be independently varied.
  *
  * <p>You may also find the inherited methods from {@link
  * AbstractOwnableSynchronizer} useful to keep track of the thread
@@ -148,16 +148,16 @@ import sun.misc.Unsafe;
  *
  * (Shared mode is similar but may involve cascading signals.)
  *
- * <p><a name="barging">Because checks in acquire are invoked before
+ * <p id="barging">Because checks in acquire are invoked before
  * enqueuing, a newly acquiring thread may <em>barge</em> ahead of
  * others that are blocked and queued.  However, you can, if desired,
- * define <tt>tryAcquire</tt> and/or <tt>tryAcquireShared</tt> to
+ * define {@code tryAcquire} and/or {@code tryAcquireShared} to
  * disable barging by internally invoking one or more of the inspection
  * methods, thereby providing a <em>fair</em> FIFO acquisition order.
- * In particular, most fair synchronizers can define <tt>tryAcquire</tt>
- * to return <tt>false</tt> if {@link #hasQueuedPredecessors} (a method
+ * In particular, most fair synchronizers can define {@code tryAcquire}
+ * to return {@code false} if {@link #hasQueuedPredecessors} (a method
  * specifically designed to be used by fair synchronizers) returns
- * <tt>true</tt>.  Other variations are possible.
+ * {@code true}.  Other variations are possible.
  *
  * <p>Throughput and scalability are generally highest for the
  * default barging (also known as <em>greedy</em>,
@@ -167,7 +167,7 @@ import sun.misc.Unsafe;
  * threads, and each recontention has an unbiased chance to succeed
  * against incoming threads.  Also, while acquires do not
  * &quot;spin&quot; in the usual sense, they may perform multiple
- * invocations of <tt>tryAcquire</tt> interspersed with other
+ * invocations of {@code tryAcquire} interspersed with other
  * computations before blocking.  This gives most of the benefits of
  * spins when exclusive synchronization is only briefly held, without
  * most of the liabilities when it isn't. If so desired, you can
@@ -178,7 +178,7 @@ import sun.misc.Unsafe;
  *
  * <p>This class provides an efficient and scalable basis for
  * synchronization in part by specializing its range of use to
- * synchronizers that can rely on <tt>int</tt> state, acquire, and
+ * synchronizers that can rely on {@code int} state, acquire, and
  * release parameters, and an internal FIFO wait queue. When this does
  * not suffice, you can build synchronizers from a lower level using
  * {@link java.util.concurrent.atomic atomic} classes, your own custom
@@ -200,12 +200,12 @@ import sun.misc.Unsafe;
  *
  *   // Our internal helper class
  *   private static class Sync extends AbstractQueuedSynchronizer {
- *     // Report whether in locked state
+ *     // Reports whether in locked state
  *     protected boolean isHeldExclusively() {
  *       return getState() == 1;
  *     }
  *
- *     // Acquire the lock if state is zero
+ *     // Acquires the lock if state is zero
  *     public boolean tryAcquire(int acquires) {
  *       assert acquires == 1; // Otherwise unused
  *       if (compareAndSetState(0, 1)) {
@@ -215,7 +215,7 @@ import sun.misc.Unsafe;
  *       return false;
  *     }
  *
- *     // Release the lock by setting state to zero
+ *     // Releases the lock by setting state to zero
  *     protected boolean tryRelease(int releases) {
  *       assert releases == 1; // Otherwise unused
  *       if (getState() == 0) throw new IllegalMonitorStateException();
@@ -224,10 +224,10 @@ import sun.misc.Unsafe;
  *       return true;
  *     }
  *
- *     // Provide a Condition
+ *     // Provides a Condition
  *     Condition newCondition() { return new ConditionObject(); }
  *
- *     // Deserialize properly
+ *     // Deserializes properly
  *     private void readObject(ObjectInputStream s)
  *         throws IOException, ClassNotFoundException {
  *       s.defaultReadObject();
@@ -255,8 +255,8 @@ import sun.misc.Unsafe;
  *
  * <p>Here is a latch class that is like a
  * {@link java.util.concurrent.CountDownLatch CountDownLatch}
- * except that it only requires a single <tt>signal</tt> to
- * fire. Because a latch is non-exclusive, it uses the <tt>shared</tt>
+ * except that it only requires a single {@code signal} to
+ * fire. Because a latch is non-exclusive, it uses the {@code shared}
  * acquire and release methods.
  *
  *  <pre> {@code
@@ -293,7 +293,7 @@ public abstract class AbstractQueuedSynchronizer
     private static final long serialVersionUID = 7373984972572414691L;
 
     /**
-     * Creates a new <tt>AbstractQueuedSynchronizer</tt> instance
+     * Creates a new {@code AbstractQueuedSynchronizer} instance
      * with initial synchronization state of zero.
      */
     protected AbstractQueuedSynchronizer() { }
@@ -326,7 +326,7 @@ public abstract class AbstractQueuedSynchronizer
      *
      * <p>Insertion into a CLH queue requires only a single atomic
      * operation on "tail", so there is a simple atomic point of
-     * demarcation from unqueued to queued. Similarly, dequeing
+     * demarcation from unqueued to queued. Similarly, dequeuing
      * involves only updating the "head". However, it takes a bit
      * more work for nodes to determine who their successors are,
      * in part to deal with possible cancellation due to timeouts
@@ -433,7 +433,7 @@ public abstract class AbstractQueuedSynchronizer
 
         /**
          * Link to predecessor node that current node/thread relies on
-         * for checking waitStatus. Assigned during enqueing, and nulled
+         * for checking waitStatus. Assigned during enqueuing, and nulled
          * out (for sake of GC) only upon dequeuing.  Also, upon
          * cancellation of a predecessor, we short-circuit while
          * finding a non-cancelled one, which will always exist
@@ -478,7 +478,7 @@ public abstract class AbstractQueuedSynchronizer
         Node nextWaiter;
 
         /**
-         * Returns true if node is waiting in shared mode
+         * Returns true if node is waiting in shared mode.
          */
         final boolean isShared() {
             return nextWaiter == SHARED;
@@ -534,7 +534,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Returns the current value of synchronization state.
-     * This operation has memory semantics of a <tt>volatile</tt> read.
+     * This operation has memory semantics of a {@code volatile} read.
      * @return current state value
      */
     protected final int getState() {
@@ -543,7 +543,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Sets the value of synchronization state.
-     * This operation has memory semantics of a <tt>volatile</tt> write.
+     * This operation has memory semantics of a {@code volatile} write.
      * @param newState the new state value
      */
     protected final void setState(int newState) {
@@ -553,12 +553,12 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Atomically sets synchronization state to the given updated
      * value if the current state value equals the expected value.
-     * This operation has memory semantics of a <tt>volatile</tt> read
+     * This operation has memory semantics of a {@code volatile} read
      * and write.
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful. False return indicates that the actual
+     * @return {@code true} if successful. False return indicates that the actual
      *         value was not equal to the expected value.
      */
     protected final boolean compareAndSetState(int expect, int update) {
@@ -663,7 +663,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Release action for shared mode -- signal successor and ensure
+     * Release action for shared mode -- signals successor and ensures
      * propagation. (Note: For exclusive mode, release just amounts
      * to calling unparkSuccessor of head if it needs signal.)
      */
@@ -784,7 +784,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Checks and updates status for a node that failed to acquire.
      * Returns true if thread should block. This is the main signal
-     * control in all acquire loops.  Requires that pred == node.prev
+     * control in all acquire loops.  Requires that pred == node.prev.
      *
      * @param pred node's predecessor holding status
      * @param node the node
@@ -1288,7 +1288,7 @@ public abstract class AbstractQueuedSynchronizer
      * thread is queued, possibly repeatedly blocking and unblocking,
      * invoking {@link #tryAcquireShared} until success or the thread
      * is interrupted.
-     * @param arg the acquire argument
+     * @param arg the acquire argument.
      * This value is conveyed to {@link #tryAcquireShared} but is
      * otherwise uninterpreted and can represent anything
      * you like.
@@ -1663,7 +1663,7 @@ public abstract class AbstractQueuedSynchronizer
      * Returns true if successful.
      * @param node the node
      * @return true if successfully transferred (else the node was
-     * cancelled before signal).
+     * cancelled before signal)
      */
     final boolean transferForSignal(Node node) {
         /*
@@ -1686,11 +1686,10 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Transfers node, if necessary, to sync queue after a cancelled
-     * wait. Returns true if thread was cancelled before being
-     * signalled.
-     * @param current the waiting thread
-     * @param node its node
+     * Transfers node, if necessary, to sync queue after a cancelled wait.
+     * Returns true if thread was cancelled before being signalled.
+     *
+     * @param node the node
      * @return true if cancelled before the node was signalled
      */
     final boolean transferAfterCancelledWait(Node node) {
@@ -1738,7 +1737,7 @@ public abstract class AbstractQueuedSynchronizer
      * uses this synchronizer as its lock.
      *
      * @param condition the condition
-     * @return <tt>true</tt> if owned
+     * @return {@code true} if owned
      * @throws NullPointerException if the condition is null
      */
     public final boolean owns(ConditionObject condition) {
@@ -1748,13 +1747,13 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Queries whether any threads are waiting on the given condition
      * associated with this synchronizer. Note that because timeouts
-     * and interrupts may occur at any time, a <tt>true</tt> return
-     * does not guarantee that a future <tt>signal</tt> will awaken
+     * and interrupts may occur at any time, a {@code true} return
+     * does not guarantee that a future {@code signal} will awaken
      * any threads.  This method is designed primarily for use in
      * monitoring of the system state.
      *
      * @param condition the condition
-     * @return <tt>true</tt> if there are any waiting threads
+     * @return {@code true} if there are any waiting threads
      * @throws IllegalMonitorStateException if exclusive synchronization
      *         is not held
      * @throws IllegalArgumentException if the given condition is
@@ -1821,7 +1820,7 @@ public abstract class AbstractQueuedSynchronizer
      * and Condition users. Exported versions of this class will in
      * general need to be accompanied by documentation describing
      * condition semantics that rely on those of the associated
-     * <tt>AbstractQueuedSynchronizer</tt>.
+     * {@code AbstractQueuedSynchronizer}.
      *
      * <p>This class is Serializable, but all fields are transient,
      * so deserialized conditions have no waiters.
@@ -1834,7 +1833,7 @@ public abstract class AbstractQueuedSynchronizer
         private transient Node lastWaiter;
 
         /**
-         * Creates a new <tt>ConditionObject</tt> instance.
+         * Creates a new {@code ConditionObject} instance.
          */
         public ConditionObject() { }
 
@@ -2187,7 +2186,7 @@ public abstract class AbstractQueuedSynchronizer
 
         /**
          * Queries whether any threads are waiting on this condition.
-         * Implements {@link AbstractQueuedSynchronizer#hasWaiters}.
+         * Implements {@link AbstractQueuedSynchronizer#hasWaiters(ConditionObject)}.
          *
          * @return {@code true} if there are any waiting threads
          * @throws IllegalMonitorStateException if {@link #isHeldExclusively}
@@ -2206,7 +2205,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * Returns an estimate of the number of threads waiting on
          * this condition.
-         * Implements {@link AbstractQueuedSynchronizer#getWaitQueueLength}.
+         * Implements {@link AbstractQueuedSynchronizer#getWaitQueueLength(ConditionObject)}.
          *
          * @return the estimated number of waiting threads
          * @throws IllegalMonitorStateException if {@link #isHeldExclusively}
@@ -2226,7 +2225,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * Returns a collection containing those threads that may be
          * waiting on this Condition.
-         * Implements {@link AbstractQueuedSynchronizer#getWaitingThreads}.
+         * Implements {@link AbstractQueuedSynchronizer#getWaitingThreads(ConditionObject)}.
          *
          * @return the collection of threads
          * @throws IllegalMonitorStateException if {@link #isHeldExclusively}

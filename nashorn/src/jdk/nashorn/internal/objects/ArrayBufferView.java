@@ -29,12 +29,18 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
+import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
+
 @ScriptClass("ArrayBufferView")
 abstract class ArrayBufferView extends ScriptObject {
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
         checkConstructorArgs(buffer, byteOffset, elementLength);
@@ -305,11 +311,11 @@ abstract class ArrayBufferView extends ScriptObject {
             dst = factory.construct(length);
         } else if (arg0 instanceof NativeArray) {
             // Constructor(type[] array)
-            length = (int) (((NativeArray) arg0).getArray().length() & 0x7fff_ffff);
+            length = lengthToInt(((NativeArray) arg0).getArray().length());
             dst = factory.construct(length);
         } else {
             // Constructor(unsigned long length)
-            length = JSType.toInt32(arg0);
+            length = lengthToInt(JSType.toInt64(arg0));
             return factory.construct(length);
         }
 
@@ -352,6 +358,13 @@ abstract class ArrayBufferView extends ScriptObject {
                 dest.set(j, source.getDouble(i), false);
             }
         }
+    }
+
+    private static int lengthToInt(final long length) {
+        if (length > Integer.MAX_VALUE || length < 0) {
+            throw rangeError("inappropriate.array.buffer.length", JSType.toString(length));
+        }
+        return (int) (length & Integer.MAX_VALUE);
     }
 
     protected static Object subarrayImpl(final Object self, final Object begin0, final Object end0) {

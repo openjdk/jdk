@@ -538,21 +538,4 @@ COPY_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
 
 ##########################################################################################
 
-ifndef OPENJDK
-ifeq ($(ENABLE_JFR), true)
-
-JFR_CONFIGURATION_DIR_SRC := $(JDK_TOPDIR)/src/closed/share/classes/oracle/jrockit/jfr/settings/
-JFR_CONFIGURATION_DIR_DST := $(LIBDIR)/jfr/
-
-JFR_SRC_FILES = $(wildcard $(JFR_CONFIGURATION_DIR_SRC)/*.jfc)
-JFR_TARGET_FILES = $(subst $(JFR_CONFIGURATION_DIR_SRC),$(JFR_CONFIGURATION_DIR_DST),$(JFR_SRC_FILES))
-
-$(JFR_CONFIGURATION_DIR_DST)/%.jfc : $(JFR_CONFIGURATION_DIR_SRC)/%.jfc
-	$(call install-file)
-
-COPY_FILES += $(JFR_TARGET_FILES)
-
-endif
-endif
-
-##########################################################################################
+-include $(CUSTOM_MAKE_DIR)/CopyFiles.gmk

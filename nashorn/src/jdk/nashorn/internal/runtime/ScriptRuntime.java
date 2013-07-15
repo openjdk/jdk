@@ -127,6 +127,17 @@ public final class ScriptRuntime {
      * @param deflt default to use if not convertible.
      * @return int tag value (or deflt.)
      */
+    public static int switchTagAsInt(final boolean tag, final int deflt) {
+        return deflt;
+    }
+
+    /**
+     * Converts a switch tag value to a simple integer. deflt value if it can't.
+     *
+     * @param tag   Switch statement tag value.
+     * @param deflt default to use if not convertible.
+     * @return int tag value (or deflt.)
+     */
     public static int switchTagAsInt(final long tag, final int deflt) {
         return isRepresentableAsInt(tag) ? (int)tag : deflt;
     }
@@ -353,6 +364,47 @@ public final class ScriptRuntime {
     public static Object apply(final ScriptFunction target, final Object self, final Object... args) {
         try {
             return target.invoke(self, args);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    /**
+     * Check that the target function is associated with current Context.
+     * And also make sure that 'self', if ScriptObject, is from current context.
+     *
+     * Call a function as a constructor given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
+        final ScriptObject global = Context.getGlobalTrusted();
+        if (! (global instanceof GlobalObject)) {
+            throw new IllegalStateException("No current global set");
+        }
+
+        if (target.getContext() != global.getContext()) {
+            throw new IllegalArgumentException("'target' function is not from current Context");
+        }
+
+        // all in order - call real 'construct'
+        return construct(target, args);
+    }
+
+    /*
+     * Call a script function as a constructor with given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object construct(final ScriptFunction target, final Object... args) {
+        try {
+            return target.construct(args);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -823,6 +875,13 @@ public final class ScriptRuntime {
 
         if (clazz instanceof StaticClass) {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
+        }
+
+        if (clazz instanceof ScriptObjectMirror) {
+            if (obj instanceof ScriptObjectMirror) {
+                return ((ScriptObjectMirror)clazz).isInstance((ScriptObjectMirror)obj);
+            }
+            return false;
         }
 
         throw typeError("instanceof.on.non.object");

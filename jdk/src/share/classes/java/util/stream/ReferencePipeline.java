@@ -25,7 +25,6 @@
 package java.util.stream;
 
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
@@ -512,12 +511,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     public final Optional<P_OUT> max(Comparator<? super P_OUT> comparator) {
-        return reduce(Comparators.greaterOf(comparator));
+        return reduce(BinaryOperator.maxBy(comparator));
     }
 
     @Override
     public final Optional<P_OUT> min(Comparator<? super P_OUT> comparator) {
-        return reduce(Comparators.lesserOf(comparator));
+        return reduce(BinaryOperator.minBy(comparator));
 
     }
 

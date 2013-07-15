@@ -375,6 +375,12 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
                     // NOTE: there are no size-injecting ops
                     if (StreamOpFlag.SHORT_CIRCUIT.isKnown(thisOpFlags)) {
                         backPropagationHead = p;
+                        // Clear the short circuit flag for next pipeline stage
+                        // This stage encapsulates short-circuiting, the next
+                        // stage may not have any short-circuit operations, and
+                        // if so spliterator.forEachRemaining should be be used
+                        // for traversal
+                        thisOpFlags = thisOpFlags & ~StreamOpFlag.IS_SHORT_CIRCUIT;
                     }
 
                     depth = 0;
@@ -448,6 +454,15 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     // PipelineHelper
 
     @Override
+    final StreamShape getSourceShape() {
+        AbstractPipeline p = AbstractPipeline.this;
+        while (p.depth > 0) {
+            p = p.previousStage;
+        }
+        return p.getOutputShape();
+    }
+
+    @Override
     final <P_IN> long exactOutputSizeIfKnown(Spliterator<P_IN> spliterator) {
         return StreamOpFlag.SIZED.isKnown(getStreamAndOpFlags()) ? spliterator.getExactSizeIfKnown() : -1;
     }
@@ -500,6 +515,16 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             sink = p.opWrapSink(p.previousStage.combinedFlags, sink);
         }
         return (Sink<P_IN>) sink;
+    }
+
+    @Override
+    final <P_IN> Spliterator<E_OUT> wrapSpliterator(Spliterator<P_IN> sourceSpliterator) {
+        if (depth == 0) {
+            return (Spliterator<E_OUT>) sourceSpliterator;
+        }
+        else {
+            return wrap(this, () -> sourceSpliterator, isParallel());
+        }
     }
 
     @Override

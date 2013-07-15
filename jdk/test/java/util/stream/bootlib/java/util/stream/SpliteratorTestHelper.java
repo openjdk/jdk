@@ -42,11 +42,33 @@ import static org.testng.Assert.fail;
  */
 public class SpliteratorTestHelper {
 
+    public interface ContentAsserter<T> {
+        void assertContents(Collection<T> actual, Collection<T> expected, boolean isOrdered);
+    }
+
+    private static ContentAsserter<Object> DEFAULT_CONTENT_ASSERTER
+            = SpliteratorTestHelper::assertContents;
+
+    @SuppressWarnings("unchecked")
+    private static <T> ContentAsserter<T> defaultContentAsserter() {
+        return (ContentAsserter<T>) DEFAULT_CONTENT_ASSERTER;
+    }
+
     public static void testSpliterator(Supplier<Spliterator<Integer>> supplier) {
-        testSpliterator(supplier, (Consumer<Integer> b) -> b);
+        testSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testSpliterator(Supplier<Spliterator<Integer>> supplier,
+                                       ContentAsserter<Integer> asserter) {
+        testSpliterator(supplier, (Consumer<Integer> b) -> b, asserter);
     }
 
     public static void testIntSpliterator(Supplier<Spliterator.OfInt> supplier) {
+        testIntSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testIntSpliterator(Supplier<Spliterator.OfInt> supplier,
+                                          ContentAsserter<Integer> asserter) {
         class BoxingAdapter implements Consumer<Integer>, IntConsumer {
             private final Consumer<Integer> b;
 
@@ -65,10 +87,15 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new);
+        testSpliterator(supplier, BoxingAdapter::new, asserter);
     }
 
     public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier) {
+        testLongSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier,
+                                           ContentAsserter<Long> asserter) {
         class BoxingAdapter implements Consumer<Long>, LongConsumer {
             private final Consumer<Long> b;
 
@@ -87,10 +114,15 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new);
+        testSpliterator(supplier, BoxingAdapter::new, asserter);
     }
 
     public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier) {
+        testDoubleSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier,
+                                             ContentAsserter<Double> asserter) {
         class BoxingAdapter implements Consumer<Double>, DoubleConsumer {
             private final Consumer<Double> b;
 
@@ -109,11 +141,12 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new);
+        testSpliterator(supplier, BoxingAdapter::new, asserter);
     }
 
     static <T, S extends Spliterator<T>> void testSpliterator(Supplier<S> supplier,
-                                                              UnaryOperator<Consumer<T>> boxingAdapter) {
+                                                              UnaryOperator<Consumer<T>> boxingAdapter,
+                                                              ContentAsserter<T> asserter) {
         ArrayList<T> fromForEach = new ArrayList<>();
         Spliterator<T> spliterator = supplier.get();
         Consumer<T> addToFromForEach = boxingAdapter.apply(fromForEach::add);
@@ -121,14 +154,14 @@ public class SpliteratorTestHelper {
 
         Collection<T> exp = Collections.unmodifiableList(fromForEach);
 
-        testForEach(exp, supplier, boxingAdapter);
-        testTryAdvance(exp, supplier, boxingAdapter);
-        testMixedTryAdvanceForEach(exp, supplier, boxingAdapter);
-        testMixedTraverseAndSplit(exp, supplier, boxingAdapter);
+        testForEach(exp, supplier, boxingAdapter, asserter);
+        testTryAdvance(exp, supplier, boxingAdapter, asserter);
+        testMixedTryAdvanceForEach(exp, supplier, boxingAdapter, asserter);
+        testMixedTraverseAndSplit(exp, supplier, boxingAdapter, asserter);
         testSplitAfterFullTraversal(supplier, boxingAdapter);
-        testSplitOnce(exp, supplier, boxingAdapter);
-        testSplitSixDeep(exp, supplier, boxingAdapter);
-        testSplitUntilNull(exp, supplier, boxingAdapter);
+        testSplitOnce(exp, supplier, boxingAdapter, asserter);
+        testSplitSixDeep(exp, supplier, boxingAdapter, asserter);
+        testSplitUntilNull(exp, supplier, boxingAdapter, asserter);
     }
 
     //
@@ -136,7 +169,8 @@ public class SpliteratorTestHelper {
     private static <T, S extends Spliterator<T>> void testForEach(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         long sizeIfKnown = spliterator.getExactSizeIfKnown();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
@@ -159,13 +193,14 @@ public class SpliteratorTestHelper {
         }
         assertEquals(fromForEach.size(), exp.size());
 
-        assertContents(fromForEach, exp, isOrdered);
+        asserter.assertContents(fromForEach, exp, isOrdered);
     }
 
     private static <T, S extends Spliterator<T>> void testTryAdvance(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         long sizeIfKnown = spliterator.getExactSizeIfKnown();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
@@ -188,13 +223,14 @@ public class SpliteratorTestHelper {
         }
         assertEquals(fromTryAdvance.size(), exp.size());
 
-        assertContents(fromTryAdvance, exp, isOrdered);
+        asserter.assertContents(fromTryAdvance, exp, isOrdered);
     }
 
     private static <T, S extends Spliterator<T>> void testMixedTryAdvanceForEach(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         long sizeIfKnown = spliterator.getExactSizeIfKnown();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
@@ -218,18 +254,14 @@ public class SpliteratorTestHelper {
         }
         assertEquals(dest.size(), exp.size());
 
-        if (isOrdered) {
-            assertEquals(dest, exp);
-        }
-        else {
-            assertContentsUnordered(dest, exp);
-        }
+        asserter.assertContents(dest, exp, isOrdered);
     }
 
     private static <T, S extends Spliterator<T>> void testMixedTraverseAndSplit(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         long sizeIfKnown = spliterator.getExactSizeIfKnown();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
@@ -266,12 +298,7 @@ public class SpliteratorTestHelper {
         }
         assertEquals(dest.size(), exp.size());
 
-        if (isOrdered) {
-            assertEquals(dest, exp);
-        }
-        else {
-            assertContentsUnordered(dest, exp);
-        }
+        asserter.assertContents(dest, exp, isOrdered);
     }
 
     private static <T, S extends Spliterator<T>> void testSplitAfterFullTraversal(
@@ -285,16 +312,14 @@ public class SpliteratorTestHelper {
 
         // Full traversal using forEach
         spliterator = supplier.get();
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> {
-        }));
+        spliterator.forEachRemaining(boxingAdapter.apply(e -> { }));
         split = spliterator.trySplit();
         assertNull(split);
 
         // Full traversal using tryAdvance then forEach
         spliterator = supplier.get();
         spliterator.tryAdvance(boxingAdapter.apply(e -> { }));
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> {
-        }));
+        spliterator.forEachRemaining(boxingAdapter.apply(e -> { }));
         split = spliterator.trySplit();
         assertNull(split);
     }
@@ -302,7 +327,8 @@ public class SpliteratorTestHelper {
     private static <T, S extends Spliterator<T>> void testSplitOnce(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         long sizeIfKnown = spliterator.getExactSizeIfKnown();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
@@ -322,13 +348,15 @@ public class SpliteratorTestHelper {
             if (s1Size >= 0 && s2Size >= 0)
                 assertEquals(sizeIfKnown, s1Size + s2Size);
         }
-        assertContents(fromSplit, exp, isOrdered);
+
+        asserter.assertContents(fromSplit, exp, isOrdered);
     }
 
     private static <T, S extends Spliterator<T>> void testSplitSixDeep(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         S spliterator = supplier.get();
         boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
 
@@ -340,13 +368,13 @@ public class SpliteratorTestHelper {
 
             // verify splitting with forEach
             splitSixDeepVisitor(depth, 0, dest, spliterator, boxingAdapter, spliterator.characteristics(), false);
-            assertContents(dest, exp, isOrdered);
+            asserter.assertContents(dest, exp, isOrdered);
 
             // verify splitting with tryAdvance
             dest.clear();
             spliterator = supplier.get();
             splitSixDeepVisitor(depth, 0, dest, spliterator, boxingAdapter, spliterator.characteristics(), true);
-            assertContents(dest, exp, isOrdered);
+            asserter.assertContents(dest, exp, isOrdered);
         }
     }
 
@@ -411,7 +439,8 @@ public class SpliteratorTestHelper {
     private static <T, S extends Spliterator<T>> void testSplitUntilNull(
             Collection<T> exp,
             Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
+            UnaryOperator<Consumer<T>> boxingAdapter,
+            ContentAsserter<T> asserter) {
         Spliterator<T> s = supplier.get();
         boolean isOrdered = s.hasCharacteristics(Spliterator.ORDERED);
         assertSpliterator(s);
@@ -420,7 +449,7 @@ public class SpliteratorTestHelper {
         Consumer<T> c = boxingAdapter.apply(splits::add);
 
         testSplitUntilNull(new SplitNode<T>(c, s));
-        assertContents(splits, exp, isOrdered);
+        asserter.assertContents(splits, exp, isOrdered);
     }
 
     private static class SplitNode<T> {
@@ -540,21 +569,8 @@ public class SpliteratorTestHelper {
             assertEquals(actual, expected);
         }
         else {
-            assertContentsUnordered(actual, expected);
+            LambdaTestHelpers.assertContentsUnordered(actual, expected);
         }
-    }
-
-    private static<T> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected) {
-        assertEquals(toBoxedMultiset(actual), toBoxedMultiset(expected));
-    }
-
-    private static <T> Map<T, Integer> toBoxedMultiset(Iterable<T> c) {
-        Map<T, Integer> result = new HashMap<>();
-        c.forEach(e -> {
-            if (result.containsKey(e)) result.put(e, result.get(e) + 1);
-            else result.put(e, 1);
-        });
-        return result;
     }
 
     static<U> void mixedTraverseAndSplit(Consumer<U> b, Spliterator<U> splTop) {
