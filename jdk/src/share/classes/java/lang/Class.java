@@ -2308,6 +2308,45 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
+     * Atomic operations support.
+     */
+    private static class Atomic {
+        // initialize Unsafe machinery here, since we need to call Class.class instance method
+        // and have to avoid calling it in the static initializer of the Class class...
+        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        // offset of Class.reflectionData instance field
+        private static final long reflectionDataOffset;
+        // offset of Class.annotationType instance field
+        private static final long annotationTypeOffset;
+
+        static {
+            Field[] fields = Class.class.getDeclaredFields0(false); // bypass caches
+            reflectionDataOffset = objectFieldOffset(fields, "reflectionData");
+            annotationTypeOffset = objectFieldOffset(fields, "annotationType");
+        }
+
+        private static long objectFieldOffset(Field[] fields, String fieldName) {
+            Field field = searchFields(fields, fieldName);
+            if (field == null) {
+                throw new Error("No " + fieldName + " field found in java.lang.Class");
+            }
+            return unsafe.objectFieldOffset(field);
+        }
+
+        static <T> boolean casReflectionData(Class<?> clazz,
+                                             SoftReference<ReflectionData<T>> oldData,
+                                             SoftReference<ReflectionData<T>> newData) {
+            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
+        }
+
+        static <T> boolean casAnnotationType(Class<?> clazz,
+                                             AnnotationType oldType,
+                                             AnnotationType newType) {
+            return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
+        }
+    }
+
+    /**
      * Reflection support.
      */
 
@@ -2332,29 +2371,6 @@ public final class Class<T> implements java.io.Serializable,
 
         ReflectionData(int redefinedCount) {
             this.redefinedCount = redefinedCount;
-        }
-
-        // initialize Unsafe machinery here, since we need to call Class.class instance method
-        // and have to avoid calling it in the static initializer of the Class class...
-        private static final Unsafe unsafe;
-        // offset of Class.reflectionData instance field
-        private static final long reflectionDataOffset;
-
-        static {
-            unsafe = Unsafe.getUnsafe();
-            // bypass caches
-            Field reflectionDataField = searchFields(Class.class.getDeclaredFields0(false),
-                                                     "reflectionData");
-            if (reflectionDataField == null) {
-                throw new Error("No reflectionData field found in java.lang.Class");
-            }
-            reflectionDataOffset = unsafe.objectFieldOffset(reflectionDataField);
-        }
-
-        static <T> boolean compareAndSwap(Class<?> clazz,
-                                          SoftReference<ReflectionData<T>> oldData,
-                                          SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
         }
     }
 
@@ -2387,7 +2403,7 @@ public final class Class<T> implements java.io.Serializable,
         while (true) {
             ReflectionData<T> rd = new ReflectionData<>(classRedefinedCount);
             // try to CAS it...
-            if (ReflectionData.compareAndSwap(this, oldReflectionData, new SoftReference<>(rd))) {
+            if (Atomic.casReflectionData(this, oldReflectionData, new SoftReference<>(rd))) {
                 return rd;
             }
             // else retry
@@ -2430,7 +2446,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Annotations handling
-    private native byte[] getRawAnnotations();
+    native byte[] getRawAnnotations();
     // Since 1.8
     native byte[] getRawTypeAnnotations();
     static byte[] getExecutableTypeAnnotationBytes(Executable ex) {
@@ -3290,10 +3306,11 @@ public final class Class<T> implements java.io.Serializable,
 
     // Annotation types cache their internal (AnnotationType) form
 
-    private AnnotationType annotationType;
+    @SuppressWarnings("UnusedDeclaration")
+    private volatile transient AnnotationType annotationType;
 
-    void setAnnotationType(AnnotationType type) {
-        annotationType = type;
+    boolean casAnnotationType(AnnotationType oldType, AnnotationType newType) {
+        return Atomic.casAnnotationType(this, oldType, newType);
     }
 
     AnnotationType getAnnotationType() {
