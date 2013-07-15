@@ -1221,9 +1221,25 @@ public final class Class<T> implements java.io.Serializable,
      * type, or void,then this method returns null.
      *
      * @return the declaring class for this class
+     * @throws SecurityException
+     *         If a security manager, <i>s</i>, is present and the caller's
+     *         class loader is not the same as or an ancestor of the class
+     *         loader for the declaring class and invocation of {@link
+     *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
+     *         denies access to the package of the declaring class
      * @since JDK1.1
      */
-    public native Class<?> getDeclaringClass();
+    @CallerSensitive
+    public Class<?> getDeclaringClass() throws SecurityException {
+        final Class<?> candidate = getDeclaringClass0();
+
+        if (candidate != null)
+            candidate.checkPackageAccess(
+                    ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+        return candidate;
+    }
+
+    private native Class<?> getDeclaringClass0();
 
 
     /**
