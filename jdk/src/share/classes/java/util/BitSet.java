@@ -189,6 +189,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @param longs a long array containing a little-endian representation
      *        of a sequence of bits to be used as the initial bits of the
      *        new bit set
+     * @return a {@code BitSet} containing all the bits in the long array
      * @since 1.7
      */
     public static BitSet valueOf(long[] longs) {
@@ -212,6 +213,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @param lb a long buffer containing a little-endian representation
      *        of a sequence of bits between its position and limit, to be
      *        used as the initial bits of the new bit set
+     * @return a {@code BitSet} containing all the bits in the buffer in the
+     *         specified range
      * @since 1.7
      */
     public static BitSet valueOf(LongBuffer lb) {
@@ -237,6 +240,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @param bytes a byte array containing a little-endian
      *        representation of a sequence of bits to be used as the
      *        initial bits of the new bit set
+     * @return a {@code BitSet} containing all the bits in the byte array
      * @since 1.7
      */
     public static BitSet valueOf(byte[] bytes) {
@@ -257,6 +261,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @param bb a byte buffer containing a little-endian representation
      *        of a sequence of bits between its position and limit, to be
      *        used as the initial bits of the new bit set
+     * @return a {@code BitSet} containing all the bits in the buffer in the
+     *         specified range
      * @since 1.7
      */
     public static BitSet valueOf(ByteBuffer bb) {

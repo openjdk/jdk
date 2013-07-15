@@ -150,6 +150,7 @@ public class Collections {
      * n<sup>2</sup> log(n) performance that would result from attempting
      * to sort a linked list in place.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be sorted.
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> (for example, strings and integers).
@@ -211,6 +212,7 @@ public class Collections {
      * n<sup>2</sup> log(n) performance that would result from attempting
      * to sort a linked list in place.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be sorted.
      * @param  c the comparator to determine the order of the list.  A
      *        {@code null} value indicates that the elements' <i>natural
@@ -249,6 +251,7 @@ public class Collections {
      * this method will do an iterator-based binary search that performs
      * O(n) link traversals and O(log n) element comparisons.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @return the index of the search key, if it is contained in the list;
@@ -349,6 +352,7 @@ public class Collections {
      * this method will do an iterator-based binary search that performs
      * O(n) link traversals and O(log n) element comparisons.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @param  c the comparator by which the list is ordered.
@@ -568,6 +572,7 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be filled with the specified element.
      * @param  obj The element with which to fill the specified list.
      * @throws UnsupportedOperationException if the specified list or its
@@ -597,6 +602,7 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @param  <T> the class of the objects in the lists
      * @param  dest The destination list.
      * @param  src The source list.
      * @throws IndexOutOfBoundsException if the destination list is too small
@@ -635,6 +641,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose minimum element is to be determined.
      * @return the minimum element of the given collection, according
      *         to the <i>natural ordering</i> of its elements.
@@ -667,6 +674,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose minimum element is to be determined.
      * @param  comp the comparator with which to determine the minimum element.
      *         A <tt>null</tt> value indicates that the elements' <i>natural
@@ -706,6 +714,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose maximum element is to be determined.
      * @return the maximum element of the given collection, according
      *         to the <i>natural ordering</i> of its elements.
@@ -738,6 +747,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose maximum element is to be determined.
      * @param  comp the comparator with which to determine the maximum element.
      *         A <tt>null</tt> value indicates that the elements' <i>natural
@@ -872,6 +882,7 @@ public class Collections {
      * <tt>(oldVal==null ? e==null : oldVal.equals(e))</tt>.
      * (This method has no effect on the size of the list.)
      *
+     * @param  <T> the class of the objects in the list
      * @param list the list in which replacement is to occur.
      * @param oldVal the old value to be replaced.
      * @param newVal the new value with which <tt>oldVal</tt> is to be
@@ -1053,6 +1064,7 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
      * @return an unmodifiable view of the specified collection.
@@ -1148,6 +1160,7 @@ public class Collections {
      * The returned set will be serializable if the specified set
      * is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
      */
@@ -1179,6 +1192,7 @@ public class Collections {
      * The returned sorted set will be serializable if the specified sorted set
      * is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param s the sorted set for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted set.
@@ -1226,6 +1240,7 @@ public class Collections {
      * The returned navigable set will be serializable if the specified
      * navigable set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param s the navigable set for which an unmodifiable view is to be
      *        returned
      * @return an unmodifiable view of the specified navigable set
@@ -1314,6 +1329,7 @@ public class Collections {
      * is serializable. Similarly, the returned list will implement
      * {@link RandomAccess} if the specified list does.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified list.
      */
@@ -1458,6 +1474,8 @@ public class Collections {
      * The returned map will be serializable if the specified map
      * is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
      */
@@ -1807,6 +1825,8 @@ public class Collections {
      * The returned sorted map will be serializable if the specified sorted map
      * is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the sorted map for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted map.
@@ -1849,6 +1869,8 @@ public class Collections {
      * The returned navigable map will be serializable if the specified
      * navigable map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the navigable map for which an unmodifiable view is to be
      *        returned
      * @return an unmodifiable view of the specified navigable map
@@ -2002,6 +2024,7 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  c the collection to be "wrapped" in a synchronized collection.
      * @return a synchronized view of the specified collection.
      */
@@ -2117,6 +2140,7 @@ public class Collections {
      * <p>The returned set will be serializable if the specified set is
      * serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the set to be "wrapped" in a synchronized set.
      * @return a synchronized view of the specified set.
      */
@@ -2187,6 +2211,7 @@ public class Collections {
      * <p>The returned sorted set will be serializable if the specified
      * sorted set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the sorted set to be "wrapped" in a synchronized sorted set.
      * @return a synchronized view of the specified sorted set.
      */
@@ -2277,6 +2302,7 @@ public class Collections {
      * <p>The returned navigable set will be serializable if the specified
      * navigable set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the navigable set to be "wrapped" in a synchronized navigable
      * set
      * @return a synchronized view of the specified navigable set
@@ -2379,6 +2405,7 @@ public class Collections {
      * <p>The returned list will be serializable if the specified list is
      * serializable.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be "wrapped" in a synchronized list.
      * @return a synchronized view of the specified list.
      */
@@ -2548,6 +2575,8 @@ public class Collections {
      * <p>The returned map will be serializable if the specified map is
      * serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the map to be "wrapped" in a synchronized map.
      * @return a synchronized view of the specified map.
      */
@@ -2738,6 +2767,8 @@ public class Collections {
      * <p>The returned sorted map will be serializable if the specified
      * sorted map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the sorted map to be "wrapped" in a synchronized sorted map.
      * @return a synchronized view of the specified sorted map.
      */
@@ -2833,6 +2864,8 @@ public class Collections {
      * <p>The returned navigable map will be serializable if the specified
      * navigable map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the navigable map to be "wrapped" in a synchronized navigable
      *              map
      * @return a synchronized view of the specified navigable map.
@@ -3008,6 +3041,7 @@ public class Collections {
      * type, the returned collection permits insertion of null elements
      * whenever the backing collection does.
      *
+     * @param <E> the class of the objects in the collection
      * @param c the collection for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code c} is permitted to hold
@@ -3153,6 +3187,7 @@ public class Collections {
      * type, the returned queue permits insertion of {@code null} elements
      * whenever the backing queue does.
      *
+     * @param <E> the class of the objects in the queue
      * @param queue the queue for which a dynamically typesafe view is to be
      *             returned
      * @param type the type of element that {@code queue} is permitted to hold
@@ -3211,6 +3246,7 @@ public class Collections {
      * type, the returned set permits insertion of null elements whenever
      * the backing set does.
      *
+     * @param <E> the class of the objects in the set
      * @param s the set for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code s} is permitted to hold
@@ -3256,6 +3292,7 @@ public class Collections {
      * type, the returned sorted set permits insertion of null elements
      * whenever the backing sorted set does.
      *
+     * @param <E> the class of the objects in the set
      * @param s the sorted set for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code s} is permitted to hold
@@ -3318,6 +3355,7 @@ public class Collections {
      * type, the returned navigable set permits insertion of null elements
      * whenever the backing sorted set does.
      *
+     * @param <E> the class of the objects in the set
      * @param s the navigable set for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code s} is permitted to hold
@@ -3398,6 +3436,7 @@ public class Collections {
      * type, the returned list permits insertion of null elements whenever
      * the backing list does.
      *
+     * @param <E> the class of the objects in the list
      * @param list the list for which a dynamically typesafe view is to be
      *             returned
      * @param type the type of element that {@code list} is permitted to hold
@@ -3535,6 +3574,8 @@ public class Collections {
      * type, the returned map permits insertion of null keys or values
      * whenever the backing map does.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the map for which a dynamically typesafe view is to be
      *          returned
      * @param keyType the type of key that {@code m} is permitted to hold
@@ -3928,6 +3969,8 @@ public class Collections {
      * type, the returned map permits insertion of null keys or values
      * whenever the backing map does.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the map for which a dynamically typesafe view is to be
      *          returned
      * @param keyType the type of key that {@code m} is permitted to hold
@@ -4149,17 +4192,13 @@ public class Collections {
     /**
      * Returns an iterator that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Iterator#hasNext hasNext} always returns {@code
-     * false}.
-     *
+     * false}.</li>
      * <li>{@link Iterator#next next} always throws {@link
-     * NoSuchElementException}.
-     *
+     * NoSuchElementException}.</li>
      * <li>{@link Iterator#remove remove} always throws {@link
-     * IllegalStateException}.
-     *
+     * IllegalStateException}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
@@ -4190,27 +4229,20 @@ public class Collections {
     /**
      * Returns a list iterator that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Iterator#hasNext hasNext} and {@link
      * ListIterator#hasPrevious hasPrevious} always return {@code
-     * false}.
-     *
+     * false}.</li>
      * <li>{@link Iterator#next next} and {@link ListIterator#previous
-     * previous} always throw {@link NoSuchElementException}.
-     *
+     * previous} always throw {@link NoSuchElementException}.</li>
      * <li>{@link Iterator#remove remove} and {@link ListIterator#set
-     * set} always throw {@link IllegalStateException}.
-     *
+     * set} always throw {@link IllegalStateException}.</li>
      * <li>{@link ListIterator#add add} always throws {@link
-     * UnsupportedOperationException}.
-     *
+     * UnsupportedOperationException}.</li>
      * <li>{@link ListIterator#nextIndex nextIndex} always returns
-     * {@code 0} .
-     *
+     * {@code 0}.</li>
      * <li>{@link ListIterator#previousIndex previousIndex} always
-     * returns {@code -1}.
-     *
+     * returns {@code -1}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
@@ -4243,19 +4275,17 @@ public class Collections {
     /**
      * Returns an enumeration that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Enumeration#hasMoreElements hasMoreElements} always
-     * returns {@code false}.
-     *
+     * returns {@code false}.</li>
      * <li> {@link Enumeration#nextElement nextElement} always throws
-     * {@link NoSuchElementException}.
-     *
+     * {@link NoSuchElementException}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
      * required, to return the same object from multiple invocations.
      *
+     * @param  <T> the class of the objects in the enumeration
      * @return an empty enumeration
      * @since 1.7
      */
@@ -4293,6 +4323,7 @@ public class Collections {
      * comparable cost to using the like-named field.  (Unlike this method, the
      * field does not provide type safety.)
      *
+     * @param  <T> the class of the objects in the set
      * @return the empty set
      *
      * @see #EMPTY_SET
@@ -4509,6 +4540,8 @@ public class Collections {
      * comparable cost to using the like-named field.  (Unlike this method, the
      * field does not provide type safety.)
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @return an empty map
      * @see #EMPTY_MAP
      * @since 1.5
@@ -4529,6 +4562,8 @@ public class Collections {
      * @implNote Implementations of this method need not create a separate
      * {@code SortedMap} object for each call.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @return an empty sorted map
      * @since 1.8
      */
@@ -4548,6 +4583,8 @@ public class Collections {
      * @implNote Implementations of this method need not create a separate
      * {@code NavigableMap} object for each call.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @return an empty navigable map
      * @since 1.8
      */
@@ -4653,6 +4690,7 @@ public class Collections {
      * Returns an immutable set containing only the specified object.
      * The returned set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param o the sole object to be stored in the returned set.
      * @return an immutable set containing only the specified object.
      */
@@ -4773,6 +4811,7 @@ public class Collections {
      * Returns an immutable list containing only the specified object.
      * The returned list is serializable.
      *
+     * @param  <T> the class of the objects in the list
      * @param o the sole object to be stored in the returned list.
      * @return an immutable list containing only the specified object.
      * @since 1.3
@@ -4834,6 +4873,8 @@ public class Collections {
      * Returns an immutable map, mapping only the specified key to the
      * specified value.  The returned map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param key the sole key to be stored in the returned map.
      * @param value the value to which the returned map maps <tt>key</tt>.
      * @return an immutable map containing only the specified key-value
@@ -4959,6 +5000,8 @@ public class Collections {
      * combination with the <tt>List.addAll</tt> method to grow lists.
      * The returned list is serializable.
      *
+     * @param  <T> the class of the object to copy and of the objects
+     *         in the returned list.
      * @param  n the number of elements in the returned list.
      * @param  o the element to appear repeatedly in the returned list.
      * @return an immutable list consisting of <tt>n</tt> copies of the
@@ -5063,6 +5106,7 @@ public class Collections {
      *
      * The returned comparator is serializable.
      *
+     * @param  <T> the class of the objects compared by the comparator
      * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
      *         the <tt>Comparable</tt> interface.
@@ -5106,6 +5150,7 @@ public class Collections {
      * <p>The returned comparator is serializable (assuming the specified
      * comparator is also serializable or {@code null}).
      *
+     * @param <T> the class of the objects compared by the comparator
      * @param cmp a comparator who's ordering is to be reversed by the returned
      * comparator or {@code null}
      * @return A comparator that imposes the reverse ordering of the
@@ -5169,6 +5214,7 @@ public class Collections {
      * interoperability with legacy APIs that require an enumeration
      * as input.
      *
+     * @param  <T> the class of the objects in the collection
      * @param c the collection for which an enumeration is to be returned.
      * @return an enumeration over the specified collection.
      * @see Enumeration
@@ -5194,6 +5240,7 @@ public class Collections {
      * legacy APIs that return enumerations and new APIs that require
      * collections.
      *
+     * @param <T> the class of the objects returned by the enumeration
      * @param e enumeration providing elements for the returned
      *          array list
      * @return an array list containing the elements returned
@@ -5227,6 +5274,7 @@ public class Collections {
      * @param c the collection in which to determine the frequency
      *     of <tt>o</tt>
      * @param o the object whose frequency is to be determined
+     * @return the number of elements in {@code c} equal to {@code o}
      * @throws NullPointerException if <tt>c</tt> is null
      * @since 1.5
      */
@@ -5347,6 +5395,7 @@ public class Collections {
      *     Collections.addAll(flavors, "Peaches 'n Plutonium", "Rocky Racoon");
      * </pre>
      *
+     * @param  <T> the class of the elements to add and of the collection
      * @param c the collection into which <tt>elements</tt> are to be inserted
      * @param elements the elements to insert into <tt>c</tt>
      * @return <tt>true</tt> if the collection changed as a result of the call
@@ -5392,6 +5441,8 @@ public class Collections {
      *        new WeakHashMap&lt;Object, Boolean&gt;());
      * </pre>
      *
+     * @param <E> the class of the map keys and of the objects in the
+     *        returned set
      * @param map the backing map
      * @return the set backed by the map
      * @throws IllegalArgumentException if <tt>map</tt> is not empty
@@ -5470,6 +5521,7 @@ public class Collections {
      * implemented as a sequence of {@link Deque#addFirst addFirst}
      * invocations on the backing deque.
      *
+     * @param  <T> the class of the objects in the deque
      * @param deque the deque
      * @return the queue
      * @since  1.6
