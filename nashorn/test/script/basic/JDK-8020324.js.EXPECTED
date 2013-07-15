@@ -1,0 +1,90 @@
+
+==== Two-way read-write instance field ====
+obj1.publicInt = 13: 13
+bean.publicInt: 13
+bean.publicInt = 15: 15
+obj1.publicInt: 15
+
+==== Read only public instance field ====
+obj1.publicFinalInt: 42
+obj1.publicFinalInt = 16: 16
+obj1.publicFinalInt: 42
+bean.publicFinalInt: 42
+
+==== Two-way read-write instance property ====
+obj1.readWrite = 17: 17
+bean.readWrite: 17
+bean.readWrite = 18: 18
+obj1.readWrite: 18
+obj1.getReadWrite(): 18
+obj1.setReadWrite(19): null
+obj1.readWrite: 19
+bean.readWrite: 19
+
+==== Read only instance property ====
+obj1.readOnly: 123
+obj1.readOnly = 20: 20
+obj1.readOnly: 123
+obj1.getReadOnly(): 123
+bean.getReadOnly(): 123
+
+==== Write only instance property ====
+obj1.writeOnly = 21: 21
+obj1.writeOnly: undefined
+bean.writeOnly: undefined
+bean.peekWriteOnly(): 21
+
+==== Two-way read-write public static field ====
+obj2.publicStaticInt = 22: 22
+PropertyBind.publicStaticInt: 22
+PropertyBind.publicStaticInt = 23: 23
+obj2.publicStaticInt: 23
+
+==== Read only public static field ====
+obj2.publicStaticFinalInt: 2112
+obj2.publicStaticFinalInt = 24: 24
+obj2.publicStaticFinalInt: 2112
+PropertyBind.publicStaticFinalInt: 2112
+
+==== Two-way read-write static property ====
+obj2.staticReadWrite = 25: 25
+PropertyBind.staticReadWrite: 25
+PropertyBind.staticReadWrite = 26: 26
+obj2.staticReadWrite: 26
+obj2.getStaticReadWrite(): 26
+obj2.setStaticReadWrite(27): null
+obj2.staticReadWrite: 27
+PropertyBind.staticReadWrite: 27
+
+==== Read only static property ====
+obj2.staticReadOnly: 1230
+obj2.staticReadOnly = 28: 28
+obj2.staticReadOnly: 1230
+obj2.getStaticReadOnly(): 1230
+PropertyBind.getStaticReadOnly(): 1230
+
+==== Write only static property ====
+obj2.staticWriteOnly = 29: 29
+obj2.staticWriteOnly: undefined
+PropertyBind.staticWriteOnly: undefined
+PropertyBind.peekStaticWriteOnly(): 29
+
+==== Sanity check to ensure property values remained what they were ====
+obj1.publicInt: 15
+bean.publicInt: 15
+obj1.publicFinalInt: 42
+bean.publicFinalInt: 42
+obj1.readWrite: 19
+bean.readWrite: 19
+obj1.readOnly: 123
+bean.readOnly: 123
+bean.peekWriteOnly(): 21
+obj2.publicStaticInt: 23
+PropertyBind.publicStaticInt: 23
+obj2.publicStaticFinalInt: 2112
+PropertyBind.publicStaticFinalInt: 2112
+obj2.staticReadWrite: 27
+PropertyBind.staticReadWrite: 27
+obj2.staticReadOnly: 1230
+PropertyBind.staticReadOnly: 1230
+PropertyBind.peekStaticWriteOnly(): 29
