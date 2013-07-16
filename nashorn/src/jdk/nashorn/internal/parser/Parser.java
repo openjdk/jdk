@@ -55,9 +55,9 @@ import static jdk.nashorn.internal.parser.TokenType.WHILE;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -1946,14 +1946,14 @@ loop:
 
         // Object context.
         // Prepare to accumulate elements.
-        // final List<Node> elements = new ArrayList<>();
-        final Map<String, PropertyNode> map = new LinkedHashMap<>();
+        final List<PropertyNode> elements = new ArrayList<>();
+        final Map<String, Integer> map = new HashMap<>();
 
         // Create a block for the object literal.
-            boolean commaSeen = true;
+        boolean commaSeen = true;
 loop:
-            while (true) {
-                switch (type) {
+        while (true) {
+            switch (type) {
                 case RBRACE:
                     next();
                     break loop;
@@ -1975,13 +1975,15 @@ loop:
                     // Get and add the next property.
                     final PropertyNode property = propertyAssignment();
                     final String key = property.getKeyName();
-                    final PropertyNode existingProperty = map.get(key);
+                    final Integer existing = map.get(key);
 
-                    if (existingProperty == null) {
-                        map.put(key, property);
-                       // elements.add(property);
+                    if (existing == null) {
+                        map.put(key, elements.size());
+                        elements.add(property);
                         break;
                     }
+
+                    final PropertyNode existingProperty = elements.get(existing);
 
                     // ECMA section 11.1.5 Object Initialiser
                     // point # 4 on property assignment production
@@ -1993,12 +1995,9 @@ loop:
                     final FunctionNode prevGetter = existingProperty.getGetter();
                     final FunctionNode prevSetter = existingProperty.getSetter();
 
-                    boolean redefinitionOk = true;
                     // ECMA 11.1.5 strict mode restrictions
-                    if (isStrictMode) {
-                        if (value != null && prevValue != null) {
-                            redefinitionOk = false;
-                        }
+                    if (isStrictMode && value != null && prevValue != null) {
+                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                     }
 
                     final boolean isPrevAccessor = prevGetter != null || prevSetter != null;
@@ -2006,49 +2005,33 @@ loop:
 
                     // data property redefined as accessor property
                     if (prevValue != null && isAccessor) {
-                        redefinitionOk = false;
+                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                     }
 
                     // accessor property redefined as data
                     if (isPrevAccessor && value != null) {
-                        redefinitionOk = false;
+                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                     }
 
                     if (isAccessor && isPrevAccessor) {
                         if (getter != null && prevGetter != null ||
-                            setter != null && prevSetter != null) {
-                            redefinitionOk = false;
+                                setter != null && prevSetter != null) {
+                            throw error(AbstractParser.message("property.redefinition", key), property.getToken());
                         }
                     }
 
-                    if (!redefinitionOk) {
-                        throw error(AbstractParser.message("property.redefinition", key), property.getToken());
-                    }
-
-                    PropertyNode newProperty = existingProperty;
                     if (value != null) {
-                        if (prevValue == null) {
-                            map.put(key, newProperty = newProperty.setValue(value));
-                        } else {
-                            final long propertyToken = Token.recast(newProperty.getToken(), COMMARIGHT);
-                            map.put(key, newProperty = newProperty.setValue(new BinaryNode(propertyToken, prevValue, value)));
-                        }
-
-                        map.put(key, newProperty = newProperty.setGetter(null).setSetter(null));
-                    }
-
-                    if (getter != null) {
-                        map.put(key, newProperty = newProperty.setGetter(getter));
-                    }
-
-                    if (setter != null) {
-                        map.put(key, newProperty = newProperty.setSetter(setter));
+                        elements.add(property);
+                    } else if (getter != null) {
+                        elements.set(existing, existingProperty.setGetter(getter));
+                    } else if (setter != null) {
+                        elements.set(existing, existingProperty.setSetter(setter));
                     }
                     break;
             }
         }
 
-        return new ObjectNode(objectToken, finish, new ArrayList<>(map.values()));
+        return new ObjectNode(objectToken, finish, elements);
     }
 
     /**

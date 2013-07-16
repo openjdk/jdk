@@ -92,6 +92,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -193,6 +195,22 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     }
 
     abstract FacetIntrospector createFacetIntrospector();
+
+    Collection<String> getReadablePropertyNames() {
+        return getUnmodifiableKeys(propertyGetters);
+    }
+
+    Collection<String> getWritablePropertyNames() {
+        return getUnmodifiableKeys(propertySetters);
+    }
+
+    Collection<String> getMethodNames() {
+        return getUnmodifiableKeys(methods);
+    }
+
+    private static Collection<String> getUnmodifiableKeys(Map<String, ?> m) {
+        return Collections.unmodifiableCollection(m.keySet());
+    }
 
     /**
      * Sets the specified dynamic method to be the property getter for the specified property. Note that you can only

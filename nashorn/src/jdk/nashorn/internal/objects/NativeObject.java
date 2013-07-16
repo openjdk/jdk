@@ -29,8 +29,22 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingDynamicLinker;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -58,6 +72,8 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 @ScriptClass("Object")
 public final class NativeObject {
     private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
+    private static final MethodType MIRROR_GETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class);
+    private static final MethodType MIRROR_SETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class, Object.class);
 
     // initialized by nasgen
     @SuppressWarnings("unused")
@@ -577,14 +593,92 @@ public final class NativeObject {
             final AccessorProperty[] props = new AccessorProperty[keys.length];
             for (int idx = 0; idx < keys.length; idx++) {
                 final String name = keys[idx];
-                final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, Object.class, ScriptObjectMirror.class);
-                final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, Object.class, ScriptObjectMirror.class, Object.class);
+                final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, MIRROR_GETTER_TYPE);
+                final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, MIRROR_SETTER_TYPE);
                 props[idx] = (AccessorProperty.create(name, 0, getter, setter));
             }
 
             targetObj.addBoundProperties(source, props);
+        } else if (source instanceof StaticClass) {
+            final Class<?> clazz = ((StaticClass)source).getRepresentedClass();
+            bindBeanProperties(targetObj, source, BeansLinker.getReadableStaticPropertyNames(clazz),
+                    BeansLinker.getWritableStaticPropertyNames(clazz), BeansLinker.getStaticMethodNames(clazz));
+        } else {
+            final Class<?> clazz = source.getClass();
+            bindBeanProperties(targetObj, source, BeansLinker.getReadableInstancePropertyNames(clazz),
+                    BeansLinker.getWritableInstancePropertyNames(clazz), BeansLinker.getInstanceMethodNames(clazz));
         }
 
         return target;
+    }
+
+    private static void bindBeanProperties(final ScriptObject targetObj, final Object source,
+            final Collection<String> readablePropertyNames, final Collection<String> writablePropertyNames,
+            final Collection<String> methodNames) {
+        final Set<String> propertyNames = new HashSet<>(readablePropertyNames);
+        propertyNames.addAll(writablePropertyNames);
+
+        final Class<?> clazz = source.getClass();
+        Bootstrap.checkReflectionAccess(clazz);
+
+        final MethodType getterType = MethodType.methodType(Object.class, clazz);
+        final MethodType setterType = MethodType.methodType(Object.class, clazz, Object.class);
+
+        final GuardingDynamicLinker linker = BeansLinker.getLinkerForClass(clazz);
+
+        final List<AccessorProperty> properties = new ArrayList<>(propertyNames.size() + methodNames.size());
+        for(final String methodName: methodNames) {
+            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE,
+                    getBoundBeanMethodGetter(source, getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source)),
+                    null));
+        }
+        for(final String propertyName: propertyNames) {
+            final boolean isWritable = writablePropertyNames.contains(propertyName);
+            properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE,
+                    readablePropertyNames.contains(propertyName) ? getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source) : Lookup.EMPTY_GETTER,
+                    isWritable ? getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source) : Lookup.EMPTY_SETTER));
+        }
+
+        targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));
+    }
+
+    private static MethodHandle getBoundBeanMethodGetter(Object source, MethodHandle methodGetter) {
+        try {
+            // NOTE: we're relying on the fact that "dyn:getMethod:..." return value is constant for any given method
+            // name and object linked with BeansLinker. (Actually, an even stronger assumption is true: return value is
+            // constant for any given method name and object's class.)
+            return MethodHandles.dropArguments(MethodHandles.constant(Object.class,
+                    Bootstrap.bindDynamicMethod(methodGetter.invoke(source), source)), 0, Object.class);
+        } catch(RuntimeException|Error e) {
+            throw e;
+        } catch(Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    private static MethodHandle getBeanOperation(final GuardingDynamicLinker linker, final String operation,
+            final MethodType methodType, final Object source) {
+        final GuardedInvocation inv;
+        try {
+            inv = linker.getGuardedInvocation(createLinkRequest(operation, methodType, source),
+                Bootstrap.getLinkerServices());
+            assert passesGuard(source, inv.getGuard());
+        } catch(RuntimeException|Error e) {
+            throw e;
+        } catch(Throwable t) {
+            throw new RuntimeException(t);
+        }
+        assert inv.getSwitchPoint() == null; // Linkers in Dynalink's beans package don't use switchpoints.
+        // We discard the guard, as all method handles will be bound to a specific object.
+        return inv.getInvocation();
+    }
+
+    private static boolean passesGuard(final Object obj, final MethodHandle guard) throws Throwable {
+        return guard == null || (boolean)guard.invoke(obj);
+    }
+
+    private static LinkRequest createLinkRequest(String operation, MethodType methodType, Object source) {
+        return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
+                methodType), false, source);
     }
 }

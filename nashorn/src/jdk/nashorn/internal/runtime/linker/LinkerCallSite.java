@@ -133,7 +133,7 @@ public class LinkerCallSite extends ChainedCallSite {
     }
 
     private static String getScriptLocation() {
-        final StackTraceElement caller = DynamicLinker.getRelinkedCallSiteLocation();
+        final StackTraceElement caller = DynamicLinker.getLinkedCallSiteLocation();
         return caller == null ? "unknown location" : (caller.getFileName() + ":" + caller.getLineNumber());
     }
 
@@ -317,7 +317,7 @@ public class LinkerCallSite extends ChainedCallSite {
 
         private static final MethodHandle TRACEOBJECT = findOwnMH("traceObject", Object.class, MethodHandle.class, Object[].class);
         private static final MethodHandle TRACEVOID   = findOwnMH("traceVoid", void.class, MethodHandle.class, Object[].class);
-        private static final MethodHandle TRACEMISS   = findOwnMH("traceMiss", void.class, Object[].class);
+        private static final MethodHandle TRACEMISS   = findOwnMH("traceMiss", void.class, String.class, Object[].class);
 
         TracingLinkerCallSite(final NashornCallSiteDescriptor desc) {
            super(desc);
@@ -363,7 +363,7 @@ public class LinkerCallSite extends ChainedCallSite {
                 return relink;
             }
             final MethodType type = relink.type();
-            return MH.foldArguments(relink, MH.asType(MH.asCollector(MH.bindTo(TRACEMISS, this), Object[].class, type.parameterCount()), type.changeReturnType(void.class)));
+            return MH.foldArguments(relink, MH.asType(MH.asCollector(MH.insertArguments(TRACEMISS, 0, this, "MISS " + getScriptLocation() + " "), Object[].class, type.parameterCount()), type.changeReturnType(void.class)));
         }
 
         private void printObject(final PrintWriter out, final Object arg) {
@@ -482,8 +482,8 @@ public class LinkerCallSite extends ChainedCallSite {
          * @throws Throwable if invocation failes or throws exception/error
          */
         @SuppressWarnings("unused")
-        public void traceMiss(final Object... args) throws Throwable {
-            tracePrint(Context.getCurrentErr(), "MISS ", args, null);
+        public void traceMiss(final String desc, final Object... args) throws Throwable {
+            tracePrint(Context.getCurrentErr(), desc, args, null);
         }
 
         private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
