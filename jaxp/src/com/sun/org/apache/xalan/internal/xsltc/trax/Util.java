@@ -105,6 +105,13 @@ public final class Util {
                     if (reader == null) {
                        try {
                            reader= XMLReaderFactory.createXMLReader();
+                           try {
+                                reader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                                            xsltc.isSecureProcessing());
+                           } catch (SAXNotRecognizedException e) {
+                                System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                        + e.getMessage());
+                           }
                        } catch (Exception e ) {
                            try {
 

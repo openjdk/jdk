@@ -26,11 +26,13 @@ import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import java.util.HashMap;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
@@ -63,6 +65,8 @@ public class XMLReaderManager {
     private HashMap m_inUse;
 
     private boolean m_useServicesMechanism = true;
+
+    private boolean _secureProcessing;
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
@@ -118,7 +122,12 @@ public class XMLReaderManager {
                     // TransformerFactory creates a reader via the
                     // XMLReaderFactory if setXMLReader is not used
                     reader = XMLReaderFactory.createXMLReader();
-
+                    try {
+                        reader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _secureProcessing);
+                    } catch (SAXNotRecognizedException e) {
+                        System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                + e.getMessage());
+                    }
                 } catch (Exception e) {
                    try {
                         // If unable to create an instance, let's try to use
@@ -190,6 +199,15 @@ public class XMLReaderManager {
      */
     public void setServicesMechnism(boolean flag) {
         m_useServicesMechanism = flag;
+    }
+
+    /**
+     * Set feature
+     */
+    public void setFeature(String name, boolean value) {
+        if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
+            _secureProcessing = value;
+        }
     }
 
     /**
