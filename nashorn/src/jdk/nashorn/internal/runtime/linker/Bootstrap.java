@@ -57,7 +57,7 @@ public final class Bootstrap {
     static {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
         factory.setPrioritizedLinkers(new NashornLinker(), new NashornPrimitiveLinker(), new NashornStaticClassLinker(),
-                new JSObjectLinker(), new ReflectionCheckLinker());
+                new BoundDynamicMethodLinker(), new JSObjectLinker(), new ReflectionCheckLinker());
         factory.setFallbackLinkers(new BeansLinker(), new NashornBottomLinker());
         factory.setSyncOnRelink(true);
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", -1);
@@ -205,6 +205,27 @@ public final class Bootstrap {
      */
     public static MethodHandle createDynamicInvoker(final String opDesc, final MethodType type) {
         return bootstrap(MethodHandles.publicLookup(), opDesc, type, 0).dynamicInvoker();
+    }
+
+    /**
+     * Binds a bean dynamic method (returned by invoking {@code dyn:getMethod} on an object linked with
+     * {@code BeansLinker} to a receiver.
+     * @param dynamicMethod the dynamic method to bind
+     * @param boundThis the bound "this" value.
+     * @return a bound dynamic method.
+     */
+    public static Object bindDynamicMethod(Object dynamicMethod, Object boundThis) {
+        return new BoundDynamicMethod(dynamicMethod, boundThis);
+    }
+
+    /**
+     * If the given class is a reflection-specific class (anything in {@code java.lang.reflect} and
+     * {@code java.lang.invoke} package, as well a {@link Class} and any subclass of {@link ClassLoader}) and there is
+     * a security manager in the system, then it checks the {@code nashorn.JavaReflection} {@code RuntimePermission}.
+     * @param clazz the class being tested
+     */
+    public static void checkReflectionAccess(Class<?> clazz) {
+        ReflectionCheckLinker.checkReflectionAccess(clazz);
     }
 
     /**

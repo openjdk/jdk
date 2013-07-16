@@ -88,10 +88,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Collection;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
@@ -102,9 +102,9 @@ import jdk.internal.dynalink.support.Lookup;
  * @author Attila Szegedi
  */
 class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
-    private final ClassValue<GuardingDynamicLinker> linkers = new ClassValue<GuardingDynamicLinker>() {
+    private static final ClassValue<SingleClassStaticsLinker> linkers = new ClassValue<SingleClassStaticsLinker>() {
         @Override
-        protected GuardingDynamicLinker computeValue(Class<?> clazz) {
+        protected SingleClassStaticsLinker computeValue(Class<?> clazz) {
             return new SingleClassStaticsLinker(clazz);
         }
     };
@@ -158,6 +158,18 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
             }
             return null;
         }
+    }
+
+    static Collection<String> getReadableStaticPropertyNames(Class<?> clazz) {
+        return linkers.get(clazz).getReadablePropertyNames();
+    }
+
+    static Collection<String> getWritableStaticPropertyNames(Class<?> clazz) {
+        return linkers.get(clazz).getWritablePropertyNames();
+    }
+
+    static Collection<String> getStaticMethodNames(Class<?> clazz) {
+        return linkers.get(clazz).getMethodNames();
     }
 
     @Override
