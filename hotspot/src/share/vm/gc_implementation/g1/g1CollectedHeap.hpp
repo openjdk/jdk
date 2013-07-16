@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_HPP
 
 #include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/evacuationInfo.hpp"
 #include "gc_implementation/g1/g1AllocRegion.hpp"
 #include "gc_implementation/g1/g1HRPrinter.hpp"
-#include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
+#include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/g1YCTypes.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
 #include "gc_implementation/g1/heapRegionSets.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
@@ -61,7 +63,12 @@ class HeapRegionRemSetIterator;
 class ConcurrentMark;
 class ConcurrentMarkThread;
 class ConcurrentG1Refine;
+class ConcurrentGCTimer;
 class GenerationCounters;
+class STWGCTimer;
+class G1NewTracer;
+class G1OldTracer;
+class EvacuationFailedInfo;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -160,7 +167,7 @@ public:
 // An instance is embedded into the G1CH and used as the
 // (optional) _is_alive_non_header closure in the STW
 // reference processor. It is also extensively used during
-// refence processing during STW evacuation pauses.
+// reference processing during STW evacuation pauses.
 class G1STWIsAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1;
 public:
@@ -323,10 +330,10 @@ private:
   void release_mutator_alloc_region();
 
   // It initializes the GC alloc regions at the start of a GC.
-  void init_gc_alloc_regions();
+  void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
 
   // It releases the GC alloc regions at the end of a GC.
-  void release_gc_alloc_regions(uint no_of_gc_workers);
+  void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info);
 
   // It does any cleanup that needs to be done on the GC alloc regions
   // before a Full GC.
@@ -388,6 +395,8 @@ private:
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
   volatile unsigned int _old_marking_cycles_completed;
+
+  bool _concurrent_cycle_started;
 
   // This is a non-product method that is helpful for testing. It is
   // called at the end of a GC and artificially expands the heap by
@@ -734,6 +743,12 @@ public:
     return _old_marking_cycles_completed;
   }
 
+  void register_concurrent_cycle_start(jlong start_time);
+  void register_concurrent_cycle_end();
+  void trace_heap_after_concurrent_cycle();
+
+  G1YCType yc_type();
+
   G1HRPrinter* hr_printer() { return &_hr_printer; }
 
 protected:
@@ -769,7 +784,7 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  void evacuate_collection_set();
+  void evacuate_collection_set(EvacuationInfo& evacuation_info);
 
   // The g1 remembered set of the heap.
   G1RemSet* _g1_rem_set;
@@ -794,7 +809,7 @@ protected:
 
   // After a collection pause, make the regions in the CS into free
   // regions.
-  void free_collection_set(HeapRegion* cs_head);
+  void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info);
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
@@ -863,9 +878,7 @@ protected:
   // True iff a evacuation has failed in the current collection.
   bool _evacuation_failed;
 
-  // Set the attribute indicating whether evacuation has failed in the
-  // current collection.
-  void set_evacuation_failed(bool b) { _evacuation_failed = b; }
+  EvacuationFailedInfo* _evacuation_failed_info_array;
 
   // Failed evacuations cause some logical from-space objects to have
   // forwarding pointers to themselves.  Reset them.
@@ -907,7 +920,7 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
+  oop handle_evacuation_failure_par(G1ParScanThreadState* _par_scan_state, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
 #ifndef PRODUCT
@@ -939,13 +952,13 @@ protected:
   inline bool evacuation_should_fail();
 
   // Reset the G1EvacuationFailureALot counters.  Should be called at
-  // the end of an evacuation pause in which an evacuation failure ocurred.
+  // the end of an evacuation pause in which an evacuation failure occurred.
   inline void reset_evacuation_should_fail();
 #endif // !PRODUCT
 
   // ("Weak") Reference processing support.
   //
-  // G1 has 2 instances of the referece processor class. One
+  // G1 has 2 instances of the reference processor class. One
   // (_ref_processor_cm) handles reference object discovery
   // and subsequent processing during concurrent marking cycles.
   //
@@ -994,6 +1007,12 @@ protected:
 
   // The (stw) reference processor...
   ReferenceProcessor* _ref_processor_stw;
+
+  STWGCTimer* _gc_timer_stw;
+  ConcurrentGCTimer* _gc_timer_cm;
+
+  G1OldTracer* _gc_tracer_cm;
+  G1NewTracer* _gc_tracer_stw;
 
   // During reference object discovery, the _is_alive_non_header
   // closure (if non-null) is applied to the referent object to
@@ -1140,8 +1159,11 @@ public:
   // The STW reference processor....
   ReferenceProcessor* ref_processor_stw() const { return _ref_processor_stw; }
 
-  // The Concurent Marking reference processor...
+  // The Concurrent Marking reference processor...
   ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
+
+  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
   virtual size_t capacity() const;
   virtual size_t used() const;
@@ -1200,7 +1222,7 @@ public:
 
   // verify_region_sets_optional() is planted in the code for
   // list verification in non-product builds (and it can be enabled in
-  // product builds by definning HEAP_REGION_SET_FORCE_VERIFY to be 1).
+  // product builds by defining HEAP_REGION_SET_FORCE_VERIFY to be 1).
 #if HEAP_REGION_SET_FORCE_VERIFY
   void verify_region_sets_optional() {
     verify_region_sets();
@@ -1266,7 +1288,7 @@ public:
   // The same as above but assume that the caller holds the Heap_lock.
   void collect_locked(GCCause::Cause cause);
 
-  // True iff a evacuation has failed in the most-recent collection.
+  // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
   // It will free a region if it has allocated objects in it that are
@@ -1337,11 +1359,6 @@ public:
   virtual void safe_object_iterate(ObjectClosure* cl) {
     object_iterate(cl);
   }
-
-  // Iterate over all objects allocated since the last collection, calling
-  // "cl.do_object" on each.  The heap must have been initialized properly
-  // to support this function, or else this call will fail.
-  virtual void object_iterate_since_last_GC(ObjectClosure* cl);
 
   // Iterate over all spaces in use in the heap, in ascending address order.
   virtual void space_iterate(SpaceClosure* cl);
@@ -1554,6 +1571,7 @@ public:
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool silent);
+
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
@@ -1839,7 +1857,7 @@ protected:
   G1ParScanHeapEvacClosure*     _evac_cl;
   G1ParScanPartialArrayClosure* _partial_scan_cl;
 
-  int _hash_seed;
+  int  _hash_seed;
   uint _queue_num;
 
   size_t _term_attempts;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,23 @@ final class ServerHandshaker extends Handshaker {
             mesg.print(System.out);
         }
 
+        // Reject client initiated renegotiation?
+        //
+        // If server side should reject client-initiated renegotiation,
+        // send an alert_handshake_failure fatal alert, not a no_renegotiation
+        // warning alert (no_renegotiation must be a warning: RFC 2246).
+        // no_renegotiation might seem more natural at first, but warnings
+        // are not appropriate because the sending party does not know how
+        // the receiving party will behave.  This state must be treated as
+        // a fatal server condition.
+        //
+        // This will not have any impact on server initiated renegotiation.
+        if (rejectClientInitiatedRenego && !isInitialHandshake &&
+                state != HandshakeMessage.ht_hello_request) {
+            fatalSE(Alerts.alert_handshake_failure,
+                "Client initiated renegotiation is not allowed");
+        }
+
         // check the server name indication if required
         ServerNameExtension clientHelloSNIExt = (ServerNameExtension)
                     mesg.extensions.get(ExtensionType.EXT_SERVER_NAME);
@@ -369,7 +386,7 @@ final class ServerHandshaker extends Handshaker {
             } else if (!allowUnsafeRenegotiation) {
                 // abort the handshake
                 if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
-                    // response with a no_renegotiation warning,
+                    // respond with a no_renegotiation warning
                     warningSE(Alerts.alert_no_renegotiation);
 
                     // invalidate the handshake so that the caller can

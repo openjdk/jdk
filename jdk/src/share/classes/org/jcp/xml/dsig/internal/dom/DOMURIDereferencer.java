@@ -31,7 +31,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.sun.org.apache.xml.internal.security.Init;
-import com.sun.org.apache.xml.internal.security.utils.IdResolver;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 
@@ -68,8 +68,11 @@ public class DOMURIDereferencer implements URIDereferencer {
         Attr uriAttr = (Attr) domRef.getHere();
         String uri = uriRef.getURI();
         DOMCryptoContext dcc = (DOMCryptoContext) context;
+        String baseURI = context.getBaseURI();
 
-        // Check if same-document URI and register ID
+        boolean secVal = Utils.secureValidation(context);
+
+        // Check if same-document URI and already registered on the context
         if (uri != null && uri.length() != 0 && uri.charAt(0) == '#') {
             String id = uri.substring(1);
 
@@ -79,19 +82,38 @@ public class DOMURIDereferencer implements URIDereferencer {
                 id = id.substring(i1+1, i2);
             }
 
-            // this is a bit of a hack to check for registered
-            // IDRefs and manually register them with Apache's IdResolver
-            // map which includes builtin schema knowledge of DSig/Enc IDs
-            Node referencedElem = dcc.getElementById(id);
-            if (referencedElem != null) {
-                IdResolver.registerElementById((Element) referencedElem, id);
+            Node refElem = dcc.getElementById(id);
+            if (refElem != null) {
+                if (secVal) {
+                    Element start =
+                        refElem.getOwnerDocument().getDocumentElement();
+                    if (!XMLUtils.protectAgainstWrappingAttack(start,
+                                                               (Element)refElem,
+                                                               id)) {
+                        String error = "Multiple Elements with the same ID " +
+                                       id + " were detected";
+                        throw new URIReferenceException(error);
+                    }
+                }
+
+                XMLSignatureInput result = new XMLSignatureInput(refElem);
+                if (!uri.substring(1).startsWith("xpointer(id(")) {
+                    result.setExcludeComments(true);
+                }
+
+                result.setMIMEType("text/xml");
+                if (baseURI != null && baseURI.length() > 0) {
+                    result.setSourceURI(baseURI.concat(uriAttr.getNodeValue()));
+                } else {
+                    result.setSourceURI(uriAttr.getNodeValue());
+                }
+                return new ApacheNodeSetData(result);
             }
         }
 
         try {
-            String baseURI = context.getBaseURI();
             ResourceResolver apacheResolver =
-                ResourceResolver.getInstance(uriAttr, baseURI);
+                ResourceResolver.getInstance(uriAttr, baseURI, secVal);
             XMLSignatureInput in = apacheResolver.resolve(uriAttr, baseURI);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);

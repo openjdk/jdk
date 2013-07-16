@@ -45,7 +45,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/privilegedStack.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
@@ -77,7 +76,8 @@
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "services/threadService.hpp"
-#include "trace/traceEventTypes.hpp"
+#include "trace/tracing.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -219,7 +219,7 @@ Thread::Thread() {
   set_osthread(NULL);
   set_resource_area(new (mtThread)ResourceArea());
   set_handle_area(new (mtThread) HandleArea(NULL));
-  set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(300, true));
+  set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, true));
   set_active_handles(NULL);
   set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
@@ -238,7 +238,6 @@ Thread::Thread() {
   CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  set_trace_buffer(NULL);
   _vm_operation_started_count = 0;
   _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
@@ -1659,9 +1658,11 @@ void JavaThread::run() {
     JvmtiExport::post_thread_start(this);
   }
 
-  EVENT_BEGIN(TraceEventThreadStart, event);
-  EVENT_COMMIT(event,
-     EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+  EventThreadStart event;
+  if (event.should_commit()) {
+     event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+     event.commit();
+  }
 
   // We call another function to do the rest so we are sure that the stack addresses used
   // from there will be lower than the stack base just computed
@@ -1791,9 +1792,11 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
     // Called before the java thread exit since we want to read info
     // from java_lang_Thread object
-    EVENT_BEGIN(TraceEventThreadEnd, event);
-    EVENT_COMMIT(event,
-        EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+    EventThreadEnd event;
+    if (event.should_commit()) {
+        event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+        event.commit();
+    }
 
     // Call after last event on thread
     EVENT_THREAD_EXIT(this);
@@ -3648,8 +3651,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
 
-  if (!TRACE_START()) {
-    vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+  if (TRACE_START() != JNI_OK) {
+    vm_exit_during_initialization("Failed to start tracing backend.");
   }
 
   if (CleanChunkPoolAsync) {
@@ -3673,7 +3676,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   if (Arguments::has_profile())       FlatProfiler::engage(main_thread, true);
-  if (Arguments::has_alloc_profile()) AllocationProfiler::engage();
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();

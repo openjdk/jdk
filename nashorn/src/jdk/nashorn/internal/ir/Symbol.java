@@ -55,23 +55,25 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int KINDMASK = (1 << 3) - 1; // Kinds are represented by lower three bits
 
     /** Is this scope */
-    public static final int IS_SCOPE         = 1 << 4;
+    public static final int IS_SCOPE             = 1 <<  4;
     /** Is this a this symbol */
-    public static final int IS_THIS          = 1 << 5;
+    public static final int IS_THIS              = 1 <<  5;
     /** Can this symbol ever be undefined */
-    public static final int CAN_BE_UNDEFINED = 1 << 6;
+    public static final int CAN_BE_UNDEFINED     = 1 <<  6;
+    /** Is this symbol always defined? */
+    public static final int IS_ALWAYS_DEFINED    = 1 <<  8;
     /** Can this symbol ever have primitive types */
-    public static final int CAN_BE_PRIMITIVE = 1 << 7;
+    public static final int CAN_BE_PRIMITIVE     = 1 <<  9;
     /** Is this a let */
-    public static final int IS_LET           = 1 << 8;
+    public static final int IS_LET               = 1 << 10;
     /** Is this an internal symbol, never represented explicitly in source code */
-    public static final int IS_INTERNAL      = 1 << 9;
+    public static final int IS_INTERNAL          = 1 << 11;
     /** Is this a function self-reference symbol */
-    public static final int IS_FUNCTION_SELF = 1 << 10;
+    public static final int IS_FUNCTION_SELF     = 1 << 12;
     /** Is this a specialized param? */
-    public static final int IS_SPECIALIZED_PARAM = 1 << 11;
+    public static final int IS_SPECIALIZED_PARAM = 1 << 13;
     /** Is this symbol a shared temporary? */
-    public static final int IS_SHARED = 1 << 12;
+    public static final int IS_SHARED            = 1 << 14;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -384,7 +386,7 @@ public final class Symbol implements Comparable<Symbol> {
       * Mark this symbol as one being shared by multiple expressions. The symbol must be a temporary.
       */
      public void setIsShared() {
-         if(!isShared()) {
+         if (!isShared()) {
              assert isTemp();
              trace("SET IS SHARED");
              flags |= IS_SHARED;
@@ -414,6 +416,14 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public boolean isParam() {
         return (flags & KINDMASK) == IS_PARAM;
+    }
+
+    /**
+     * Check if this symbol is always defined, which overrides all canBeUndefined tags
+     * @return true if always defined
+     */
+    public boolean isAlwaysDefined() {
+        return isParam() || (flags & IS_ALWAYS_DEFINED) == IS_ALWAYS_DEFINED;
     }
 
     /**
@@ -462,7 +472,9 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setCanBeUndefined() {
         assert type.isObject() : type;
-        if(!canBeUndefined()) {
+        if (isAlwaysDefined()) {
+            return;
+        } else if (!canBeUndefined()) {
             assert !isShared();
             flags |= CAN_BE_UNDEFINED;
         }

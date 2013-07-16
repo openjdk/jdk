@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -624,12 +626,26 @@ void OneContigSpaceCardGeneration::collect(bool   full,
                                            bool   clear_all_soft_refs,
                                            size_t size,
                                            bool   is_tlab) {
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+
   SpecializationStats::clear();
   // Temporarily expand the span of our ref processor, so
   // refs discovery is over the entire heap, not just this generation
   ReferenceProcessorSpanMutator
-    x(ref_processor(), GenCollectedHeap::heap()->reserved_region());
+    x(ref_processor(), gch->reserved_region());
+
+  STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
+  gc_timer->register_gc_start(os::elapsed_counter());
+
+  SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
+  gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
+
   GenMarkSweep::invoke_at_safepoint(_level, ref_processor(), clear_all_soft_refs);
+
+  gc_timer->register_gc_end(os::elapsed_counter());
+
+  gc_tracer->report_gc_end(os::elapsed_counter(), gc_timer->time_partitions());
+
   SpecializationStats::print();
 }
 
@@ -793,16 +809,6 @@ void OneContigSpaceCardGeneration::object_iterate(ObjectClosure* blk) {
 void OneContigSpaceCardGeneration::space_iterate(SpaceClosure* blk,
                                                  bool usedOnly) {
   blk->do_space(_the_space);
-}
-
-void OneContigSpaceCardGeneration::object_iterate_since_last_GC(ObjectClosure* blk) {
-  // Deal with delayed initialization of _the_space,
-  // and lack of initialization of _last_gc.
-  if (_last_gc.space() == NULL) {
-    assert(the_space() != NULL, "shouldn't be NULL");
-    _last_gc = the_space()->bottom_mark();
-  }
-  the_space()->object_iterate_from(_last_gc, blk);
 }
 
 void OneContigSpaceCardGeneration::younger_refs_iterate(OopsInGenClosure* blk) {

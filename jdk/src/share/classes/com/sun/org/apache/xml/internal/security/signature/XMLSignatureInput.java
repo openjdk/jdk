@@ -27,10 +27,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -244,13 +245,13 @@ public class XMLSignatureInput implements Cloneable {
             if (circumvent) {
                 XMLUtils.circumventBug2650(XMLUtils.getOwnerDocument(_subNode));
             }
-            this._inputNodeSet = new HashSet<Node>();
+            this._inputNodeSet = new LinkedHashSet<Node>();
             XMLUtils.getSet(_subNode,this._inputNodeSet, excludeNode, this.excludeComments);
 
             return this._inputNodeSet;
         } else if (this.isOctetStream()) {
             convertToNodes();
-            HashSet<Node> result=new HashSet<Node>();
+            LinkedHashSet<Node> result = new LinkedHashSet<Node>();
             XMLUtils.getSet(_subNode, result,null,false);
             //this._inputNodeSet=result;
             return result;
@@ -603,6 +604,8 @@ public class XMLSignatureInput implements Cloneable {
         DocumentBuilderFactory dfactory = DocumentBuilderFactory.newInstance();
         dfactory.setValidating(false);
         dfactory.setNamespaceAware(true);
+        dfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                            Boolean.TRUE);
         DocumentBuilder db = dfactory.newDocumentBuilder();
         // select all nodes, also the comments.
         try {

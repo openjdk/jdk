@@ -52,7 +52,7 @@ import java.io.IOException;
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Channels of this type support the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -98,6 +98,9 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected AsynchronousServerSocketChannel(AsynchronousChannelProvider provider) {
         this.provider = provider;
@@ -105,6 +108,8 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Returns the provider that created this channel.
+     *
+     * @return  The provider that created this channel
      */
     public final AsynchronousChannelProvider provider() {
         return provider;
@@ -253,7 +258,7 @@ public abstract class AsynchronousServerSocketChannel
      * <p> To allow for concurrent handling of new connections, the completion
      * handler is not invoked directly by the initiating thread when a new
      * connection is accepted immediately (see <a
-     * href="AsynchronousChannelGroup.html#threading">Threading<a>).
+     * href="AsynchronousChannelGroup.html#threading">Threading</a>).
      *
      * <p> If a security manager has been installed then it verifies that the
      * address and port number of the connection's remote endpoint are permitted
@@ -263,6 +268,8 @@ public abstract class AsynchronousServerSocketChannel
      * the connection is closed and the operation completes with a {@link
      * SecurityException}.
      *
+     * @param   <A>
+     *          The type of the attachment
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
@@ -297,4 +304,25 @@ public abstract class AsynchronousServerSocketChannel
      *          If this channel's socket has not yet been bound
      */
     public abstract Future<AsynchronousSocketChannel> accept();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
+     * local port of the channel's socket is returned.
+     *
+     * @return  The {@code SocketAddress} that the socket is bound to, or the
+     *          {@code SocketAddress} representing the loopback address if
+     *          denied by the security manager, or {@code null} if the
+     *          channel's socket is not bound
+     *
+     * @throws  ClosedChannelException     {@inheritDoc}
+     * @throws  IOException                {@inheritDoc}
+     */
+    @Override
+    public abstract SocketAddress getLocalAddress() throws IOException;
 }

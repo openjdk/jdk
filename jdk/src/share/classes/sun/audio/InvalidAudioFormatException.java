@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,20 @@ import java.io.IOException;
 /**
  * Signals an invalid audio stream for the stream handler.
  */
-class InvalidAudioFormatException extends IOException {
+final class InvalidAudioFormatException extends IOException {
 
 
     /**
      * Constructor.
      */
-    public InvalidAudioFormatException() {
+    InvalidAudioFormatException() {
         super();
     }
 
     /**
      * Constructor with a detail message.
      */
-    public InvalidAudioFormatException(String s) {
+    InvalidAudioFormatException(String s) {
         super(s);
     }
 }

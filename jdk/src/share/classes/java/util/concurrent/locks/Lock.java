@@ -121,8 +121,8 @@ import java.util.concurrent.TimeUnit;
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
  * lock, as described in
- * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/index.html">
- * The Java Language Specification, Third Edition (17.4 Memory Model)</a>:
+ * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4">
+ * The Java Language Specification (17.4 Memory Model)</a>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.
@@ -136,7 +136,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <h3>Implementation Considerations</h3>
  *
- * <p> The three forms of lock acquisition (interruptible,
+ * <p>The three forms of lock acquisition (interruptible,
  * non-interruptible, and timed) may differ in their performance
  * characteristics, ordering guarantees, or other implementation
  * qualities.  Further, the ability to interrupt the <em>ongoing</em>
@@ -227,7 +227,7 @@ public interface Lock {
      *
      * @throws InterruptedException if the current thread is
      *         interrupted while acquiring the lock (and interruption
-     *         of lock acquisition is supported).
+     *         of lock acquisition is supported)
      */
     void lockInterruptibly() throws InterruptedException;
 

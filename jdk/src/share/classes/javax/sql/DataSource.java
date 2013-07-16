@@ -36,7 +36,7 @@ import java.sql.Wrapper;
  * is the preferred means of getting a connection. An object that implements
  * the {@code DataSource} interface will typically be
  * registered with a naming service based on the
- * Java<sup><font size=-2>TM</font></sup> Naming and Directory (JNDI) API.
+ * Java&trade; Naming and Directory (JNDI) API.
  * <P>
  * The {@code DataSource} interface is implemented by a driver vendor.
  * There are three types of implementations:
@@ -82,7 +82,7 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    *
    * @return  a connection to the data source
    * @exception SQLException if a database access error occurs
-   * @throws SQLTimeoutException  when the driver has determined that the
+   * @throws java.sql.SQLTimeoutException  when the driver has determined that the
    * timeout value specified by the {@code setLoginTimeout} method
    * has been exceeded and has at least tried to cancel the
    * current database connection attempt
@@ -98,7 +98,7 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    * @param password the user's password
    * @return  a connection to the data source
    * @exception SQLException if a database access error occurs
-   * @throws SQLTimeoutException  when the driver has determined that the
+   * @throws java.sql.SQLTimeoutException  when the driver has determined that the
    * timeout value specified by the {@code setLoginTimeout} method
    * has been exceeded and has at least tried to cancel the
    * current database connection attempt

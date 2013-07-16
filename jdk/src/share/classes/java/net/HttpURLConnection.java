@@ -109,7 +109,7 @@ abstract public class HttpURLConnection extends URLConnection {
      * server. In this case, {@link #getHeaderField(int) getHeaderField(0)} returns the status
      * line, but <code>getHeaderFieldKey(0)</code> returns null.
      *
-     * @param   n   an index, where n >=0.
+     * @param   n   an index, where {@code n >=0}.
      * @return  the key for the <code>n</code><sup>th</sup> header field,
      *          or <code>null</code> if the key does not exist.
      */
@@ -260,7 +260,7 @@ abstract public class HttpURLConnection extends URLConnection {
      * {@link #getHeaderFieldKey getHeaderFieldKey} method to iterate through all
      * the headers in the message.
      *
-     * @param   n   an index, where n>=0.
+     * @param   n   an index, where {@code n>=0}.
      * @return  the value of the <code>n</code><sup>th</sup> header field,
      *          or <code>null</code> if the value does not exist.
      * @see     java.net.HttpURLConnection#getHeaderFieldKey(int)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ public abstract class TaggedComponentBase extends IdentifiableBase
     public org.omg.IOP.TaggedComponent getIOPComponent(
         org.omg.CORBA.ORB orb )
     {
-        EncapsOutputStream os = new EncapsOutputStream( (ORB)orb ) ;
+        EncapsOutputStream os =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream((ORB)orb);
         write( os ) ;
         InputStream is = (InputStream)(os.create_input_stream() ) ;
         return org.omg.IOP.TaggedComponentHelper.read( is ) ;

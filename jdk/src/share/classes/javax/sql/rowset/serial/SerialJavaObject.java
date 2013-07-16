@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Vector;
 import javax.sql.rowset.RowSetWarning;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A serializable mapping in the Java programming language of an SQL
@@ -44,7 +47,7 @@ import javax.sql.rowset.RowSetWarning;
  * Static or transient fields cannot be serialized; an attempt to serialize
  * them will result in a <code>SerialException</code> object being thrown.
  *
- * <h4> Thread safety </h4>
+ * <h3> Thread safety </h3>
  *
  * A SerialJavaObject is not safe for use by multiple concurrent threads.  If a
  * SerialJavaObject is to be used by more than one thread then access to the
@@ -119,10 +122,31 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * @return an array of <code>Field</code> objects
      * @throws SerialException if an error is encountered accessing
      * the serialized object
+     * @throws  SecurityException  If a security manager, <i>s</i>, is present
+     * and the caller's class loader is not the same as or an
+     * ancestor of the class loader for the class of the
+     * {@linkplain #getObject object} being serialized
+     * and invocation of {@link SecurityManager#checkPackageAccess
+     * s.checkPackageAccess()} denies access to the package
+     * of that class.
+     * @see Class#getFields
      */
+    @CallerSensitive
     public Field[] getFields() throws SerialException {
         if (fields != null) {
             Class<?> c = this.obj.getClass();
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                /*
+                 * Check if the caller is allowed to access the specified class's package.
+                 * If access is denied, throw a SecurityException.
+                 */
+                Class<?> caller = sun.reflect.Reflection.getCallerClass();
+                if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(),
+                                                        c.getClassLoader())) {
+                    ReflectUtil.checkPackageAccess(c);
+                }
+            }
             return c.getFields();
         } else {
             throw new SerialException("SerialJavaObject does not contain" +

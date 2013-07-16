@@ -1321,12 +1321,6 @@ void InstanceKlass::array_klasses_do(void f(Klass* k)) {
     ArrayKlass::cast(array_klasses())->array_klasses_do(f);
 }
 
-
-void InstanceKlass::with_array_klasses_do(void f(Klass* k)) {
-  f(this);
-  array_klasses_do(f);
-}
-
 #ifdef ASSERT
 static int linear_search(Array<Method*>* methods, Symbol* name, Symbol* signature) {
   int len = methods->length();
@@ -3088,27 +3082,26 @@ class VerifyFieldClosure: public OopClosure {
   virtual void do_oop(narrowOop* p) { VerifyFieldClosure::do_oop_work(p); }
 };
 
-void InstanceKlass::verify_on(outputStream* st) {
-  Klass::verify_on(st);
-  Thread *thread = Thread::current();
-
+void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
 #ifndef PRODUCT
-  // Avoid redundant verifies
+  // Avoid redundant verifies, this really should be in product.
   if (_verify_count == Universe::verify_count()) return;
   _verify_count = Universe::verify_count();
 #endif
-  // Verify that klass is present in SystemDictionary
-  if (is_loaded() && !is_anonymous()) {
+
+  // Verify Klass
+  Klass::verify_on(st, check_dictionary);
+
+  // Verify that klass is present in SystemDictionary if not already
+  // verifying the SystemDictionary.
+  if (is_loaded() && !is_anonymous() && check_dictionary) {
     Symbol* h_name = name();
     SystemDictionary::verify_obj_klass_present(h_name, class_loader_data());
   }
 
-  // Verify static fields
-  VerifyFieldClosure blk;
-
   // Verify vtables
   if (is_linked()) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     // $$$ This used to be done only for m/s collections.  Doing it
     // always seemed a valid generalization.  (DLD -- 6/00)
     vtable()->verify(st);
@@ -3116,7 +3109,6 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify first subklass
   if (subklass_oop() != NULL) {
-    guarantee(subklass_oop()->is_metadata(), "should be in metaspace");
     guarantee(subklass_oop()->is_klass(), "should be klass");
   }
 
@@ -3128,7 +3120,6 @@ void InstanceKlass::verify_on(outputStream* st) {
       fatal(err_msg("subclass points to itself " PTR_FORMAT, sib));
     }
 
-    guarantee(sib->is_metadata(), "should be in metaspace");
     guarantee(sib->is_klass(), "should be klass");
     guarantee(sib->super() == super, "siblings should have same superklass");
   }
@@ -3164,7 +3155,6 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (methods() != NULL) {
     Array<Method*>* methods = this->methods();
     for (int j = 0; j < methods->length(); j++) {
-      guarantee(methods->at(j)->is_metadata(), "should be in metaspace");
       guarantee(methods->at(j)->is_method(), "non-method in methods array");
     }
     for (int j = 0; j < methods->length() - 1; j++) {
@@ -3202,16 +3192,13 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify other fields
   if (array_klasses() != NULL) {
-    guarantee(array_klasses()->is_metadata(), "should be in metaspace");
     guarantee(array_klasses()->is_klass(), "should be klass");
   }
   if (constants() != NULL) {
-    guarantee(constants()->is_metadata(), "should be in metaspace");
     guarantee(constants()->is_constantPool(), "should be constant pool");
   }
   const Klass* host = host_klass();
   if (host != NULL) {
-    guarantee(host->is_metadata(), "should be in metaspace");
     guarantee(host->is_klass(), "should be klass");
   }
 }

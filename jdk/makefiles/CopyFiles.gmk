@@ -200,7 +200,7 @@ ICCPROFILE_DEST_DIR := $(LIBDIR)/cmm
 
 ifdef OPENJDK
     ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/share/lib/cmm/lcms
-else 
+else
     ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/closed/share/lib/cmm/kcms
 endif
 
@@ -217,29 +217,29 @@ COPY_FILES += $(ICCPROFILE_TARGET_FILES)
 
 #make sure freetype dll will be available at runtime as well as link time
 #
-#NB: Default freetype build system uses -h linker option and 
-#   result .so contains hardcoded library name that is later 
-#   used for adding dependencies to other objects 
+#NB: Default freetype build system uses -h linker option and
+#   result .so contains hardcoded library name that is later
+#   used for adding dependencies to other objects
 #   (e.g. libfontmanager.so).
-#   
+#
 #   It is not obvious how to extract that hardcoded name (libfreetype.so.6)
 #   without overcomplicating logic here.
 #   To workaround this we hardcode .6 suffix for now.
 #
 #   Note that .so.6 library will not be found by System.loadLibrary()
-#        but fortunately we need to load FreeType library explicitly 
-#        on windows only  
+#        but fortunately we need to load FreeType library explicitly
+#        on windows only
 #
 #TODO: rework this to avoid hardcoding library name in the makefile
 #
 ifdef OPENJDK
     ifeq ($(OPENJDK_TARGET_OS), windows)
         FREETYPE_LIB = $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
-    else 
+    else
         ifeq ($(USING_SYSTEM_FT_LIB), false)
             FREETYPE_LIB = $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
         endif
-    endif 
+    endif
 
     $(FREETYPE_LIB): $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
 	$(CP) $(FREETYPE2_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
@@ -537,3 +537,5 @@ $(JDK_OUTPUTDIR)/lib/sound.properties : $(JDK_TOPDIR)/src/share/lib/sound.proper
 COPY_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
 
 ##########################################################################################
+
+-include $(CUSTOM_MAKE_DIR)/CopyFiles.gmk

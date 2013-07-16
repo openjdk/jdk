@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@ import java.security.spec.InvalidKeySpecException;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>KeyFactory</code> class.
+ * for the {@code KeyFactory} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a key factory for a particular algorithm.
  *
  * <P> Key factories are used to convert <I>keys</I> (opaque
- * cryptographic keys of type <code>Key</code>) into <I>key specifications</I>
+ * cryptographic keys of type {@code Key}) into <I>key specifications</I>
  * (transparent representations of the underlying key material), and vice
  * versa.
  *
@@ -46,8 +46,8 @@ import java.security.spec.InvalidKeySpecException;
  *
  * <P> Multiple compatible key specifications may exist for the same key.
  * For example, a DSA public key may be specified using
- * <code>DSAPublicKeySpec</code> or
- * <code>X509EncodedKeySpec</code>. A key factory can be used to translate
+ * {@code DSAPublicKeySpec} or
+ * {@code X509EncodedKeySpec}. A key factory can be used to translate
  * between compatible key specifications.
  *
  * <P> A provider should document all the key specifications supported by its
@@ -100,11 +100,11 @@ public abstract class KeyFactorySpi {
     /**
      * Returns a specification (key material) of the given key
      * object.
-     * <code>keySpec</code> identifies the specification class in which
+     * {@code keySpec} identifies the specification class in which
      * the key material should be returned. It could, for example, be
-     * <code>DSAPublicKeySpec.class</code>, to indicate that the
+     * {@code DSAPublicKeySpec.class}, to indicate that the
      * key material should be returned in an instance of the
-     * <code>DSAPublicKeySpec</code> class.
+     * {@code DSAPublicKeySpec} class.
      *
      * @param key the key.
      *

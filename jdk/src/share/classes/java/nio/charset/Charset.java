@@ -66,7 +66,7 @@ import sun.security.action.GetPropertyAction;
  *
  *
  * <a name="names"><a name="charenc">
- * <h4>Charset names</h4>
+ * <h2>Charset names</h2>
  *
  * <p> Charsets are named by strings composed of the following characters:
  *
@@ -140,7 +140,7 @@ import sun.security.action.GetPropertyAction;
  * previous canonical name be made into an alias.
  *
  *
- * <h4>Standard charsets</h4>
+ * <h2>Standard charsets</h2>
  *
  * <a name="standard">
  *
@@ -217,7 +217,7 @@ import sun.security.action.GetPropertyAction;
  * <p>The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
  *
- * <h4>Terminology</h4>
+ * <h2>Terminology</h2>
  *
  * <p> The name of this class is taken from the terms used in
  * <a href="http://www.ietf.org/rfc/rfc2278.txt"><i>RFC&nbsp;2278</i></a>.
@@ -490,7 +490,7 @@ public abstract class Charset
     }
 
     /**
-     * Tells whether the named charset is supported. </p>
+     * Tells whether the named charset is supported.
      *
      * @param  charsetName
      *         The name of the requested charset; may be either
@@ -510,7 +510,7 @@ public abstract class Charset
     }
 
     /**
-     * Returns a charset object for the named charset. </p>
+     * Returns a charset object for the named charset.
      *
      * @param  charsetName
      *         The name of the requested charset; may be either
@@ -629,7 +629,7 @@ public abstract class Charset
 
     /**
      * Initializes a new charset with the given canonical name and alias
-     * set. </p>
+     * set.
      *
      * @param  canonicalName
      *         The canonical name of this charset
@@ -650,7 +650,7 @@ public abstract class Charset
     }
 
     /**
-     * Returns this charset's canonical name. </p>
+     * Returns this charset's canonical name.
      *
      * @return  The canonical name of this charset
      */
@@ -659,7 +659,7 @@ public abstract class Charset
     }
 
     /**
-     * Returns a set containing this charset's aliases. </p>
+     * Returns a set containing this charset's aliases.
      *
      * @return  An immutable set of this charset's aliases
      */
@@ -690,7 +690,7 @@ public abstract class Charset
     /**
      * Tells whether or not this charset is registered in the <a
      * href="http://www.iana.org/assignments/character-sets">IANA Charset
-     * Registry</a>.  </p>
+     * Registry</a>.
      *
      * @return  <tt>true</tt> if, and only if, this charset is known by its
      *          implementor to be registered with the IANA
@@ -737,19 +737,22 @@ public abstract class Charset
      * it is not necessarily the case that the given charset is not contained
      * in this charset.
      *
+     * @param   cs
+     *          The given charset
+     *
      * @return  <tt>true</tt> if the given charset is contained in this charset
      */
     public abstract boolean contains(Charset cs);
 
     /**
-     * Constructs a new decoder for this charset. </p>
+     * Constructs a new decoder for this charset.
      *
      * @return  A new decoder for this charset
      */
     public abstract CharsetDecoder newDecoder();
 
     /**
-     * Constructs a new encoder for this charset. </p>
+     * Constructs a new encoder for this charset.
      *
      * @return  A new encoder for this charset
      *
@@ -881,7 +884,7 @@ public abstract class Charset
     }
 
     /**
-     * Computes a hashcode for this charset. </p>
+     * Computes a hashcode for this charset.
      *
      * @return  An integer hashcode
      */
@@ -907,7 +910,7 @@ public abstract class Charset
     }
 
     /**
-     * Returns a string describing this charset. </p>
+     * Returns a string describing this charset.
      *
      * @return  A string describing this charset
      */

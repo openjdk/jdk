@@ -105,7 +105,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         // sun.security.provider.PolicyFile
 
         {"java.security.policy.error.parsing.policy.message",
-                "java.security.policy: \u5BF9{0}\u8FDB\u884C\u8BED\u6CD5\u5206\u6790\u65F6\u51FA\u9519:\n\t{1}"},
+                "java.security.policy: \u89E3\u6790{0}\u65F6\u51FA\u9519:\n\t{1}"},
         {"java.security.policy.error.adding.Permission.perm.message",
                 "java.security.policy: \u6DFB\u52A0\u6743\u9650{0}\u65F6\u51FA\u9519:\n\t{1}"},
         {"java.security.policy.error.adding.Entry.message",
@@ -127,6 +127,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "\u591A\u4E2A\u4EE3\u7801\u5E93\u8868\u8FBE\u5F0F"},
         {"multiple.SignedBy.expressions","\u591A\u4E2A SignedBy \u8868\u8FBE\u5F0F"},
+        {"duplicate.keystore.domain.name","\u5BC6\u94A5\u5E93\u57DF\u540D\u91CD\u590D: {0}"},
+        {"duplicate.keystore.name","\u5BC6\u94A5\u5E93\u540D\u79F0\u91CD\u590D: {0}"},
         {"SignedBy.has.empty.alias","SignedBy \u6709\u7A7A\u522B\u540D"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "\u6CA1\u6709\u901A\u914D\u7B26\u540D\u79F0, \u65E0\u6CD5\u4F7F\u7528\u901A\u914D\u7B26\u7C7B\u6307\u5B9A\u4E3B\u7528\u6237"},

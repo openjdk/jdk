@@ -74,7 +74,6 @@
 #include "runtime/vm_operations.hpp"
 #include "services/runtimeService.hpp"
 #include "trace/tracing.hpp"
-#include "trace/traceEventTypes.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -880,7 +879,7 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
                                    env, capacity);
 #endif /* USDT2 */
   //%note jni_11
-  if (capacity < 0 && capacity > MAX_REASONABLE_LOCAL_CAPACITY) {
+  if (capacity < 0 || capacity > MAX_REASONABLE_LOCAL_CAPACITY) {
 #ifndef USDT2
     DTRACE_PROBE1(hotspot_jni, PushLocalFrame__return, JNI_ERR);
 #else /* USDT2 */
@@ -5014,6 +5013,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 
 #ifndef PRODUCT
 
+#include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -5031,6 +5031,7 @@ void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
     run_unit_test(GlobalDefinitions::test_globals());
+    run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
@@ -5096,7 +5097,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   // function used to determine this will always return false. Atomic::xchg
   // does not have this problem.
   if (Atomic::xchg(1, &vm_created) == 1) {
-    return JNI_ERR;   // already created, or create attempt in progress
+    return JNI_EEXIST;   // already created, or create attempt in progress
   }
   if (Atomic::xchg(0, &safe_to_recreate_vm) == 0) {
     return JNI_ERR;  // someone tried and failed and retry not allowed.
@@ -5131,13 +5132,27 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
        JvmtiExport::post_thread_start(thread);
     }
 
-    EVENT_BEGIN(TraceEventThreadStart, event);
-    EVENT_COMMIT(event,
-        EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(thread->threadObj())));
+    EventThreadStart event;
+    if (event.should_commit()) {
+      event.set_javalangthread(java_lang_Thread::thread_id(thread->threadObj()));
+      event.commit();
+    }
+
+#ifndef PRODUCT
+  #ifndef TARGET_OS_FAMILY_windows
+    #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
+  #endif
 
     // Check if we should compile all classes on bootclasspath
-    NOT_PRODUCT(if (CompileTheWorld) ClassLoader::compile_the_world();)
-    NOT_PRODUCT(if (ReplayCompiles) ciReplay::replay(thread);)
+    if (CompileTheWorld) ClassLoader::compile_the_world();
+    if (ReplayCompiles) ciReplay::replay(thread);
+
+    // Some platforms (like Win*) need a wrapper around these test
+    // functions in order to properly handle error conditions.
+    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(test_error_handler);
+    CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(execute_internal_vm_tests);
+#endif
+
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_and_fence(thread, _thread_in_vm, _thread_in_native);
   } else {
@@ -5154,8 +5169,6 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     OrderAccess::release_store(&vm_created, 0);
   }
 
-  NOT_PRODUCT(test_error_handler(ErrorHandlerTest));
-  NOT_PRODUCT(execute_internal_vm_tests());
   return result;
 }
 
@@ -5334,9 +5347,11 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     JvmtiExport::post_thread_start(thread);
   }
 
-  EVENT_BEGIN(TraceEventThreadStart, event);
-  EVENT_COMMIT(event,
-      EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(thread->threadObj())));
+  EventThreadStart event;
+  if (event.should_commit()) {
+    event.set_javalangthread(java_lang_Thread::thread_id(thread->threadObj()));
+    event.commit();
+  }
 
   *(JNIEnv**)penv = thread->jni_environment();
 

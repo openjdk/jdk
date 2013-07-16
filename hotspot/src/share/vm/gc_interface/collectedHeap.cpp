@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,15 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/gcHeapSummary.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
+#include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/allocTracer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "runtime/init.hpp"
@@ -65,11 +71,71 @@ void GCHeapLog::log_heap(bool before) {
   }
 }
 
+VirtualSpaceSummary CollectedHeap::create_heap_space_summary() {
+  size_t capacity_in_words = capacity() / HeapWordSize;
+
+  return VirtualSpaceSummary(
+    reserved_region().start(), reserved_region().start() + capacity_in_words, reserved_region().end());
+}
+
+GCHeapSummary CollectedHeap::create_heap_summary() {
+  VirtualSpaceSummary heap_space = create_heap_space_summary();
+  return GCHeapSummary(heap_space, used());
+}
+
+MetaspaceSummary CollectedHeap::create_metaspace_summary() {
+  const MetaspaceSizes meta_space(
+      MetaspaceAux::allocated_capacity_bytes(),
+      MetaspaceAux::allocated_used_bytes(),
+      MetaspaceAux::reserved_in_bytes());
+  const MetaspaceSizes data_space(
+      MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType),
+      MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType),
+      MetaspaceAux::reserved_in_bytes(Metaspace::NonClassType));
+  const MetaspaceSizes class_space(
+      MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType),
+      MetaspaceAux::allocated_used_bytes(Metaspace::ClassType),
+      MetaspaceAux::reserved_in_bytes(Metaspace::ClassType));
+
+  return MetaspaceSummary(meta_space, data_space, class_space);
+}
+
+void CollectedHeap::print_heap_before_gc() {
+  if (PrintHeapAtGC) {
+    Universe::print_heap_before_gc();
+  }
+  if (_gc_heap_log != NULL) {
+    _gc_heap_log->log_heap_before();
+  }
+}
+
+void CollectedHeap::print_heap_after_gc() {
+  if (PrintHeapAtGC) {
+    Universe::print_heap_after_gc();
+  }
+  if (_gc_heap_log != NULL) {
+    _gc_heap_log->log_heap_after();
+  }
+}
+
+void CollectedHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
+  const GCHeapSummary& heap_summary = create_heap_summary();
+  const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
+  gc_tracer->report_gc_heap_summary(when, heap_summary, metaspace_summary);
+}
+
+void CollectedHeap::trace_heap_before_gc(GCTracer* gc_tracer) {
+  trace_heap(GCWhen::BeforeGC, gc_tracer);
+}
+
+void CollectedHeap::trace_heap_after_gc(GCTracer* gc_tracer) {
+  trace_heap(GCWhen::AfterGC, gc_tracer);
+}
+
 // Memory state functions.
 
 
 CollectedHeap::CollectedHeap() : _n_par_threads(0)
-
 {
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
@@ -185,7 +251,7 @@ void CollectedHeap::check_for_valid_allocation_state() {
 }
 #endif
 
-HeapWord* CollectedHeap::allocate_from_tlab_slow(Thread* thread, size_t size) {
+HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thread, size_t size) {
 
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.
@@ -209,6 +275,9 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Thread* thread, size_t size) {
   if (obj == NULL) {
     return NULL;
   }
+
+  AllocTracer::send_allocation_in_new_tlab_event(klass, new_tlab_size * HeapWordSize, size * HeapWordSize);
+
   if (ZeroTLAB) {
     // ..and clear it.
     Copy::zero_to_words(obj, new_tlab_size);
@@ -458,28 +527,28 @@ void CollectedHeap::resize_all_tlabs() {
   }
 }
 
-void CollectedHeap::pre_full_gc_dump() {
+void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
   if (HeapDumpBeforeFullGC) {
-    TraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, gclog_or_tty);
+    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer);
     // We are doing a "major" collection and a heap dump before
     // major collection has been requested.
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramBeforeFullGC) {
-    TraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, gclog_or_tty);
-    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
+    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer);
+    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
 }
 
-void CollectedHeap::post_full_gc_dump() {
+void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
   if (HeapDumpAfterFullGC) {
-    TraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, gclog_or_tty);
+    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer);
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramAfterFullGC) {
-    TraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, gclog_or_tty);
-    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
+    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer);
+    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
 }
@@ -490,7 +559,7 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj;
     assert(ScavengeRootsInCode > 0, "must be");
-    obj = common_mem_allocate_init(size, CHECK_NULL);
+    obj = common_mem_allocate_init(real_klass, size, CHECK_NULL);
   post_allocation_setup_common(klass, obj);
   assert(Universe::is_bootstrapping() ||
          !((oop)obj)->is_array(), "must not be an array");

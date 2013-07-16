@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
 #include "services/diagnosticArgument.hpp"
 
@@ -86,9 +87,18 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) {
 
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
-    if (str == NULL || sscanf(str, JLONG_FORMAT, &_value) != 1) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in diagnostic command arguments\n");
+  int scanned = -1;
+  if (str == NULL
+      || sscanf(str, JLONG_FORMAT"%n", &_value, &scanned) != 1
+      || (size_t)scanned != len)
+  {
+    ResourceMark rm;
+
+    char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
+    strncpy(buf, str, len);
+    buf[len] = '\0';
+    Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
+      "Integer parsing error in command argument '%s'. Could not parse: %s.", _name, buf);
   }
 }
 
@@ -96,7 +106,7 @@ template <> void DCmdArgument<jlong>::init_value(TRAPS) {
   if (has_default()) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      fatal("Default string must be parsable");
+      fatal("Default string must be parseable");
     }
   } else {
     set_value(0);
@@ -116,8 +126,13 @@ template <> void DCmdArgument<bool>::parse_value(const char* str,
     } else if (len == strlen("false") && strncasecmp(str, "false", len) == 0) {
        set_value(false);
     } else {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-        "Boolean parsing error in diagnostic command arguments");
+      ResourceMark rm;
+
+      char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
+      strncpy(buf, str, len);
+      buf[len] = '\0';
+      Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
+        "Boolean parsing error in command argument '%s'. Could not parse: %s.", _name, buf);
     }
   }
 }
@@ -168,7 +183,7 @@ template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
                                                  size_t len, TRAPS) {
   if (str == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Integer parsing error nanotime value: syntax error");
+              "Integer parsing error nanotime value: syntax error, value is null");
   }
 
   int argc = sscanf(str, JLONG_FORMAT, &_value._time);
@@ -232,7 +247,7 @@ template <> void DCmdArgument<NanoTimeArgument>::init_value(TRAPS) {
   } else {
     _value._time = 0;
     _value._nanotime = 0;
-    strcmp(_value._unit, "ns");
+    strcpy(_value._unit, "ns");
   }
 }
 

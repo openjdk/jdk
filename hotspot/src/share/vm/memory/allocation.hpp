@@ -157,7 +157,8 @@ enum MemoryType {
   mtJavaHeap          = 0x0C00,  // Java heap
   mtClassShared       = 0x0D00,  // class data sharing
   mtTest              = 0x0E00,  // Test type for verifying NMT
-  mt_number_of_types  = 0x000E,  // number of memory types (mtDontTrack
+  mtTracing           = 0x0F00,  // memory used for Tracing
+  mt_number_of_types  = 0x000F,  // number of memory types (mtDontTrack
                                  // is not included as validate type)
   mtDontTrack         = 0x0F00,  // memory we do not or cannot track
   mt_masks            = 0x7F00,
@@ -263,7 +264,6 @@ class ClassLoaderData;
 
 class MetaspaceObj {
  public:
-  bool is_metadata() const;
   bool is_metaspace_object() const;  // more specific test but slower
   bool is_shared() const;
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
@@ -339,7 +339,7 @@ class Chunk: CHeapObj<mtChunk> {
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
  public:
-  void* operator new(size_t size, size_t length);
+  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length);
   void  operator delete(void* p);
   Chunk(size_t length);
 
@@ -353,7 +353,8 @@ class Chunk: CHeapObj<mtChunk> {
     slack      = 20,            // suspected sizeof(Chunk) + internal malloc headers
 #endif
 
-    init_size  =  1*K  - slack, // Size of first chunk
+    tiny_size  =  256  - slack, // Size of first chunk (tiny)
+    init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
     medium_size= 10*K  - slack, // Size of medium-sized chunk
     size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
     non_pool_size = init_size + 32 // An initial size which is not one of above
@@ -402,10 +403,15 @@ protected:
 
   void signal_out_of_memory(size_t request, const char* whence) const;
 
-  void check_for_overflow(size_t request, const char* whence) const {
+  bool check_for_overflow(size_t request, const char* whence,
+      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) const {
     if (UINTPTR_MAX - request < (uintptr_t)_hwm) {
+      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+        return false;
+      }
       signal_out_of_memory(request, whence);
     }
+    return true;
  }
 
  public:
@@ -429,7 +435,8 @@ protected:
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
-    check_for_overflow(x, "Arena::Amalloc");
+    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
+      return NULL;
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
@@ -443,7 +450,8 @@ protected:
   void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
     debug_only(if (UseMallocOnly) return malloc(x);)
-    check_for_overflow(x, "Arena::Amalloc_4");
+    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
+      return NULL;
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode);
@@ -464,7 +472,8 @@ protected:
     size_t delta = (((size_t)_hwm + DALIGN_M1) & ~DALIGN_M1) - (size_t)_hwm;
     x += delta;
 #endif
-    check_for_overflow(x, "Arena::Amalloc_D");
+    if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
+      return NULL;
     NOT_PRODUCT(inc_bytes_allocated(x);)
     if (_hwm + x > _max) {
       return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
@@ -634,8 +643,15 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define NEW_RESOURCE_ARRAY_IN_THREAD(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type))
 
+#define NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(thread, type, size)\
+  (type*) resource_allocate_bytes(thread, (size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
+
 #define REALLOC_RESOURCE_ARRAY(type, old, old_size, new_size)\
-  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type) )
+  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type), (new_size) * sizeof(type))
+
+#define REALLOC_RESOURCE_ARRAY_RETURN_NULL(type, old, old_size, new_size)\
+  (type*) resource_reallocate_bytes((char*)(old), (old_size) * sizeof(type),\
+                                    (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
 #define FREE_RESOURCE_ARRAY(type, old, size)\
   resource_free_bytes((char*)(old), (size) * sizeof(type))
@@ -646,27 +662,39 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define NEW_RESOURCE_OBJ(type)\
   NEW_RESOURCE_ARRAY(type, 1)
 
-#define NEW_C_HEAP_ARRAY(type, size, memflags)\
-  (type*) (AllocateHeap((size) * sizeof(type), memflags))
+#define NEW_RESOURCE_OBJ_RETURN_NULL(type)\
+  NEW_RESOURCE_ARRAY_RETURN_NULL(type, 1)
 
-#define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
-  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
-
-#define FREE_C_HEAP_ARRAY(type, old, memflags) \
-  FreeHeap((char*)(old), memflags)
+#define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)\
+  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail)
 
 #define NEW_C_HEAP_ARRAY2(type, size, memflags, pc)\
   (type*) (AllocateHeap((size) * sizeof(type), memflags, pc))
 
-#define REALLOC_C_HEAP_ARRAY2(type, old, size, memflags, pc)\
-  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, pc))
+#define NEW_C_HEAP_ARRAY(type, size, memflags)\
+  (type*) (AllocateHeap((size) * sizeof(type), memflags))
 
-#define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)         \
-  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail)
+#define NEW_C_HEAP_ARRAY2_RETURN_NULL(type, size, memflags, pc)\
+  NEW_C_HEAP_ARRAY3(type, size, memflags, pc, AllocFailStrategy::RETURN_NULL)
+
+#define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, memflags)\
+  NEW_C_HEAP_ARRAY3(type, size, memflags, (address)0, AllocFailStrategy::RETURN_NULL)
+
+#define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
+  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
+
+#define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, memflags)\
+   (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, AllocFailStrategy::RETURN_NULL))
+
+#define FREE_C_HEAP_ARRAY(type, old, memflags) \
+  FreeHeap((char*)(old), memflags)
 
 // allocate type in heap without calling ctor
 #define NEW_C_HEAP_OBJ(type, memflags)\
   NEW_C_HEAP_ARRAY(type, 1, memflags)
+
+#define NEW_C_HEAP_OBJ_RETURN_NULL(type, memflags)\
+  NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, memflags)
 
 // deallocate obj of type in heap without calling dtor
 #define FREE_C_HEAP_OBJ(objname, memflags)\
@@ -712,13 +740,21 @@ public:
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
 template <class E, MEMFLAGS F>
-class ArrayAllocator : StackObj {
+class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
   char* _addr;
   bool _use_malloc;
   size_t _size;
+  bool _free_in_destructor;
  public:
-  ArrayAllocator() : _addr(NULL), _use_malloc(false), _size(0) { }
-  ~ArrayAllocator() { free(); }
+  ArrayAllocator(bool free_in_destructor = true) :
+    _addr(NULL), _use_malloc(false), _size(0), _free_in_destructor(free_in_destructor) { }
+
+  ~ArrayAllocator() {
+    if (_free_in_destructor) {
+      free();
+    }
+  }
+
   E* allocate(size_t length);
   void free();
 };

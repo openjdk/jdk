@@ -25,6 +25,8 @@
 
 package java.util;
 
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -943,6 +945,33 @@ public class TreeMap<K,V>
      */
     public SortedMap<K,V> tailMap(K fromKey) {
         return tailMap(fromKey, true);
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        int expectedModCount = modCount;
+        for (Entry<K, V> e = getFirstEntry(); e != null; e = successor(e)) {
+            action.accept(e.key, e.value);
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        int expectedModCount = modCount;
+
+        for (Entry<K, V> e = getFirstEntry(); e != null; e = successor(e)) {
+            e.value = Objects.requireNonNull(function.apply(e.key, e.value));
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
     }
 
     // View class support
@@ -2909,13 +2938,13 @@ public class TreeMap<K,V>
 
         public int characteristics() {
             return (side == 0 ? Spliterator.SIZED : 0) |
-                   Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED;
+                    Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED;
         }
 
         @Override
         public Comparator<? super Map.Entry<K, V>> getComparator() {
             return tree.comparator != null ?
-                   Comparators.byKey(tree.comparator) : null;
+                    Map.Entry.comparingByKey(tree.comparator) : null;
         }
     }
 }

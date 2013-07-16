@@ -31,6 +31,7 @@ import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 
 
 public class Net {
@@ -43,6 +44,34 @@ public class Net {
             return "UNSPEC";
         }
     };
+
+    // set to true if exclusive binding is on for Windows
+    private static final boolean exclusiveBind;
+
+    static {
+        int availLevel = isExclusiveBindAvailable();
+        if (availLevel >= 0) {
+            String exclBindProp =
+                java.security.AccessController.doPrivileged(
+                    new PrivilegedAction<String>() {
+                        @Override
+                        public String run() {
+                            return System.getProperty(
+                                    "sun.net.useExclusiveBind");
+                        }
+                    });
+            if (exclBindProp != null) {
+                exclusiveBind = exclBindProp.length() == 0 ?
+                        true : Boolean.parseBoolean(exclBindProp);
+            } else if (availLevel == 1) {
+                exclusiveBind = true;
+            } else {
+                exclusiveBind = false;
+            }
+        } else {
+            exclusiveBind = false;
+        }
+    }
 
     // -- Miscellaneous utilities --
 
@@ -58,6 +87,13 @@ public class Net {
             checkedIPv6 = true;
         }
         return isIPv6Available;
+    }
+
+    /**
+     * Returns true if exclusive binding is on
+     */
+    static boolean useExclusiveBind() {
+        return exclusiveBind;
     }
 
     /**
@@ -145,6 +181,34 @@ public class Net {
         throws IOException
     {
         translateException(x, false);
+    }
+
+    /**
+     * Returns the local address after performing a SecurityManager#checkConnect.
+     */
+    static InetSocketAddress getRevealedLocalAddress(InetSocketAddress addr) {
+        SecurityManager sm = System.getSecurityManager();
+        if (addr == null || sm == null)
+            return addr;
+
+        try{
+            sm.checkConnect(addr.getAddress().getHostAddress(), -1);
+            // Security check passed
+        } catch (SecurityException e) {
+            // Return loopback address only if security check fails
+            addr = getLoopbackAddress(addr.getPort());
+        }
+        return addr;
+    }
+
+    static String getRevealedLocalAddressAsString(InetSocketAddress addr) {
+        return System.getSecurityManager() == null ? addr.toString() :
+                getLoopbackAddress(addr.getPort()).toString();
+    }
+
+    private static InetSocketAddress getLoopbackAddress(int port) {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                                     port);
     }
 
     /**
@@ -308,6 +372,12 @@ public class Net {
 
     private static native boolean isIPv6Available0();
 
+    /*
+     * Returns 1 for Windows versions that support exclusive binding by default, 0
+     * for those that do not, and -1 for Solaris/Linux/Mac OS
+     */
+    private static native int isExclusiveBindAvailable();
+
     private static native boolean canIPv6SocketJoinIPv4Group0();
 
     private static native boolean canJoin6WithIPv4Group0();
@@ -341,11 +411,12 @@ public class Net {
     {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        bind0(preferIPv6, fd, addr, port);
+        bind0(fd, preferIPv6, exclusiveBind, addr, port);
     }
 
-    private static native void bind0(boolean preferIPv6, FileDescriptor fd,
-                                     InetAddress addr, int port)
+    private static native void bind0(FileDescriptor fd, boolean preferIPv6,
+                                     boolean useExclBind, InetAddress addr,
+                                     int port)
         throws IOException;
 
     static native void listen(FileDescriptor fd, int backlog) throws IOException;

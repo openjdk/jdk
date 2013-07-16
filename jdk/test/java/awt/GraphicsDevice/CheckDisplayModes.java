@@ -37,6 +37,10 @@ public class CheckDisplayModes {
     public static void main(String[] args) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice graphicDevice = ge.getDefaultScreenDevice();
+        if (!graphicDevice.isDisplayChangeSupported()) {
+            System.err.println("Display mode change is not supported on this host. Test is considered passed.");
+            return;
+        }
         DisplayMode defaultDisplayMode = graphicDevice.getDisplayMode();
         checkDisplayMode(defaultDisplayMode);
         graphicDevice.setDisplayMode(defaultDisplayMode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import java.math.*;
  * <p>
  * A JDBC <code>FilteredRowSet</code> standard implementation implements the
  * <code>RowSet</code> interfaces and extends the
- * <code>CachedRowSet</code><sup><font size=-2>TM</font></sup> class. The
+ * <code>CachedRowSet</code>&trade; class. The
  * <code>CachedRowSet</code> class provides a set of protected cursor manipulation
  * methods, which a <code>FilteredRowSet</code> implementation can override
  * to supply filtering support.
@@ -69,8 +69,8 @@ import java.math.*;
  * class JavaDoc), a <code>FilteredRowSet</code> could then be used as described
  * below.
  * <P>
- * <code>
  * <pre>
+ * {@code
  *     FilteredRowSet frs = new FilteredRowSetImpl();
  *     frs.populate(rs);
  *
@@ -78,8 +78,8 @@ import java.math.*;
  *     frs.setFilter(name);
  *
  *     frs.next() // only names from "Alpha" to "Bravo" will be returned
+ * }
  * </pre>
- * </code>
  * In the example above, we initialize a <code>Range</code> object which
  * implements the <code>Predicate</code> interface. This object expresses
  * the following constraints: All rows outputted or modified from this

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ $(eval $(call FillCacheFind,$(JDK_TOPDIR)/make/tools \
     $(JDK_TOPDIR)/makefiles/sun))
 
 TOOLS_SRC:=$(JDK_TOPDIR)/make/tools/src \
-           $(JDK_TOPDIR)/makefiles/sun/awt/X11 \
+           $(JDK_TOPDIR)/makefiles/sun/awt/ \
            $(JDK_TOPDIR)/makefiles/sun/osxapp \
            $(JDK_TOPDIR)/make/tools/swing-beans
 
@@ -134,8 +134,8 @@ TOOL_GENERATENIMBUS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_WRAPPERGENERATOR=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 	WrapperGenerator
 
-TOOL_X11_TOBIN=$(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
-	sun.awt.X11.ToBin
+TOOL_AWT_TOBIN=$(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+	sun.awt.ToBin
 
 TOOL_OSX_TOBIN=$(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
 	sun.osxapp.ToBin

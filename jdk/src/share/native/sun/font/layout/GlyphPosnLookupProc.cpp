@@ -168,7 +168,7 @@ le_uint32 GlyphPositioningLookupProcessor::applySubtable(const LEReferenceTo<Loo
     {
         LEReferenceTo<ExtensionSubtable> subtable(lookupSubtable, success);
 
-        delta = subtable->process(this, lookupType, glyphIterator, fontInstance, success);
+        delta = subtable->process(subtable, this, lookupType, glyphIterator, fontInstance, success);
         break;
     }
 

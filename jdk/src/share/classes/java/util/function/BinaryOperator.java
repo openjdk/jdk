@@ -24,6 +24,9 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+import java.util.Comparator;
+
 /**
  * An operation upon two operands yielding a result. This is a specialization of
  * {@code BiFunction} where the operands and the result are all of the same type.
@@ -35,4 +38,33 @@ package java.util.function;
  */
 @FunctionalInterface
 public interface BinaryOperator<T> extends BiFunction<T,T,T> {
+    /**
+     * Returns a {@link BinaryOperator} which returns the lesser of two elements
+     * according to the specified {@code Comparator}
+     *
+     * @param <T> the type of values to be compared and returned
+     * @param  comparator a {@code Comparator} for comparing the two values
+     * @return a {@code BinaryOperator} which returns the lesser of its operands,
+     *         according to the supplied {@code Comparator}
+     * @throws NullPointerException if the argument is null
+     */
+    public static<T> BinaryOperator<T> minBy(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator);
+        return (a, b) -> comparator.compare(a, b) <= 0 ? a : b;
+    }
+
+    /**
+     * Returns a {@link BinaryOperator} which returns the greater of two elements
+     * according to the specified {@code Comparator}
+     *
+     * @param <T> the type of values to be compared and returned
+     * @param  comparator a {@code Comparator} for comparing the two values
+     * @return a {@code BinaryOperator} which returns the greater of its operands,
+     *         according to the supplied {@code Comparator}
+     * @throws NullPointerException if the argument is null
+     */
+    public static<T> BinaryOperator<T> maxBy(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator);
+        return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
+    }
 }

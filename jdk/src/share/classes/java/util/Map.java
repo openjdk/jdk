@@ -28,6 +28,7 @@ package java.util;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.io.Serializable;
 
 /**
  * An object that maps keys to values.  A map cannot contain duplicate keys;
@@ -446,6 +447,74 @@ public interface Map<K,V> {
          * @see #equals(Object)
          */
         int hashCode();
+
+        /**
+         * Returns a comparator that compares {@link Map.Entry} in natural order on key.
+         *
+         * <p>The returned comparator is serializable and throws {@link
+         * NullPointerException} when comparing an entry with a null key.
+         *
+         * @param  <K> the {@link Comparable} type of then map keys
+         * @param  <V> the type of the map values
+         * @return a comparator that compares {@link Map.Entry} in natural order on key.
+         * @see Comparable
+         */
+        public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K,V>> comparingByKey() {
+            return (Comparator<Map.Entry<K, V>> & Serializable)
+                (c1, c2) -> c1.getKey().compareTo(c2.getKey());
+        }
+
+        /**
+         * Returns a comparator that compares {@link Map.Entry} in natural order on value.
+         *
+         * <p>The returned comparator is serializable and throws {@link
+         * NullPointerException} when comparing an entry with null values.
+         *
+         * @param <K> the type of the map keys
+         * @param <V> the {@link Comparable} type of the map values
+         * @return a comparator that compares {@link Map.Entry} in natural order on value.
+         * @see Comparable
+         */
+        public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K,V>> comparingByValue() {
+            return (Comparator<Map.Entry<K, V>> & Serializable)
+                (c1, c2) -> c1.getValue().compareTo(c2.getValue());
+        }
+
+        /**
+         * Returns a comparator that compares {@link Map.Entry} by key using the given
+         * {@link Comparator}.
+         *
+         * <p>The returned comparator is serializable if the specified comparator
+         * is also serializable.
+         *
+         * @param  <K> the type of the map keys
+         * @param  <V> the type of the map values
+         * @param  cmp the key {@link Comparator}
+         * @return a comparator that compares {@link Map.Entry} by the key.
+         */
+        public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(Comparator<? super K> cmp) {
+            Objects.requireNonNull(cmp);
+            return (Comparator<Map.Entry<K, V>> & Serializable)
+                (c1, c2) -> cmp.compare(c1.getKey(), c2.getKey());
+        }
+
+        /**
+         * Returns a comparator that compares {@link Map.Entry} by value using the given
+         * {@link Comparator}.
+         *
+         * <p>The returned comparator is serializable if the specified comparator
+         * is also serializable.
+         *
+         * @param  <K> the type of the map keys
+         * @param  <V> the type of the map values
+         * @param  cmp the value {@link Comparator}
+         * @return a comparator that compares {@link Map.Entry} by the value.
+         */
+        public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(Comparator<? super V> cmp) {
+            Objects.requireNonNull(cmp);
+            return (Comparator<Map.Entry<K, V>> & Serializable)
+                (c1, c2) -> cmp.compare(c1.getValue(), c2.getValue());
+        }
     }
 
     // Comparison and hashing
@@ -545,6 +614,7 @@ public interface Map<K,V> {
                 k = entry.getKey();
                 v = entry.getValue();
             } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
             action.accept(k, v);
@@ -599,9 +669,19 @@ public interface Map<K,V> {
                 k = entry.getKey();
                 v = entry.getValue();
             } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
-            entry.setValue(function.apply(k, v));
+
+            // ise thrown from function is not a cme.
+            v = function.apply(k, v);
+
+            try {
+                entry.setValue(v);
+            } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
         }
     }
 
@@ -629,7 +709,7 @@ public interface Map<K,V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
-     *         {@code 1} if there was no mapping for the key.
+     *         {@code null} if there was no mapping for the key.
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
@@ -983,20 +1063,40 @@ public interface Map<K,V> {
         V oldValue = get(key);
         for (;;) {
             V newValue = remappingFunction.apply(key, oldValue);
-            if (oldValue != null) {
-                if (newValue != null) {
-                    if (replace(key, oldValue, newValue))
-                        return newValue;
-                } else if (remove(key, oldValue)) {
+            if (newValue == null) {
+                // delete mapping
+                if(oldValue != null || containsKey(key)) {
+                    // something to remove
+                    if (remove(key, oldValue)) {
+                        // removed the old value as expected
+                        return null;
+                    }
+
+                    // some other value replaced old value. try again.
+                    oldValue = get(key);
+                } else {
+                    // nothing to do. Leave things as they were.
                     return null;
                 }
-                oldValue = get(key);
             } else {
-                if (newValue != null) {
-                    if ((oldValue = putIfAbsent(key, newValue)) == null)
+                // add or replace old mapping
+                if (oldValue != null) {
+                    // replace
+                    if (replace(key, oldValue, newValue)) {
+                        // replaced as expected.
                         return newValue;
+                    }
+
+                    // some other value replaced old value. try again.
+                    oldValue = get(key);
                 } else {
-                    return null;
+                    // add (replace if oldValue was null)
+                    if ((oldValue = putIfAbsent(key, newValue)) == null) {
+                        // replaced
+                        return newValue;
+                    }
+
+                    // some other value replaced old value. try again.
                 }
             }
         }
