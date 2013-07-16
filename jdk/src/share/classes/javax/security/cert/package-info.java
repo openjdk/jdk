@@ -23,57 +23,18 @@
  * questions.
  */
 
-package javax.security.auth.callback;
-
-import java.util.Locale;
-
 /**
- * <p> Underlying security services instantiate and pass a
- * {@code LanguageCallback} to the {@code handle}
- * method of a {@code CallbackHandler} to retrieve the {@code Locale}
- * used for localizing text.
+ * Provides classes for public key certificates.
  *
- * @see javax.security.auth.callback.CallbackHandler
+ * These classes include a simplified version of the
+ * java.security.cert package.  These classes were developed
+ * as part of the Java Secure Socket
+ * Extension (JSSE).  When JSSE was added to the J2SE version 1.4, this
+ * package was added for backward-compatibility reasons only.
+ *
+ * New applications should not use this package, but rather
+ * java.security.cert.
+ *
+ * @since 1.4
  */
-public class LanguageCallback implements Callback, java.io.Serializable {
-
-    private static final long serialVersionUID = 2019050433478903213L;
-
-    /**
-     * @serial
-     * @since 1.4
-     */
-    private Locale locale;
-
-    /**
-     * Construct a {@code LanguageCallback}.
-     */
-    public LanguageCallback() { }
-
-    /**
-     * Set the retrieved {@code Locale}.
-     *
-     * <p>
-     *
-     * @param locale the retrieved {@code Locale}.
-     *
-     * @see #getLocale
-     */
-    public void setLocale(Locale locale) {
-        this.locale = locale;
-    }
-
-    /**
-     * Get the retrieved {@code Locale}.
-     *
-     * <p>
-     *
-     * @return the retrieved {@code Locale}, or null
-     *          if no {@code Locale} could be retrieved.
-     *
-     * @see #setLocale
-     */
-    public Locale getLocale() {
-        return locale;
-    }
-}
+package javax.security.cert;

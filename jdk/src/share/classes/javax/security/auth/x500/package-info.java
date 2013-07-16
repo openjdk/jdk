@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,27 @@
  * questions.
  */
 
-package javax.security.auth;
-
 /**
- * Signals that a {@code destroy} operation failed.
+ * This package contains the classes that should be used to store
+ * X500 Principal and X500 Private Credentials in a
+ * <i>Subject</i>.
  *
- * <p> This exception is thrown by credentials implementing
- * the {@code Destroyable} interface when the {@code destroy}
- * method fails.
+ * <h2>Package Specification</h2>
  *
+ * <ul>
+ *   <li><a href="http://www.ietf.org/rfc/rfc1779.txt">
+ *     RFC 1779: A String Representation of Distinguished Names</a></li>
+ *   <li><a href="http://www.ietf.org/rfc/rfc2253.txt">
+ *     RFC 2253: Lightweight Directory Access Protocol (v3):
+ *     UTF-8 String Representation of Distinguished Names</a></li>
+ *   <li><a href="http://www.ietf.org/rfc/rfc3280.txt">
+ *     RFC 3280: Internet X.509 Public Key Infrastructure
+ *     Certificate and Certificate Revocation List (CRL) Profile</a></li>
+ *   <li><a href="http://www.ietf.org/rfc/rfc4512.txt">
+ *     RFC 4512: Lightweight Directory Access Protocol (LDAP):
+ *     Directory Information Models</a></li>
+ * </ul>
+ *
+ * @since JDK1.4
  */
-public class DestroyFailedException extends Exception {
-
-    private static final long serialVersionUID = -7790152857282749162L;
-
-    /**
-     * Constructs a DestroyFailedException with no detail message. A detail
-     * message is a String that describes this particular exception.
-     */
-    public DestroyFailedException() {
-        super();
-    }
-
-    /**
-     * Constructs a DestroyFailedException with the specified detail
-     * message.  A detail message is a String that describes this particular
-     * exception.
-     *
-     * <p>
-     *
-     * @param msg the detail message.
-     */
-    public DestroyFailedException(String msg) {
-        super(msg);
-    }
-}
+package javax.security.auth.x500;
