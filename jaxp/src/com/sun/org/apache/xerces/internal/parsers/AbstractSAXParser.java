@@ -20,16 +20,13 @@
 
 package com.sun.org.apache.xerces.internal.parsers;
 
-import java.io.IOException;
-import java.util.Locale;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.util.Status;
-import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
-import com.sun.org.apache.xerces.internal.util.EntityResolverWrapper;
 import com.sun.org.apache.xerces.internal.util.EntityResolver2Wrapper;
+import com.sun.org.apache.xerces.internal.util.EntityResolverWrapper;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
+import com.sun.org.apache.xerces.internal.util.SecurityManager;
+import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
@@ -48,15 +45,17 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
+import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
+import java.io.IOException;
+import java.util.Locale;
+import javax.xml.XMLConstants;
 import org.xml.sax.AttributeList;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.DocumentHandler;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
 import org.xml.sax.Parser;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -130,6 +129,10 @@ public abstract class AbstractSAXParser
     /** Property id: DOM node. */
     protected static final String DOM_NODE =
         Constants.SAX_PROPERTY_PREFIX + Constants.DOM_NODE_PROPERTY;
+
+    /** Property id: security manager. */
+    private static final String SECURITY_MANAGER =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
     /** Recognized properties. */
     private static final String[] RECOGNIZED_PROPERTIES = {
@@ -1645,19 +1648,13 @@ public abstract class AbstractSAXParser
                 // Drop through and perform default processing
                 //
             }
-
-            //
-            // Xerces Features
-            //
-
-            /*
-            else if (featureId.startsWith(XERCES_FEATURES_PREFIX)) {
-                String feature = featureId.substring(XERCES_FEATURES_PREFIX.length());
-                //
-                // Drop through and perform default processing
-                //
+            else if (featureId.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
+                if (state) {
+                    if (fConfiguration.getProperty(SECURITY_MANAGER )==null) {
+                        fConfiguration.setProperty(SECURITY_MANAGER, new SecurityManager());
+                    }
+                }
             }
-            */
 
             //
             // Default handling

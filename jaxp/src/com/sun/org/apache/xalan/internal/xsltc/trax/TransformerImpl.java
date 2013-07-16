@@ -271,6 +271,7 @@ public final class TransformerImpl extends Transformer
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
+        _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
         //_isIncremental = tfactory._incremental;
     }
 
@@ -286,6 +287,7 @@ public final class TransformerImpl extends Transformer
      */
     public void setSecureProcessing(boolean flag) {
         _isSecureProcessing = flag;
+        _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
     }
     /**
      * Return the state of the services mechanism feature.
