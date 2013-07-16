@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,13 @@
  * questions.
  */
 
-package javax.security.auth;
-
 /**
- * Signals that a {@code destroy} operation failed.
+ * This package provides the classes necessary for services
+ * to interact with applications in order to retrieve
+ * information (authentication data including usernames
+ * or passwords, for example) or to display information
+ * (error and warning messages, for example).
  *
- * <p> This exception is thrown by credentials implementing
- * the {@code Destroyable} interface when the {@code destroy}
- * method fails.
- *
+ * @since JDK1.4
  */
-public class DestroyFailedException extends Exception {
-
-    private static final long serialVersionUID = -7790152857282749162L;
-
-    /**
-     * Constructs a DestroyFailedException with no detail message. A detail
-     * message is a String that describes this particular exception.
-     */
-    public DestroyFailedException() {
-        super();
-    }
-
-    /**
-     * Constructs a DestroyFailedException with the specified detail
-     * message.  A detail message is a String that describes this particular
-     * exception.
-     *
-     * <p>
-     *
-     * @param msg the detail message.
-     */
-    public DestroyFailedException(String msg) {
-        super(msg);
-    }
-}
+package javax.security.auth.callback;
