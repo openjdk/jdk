@@ -57,7 +57,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     public void clearGlobalFocusOwner(Window activeWindow) {
         if (activeWindow != null) {
             Component focusOwner = activeWindow.getFocusOwner();
-            if (focusLog.isLoggable(PlatformLogger.FINE)) {
+            if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                 focusLog.fine("Clearing global focus owner " + focusOwner);
             }
             if (focusOwner != null) {
@@ -127,7 +127,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
             FocusEvent fl = new CausedFocusEvent(currentOwner, FocusEvent.FOCUS_LOST,
                                                  false, lightweightChild, cause);
 
-            if (focusLog.isLoggable(PlatformLogger.FINER)) {
+            if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                 focusLog.finer("Posting focus event: " + fl);
             }
             SunToolkit.postEvent(SunToolkit.targetToAppContext(currentOwner), fl);
@@ -136,7 +136,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
         FocusEvent fg = new CausedFocusEvent(lightweightChild, FocusEvent.FOCUS_GAINED,
                                              false, currentOwner, cause);
 
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Posting focus event: " + fg);
         }
         SunToolkit.postEvent(SunToolkit.targetToAppContext(lightweightChild), fg);

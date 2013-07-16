@@ -67,6 +67,8 @@ public class GnomeFileTypeDetector
         NativeBuffer buffer = NativeBuffers.asNativeBuffer(path.getByteArrayForSysCalls());
         try {
             if (gioAvailable) {
+                // GIO may access file so need permission check
+                path.checkRead();
                 byte[] type = probeUsingGio(buffer.address());
                 return (type == null) ? null : new String(type);
             } else {
@@ -76,7 +78,6 @@ public class GnomeFileTypeDetector
                 String s = new String(type);
                 return s.equals(GNOME_VFS_MIME_TYPE_UNKNOWN) ? null : s;
             }
-
         } finally {
             buffer.release();
         }

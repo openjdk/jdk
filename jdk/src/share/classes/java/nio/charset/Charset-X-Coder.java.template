@@ -161,7 +161,10 @@ public abstract class Charset$Coder$ {
 
     /**
      * Initializes a new $coder$.  The new $coder$ will have the given
-     * $otypes-per-itype$ and replacement values. </p>
+     * $otypes-per-itype$ and replacement values.
+     *
+     * @param  cs
+     *         The charset that created this $coder$
      *
      * @param  average$ItypesPerOtype$
      *         A positive float value indicating the expected number of
@@ -207,7 +210,10 @@ public abstract class Charset$Coder$ {
     /**
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ values and its replacement will be the
-     * $replTypeName$ $defaultReplName$. </p>
+     * $replTypeName$ $defaultReplName$.
+     *
+     * @param  cs
+     *         The charset that created this $coder$
      *
      * @param  average$ItypesPerOtype$
      *         A positive float value indicating the expected number of
@@ -230,7 +236,7 @@ public abstract class Charset$Coder$ {
     }
 
     /**
-     * Returns the charset that created this $coder$.  </p>
+     * Returns the charset that created this $coder$.
      *
      * @return  This $coder$'s charset
      */
@@ -239,7 +245,7 @@ public abstract class Charset$Coder$ {
     }
 
     /**
-     * Returns this $coder$'s replacement value. </p>
+     * Returns this $coder$'s replacement value.
      *
      * @return  This $coder$'s current replacement,
      *          which is never <tt>null</tt> and is never empty
@@ -260,7 +266,7 @@ public abstract class Charset$Coder$ {
      * method, passing the new replacement, after checking that the new
      * replacement is acceptable.  </p>
      *
-     * @param  newReplacement
+     * @param  newReplacement  The replacement value
      *
 #if[decoder]
      *         The new replacement; must not be <tt>null</tt>
@@ -305,7 +311,7 @@ public abstract class Charset$Coder$ {
      * should be overridden by $coder$s that require notification of changes to
      * the replacement.  </p>
      *
-     * @param  newReplacement
+     * @param  newReplacement    The replacement value
      */
     protected void implReplaceWith($replType$ newReplacement) {
     }
@@ -351,7 +357,7 @@ public abstract class Charset$Coder$ {
 #end[encoder]
 
     /**
-     * Returns this $coder$'s current action for malformed-input errors.  </p>
+     * Returns this $coder$'s current action for malformed-input errors.
      *
      * @return The current malformed-input action, which is never <tt>null</tt>
      */
@@ -360,7 +366,7 @@ public abstract class Charset$Coder$ {
     }
 
     /**
-     * Changes this $coder$'s action for malformed-input errors.  </p>
+     * Changes this $coder$'s action for malformed-input errors.
      *
      * <p> This method invokes the {@link #implOnMalformedInput
      * implOnMalformedInput} method, passing the new action.  </p>
@@ -386,12 +392,13 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method does nothing.  This method
      * should be overridden by $coder$s that require notification of changes to
      * the malformed-input action.  </p>
+     *
+     * @param  newAction  The new action
      */
     protected void implOnMalformedInput(CodingErrorAction newAction) { }
 
     /**
      * Returns this $coder$'s current action for unmappable-character errors.
-     * </p>
      *
      * @return The current unmappable-character action, which is never
      *         <tt>null</tt>
@@ -429,13 +436,15 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method does nothing.  This method
      * should be overridden by $coder$s that require notification of changes to
      * the unmappable-character action.  </p>
+     *
+     * @param  newAction  The new action
      */
     protected void implOnUnmappableCharacter(CodingErrorAction newAction) { }
 
     /**
      * Returns the average number of $otype$s that will be produced for each
      * $itype$ of input.  This heuristic value may be used to estimate the size
-     * of the output buffer required for a given input sequence. </p>
+     * of the output buffer required for a given input sequence.
      *
      * @return  The average number of $otype$s produced
      *          per $itype$ of input
@@ -447,7 +456,7 @@ public abstract class Charset$Coder$ {
     /**
      * Returns the maximum number of $otype$s that will be produced for each
      * $itype$ of input.  This value may be used to compute the worst-case size
-     * of the output buffer required for a given input sequence. </p>
+     * of the output buffer required for a given input sequence.
      *
      * @return  The maximum number of $otype$s that will be produced per
      *          $itype$ of input
@@ -926,6 +935,9 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method is not very efficient; it
      * should generally be overridden to improve performance.  </p>
      *
+     * @param   c
+     *          The given character
+     *
      * @return  <tt>true</tt> if, and only if, this encoder can encode
      *          the given character
      *
@@ -953,6 +965,9 @@ public abstract class Charset$Coder$ {
      *
      * <p> The default implementation of this method is not very efficient; it
      * should generally be overridden to improve performance.  </p>
+     *
+     * @param   cs
+     *          The given character sequence
      *
      * @return  <tt>true</tt> if, and only if, this encoder can encode
      *          the given character without throwing any exceptions and without

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public interface Joinable {
      * object. A <code>JoinRowSet</code> object can now add this <code>RowSet</code>
      * object based on the match column.
      * <p>
-     * Sub-interfaces such as the <code>CachedRowSet</code><sup><font size=-2>TM</font></sup>
+     * Sub-interfaces such as the <code>CachedRowSet</code>&trade;
      * interface define the method <code>CachedRowSet.setKeyColumns</code>, which allows
      * primary key semantics to be enforced on specific columns.
      * Implementations of the <code>setMatchColumn(int columnIdx)</code> method

@@ -103,18 +103,18 @@ public class FormatData_pt extends ParallelListResourceBundle {
             },
             { "MonthAbbreviations",
                 new String[] {
-                    "Jan", // abb january
-                    "Fev", // abb february
-                    "Mar", // abb march
-                    "Abr", // abb april
-                    "Mai", // abb may
-                    "Jun", // abb june
-                    "Jul", // abb july
-                    "Ago", // abb august
-                    "Set", // abb september
-                    "Out", // abb october
-                    "Nov", // abb november
-                    "Dez", // abb december
+                    "jan", // abb january
+                    "fev", // abb february
+                    "mar", // abb march
+                    "abr", // abb april
+                    "mai", // abb may
+                    "jun", // abb june
+                    "jul", // abb july
+                    "ago", // abb august
+                    "set", // abb september
+                    "out", // abb october
+                    "nov", // abb november
+                    "dez", // abb december
                     "" // abb month 13 if applicable
                 }
             },

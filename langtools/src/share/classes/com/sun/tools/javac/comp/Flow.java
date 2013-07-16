@@ -1945,10 +1945,17 @@ public class Flow {
                 }
             }
 
+            /*  The analysis of each catch should be independent.
+             *  Each one should have the same initial values of inits and
+             *  uninits.
+             */
+            final Bits initsCatchPrev = new Bits(initsTry);
+            final Bits uninitsCatchPrev = new Bits(uninitsTry);
+
             for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
                 JCVariableDecl param = l.head.param;
-                inits.assign(initsTry);
-                uninits.assign(uninitsTry);
+                inits.assign(initsCatchPrev);
+                uninits.assign(uninitsCatchPrev);
                 scan(param);
                 inits.incl(param.sym.adr);
                 uninits.excl(param.sym.adr);

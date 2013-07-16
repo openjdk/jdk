@@ -199,7 +199,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
                    structure. */
                 long ctxt = getNativeDragContext();
 
-                if (logger.isLoggable(PlatformLogger.FINER)) {
+                if (logger.isLoggable(PlatformLogger.Level.FINER)) {
                     logger.finer("        processing " + event + " ctxt=" + ctxt +
                                  " consumed=" + event.isConsumed());
                 }

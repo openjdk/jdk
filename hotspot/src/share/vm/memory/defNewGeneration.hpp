@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,14 @@
 #include "gc_implementation/shared/ageTable.hpp"
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
+#include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "memory/generation.inline.hpp"
 #include "utilities/stack.hpp"
 
 class EdenSpace;
 class ContiguousSpace;
 class ScanClosure;
+class STWGCTimer;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -46,15 +48,17 @@ protected:
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   ageTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
-  size_t        _pretenure_size_threshold_words;
+  size_t      _pretenure_size_threshold_words;
 
   ageTable*   age_table() { return &_age_table; }
+
   // Initialize state to optimistically assume no promotion failure will
   // happen.
   void   init_assuming_no_promotion_failure();
   // True iff a promotion has failed in the current collection.
   bool   _promotion_failed;
   bool   promotion_failed() { return _promotion_failed; }
+  PromotionFailedInfo _promotion_failed_info;
 
   // Handling promotion failure.  A young generation collection
   // can fail if a live object cannot be copied out of its
@@ -132,6 +136,8 @@ protected:
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
 
+  STWGCTimer* _gc_timer;
+
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -203,6 +209,8 @@ protected:
   DefNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level,
                    const char* policy="Copy");
 
+  virtual void ref_processor_init();
+
   virtual Generation::Name kind() { return Generation::DefNew; }
 
   // Accessing spaces
@@ -244,7 +252,6 @@ protected:
 
   // Iteration
   void object_iterate(ObjectClosure* blk);
-  void object_iterate_since_last_GC(ObjectClosure* cl);
 
   void younger_refs_iterate(OopsInGenClosure* cl);
 

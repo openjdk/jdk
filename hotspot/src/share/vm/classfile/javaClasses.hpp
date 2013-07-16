@@ -234,6 +234,7 @@ class java_lang_Class : AllStatic {
   static GrowableArray<Klass*>* _fixup_mirror_list;
 
   static void set_init_lock(oop java_class, oop init_lock);
+  static void set_protection_domain(oop java_class, oop protection_domain);
  public:
   static void compute_offsets();
 
@@ -272,7 +273,6 @@ class java_lang_Class : AllStatic {
 
   // Support for embedded per-class oops
   static oop  protection_domain(oop java_class);
-  static void set_protection_domain(oop java_class, oop protection_domain);
   static oop  init_lock(oop java_class);
   static objArrayOop  signers(oop java_class);
   static void set_signers(oop java_class, objArrayOop signers);
@@ -1167,10 +1167,13 @@ class java_security_AccessControlContext: AllStatic {
   static int _context_offset;
   static int _privilegedContext_offset;
   static int _isPrivileged_offset;
+  static int _isAuthorized_offset;
 
   static void compute_offsets();
  public:
   static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
+
+  static bool is_authorized(Handle context);
 
   // Debugging/initialization
   friend class JavaClasses;
@@ -1231,17 +1234,21 @@ class java_lang_System : AllStatic {
   enum {
    hc_static_in_offset  = 0,
    hc_static_out_offset = 1,
-   hc_static_err_offset = 2
+   hc_static_err_offset = 2,
+   hc_static_security_offset = 3
   };
 
   static int  static_in_offset;
   static int static_out_offset;
   static int static_err_offset;
+  static int static_security_offset;
 
  public:
   static int  in_offset_in_bytes();
   static int out_offset_in_bytes();
   static int err_offset_in_bytes();
+
+  static bool has_security_manager();
 
   // Debugging
   friend class JavaClasses;

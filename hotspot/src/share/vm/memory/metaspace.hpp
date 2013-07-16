@@ -193,7 +193,10 @@ class Metaspace : public CHeapObj<mtClass> {
 };
 
 class MetaspaceAux : AllStatic {
+  static size_t free_chunks_total(Metaspace::MetadataType mdtype);
+  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
 
+ public:
   // Statistics for class space and data space in metaspace.
 
   // These methods iterate over the classloader data graph
@@ -205,10 +208,6 @@ class MetaspaceAux : AllStatic {
   // Iterates over the virtual space list.
   static size_t reserved_in_bytes(Metaspace::MetadataType mdtype);
 
-  static size_t free_chunks_total(Metaspace::MetadataType mdtype);
-  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
-
- public:
   // Running sum of space in all Metachunks that has been
   // allocated to a Metaspace.  This is used instead of
   // iterating over all the classloaders. One for each

@@ -166,6 +166,7 @@ Java_sun_java2d_windows_GDIBlitLoops_nativeBlit
                 // when using ByteGray surfaces.  Eventually, we should use
                 // the new Disposer mechanism to delete this native memory.
                 if (byteGrayPalette == NULL) {
+                    // assert (256 * sizeof(RGBQUAD)) <= SIZE_MAX
                     byteGrayPalette = (RGBQUAD *)safe_Malloc(256 * sizeof(RGBQUAD));
                     for (int i = 0; i < 256; ++i) {
                         byteGrayPalette[i].rgbRed = i;

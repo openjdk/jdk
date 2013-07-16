@@ -33,6 +33,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -54,12 +55,15 @@ public final class NativeRangeError extends ScriptObject {
     @Property(attributes = Attribute.NOT_ENUMERABLE, where = Where.PROTOTYPE)
     public Object message;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeRangeError(final Object msg) {
-        setProto(Global.instance().getRangeErrorPrototype());
+        super(Global.instance().getRangeErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
-            this.delete(NativeError.MESSAGE, Global.isStrict());
+            this.delete(NativeError.MESSAGE, false);
         }
     }
 

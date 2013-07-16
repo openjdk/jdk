@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,17 @@ final class TubeCreator {
     private final String msgDumpPropertyBase;
 
     TubeCreator(TubeFactoryConfig config, ClassLoader tubeFactoryClassLoader) {
+        String className = config.getClassName();
         try {
-            Class<?> factoryClass = Class.forName(config.getClassName(), true, tubeFactoryClassLoader);
+            Class<?> factoryClass;
+            if (isJDKInternal(className)) {
+                factoryClass = Class.forName(className, true, null);
+            } else {
+                factoryClass = Class.forName(className, true, tubeFactoryClassLoader);
+            }
             if (TubeFactory.class.isAssignableFrom(factoryClass)) {
-                @SuppressWarnings("unchecked")
                 // We can suppress "unchecked" warning here as we are checking for the correct type in the if statement above
+                @SuppressWarnings("unchecked")
                 Class<TubeFactory> typedClass = (Class<TubeFactory>) factoryClass;
                 this.factory = typedClass.newInstance();
                 this.msgDumpPropertyBase = this.factory.getClass().getName() + ".dump";
@@ -57,11 +63,11 @@ final class TubeCreator {
                 throw new RuntimeException(TubelineassemblyMessages.MASM_0015_CLASS_DOES_NOT_IMPLEMENT_INTERFACE(factoryClass.getName(), TubeFactory.class.getName()));
             }
         } catch (InstantiationException ex) {
-            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0016_UNABLE_TO_INSTANTIATE_TUBE_FACTORY(config.getClassName()), ex), true);
+            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0016_UNABLE_TO_INSTANTIATE_TUBE_FACTORY(className), ex), true);
         } catch (IllegalAccessException ex) {
-            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0016_UNABLE_TO_INSTANTIATE_TUBE_FACTORY(config.getClassName()), ex), true);
+            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0016_UNABLE_TO_INSTANTIATE_TUBE_FACTORY(className), ex), true);
         } catch (ClassNotFoundException ex) {
-            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0017_UNABLE_TO_LOAD_TUBE_FACTORY_CLASS(config.getClassName()), ex), true);
+            throw LOGGER.logSevereException(new RuntimeException(TubelineassemblyMessages.MASM_0017_UNABLE_TO_LOAD_TUBE_FACTORY_CLASS(className), ex), true);
         }
     }
 
@@ -90,4 +96,10 @@ final class TubeCreator {
     String getMessageDumpPropertyBase() {
         return msgDumpPropertyBase;
     }
+
+    private boolean isJDKInternal(String className) {
+        // avoid repackaging
+        return className.startsWith("com." + "sun.xml.internal.ws");
+    }
+
 }

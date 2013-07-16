@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,16 +36,16 @@ import javax.sound.midi.Patch;
  *
  * @author Karl Helgason
  */
-public class SF2Instrument extends ModelInstrument {
+public final class SF2Instrument extends ModelInstrument {
 
-    protected String name = "";
-    protected int preset = 0;
-    protected int bank = 0;
-    protected long library = 0;
-    protected long genre = 0;
-    protected long morphology = 0;
-    protected SF2GlobalRegion globalregion = null;
-    protected List<SF2InstrumentRegion> regions
+    String name = "";
+    int preset = 0;
+    int bank = 0;
+    long library = 0;
+    long genre = 0;
+    long morphology = 0;
+    SF2GlobalRegion globalregion = null;
+    List<SF2InstrumentRegion> regions
             = new ArrayList<SF2InstrumentRegion>();
 
     public SF2Instrument() {
@@ -730,7 +730,7 @@ public class SF2Instrument extends ModelInstrument {
         return msrc;
     }
 
-    protected static ModelDestination convertDestination(int dst,
+    static ModelDestination convertDestination(int dst,
             double[] amountcorrection, ModelSource[] extrasrc) {
         ModelIdentifier id = null;
         switch (dst) {

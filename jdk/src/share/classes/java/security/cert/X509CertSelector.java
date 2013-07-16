@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,27 +39,27 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
 
 /**
- * A <code>CertSelector</code> that selects <code>X509Certificates</code> that
+ * A {@code CertSelector} that selects {@code X509Certificates} that
  * match all specified criteria. This class is particularly useful when
- * selecting certificates from a <code>CertStore</code> to build a
+ * selecting certificates from a {@code CertStore} to build a
  * PKIX-compliant certification path.
  * <p>
- * When first constructed, an <code>X509CertSelector</code> has no criteria
- * enabled and each of the <code>get</code> methods return a default value
- * (<code>null</code>, or <code>-1</code> for the {@link #getBasicConstraints
+ * When first constructed, an {@code X509CertSelector} has no criteria
+ * enabled and each of the {@code get} methods return a default value
+ * ({@code null}, or {@code -1} for the {@link #getBasicConstraints
  * getBasicConstraints} method). Therefore, the {@link #match match}
- * method would return <code>true</code> for any <code>X509Certificate</code>.
+ * method would return {@code true} for any {@code X509Certificate}.
  * Typically, several criteria are enabled (by calling
  * {@link #setIssuer setIssuer} or
  * {@link #setKeyUsage setKeyUsage}, for instance) and then the
- * <code>X509CertSelector</code> is passed to
+ * {@code X509CertSelector} is passed to
  * {@link CertStore#getCertificates CertStore.getCertificates} or some similar
  * method.
  * <p>
  * Several criteria can be enabled (by calling {@link #setIssuer setIssuer}
  * and {@link #setSerialNumber setSerialNumber},
- * for example) such that the <code>match</code> method
- * usually uniquely matches a single <code>X509Certificate</code>. We say
+ * for example) such that the {@code match} method
+ * usually uniquely matches a single {@code X509Certificate}. We say
  * usually, since it is possible for two issuing CAs to have the same
  * distinguished name and each issue a certificate with the same serial
  * number. Other unique combinations include the issuer, subject,
@@ -149,8 +149,8 @@ public class X509CertSelector implements CertSelector {
     static final int NAME_OID = 8;
 
     /**
-     * Creates an <code>X509CertSelector</code>. Initially, no criteria are set
-     * so any <code>X509Certificate</code> will match.
+     * Creates an {@code X509CertSelector}. Initially, no criteria are set
+     * so any {@code X509Certificate} will match.
      */
     public X509CertSelector() {
         // empty
@@ -158,17 +158,17 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the certificateEquals criterion. The specified
-     * <code>X509Certificate</code> must be equal to the
-     * <code>X509Certificate</code> passed to the <code>match</code> method.
-     * If <code>null</code>, then this check is not applied.
+     * {@code X509Certificate} must be equal to the
+     * {@code X509Certificate} passed to the {@code match} method.
+     * If {@code null}, then this check is not applied.
      *
      * <p>This method is particularly useful when it is necessary to
      * match a single certificate. Although other criteria can be specified
      * in conjunction with the certificateEquals criterion, it is usually not
      * practical or necessary.
      *
-     * @param cert the <code>X509Certificate</code> to match (or
-     * <code>null</code>)
+     * @param cert the {@code X509Certificate} to match (or
+     * {@code null})
      * @see #getCertificate
      */
     public void setCertificate(X509Certificate cert) {
@@ -178,11 +178,11 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the serialNumber criterion. The specified serial number
      * must match the certificate serial number in the
-     * <code>X509Certificate</code>. If <code>null</code>, any certificate
+     * {@code X509Certificate}. If {@code null}, any certificate
      * serial number will do.
      *
      * @param serial the certificate serial number to match
-     *        (or <code>null</code>)
+     *        (or {@code null})
      * @see #getSerialNumber
      */
     public void setSerialNumber(BigInteger serial) {
@@ -192,11 +192,11 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the issuer criterion. The specified distinguished name
      * must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, any issuer
+     * {@code X509Certificate}. If {@code null}, any issuer
      * distinguished name will do.
      *
      * @param issuer a distinguished name as X500Principal
-     *                 (or <code>null</code>)
+     *                 (or {@code null})
      * @since 1.5
      */
     public void setIssuer(X500Principal issuer) {
@@ -213,14 +213,14 @@ public class X509CertSelector implements CertSelector {
      * <p>
      * Sets the issuer criterion. The specified distinguished name
      * must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, any issuer
+     * {@code X509Certificate}. If {@code null}, any issuer
      * distinguished name will do.
      * <p>
-     * If <code>issuerDN</code> is not <code>null</code>, it should contain a
+     * If {@code issuerDN} is not {@code null}, it should contain a
      * distinguished name, in RFC 2253 format.
      *
      * @param issuerDN a distinguished name in RFC 2253 format
-     *                 (or <code>null</code>)
+     *                 (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      */
     public void setIssuer(String issuerDN) throws IOException {
@@ -234,14 +234,14 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the issuer criterion. The specified distinguished name
      * must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code> is specified,
+     * {@code X509Certificate}. If {@code null} is specified,
      * the issuer criterion is disabled and any issuer distinguished name will
      * do.
      * <p>
-     * If <code>issuerDN</code> is not <code>null</code>, it should contain a
+     * If {@code issuerDN} is not {@code null}, it should contain a
      * single DER encoded distinguished name, as defined in X.501. The ASN.1
      * notation for this structure is as follows.
-     * <pre><code>
+     * <pre>{@code
      * Name ::= CHOICE {
      *   RDNSequence }
      *
@@ -264,13 +264,13 @@ public class X509CertSelector implements CertSelector {
      *       universalString         UniversalString (SIZE (1..MAX)),
      *       utf8String              UTF8String (SIZE (1.. MAX)),
      *       bmpString               BMPString (SIZE (1..MAX)) }
-     * </code></pre>
+     * }</pre>
      * <p>
      * Note that the byte array specified here is cloned to protect against
      * subsequent modifications.
      *
      * @param issuerDN a byte array containing the distinguished name
-     *                 in ASN.1 DER encoded form (or <code>null</code>)
+     *                 in ASN.1 DER encoded form (or {@code null})
      * @throws IOException if an encoding error occurs (incorrect form for DN)
      */
     public void setIssuer(byte[] issuerDN) throws IOException {
@@ -284,11 +284,11 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the subject criterion. The specified distinguished name
      * must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, any subject
+     * {@code X509Certificate}. If {@code null}, any subject
      * distinguished name will do.
      *
      * @param subject a distinguished name as X500Principal
-     *                  (or <code>null</code>)
+     *                  (or {@code null})
      * @since 1.5
      */
     public void setSubject(X500Principal subject) {
@@ -304,14 +304,14 @@ public class X509CertSelector implements CertSelector {
      * <p>
      * Sets the subject criterion. The specified distinguished name
      * must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, any subject
+     * {@code X509Certificate}. If {@code null}, any subject
      * distinguished name will do.
      * <p>
-     * If <code>subjectDN</code> is not <code>null</code>, it should contain a
+     * If {@code subjectDN} is not {@code null}, it should contain a
      * distinguished name, in RFC 2253 format.
      *
      * @param subjectDN a distinguished name in RFC 2253 format
-     *                  (or <code>null</code>)
+     *                  (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      */
     public void setSubject(String subjectDN) throws IOException {
@@ -325,16 +325,16 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the subject criterion. The specified distinguished name
      * must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, any subject
+     * {@code X509Certificate}. If {@code null}, any subject
      * distinguished name will do.
      * <p>
-     * If <code>subjectDN</code> is not <code>null</code>, it should contain a
+     * If {@code subjectDN} is not {@code null}, it should contain a
      * single DER encoded distinguished name, as defined in X.501. For the ASN.1
      * notation for this structure, see
      * {@link #setIssuer(byte [] issuerDN) setIssuer(byte [] issuerDN)}.
      *
      * @param subjectDN a byte array containing the distinguished name in
-     *                  ASN.1 DER format (or <code>null</code>)
+     *                  ASN.1 DER format (or {@code null})
      * @throws IOException if an encoding error occurs (incorrect form for DN)
      */
     public void setSubject(byte[] subjectDN) throws IOException {
@@ -347,34 +347,34 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the subjectKeyIdentifier criterion. The
-     * <code>X509Certificate</code> must contain a SubjectKeyIdentifier
+     * {@code X509Certificate} must contain a SubjectKeyIdentifier
      * extension for which the contents of the extension
      * matches the specified criterion value.
-     * If the criterion value is <code>null</code>, no
+     * If the criterion value is {@code null}, no
      * subjectKeyIdentifier check will be done.
      * <p>
-     * If <code>subjectKeyID</code> is not <code>null</code>, it
+     * If {@code subjectKeyID} is not {@code null}, it
      * should contain a single DER encoded value corresponding to the contents
      * of the extension value (not including the object identifier,
      * criticality setting, and encapsulating OCTET STRING)
      * for a SubjectKeyIdentifier extension.
      * The ASN.1 notation for this structure follows.
      * <p>
-     * <pre><code>
+     * <pre>{@code
      * SubjectKeyIdentifier ::= KeyIdentifier
      *
      * KeyIdentifier ::= OCTET STRING
-     * </code></pre>
+     * }</pre>
      * <p>
      * Since the format of subject key identifiers is not mandated by
      * any standard, subject key identifiers are not parsed by the
-     * <code>X509CertSelector</code>. Instead, the values are compared using
+     * {@code X509CertSelector}. Instead, the values are compared using
      * a byte-by-byte comparison.
      * <p>
      * Note that the byte array supplied here is cloned to protect against
      * subsequent modifications.
      *
-     * @param subjectKeyID the subject key identifier (or <code>null</code>)
+     * @param subjectKeyID the subject key identifier (or {@code null})
      * @see #getSubjectKeyIdentifier
      */
     public void setSubjectKeyIdentifier(byte[] subjectKeyID) {
@@ -387,46 +387,46 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the authorityKeyIdentifier criterion. The
-     * <code>X509Certificate</code> must contain an
+     * {@code X509Certificate} must contain an
      * AuthorityKeyIdentifier extension for which the contents of the
      * extension value matches the specified criterion value.
-     * If the criterion value is <code>null</code>, no
+     * If the criterion value is {@code null}, no
      * authorityKeyIdentifier check will be done.
      * <p>
-     * If <code>authorityKeyID</code> is not <code>null</code>, it
+     * If {@code authorityKeyID} is not {@code null}, it
      * should contain a single DER encoded value corresponding to the contents
      * of the extension value (not including the object identifier,
      * criticality setting, and encapsulating OCTET STRING)
      * for an AuthorityKeyIdentifier extension.
      * The ASN.1 notation for this structure follows.
      * <p>
-     * <pre><code>
+     * <pre>{@code
      * AuthorityKeyIdentifier ::= SEQUENCE {
      *    keyIdentifier             [0] KeyIdentifier           OPTIONAL,
      *    authorityCertIssuer       [1] GeneralNames            OPTIONAL,
      *    authorityCertSerialNumber [2] CertificateSerialNumber OPTIONAL  }
      *
      * KeyIdentifier ::= OCTET STRING
-     * </code></pre>
+     * }</pre>
      * <p>
      * Authority key identifiers are not parsed by the
-     * <code>X509CertSelector</code>.  Instead, the values are
+     * {@code X509CertSelector}.  Instead, the values are
      * compared using a byte-by-byte comparison.
      * <p>
-     * When the <code>keyIdentifier</code> field of
-     * <code>AuthorityKeyIdentifier</code> is populated, the value is
-     * usually taken from the <code>SubjectKeyIdentifier</code> extension
+     * When the {@code keyIdentifier} field of
+     * {@code AuthorityKeyIdentifier} is populated, the value is
+     * usually taken from the {@code SubjectKeyIdentifier} extension
      * in the issuer's certificate.  Note, however, that the result of
-     * <code>X509Certificate.getExtensionValue(&lt;SubjectKeyIdentifier Object
-     * Identifier&gt;)</code> on the issuer's certificate may NOT be used
-     * directly as the input to <code>setAuthorityKeyIdentifier</code>.
+     * {@code X509Certificate.getExtensionValue(<SubjectKeyIdentifier Object
+     * Identifier>)} on the issuer's certificate may NOT be used
+     * directly as the input to {@code setAuthorityKeyIdentifier}.
      * This is because the SubjectKeyIdentifier contains
      * only a KeyIdentifier OCTET STRING, and not a SEQUENCE of
      * KeyIdentifier, GeneralNames, and CertificateSerialNumber.
      * In order to use the extension value of the issuer certificate's
-     * <code>SubjectKeyIdentifier</code>
+     * {@code SubjectKeyIdentifier}
      * extension, it will be necessary to extract the value of the embedded
-     * <code>KeyIdentifier</code> OCTET STRING, then DER encode this OCTET
+     * {@code KeyIdentifier} OCTET STRING, then DER encode this OCTET
      * STRING inside a SEQUENCE.
      * For more details on SubjectKeyIdentifier, see
      * {@link #setSubjectKeyIdentifier(byte[] subjectKeyID)}.
@@ -435,7 +435,7 @@ public class X509CertSelector implements CertSelector {
      * subsequent modifications.
      *
      * @param authorityKeyID the authority key identifier
-     *        (or <code>null</code>)
+     *        (or {@code null})
      * @see #getAuthorityKeyIdentifier
      */
     public void setAuthorityKeyIdentifier(byte[] authorityKeyID) {
@@ -449,13 +449,13 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the certificateValid criterion. The specified date must fall
      * within the certificate validity period for the
-     * <code>X509Certificate</code>. If <code>null</code>, no certificateValid
+     * {@code X509Certificate}. If {@code null}, no certificateValid
      * check will be done.
      * <p>
-     * Note that the <code>Date</code> supplied here is cloned to protect
+     * Note that the {@code Date} supplied here is cloned to protect
      * against subsequent modifications.
      *
-     * @param certValid the <code>Date</code> to check (or <code>null</code>)
+     * @param certValid the {@code Date} to check (or {@code null})
      * @see #getCertificateValid
      */
     public void setCertificateValid(Date certValid) {
@@ -469,14 +469,14 @@ public class X509CertSelector implements CertSelector {
     /**
      * Sets the privateKeyValid criterion. The specified date must fall
      * within the private key validity period for the
-     * <code>X509Certificate</code>. If <code>null</code>, no privateKeyValid
+     * {@code X509Certificate}. If {@code null}, no privateKeyValid
      * check will be done.
      * <p>
-     * Note that the <code>Date</code> supplied here is cloned to protect
+     * Note that the {@code Date} supplied here is cloned to protect
      * against subsequent modifications.
      *
-     * @param privateKeyValid the <code>Date</code> to check (or
-     *                        <code>null</code>)
+     * @param privateKeyValid the {@code Date} to check (or
+     *                        {@code null})
      * @see #getPrivateKeyValid
      */
     public void setPrivateKeyValid(Date privateKeyValid) {
@@ -489,12 +489,12 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the subjectPublicKeyAlgID criterion. The
-     * <code>X509Certificate</code> must contain a subject public key
-     * with the specified algorithm. If <code>null</code>, no
+     * {@code X509Certificate} must contain a subject public key
+     * with the specified algorithm. If {@code null}, no
      * subjectPublicKeyAlgID check will be done.
      *
      * @param oid The object identifier (OID) of the algorithm to check
-     *            for (or <code>null</code>). An OID is represented by a
+     *            for (or {@code null}). An OID is represented by a
      *            set of nonnegative integers separated by periods.
      * @throws IOException if the OID is invalid, such as
      * the first component being not 0, 1 or 2 or the second component
@@ -512,10 +512,10 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the subjectPublicKey criterion. The
-     * <code>X509Certificate</code> must contain the specified subject public
-     * key. If <code>null</code>, no subjectPublicKey check will be done.
+     * {@code X509Certificate} must contain the specified subject public
+     * key. If {@code null}, no subjectPublicKey check will be done.
      *
-     * @param key the subject public key to check for (or <code>null</code>)
+     * @param key the subject public key to check for (or {@code null})
      * @see #getSubjectPublicKey
      */
     public void setSubjectPublicKey(PublicKey key) {
@@ -529,17 +529,17 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Sets the subjectPublicKey criterion. The <code>X509Certificate</code>
-     * must contain the specified subject public key. If <code>null</code>,
+     * Sets the subjectPublicKey criterion. The {@code X509Certificate}
+     * must contain the specified subject public key. If {@code null},
      * no subjectPublicKey check will be done.
      * <p>
      * Because this method allows the public key to be specified as a byte
      * array, it may be used for unknown key types.
      * <p>
-     * If <code>key</code> is not <code>null</code>, it should contain a
+     * If {@code key} is not {@code null}, it should contain a
      * single DER encoded SubjectPublicKeyInfo structure, as defined in X.509.
      * The ASN.1 notation for this structure is as follows.
-     * <pre><code>
+     * <pre>{@code
      * SubjectPublicKeyInfo  ::=  SEQUENCE  {
      *   algorithm            AlgorithmIdentifier,
      *   subjectPublicKey     BIT STRING  }
@@ -550,13 +550,13 @@ public class X509CertSelector implements CertSelector {
      *                              -- contains a value of the type
      *                              -- registered for use with the
      *                              -- algorithm object identifier value
-     * </code></pre>
+     * }</pre>
      * <p>
      * Note that the byte array supplied here is cloned to protect against
      * subsequent modifications.
      *
      * @param key a byte array containing the subject public key in ASN.1 DER
-     *            form (or <code>null</code>)
+     *            form (or {@code null})
      * @throws IOException if an encoding error occurs (incorrect form for
      * subject public key)
      * @see #getSubjectPublicKey
@@ -572,9 +572,9 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Sets the keyUsage criterion. The <code>X509Certificate</code>
-     * must allow the specified keyUsage values. If <code>null</code>, no
-     * keyUsage check will be done. Note that an <code>X509Certificate</code>
+     * Sets the keyUsage criterion. The {@code X509Certificate}
+     * must allow the specified keyUsage values. If {@code null}, no
+     * keyUsage check will be done. Note that an {@code X509Certificate}
      * that has no keyUsage extension implicitly allows all keyUsage values.
      * <p>
      * Note that the boolean array supplied here is cloned to protect against
@@ -583,7 +583,7 @@ public class X509CertSelector implements CertSelector {
      * @param keyUsage a boolean array in the same format as the boolean
      *                 array returned by
      * {@link X509Certificate#getKeyUsage() X509Certificate.getKeyUsage()}.
-     *                 Or <code>null</code>.
+     *                 Or {@code null}.
      * @see #getKeyUsage
      */
     public void setKeyUsage(boolean[] keyUsage) {
@@ -595,18 +595,18 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Sets the extendedKeyUsage criterion. The <code>X509Certificate</code>
+     * Sets the extendedKeyUsage criterion. The {@code X509Certificate}
      * must allow the specified key purposes in its extended key usage
-     * extension. If <code>keyPurposeSet</code> is empty or <code>null</code>,
+     * extension. If {@code keyPurposeSet} is empty or {@code null},
      * no extendedKeyUsage check will be done. Note that an
-     * <code>X509Certificate</code> that has no extendedKeyUsage extension
+     * {@code X509Certificate} that has no extendedKeyUsage extension
      * implicitly allows all key purposes.
      * <p>
-     * Note that the <code>Set</code> is cloned to protect against
+     * Note that the {@code Set} is cloned to protect against
      * subsequent modifications.
      *
-     * @param keyPurposeSet a <code>Set</code> of key purpose OIDs in string
-     * format (or <code>null</code>). Each OID is represented by a set of
+     * @param keyPurposeSet a {@code Set} of key purpose OIDs in string
+     * format (or {@code null}). Each OID is represented by a set of
      * nonnegative integers separated by periods.
      * @throws IOException if the OID is invalid, such as
      * the first component being not 0, 1 or 2 or the second component
@@ -632,15 +632,15 @@ public class X509CertSelector implements CertSelector {
      * specified in the {@link #setSubjectAlternativeNames
      * setSubjectAlternativeNames} or {@link #addSubjectAlternativeName
      * addSubjectAlternativeName} methods. If enabled,
-     * the <code>X509Certificate</code> must contain all of the
+     * the {@code X509Certificate} must contain all of the
      * specified subject alternative names. If disabled, the
-     * <code>X509Certificate</code> must contain at least one of the
+     * {@code X509Certificate} must contain at least one of the
      * specified subject alternative names.
      *
-     * <p>The matchAllNames flag is <code>true</code> by default.
+     * <p>The matchAllNames flag is {@code true} by default.
      *
-     * @param matchAllNames if <code>true</code>, the flag is enabled;
-     * if <code>false</code>, the flag is disabled.
+     * @param matchAllNames if {@code true}, the flag is enabled;
+     * if {@code false}, the flag is disabled.
      * @see #getMatchAllSubjectAltNames
      */
     public void setMatchAllSubjectAltNames(boolean matchAllNames) {
@@ -649,7 +649,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the subjectAlternativeNames criterion. The
-     * <code>X509Certificate</code> must contain all or at least one of the
+     * {@code X509Certificate} must contain all or at least one of the
      * specified subjectAlternativeNames, depending on the value of
      * the matchAllNames flag (see {@link #setMatchAllSubjectAltNames
      * setMatchAllSubjectAltNames}).
@@ -659,19 +659,19 @@ public class X509CertSelector implements CertSelector {
      * subjectAlternativeNames criterion. The specified value replaces
      * the previous value for the subjectAlternativeNames criterion.
      * <p>
-     * The <code>names</code> parameter (if not <code>null</code>) is a
-     * <code>Collection</code> with one
+     * The {@code names} parameter (if not {@code null}) is a
+     * {@code Collection} with one
      * entry for each name to be included in the subject alternative name
-     * criterion. Each entry is a <code>List</code> whose first entry is an
-     * <code>Integer</code> (the name type, 0-8) and whose second
-     * entry is a <code>String</code> or a byte array (the name, in
+     * criterion. Each entry is a {@code List} whose first entry is an
+     * {@code Integer} (the name type, 0-8) and whose second
+     * entry is a {@code String} or a byte array (the name, in
      * string or ASN.1 DER encoded form, respectively).
-     * There can be multiple names of the same type. If <code>null</code>
+     * There can be multiple names of the same type. If {@code null}
      * is supplied as the value for this argument, no
      * subjectAlternativeNames check will be performed.
      * <p>
-     * Each subject alternative name in the <code>Collection</code>
-     * may be specified either as a <code>String</code> or as an ASN.1 encoded
+     * Each subject alternative name in the {@code Collection}
+     * may be specified either as a {@code String} or as an ASN.1 encoded
      * byte array. For more details about the formats used, see
      * {@link #addSubjectAlternativeName(int type, String name)
      * addSubjectAlternativeName(int type, String name)} and
@@ -682,15 +682,15 @@ public class X509CertSelector implements CertSelector {
      * array form instead of the String form. See the note in
      * {@link #addSubjectAlternativeName(int, String)} for more information.
      * <p>
-     * Note that the <code>names</code> parameter can contain duplicate
+     * Note that the {@code names} parameter can contain duplicate
      * names (same name and name type), but they may be removed from the
-     * <code>Collection</code> of names returned by the
+     * {@code Collection} of names returned by the
      * {@link #getSubjectAlternativeNames getSubjectAlternativeNames} method.
      * <p>
-     * Note that a deep copy is performed on the <code>Collection</code> to
+     * Note that a deep copy is performed on the {@code Collection} to
      * protect against subsequent modifications.
      *
-     * @param names a <code>Collection</code> of names (or <code>null</code>)
+     * @param names a {@code Collection} of names (or {@code null})
      * @throws IOException if a parsing error occurs
      * @see #getSubjectAlternativeNames
      */
@@ -714,7 +714,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Adds a name to the subjectAlternativeNames criterion. The
-     * <code>X509Certificate</code> must contain all or at least one
+     * {@code X509Certificate} must contain all or at least one
      * of the specified subjectAlternativeNames, depending on the value of
      * the matchAllNames flag (see {@link #setMatchAllSubjectAltNames
      * setMatchAllSubjectAltNames}).
@@ -747,7 +747,7 @@ public class X509CertSelector implements CertSelector {
      *
      * @param type the name type (0-8, as specified in
      *             RFC 3280, section 4.2.1.7)
-     * @param name the name in string form (not <code>null</code>)
+     * @param name the name in string form (not {@code null})
      * @throws IOException if a parsing error occurs
      */
     public void addSubjectAlternativeName(int type, String name)
@@ -757,7 +757,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Adds a name to the subjectAlternativeNames criterion. The
-     * <code>X509Certificate</code> must contain all or at least one
+     * {@code X509Certificate} must contain all or at least one
      * of the specified subjectAlternativeNames, depending on the value of
      * the matchAllNames flag (see {@link #setMatchAllSubjectAltNames
      * setMatchAllSubjectAltNames}).
@@ -774,7 +774,7 @@ public class X509CertSelector implements CertSelector {
      * the encoded value of the name, and should not include the tag associated
      * with the name in the GeneralName structure. The ASN.1 definition of this
      * structure appears below.
-     * <pre><code>
+     * <pre>{@code
      *  GeneralName ::= CHOICE {
      *       otherName                       [0]     OtherName,
      *       rfc822Name                      [1]     IA5String,
@@ -785,7 +785,7 @@ public class X509CertSelector implements CertSelector {
      *       uniformResourceIdentifier       [6]     IA5String,
      *       iPAddress                       [7]     OCTET STRING,
      *       registeredID                    [8]     OBJECT IDENTIFIER}
-     * </code></pre>
+     * }</pre>
      * <p>
      * Note that the byte array supplied here is cloned to protect against
      * subsequent modifications.
@@ -802,7 +802,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * A private method that adds a name (String or byte array) to the
-     * subjectAlternativeNames criterion. The <code>X509Certificate</code>
+     * subjectAlternativeNames criterion. The {@code X509Certificate}
      * must contain the specified subjectAlternativeName.
      *
      * @param type the name type (0-8, as specified in
@@ -829,19 +829,19 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Parse an argument of the form passed to setSubjectAlternativeNames,
-     * returning a <code>Collection</code> of
-     * <code>GeneralNameInterface</code>s.
+     * returning a {@code Collection} of
+     * {@code GeneralNameInterface}s.
      * Throw an IllegalArgumentException or a ClassCastException
      * if the argument is malformed.
      *
      * @param names a Collection with one entry per name.
-     *              Each entry is a <code>List</code> whose first entry
+     *              Each entry is a {@code List} whose first entry
      *              is an Integer (the name type, 0-8) and whose second
      *              entry is a String or a byte array (the name, in
      *              string or ASN.1 DER encoded form, respectively).
      *              There can be multiple names of the same type. Null is
      *              not an acceptable value.
-     * @return a Set of <code>GeneralNameInterface</code>s
+     * @return a Set of {@code GeneralNameInterface}s
      * @throws IOException if a parsing error occurs
      */
     private static Set<GeneralNameInterface> parseNames(Collection<List<?>> names) throws IOException {
@@ -865,8 +865,8 @@ public class X509CertSelector implements CertSelector {
     /**
      * Compare for equality two objects of the form passed to
      * setSubjectAlternativeNames (or X509CRLSelector.setIssuerNames).
-     * Throw an <code>IllegalArgumentException</code> or a
-     * <code>ClassCastException</code> if one of the objects is malformed.
+     * Throw an {@code IllegalArgumentException} or a
+     * {@code ClassCastException} if one of the objects is malformed.
      *
      * @param object1 a Collection containing the first object to compare
      * @param object2 a Collection containing the second object to compare
@@ -880,7 +880,7 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Make a <code>GeneralNameInterface</code> out of a name type (0-8) and an
+     * Make a {@code GeneralNameInterface} out of a name type (0-8) and an
      * Object that may be a byte array holding the ASN.1 DER encoded
      * name or a String form of the name.  Except for X.509
      * Distinguished Names, the String form of the name must not be the
@@ -989,7 +989,7 @@ public class X509CertSelector implements CertSelector {
 
 
     /**
-     * Sets the name constraints criterion. The <code>X509Certificate</code>
+     * Sets the name constraints criterion. The {@code X509Certificate}
      * must have subject and subject alternative names that
      * meet the specified name constraints.
      * <p>
@@ -998,7 +998,7 @@ public class X509CertSelector implements CertSelector {
      * would appear in the NameConstraints structure defined in RFC 3280
      * and X.509. The ASN.1 definition of this structure appears below.
      *
-     * <pre><code>
+     * <pre>{@code
      *  NameConstraints ::= SEQUENCE {
      *       permittedSubtrees       [0]     GeneralSubtrees OPTIONAL,
      *       excludedSubtrees        [1]     GeneralSubtrees OPTIONAL }
@@ -1022,7 +1022,7 @@ public class X509CertSelector implements CertSelector {
      *       uniformResourceIdentifier       [6]     IA5String,
      *       iPAddress                       [7]     OCTET STRING,
      *       registeredID                    [8]     OBJECT IDENTIFIER}
-     * </code></pre>
+     * }</pre>
      * <p>
      * Note that the byte array supplied here is cloned to protect against
      * subsequent modifications.
@@ -1031,7 +1031,7 @@ public class X509CertSelector implements CertSelector {
      *              a NameConstraints extension to be used for checking
      *              name constraints. Only the value of the extension is
      *              included, not the OID or criticality flag. Can be
-     *              <code>null</code>,
+     *              {@code null},
      *              in which case no name constraints check will be performed.
      * @throws IOException if a parsing error occurs
      * @see #getNameConstraints
@@ -1048,7 +1048,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Sets the basic constraints constraint. If the value is greater than or
-     * equal to zero, <code>X509Certificates</code> must include a
+     * equal to zero, {@code X509Certificates} must include a
      * basicConstraints extension with
      * a pathLen of at least this value. If the value is -2, only end-entity
      * certificates are accepted. If the value is -1, no check is done.
@@ -1070,18 +1070,18 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Sets the policy constraint. The <code>X509Certificate</code> must
+     * Sets the policy constraint. The {@code X509Certificate} must
      * include at least one of the specified policies in its certificate
-     * policies extension. If <code>certPolicySet</code> is empty, then the
-     * <code>X509Certificate</code> must include at least some specified policy
-     * in its certificate policies extension. If <code>certPolicySet</code> is
-     * <code>null</code>, no policy check will be performed.
+     * policies extension. If {@code certPolicySet} is empty, then the
+     * {@code X509Certificate} must include at least some specified policy
+     * in its certificate policies extension. If {@code certPolicySet} is
+     * {@code null}, no policy check will be performed.
      * <p>
-     * Note that the <code>Set</code> is cloned to protect against
+     * Note that the {@code Set} is cloned to protect against
      * subsequent modifications.
      *
-     * @param certPolicySet a <code>Set</code> of certificate policy OIDs in
-     *                      string format (or <code>null</code>). Each OID is
+     * @param certPolicySet a {@code Set} of certificate policy OIDs in
+     *                      string format (or {@code null}). Each OID is
      *                      represented by a set of nonnegative integers
      *                    separated by periods.
      * @throws IOException if a parsing error occurs on the OID such as
@@ -1115,12 +1115,12 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Sets the pathToNames criterion. The <code>X509Certificate</code> must
+     * Sets the pathToNames criterion. The {@code X509Certificate} must
      * not include name constraints that would prohibit building a
      * path to the specified names.
      * <p>
      * This method allows the caller to specify, with a single method call,
-     * the complete set of names which the <code>X509Certificates</code>'s
+     * the complete set of names which the {@code X509Certificates}'s
      * name constraints must permit. The specified value replaces
      * the previous value for the pathToNames criterion.
      * <p>
@@ -1129,19 +1129,19 @@ public class X509CertSelector implements CertSelector {
      * built, any candidate certificate must not include name constraints that
      * would prohibit building a path to any of the names in the partial path.
      * <p>
-     * The <code>names</code> parameter (if not <code>null</code>) is a
-     * <code>Collection</code> with one
+     * The {@code names} parameter (if not {@code null}) is a
+     * {@code Collection} with one
      * entry for each name to be included in the pathToNames
-     * criterion. Each entry is a <code>List</code> whose first entry is an
-     * <code>Integer</code> (the name type, 0-8) and whose second
-     * entry is a <code>String</code> or a byte array (the name, in
+     * criterion. Each entry is a {@code List} whose first entry is an
+     * {@code Integer} (the name type, 0-8) and whose second
+     * entry is a {@code String} or a byte array (the name, in
      * string or ASN.1 DER encoded form, respectively).
-     * There can be multiple names of the same type. If <code>null</code>
+     * There can be multiple names of the same type. If {@code null}
      * is supplied as the value for this argument, no
      * pathToNames check will be performed.
      * <p>
-     * Each name in the <code>Collection</code>
-     * may be specified either as a <code>String</code> or as an ASN.1 encoded
+     * Each name in the {@code Collection}
+     * may be specified either as a {@code String} or as an ASN.1 encoded
      * byte array. For more details about the formats used, see
      * {@link #addPathToName(int type, String name)
      * addPathToName(int type, String name)} and
@@ -1152,16 +1152,16 @@ public class X509CertSelector implements CertSelector {
      * array form instead of the String form. See the note in
      * {@link #addPathToName(int, String)} for more information.
      * <p>
-     * Note that the <code>names</code> parameter can contain duplicate
+     * Note that the {@code names} parameter can contain duplicate
      * names (same name and name type), but they may be removed from the
-     * <code>Collection</code> of names returned by the
+     * {@code Collection} of names returned by the
      * {@link #getPathToNames getPathToNames} method.
      * <p>
-     * Note that a deep copy is performed on the <code>Collection</code> to
+     * Note that a deep copy is performed on the {@code Collection} to
      * protect against subsequent modifications.
      *
-     * @param names a <code>Collection</code> with one entry per name
-     *              (or <code>null</code>)
+     * @param names a {@code Collection} with one entry per name
+     *              (or {@code null})
      * @throws IOException if a parsing error occurs
      * @see #getPathToNames
      */
@@ -1186,12 +1186,12 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Adds a name to the pathToNames criterion. The <code>X509Certificate</code>
+     * Adds a name to the pathToNames criterion. The {@code X509Certificate}
      * must not include name constraints that would prohibit building a
      * path to the specified name.
      * <p>
      * This method allows the caller to add a name to the set of names which
-     * the <code>X509Certificates</code>'s name constraints must permit.
+     * the {@code X509Certificates}'s name constraints must permit.
      * The specified name is added to any previous value for the
      * pathToNames criterion.  If the name is a duplicate, it may be ignored.
      * <p>
@@ -1223,12 +1223,12 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Adds a name to the pathToNames criterion. The <code>X509Certificate</code>
+     * Adds a name to the pathToNames criterion. The {@code X509Certificate}
      * must not include name constraints that would prohibit building a
      * path to the specified name.
      * <p>
      * This method allows the caller to add a name to the set of names which
-     * the <code>X509Certificates</code>'s name constraints must permit.
+     * the {@code X509Certificates}'s name constraints must permit.
      * The specified name is added to any previous value for the
      * pathToNames criterion. If the name is a duplicate, it may be ignored.
      * <p>
@@ -1254,7 +1254,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * A private method that adds a name (String or byte array) to the
-     * pathToNames criterion. The <code>X509Certificate</code> must contain
+     * pathToNames criterion. The {@code X509Certificate} must contain
      * the specified pathToName.
      *
      * @param type the name type (0-8, as specified in
@@ -1279,11 +1279,11 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the certificateEquals criterion. The specified
-     * <code>X509Certificate</code> must be equal to the
-     * <code>X509Certificate</code> passed to the <code>match</code> method.
-     * If <code>null</code>, this check is not applied.
+     * {@code X509Certificate} must be equal to the
+     * {@code X509Certificate} passed to the {@code match} method.
+     * If {@code null}, this check is not applied.
      *
-     * @return the <code>X509Certificate</code> to match (or <code>null</code>)
+     * @return the {@code X509Certificate} to match (or {@code null})
      * @see #setCertificate
      */
     public X509Certificate getCertificate() {
@@ -1293,11 +1293,11 @@ public class X509CertSelector implements CertSelector {
     /**
      * Returns the serialNumber criterion. The specified serial number
      * must match the certificate serial number in the
-     * <code>X509Certificate</code>. If <code>null</code>, any certificate
+     * {@code X509Certificate}. If {@code null}, any certificate
      * serial number will do.
      *
      * @return the certificate serial number to match
-     *                (or <code>null</code>)
+     *                (or {@code null})
      * @see #setSerialNumber
      */
     public BigInteger getSerialNumber() {
@@ -1305,13 +1305,13 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the issuer criterion as an <code>X500Principal</code>. This
+     * Returns the issuer criterion as an {@code X500Principal}. This
      * distinguished name must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the issuer criterion
+     * {@code X509Certificate}. If {@code null}, the issuer criterion
      * is disabled and any issuer distinguished name will do.
      *
      * @return the required issuer distinguished name as X500Principal
-     *         (or <code>null</code>)
+     *         (or {@code null})
      * @since 1.5
      */
     public X500Principal getIssuer() {
@@ -1325,16 +1325,16 @@ public class X509CertSelector implements CertSelector {
      * encoding information in the RFC 2253 String form of some distinguished
      * names.
      * <p>
-     * Returns the issuer criterion as a <code>String</code>. This
+     * Returns the issuer criterion as a {@code String}. This
      * distinguished name must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the issuer criterion
+     * {@code X509Certificate}. If {@code null}, the issuer criterion
      * is disabled and any issuer distinguished name will do.
      * <p>
-     * If the value returned is not <code>null</code>, it is a
+     * If the value returned is not {@code null}, it is a
      * distinguished name, in RFC 2253 format.
      *
      * @return the required issuer distinguished name in RFC 2253 format
-     *         (or <code>null</code>)
+     *         (or {@code null})
      */
     public String getIssuerAsString() {
         return (issuer == null ? null : issuer.getName());
@@ -1343,10 +1343,10 @@ public class X509CertSelector implements CertSelector {
     /**
      * Returns the issuer criterion as a byte array. This distinguished name
      * must match the issuer distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the issuer criterion
+     * {@code X509Certificate}. If {@code null}, the issuer criterion
      * is disabled and any issuer distinguished name will do.
      * <p>
-     * If the value returned is not <code>null</code>, it is a byte
+     * If the value returned is not {@code null}, it is a byte
      * array containing a single DER encoded distinguished name, as defined in
      * X.501. The ASN.1 notation for this structure is supplied in the
      * documentation for
@@ -1356,7 +1356,7 @@ public class X509CertSelector implements CertSelector {
      * subsequent modifications.
      *
      * @return a byte array containing the required issuer distinguished name
-     *         in ASN.1 DER format (or <code>null</code>)
+     *         in ASN.1 DER format (or {@code null})
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
@@ -1364,13 +1364,13 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the subject criterion as an <code>X500Principal</code>. This
+     * Returns the subject criterion as an {@code X500Principal}. This
      * distinguished name must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the subject criterion
+     * {@code X509Certificate}. If {@code null}, the subject criterion
      * is disabled and any subject distinguished name will do.
      *
      * @return the required subject distinguished name as X500Principal
-     *         (or <code>null</code>)
+     *         (or {@code null})
      * @since 1.5
      */
     public X500Principal getSubject() {
@@ -1384,16 +1384,16 @@ public class X509CertSelector implements CertSelector {
      * encoding information in the RFC 2253 String form of some distinguished
      * names.
      * <p>
-     * Returns the subject criterion as a <code>String</code>. This
+     * Returns the subject criterion as a {@code String}. This
      * distinguished name must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the subject criterion
+     * {@code X509Certificate}. If {@code null}, the subject criterion
      * is disabled and any subject distinguished name will do.
      * <p>
-     * If the value returned is not <code>null</code>, it is a
+     * If the value returned is not {@code null}, it is a
      * distinguished name, in RFC 2253 format.
      *
      * @return the required subject distinguished name in RFC 2253 format
-     *         (or <code>null</code>)
+     *         (or {@code null})
      */
     public String getSubjectAsString() {
         return (subject == null ? null : subject.getName());
@@ -1402,10 +1402,10 @@ public class X509CertSelector implements CertSelector {
     /**
      * Returns the subject criterion as a byte array. This distinguished name
      * must match the subject distinguished name in the
-     * <code>X509Certificate</code>. If <code>null</code>, the subject criterion
+     * {@code X509Certificate}. If {@code null}, the subject criterion
      * is disabled and any subject distinguished name will do.
      * <p>
-     * If the value returned is not <code>null</code>, it is a byte
+     * If the value returned is not {@code null}, it is a byte
      * array containing a single DER encoded distinguished name, as defined in
      * X.501. The ASN.1 notation for this structure is supplied in the
      * documentation for
@@ -1415,7 +1415,7 @@ public class X509CertSelector implements CertSelector {
      * subsequent modifications.
      *
      * @return a byte array containing the required subject distinguished name
-     *         in ASN.1 DER format (or <code>null</code>)
+     *         in ASN.1 DER format (or {@code null})
      * @throws IOException if an encoding error occurs
      */
     public byte[] getSubjectAsBytes() throws IOException {
@@ -1424,14 +1424,14 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the subjectKeyIdentifier criterion. The
-     * <code>X509Certificate</code> must contain a SubjectKeyIdentifier
-     * extension with the specified value. If <code>null</code>, no
+     * {@code X509Certificate} must contain a SubjectKeyIdentifier
+     * extension with the specified value. If {@code null}, no
      * subjectKeyIdentifier check will be done.
      * <p>
      * Note that the byte array returned is cloned to protect against
      * subsequent modifications.
      *
-     * @return the key identifier (or <code>null</code>)
+     * @return the key identifier (or {@code null})
      * @see #setSubjectKeyIdentifier
      */
     public byte[] getSubjectKeyIdentifier() {
@@ -1443,14 +1443,14 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the authorityKeyIdentifier criterion. The
-     * <code>X509Certificate</code> must contain a AuthorityKeyIdentifier
-     * extension with the specified value. If <code>null</code>, no
+     * {@code X509Certificate} must contain a AuthorityKeyIdentifier
+     * extension with the specified value. If {@code null}, no
      * authorityKeyIdentifier check will be done.
      * <p>
      * Note that the byte array returned is cloned to protect against
      * subsequent modifications.
      *
-     * @return the key identifier (or <code>null</code>)
+     * @return the key identifier (or {@code null})
      * @see #setAuthorityKeyIdentifier
      */
     public byte[] getAuthorityKeyIdentifier() {
@@ -1463,13 +1463,13 @@ public class X509CertSelector implements CertSelector {
     /**
      * Returns the certificateValid criterion. The specified date must fall
      * within the certificate validity period for the
-     * <code>X509Certificate</code>. If <code>null</code>, no certificateValid
+     * {@code X509Certificate}. If {@code null}, no certificateValid
      * check will be done.
      * <p>
-     * Note that the <code>Date</code> returned is cloned to protect against
+     * Note that the {@code Date} returned is cloned to protect against
      * subsequent modifications.
      *
-     * @return the <code>Date</code> to check (or <code>null</code>)
+     * @return the {@code Date} to check (or {@code null})
      * @see #setCertificateValid
      */
     public Date getCertificateValid() {
@@ -1482,13 +1482,13 @@ public class X509CertSelector implements CertSelector {
     /**
      * Returns the privateKeyValid criterion. The specified date must fall
      * within the private key validity period for the
-     * <code>X509Certificate</code>. If <code>null</code>, no privateKeyValid
+     * {@code X509Certificate}. If {@code null}, no privateKeyValid
      * check will be done.
      * <p>
-     * Note that the <code>Date</code> returned is cloned to protect against
+     * Note that the {@code Date} returned is cloned to protect against
      * subsequent modifications.
      *
-     * @return the <code>Date</code> to check (or <code>null</code>)
+     * @return the {@code Date} to check (or {@code null})
      * @see #setPrivateKeyValid
      */
     public Date getPrivateKeyValid() {
@@ -1500,12 +1500,12 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the subjectPublicKeyAlgID criterion. The
-     * <code>X509Certificate</code> must contain a subject public key
-     * with the specified algorithm. If <code>null</code>, no
+     * {@code X509Certificate} must contain a subject public key
+     * with the specified algorithm. If {@code null}, no
      * subjectPublicKeyAlgID check will be done.
      *
      * @return the object identifier (OID) of the signature algorithm to check
-     *         for (or <code>null</code>). An OID is represented by a set of
+     *         for (or {@code null}). An OID is represented by a set of
      *         nonnegative integers separated by periods.
      * @see #setSubjectPublicKeyAlgID
      */
@@ -1518,10 +1518,10 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the subjectPublicKey criterion. The
-     * <code>X509Certificate</code> must contain the specified subject
-     * public key. If <code>null</code>, no subjectPublicKey check will be done.
+     * {@code X509Certificate} must contain the specified subject
+     * public key. If {@code null}, no subjectPublicKey check will be done.
      *
-     * @return the subject public key to check for (or <code>null</code>)
+     * @return the subject public key to check for (or {@code null})
      * @see #setSubjectPublicKey
      */
     public PublicKey getSubjectPublicKey() {
@@ -1529,7 +1529,7 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the keyUsage criterion. The <code>X509Certificate</code>
+     * Returns the keyUsage criterion. The {@code X509Certificate}
      * must allow the specified keyUsage values. If null, no keyUsage
      * check will be done.
      * <p>
@@ -1539,7 +1539,7 @@ public class X509CertSelector implements CertSelector {
      * @return a boolean array in the same format as the boolean
      *                 array returned by
      * {@link X509Certificate#getKeyUsage() X509Certificate.getKeyUsage()}.
-     *                 Or <code>null</code>.
+     *                 Or {@code null}.
      * @see #setKeyUsage
      */
     public boolean[] getKeyUsage() {
@@ -1550,15 +1550,15 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the extendedKeyUsage criterion. The <code>X509Certificate</code>
+     * Returns the extendedKeyUsage criterion. The {@code X509Certificate}
      * must allow the specified key purposes in its extended key usage
-     * extension. If the <code>keyPurposeSet</code> returned is empty or
-     * <code>null</code>, no extendedKeyUsage check will be done. Note that an
-     * <code>X509Certificate</code> that has no extendedKeyUsage extension
+     * extension. If the {@code keyPurposeSet} returned is empty or
+     * {@code null}, no extendedKeyUsage check will be done. Note that an
+     * {@code X509Certificate} that has no extendedKeyUsage extension
      * implicitly allows all key purposes.
      *
-     * @return an immutable <code>Set</code> of key purpose OIDs in string
-     * format (or <code>null</code>)
+     * @return an immutable {@code Set} of key purpose OIDs in string
+     * format (or {@code null})
      * @see #setExtendedKeyUsage
      */
     public Set<String> getExtendedKeyUsage() {
@@ -1566,19 +1566,19 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Indicates if the <code>X509Certificate</code> must contain all
+     * Indicates if the {@code X509Certificate} must contain all
      * or at least one of the subjectAlternativeNames
      * specified in the {@link #setSubjectAlternativeNames
      * setSubjectAlternativeNames} or {@link #addSubjectAlternativeName
-     * addSubjectAlternativeName} methods. If <code>true</code>,
-     * the <code>X509Certificate</code> must contain all of the
-     * specified subject alternative names. If <code>false</code>, the
-     * <code>X509Certificate</code> must contain at least one of the
+     * addSubjectAlternativeName} methods. If {@code true},
+     * the {@code X509Certificate} must contain all of the
+     * specified subject alternative names. If {@code false}, the
+     * {@code X509Certificate} must contain at least one of the
      * specified subject alternative names.
      *
-     * @return <code>true</code> if the flag is enabled;
-     * <code>false</code> if the flag is disabled. The flag is
-     * <code>true</code> by default.
+     * @return {@code true} if the flag is enabled;
+     * {@code false} if the flag is disabled. The flag is
+     * {@code true} by default.
      * @see #setMatchAllSubjectAltNames
      */
     public boolean getMatchAllSubjectAltNames() {
@@ -1587,35 +1587,35 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns a copy of the subjectAlternativeNames criterion.
-     * The <code>X509Certificate</code> must contain all or at least one
+     * The {@code X509Certificate} must contain all or at least one
      * of the specified subjectAlternativeNames, depending on the value
      * of the matchAllNames flag (see {@link #getMatchAllSubjectAltNames
      * getMatchAllSubjectAltNames}). If the value returned is
-     * <code>null</code>, no subjectAlternativeNames check will be performed.
+     * {@code null}, no subjectAlternativeNames check will be performed.
      * <p>
-     * If the value returned is not <code>null</code>, it is a
-     * <code>Collection</code> with
+     * If the value returned is not {@code null}, it is a
+     * {@code Collection} with
      * one entry for each name to be included in the subject alternative name
-     * criterion. Each entry is a <code>List</code> whose first entry is an
-     * <code>Integer</code> (the name type, 0-8) and whose second
-     * entry is a <code>String</code> or a byte array (the name, in
+     * criterion. Each entry is a {@code List} whose first entry is an
+     * {@code Integer} (the name type, 0-8) and whose second
+     * entry is a {@code String} or a byte array (the name, in
      * string or ASN.1 DER encoded form, respectively).
      * There can be multiple names of the same type.  Note that the
-     * <code>Collection</code> returned may contain duplicate names (same name
+     * {@code Collection} returned may contain duplicate names (same name
      * and name type).
      * <p>
-     * Each subject alternative name in the <code>Collection</code>
-     * may be specified either as a <code>String</code> or as an ASN.1 encoded
+     * Each subject alternative name in the {@code Collection}
+     * may be specified either as a {@code String} or as an ASN.1 encoded
      * byte array. For more details about the formats used, see
      * {@link #addSubjectAlternativeName(int type, String name)
      * addSubjectAlternativeName(int type, String name)} and
      * {@link #addSubjectAlternativeName(int type, byte [] name)
      * addSubjectAlternativeName(int type, byte [] name)}.
      * <p>
-     * Note that a deep copy is performed on the <code>Collection</code> to
+     * Note that a deep copy is performed on the {@code Collection} to
      * protect against subsequent modifications.
      *
-     * @return a <code>Collection</code> of names (or <code>null</code>)
+     * @return a {@code Collection} of names (or {@code null})
      * @see #setSubjectAlternativeNames
      */
     public Collection<List<?>> getSubjectAlternativeNames() {
@@ -1628,21 +1628,21 @@ public class X509CertSelector implements CertSelector {
     /**
      * Clone an object of the form passed to
      * setSubjectAlternativeNames and setPathToNames.
-     * Throw a <code>RuntimeException</code> if the argument is malformed.
+     * Throw a {@code RuntimeException} if the argument is malformed.
      * <p>
      * This method wraps cloneAndCheckNames, changing any
-     * <code>IOException</code> into a <code>RuntimeException</code>. This
+     * {@code IOException} into a {@code RuntimeException}. This
      * method should be used when the object being
      * cloned has already been checked, so there should never be any exceptions.
      *
-     * @param names a <code>Collection</code> with one entry per name.
-     *              Each entry is a <code>List</code> whose first entry
+     * @param names a {@code Collection} with one entry per name.
+     *              Each entry is a {@code List} whose first entry
      *              is an Integer (the name type, 0-8) and whose second
      *              entry is a String or a byte array (the name, in
      *              string or ASN.1 DER encoded form, respectively).
      *              There can be multiple names of the same type. Null
      *              is not an acceptable value.
-     * @return a deep copy of the specified <code>Collection</code>
+     * @return a deep copy of the specified {@code Collection}
      * @throws RuntimeException if a parsing error occurs
      */
     private static Set<List<?>> cloneNames(Collection<List<?>> names) {
@@ -1657,16 +1657,16 @@ public class X509CertSelector implements CertSelector {
     /**
      * Clone and check an argument of the form passed to
      * setSubjectAlternativeNames and setPathToNames.
-     * Throw an <code>IOException</code> if the argument is malformed.
+     * Throw an {@code IOException} if the argument is malformed.
      *
-     * @param names a <code>Collection</code> with one entry per name.
-     *              Each entry is a <code>List</code> whose first entry
+     * @param names a {@code Collection} with one entry per name.
+     *              Each entry is a {@code List} whose first entry
      *              is an Integer (the name type, 0-8) and whose second
      *              entry is a String or a byte array (the name, in
      *              string or ASN.1 DER encoded form, respectively).
      *              There can be multiple names of the same type.
-     *              <code>null</code> is not an acceptable value.
-     * @return a deep copy of the specified <code>Collection</code>
+     *              {@code null} is not an acceptable value.
+     * @return a deep copy of the specified {@code Collection}
      * @throws IOException if a parsing error occurs
      */
     private static Set<List<?>> cloneAndCheckNames(Collection<List<?>> names) throws IOException {
@@ -1709,7 +1709,7 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the name constraints criterion. The <code>X509Certificate</code>
+     * Returns the name constraints criterion. The {@code X509Certificate}
      * must have subject and subject alternative names that
      * meet the specified name constraints.
      * <p>
@@ -1725,7 +1725,7 @@ public class X509CertSelector implements CertSelector {
      *
      * @return a byte array containing the ASN.1 DER encoding of
      *         a NameConstraints extension used for checking name constraints.
-     *         <code>null</code> if no name constraints check will be performed.
+     *         {@code null} if no name constraints check will be performed.
      * @see #setNameConstraints
      */
     public byte[] getNameConstraints() {
@@ -1738,7 +1738,7 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns the basic constraints constraint. If the value is greater than
-     * or equal to zero, the <code>X509Certificates</code> must include a
+     * or equal to zero, the {@code X509Certificates} must include a
      * basicConstraints extension with a pathLen of at least this value.
      * If the value is -2, only end-entity certificates are accepted. If
      * the value is -1, no basicConstraints check is done.
@@ -1751,15 +1751,15 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Returns the policy criterion. The <code>X509Certificate</code> must
+     * Returns the policy criterion. The {@code X509Certificate} must
      * include at least one of the specified policies in its certificate policies
-     * extension. If the <code>Set</code> returned is empty, then the
-     * <code>X509Certificate</code> must include at least some specified policy
-     * in its certificate policies extension. If the <code>Set</code> returned is
-     * <code>null</code>, no policy check will be performed.
+     * extension. If the {@code Set} returned is empty, then the
+     * {@code X509Certificate} must include at least some specified policy
+     * in its certificate policies extension. If the {@code Set} returned is
+     * {@code null}, no policy check will be performed.
      *
-     * @return an immutable <code>Set</code> of certificate policy OIDs in
-     *         string format (or <code>null</code>)
+     * @return an immutable {@code Set} of certificate policy OIDs in
+     *         string format (or {@code null})
      * @see #setPolicy
      */
     public Set<String> getPolicy() {
@@ -1768,33 +1768,33 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns a copy of the pathToNames criterion. The
-     * <code>X509Certificate</code> must not include name constraints that would
+     * {@code X509Certificate} must not include name constraints that would
      * prohibit building a path to the specified names. If the value
-     * returned is <code>null</code>, no pathToNames check will be performed.
+     * returned is {@code null}, no pathToNames check will be performed.
      * <p>
-     * If the value returned is not <code>null</code>, it is a
-     * <code>Collection</code> with one
+     * If the value returned is not {@code null}, it is a
+     * {@code Collection} with one
      * entry for each name to be included in the pathToNames
-     * criterion. Each entry is a <code>List</code> whose first entry is an
-     * <code>Integer</code> (the name type, 0-8) and whose second
-     * entry is a <code>String</code> or a byte array (the name, in
+     * criterion. Each entry is a {@code List} whose first entry is an
+     * {@code Integer} (the name type, 0-8) and whose second
+     * entry is a {@code String} or a byte array (the name, in
      * string or ASN.1 DER encoded form, respectively).
      * There can be multiple names of the same type. Note that the
-     * <code>Collection</code> returned may contain duplicate names (same
+     * {@code Collection} returned may contain duplicate names (same
      * name and name type).
      * <p>
-     * Each name in the <code>Collection</code>
-     * may be specified either as a <code>String</code> or as an ASN.1 encoded
+     * Each name in the {@code Collection}
+     * may be specified either as a {@code String} or as an ASN.1 encoded
      * byte array. For more details about the formats used, see
      * {@link #addPathToName(int type, String name)
      * addPathToName(int type, String name)} and
      * {@link #addPathToName(int type, byte [] name)
      * addPathToName(int type, byte [] name)}.
      * <p>
-     * Note that a deep copy is performed on the <code>Collection</code> to
+     * Note that a deep copy is performed on the {@code Collection} to
      * protect against subsequent modifications.
      *
-     * @return a <code>Collection</code> of names (or <code>null</code>)
+     * @return a {@code Collection} of names (or {@code null})
      * @see #setPathToNames
      */
     public Collection<List<?>> getPathToNames() {
@@ -1805,10 +1805,10 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Return a printable representation of the <code>CertSelector</code>.
+     * Return a printable representation of the {@code CertSelector}.
      *
-     * @return a <code>String</code> describing the contents of the
-     *         <code>CertSelector</code>
+     * @return a {@code String} describing the contents of the
+     *         {@code CertSelector}
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
@@ -1927,22 +1927,22 @@ public class X509CertSelector implements CertSelector {
 
     /**
      * Returns an Extension object given any X509Certificate and extension oid.
-     * Throw an <code>IOException</code> if the extension byte value is
+     * Throw an {@code IOException} if the extension byte value is
      * malformed.
      *
-     * @param cert a <code>X509Certificate</code>
-     * @param extId an <code>integer</code> which specifies the extension index.
+     * @param cert a {@code X509Certificate}
+     * @param extId an {@code integer} which specifies the extension index.
      * Currently, the supported extensions are as follows:
      * index 0 - PrivateKeyUsageExtension
      * index 1 - SubjectAlternativeNameExtension
      * index 2 - NameConstraintsExtension
      * index 3 - CertificatePoliciesExtension
      * index 4 - ExtendedKeyUsageExtension
-     * @return an <code>Extension</code> object whose real type is as specified
+     * @return an {@code Extension} object whose real type is as specified
      * by the extension oid.
-     * @throws IOException if cannot construct the <code>Extension</code>
+     * @throws IOException if cannot construct the {@code Extension}
      * object with the extension encoding retrieved from the passed in
-     * <code>X509Certificate</code>.
+     * {@code X509Certificate}.
      */
     private static Extension getExtensionObject(X509Certificate cert, int extId)
             throws IOException {
@@ -1990,11 +1990,11 @@ public class X509CertSelector implements CertSelector {
     }
 
     /**
-     * Decides whether a <code>Certificate</code> should be selected.
+     * Decides whether a {@code Certificate} should be selected.
      *
-     * @param cert the <code>Certificate</code> to be checked
-     * @return <code>true</code> if the <code>Certificate</code> should be
-     *         selected, <code>false</code> otherwise
+     * @param cert the {@code Certificate} to be checked
+     * @return {@code true} if the {@code Certificate} should be
+     *         selected, {@code false} otherwise
      */
     public boolean match(Certificate cert) {
         if (!(cert instanceof X509Certificate)) {

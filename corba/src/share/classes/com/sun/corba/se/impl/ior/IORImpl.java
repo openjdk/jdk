@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,8 @@ public class IORImpl extends IdentifiableContainerBase implements IOR
     {
         StringWriter bs;
 
-        MarshalOutputStream s = new EncapsOutputStream(factory);
+        MarshalOutputStream s =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream(factory);
         s.putEndian();
         write( (OutputStream)s );
         bs = new StringWriter();
@@ -237,7 +238,8 @@ public class IORImpl extends IdentifiableContainerBase implements IOR
     }
 
     public org.omg.IOP.IOR getIOPIOR() {
-        EncapsOutputStream os = new EncapsOutputStream(factory);
+        EncapsOutputStream os =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream(factory);
         write(os);
         InputStream is = (InputStream) (os.create_input_stream());
         return org.omg.IOP.IORHelper.read(is);

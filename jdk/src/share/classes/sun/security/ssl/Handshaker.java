@@ -186,6 +186,16 @@ abstract class Handshaker {
     static final boolean allowLegacyHelloMessages = Debug.getBooleanProperty(
                     "sun.security.ssl.allowLegacyHelloMessages", true);
 
+    // To prevent the TLS renegotiation issues, by setting system property
+    // "jdk.tls.rejectClientInitiatedRenegotiation" to true, applications in
+    // server side can disable all client initiated SSL renegotiations
+    // regardless of the support of TLS protocols.
+    //
+    // By default, allow client initiated renegotiations.
+    static final boolean rejectClientInitiatedRenego =
+            Debug.getBooleanProperty(
+                "jdk.tls.rejectClientInitiatedRenegotiation", false);
+
     // need to dispose the object when it is invalidated
     boolean invalidated;
 

@@ -72,6 +72,9 @@ public abstract class AbstractSelectableChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected AbstractSelectableChannel(SelectorProvider provider) {
         this.provider = provider;
@@ -251,6 +254,9 @@ public abstract class AbstractSelectableChannel
      * that is blocked in an I/O operation upon this channel to return
      * immediately, either by throwing an exception or by returning normally.
      * </p>
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     protected abstract void implCloseSelectableChannel() throws IOException;
 
@@ -298,6 +304,10 @@ public abstract class AbstractSelectableChannel
      * configureBlocking} method in order to perform the actual work of
      * changing the blocking mode.  This method is only invoked if the new mode
      * is different from the current mode.  </p>
+     *
+     * @param  block  If <tt>true</tt> then this channel will be placed in
+     *                blocking mode; if <tt>false</tt> then it will be placed
+     *                non-blocking mode
      *
      * @throws IOException
      *         If an I/O error occurs

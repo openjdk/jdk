@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,11 @@ intptr_t* os::Solaris::ucontext_get_fp(ucontext_t *uc) {
   return NULL;
 }
 
+address os::Solaris::ucontext_get_pc(ucontext_t *uc) {
+  return (address) uc->uc_mcontext.gregs[REG_PC];
+}
+
+
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread
 // is currently interrupted by SIGPROF.
 //
@@ -265,22 +270,6 @@ frame os::current_frame() {
   }
 }
 
-
-void GetThreadPC_Callback::execute(OSThread::InterruptArguments *args) {
-  Thread*     thread = args->thread();
-  ucontext_t* uc     = args->ucontext();
-  intptr_t* sp;
-
-  assert(ProfileVM && thread->is_VM_thread(), "just checking");
-
-  // Skip the mcontext corruption verification. If if occasionally
-  // things get corrupt, it is ok for profiling - we will just get an unresolved
-  // function name
-  ExtendedPC new_addr((address)uc->uc_mcontext.gregs[REG_PC]);
-  _addr = new_addr;
-}
-
-
 static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, gregset_t rs, lwpstatus_t *lwpstatus) {
   char lwpstatusfile[PROCFILE_LENGTH];
   int lwpfd, err;
@@ -313,11 +302,6 @@ bool os::is_allocatable(size_t bytes) {
    return (bytes <= (size_t)3835*M);
 #endif
 }
-
-extern "C" void Fetch32PFI () ;
-extern "C" void Fetch32Resume () ;
-extern "C" void FetchNPFI () ;
-extern "C" void FetchNResume () ;
 
 extern "C" JNIEXPORT int
 JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
@@ -358,13 +342,8 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   guarantee(sig != os::Solaris::SIGinterrupt(), "Can not chain VM interrupt signal, try -XX:+UseAltSigs");
 
   if (sig == os::Solaris::SIGasync()) {
-    if (thread) {
-      OSThread::InterruptArguments args(thread, uc);
-      thread->osthread()->do_interrupt_callbacks_at_interrupt(&args);
-      return true;
-    } else if (vmthread) {
-      OSThread::InterruptArguments args(vmthread, uc);
-      vmthread->osthread()->do_interrupt_callbacks_at_interrupt(&args);
+    if (thread || vmthread) {
+      OSThread::SR_handler(t, uc);
       return true;
     } else if (os::Solaris::chained_handler(sig, info, ucVoid)) {
       return true;
@@ -395,17 +374,10 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     npc = (address) uc->uc_mcontext.gregs[REG_nPC];
 
     // SafeFetch() support
-    // Implemented with either a fixed set of addresses such
-    // as Fetch32*, or with Thread._OnTrap.
-    if (uc->uc_mcontext.gregs[REG_PC] == intptr_t(Fetch32PFI)) {
-      uc->uc_mcontext.gregs [REG_PC]  = intptr_t(Fetch32Resume) ;
-      uc->uc_mcontext.gregs [REG_nPC] = intptr_t(Fetch32Resume) + 4 ;
-      return true ;
-    }
-    if (uc->uc_mcontext.gregs[REG_PC] == intptr_t(FetchNPFI)) {
-      uc->uc_mcontext.gregs [REG_PC]  = intptr_t(FetchNResume) ;
-      uc->uc_mcontext.gregs [REG_nPC] = intptr_t(FetchNResume) + 4 ;
-      return true ;
+    if (StubRoutines::is_safefetch_fault(pc)) {
+      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      uc->uc_mcontext.gregs[REG_nPC] = uc->uc_mcontext.gregs[REG_PC] + 4;
+      return 1;
     }
 
     // Handle ALL stack overflow variations here

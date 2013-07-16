@@ -105,6 +105,32 @@ interface Node<T> {
     }
 
     /**
+     * Return a node describing a subsequence of the elements of this node,
+     * starting at the given inclusive start offset and ending at the given
+     * exclusive end offset.
+     *
+     * @param from The (inclusive) starting offset of elements to include, must
+     *             be in range 0..count().
+     * @param to The (exclusive) end offset of elements to include, must be
+     *           in range 0..count().
+     * @param generator A function to be used to create a new array, if needed,
+     *                  for reference nodes.
+     * @return the truncated node
+     */
+    default Node<T> truncate(long from, long to, IntFunction<T[]> generator) {
+        if (from == 0 && to == count())
+            return this;
+        Spliterator<T> spliterator = spliterator();
+        long size = to - from;
+        Node.Builder<T> nodeBuilder = Nodes.builder(size, generator);
+        nodeBuilder.begin(size);
+        for (int i = 0; i < from && spliterator.tryAdvance(e -> { }); i++) { }
+        for (int i = 0; (i < size) && spliterator.tryAdvance(nodeBuilder); i++) { }
+        nodeBuilder.end();
+        return nodeBuilder.build();
+    }
+
+    /**
      * Provides an array view of the contents of this node.
      *
      * <p>Depending on the underlying implementation, this may return a
@@ -192,19 +218,90 @@ interface Node<T> {
         }
     }
 
-    /**
-     * Specialized {@code Node} for int elements
-     */
-    interface OfInt extends Node<Integer> {
+    public interface OfPrimitive<T, T_CONS, T_ARR,
+                                 T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>,
+                                 T_NODE extends OfPrimitive<T, T_CONS, T_ARR, T_SPLITR, T_NODE>>
+            extends Node<T> {
 
         /**
          * {@inheritDoc}
          *
-         * @return a {@link Spliterator.OfInt} describing the elements of this
-         *         node
+         * @return a {@link Spliterator.OfPrimitive} describing the elements of
+         *         this node
          */
         @Override
-        Spliterator.OfInt spliterator();
+        T_SPLITR spliterator();
+
+        /**
+         * Traverses the elements of this node, and invoke the provided
+         * {@code action} with each element.
+         *
+         * @param action a consumer that is to be invoked with each
+         *        element in this {@code Node.OfPrimitive}
+         */
+        void forEach(T_CONS action);
+
+        @Override
+        default T_NODE getChild(int i) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        T_NODE truncate(long from, long to, IntFunction<T[]> generator);
+
+        /**
+         * {@inheritDoc}
+         *
+         * @implSpec the default implementation invokes the generator to create
+         * an instance of a boxed primitive array with a length of
+         * {@link #count()} and then invokes {@link #copyInto(T[], int)} with
+         * that array at an offset of 0.
+         */
+        @Override
+        default T[] asArray(IntFunction<T[]> generator) {
+            T[] boxed = generator.apply((int) count());
+            copyInto(boxed, 0);
+            return boxed;
+        }
+
+        /**
+         * Views this node as a primitive array.
+         *
+         * <p>Depending on the underlying implementation this may return a
+         * reference to an internal array rather than a copy.  It is the callers
+         * responsibility to decide if either this node or the array is utilized
+         * as the primary reference for the data.</p>
+         *
+         * @return an array containing the contents of this {@code Node}
+         */
+        T_ARR asPrimitiveArray();
+
+        /**
+         * Creates a new primitive array.
+         *
+         * @param count the length of the primitive array.
+         * @return the new primitive array.
+         */
+        T_ARR newArray(int count);
+
+        /**
+         * Copies the content of this {@code Node} into a primitive array,
+         * starting at a given offset into the array.  It is the caller's
+         * responsibility to ensure there is sufficient room in the array.
+         *
+         * @param array the array into which to copy the contents of this
+         *              {@code Node}
+         * @param offset the starting offset within the array
+         * @throws IndexOutOfBoundsException if copying would cause access of
+         *         data outside array bounds
+         * @throws NullPointerException if {@code array} is {@code null}
+         */
+        void copyInto(T_ARR array, int offset);
+    }
+
+    /**
+     * Specialized {@code Node} for int elements
+     */
+    interface OfInt extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, OfInt> {
 
         /**
          * {@inheritDoc}
@@ -227,79 +324,42 @@ interface Node<T> {
         }
 
         /**
-         * Traverses the elements of this node, and invoke the provided
-         * {@code IntConsumer} with each element.
-         *
-         * @param consumer a {@code IntConsumer} that is to be invoked with each
-         *        element in this {@code Node}
-         */
-        void forEach(IntConsumer consumer);
-
-        /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes the generator to create
-         * an instance of an Integer[] array with a length of {@link #count()}
-         * and then invokes {@link #copyInto(Integer[], int)} with that
-         * Integer[] array at an offset of 0.  This is not efficient and it is
-         * recommended to invoke {@link #asIntArray()}.
-         */
-        @Override
-        default Integer[] asArray(IntFunction<Integer[]> generator) {
-            Integer[] boxed = generator.apply((int) count());
-            copyInto(boxed, 0);
-            return boxed;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @implSpec the default implementation invokes {@link #asIntArray()} to
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()} to
          * obtain an int[] array then and copies the elements from that int[]
          * array into the boxed Integer[] array.  This is not efficient and it
-         * is recommended to invoke {@link #copyInto(int[], int)}.
+         * is recommended to invoke {@link #copyInto(Object, int)}.
          */
         @Override
         default void copyInto(Integer[] boxed, int offset) {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfInt.copyInto(Integer[], int)");
 
-            int[] array = asIntArray();
+            int[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
         }
 
         @Override
-        default Node.OfInt getChild(int i) {
-            throw new IndexOutOfBoundsException();
+        default Node.OfInt truncate(long from, long to, IntFunction<Integer[]> generator) {
+            if (from == 0 && to == count())
+                return this;
+            long size = to - from;
+            Spliterator.OfInt spliterator = spliterator();
+            Node.Builder.OfInt nodeBuilder = Nodes.intBuilder(size);
+            nodeBuilder.begin(size);
+            for (int i = 0; i < from && spliterator.tryAdvance((IntConsumer) e -> { }); i++) { }
+            for (int i = 0; (i < size) && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
+            nodeBuilder.end();
+            return nodeBuilder.build();
         }
 
-        /**
-         * Views this node as an int[] array.
-         *
-         * <p>Depending on the underlying implementation this may return a
-         * reference to an internal array rather than a copy.  It is the callers
-         * responsibility to decide if either this node or the array is utilized
-         * as the primary reference for the data.</p>
-         *
-         * @return an array containing the contents of this {@code Node}
-         */
-        int[] asIntArray();
-
-        /**
-         * Copies the content of this {@code Node} into an int[] array, starting
-         * at a given offset into the array.  It is the caller's responsibility
-         * to ensure there is sufficient room in the array.
-         *
-         * @param array the array into which to copy the contents of this
-         *              {@code Node}
-         * @param offset the starting offset within the array
-         * @throws IndexOutOfBoundsException if copying would cause access of
-         *         data outside array bounds
-         * @throws NullPointerException if {@code array} is {@code null}
-         */
-        void copyInto(int[] array, int offset);
+        @Override
+        default int[] newArray(int count) {
+            return new int[count];
+        }
 
         /**
          * {@inheritDoc}
@@ -309,22 +369,12 @@ interface Node<T> {
         default StreamShape getShape() {
             return StreamShape.INT_VALUE;
         }
-
     }
 
     /**
      * Specialized {@code Node} for long elements
      */
-    interface OfLong extends Node<Long> {
-
-        /**
-         * {@inheritDoc}
-         *
-         * @return a {@link Spliterator.OfLong} describing the elements of this
-         *         node
-         */
-        @Override
-        Spliterator.OfLong spliterator();
+    interface OfLong extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, OfLong> {
 
         /**
          * {@inheritDoc}
@@ -347,79 +397,42 @@ interface Node<T> {
         }
 
         /**
-         * Traverses the elements of this node, and invoke the provided
-         * {@code LongConsumer} with each element.
-         *
-         * @param consumer a {@code LongConsumer} that is to be invoked with
-         *        each element in this {@code Node}
-         */
-        void forEach(LongConsumer consumer);
-
-        /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes the generator to create
-         * an instance of a Long[] array with a length of {@link #count()} and
-         * then invokes {@link #copyInto(Long[], int)} with that Long[] array at
-         * an offset of 0.  This is not efficient and it is recommended to
-         * invoke {@link #asLongArray()}.
-         */
-        @Override
-        default Long[] asArray(IntFunction<Long[]> generator) {
-            Long[] boxed = generator.apply((int) count());
-            copyInto(boxed, 0);
-            return boxed;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @implSpec the default implementation invokes {@link #asLongArray()}
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()}
          * to obtain a long[] array then and copies the elements from that
          * long[] array into the boxed Long[] array.  This is not efficient and
-         * it is recommended to invoke {@link #copyInto(long[], int)}.
+         * it is recommended to invoke {@link #copyInto(Object, int)}.
          */
         @Override
         default void copyInto(Long[] boxed, int offset) {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfInt.copyInto(Long[], int)");
 
-            long[] array = asLongArray();
+            long[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
         }
 
         @Override
-        default Node.OfLong getChild(int i) {
-            throw new IndexOutOfBoundsException();
+        default Node.OfLong truncate(long from, long to, IntFunction<Long[]> generator) {
+            if (from == 0 && to == count())
+                return this;
+            long size = to - from;
+            Spliterator.OfLong spliterator = spliterator();
+            Node.Builder.OfLong nodeBuilder = Nodes.longBuilder(size);
+            nodeBuilder.begin(size);
+            for (int i = 0; i < from && spliterator.tryAdvance((LongConsumer) e -> { }); i++) { }
+            for (int i = 0; (i < size) && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
+            nodeBuilder.end();
+            return nodeBuilder.build();
         }
 
-        /**
-         * Views this node as a long[] array.
-         *
-         * <p/>Depending on the underlying implementation this may return a
-         * reference to an internal array rather than a copy. It is the callers
-         * responsibility to decide if either this node or the array is utilized
-         * as the primary reference for the data.
-         *
-         * @return an array containing the contents of this {@code Node}
-         */
-        long[] asLongArray();
-
-        /**
-         * Copies the content of this {@code Node} into a long[] array, starting
-         * at a given offset into the array.  It is the caller's responsibility
-         * to ensure there is sufficient room in the array.
-         *
-         * @param array the array into which to copy the contents of this
-         *        {@code Node}
-         * @param offset the starting offset within the array
-         * @throws IndexOutOfBoundsException if copying would cause access of
-         *         data outside array bounds
-         * @throws NullPointerException if {@code array} is {@code null}
-         */
-        void copyInto(long[] array, int offset);
+        @Override
+        default long[] newArray(int count) {
+            return new long[count];
+        }
 
         /**
          * {@inheritDoc}
@@ -429,23 +442,12 @@ interface Node<T> {
         default StreamShape getShape() {
             return StreamShape.LONG_VALUE;
         }
-
-
     }
 
     /**
      * Specialized {@code Node} for double elements
      */
-    interface OfDouble extends Node<Double> {
-
-        /**
-         * {@inheritDoc}
-         *
-         * @return A {@link Spliterator.OfDouble} describing the elements of
-         *         this node
-         */
-        @Override
-        Spliterator.OfDouble spliterator();
+    interface OfDouble extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, OfDouble> {
 
         /**
          * {@inheritDoc}
@@ -467,82 +469,45 @@ interface Node<T> {
             }
         }
 
-        /**
-         * Traverses the elements of this node, and invoke the provided
-         * {@code DoubleConsumer} with each element.
-         *
-         * @param consumer A {@code DoubleConsumer} that is to be invoked with
-         *        each element in this {@code Node}
-         */
-        void forEach(DoubleConsumer consumer);
-
         //
 
         /**
          * {@inheritDoc}
          *
-         * @implSpec the default implementation invokes the generator to create
-         * an instance of a Double[] array with a length of {@link #count()} and
-         * then invokes {@link #copyInto(Double[], int)} with that Double[]
-         * array at an offset of 0.  This is not efficient and it is recommended
-         * to invoke {@link #asDoubleArray()}.
-         */
-        @Override
-        default Double[] asArray(IntFunction<Double[]> generator) {
-            Double[] boxed = generator.apply((int) count());
-            copyInto(boxed, 0);
-            return boxed;
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @implSpec the default implementation invokes {@link #asDoubleArray()}
+         * @implSpec the default implementation invokes {@link #asPrimitiveArray()}
          * to obtain a double[] array then and copies the elements from that
          * double[] array into the boxed Double[] array.  This is not efficient
-         * and it is recommended to invoke {@link #copyInto(double[], int)}.
+         * and it is recommended to invoke {@link #copyInto(Object, int)}.
          */
         @Override
         default void copyInto(Double[] boxed, int offset) {
             if (Tripwire.ENABLED)
                 Tripwire.trip(getClass(), "{0} calling Node.OfDouble.copyInto(Double[], int)");
 
-            double[] array = asDoubleArray();
+            double[] array = asPrimitiveArray();
             for (int i = 0; i < array.length; i++) {
                 boxed[offset + i] = array[i];
             }
         }
 
         @Override
-        default Node.OfDouble getChild(int i) {
-            throw new IndexOutOfBoundsException();
+        default Node.OfDouble truncate(long from, long to, IntFunction<Double[]> generator) {
+            if (from == 0 && to == count())
+                return this;
+            long size = to - from;
+            Spliterator.OfDouble spliterator = spliterator();
+            Node.Builder.OfDouble nodeBuilder = Nodes.doubleBuilder(size);
+            nodeBuilder.begin(size);
+            for (int i = 0; i < from && spliterator.tryAdvance((DoubleConsumer) e -> { }); i++) { }
+            for (int i = 0; (i < size) && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
+            nodeBuilder.end();
+            return nodeBuilder.build();
         }
 
-        /**
-         * Views this node as a double[] array.
-         *
-         * <p/>Depending on the underlying implementation this may return a
-         * reference to an internal array rather than a copy.  It is the callers
-         * responsibility to decide if either this node or the array is utilized
-         * as the primary reference for the data.
-         *
-         * @return an array containing the contents of this {@code Node}
-         */
-        double[] asDoubleArray();
-
-        /**
-         * Copies the content of this {@code Node} into a double[] array, starting
-         * at a given offset into the array.  It is the caller's responsibility
-         * to ensure there is sufficient room in the array.
-         *
-         * @param array the array into which to copy the contents of this
-         *        {@code Node}
-         * @param offset the starting offset within the array
-         * @throws IndexOutOfBoundsException if copying would cause access of
-         *         data outside array bounds
-         * @throws NullPointerException if {@code array} is {@code null}
-         */
-        void copyInto(double[] array, int offset);
+        @Override
+        default double[] newArray(int count) {
+            return new double[count];
+        }
 
         /**
          * {@inheritDoc}

@@ -24,16 +24,6 @@ package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
 
-import java.util.function.DoubleToIntFunction;
-import java.util.function.DoubleToLongFunction;
-import java.util.function.Function;
-import java.util.function.IntToDoubleFunction;
-import java.util.function.IntToLongFunction;
-import java.util.function.LongToDoubleFunction;
-import java.util.function.LongToIntFunction;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
@@ -98,8 +88,8 @@ public class MapOpTest extends OpTestCase {
         exerciseOps(data, s -> s.mapToObj(i -> i));
         exerciseOps(data, s -> s.map(i -> 0));
         exerciseOps(data, s -> s.map(i -> i * 2));
-        exerciseOps(data, s -> s.longs());
-        exerciseOps(data, s -> s.doubles());
+        exerciseOps(data, s -> s.asLongStream());
+        exerciseOps(data, s -> s.asDoubleStream());
         exerciseOps(data, s -> s.boxed());
         exerciseOps(data, s -> s.mapToObj(Integer::toString));
         exerciseOps(data, s -> s.mapToLong(i -> i));
@@ -113,7 +103,7 @@ public class MapOpTest extends OpTestCase {
         exerciseOps(data, s -> s.mapToObj(i -> i));
         exerciseOps(data, s -> s.map(i -> 0L));
         exerciseOps(data, s -> s.map(i -> i * 2L));
-        exerciseOps(data, s -> s.doubles());
+        exerciseOps(data, s -> s.asDoubleStream());
         exerciseOps(data, s -> s.boxed());
         exerciseOps(data, s -> s.mapToObj(e -> Long.toString(e)));
         exerciseOps(data, s -> s.mapToInt(i -> (int) i));

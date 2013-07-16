@@ -433,7 +433,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         int measure = PSD_INTHOUSANDTHSOFINCHES;
         int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
         if (sz > 0) {
-          LPTSTR str = (LPTSTR)safe_Malloc(sizeof(TCHAR) * sz);
+          LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
           if (str != NULL) {
             sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
             if (sz > 0) {
@@ -645,7 +645,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
           int sz = GetLocaleInfo(LOCALE_USER_DEFAULT,
                                  LOCALE_IMEASURE, NULL, 0);
           if (sz > 0) {
-            LPTSTR str = (LPTSTR)safe_Malloc(sizeof(TCHAR) * sz);
+            LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
             if (str != NULL) {
               sz = GetLocaleInfo(LOCALE_USER_DEFAULT,
                                  LOCALE_IMEASURE, str, sz);
@@ -2302,8 +2302,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
      * rounded advances will drift away from the true advance.
      */
     if (glyphPos != NULL && strLen > 0) {
-         xadvances = (int*)safe_Malloc(strLen * sizeof(int));
-         xyadvances = (int*)safe_Malloc(strLen * sizeof(int) * 2);
+         xadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, strLen, sizeof(int));
+         xyadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, strLen, sizeof(int) * 2);
     }
     if (xadvances != NULL && xyadvances != NULL) {
         int *inxAdvances = xadvances;
@@ -2513,8 +2513,9 @@ static jbyte* reverseDIB(jbyte* imageBits, long srcWidth, long srcHeight,
     if ((imgWidthByteSz % sizeof(DWORD)) != 0)
         padBytes = sizeof(DWORD) - (imgWidthByteSz % sizeof(DWORD));
 
+    jbyte* alignedImage = (jbyte*) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
+            imgWidthByteSz+padBytes, ROUND_TO_LONG(srcHeight));
     long newImgSize = (imgWidthByteSz+padBytes) * ROUND_TO_LONG(srcHeight);
-    jbyte* alignedImage = (jbyte*) safe_Malloc(newImgSize);
 
     if (alignedImage != NULL) {
         memset(alignedImage, 0xff, newImgSize);
@@ -3116,7 +3117,7 @@ static POINT *getPaperSizeList(LPCTSTR deviceName, LPCTSTR portName) {
                                        DC_PAPERSIZE, NULL, NULL);
 
     if (numPaperSizes > 0) {
-        paperSizes = (POINT *)safe_Malloc(sizeof(*paperSizes) * numPaperSizes);
+        paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes), numPaperSizes);
 
         DWORD result = DeviceCapabilities(deviceName, portName,
                                           DC_PAPERSIZE, (LPTSTR) paperSizes,
@@ -3766,8 +3767,8 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
     numPaperSizes = (int)DeviceCapabilities(printer, port, DC_PAPERSIZE,
                                             NULL, NULL);
     if (numPaperSizes > 0) {
-        papers = (WORD*)safe_Malloc(sizeof(WORD) * numPaperSizes);
-        paperSizes = (POINT *)safe_Malloc(sizeof(*paperSizes) * numPaperSizes);
+        papers = (WORD*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(WORD), numPaperSizes);
+        paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes), numPaperSizes);
 
         DWORD result1 = DeviceCapabilities(printer, port,
                                            DC_PAPERS, (LPTSTR) papers, NULL);

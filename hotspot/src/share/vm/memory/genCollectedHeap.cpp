@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/filemap.hpp"
@@ -41,7 +42,6 @@
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
@@ -388,7 +388,7 @@ void GenCollectedHeap::do_collection(bool  full,
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, gclog_or_tty);
+    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL);
 
     gc_prologue(complete);
     increment_total_collections(complete);
@@ -417,10 +417,11 @@ void GenCollectedHeap::do_collection(bool  full,
             // The full_collections increment was missed above.
             increment_total_full_collections();
           }
-          pre_full_gc_dump();    // do any pre full gc dumps
+          pre_full_gc_dump(NULL);    // do any pre full gc dumps
         }
         // Timer for individual generations. Last argument is false: no CR
-        TraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, gclog_or_tty);
+        // FIXME: We should try to start the timing earlier to cover more of the GC pause
+        GCTraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, NULL);
         TraceCollectorStats tcs(_gens[i]->counters());
         TraceMemoryManagerStats tmms(_gens[i]->kind(),gc_cause());
 
@@ -534,7 +535,8 @@ void GenCollectedHeap::do_collection(bool  full,
     complete = complete || (max_level_collected == n_gens() - 1);
 
     if (complete) { // We did a "major" collection
-      post_full_gc_dump();   // do any post full gc dumps
+      // FIXME: See comment at pre_full_gc_dump call
+      post_full_gc_dump(NULL);   // do any post full gc dumps
     }
 
     if (PrintGCDetails) {
@@ -870,12 +872,6 @@ void GenCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
   }
 }
 
-void GenCollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {
-  for (int i = 0; i < _n_gens; i++) {
-    _gens[i]->object_iterate_since_last_GC(cl);
-  }
-}
-
 Space* GenCollectedHeap::space_containing(const void* addr) const {
   for (int i = 0; i < _n_gens; i++) {
     Space* res = _gens[i]->space_containing(addr);
@@ -1183,8 +1179,6 @@ void GenCollectedHeap::gc_prologue(bool full) {
   CollectedHeap::accumulate_statistics_all_tlabs();
   ensure_parsability(true);   // retire TLABs
 
-  // Call allocation profiler
-  AllocationProfiler::iterate_since_last_gc();
   // Walk generations
   GenGCPrologueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.

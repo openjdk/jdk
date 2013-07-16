@@ -201,23 +201,24 @@ void LIR_OprDesc::validate_type() const {
 
 #ifdef ASSERT
   if (!is_pointer() && !is_illegal()) {
+    OprKind kindfield = kind_field(); // Factored out because of compiler bug, see 8002160
     switch (as_BasicType(type_field())) {
     case T_LONG:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+      assert((kindfield == cpu_register || kindfield == stack_value) &&
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
       // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
-      assert((kind_field() == fpu_register || kind_field() == stack_value
-             ARM_ONLY(|| kind_field() == cpu_register)
-             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+      assert((kindfield == fpu_register || kindfield == stack_value
+             ARM_ONLY(|| kindfield == cpu_register)
+             PPC_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
       // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
-      assert((kind_field() == fpu_register || kind_field() == stack_value
-             ARM_ONLY(|| kind_field() == cpu_register)
-             PPC_ONLY(|| kind_field() == cpu_register) ) &&
+      assert((kindfield == fpu_register || kindfield == stack_value
+             ARM_ONLY(|| kindfield == cpu_register)
+             PPC_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -229,7 +230,7 @@ void LIR_OprDesc::validate_type() const {
     case T_OBJECT:
     case T_METADATA:
     case T_ARRAY:
-      assert((kind_field() == cpu_register || kind_field() == stack_value) &&
+      assert((kindfield == cpu_register || kindfield == stack_value) &&
              size_field() == single_size, "must match");
       break;
 
@@ -429,6 +430,11 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   _stub = new ArrayCopyStub(this);
 }
 
+LIR_OpUpdateCRC32::LIR_OpUpdateCRC32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)
+  : LIR_Op(lir_updatecrc32, res, NULL)
+  , _crc(crc)
+  , _val(val) {
+}
 
 //-------------------verify--------------------------
 
@@ -875,6 +881,20 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
+// LIR_OpUpdateCRC32
+    case lir_updatecrc32: {
+      assert(op->as_OpUpdateCRC32() != NULL, "must be");
+      LIR_OpUpdateCRC32* opUp = (LIR_OpUpdateCRC32*)op;
+
+      assert(opUp->_crc->is_valid(), "used");          do_input(opUp->_crc);     do_temp(opUp->_crc);
+      assert(opUp->_val->is_valid(), "used");          do_input(opUp->_val);     do_temp(opUp->_val);
+      assert(opUp->_result->is_valid(), "used");       do_output(opUp->_result);
+      assert(opUp->_info == NULL, "no info for LIR_OpUpdateCRC32");
+
+      break;
+    }
+
+
 // LIR_OpLock
     case lir_lock:
     case lir_unlock: {
@@ -1053,6 +1073,10 @@ void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
   masm->emit_arraycopy(this);
   masm->emit_code_stub(stub());
+}
+
+void LIR_OpUpdateCRC32::emit_code(LIR_Assembler* masm) {
+  masm->emit_updatecrc32(this);
 }
 
 void LIR_Op0::emit_code(LIR_Assembler* masm) {
@@ -1762,6 +1786,8 @@ const char * LIR_Op::name() const {
      case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
      case lir_arraycopy:             s = "arraycopy";     break;
+     // LIR_OpUpdateCRC32
+     case lir_updatecrc32:           s = "updatecrc32";   break;
      // LIR_OpLock
      case lir_lock:                  s = "lock";          break;
      case lir_unlock:                s = "unlock";        break;
@@ -1812,6 +1838,13 @@ void LIR_OpArrayCopy::print_instr(outputStream* out) const {
   dst_pos()->print(out); out->print(" ");
   length()->print(out);  out->print(" ");
   tmp()->print(out);     out->print(" ");
+}
+
+// LIR_OpUpdateCRC32
+void LIR_OpUpdateCRC32::print_instr(outputStream* out) const {
+  crc()->print(out);     out->print(" ");
+  val()->print(out);     out->print(" ");
+  result_opr()->print(out); out->print(" ");
 }
 
 // LIR_OpCompareAndSwap

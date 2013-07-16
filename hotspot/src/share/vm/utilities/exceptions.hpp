@@ -194,15 +194,15 @@ class Exceptions {
 #define HAS_PENDING_EXCEPTION                    (((ThreadShadow*)THREAD)->has_pending_exception())
 #define CLEAR_PENDING_EXCEPTION                  (((ThreadShadow*)THREAD)->clear_pending_exception())
 
-#define CHECK                                    THREAD); if (HAS_PENDING_EXCEPTION) return       ; (0
-#define CHECK_(result)                           THREAD); if (HAS_PENDING_EXCEPTION) return result; (0
+#define CHECK                                    THREAD); if (HAS_PENDING_EXCEPTION) return       ; (void)(0
+#define CHECK_(result)                           THREAD); if (HAS_PENDING_EXCEPTION) return result; (void)(0
 #define CHECK_0                                  CHECK_(0)
 #define CHECK_NH                                 CHECK_(Handle())
 #define CHECK_NULL                               CHECK_(NULL)
 #define CHECK_false                              CHECK_(false)
 
-#define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (0
-#define CHECK_AND_CLEAR_(result)                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return result; } (0
+#define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (void)(0
+#define CHECK_AND_CLEAR_(result)                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return result; } (void)(0
 #define CHECK_AND_CLEAR_0                       CHECK_AND_CLEAR_(0)
 #define CHECK_AND_CLEAR_NH                      CHECK_AND_CLEAR_(Handle())
 #define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(NULL)
@@ -282,7 +282,7 @@ class Exceptions {
     CLEAR_PENDING_EXCEPTION;               \
     ex->print();                           \
     ShouldNotReachHere();                  \
-  } (0
+  } (void)(0
 
 // ExceptionMark is a stack-allocated helper class for local exception handling.
 // It is used with the EXCEPTION_MARK macro.

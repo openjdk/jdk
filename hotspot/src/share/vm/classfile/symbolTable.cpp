@@ -598,6 +598,8 @@ StringTable* StringTable::_the_table = NULL;
 
 bool StringTable::_needs_rehashing = false;
 
+volatile int StringTable::_parallel_claimed_idx = 0;
+
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
   return use_alternate_hashcode() ? AltHashing::murmur3_32(seed(), s, len) :
@@ -761,8 +763,18 @@ void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f) 
   }
 }
 
-void StringTable::oops_do(OopClosure* f) {
-  for (int i = 0; i < the_table()->table_size(); ++i) {
+void StringTable::buckets_do(OopClosure* f, int start_idx, int end_idx) {
+  const int limit = the_table()->table_size();
+
+  assert(0 <= start_idx && start_idx <= limit,
+         err_msg("start_idx (" INT32_FORMAT ") oob?", start_idx));
+  assert(0 <= end_idx && end_idx <= limit,
+         err_msg("end_idx (" INT32_FORMAT ") oob?", end_idx));
+  assert(start_idx <= end_idx,
+         err_msg("Ordering: start_idx=" INT32_FORMAT", end_idx=" INT32_FORMAT,
+                 start_idx, end_idx));
+
+  for (int i = start_idx; i < end_idx; i += 1) {
     HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
     while (entry != NULL) {
       assert(!entry->is_shared(), "CDS not used for the StringTable");
@@ -771,6 +783,27 @@ void StringTable::oops_do(OopClosure* f) {
 
       entry = entry->next();
     }
+  }
+}
+
+void StringTable::oops_do(OopClosure* f) {
+  buckets_do(f, 0, the_table()->table_size());
+}
+
+void StringTable::possibly_parallel_oops_do(OopClosure* f) {
+  const int ClaimChunkSize = 32;
+  const int limit = the_table()->table_size();
+
+  for (;;) {
+    // Grab next set of buckets to scan
+    int start_idx = Atomic::add(ClaimChunkSize, &_parallel_claimed_idx) - ClaimChunkSize;
+    if (start_idx >= limit) {
+      // End of table
+      break;
+    }
+
+    int end_idx = MIN2(limit, start_idx + ClaimChunkSize);
+    buckets_do(f, start_idx, end_idx);
   }
 }
 
