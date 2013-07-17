@@ -33,10 +33,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
+import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
+import com.sun.tools.javac.comp.Enter;
+import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -83,6 +88,7 @@ public class Types {
     final boolean allowDefaultMethods;
     final ClassReader reader;
     final Check chk;
+    final Enter enter;
     JCDiagnostic.Factory diags;
     List<Warner> warnStack = List.nil();
     final Name capturedName;
@@ -109,6 +115,7 @@ public class Types {
         allowDefaultMethods = source.allowDefaultMethods();
         reader = ClassReader.instance(context);
         chk = Check.instance(context);
+        enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
@@ -605,6 +612,84 @@ public class Types {
             return site;
         }
     }
+
+    /**
+     * Create a symbol for a class that implements a given functional interface
+     * and overrides its functional descriptor. This routine is used for two
+     * main purposes: (i) checking well-formedness of a functional interface;
+     * (ii) perform functional interface bridge calculation.
+     */
+    public ClassSymbol makeFunctionalInterfaceClass(Env<AttrContext> env, Name name, List<Type> targets, long cflags) {
+        Assert.check(targets.nonEmpty() && isFunctionalInterface(targets.head));
+        Symbol descSym = findDescriptorSymbol(targets.head.tsym);
+        Type descType = findDescriptorType(targets.head);
+        ClassSymbol csym = new ClassSymbol(cflags, name, env.enclClass.sym.outermostClass());
+        csym.completer = null;
+        csym.members_field = new Scope(csym);
+        MethodSymbol instDescSym = new MethodSymbol(descSym.flags(), descSym.name, descType, csym);
+        csym.members_field.enter(instDescSym);
+        Type.ClassType ctype = new Type.ClassType(Type.noType, List.<Type>nil(), csym);
+        ctype.supertype_field = syms.objectType;
+        ctype.interfaces_field = targets;
+        csym.type = ctype;
+        csym.sourcefile = ((ClassSymbol)csym.owner).sourcefile;
+        return csym;
+    }
+
+    /**
+     * Find the minimal set of methods that are overridden by the functional
+     * descriptor in 'origin'. All returned methods are assumed to have different
+     * erased signatures.
+     */
+    public List<Symbol> functionalInterfaceBridges(TypeSymbol origin) {
+        Assert.check(isFunctionalInterface(origin));
+        Symbol descSym = findDescriptorSymbol(origin);
+        CompoundScope members = membersClosure(origin.type, false);
+        ListBuffer<Symbol> overridden = ListBuffer.lb();
+        outer: for (Symbol m2 : members.getElementsByName(descSym.name, bridgeFilter)) {
+            if (m2 == descSym) continue;
+            else if (descSym.overrides(m2, origin, Types.this, false)) {
+                for (Symbol m3 : overridden) {
+                    if (isSameType(m3.erasure(Types.this), m2.erasure(Types.this)) ||
+                            (m3.overrides(m2, origin, Types.this, false) &&
+                            (pendingBridges((ClassSymbol)origin, m3.enclClass()) ||
+                            (((MethodSymbol)m2).binaryImplementation((ClassSymbol)m3.owner, Types.this) != null)))) {
+                        continue outer;
+                    }
+                }
+                overridden.add(m2);
+            }
+        }
+        return overridden.toList();
+    }
+    //where
+        private Filter<Symbol> bridgeFilter = new Filter<Symbol>() {
+            public boolean accepts(Symbol t) {
+                return t.kind == Kinds.MTH &&
+                        t.name != names.init &&
+                        t.name != names.clinit &&
+                        (t.flags() & SYNTHETIC) == 0;
+            }
+        };
+        private boolean pendingBridges(ClassSymbol origin, TypeSymbol s) {
+            //a symbol will be completed from a classfile if (a) symbol has
+            //an associated file object with CLASS kind and (b) the symbol has
+            //not been entered
+            if (origin.classfile != null &&
+                    origin.classfile.getKind() == JavaFileObject.Kind.CLASS &&
+                    enter.getEnv(origin) == null) {
+                return false;
+            }
+            if (origin == s) {
+                return true;
+            }
+            for (Type t : interfaces(origin.type)) {
+                if (pendingBridges((ClassSymbol)t.tsym, s)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     // </editor-fold>
 
    /**
@@ -2672,6 +2757,7 @@ public class Types {
                 public boolean accepts(Symbol s) {
                     return s.kind == Kinds.MTH &&
                             s.name == msym.name &&
+                            (s.flags() & SYNTHETIC) == 0 &&
                             s.isInheritedIn(site.tsym, Types.this) &&
                             overrideEquivalent(memberType(site, s), memberType(site, msym));
                 }
