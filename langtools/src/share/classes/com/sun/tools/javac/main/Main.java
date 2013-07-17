@@ -377,10 +377,10 @@ public class Main {
     }
 
     public Result compile(String[] args,
-                       String[] classNames,
-                       Context context,
-                       List<JavaFileObject> fileObjects,
-                       Iterable<? extends Processor> processors)
+                          String[] classNames,
+                          Context context,
+                          List<JavaFileObject> fileObjects,
+                          Iterable<? extends Processor> processors)
     {
         context.put(Log.outKey, out);
         log = Log.instance(context);

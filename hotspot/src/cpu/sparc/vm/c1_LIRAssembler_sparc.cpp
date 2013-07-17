@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2946,6 +2946,9 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst_opr) {
   }
 }
 
+void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
+  fatal("CRC32 intrinsic is not implemented on this platform");
+}
 
 void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();
