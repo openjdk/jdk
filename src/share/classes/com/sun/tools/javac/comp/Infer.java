@@ -159,7 +159,8 @@ public class Infer {
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                 //inject return constraints earlier
                 checkWithinBounds(inferenceContext, warn); //propagation
-                generateReturnConstraints(resultInfo, mt, inferenceContext);
+                Type newRestype = generateReturnConstraints(resultInfo, mt, inferenceContext);
+                mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
                 //propagate outwards if needed
                 if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
                     //propagate inference context outwards and exit
@@ -209,9 +210,20 @@ public class Infer {
      * call occurs in a context where a type T is expected, use the expected
      * type to derive more constraints on the generic method inference variables.
      */
-    void generateReturnConstraints(Attr.ResultInfo resultInfo,
+    Type generateReturnConstraints(Attr.ResultInfo resultInfo,
             MethodType mt, InferenceContext inferenceContext) {
-        Type qtype1 = inferenceContext.asFree(mt.getReturnType());
+        Type from = mt.getReturnType();
+        if (mt.getReturnType().containsAny(inferenceContext.inferencevars) &&
+                resultInfo.checkContext.inferenceContext() != emptyContext) {
+            from = types.capture(from);
+            //add synthetic captured ivars
+            for (Type t : from.getTypeArguments()) {
+                if (t.hasTag(TYPEVAR) && ((TypeVar)t).isCaptured()) {
+                    inferenceContext.addVar((TypeVar)t);
+                }
+            }
+        }
+        Type qtype1 = inferenceContext.asFree(from);
         Type to = returnConstraintTarget(qtype1, resultInfo.pt);
         Assert.check(allowGraphInference || !resultInfo.checkContext.inferenceContext().free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
@@ -224,6 +236,7 @@ public class Infer {
                     .setMessage("infer.no.conforming.instance.exists",
                     inferenceContext.restvars(), mt.getReturnType(), to);
         }
+        return from;
     }
 
     Type returnConstraintTarget(Type from, Type to) {
@@ -436,7 +449,9 @@ public class Infer {
                     EnumSet<IncorporationStep> incorporationSteps = allowGraphInference ?
                             incorporationStepsGraph : incorporationStepsLegacy;
                     for (IncorporationStep is : incorporationSteps) {
-                        is.apply(uv, inferenceContext, warn);
+                        if (is.accepts(uv, inferenceContext)) {
+                            is.apply(uv, inferenceContext, warn);
+                        }
                     }
                 }
                 if (!mlistener.changed || !allowGraphInference) break;
@@ -526,6 +541,11 @@ public class Infer {
                         }
                     }
                 }
+            }
+            @Override
+            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+                //applies to all undetvars
+                return true;
             }
         },
         /**
@@ -647,6 +667,7 @@ public class Infer {
                 for (Type b : uv.getBounds(InferenceBound.UPPER)) {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
+                        if (uv2.isCaptured()) continue;
                         //alpha <: beta
                         //0. set beta :> alpha
                         uv2.addBound(InferenceBound.LOWER, uv, infer.types);
@@ -672,6 +693,7 @@ public class Infer {
                 for (Type b : uv.getBounds(InferenceBound.LOWER)) {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
+                        if (uv2.isCaptured()) continue;
                         //alpha :> beta
                         //0. set beta <: alpha
                         uv2.addBound(InferenceBound.UPPER, uv, infer.types);
@@ -697,6 +719,7 @@ public class Infer {
                 for (Type b : uv.getBounds(InferenceBound.EQ)) {
                     if (inferenceContext.inferenceVars().contains(b)) {
                         UndetVar uv2 = (UndetVar)inferenceContext.asFree(b);
+                        if (uv2.isCaptured()) continue;
                         //alpha == beta
                         //0. set beta == alpha
                         uv2.addBound(InferenceBound.EQ, uv, infer.types);
@@ -722,6 +745,10 @@ public class Infer {
         };
 
         abstract void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn);
+
+        boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
+            return !uv.isCaptured();
+        }
     }
 
     /** incorporation steps to be executed when running in legacy mode */
@@ -1027,12 +1054,35 @@ public class Infer {
         UPPER_LEGACY(InferenceBound.UPPER) {
             @Override
             public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
-                return !inferenceContext.free(t.getBounds(ib));
+                return !inferenceContext.free(t.getBounds(ib)) && !t.isCaptured();
             }
 
             @Override
             Type solve(UndetVar uv, InferenceContext inferenceContext) {
                 return UPPER.solve(uv, inferenceContext);
+            }
+        },
+        /**
+         * Like the former; the only difference is that this step can only be applied
+         * if all upper/lower bounds are ground.
+         */
+        CAPTURED(InferenceBound.UPPER) {
+            @Override
+            public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
+                return !inferenceContext.free(t.getBounds(InferenceBound.UPPER, InferenceBound.LOWER));
+            }
+
+            @Override
+            Type solve(UndetVar uv, InferenceContext inferenceContext) {
+                Infer infer = inferenceContext.infer();
+                Type upper = UPPER.filterBounds(uv, inferenceContext).nonEmpty() ?
+                        UPPER.solve(uv, inferenceContext) :
+                        infer.syms.objectType;
+                Type lower = LOWER.filterBounds(uv, inferenceContext).nonEmpty() ?
+                        LOWER.solve(uv, inferenceContext) :
+                        infer.syms.botType;
+                CapturedType prevCaptured = (CapturedType)uv.qtype;
+                return new CapturedType(prevCaptured.tsym.name, prevCaptured.tsym.owner, upper, lower, prevCaptured.wildcard);
             }
         };
 
@@ -1052,7 +1102,7 @@ public class Infer {
          * Can the inference variable be instantiated using this step?
          */
         public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
-            return filterBounds(t, inferenceContext).nonEmpty();
+            return filterBounds(t, inferenceContext).nonEmpty() && !t.isCaptured();
         }
 
         /**
@@ -1089,7 +1139,7 @@ public class Infer {
 
         EQ(EnumSet.of(InferenceStep.EQ)),
         EQ_LOWER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER)),
-        EQ_LOWER_THROWS_UPPER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER, InferenceStep.THROWS, InferenceStep.UPPER));
+        EQ_LOWER_THROWS_UPPER_CAPTURED(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER, InferenceStep.UPPER, InferenceStep.THROWS, InferenceStep.CAPTURED));
 
         final EnumSet<InferenceStep> steps;
 
@@ -1350,10 +1400,24 @@ public class Infer {
             Mapping fromTypeVarFun = new Mapping("fromTypeVarFunWithBounds") {
                 // mapping that turns inference variables into undet vars
                 public Type apply(Type t) {
-                    if (t.hasTag(TYPEVAR)) return new UndetVar((TypeVar)t, types);
-                    else return t.map(this);
+                    if (t.hasTag(TYPEVAR)) {
+                        TypeVar tv = (TypeVar)t;
+                        return tv.isCaptured() ?
+                                new CapturedUndetVar((CapturedType)tv, types) :
+                                new UndetVar(tv, types);
+                    } else {
+                        return t.map(this);
+                    }
                 }
             };
+
+        /**
+         * add a new inference var to this inference context
+         */
+        void addVar(TypeVar t) {
+            this.undetvars = this.undetvars.prepend(fromTypeVarFun.apply(t));
+            this.inferencevars = this.inferencevars.prepend(t);
+        }
 
         /**
          * returns the list of free variables (as type-variables) in this
