@@ -234,6 +234,7 @@ class java_lang_Class : AllStatic {
   static GrowableArray<Klass*>* _fixup_mirror_list;
 
   static void set_init_lock(oop java_class, oop init_lock);
+  static void set_protection_domain(oop java_class, oop protection_domain);
  public:
   static void compute_offsets();
 
@@ -272,7 +273,6 @@ class java_lang_Class : AllStatic {
 
   // Support for embedded per-class oops
   static oop  protection_domain(oop java_class);
-  static void set_protection_domain(oop java_class, oop protection_domain);
   static oop  init_lock(oop java_class);
   static objArrayOop  signers(oop java_class);
   static void set_signers(oop java_class, objArrayOop signers);
