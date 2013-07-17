@@ -227,15 +227,15 @@ public final class KdcComm {
         try {
             ibuf = sendIfPossible(obuf, tempKdc.next(), useTCP);
         } catch(Exception first) {
+            boolean ok = false;
             while(tempKdc.hasNext()) {
                 try {
                     ibuf = sendIfPossible(obuf, tempKdc.next(), useTCP);
-                    if (ibuf != null) {
-                        return ibuf;
-                    }
+                    ok = true;
+                    break;
                 } catch(Exception ignore) {}
             }
-            throw first;
+            if (!ok) throw first;
         }
         if (ibuf == null) {
             throw new IOException("Cannot get a KDC reply");
