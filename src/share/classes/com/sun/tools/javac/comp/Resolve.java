@@ -584,6 +584,13 @@ public class Resolve {
         try {
             currentResolutionContext = new MethodResolutionContext();
             currentResolutionContext.attrMode = DeferredAttr.AttrMode.CHECK;
+            if (env.tree.hasTag(JCTree.Tag.REFERENCE)) {
+                //method/constructor references need special check class
+                //to handle inference variables in 'argtypes' (might happen
+                //during an unsticking round)
+                currentResolutionContext.methodCheck =
+                        new MethodReferenceCheck(resultInfo.checkContext.inferenceContext());
+            }
             MethodResolutionPhase step = currentResolutionContext.step = env.info.pendingResolutionPhase;
             return rawInstantiate(env, site, m, resultInfo, argtypes, typeargtypes,
                     step.isBoxingRequired(), step.isVarargsRequired(), warn);
@@ -773,6 +780,14 @@ public class Resolve {
         }
     };
 
+    List<Type> dummyArgs(int length) {
+        ListBuffer<Type> buf = ListBuffer.lb();
+        for (int i = 0 ; i < length ; i++) {
+            buf.append(Type.noType);
+        }
+        return buf.toList();
+    }
+
     /**
      * Main method applicability routine. Given a list of actual types A,
      * a list of formal types F, determines whether the types in A are
@@ -835,6 +850,47 @@ public class Resolve {
             CheckContext checkContext = new MethodCheckContext(!deferredAttrContext.phase.isBoxingRequired(), deferredAttrContext, rsWarner) {
                 MethodCheckDiag methodDiag = varargsCheck ?
                                  MethodCheckDiag.VARARG_MISMATCH : MethodCheckDiag.ARG_MISMATCH;
+
+                @Override
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    reportMC(pos, methodDiag, deferredAttrContext.inferenceContext, details);
+                }
+            };
+            return new MethodResultInfo(to, checkContext);
+        }
+
+        @Override
+        public MethodCheck mostSpecificCheck(List<Type> actuals, boolean strict) {
+            return new MostSpecificCheck(strict, actuals);
+        }
+    };
+
+    class MethodReferenceCheck extends AbstractMethodCheck {
+
+        InferenceContext pendingInferenceContext;
+
+        MethodReferenceCheck(InferenceContext pendingInferenceContext) {
+            this.pendingInferenceContext = pendingInferenceContext;
+        }
+
+        @Override
+        void checkArg(DiagnosticPosition pos, boolean varargs, Type actual, Type formal, DeferredAttrContext deferredAttrContext, Warner warn) {
+            ResultInfo mresult = methodCheckResult(varargs, formal, deferredAttrContext, warn);
+            mresult.check(pos, actual);
+        }
+
+        private ResultInfo methodCheckResult(final boolean varargsCheck, Type to,
+                final DeferredAttr.DeferredAttrContext deferredAttrContext, Warner rsWarner) {
+            CheckContext checkContext = new MethodCheckContext(!deferredAttrContext.phase.isBoxingRequired(), deferredAttrContext, rsWarner) {
+                MethodCheckDiag methodDiag = varargsCheck ?
+                                 MethodCheckDiag.VARARG_MISMATCH : MethodCheckDiag.ARG_MISMATCH;
+
+                @Override
+                public boolean compatible(Type found, Type req, Warner warn) {
+                    found = pendingInferenceContext.asFree(found);
+                    req = infer.returnConstraintTarget(found, req);
+                    return super.compatible(found, req, warn);
+                }
 
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
@@ -2576,7 +2632,8 @@ public class Resolve {
                                   Name name, List<Type> argtypes,
                                   List<Type> typeargtypes,
                                   boolean boxingAllowed,
-                                  MethodCheck methodCheck) {
+                                  MethodCheck methodCheck,
+                                  InferenceContext inferenceContext) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
 
         ReferenceLookupHelper boundLookupHelper;
@@ -2599,7 +2656,7 @@ public class Resolve {
         Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(), site.tsym, methodCheck, boundLookupHelper);
 
         //step 2 - unbound lookup
-        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup();
+        ReferenceLookupHelper unboundLookupHelper = boundLookupHelper.unboundLookup(inferenceContext);
         Env<AttrContext> unboundEnv = env.dup(env.tree, env.info.dup());
         Symbol unboundSym = lookupMethod(unboundEnv, env.tree.pos(), site.tsym, methodCheck, unboundLookupHelper);
 
@@ -2739,11 +2796,11 @@ public class Resolve {
          * Returns an unbound version of this lookup helper. By default, this
          * method returns an dummy lookup helper.
          */
-        ReferenceLookupHelper unboundLookup() {
+        ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
             //dummy loopkup helper that always return 'methodNotFound'
             return new ReferenceLookupHelper(referenceTree, name, site, argtypes, typeargtypes, maxPhase) {
                 @Override
-                ReferenceLookupHelper unboundLookup() {
+                ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
                     return this;
                 }
                 @Override
@@ -2793,14 +2850,15 @@ public class Resolve {
         }
 
         @Override
-        ReferenceLookupHelper unboundLookup() {
+        ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
             if (TreeInfo.isStaticSelector(referenceTree.expr, names) &&
                     argtypes.nonEmpty() &&
-                    (argtypes.head.hasTag(NONE) || types.isSubtypeUnchecked(argtypes.head, site))) {
+                    (argtypes.head.hasTag(NONE) ||
+                    types.isSubtypeUnchecked(inferenceContext.asFree(argtypes.head), site))) {
                 return new UnboundMethodReferenceLookupHelper(referenceTree, name,
                         site, argtypes, typeargtypes, maxPhase);
             } else {
-                return super.unboundLookup();
+                return super.unboundLookup(inferenceContext);
             }
         }
 
@@ -2836,7 +2894,7 @@ public class Resolve {
         }
 
         @Override
-        ReferenceLookupHelper unboundLookup() {
+        ReferenceLookupHelper unboundLookup(InferenceContext inferenceContext) {
             return this;
         }
 

@@ -2708,10 +2708,21 @@ public class Attr extends JCTree.Visitor {
 
             setFunctionalInfo(that, pt(), desc, target, resultInfo.checkContext.inferenceContext());
             List<Type> argtypes = desc.getParameterTypes();
+            Resolve.MethodCheck referenceCheck = rs.resolveMethodCheck;
 
-            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult =
-                    rs.resolveMemberReference(that.pos(), localEnv, that,
-                        that.expr.type, that.name, argtypes, typeargtypes, true, rs.resolveMethodCheck);
+            if (resultInfo.checkContext.inferenceContext().free(argtypes)) {
+                referenceCheck = rs.new MethodReferenceCheck(resultInfo.checkContext.inferenceContext());
+            }
+
+            Pair<Symbol, Resolve.ReferenceLookupHelper> refResult = null;
+            List<Type> saved_undet = resultInfo.checkContext.inferenceContext().save();
+            try {
+                refResult = rs.resolveMemberReference(that.pos(), localEnv, that, that.expr.type,
+                        that.name, argtypes, typeargtypes, true, referenceCheck,
+                        resultInfo.checkContext.inferenceContext());
+            } finally {
+                resultInfo.checkContext.inferenceContext().rollback(saved_undet);
+            }
 
             Symbol refSym = refResult.fst;
             Resolve.ReferenceLookupHelper lookupHelper = refResult.snd;
@@ -2823,16 +2834,23 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            that.sym = refSym.baseSymbol();
-            that.kind = lookupHelper.referenceKind(that.sym);
-
             ResultInfo checkInfo =
                     resultInfo.dup(newMethodTemplate(
                         desc.getReturnType().hasTag(VOID) ? Type.noType : desc.getReturnType(),
-                        lookupHelper.argtypes,
-                        typeargtypes));
+                        that.kind.isUnbound() ? argtypes.tail : argtypes, typeargtypes));
 
             Type refType = checkId(that, lookupHelper.site, refSym, localEnv, checkInfo);
+
+            if (that.kind.isUnbound() &&
+                    resultInfo.checkContext.inferenceContext().free(argtypes.head)) {
+                //re-generate inference constraints for unbound receiver
+                if (!types.isSubtype(resultInfo.checkContext.inferenceContext().asFree(argtypes.head), exprType)) {
+                    //cannot happen as this has already been checked - we just need
+                    //to regenerate the inference constraints, as that has been lost
+                    //as a result of the call to inferenceContext.save()
+                    Assert.error("Can't get here");
+                }
+            }
 
             if (!refType.isErroneous()) {
                 refType = types.createMethodTypeWithReturn(refType,

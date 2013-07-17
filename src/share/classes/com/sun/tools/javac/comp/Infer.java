@@ -149,7 +149,7 @@ public class Infer {
         inferenceException.clear();
         try {
             DeferredAttr.DeferredAttrContext deferredAttrContext =
-                    resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
+                        resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
 
             resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,
                     argtypes, mt.getParameterTypes(), warn);
@@ -225,32 +225,32 @@ public class Infer {
                     inferenceContext.restvars(), mt.getReturnType(), to);
         }
     }
-    //where
-        private Type returnConstraintTarget(Type from, Type to) {
-            if (from.hasTag(VOID)) {
-                return syms.voidType;
-            } else if (to.hasTag(NONE)) {
-                return from.isPrimitive() ? from : syms.objectType;
-            } else if (from.hasTag(UNDETVAR) && to.isPrimitive()) {
-                if (!allowGraphInference) {
-                    //if legacy, just return boxed type
-                    return types.boxedClass(to).type;
-                }
-                //if graph inference we need to skip conflicting boxed bounds...
-                UndetVar uv = (UndetVar)from;
-                for (Type t : uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
-                    Type boundAsPrimitive = types.unboxedType(t);
-                    if (boundAsPrimitive == null) continue;
-                    if (types.isConvertible(boundAsPrimitive, to)) {
-                        //effectively skip return-type constraint generation (compatibility)
-                        return syms.objectType;
-                    }
-                }
+
+    Type returnConstraintTarget(Type from, Type to) {
+        if (from.hasTag(VOID)) {
+            return syms.voidType;
+        } else if (to.hasTag(NONE)) {
+            return from.isPrimitive() ? from : syms.objectType;
+        } else if (from.hasTag(UNDETVAR) && to.isPrimitive()) {
+            if (!allowGraphInference) {
+                //if legacy, just return boxed type
                 return types.boxedClass(to).type;
-            } else {
-                return to;
             }
+            //if graph inference we need to skip conflicting boxed bounds...
+            UndetVar uv = (UndetVar)from;
+            for (Type t : uv.getBounds(InferenceBound.EQ, InferenceBound.LOWER)) {
+                Type boundAsPrimitive = types.unboxedType(t);
+                if (boundAsPrimitive == null) continue;
+                if (types.isConvertible(boundAsPrimitive, to)) {
+                    //effectively skip return-type constraint generation (compatibility)
+                    return syms.objectType;
+                }
+            }
+            return types.boxedClass(to).type;
+        } else {
+            return to;
         }
+    }
 
     /**
       * Infer cyclic inference variables as described in 15.12.2.8.
@@ -1336,9 +1336,6 @@ public class Infer {
 
         /** list of inference vars in this context */
         List<Type> inferencevars;
-
-        /** backed up inference variables */
-        List<Type> saved_undet;
 
         java.util.Map<FreeTypeListener, List<Type>> freeTypeListeners =
                 new java.util.HashMap<FreeTypeListener, List<Type>>();
