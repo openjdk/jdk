@@ -1452,7 +1452,7 @@ public abstract class Type implements TypeMirror {
         }
 
         /** inference variable bounds */
-        private Map<InferenceBound, List<Type>> bounds;
+        protected Map<InferenceBound, List<Type>> bounds;
 
         /** inference variable's inferred type (set from Infer.java) */
         public Type inst = null;
@@ -1520,7 +1520,11 @@ public abstract class Type implements TypeMirror {
         }
 
         /** add a bound of a given kind - this might trigger listener notification */
-        public void addBound(InferenceBound ib, Type bound, Types types) {
+        public final void addBound(InferenceBound ib, Type bound, Types types) {
+            addBound(ib, bound, types, false);
+        }
+
+        protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             Type bound2 = boundMap.apply(bound);
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
@@ -1575,7 +1579,7 @@ public abstract class Type implements TypeMirror {
                     bounds.put(ib, newBounds.toList());
                     //step 3 - for each dependency, add new replaced bound
                     for (Type dep : deps) {
-                        addBound(ib, types.subst(dep, from, to), types);
+                        addBound(ib, types.subst(dep, from, to), types, true);
                     }
                 }
             } finally {
@@ -1590,6 +1594,39 @@ public abstract class Type implements TypeMirror {
             if (listener != null) {
                 listener.varChanged(this, ibs);
             }
+        }
+
+        public boolean isCaptured() {
+            return false;
+        }
+    }
+
+    /**
+     * This class is used to represent synthetic captured inference variables
+     * that can be generated during nested generic method calls. The only difference
+     * between these inference variables and ordinary ones is that captured inference
+     * variables cannot get new bounds through incorporation.
+     */
+    public static class CapturedUndetVar extends UndetVar {
+
+        public CapturedUndetVar(CapturedType origin, Types types) {
+            super(origin, types);
+            if (!origin.lower.hasTag(BOT)) {
+                bounds.put(InferenceBound.LOWER, List.of(origin.lower));
+            }
+        }
+
+        @Override
+        public void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
+            if (update) {
+                //only change bounds if request comes from substBounds
+                super.addBound(ib, bound, types, update);
+            }
+        }
+
+        @Override
+        public boolean isCaptured() {
+            return true;
         }
     }
 

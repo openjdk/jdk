@@ -961,8 +961,21 @@ public class Resolve {
                 DeferredType dt = (DeferredType)found;
                 return dt.check(this);
             } else {
-                return super.check(pos, chk.checkNonVoid(pos, types.capture(types.upperBound(found.baseType()))));
+                return super.check(pos, chk.checkNonVoid(pos, types.capture(U(found.baseType()))));
             }
+        }
+
+        /**
+         * javac has a long-standing 'simplification' (see 6391995):
+         * given an actual argument type, the method check is performed
+         * on its upper bound. This leads to inconsistencies when an
+         * argument type is checked against itself. For example, given
+         * a type-variable T, it is not true that {@code U(T) <: T},
+         * so we need to guard against that.
+         */
+        private Type U(Type found) {
+            return found == pt ?
+                    found : types.upperBound(found);
         }
 
         @Override
