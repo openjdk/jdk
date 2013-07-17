@@ -246,7 +246,7 @@ public class VM {
      }
   }
 
-  private static final boolean disableDerivedPrinterTableCheck;
+  private static final boolean disableDerivedPointerTableCheck;
   private static final Properties saProps;
 
   static {
@@ -256,12 +256,12 @@ public class VM {
        url = VM.class.getClassLoader().getResource("sa.properties");
        saProps.load(new BufferedInputStream(url.openStream()));
      } catch (Exception e) {
-       throw new RuntimeException("Unable to load properties  " +
+       System.err.println("Unable to load properties  " +
                                   (url == null ? "null" : url.toString()) +
                                   ": " + e.getMessage());
      }
 
-     disableDerivedPrinterTableCheck = System.getProperty("sun.jvm.hotspot.runtime.VM.disableDerivedPointerTableCheck") != null;
+     disableDerivedPointerTableCheck = System.getProperty("sun.jvm.hotspot.runtime.VM.disableDerivedPointerTableCheck") != null;
   }
 
   private VM(TypeDataBase db, JVMDebugger debugger, boolean isBigEndian) {
@@ -371,7 +371,8 @@ public class VM {
   /** This is used by the debugging system */
   public static void initialize(TypeDataBase db, JVMDebugger debugger) {
     if (soleInstance != null) {
-      throw new RuntimeException("Attempt to initialize VM twice");
+      // Using multiple SA Tool classes in the same process creates a call here.
+      return;
     }
     soleInstance = new VM(db, debugger, debugger.getMachineDescription().isBigEndian());
 
@@ -683,7 +684,7 @@ public class VM {
 
   /** Returns true if C2 derived pointer table should be used, false otherwise */
   public boolean useDerivedPointerTable() {
-    return !disableDerivedPrinterTableCheck;
+    return !disableDerivedPointerTableCheck;
   }
 
   /** Returns the code cache; should not be used if is core build */

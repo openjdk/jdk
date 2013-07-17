@@ -245,9 +245,9 @@ public final class Compiler {
     /**
      * Constructor
      *
+     * @param env          script environment
      * @param installer    code installer
-     * @param functionNode function node (in any available {@link CompilationState}) to compile
-     * @param sequence     {@link Compiler#CompilationSequence} of {@link CompilationPhase}s to apply as this compilation
+     * @param sequence     {@link Compiler.CompilationSequence} of {@link CompilationPhase}s to apply as this compilation
      * @param strict       should this compilation use strict mode semantics
      */
     //TODO support an array of FunctionNodes for batch lazy compilation

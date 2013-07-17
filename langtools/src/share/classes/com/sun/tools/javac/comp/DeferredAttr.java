@@ -115,10 +115,15 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(DEFERRED, null);
+            super(null);
             this.tree = tree;
             this.env = env.dup(tree, env.info.dup());
             this.speculativeCache = new SpeculativeCache();
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return DEFERRED;
         }
 
         /**
@@ -959,10 +964,8 @@ public class DeferredAttr extends JCTree.Visitor {
             if (sym.kind == Kinds.AMBIGUOUS) {
                 Resolve.AmbiguityError err = (Resolve.AmbiguityError)sym.baseSymbol();
                 result = ArgumentExpressionKind.PRIMITIVE;
-                for (List<Symbol> ambigousSyms = err.ambiguousSyms ;
-                        ambigousSyms.nonEmpty() && !result.isPoly() ;
-                        ambigousSyms = ambigousSyms.tail) {
-                    Symbol s = ambigousSyms.head;
+                for (Symbol s : err.ambiguousSyms) {
+                    if (result.isPoly()) break;
                     if (s.kind == Kinds.MTH) {
                         result = reduce(ArgumentExpressionKind.methodKind(s, types));
                     }

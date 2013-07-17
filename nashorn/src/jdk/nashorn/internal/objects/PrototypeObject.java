@@ -35,6 +35,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * Instances of this class serve as "prototype" object for script functions.
@@ -43,7 +44,7 @@ import jdk.nashorn.internal.lookup.Lookup;
  *
  */
 public class PrototypeObject extends ScriptObject {
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
 
     private Object constructor;
 
@@ -53,11 +54,11 @@ public class PrototypeObject extends ScriptObject {
     static {
         PropertyMap map = PropertyMap.newMap(PrototypeObject.class);
         map = Lookup.newProperty(map, "constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR);
-        nasgenmap$ = map;
+        map$ = map;
     }
 
     PrototypeObject() {
-        this(nasgenmap$);
+        this(map$);
     }
 
     /**
@@ -66,12 +67,12 @@ public class PrototypeObject extends ScriptObject {
      * @param map property map
      */
     public PrototypeObject(final PropertyMap map) {
-        super(map != nasgenmap$ ? map.addAll(nasgenmap$) : nasgenmap$);
+        super(map != map$ ? map.addAll(map$) : map$);
         setProto(Global.objectPrototype());
     }
 
     PrototypeObject(final ScriptFunction func) {
-        this();
+        this(map$);
         this.constructor = func;
     }
 
@@ -106,6 +107,10 @@ public class PrototypeObject extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), PrototypeObject.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(PrototypeObject.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 }

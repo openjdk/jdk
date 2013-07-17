@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -899,6 +899,11 @@ public:
   void movdqu(XMMRegister dst, XMMRegister src)   { Assembler::movdqu(dst, src); }
   void movdqu(XMMRegister dst, AddressLiteral src);
 
+  // Move Aligned Double Quadword
+  void movdqa(XMMRegister dst, Address src)       { Assembler::movdqa(dst, src); }
+  void movdqa(XMMRegister dst, XMMRegister src)   { Assembler::movdqa(dst, src); }
+  void movdqa(XMMRegister dst, AddressLiteral src);
+
   void movsd(XMMRegister dst, XMMRegister src) { Assembler::movsd(dst, src); }
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
@@ -1027,6 +1032,16 @@ public:
       Assembler::vinsertf128h(dst, nds, src);
   }
 
+  // Carry-Less Multiplication Quadword
+  void vpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+    // 0x00 - multiply lower 64 bits [0:63]
+    Assembler::vpclmulqdq(dst, nds, src, 0x00);
+  }
+  void vpclmulhdq(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+    // 0x11 - multiply upper 64 bits [64:127]
+    Assembler::vpclmulqdq(dst, nds, src, 0x11);
+  }
+
   // Data
 
   void cmov32( Condition cc, Register dst, Address  src);
@@ -1142,6 +1157,16 @@ public:
   void encode_iso_array(Register src, Register dst, Register len,
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
                         XMMRegister tmp4, Register tmp5, Register result);
+
+  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  void update_byte_crc32(Register crc, Register val, Register table);
+  void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);
+  // Fold 128-bit data chunk
+  void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset);
+  void fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf);
+  // Fold 8-bit data
+  void fold_8bit_crc32(Register crc, Register table, Register tmp);
+  void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
 
 #undef VIRTUAL
 

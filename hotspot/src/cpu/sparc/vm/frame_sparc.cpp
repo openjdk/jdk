@@ -257,11 +257,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
-      return false;
-    }
-
     // It should be safe to construct the sender though it might not be valid
 
     frame sender(_SENDER_SP, younger_sp, adjusted_stack);
