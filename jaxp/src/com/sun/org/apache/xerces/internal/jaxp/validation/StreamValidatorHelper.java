@@ -24,7 +24,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.parsers.XML11Configuration;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
@@ -170,7 +170,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
     private XMLParserConfiguration initialize() {
         XML11Configuration config = new XML11Configuration();
         if (fComponentManager.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            config.setProperty(SECURITY_MANAGER, new SecurityManager());
+            config.setProperty(SECURITY_MANAGER, new XMLSecurityManager());
         }
         config.setProperty(ENTITY_RESOLVER, fComponentManager.getProperty(ENTITY_RESOLVER));
         config.setProperty(ERROR_HANDLER, fComponentManager.getProperty(ERROR_HANDLER));

@@ -49,10 +49,10 @@ import com.sun.org.apache.xerces.internal.util.SAXLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -679,7 +679,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                         reader = spf.newSAXParser().getXMLReader();
                         // If this is a Xerces SAX parser, set the security manager if there is one
                         if (reader instanceof com.sun.org.apache.xerces.internal.parsers.SAXParser) {
-                           SecurityManager securityManager = (SecurityManager) fComponentManager.getProperty(SECURITY_MANAGER);
+                           XMLSecurityManager securityManager = (XMLSecurityManager) fComponentManager.getProperty(SECURITY_MANAGER);
                            if (securityManager != null) {
                                try {
                                    reader.setProperty(SECURITY_MANAGER, securityManager);
