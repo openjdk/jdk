@@ -1525,7 +1525,7 @@ public abstract class Type implements TypeMirror {
         }
 
         protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
-            Type bound2 = boundMap.apply(bound);
+            Type bound2 = toTypeVarMap.apply(bound);
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
@@ -1536,7 +1536,7 @@ public abstract class Type implements TypeMirror {
             notifyChange(EnumSet.of(ib));
         }
         //where
-            Type.Mapping boundMap = new Mapping("boundMap") {
+            Type.Mapping toTypeVarMap = new Mapping("toTypeVarMap") {
                 @Override
                 public Type apply(Type t) {
                     if (t.hasTag(UNDETVAR)) {

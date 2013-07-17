@@ -461,9 +461,10 @@ public class Infer {
         }
         finally {
             mlistener.detach();
-            if (mlistener.rounds == MAX_INCORPORATION_STEPS) {
+            if (incorporationCache.size() == MAX_INCORPORATION_STEPS) {
                 inferenceContext.rollback(saved_undet);
             }
+            incorporationCache.clear();
         }
     }
     //where
@@ -475,7 +476,6 @@ public class Infer {
          */
         class MultiUndetVarListener implements UndetVar.UndetVarListener {
 
-            int rounds;
             boolean changed;
             List<Type> undetvars;
 
@@ -489,13 +489,12 @@ public class Infer {
 
             public void varChanged(UndetVar uv, Set<InferenceBound> ibs) {
                 //avoid non-termination
-                if (rounds < MAX_INCORPORATION_STEPS) {
+                if (incorporationCache.size() < MAX_INCORPORATION_STEPS) {
                     changed = true;
                 }
             }
 
             void reset() {
-                rounds++;
                 changed = false;
             }
 
@@ -528,17 +527,17 @@ public class Infer {
                 if (uv.inst != null) {
                     Type inst = uv.inst;
                     for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                        if (!infer.types.isSubtypeUnchecked(inst, inferenceContext.asFree(u), warn)) {
+                        if (!isSubtype(inst, inferenceContext.asFree(u), warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.UPPER);
                         }
                     }
                     for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!infer.types.isSubtypeUnchecked(inferenceContext.asFree(l), inst, warn)) {
+                        if (!isSubtype(inferenceContext.asFree(l), inst, warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.LOWER);
                         }
                     }
                     for (Type e : uv.getBounds(InferenceBound.EQ)) {
-                        if (!infer.types.isSameType(inst, inferenceContext.asFree(e))) {
+                        if (!isSameType(inst, inferenceContext.asFree(e), infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.EQ);
                         }
                     }
@@ -561,19 +560,19 @@ public class Infer {
                 Type eq = null;
                 for (Type e : uv.getBounds(InferenceBound.EQ)) {
                     Assert.check(!inferenceContext.free(e));
-                    if (eq != null && !infer.types.isSameType(e, eq)) {
+                    if (eq != null && !isSameType(e, eq, infer)) {
                         infer.reportBoundError(uv, BoundErrorKind.EQ);
                     }
                     eq = e;
                     for (Type l : uv.getBounds(InferenceBound.LOWER)) {
                         Assert.check(!inferenceContext.free(l));
-                        if (!infer.types.isSubtypeUnchecked(l, e, warn)) {
+                        if (!isSubtype(l, e, warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_LOWER);
                         }
                     }
                     for (Type u : uv.getBounds(InferenceBound.UPPER)) {
                         if (inferenceContext.free(u)) continue;
-                        if (!infer.types.isSubtypeUnchecked(e, u, warn)) {
+                        if (!isSubtype(e, u, warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_UPPER);
                         }
                     }
@@ -589,12 +588,12 @@ public class Infer {
                 for (Type e : uv.getBounds(InferenceBound.EQ)) {
                     if (e.containsAny(inferenceContext.inferenceVars())) continue;
                     for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                        if (!infer.types.isSubtypeUnchecked(e, inferenceContext.asFree(u), warn)) {
+                        if (!isSubtype(e, inferenceContext.asFree(u), warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_UPPER);
                         }
                     }
                     for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!infer.types.isSubtypeUnchecked(inferenceContext.asFree(l), e, warn)) {
+                        if (!isSubtype(inferenceContext.asFree(l), e, warn, infer)) {
                             infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_LOWER);
                         }
                     }
@@ -610,7 +609,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                        isSubtype(inferenceContext.asFree(b2), inferenceContext.asFree(b1), warn , infer);
                     }
                 }
             }
@@ -624,7 +623,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                        isSubtype(inferenceContext.asFree(b2), inferenceContext.asFree(b1), warn, infer);
                     }
                 }
             }
@@ -638,7 +637,7 @@ public class Infer {
                 Infer infer = inferenceContext.infer();
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        infer.types.isSubtypeUnchecked(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                        isSubtype(inferenceContext.asFree(b2), inferenceContext.asFree(b1), warn, infer);
                     }
                 }
             }
@@ -653,7 +652,7 @@ public class Infer {
                 for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
                     for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
                         if (b1 != b2) {
-                            infer.types.isSameType(inferenceContext.asFree(b2), inferenceContext.asFree(b1));
+                            isSameType(inferenceContext.asFree(b2), inferenceContext.asFree(b1), infer);
                         }
                     }
                 }
@@ -672,14 +671,14 @@ public class Infer {
                         if (uv2.isCaptured()) continue;
                         //alpha <: beta
                         //0. set beta :> alpha
-                        uv2.addBound(InferenceBound.LOWER, uv, infer.types);
+                        addBound(InferenceBound.LOWER, uv2, inferenceContext.asInstType(uv.qtype), infer);
                         //1. copy alpha's lower to beta's
                         for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                            uv2.addBound(InferenceBound.LOWER, inferenceContext.asInstType(l), infer.types);
+                            addBound(InferenceBound.LOWER, uv2, inferenceContext.asInstType(l), infer);
                         }
                         //2. copy beta's upper to alpha's
                         for (Type u : uv2.getBounds(InferenceBound.UPPER)) {
-                            uv.addBound(InferenceBound.UPPER, inferenceContext.asInstType(u), infer.types);
+                            addBound(InferenceBound.UPPER, uv, inferenceContext.asInstType(u), infer);
                         }
                     }
                 }
@@ -698,14 +697,14 @@ public class Infer {
                         if (uv2.isCaptured()) continue;
                         //alpha :> beta
                         //0. set beta <: alpha
-                        uv2.addBound(InferenceBound.UPPER, uv, infer.types);
+                        addBound(InferenceBound.UPPER, uv2, inferenceContext.asInstType(uv.qtype), infer);
                         //1. copy alpha's upper to beta's
                         for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                            uv2.addBound(InferenceBound.UPPER, inferenceContext.asInstType(u), infer.types);
+                            addBound(InferenceBound.UPPER, uv2, inferenceContext.asInstType(u), infer);
                         }
                         //2. copy beta's lower to alpha's
                         for (Type l : uv2.getBounds(InferenceBound.LOWER)) {
-                            uv.addBound(InferenceBound.LOWER, inferenceContext.asInstType(l), infer.types);
+                            addBound(InferenceBound.LOWER, uv, inferenceContext.asInstType(l), infer);
                         }
                     }
                 }
@@ -724,12 +723,12 @@ public class Infer {
                         if (uv2.isCaptured()) continue;
                         //alpha == beta
                         //0. set beta == alpha
-                        uv2.addBound(InferenceBound.EQ, uv, infer.types);
+                        addBound(InferenceBound.EQ, uv2, inferenceContext.asInstType(uv.qtype), infer);
                         //1. copy all alpha's bounds to beta's
                         for (InferenceBound ib : InferenceBound.values()) {
                             for (Type b2 : uv.getBounds(ib)) {
                                 if (b2 != uv2) {
-                                    uv2.addBound(ib, inferenceContext.asInstType(b2), infer.types);
+                                    addBound(ib, uv2, inferenceContext.asInstType(b2), infer);
                                 }
                             }
                         }
@@ -737,7 +736,7 @@ public class Infer {
                         for (InferenceBound ib : InferenceBound.values()) {
                             for (Type b2 : uv2.getBounds(ib)) {
                                 if (b2 != uv) {
-                                    uv.addBound(ib, inferenceContext.asInstType(b2), infer.types);
+                                    addBound(ib, uv, inferenceContext.asInstType(b2), infer);
                                 }
                             }
                         }
@@ -751,6 +750,41 @@ public class Infer {
         boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
             return !uv.isCaptured();
         }
+
+        boolean isSubtype(Type s, Type t, Warner warn, Infer infer) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, infer);
+        }
+
+        boolean isSameType(Type s, Type t, Infer infer) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, infer);
+        }
+
+        void addBound(InferenceBound ib, UndetVar uv, Type b, Infer infer) {
+            doIncorporationOp(opFor(ib), uv, b, null, infer);
+        }
+
+        IncorporationBinaryOpKind opFor(InferenceBound boundKind) {
+            switch (boundKind) {
+                case EQ:
+                    return IncorporationBinaryOpKind.ADD_EQ_BOUND;
+                case LOWER:
+                    return IncorporationBinaryOpKind.ADD_LOWER_BOUND;
+                case UPPER:
+                    return IncorporationBinaryOpKind.ADD_UPPER_BOUND;
+                default:
+                    Assert.error("Can't get here!");
+                    return null;
+            }
+        }
+
+        boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, Infer infer) {
+            IncorporationBinaryOp newOp = infer.new IncorporationBinaryOp(opKind, op1, op2);
+            Boolean res = infer.incorporationCache.get(newOp);
+            if (res == null) {
+                infer.incorporationCache.put(newOp, res = newOp.apply(warn));
+            }
+            return res;
+        }
     }
 
     /** incorporation steps to be executed when running in legacy mode */
@@ -759,6 +793,102 @@ public class Infer {
     /** incorporation steps to be executed when running in graph mode */
     EnumSet<IncorporationStep> incorporationStepsGraph =
             EnumSet.complementOf(EnumSet.of(IncorporationStep.EQ_CHECK_LEGACY));
+
+    /**
+     * Three kinds of basic operation are supported as part of an incorporation step:
+     * (i) subtype check, (ii) same type check and (iii) bound addition (either
+     * upper/lower/eq bound).
+     */
+    enum IncorporationBinaryOpKind {
+        IS_SUBTYPE() {
+            @Override
+            boolean apply(Type op1, Type op2, Warner warn, Types types) {
+                return types.isSubtypeUnchecked(op1, op2, warn);
+            }
+        },
+        IS_SAME_TYPE() {
+            @Override
+            boolean apply(Type op1, Type op2, Warner warn, Types types) {
+                return types.isSameType(op1, op2);
+            }
+        },
+        ADD_UPPER_BOUND() {
+            @Override
+            boolean apply(Type op1, Type op2, Warner warn, Types types) {
+                UndetVar uv = (UndetVar)op1;
+                uv.addBound(InferenceBound.UPPER, op2, types);
+                return true;
+            }
+        },
+        ADD_LOWER_BOUND() {
+            @Override
+            boolean apply(Type op1, Type op2, Warner warn, Types types) {
+                UndetVar uv = (UndetVar)op1;
+                uv.addBound(InferenceBound.LOWER, op2, types);
+                return true;
+            }
+        },
+        ADD_EQ_BOUND() {
+            @Override
+            boolean apply(Type op1, Type op2, Warner warn, Types types) {
+                UndetVar uv = (UndetVar)op1;
+                uv.addBound(InferenceBound.EQ, op2, types);
+                return true;
+            }
+        };
+
+        abstract boolean apply(Type op1, Type op2, Warner warn, Types types);
+    }
+
+    /**
+     * This class encapsulates a basic incorporation operation; incorporation
+     * operations takes two type operands and a kind. Each operation performed
+     * during an incorporation round is stored in a cache, so that operations
+     * are not executed unnecessarily (which would potentially lead to adding
+     * same bounds over and over).
+     */
+    class IncorporationBinaryOp {
+
+        IncorporationBinaryOpKind opKind;
+        Type op1;
+        Type op2;
+
+        IncorporationBinaryOp(IncorporationBinaryOpKind opKind, Type op1, Type op2) {
+            this.opKind = opKind;
+            this.op1 = op1;
+            this.op2 = op2;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof IncorporationBinaryOp)) {
+                return false;
+            } else {
+                IncorporationBinaryOp that = (IncorporationBinaryOp)o;
+                return opKind == that.opKind &&
+                        types.isSameType(op1, that.op1, true) &&
+                        types.isSameType(op2, that.op2, true);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int result = opKind.hashCode();
+            result *= 127;
+            result += types.hashCode(op1);
+            result *= 127;
+            result += types.hashCode(op2);
+            return result;
+        }
+
+        boolean apply(Warner warn) {
+            return opKind.apply(op1, op2, warn, types);
+        }
+    }
+
+    /** an incorporation cache keeps track of all executed incorporation-related operations */
+    Map<IncorporationBinaryOp, Boolean> incorporationCache =
+            new HashMap<IncorporationBinaryOp, Boolean>();
 
     /**
      * Make sure that the upper bounds we got so far lead to a solvable inference
@@ -894,6 +1024,41 @@ public class Infer {
         public Node pickNode(InferenceGraph g) {
                         Assert.check(!g.nodes.isEmpty(), "No nodes to solve!");
             return g.nodes.get(0);
+        }
+
+        boolean isSubtype(Type s, Type t, Warner warn, Infer infer) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, infer);
+        }
+
+        boolean isSameType(Type s, Type t, Infer infer) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, infer);
+        }
+
+        void addBound(InferenceBound ib, UndetVar uv, Type b, Infer infer) {
+            doIncorporationOp(opFor(ib), uv, b, null, infer);
+        }
+
+        IncorporationBinaryOpKind opFor(InferenceBound boundKind) {
+            switch (boundKind) {
+                case EQ:
+                    return IncorporationBinaryOpKind.ADD_EQ_BOUND;
+                case LOWER:
+                    return IncorporationBinaryOpKind.ADD_LOWER_BOUND;
+                case UPPER:
+                    return IncorporationBinaryOpKind.ADD_UPPER_BOUND;
+                default:
+                    Assert.error("Can't get here!");
+                    return null;
+            }
+        }
+
+        boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, Infer infer) {
+            IncorporationBinaryOp newOp = infer.new IncorporationBinaryOp(opKind, op1, op2);
+            Boolean res = infer.incorporationCache.get(newOp);
+            if (res == null) {
+                infer.incorporationCache.put(newOp, res = newOp.apply(warn));
+            }
+            return res;
         }
     }
 
