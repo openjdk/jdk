@@ -175,6 +175,7 @@ define_pd_global(intx, InitialCodeCacheSize,         160*K);
 define_pd_global(intx, ReservedCodeCacheSize,        32*M);
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 define_pd_global(intx, CodeCacheMinBlockLength,      1);
+define_pd_global(intx, CodeCacheMinimumUseSpace,     200*K);
 define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(4*M));
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
@@ -3678,6 +3679,9 @@ class CommandLineFlags {
                                                                             \
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
+                                                                            \
+  product(bool, ParseGenericDefaults, false,                                \
+          "Parse generic signatures for default method handling")           \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
