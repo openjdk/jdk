@@ -2490,7 +2490,7 @@ public class Resolve {
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
                         if (sym.kind >= AMBIGUOUS) {
                             final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                            ((InapplicableSymbolError)sym).errCandidate().details :
+                                            ((InapplicableSymbolError)sym).errCandidate().snd :
                                             null;
                             sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
                                 @Override
@@ -3442,20 +3442,20 @@ public class Resolve {
                         key, name, first, second);
             }
             else {
-                Candidate c = errCandidate();
+                Pair<Symbol, JCDiagnostic> c = errCandidate();
                 if (compactMethodDiags) {
                     for (Map.Entry<Template, DiagnosticRewriter> _entry :
                             MethodResolutionDiagHelper.rewriters.entrySet()) {
-                        if (_entry.getKey().matches(c.details)) {
+                        if (_entry.getKey().matches(c.snd)) {
                             JCDiagnostic simpleDiag =
                                     _entry.getValue().rewriteDiagnostic(diags, pos,
-                                        log.currentSource(), dkind, c.details);
+                                        log.currentSource(), dkind, c.snd);
                             simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
                             return simpleDiag;
                         }
                     }
                 }
-                Symbol ws = c.sym.asMemberOf(site, types);
+                Symbol ws = c.fst.asMemberOf(site, types);
                 return diags.create(dkind, log.currentSource(), pos,
                           "cant.apply.symbol",
                           kindName(ws),
@@ -3464,7 +3464,7 @@ public class Resolve {
                           methodArguments(argtypes),
                           kindName(ws.owner),
                           ws.owner.type,
-                          c.details);
+                          c.snd);
             }
         }
 
@@ -3473,14 +3473,14 @@ public class Resolve {
             return types.createErrorType(name, location, syms.errSymbol.type).tsym;
         }
 
-        private Candidate errCandidate() {
+        protected Pair<Symbol, JCDiagnostic> errCandidate() {
             Candidate bestSoFar = null;
             for (Candidate c : resolveContext.candidates) {
                 if (c.isApplicable()) continue;
                 bestSoFar = c;
             }
             Assert.checkNonNull(bestSoFar);
-            return bestSoFar;
+            return new Pair<Symbol, JCDiagnostic>(bestSoFar.sym, bestSoFar.details);
         }
     }
 
@@ -3523,7 +3523,15 @@ public class Resolve {
                         methodArguments(argtypes));
                 return new JCDiagnostic.MultilineDiagnostic(err, candidateDetails(filteredCandidates, site));
             } else if (filteredCandidates.size() == 1) {
-                JCDiagnostic d =  new InapplicableSymbolError(resolveContext).getDiagnostic(dkind, pos,
+                Map.Entry<Symbol, JCDiagnostic> _e =
+                                filteredCandidates.entrySet().iterator().next();
+                final Pair<Symbol, JCDiagnostic> p = new Pair<Symbol, JCDiagnostic>(_e.getKey(), _e.getValue());
+                JCDiagnostic d = new InapplicableSymbolError(resolveContext) {
+                    @Override
+                    protected Pair<Symbol, JCDiagnostic> errCandidate() {
+                        return p;
+                    }
+                }.getDiagnostic(dkind, pos,
                     location, site, name, argtypes, typeargtypes);
                 if (truncatedDiag) {
                     d.setFlag(DiagnosticFlag.COMPRESSED);
