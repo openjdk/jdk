@@ -2245,7 +2245,7 @@ public class Types {
 
             @Override
             public Type visitErrorType(ErrorType t, Void ignored) {
-                return t;
+                return Type.noType;
             }
         };
     // </editor-fold>
