@@ -41,9 +41,11 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -909,27 +911,32 @@ public class Infer {
         }
 
         /**
-         * Computes the cost associated with a given node; the cost is computed
-         * as the total number of type-variables that should be eagerly instantiated
-         * in order to get to some of the variables in {@code varsToSolve} from
-         * a given node
+         * Computes the minimum path that goes from a given node to any of the nodes
+         * containing a variable in {@code varsToSolve}. For any given path, the cost
+         * is computed as the total number of type-variables that should be eagerly
+         * instantiated across that path.
          */
-        void computeCostIfNeeded(Node n, Map<Node, Integer> costMap) {
-            if (costMap.containsKey(n)) {
-                return;
-            } else if (!Collections.disjoint(n.data, varsToSolve)) {
-                costMap.put(n, n.data.size());
+        int computeMinPath(InferenceGraph g, Node n) {
+            return computeMinPath(g, n, List.<Node>nil(), 0);
+        }
+
+        int computeMinPath(InferenceGraph g, Node n, List<Node> path, int cost) {
+            if (path.contains(n)) return Integer.MAX_VALUE;
+            List<Node> path2 = path.prepend(n);
+            int cost2 = cost + n.data.size();
+            if (!Collections.disjoint(n.data, varsToSolve)) {
+                return cost2;
             } else {
-                int subcost = Integer.MAX_VALUE;
-                costMap.put(n, subcost); //avoid loops
-                for (Node n2 : n.getDependencies()) {
-                    computeCostIfNeeded(n2, costMap);
-                    subcost = Math.min(costMap.get(n2), subcost);
+               int bestPath = Integer.MAX_VALUE;
+               for (Node n2 : g.nodes) {
+                   if (n2.deps.contains(n)) {
+                       int res = computeMinPath(g, n2, path2, cost2);
+                       if (res < bestPath) {
+                           bestPath = res;
+                       }
+                   }
                 }
-                //update cost map to reflect real cost
-                costMap.put(n, subcost == Integer.MAX_VALUE ?
-                        Integer.MAX_VALUE :
-                        n.data.size() + subcost);
+               return bestPath;
             }
         }
 
@@ -938,21 +945,20 @@ public class Infer {
          */
         @Override
         public Node pickNode(final InferenceGraph g) {
-            final Map<Node, Integer> costMap = new HashMap<Node, Integer>();
-            ArrayList<Node> leaves = new ArrayList<Node>();
+            final Map<Node, Integer> leavesMap = new HashMap<Node, Integer>();
             for (Node n : g.nodes) {
-                computeCostIfNeeded(n, costMap);
                 if (n.isLeaf(n)) {
-                    leaves.add(n);
+                    leavesMap.put(n, computeMinPath(g, n));
                 }
             }
-            Assert.check(!leaves.isEmpty(), "No nodes to solve!");
-            Collections.sort(leaves, new java.util.Comparator<Node>() {
+            Assert.check(!leavesMap.isEmpty(), "No nodes to solve!");
+            TreeSet<Node> orderedLeaves = new TreeSet<Node>(new Comparator<Node>() {
                 public int compare(Node n1, Node n2) {
-                    return costMap.get(n1) - costMap.get(n2);
+                    return leavesMap.get(n1) - leavesMap.get(n2);
                 }
             });
-            return leaves.get(0);
+            orderedLeaves.addAll(leavesMap.keySet());
+            return orderedLeaves.first();
         }
     }
 
