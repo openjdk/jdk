@@ -968,6 +968,39 @@ public class Infer {
             }
         },
         /**
+         * Infer uninstantiated/unbound inference variables occurring in 'throws'
+         * clause as RuntimeException
+         */
+        THROWS(InferenceBound.UPPER) {
+            @Override
+            public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
+                if ((t.qtype.tsym.flags() & Flags.THROWS) == 0) {
+                    //not a throws undet var
+                    return false;
+                }
+                if (t.getBounds(InferenceBound.EQ, InferenceBound.LOWER, InferenceBound.UPPER)
+                            .diff(t.getDeclaredBounds()).nonEmpty()) {
+                    //not an unbounded undet var
+                    return false;
+                }
+                Infer infer = inferenceContext.infer();
+                for (Type db : t.getDeclaredBounds()) {
+                    if (t.isInterface()) continue;
+                    if (infer.types.asSuper(infer.syms.runtimeExceptionType, db.tsym) != null) {
+                        //declared bound is a supertype of RuntimeException
+                        return true;
+                    }
+                }
+                //declared bound is more specific then RuntimeException - give up
+                return false;
+            }
+
+            @Override
+            Type solve(UndetVar uv, InferenceContext inferenceContext) {
+                return inferenceContext.infer().syms.runtimeExceptionType;
+            }
+        },
+        /**
          * Instantiate an inference variables using its (ground) upper bounds. Such
          * bounds are merged together using glb().
          */
@@ -1056,7 +1089,7 @@ public class Infer {
 
         EQ(EnumSet.of(InferenceStep.EQ)),
         EQ_LOWER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER)),
-        EQ_LOWER_UPPER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER, InferenceStep.UPPER));
+        EQ_LOWER_THROWS_UPPER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER, InferenceStep.THROWS, InferenceStep.UPPER));
 
         final EnumSet<InferenceStep> steps;
 
