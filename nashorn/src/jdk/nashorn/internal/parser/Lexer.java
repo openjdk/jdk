@@ -83,12 +83,70 @@ public class Lexer extends Scanner {
     /** Type of last token added. */
     private TokenType last;
 
-    private static final String JAVASCRIPT_WHITESPACE;
-    private static final String JAVASCRIPT_WHITESPACE_EOL;
-    private static final String JAVASCRIPT_WHITESPACE_IN_REGEXP;
+    private static final String SPACETAB = " \t";  // ASCII space and tab
+    private static final String LFCR     = "\n\r"; // line feed and carriage return (ctrl-m)
 
-    private static final String JSON_WHITESPACE;
-    private static final String JSON_WHITESPACE_EOL;
+    private static final String JSON_WHITESPACE_EOL = LFCR;
+    private static final String JSON_WHITESPACE     = SPACETAB + LFCR;
+
+    private static final String JAVASCRIPT_WHITESPACE_EOL =
+        LFCR +
+        "\u2028" + // line separator
+        "\u2029"   // paragraph separator
+        ;
+    private static final String JAVASCRIPT_WHITESPACE =
+        SPACETAB +
+        JAVASCRIPT_WHITESPACE_EOL +
+        "\u000b" + // tabulation line
+        "\u000c" + // ff (ctrl-l)
+        "\u00a0" + // Latin-1 space
+        "\u1680" + // Ogham space mark
+        "\u180e" + // separator, Mongolian vowel
+        "\u2000" + // en quad
+        "\u2001" + // em quad
+        "\u2002" + // en space
+        "\u2003" + // em space
+        "\u2004" + // three-per-em space
+        "\u2005" + // four-per-em space
+        "\u2006" + // six-per-em space
+        "\u2007" + // figure space
+        "\u2008" + // punctuation space
+        "\u2009" + // thin space
+        "\u200a" + // hair space
+        "\u202f" + // narrow no-break space
+        "\u205f" + // medium mathematical space
+        "\u3000" + // ideographic space
+        "\ufeff"   // byte order mark
+        ;
+
+    private static final String JAVASCRIPT_WHITESPACE_IN_REGEXP =
+        "\\u000a" + // line feed
+        "\\u000d" + // carriage return (ctrl-m)
+        "\\u2028" + // line separator
+        "\\u2029" + // paragraph separator
+        "\\u0009" + // tab
+        "\\u0020" + // ASCII space
+        "\\u000b" + // tabulation line
+        "\\u000c" + // ff (ctrl-l)
+        "\\u00a0" + // Latin-1 space
+        "\\u1680" + // Ogham space mark
+        "\\u180e" + // separator, Mongolian vowel
+        "\\u2000" + // en quad
+        "\\u2001" + // em quad
+        "\\u2002" + // en space
+        "\\u2003" + // em space
+        "\\u2004" + // three-per-em space
+        "\\u2005" + // four-per-em space
+        "\\u2006" + // six-per-em space
+        "\\u2007" + // figure space
+        "\\u2008" + // punctuation space
+        "\\u2009" + // thin space
+        "\\u200a" + // hair space
+        "\\u202f" + // narrow no-break space
+        "\\u205f" + // medium mathematical space
+        "\\u3000" + // ideographic space
+        "\\ufeff"   // byte order mark
+        ;
 
     static String unicodeEscape(final char ch) {
         final StringBuilder sb = new StringBuilder();
@@ -102,65 +160,6 @@ public class Lexer extends Scanner {
         sb.append(hex);
 
         return sb.toString();
-    }
-
-    static {
-        final StringBuilder ws       = new StringBuilder();
-        final StringBuilder wsEOL    = new StringBuilder();
-        final StringBuilder wsRegExp = new StringBuilder();
-        final StringBuilder jsonWs   = new StringBuilder();
-
-        jsonWs.append((char)0x000a);
-        jsonWs.append((char)0x000d);
-        JSON_WHITESPACE_EOL = jsonWs.toString();
-
-        jsonWs.append((char)0x0009);
-        jsonWs.append((char)0x0020);
-        JSON_WHITESPACE = jsonWs.toString();
-
-        for (int i = 0; i <= 0xffff; i++) {
-           switch (i) {
-            case 0x000a: // line feed
-            case 0x000d: // carriage return (ctrl-m)
-            case 0x2028: // line separator
-            case 0x2029: // paragraph separator
-                wsEOL.append((char)i);
-            case 0x0009: // tab
-            case 0x0020: // ASCII space
-            case 0x000b: // tabulation line
-            case 0x000c: // ff (ctrl-l)
-            case 0x00a0: // Latin-1 space
-            case 0x1680: // Ogham space mark
-            case 0x180e: // separator, Mongolian vowel
-            case 0x2000: // en quad
-            case 0x2001: // em quad
-            case 0x2002: // en space
-            case 0x2003: // em space
-            case 0x2004: // three-per-em space
-            case 0x2005: // four-per-em space
-            case 0x2006: // six-per-em space
-            case 0x2007: // figure space
-            case 0x2008: // punctuation space
-            case 0x2009: // thin space
-            case 0x200a: // hair space
-            case 0x202f: // narrow no-break space
-            case 0x205f: // medium mathematical space
-            case 0x3000: // ideographic space
-            case 0xfeff: // byte order mark
-                ws.append((char)i);
-
-                wsRegExp.append(Lexer.unicodeEscape((char)i));
-                break;
-
-            default:
-                break;
-            }
-        }
-
-        JAVASCRIPT_WHITESPACE = ws.toString();
-        JAVASCRIPT_WHITESPACE_EOL = wsEOL.toString();
-        JAVASCRIPT_WHITESPACE_IN_REGEXP = wsRegExp.toString();
-
     }
 
     /**
