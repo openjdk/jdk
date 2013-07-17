@@ -95,7 +95,6 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
     /**
      * Constructor
      *
-     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param statements statements
