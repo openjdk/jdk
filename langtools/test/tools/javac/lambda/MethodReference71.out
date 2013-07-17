@@ -1,0 +1,3 @@
+MethodReference71.java:24:10: compiler.err.ref.ambiguous: g, kindname.method, <Z>g(MethodReference71.F<Z>), MethodReference71, kindname.method, <Z>g(MethodReference71.G<Z>), MethodReference71
+MethodReference71.java:24:11: compiler.err.prob.found.req: (compiler.misc.cyclic.inference: Z)
+2 errors
