@@ -123,27 +123,6 @@ void OldGCTracer::send_concurrent_mode_failure_event() {
   }
 }
 
-#if INCLUDE_SERVICES
-void GCTracer::send_object_count_after_gc_event(Klass* klass, jlong count, julong total_size) const {
-  EventObjectCountAfterGC e;
-  if (e.should_commit()) {
-    e.set_gcId(_shared_gc_info.id());
-    e.set_class(klass);
-    e.set_count(count);
-    e.set_totalSize(total_size);
-    e.commit();
-  }
-}
-#endif
-
-bool GCTracer::should_send_object_count_after_gc_event() const {
-#if INCLUDE_TRACE
-  return Tracing::is_event_enabled(EventObjectCountAfterGC::eventId);
-#else
-  return false;
-#endif
-}
-
 #if INCLUDE_ALL_GCS
 void G1NewTracer::send_g1_young_gc_event() {
   EventGCG1GarbageCollection e(UNTIMED);
