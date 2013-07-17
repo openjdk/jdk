@@ -248,7 +248,7 @@ public abstract class Entity {
         public int fBufferSize = DEFAULT_BUFFER_SIZE;
 
         /** Default buffer size before we've finished with the XMLDecl:  */
-        public static final int DEFAULT_XMLDECL_BUFFER_SIZE = 28;
+        public static final int DEFAULT_XMLDECL_BUFFER_SIZE = 64;
 
         /** Default internal entity buffer size (1024). */
         public static final int DEFAULT_INTERNAL_BUFFER_SIZE = 1024;

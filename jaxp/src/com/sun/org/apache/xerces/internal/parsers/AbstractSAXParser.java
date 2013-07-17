@@ -25,10 +25,10 @@ import com.sun.org.apache.xerces.internal.util.EntityResolver2Wrapper;
 import com.sun.org.apache.xerces.internal.util.EntityResolverWrapper;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -1651,7 +1651,7 @@ public abstract class AbstractSAXParser
             else if (featureId.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
                 if (state) {
                     if (fConfiguration.getProperty(SECURITY_MANAGER )==null) {
-                        fConfiguration.setProperty(SECURITY_MANAGER, new SecurityManager());
+                        fConfiguration.setProperty(SECURITY_MANAGER, new XMLSecurityManager());
                     }
                 }
             }

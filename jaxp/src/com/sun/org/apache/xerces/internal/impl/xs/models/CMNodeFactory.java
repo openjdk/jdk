@@ -21,13 +21,13 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.models;
 
-import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
-import com.sun.org.apache.xerces.internal.util.SecurityManager ;
-import com.sun.org.apache.xerces.internal.impl.dtd.models.CMNode;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
-import com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
+import com.sun.org.apache.xerces.internal.impl.dtd.models.CMNode;
+import com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 
 /**
  *
@@ -68,7 +68,7 @@ public class CMNodeFactory {
 
     // stores defaults for different security holes (maxOccurLimit in current context) if it has
     // been set on the configuration.
-    private SecurityManager fSecurityManager = null;
+    private XMLSecurityManager fSecurityManager = null;
 
     /** default constructor */
     public CMNodeFactory() {
@@ -77,10 +77,10 @@ public class CMNodeFactory {
     public void reset(XMLComponentManager componentManager){
         fErrorReporter = (XMLErrorReporter)componentManager.getProperty(ERROR_REPORTER);
         try {
-            fSecurityManager = (SecurityManager)componentManager.getProperty(SECURITY_MANAGER);
+            fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER);
             //we are setting the limit of number of nodes to 3times the maxOccur value..
             if(fSecurityManager != null){
-                maxNodeLimit = fSecurityManager.getMaxOccurNodeLimit() * MULTIPLICITY ;
+                maxNodeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT) * MULTIPLICITY ;
             }
         }
         catch (XMLConfigurationException e) {
@@ -150,8 +150,9 @@ public class CMNodeFactory {
 
             if (suffixLength == Constants.SECURITY_MANAGER_PROPERTY.length() &&
                 propertyId.endsWith(Constants.SECURITY_MANAGER_PROPERTY)) {
-                fSecurityManager = (SecurityManager)value;
-                maxNodeLimit = (fSecurityManager != null) ? fSecurityManager.getMaxOccurNodeLimit() * MULTIPLICITY : 0 ;
+                fSecurityManager = (XMLSecurityManager)value;
+                maxNodeLimit = (fSecurityManager != null) ?
+                        fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT) * MULTIPLICITY : 0 ;
                 return;
             }
             if (suffixLength == Constants.ERROR_REPORTER_PROPERTY.length() &&

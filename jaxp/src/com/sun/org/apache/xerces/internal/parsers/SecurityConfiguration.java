@@ -23,8 +23,8 @@ package com.sun.org.apache.xerces.internal.parsers;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 
 /**
  * This configuration allows Xerces to behave in a security-conscious manner; that is,
@@ -106,8 +106,8 @@ public class SecurityConfiguration extends XIncludeAwareParserConfiguration
                                          XMLComponentManager parentSettings) {
         super(symbolTable, grammarPool, parentSettings);
 
-        // create the SecurityManager property:
-        setProperty(SECURITY_MANAGER_PROPERTY, new SecurityManager());
+        // create the XMLSecurityManager property:
+        setProperty(SECURITY_MANAGER_PROPERTY, new XMLSecurityManager());
     } // <init>(SymbolTable,XMLGrammarPool)
 
 } // class SecurityConfiguration

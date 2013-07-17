@@ -40,6 +40,7 @@ import com.sun.org.apache.xerces.internal.util.DOMUtil;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import java.util.HashMap;
@@ -1194,7 +1195,7 @@ public class XSAttributeChecker {
                     if (!optimize) {
                     //Revisit :: IMO this is not right place to check
                     // maxOccurNodeLimit.
-                    int maxOccurNodeLimit = fSchemaHandler.fSecureProcessing.getMaxOccurNodeLimit();
+                    int maxOccurNodeLimit = fSchemaHandler.fSecureProcessing.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT);
                     if (max > maxOccurNodeLimit) {
                         reportSchemaFatalError("maxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
 

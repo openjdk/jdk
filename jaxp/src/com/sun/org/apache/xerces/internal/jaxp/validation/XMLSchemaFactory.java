@@ -41,11 +41,11 @@ import com.sun.org.apache.xerces.internal.util.DOMInputSource;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXInputSource;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -79,7 +79,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private static final String XMLGRAMMAR_POOL =
         Constants.XERCES_PROPERTY_PREFIX + Constants.XMLGRAMMAR_POOL_PROPERTY;
 
-    /** Property identifier: SecurityManager. */
+    /** Property identifier: XMLSecurityManager. */
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
@@ -108,8 +108,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
     /** The ErrorHandlerWrapper */
     private ErrorHandlerWrapper fErrorHandlerWrapper;
 
-    /** The SecurityManager. */
-    private SecurityManager fSecurityManager;
+    /** The XMLSecurityManager. */
+    private XMLSecurityManager fSecurityManager;
 
     /** The container for the real grammar pool. */
     private XMLGrammarPoolWrapper fXMLGrammarPoolWrapper;
@@ -137,7 +137,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fXMLSchemaLoader.setErrorHandler(fErrorHandlerWrapper);
 
         // Enable secure processing feature by default
-        fSecurityManager = new SecurityManager();
+        fSecurityManager = new XMLSecurityManager();
         fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
 
         //by default, the secure feature is set to true, otherwise the default would have been 'file'
@@ -365,7 +365,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
                         "jaxp-secureprocessing-feature", null));
             }
             if (value) {
-                fSecurityManager = new SecurityManager();
+                fSecurityManager = new XMLSecurityManager();
                 fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
             } else {
@@ -404,7 +404,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "ProperyNameNull", null));
         }
         if (name.equals(SECURITY_MANAGER)) {
-            fSecurityManager = (SecurityManager) object;
+            fSecurityManager = (XMLSecurityManager) object;
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
             return;
         }

@@ -499,7 +499,7 @@ public abstract class XMLScanner
                             reportFatalError("SDDeclInvalid",  new Object[] {standalone});
                         }
                     } else {
-                        reportFatalError("EncodingDeclRequired", null);
+                        reportFatalError("SDDeclNameInvalid", null);
                     }
                     break;
                 }
@@ -564,7 +564,7 @@ public abstract class XMLScanner
             XMLString value)
             throws IOException, XNIException {
 
-        String name = fEntityScanner.scanName();
+        String name = scanPseudoAttributeName();
         // XMLEntityManager.print(fEntityManager.getCurrentEntity());
 
         if (name == null) {
@@ -615,6 +615,35 @@ public abstract class XMLScanner
         return name;
 
     } // scanPseudoAttribute(XMLString):String
+
+    /**
+     * Scans the name of a pseudo attribute. The only legal names
+     * in XML 1.0/1.1 documents are 'version', 'encoding' and 'standalone'.
+     *
+     * @return the name of the pseudo attribute or <code>null</code>
+     * if a legal pseudo attribute name could not be scanned.
+     */
+    private String scanPseudoAttributeName() throws IOException, XNIException {
+        final int ch = fEntityScanner.peekChar();
+        switch (ch) {
+            case 'v':
+                if (fEntityScanner.skipString(fVersionSymbol)) {
+                    return fVersionSymbol;
+                }
+                break;
+            case 'e':
+                if (fEntityScanner.skipString(fEncodingSymbol)) {
+                    return fEncodingSymbol;
+                }
+                break;
+            case 's':
+                if (fEntityScanner.skipString(fStandaloneSymbol)) {
+                    return fStandaloneSymbol;
+                }
+                break;
+        }
+        return null;
+    } // scanPseudoAttributeName()
 
     /**
      * Scans a processing instruction.

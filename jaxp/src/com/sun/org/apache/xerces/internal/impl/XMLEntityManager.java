@@ -28,9 +28,9 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -324,7 +324,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
     // stores defaults for entity expansion limit if it has
     // been set on the configuration.
-    protected SecurityManager fSecurityManager = null;
+    protected XMLSecurityManager fSecurityManager = null;
 
     /**
      * True if the document entity is standalone. This should really
@@ -1482,7 +1482,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fEntityResolver = (XMLEntityResolver)componentManager.getProperty(ENTITY_RESOLVER, null);
         fStaxEntityResolver = (StaxEntityResolverWrapper)componentManager.getProperty(STAX_ENTITY_RESOLVER, null);
         fValidationManager = (ValidationManager)componentManager.getProperty(VALIDATION_MANAGER, null);
-        fSecurityManager = (SecurityManager)componentManager.getProperty(SECURITY_MANAGER, null);
+        fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER, null);
 
         // JAXP 1.5 feature
         fAccessExternalDTD = (String) componentManager.getProperty(ACCESS_EXTERNAL_DTD, EXTERNAL_ACCESS_DEFAULT);
@@ -1499,7 +1499,9 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     // a class acting as a component manager but not
     // implementing that interface for whatever reason.
     public void reset() {
-        fEntityExpansionLimit = (fSecurityManager != null)?fSecurityManager.getEntityExpansionLimit():0;
+        fEntityExpansionLimit = (fSecurityManager != null)?
+                fSecurityManager.getLimit(XMLSecurityManager.Limit.ENTITY_EXPANSION_LIMIT):0;
+
 
         // initialize state
         fStandalone = false;
@@ -1635,8 +1637,10 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             }
             if (suffixLength == Constants.SECURITY_MANAGER_PROPERTY.length() &&
                 propertyId.endsWith(Constants.SECURITY_MANAGER_PROPERTY)) {
-                fSecurityManager = (SecurityManager)value;
-                fEntityExpansionLimit = (fSecurityManager != null)?fSecurityManager.getEntityExpansionLimit():0;
+                fSecurityManager = (XMLSecurityManager)value;
+                fEntityExpansionLimit = (fSecurityManager != null)?
+                        fSecurityManager.getLimit(XMLSecurityManager.Limit.ENTITY_EXPANSION_LIMIT):0;
+
             }
         }
 

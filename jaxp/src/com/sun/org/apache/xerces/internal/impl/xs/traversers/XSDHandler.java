@@ -70,7 +70,6 @@ import com.sun.org.apache.xerces.internal.util.DOMUtil;
 import com.sun.org.apache.xerces.internal.util.DefaultErrorHandler;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXInputSource;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.StAXLocationWrapper;
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
@@ -78,6 +77,7 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -257,7 +257,7 @@ public class XSDHandler {
      *
      * <p>Protected to allow access by any traverser.</p>
      */
-    protected SecurityManager fSecureProcessing = null;
+    protected XMLSecurityManager fSecureProcessing = null;
 
     private String fAccessExternalSchema;
 
@@ -3501,7 +3501,7 @@ public class XSDHandler {
 
         fSecureProcessing = null;
         if( componentManager!=null ) {
-            fSecureProcessing = (SecurityManager) componentManager.getProperty(SECURE_PROCESSING, null);
+            fSecureProcessing = (XMLSecurityManager) componentManager.getProperty(SECURE_PROCESSING, null);
         }
 
         //set entity resolver
