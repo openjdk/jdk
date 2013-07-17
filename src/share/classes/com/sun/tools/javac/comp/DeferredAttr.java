@@ -127,7 +127,7 @@ public class DeferredAttr extends JCTree.Visitor {
         DeferredType(JCExpression tree, Env<AttrContext> env) {
             super(null);
             this.tree = tree;
-            this.env = env.dup(tree, env.info.dup());
+            this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
         }
 
@@ -263,7 +263,7 @@ public class DeferredAttr extends JCTree.Visitor {
     DeferredTypeCompleter dummyCompleter = new DeferredTypeCompleter() {
         public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             Assert.check(deferredAttrContext.mode == AttrMode.CHECK);
-            return dt.tree.type = Type.noType;
+            return dt.tree.type = Type.stuckType;
         }
     };
 

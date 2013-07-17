@@ -481,31 +481,7 @@ public class Attr extends JCTree.Visitor {
         static final long serialVersionUID = -6924771130405446405L;
         private Env<AttrContext> env;
         private BreakAttr(Env<AttrContext> env) {
-            this.env = copyEnv(env);
-        }
-
-        private Env<AttrContext> copyEnv(Env<AttrContext> env) {
-            Env<AttrContext> newEnv =
-                    env.dup(env.tree, env.info.dup(copyScope(env.info.scope)));
-            if (newEnv.outer != null) {
-                newEnv.outer = copyEnv(newEnv.outer);
-            }
-            return newEnv;
-        }
-
-        private Scope copyScope(Scope sc) {
-            Scope newScope = new Scope(sc.owner);
-            List<Symbol> elemsList = List.nil();
-            while (sc != null) {
-                for (Scope.Entry e = sc.elems ; e != null ; e = e.sibling) {
-                    elemsList = elemsList.prepend(e.sym);
-                }
-                sc = sc.next;
-            }
-            for (Symbol s : elemsList) {
-                newScope.enter(s);
-            }
-            return newScope;
+            this.env = env;
         }
     }
 
@@ -605,7 +581,7 @@ public class Attr extends JCTree.Visitor {
             tree.accept(this);
             if (tree == breakTree &&
                     resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                throw new BreakAttr(env);
+                throw new BreakAttr(copyEnv(env));
             }
             return result;
         } catch (CompletionFailure ex) {
@@ -615,6 +591,30 @@ public class Attr extends JCTree.Visitor {
             this.env = prevEnv;
             this.resultInfo = prevResult;
         }
+    }
+
+    Env<AttrContext> copyEnv(Env<AttrContext> env) {
+        Env<AttrContext> newEnv =
+                env.dup(env.tree, env.info.dup(copyScope(env.info.scope)));
+        if (newEnv.outer != null) {
+            newEnv.outer = copyEnv(newEnv.outer);
+        }
+        return newEnv;
+    }
+
+    Scope copyScope(Scope sc) {
+        Scope newScope = new Scope(sc.owner);
+        List<Symbol> elemsList = List.nil();
+        while (sc != null) {
+            for (Scope.Entry e = sc.elems ; e != null ; e = e.sibling) {
+                elemsList = elemsList.prepend(e.sym);
+            }
+            sc = sc.next;
+        }
+        for (Symbol s : elemsList) {
+            newScope.enter(s);
+        }
+        return newScope;
     }
 
     /** Derived visitor method: attribute an expression tree.
@@ -2431,7 +2431,7 @@ public class Attr extends JCTree.Visitor {
             boolean isSpeculativeRound =
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
 
-            postAttr(that);
+            preFlow(that);
             flow.analyzeLambda(env, that, make, isSpeculativeRound);
 
             checkLambdaCompatible(that, lambdaType, resultInfo.checkContext, isSpeculativeRound);
@@ -2453,6 +2453,21 @@ public class Attr extends JCTree.Visitor {
         }
     }
     //where
+        void preFlow(JCLambda tree) {
+            new PostAttrAnalyzer() {
+                @Override
+                public void scan(JCTree tree) {
+                    if (tree == null ||
+                            (tree.type != null &&
+                            tree.type == Type.stuckType)) {
+                        //don't touch stuck expressions!
+                        return;
+                    }
+                    super.scan(tree);
+                }
+            }.scan(tree);
+        }
+
         Types.MapVisitor<DiagnosticPosition> targetChecker = new Types.MapVisitor<DiagnosticPosition>() {
 
             @Override
