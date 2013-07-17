@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package javax.security.auth.callback;
 
 /**
- * Signals that a <code>CallbackHandler</code> does not
- * recognize a particular <code>Callback</code>.
+ * Signals that a {@code CallbackHandler} does not
+ * recognize a particular {@code Callback}.
  *
  */
 public class UnsupportedCallbackException extends Exception {
@@ -40,12 +40,12 @@ public class UnsupportedCallbackException extends Exception {
     private Callback callback;
 
     /**
-     * Constructs a <code>UnsupportedCallbackException</code>
+     * Constructs a {@code UnsupportedCallbackException}
      * with no detail message.
      *
      * <p>
      *
-     * @param callback the unrecognized <code>Callback</code>.
+     * @param callback the unrecognized {@code Callback}.
      */
     public UnsupportedCallbackException(Callback callback) {
         super();
@@ -59,7 +59,7 @@ public class UnsupportedCallbackException extends Exception {
      *
      * <p>
      *
-     * @param callback the unrecognized <code>Callback</code>. <p>
+     * @param callback the unrecognized {@code Callback}. <p>
      *
      * @param msg the detail message.
      */
@@ -69,11 +69,11 @@ public class UnsupportedCallbackException extends Exception {
     }
 
     /**
-     * Get the unrecognized <code>Callback</code>.
+     * Get the unrecognized {@code Callback}.
      *
      * <p>
      *
-     * @return the unrecognized <code>Callback</code>.
+     * @return the unrecognized {@code Callback}.
      */
     public Callback getCallback() {
         return callback;

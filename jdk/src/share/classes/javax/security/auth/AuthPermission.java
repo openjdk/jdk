@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ package javax.security.auth;
  *
  * <pre>
  *      doAs -                  allow the caller to invoke the
- *                              <code>Subject.doAs</code> methods.
+ *                              {@code Subject.doAs} methods.
  *
  *      doAsPrivileged -        allow the caller to invoke the
- *                              <code>Subject.doAsPrivileged</code> methods.
+ *                              {@code Subject.doAsPrivileged} methods.
  *
  *      getSubject -            allow for the retrieval of the
  *                              Subject(s) associated with the
@@ -52,39 +52,39 @@ package javax.security.auth;
  *
  *      getSubjectFromDomainCombiner -  allow for the retrieval of the
  *                              Subject associated with the
- *                              a <code>SubjectDomainCombiner</code>.
+ *                              a {@code SubjectDomainCombiner}.
  *
  *      setReadOnly -           allow the caller to set a Subject
  *                              to be read-only.
  *
- *      modifyPrincipals -      allow the caller to modify the <code>Set</code>
+ *      modifyPrincipals -      allow the caller to modify the {@code Set}
  *                              of Principals associated with a
- *                              <code>Subject</code>
+ *                              {@code Subject}
  *
  *      modifyPublicCredentials - allow the caller to modify the
- *                              <code>Set</code> of public credentials
- *                              associated with a <code>Subject</code>
+ *                              {@code Set} of public credentials
+ *                              associated with a {@code Subject}
  *
  *      modifyPrivateCredentials - allow the caller to modify the
- *                              <code>Set</code> of private credentials
- *                              associated with a <code>Subject</code>
+ *                              {@code Set} of private credentials
+ *                              associated with a {@code Subject}
  *
- *      refreshCredential -     allow code to invoke the <code>refresh</code>
+ *      refreshCredential -     allow code to invoke the {@code refresh}
  *                              method on a credential which implements
- *                              the <code>Refreshable</code> interface.
+ *                              the {@code Refreshable} interface.
  *
- *      destroyCredential -     allow code to invoke the <code>destroy</code>
- *                              method on a credential <code>object</code>
- *                              which implements the <code>Destroyable</code>
+ *      destroyCredential -     allow code to invoke the {@code destroy}
+ *                              method on a credential {@code object}
+ *                              which implements the {@code Destroyable}
  *                              interface.
  *
  *      createLoginContext.{name} -  allow code to instantiate a
- *                              <code>LoginContext</code> with the
+ *                              {@code LoginContext} with the
  *                              specified <i>name</i>.  <i>name</i>
  *                              is used as the index into the installed login
- *                              <code>Configuration</code>
+ *                              {@code Configuration}
  *                              (that returned by
- *                              <code>Configuration.getConfiguration()</code>).
+ *                              {@code Configuration.getConfiguration()}).
  *                              <i>name</i> can be wildcarded (set to '*')
  *                              to allow for any name.
  *
@@ -93,7 +93,7 @@ package javax.security.auth;
  *
  *      createLoginConfiguration.{type} - allow code to obtain a Configuration
  *                              object via
- *                              <code>Configuration.getInstance</code>.
+ *                              {@code Configuration.getInstance}.
  *
  *      setLoginConfiguration - allow for the setting of the system-wide
  *                              login Configuration.
@@ -103,15 +103,15 @@ package javax.security.auth;
  * </pre>
  *
  * <p> The following target name has been deprecated in favor of
- * <code>createLoginContext.{name}</code>.
+ * {@code createLoginContext.{name}}.
  *
  * <pre>
  *      createLoginContext -    allow code to instantiate a
- *                              <code>LoginContext</code>.
+ *                              {@code LoginContext}.
  * </pre>
  *
- * <p> <code>javax.security.auth.Policy</code> has been
- * deprecated in favor of <code>java.security.Policy</code>.
+ * <p> {@code javax.security.auth.Policy} has been
+ * deprecated in favor of {@code java.security.Policy}.
  * Therefore, the following target names have also been deprecated:
  *
  * <pre>
@@ -139,8 +139,8 @@ java.security.BasicPermission {
      *
      * @param name the name of the AuthPermission
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
     public AuthPermission(String name) {
         // for backwards compatibility --
@@ -160,8 +160,8 @@ java.security.BasicPermission {
      *
      * @param actions should be null.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
     public AuthPermission(String name, String actions) {
         // for backwards compatibility --
