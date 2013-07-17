@@ -345,7 +345,7 @@ public class Resolve {
 
     boolean isAccessible(Env<AttrContext> env, Type t, boolean checkInner) {
         return (t.hasTag(ARRAY))
-            ? isAccessible(env, types.elemtype(t))
+            ? isAccessible(env, types.upperBound(types.elemtype(t)))
             : isAccessible(env, t.tsym, checkInner);
     }
 
