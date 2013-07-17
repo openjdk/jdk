@@ -4684,6 +4684,34 @@ void os::pause() {
   }
 }
 
+os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
+  assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
+}
+
+/*
+ * See the caveats for this class in os_windows.hpp
+ * Protects the callback call so that raised OS EXCEPTIONS causes a jump back
+ * into this method and returns false. If no OS EXCEPTION was raised, returns
+ * true.
+ * The callback is supposed to provide the method that should be protected.
+ */
+bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
+  assert(!WatcherThread::watcher_thread()->has_crash_protection(),
+      "crash_protection already set?");
+
+  bool success = true;
+  __try {
+    WatcherThread::watcher_thread()->set_crash_protection(this);
+    cb.call();
+  } __except(EXCEPTION_EXECUTE_HANDLER) {
+    // only for protection, nothing to do
+    success = false;
+  }
+  WatcherThread::watcher_thread()->set_crash_protection(NULL);
+  return success;
+}
+
 // An Event wraps a win32 "CreateEvent" kernel handle.
 //
 // We have a number of choices regarding "CreateEvent" win32 handle leakage:
