@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.List;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -137,8 +138,8 @@ public class BridgeHarness {
      * annotation in the bridge map
      */
     protected void checkBridges(JavaFileObject jfo) {
-        try {
-            ClassFile cf = ClassFile.read(jfo.openInputStream());
+        try (InputStream is = jfo.openInputStream()) {
+            ClassFile cf = ClassFile.read(is);
             System.err.println("checking: " + cf.getName());
 
             List<Bridge> bridgeList = bridgesMap.get(cf.getName());
