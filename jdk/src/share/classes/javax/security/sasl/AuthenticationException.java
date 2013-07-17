@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ package javax.security.sasl;
  */
 public class AuthenticationException extends SaslException {
     /**
-     * Constructs a new instance of <tt>AuthenticationException</tt>.
+     * Constructs a new instance of {@code AuthenticationException}.
      * The root exception and the detailed message are null.
      */
     public AuthenticationException () {
@@ -53,7 +53,7 @@ public class AuthenticationException extends SaslException {
     }
 
     /**
-     * Constructs a new instance of <tt>AuthenticationException</tt>
+     * Constructs a new instance of {@code AuthenticationException}
      * with a detailed message.
      * The root exception is null.
      * @param detail A possibly null string containing details of the exception.
@@ -65,7 +65,7 @@ public class AuthenticationException extends SaslException {
     }
 
     /**
-     * Constructs a new instance of <tt>AuthenticationException</tt> with a detailed message
+     * Constructs a new instance of {@code AuthenticationException} with a detailed message
      * and a root exception.
      *
      * @param detail A possibly null string containing details of the exception.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@
 
 // in nss.h:
 // extern PRBool NSS_VersionCheck(const char *importedVersion);
-// extern SECStatus NSS_Init(const char *configdir);
+// extern SECStatus NSS_Initialize(const char *configdir,
+//     const char *certPrefix, const char *keyPrefix,
+//     const char *secmodName, PRUint32 flags);
+
 typedef int (*FPTR_VersionCheck)(const char *importedVersion);
-typedef int (*FPTR_Init)(const char *configdir);
+typedef int (*FPTR_Initialize)(const char *configdir,
+        const char *certPrefix, const char *keyPrefix,
+        const char *secmodName, unsigned int flags);
 
 // in secmod.h
 //extern SECMODModule *SECMOD_LoadModule(char *moduleSpec,SECMODModule *parent,

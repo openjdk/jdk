@@ -2,25 +2,25 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.exceptions;
-
-
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -28,7 +28,6 @@ import java.text.MessageFormat;
 
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.I18n;
-
 
 /**
  * The mother of all Exceptions in this bundle. It allows exceptions to have
@@ -64,186 +63,154 @@ import com.sun.org.apache.xml.internal.security.utils.I18n;
  */
 public class XMLSecurityException extends Exception {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
+    /** Field msgID */
+    protected String msgID;
 
-   /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
+    /**
+     * Constructor XMLSecurityException
+     *
+     */
+    public XMLSecurityException() {
+        super("Missing message string");
 
-   /** Field originalException */
-   protected Exception originalException = null;
+        this.msgID = null;
+    }
 
-   /** Field msgID */
-   protected String msgID;
+    /**
+     * Constructor XMLSecurityException
+     *
+     * @param msgID
+     */
+    public XMLSecurityException(String msgID) {
+        super(I18n.getExceptionMessage(msgID));
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    */
-   public XMLSecurityException() {
+        this.msgID = msgID;
+    }
 
-      super("Missing message string");
+    /**
+     * Constructor XMLSecurityException
+     *
+     * @param msgID
+     * @param exArgs
+     */
+    public XMLSecurityException(String msgID, Object exArgs[]) {
 
-      this.msgID = null;
-      this.originalException = null;
-   }
+        super(MessageFormat.format(I18n.getExceptionMessage(msgID), exArgs));
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    * @param _msgID
-    */
-   public XMLSecurityException(String _msgID) {
+        this.msgID = msgID;
+    }
 
-      super(I18n.getExceptionMessage(_msgID));
+    /**
+     * Constructor XMLSecurityException
+     *
+     * @param originalException
+     */
+    public XMLSecurityException(Exception originalException) {
 
-      this.msgID = _msgID;
-      this.originalException = null;
-   }
+        super("Missing message ID to locate message string in resource bundle \""
+              + Constants.exceptionMessagesResourceBundleBase
+              + "\". Original Exception was a "
+              + originalException.getClass().getName() + " and message "
+              + originalException.getMessage(), originalException);
+    }
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    * @param _msgID
-    * @param exArgs
-    */
-   public XMLSecurityException(String _msgID, Object exArgs[]) {
+    /**
+     * Constructor XMLSecurityException
+     *
+     * @param msgID
+     * @param originalException
+     */
+    public XMLSecurityException(String msgID, Exception originalException) {
+        super(I18n.getExceptionMessage(msgID, originalException), originalException);
 
-      super(MessageFormat.format(I18n.getExceptionMessage(_msgID), exArgs));
+        this.msgID = msgID;
+    }
 
-      this.msgID = _msgID;
-      this.originalException = null;
-   }
+    /**
+     * Constructor XMLSecurityException
+     *
+     * @param msgID
+     * @param exArgs
+     * @param originalException
+     */
+    public XMLSecurityException(String msgID, Object exArgs[], Exception originalException) {
+        super(MessageFormat.format(I18n.getExceptionMessage(msgID), exArgs), originalException);
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    * @param _originalException
-    */
-   public XMLSecurityException(Exception _originalException) {
+        this.msgID = msgID;
+    }
 
-      super("Missing message ID to locate message string in resource bundle \""
-            + Constants.exceptionMessagesResourceBundleBase
-            + "\". Original Exception was a "
-            + _originalException.getClass().getName() + " and message "
-            + _originalException.getMessage());
+    /**
+     * Method getMsgID
+     *
+     * @return the messageId
+     */
+    public String getMsgID() {
+        if (msgID == null) {
+            return "Missing message ID";
+        }
+        return msgID;
+    }
 
-      this.originalException = _originalException;
-   }
+    /** @inheritDoc */
+    public String toString() {
+        String s = this.getClass().getName();
+        String message = super.getLocalizedMessage();
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    * @param _msgID
-    * @param _originalException
-    */
-   public XMLSecurityException(String _msgID, Exception _originalException) {
+        if (message != null) {
+            message = s + ": " + message;
+        } else {
+            message = s;
+        }
 
-      super(I18n.getExceptionMessage(_msgID, _originalException));
+        if (super.getCause() != null) {
+            message = message + "\nOriginal Exception was " + super.getCause().toString();
+        }
 
-      this.msgID = _msgID;
-      this.originalException = _originalException;
-   }
+        return message;
+    }
 
-   /**
-    * Constructor XMLSecurityException
-    *
-    * @param _msgID
-    * @param exArgs
-    * @param _originalException
-    */
-   public XMLSecurityException(String _msgID, Object exArgs[],
-                               Exception _originalException) {
+    /**
+     * Method printStackTrace
+     *
+     */
+    public void printStackTrace() {
+        synchronized (System.err) {
+            super.printStackTrace(System.err);
+        }
+    }
 
-      super(MessageFormat.format(I18n.getExceptionMessage(_msgID), exArgs));
+    /**
+     * Method printStackTrace
+     *
+     * @param printwriter
+     */
+    public void printStackTrace(PrintWriter printwriter) {
+        super.printStackTrace(printwriter);
+    }
 
-      this.msgID = _msgID;
-      this.originalException = _originalException;
-   }
+    /**
+     * Method printStackTrace
+     *
+     * @param printstream
+     */
+    public void printStackTrace(PrintStream printstream) {
+        super.printStackTrace(printstream);
+    }
 
-   /**
-    * Method getMsgID
-    *
-    * @return the messageId
-    */
-   public String getMsgID() {
-
-      if (msgID == null) {
-         return "Missing message ID";
-      }
-      return msgID;
-   }
-
-   /** @inheritDoc */
-   public String toString() {
-
-      String s = this.getClass().getName();
-      String message = super.getLocalizedMessage();
-
-      if (message != null) {
-         message = s + ": " + message;
-      } else {
-         message = s;
-      }
-
-      if (originalException != null) {
-         message = message + "\nOriginal Exception was "
-                   + originalException.toString();
-      }
-
-      return message;
-   }
-
-   /**
-    * Method printStackTrace
-    *
-    */
-   public void printStackTrace() {
-
-      synchronized (System.err) {
-         super.printStackTrace(System.err);
-
-         if (this.originalException != null) {
-            this.originalException.printStackTrace(System.err);
-         }
-      }
-   }
-
-   /**
-    * Method printStackTrace
-    *
-    * @param printwriter
-    */
-   public void printStackTrace(PrintWriter printwriter) {
-
-      super.printStackTrace(printwriter);
-
-      if (this.originalException != null) {
-         this.originalException.printStackTrace(printwriter);
-      }
-   }
-
-   /**
-    * Method printStackTrace
-    *
-    * @param printstream
-    */
-   public void printStackTrace(PrintStream printstream) {
-
-      super.printStackTrace(printstream);
-
-      if (this.originalException != null) {
-         this.originalException.printStackTrace(printstream);
-      }
-   }
-
-   /**
-    * Method getOriginalException
-    *
-    * @return the original exception
-    */
-   public Exception getOriginalException() {
-      return originalException;
-   }
+    /**
+     * Method getOriginalException
+     *
+     * @return the original exception
+     */
+    public Exception getOriginalException() {
+        if (this.getCause() instanceof Exception) {
+            return (Exception)this.getCause();
+        }
+        return null;
+    }
 }

@@ -226,116 +226,114 @@ public class RangeTest extends OpTestCase {
         assertEquals(first, LongStream.iterate(0, i -> i + 1).parallel().filter(i -> i > 10000).findFirst().getAsLong());
     }
 
-    // Enable when Stream.concat is present and range implementations are
-    // updated to use that
-//    private static void assertSizedAndSubSized(Spliterator<?> s) {
-//        assertTrue(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
-//    }
-//
-//    private static void assertNotSizedAndSubSized(Spliterator<?> s) {
-//        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
-//    }
-//
-//    public void testLongLongRange() {
-//        // Test [Long.MIN_VALUE, Long.MAX_VALUE)
-//        // This will concatenate streams of three ranges
-//        //   [Long.MIN_VALUE, x) [x, 0) [0, Long.MAX_VALUE)
-//        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
-//        {
-//            Spliterator.OfLong s = LongStream.range(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
-//
-//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
-//            assertNotSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s1 = s.trySplit();
-//            assertNotSizedAndSubSized(s1);
-//            assertSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s2 = s1.trySplit();
-//            assertSizedAndSubSized(s1);
-//            assertSizedAndSubSized(s2);
-//
-//            assertTrue(s.estimateSize() == Long.MAX_VALUE);
-//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
-//
-//            assertEquals(s.estimateSize() + s1.estimateSize() + s2.estimateSize(),
-//                         Long.MAX_VALUE - Long.MIN_VALUE);
-//        }
-//
-//        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
-//        for (int i = 0; i < ranges.length; i++) {
-//            long start = ranges[i][0];
-//            long end = ranges[i][1];
-//
-//            Spliterator.OfLong s = LongStream.range(start, end).spliterator();
-//
-//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
-//            assertNotSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s1 = s.trySplit();
-//            assertSizedAndSubSized(s1);
-//            assertSizedAndSubSized(s);
-//
-//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
-//
-//            assertEquals(s.estimateSize() + s1.estimateSize(), end - start);
-//        }
-//    }
-//
-//    public void testLongLongRangeClosed() {
-//        // Test [Long.MIN_VALUE, Long.MAX_VALUE]
-//        // This will concatenate streams of four ranges
-//        //   [Long.MIN_VALUE, x) [x, 0) [0, y) [y, Long.MAX_VALUE]
-//        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
-//        //       y = Long.divideUnsigned(Long.MAX_VALUE, 2) + 1
-//
-//        {
-//            Spliterator.OfLong s = LongStream.rangeClosed(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
-//
-//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
-//            assertNotSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s1 = s.trySplit();
-//            assertNotSizedAndSubSized(s1);
-//            assertNotSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s2 = s1.trySplit();
-//            assertSizedAndSubSized(s1);
-//            assertSizedAndSubSized(s2);
-//
-//            Spliterator.OfLong s3 = s.trySplit();
-//            assertSizedAndSubSized(s3);
-//            assertSizedAndSubSized(s);
-//
-//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s3.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
-//
-//            assertEquals(s.estimateSize() + s3.estimateSize() + s1.estimateSize() + s2.estimateSize(),
-//                         Long.MAX_VALUE - Long.MIN_VALUE + 1);
-//        }
-//
-//        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
-//        for (int i = 0; i < ranges.length; i++) {
-//            long start = ranges[i][0];
-//            long end = ranges[i][1];
-//
-//            Spliterator.OfLong s = LongStream.rangeClosed(start, end).spliterator();
-//
-//            assertEquals(s.estimateSize(), Long.MAX_VALUE);
-//            assertNotSizedAndSubSized(s);
-//
-//            Spliterator.OfLong s1 = s.trySplit();
-//            assertSizedAndSubSized(s1);
-//            assertSizedAndSubSized(s);
-//
-//            assertTrue(s.estimateSize() < Long.MAX_VALUE);
-//            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
-//
-//            assertEquals(s.estimateSize() + s1.estimateSize(), end - start + 1);
-//        }
-//    }
+    private static void assertSizedAndSubSized(Spliterator<?> s) {
+        assertTrue(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
+    }
+
+    private static void assertNotSizedAndSubSized(Spliterator<?> s) {
+        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED));
+    }
+
+    public void testLongLongRange() {
+        // Test [Long.MIN_VALUE, Long.MAX_VALUE)
+        // This will concatenate streams of three ranges
+        //   [Long.MIN_VALUE, x) [x, 0) [0, Long.MAX_VALUE)
+        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
+        {
+            Spliterator.OfLong s = LongStream.range(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
+
+            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertNotSizedAndSubSized(s);
+
+            Spliterator.OfLong s1 = s.trySplit();
+            assertNotSizedAndSubSized(s1);
+            assertSizedAndSubSized(s);
+
+            Spliterator.OfLong s2 = s1.trySplit();
+            assertSizedAndSubSized(s1);
+            assertSizedAndSubSized(s2);
+
+            assertTrue(s.estimateSize() == Long.MAX_VALUE);
+            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
+
+            assertEquals(s.estimateSize() + s1.estimateSize() + s2.estimateSize(),
+                         Long.MAX_VALUE - Long.MIN_VALUE);
+        }
+
+        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
+        for (int i = 0; i < ranges.length; i++) {
+            long start = ranges[i][0];
+            long end = ranges[i][1];
+
+            Spliterator.OfLong s = LongStream.range(start, end).spliterator();
+
+            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertNotSizedAndSubSized(s);
+
+            Spliterator.OfLong s1 = s.trySplit();
+            assertSizedAndSubSized(s1);
+            assertSizedAndSubSized(s);
+
+            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+
+            assertEquals(s.estimateSize() + s1.estimateSize(), end - start);
+        }
+    }
+
+    public void testLongLongRangeClosed() {
+        // Test [Long.MIN_VALUE, Long.MAX_VALUE]
+        // This will concatenate streams of four ranges
+        //   [Long.MIN_VALUE, x) [x, 0) [0, y) [y, Long.MAX_VALUE]
+        // where x = Long.divideUnsigned(0 - Long.MIN_VALUE, 2) + 1
+        //       y = Long.divideUnsigned(Long.MAX_VALUE, 2) + 1
+
+        {
+            Spliterator.OfLong s = LongStream.rangeClosed(Long.MIN_VALUE, Long.MAX_VALUE).spliterator();
+
+            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertNotSizedAndSubSized(s);
+
+            Spliterator.OfLong s1 = s.trySplit();
+            assertNotSizedAndSubSized(s1);
+            assertNotSizedAndSubSized(s);
+
+            Spliterator.OfLong s2 = s1.trySplit();
+            assertSizedAndSubSized(s1);
+            assertSizedAndSubSized(s2);
+
+            Spliterator.OfLong s3 = s.trySplit();
+            assertSizedAndSubSized(s3);
+            assertSizedAndSubSized(s);
+
+            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s3.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s2.estimateSize() < Long.MAX_VALUE);
+
+            assertEquals(s.estimateSize() + s3.estimateSize() + s1.estimateSize() + s2.estimateSize(),
+                         Long.MAX_VALUE - Long.MIN_VALUE + 1);
+        }
+
+        long[][] ranges = { {Long.MIN_VALUE, 0}, {-1, Long.MAX_VALUE} };
+        for (int i = 0; i < ranges.length; i++) {
+            long start = ranges[i][0];
+            long end = ranges[i][1];
+
+            Spliterator.OfLong s = LongStream.rangeClosed(start, end).spliterator();
+
+            assertEquals(s.estimateSize(), Long.MAX_VALUE);
+            assertNotSizedAndSubSized(s);
+
+            Spliterator.OfLong s1 = s.trySplit();
+            assertSizedAndSubSized(s1);
+            assertSizedAndSubSized(s);
+
+            assertTrue(s.estimateSize() < Long.MAX_VALUE);
+            assertTrue(s1.estimateSize() < Long.MAX_VALUE);
+
+            assertEquals(s.estimateSize() + s1.estimateSize(), end - start + 1);
+        }
+    }
 }
