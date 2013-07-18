@@ -45,6 +45,7 @@ import static jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome.ERROR
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -66,6 +67,7 @@ import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import sun.reflect.CallerSensitive;
 
 /**
  * Generates bytecode for a Java adapter class. Used by the {@link JavaAdapterFactory}.
@@ -378,7 +380,7 @@ final class JavaAdapterBytecodeGenerator {
         boolean gotCtor = false;
         for (final Constructor<?> ctor: superClass.getDeclaredConstructors()) {
             final int modifier = ctor.getModifiers();
-            if((modifier & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0) {
+            if((modifier & (Modifier.PUBLIC | Modifier.PROTECTED)) != 0 && !isCallerSensitive(ctor)) {
                 generateConstructors(ctor);
                 gotCtor = true;
             }
@@ -843,7 +845,7 @@ final class JavaAdapterBytecodeGenerator {
                 }
                 if (Modifier.isPublic(m) || Modifier.isProtected(m)) {
                     final MethodInfo mi = new MethodInfo(typeMethod);
-                    if (Modifier.isFinal(m)) {
+                    if (Modifier.isFinal(m) || isCallerSensitive(typeMethod)) {
                         finalMethods.add(mi);
                     } else if (!finalMethods.contains(mi) && methodInfos.add(mi)) {
                         if (Modifier.isAbstract(m)) {
@@ -919,5 +921,9 @@ final class JavaAdapterBytecodeGenerator {
     private static Class<?> assignableSuperClass(final Class<?> c1, final Class<?> c2) {
         final Class<?> superClass = c1.getSuperclass();
         return superClass.isAssignableFrom(c2) ? superClass : assignableSuperClass(superClass, c2);
+    }
+
+    private static boolean isCallerSensitive(final AccessibleObject e) {
+        return e.getAnnotation(CallerSensitive.class) != null;
     }
 }
