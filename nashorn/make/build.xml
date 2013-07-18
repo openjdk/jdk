@@ -267,6 +267,11 @@ grant codeBase "file:/${basedir}/test/script/basic/*" {
 grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
     permission java.util.PropertyPermission "java.security.policy", "read";
 };
+
+grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
+    permission java.lang.RuntimePermission "nashorn.JavaReflection";
+};
+
     </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
