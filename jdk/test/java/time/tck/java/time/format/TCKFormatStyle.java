@@ -54,17 +54,18 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.format;
 
-import static java.time.temporal.ChronoField.ERA;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
+import java.time.temporal.Temporal;
+
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
-import java.time.chrono.Era;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.HijrahEra;
-import java.time.temporal.ValueRange;
-import java.util.List;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -73,45 +74,40 @@ import org.testng.annotations.Test;
  * Test.
  */
 @Test
-public class TCKHijrahEra {
+public class TCKFormatStyle {
 
-    @DataProvider(name = "HijrahEras")
-    Object[][] data_of_eras() {
+    private static final ZoneId ZONEID_PARIS = ZoneId.of("Europe/Paris");
+    private static final ZoneId OFFSET_PTWO = ZoneOffset.of("+02:00");
+
+    //-----------------------------------------------------------------------
+    // valueOf()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_valueOf() {
+        for (FormatStyle style : FormatStyle.values()) {
+            assertEquals(FormatStyle.valueOf(style.name()), style);
+        }
+    }
+
+    @DataProvider(name="formatStyle")
+    Object[][] data_formatStyle() {
         return new Object[][] {
-                    {HijrahEra.AH, "AH", 1},
-       };
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.FULL, "Tuesday, October 2, 2001 1:02:03 AM CEST Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.LONG, "October 2, 2001 1:02:03 AM CEST Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.MEDIUM, "Oct 2, 2001 1:02:03 AM Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.SHORT, "10/2/01 1:02 AM Europe/Paris"},
+
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.FULL, "Tuesday, October 2, 2001 1:02:03 AM +02:00 +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.LONG, "October 2, 2001 1:02:03 AM +02:00 +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.MEDIUM, "Oct 2, 2001 1:02:03 AM +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.SHORT, "10/2/01 1:02 AM +02:00"},
+        };
     }
 
-    @Test(dataProvider="HijrahEras")
-    public void test_valueOf(HijrahEra era , String eraName, int eraValue) {
-        assertEquals(era.getValue(), eraValue);
-
-        assertEquals(HijrahChronology.INSTANCE.eraOf(eraValue), era);
-        assertEquals(HijrahEra.of(eraValue), era);
-        assertEquals(HijrahEra.valueOf(eraName), era);
+    @Test(dataProvider = "formatStyle")
+    public void test_formatStyle(Temporal temporal, FormatStyle style, String formattedStr) {
+        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
+        DateTimeFormatter formatter = builder.appendLocalized(style, style).appendLiteral(" ").appendZoneOrOffsetId().toFormatter();
+        assertEquals(formatter.format(temporal), formattedStr);
     }
-
-    //-----------------------------------------------------------------------
-    // values()
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_values() {
-        List<Era> eraList = HijrahChronology.INSTANCE.eras();
-        HijrahEra[] eras = HijrahEra.values();
-        assertEquals(eraList.size(), eras.length);
-        for (HijrahEra era : eras) {
-            assertTrue(eraList.contains(era));
-        }
-    }
-
-    //-----------------------------------------------------------------------
-    // range()
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_range() {
-        for (HijrahEra era : HijrahEra.values()) {
-            assertEquals(era.range(ERA), ValueRange.of(1, 1));
-        }
-    }
-
 }

@@ -54,17 +54,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.format;
 
-import static java.time.temporal.ChronoField.ERA;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-
-import java.time.chrono.Era;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.HijrahEra;
-import java.time.temporal.ValueRange;
-import java.util.List;
+import static org.testng.Assert.fail;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -73,44 +75,62 @@ import org.testng.annotations.Test;
  * Test.
  */
 @Test
-public class TCKHijrahEra {
-
-    @DataProvider(name = "HijrahEras")
-    Object[][] data_of_eras() {
-        return new Object[][] {
-                    {HijrahEra.AH, "AH", 1},
-       };
-    }
-
-    @Test(dataProvider="HijrahEras")
-    public void test_valueOf(HijrahEra era , String eraName, int eraValue) {
-        assertEquals(era.getValue(), eraValue);
-
-        assertEquals(HijrahChronology.INSTANCE.eraOf(eraValue), era);
-        assertEquals(HijrahEra.of(eraValue), era);
-        assertEquals(HijrahEra.valueOf(eraName), era);
-    }
+public class TCKSignStyle {
 
     //-----------------------------------------------------------------------
-    // values()
+    // valueOf()
     //-----------------------------------------------------------------------
     @Test
-    public void test_values() {
-        List<Era> eraList = HijrahChronology.INSTANCE.eras();
-        HijrahEra[] eras = HijrahEra.values();
-        assertEquals(eraList.size(), eras.length);
-        for (HijrahEra era : eras) {
-            assertTrue(eraList.contains(era));
+    public void test_valueOf() {
+        for (SignStyle style : SignStyle.values()) {
+            assertEquals(SignStyle.valueOf(style.name()), style);
         }
     }
 
-    //-----------------------------------------------------------------------
-    // range()
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_range() {
-        for (HijrahEra era : HijrahEra.values()) {
-            assertEquals(era.range(ERA), ValueRange.of(1, 1));
+    @DataProvider(name="signStyle")
+    Object[][] data_signStyle() {
+        return new Object[][] {
+                {LocalDate.of(0, 10, 2), SignStyle.ALWAYS, null, "+00"},
+                {LocalDate.of(2001, 10, 2), SignStyle.ALWAYS, null, "+2001"},
+                {LocalDate.of(-2001, 10, 2), SignStyle.ALWAYS, null, "-2001"},
+
+                {LocalDate.of(2001, 10, 2), SignStyle.NORMAL, null, "2001"},
+                {LocalDate.of(-2001, 10, 2), SignStyle.NORMAL, null, "-2001"},
+
+                {LocalDate.of(2001, 10, 2), SignStyle.NEVER, null, "2001"},
+                {LocalDate.of(-2001, 10, 2), SignStyle.NEVER, null, "2001"},
+
+                {LocalDate.of(2001, 10, 2), SignStyle.NOT_NEGATIVE, null, "2001"},
+                {LocalDate.of(-2001, 10, 2), SignStyle.NOT_NEGATIVE, DateTimeException.class, ""},
+
+                {LocalDate.of(0, 10, 2), SignStyle.EXCEEDS_PAD, null, "00"},
+                {LocalDate.of(1, 10, 2), SignStyle.EXCEEDS_PAD, null, "01"},
+                {LocalDate.of(-1, 10, 2), SignStyle.EXCEEDS_PAD, null, "-01"},
+
+                {LocalDate.of(20001, 10, 2), SignStyle.ALWAYS, DateTimeException.class, ""},
+                {LocalDate.of(20001, 10, 2), SignStyle.NORMAL, DateTimeException.class, ""},
+                {LocalDate.of(20001, 10, 2), SignStyle.NEVER, DateTimeException.class, ""},
+                {LocalDate.of(20001, 10, 2), SignStyle.EXCEEDS_PAD, DateTimeException.class, ""},
+                {LocalDate.of(20001, 10, 2), SignStyle.NOT_NEGATIVE, DateTimeException.class, ""},
+        };
+    }
+
+    @Test(dataProvider = "signStyle")
+    public void test_signStyle(LocalDate localDate, SignStyle style, Class<?> expectedEx, String expectedStr) {
+        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
+        DateTimeFormatter formatter = builder.appendValue(ChronoField.YEAR, 2, 4, style)
+                                             .toFormatter();
+        formatter = formatter.withZone(ZoneOffset.UTC);
+        if (expectedEx == null) {
+            String output = formatter.format(localDate);
+            assertEquals(output, expectedStr);
+        } else {
+            try {
+                formatter.format(localDate);
+                fail();
+            } catch (Exception ex) {
+                assertTrue(expectedEx.isInstance(ex));
+            }
         }
     }
 
