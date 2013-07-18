@@ -317,12 +317,8 @@ check_primitive_array_type(JavaThread* thr, jarray jArray, BasicType elementType
 
 static inline void
 check_is_obj_array(JavaThread* thr, jarray jArray) {
-  BasicType array_type;
-  arrayOop aOop;
-
-  aOop = check_is_array(thr, jArray);
-  array_type = TypeArrayKlass::cast(aOop->klass())->element_type();
-  if (array_type != T_OBJECT) {
+  arrayOop aOop = check_is_array(thr, jArray);
+  if (!aOop->is_objArray()) {
     ReportJNIFatalError(thr, fatal_object_array_expected);
   }
 }
