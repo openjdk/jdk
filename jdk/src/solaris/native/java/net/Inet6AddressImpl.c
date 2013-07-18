@@ -120,7 +120,6 @@ static jclass ni_ia4cls;
 static jclass ni_ia6cls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
-static jfieldID ni_ia6ipaddressID;
 static int initialized = 0;
 
 /*
@@ -156,7 +155,6 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
       ni_ia6cls = (*env)->NewGlobalRef(env, ni_ia6cls);
       ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
       ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
-      ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
       initialized = 1;
     }
 
@@ -303,6 +301,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
 
         while (iterator != NULL) {
+            int ret1;
             if (iterator->ai_family == AF_INET) {
                 jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
                 if (IS_NULL(iaObj)) {
@@ -315,26 +314,22 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                 inetIndex++;
             } else if (iterator->ai_family == AF_INET6) {
                 jint scope = 0;
-                jbyteArray ipaddress;
 
                 jobject iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
                 if (IS_NULL(iaObj)) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
-                ipaddress = (*env)->NewByteArray(env, 16);
-                if (IS_NULL(ipaddress)) {
+                ret1 = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
+                if (!ret1) {
                     ret = NULL;
                     goto cleanupAndReturn;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                                           (jbyte *)&(((struct sockaddr_in6*)iterator->ai_addr)->sin6_addr));
+
                 scope = ((struct sockaddr_in6*)iterator->ai_addr)->sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
+                    setInet6Address_scopeid(env, iaObj, scope);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
                 setInetAddress_hostName(env, iaObj, host);
                 (*env)->SetObjectArrayElement(env, ret, inet6Index, iaObj);
                 inet6Index++;
