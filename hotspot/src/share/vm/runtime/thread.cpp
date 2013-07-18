@@ -3490,44 +3490,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
     initialize_class(vmSymbols::java_lang_String(), CHECK_0);
 
-    if (AggressiveOpts) {
-      {
-        // Forcibly initialize java/util/HashMap and mutate the private
-        // static final "frontCacheEnabled" field before we start creating instances
-#ifdef ASSERT
-        Klass* tmp_k = SystemDictionary::find(vmSymbols::java_util_HashMap(), Handle(), Handle(), CHECK_0);
-        assert(tmp_k == NULL, "java/util/HashMap should not be loaded yet");
-#endif
-        Klass* k_o = SystemDictionary::resolve_or_null(vmSymbols::java_util_HashMap(), Handle(), Handle(), CHECK_0);
-        KlassHandle k = KlassHandle(THREAD, k_o);
-        guarantee(k.not_null(), "Must find java/util/HashMap");
-        instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
-        ik->initialize(CHECK_0);
-        fieldDescriptor fd;
-        // Possible we might not find this field; if so, don't break
-        if (ik->find_local_field(vmSymbols::frontCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-          k()->java_mirror()->bool_field_put(fd.offset(), true);
-        }
-      }
-
-      if (UseStringCache) {
-        // Forcibly initialize java/lang/StringValue and mutate the private
-        // static final "stringCacheEnabled" field before we start creating instances
-        Klass* k_o = SystemDictionary::resolve_or_null(vmSymbols::java_lang_StringValue(), Handle(), Handle(), CHECK_0);
-        // Possible that StringValue isn't present: if so, silently don't break
-        if (k_o != NULL) {
-          KlassHandle k = KlassHandle(THREAD, k_o);
-          instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
-          ik->initialize(CHECK_0);
-          fieldDescriptor fd;
-          // Possible we might not find this field: if so, silently don't break
-          if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-            k()->java_mirror()->bool_field_put(fd.offset(), true);
-          }
-        }
-      }
-    }
-
     // Initialize java_lang.System (needed before creating the thread)
     initialize_class(vmSymbols::java_lang_System(), CHECK_0);
     initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK_0);
