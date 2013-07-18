@@ -2323,6 +2323,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
   Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
 
+  // Handle SafeFetch32 and SafeFetchN exceptions.
+  if (StubRoutines::is_safefetch_fault(pc)) {
+    return Handle_Exception(exceptionInfo, StubRoutines::continuation_for_safefetch_fault(pc));
+  }
+
 #ifndef _WIN64
   // Execution protection violation - win32 running on AMD64 only
   // Handled first to avoid misdiagnosis as a "normal" access violation;

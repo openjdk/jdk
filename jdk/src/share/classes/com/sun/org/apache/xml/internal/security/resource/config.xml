@@ -52,9 +52,6 @@
       <TransformAlgorithm URI="http://www.w3.org/TR/1999/REC-xslt-19991116"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXSLT" />
       <!-- XPath version 2 -->
-      <TransformAlgorithm URI="http://www.w3.org/2002/04/xmldsig-filter2"
-                          JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath2Filter" />
-      <!-- XPath version 2b -->
       <TransformAlgorithm URI="http://www.w3.org/2002/06/xmldsig-filter2"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXPath2Filter" />
    </TransformAlgorithms>
@@ -78,6 +75,12 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA$SignatureRSASHA512" />
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA1" />
+      <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA256" />
+      <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA384" />
+      <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA512" />
 
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.IntegrityHmac$IntegrityHmacMD5" />
@@ -97,7 +100,7 @@
                     Description="MD5 message digest from RFC 1321"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="NOT RECOMMENDED"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="MD5"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmlenc#ripemd160"
@@ -122,7 +125,7 @@
                     Description="SHA message digest with 384 bit"
                     AlgorithmClass="MessageDigest"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="SHA-384"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmlenc#sha512"
@@ -142,14 +145,14 @@
                     Description="RSA Signature with MD5 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="NOT RECOMMENDED"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="MD5withRSA"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-ripemd160"
                     Description="RSA Signature with RIPEMD-160 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="RIPEMD160withRSA"/>
 
          <Algorithm URI="http://www.w3.org/2000/09/xmldsig#rsa-sha1"
@@ -162,43 +165,64 @@
                     Description="RSA Signature with SHA-256 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="SHA256withRSA"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
                     Description="RSA Signature with SHA-384 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="SHA384withRSA"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
                     Description="RSA Signature with SHA-512 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="SHA512withRSA"/>
                     
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
                     Description="ECDSA Signature with SHA-1 message digest"
                     AlgorithmClass="Signature"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
-                    JCEName="ECDSAwithSHA1"/>
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
+                    JCEName="SHA1withECDSA"/>
+
+         <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
+                    Description="ECDSA Signature with SHA-256 message digest"
+                    AlgorithmClass="Signature"
+                    RequirementLevel="OPTIONAL"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
+                    JCEName="SHA256withECDSA"/>
+
+         <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384"
+                    Description="ECDSA Signature with SHA-384 message digest"
+                    AlgorithmClass="Signature"
+                    RequirementLevel="OPTIONAL"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
+                    JCEName="SHA384withECDSA"/>
+
+         <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
+                    Description="ECDSA Signature with SHA-512 message digest"
+                    AlgorithmClass="Signature"
+                    RequirementLevel="OPTIONAL"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
+                    JCEName="SHA512withECDSA"/>
 
          <!-- MAC Algorithms -->
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                     Description="Message Authentication code using MD5"
                     AlgorithmClass="Mac"
                     RequirementLevel="NOT RECOMMENDED"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="HmacMD5"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-ripemd160"
                     Description="Message Authentication code using RIPEMD-160"
                     AlgorithmClass="Mac"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="HMACRIPEMD160"/>
 
          <Algorithm URI="http://www.w3.org/2000/09/xmldsig#hmac-sha1"
@@ -211,21 +235,21 @@
                     Description="Message Authentication code using SHA-256"
                     AlgorithmClass="Mac"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="HmacSHA256"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-sha384"
                     Description="Message Authentication code using SHA-384"
                     AlgorithmClass="Mac"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="HmacSHA384"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-sha512"
                     Description="Message Authentication code using SHA-512"
                     AlgorithmClass="Mac"
                     RequirementLevel="OPTIONAL"
-                    SpecificationURL="http://www.ietf.org/internet-drafts/draft-eastlake-xmldsig-uri-02.txt"
+                    SpecificationURL="http://www.ietf.org/rfc/rfc4051.txt"
                     JCEName="HmacSHA512"/>
 
          <!-- Block encryption Algorithms -->
@@ -260,7 +284,31 @@
                     KeyLength="256"
                     RequiredKey="AES"
                     JCEName="AES/CBC/ISO10126Padding"/>
+                    
+         <Algorithm URI="http://www.w3.org/2009/xmlenc11#aes128-gcm"
+                   Description="Block encryption using AES with a key length of 128 bit in GCM"
+                   AlgorithmClass="BlockEncryption"
+                   RequirementLevel="OPTIONAL"
+                   KeyLength="128"
+                   RequiredKey="AES"
+                   JCEName="AES/GCM/NoPadding"/>
+                   
+         <Algorithm URI="http://www.w3.org/2009/xmlenc11#aes192-gcm"
+                   Description="Block encryption using AES with a key length of 192 bit in GCM"
+                   AlgorithmClass="BlockEncryption"
+                   RequirementLevel="OPTIONAL"
+                   KeyLength="192"
+                   RequiredKey="AES"
+                   JCEName="AES/GCM/NoPadding"/>
 
+         <Algorithm URI="http://www.w3.org/2009/xmlenc11#aes256-gcm"
+                   Description="Block encryption using AES with a key length of 256 bit in GCM"
+                   AlgorithmClass="BlockEncryption"
+                   RequirementLevel="OPTIONAL"
+                   KeyLength="256"
+                   RequiredKey="AES"
+                   JCEName="AES/GCM/NoPadding"/>
+         
          <Algorithm URI="http://www.w3.org/2001/04/xmlenc#rsa-1_5"
                     Description="Key Transport RSA-v1.5"
                     AlgorithmClass="KeyTransport"
@@ -273,7 +321,14 @@
                     AlgorithmClass="KeyTransport"
                     RequirementLevel="REQUIRED"
                     RequiredKey="RSA"
-                    JCEName="RSA/ECB/OAEPWithSHA1AndMGF1Padding"/>
+                    JCEName="RSA/ECB/OAEPPadding"/>
+                    
+         <Algorithm URI="http://www.w3.org/2009/xmlenc11#rsa-oaep"
+                    Description="Key Transport RSA-OAEP"
+                    AlgorithmClass="KeyTransport"
+                    RequirementLevel="OPTIONAL"
+                    RequiredKey="RSA"
+                    JCEName="RSA/ECB/OAEPPadding"/>
 
          <Algorithm URI="http://www.w3.org/2001/04/xmlenc#dh"
                     Description="Key Agreement Diffie-Hellman"
@@ -314,14 +369,7 @@
 
       </Algorithms>
    </JCEAlgorithmMappings>
-   <ResourceBundles defaultLanguageCode="en" defaultCountryCode="US">
-      <ResourceBundle LanguageCode="en"
-                      CountryCode="US"
-                      LOCATION="com.sun.org.apache.xml.internal.security/resource/xmlsecurity_en.properties" />
-      <ResourceBundle LanguageCode="de"
-                      CountryCode="DE"
-                      LOCATION="com.sun.org.apache.xml.internal.security/resource/xmlsecurity_de.properties" />
-   </ResourceBundles>
+   <ResourceBundles defaultLanguageCode="en" defaultCountryCode="US"/>
    <ResourceResolvers>
       <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverDirectHTTP"
                 DESCRIPTION="A simple resolver for requests to HTTP space" />
@@ -330,32 +378,8 @@
       <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverFragment"
                 DESCRIPTION="A simple resolver for requests of same-document URIs" />
       <Resolver JAVACLASS="com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverXPointer"
-                DESCRIPTION="A simple resolver for requests of XPointer fragents" />
+                DESCRIPTION="A simple resolver for requests of XPointer fragments" />
    </ResourceResolvers>
-   <!-- <defaultLocale languageCode="en" countryCode="US" /> -->
-   <KeyInfo>
-      <ContentHandler LOCALNAME="KeyName"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.KeyName" />
-      <ContentHandler LOCALNAME="KeyValue"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.KeyValue" />
-      <ContentHandler LOCALNAME="RetrievalMethod"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.RetrievalMethod" />
-      <ContentHandler LOCALNAME="X509Data"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.X509Data" />
-      <ContentHandler LOCALNAME="PGPData"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.PGPData" />
-      <ContentHandler LOCALNAME="SPKIData"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.SPKIData" />
-      <ContentHandler LOCALNAME="MgmtData"
-                      NAMESPACE="http://www.w3.org/2000/09/xmldsig#"
-                      JAVACLASS="com.sun.org.apache.xml.internal.security.keys.content.MgmtData" />
-   </KeyInfo>
    <KeyResolver>
       <!-- This section contains a list of KeyResolvers that are available in
            every KeyInfo object -->

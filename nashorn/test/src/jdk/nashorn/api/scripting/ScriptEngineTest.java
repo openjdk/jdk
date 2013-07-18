@@ -36,6 +36,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -342,6 +343,23 @@ public class ScriptEngineTest {
         foo2 = ((Invocable)engine).getInterface(Foo2.class);
         foo2.bar();
         foo2.bar2();
+    }
+
+    @Test
+    /**
+     * Try passing non-interface Class object for interface implementation.
+     */
+    public void getNonInterfaceGetInterfaceTest() {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("nashorn");
+        try {
+            log(Objects.toString(((Invocable)engine).getInterface(Object.class)));
+            fail("Should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                fail("IllegalArgumentException expected, got " + exp);
+            }
+        }
     }
 
     @Test

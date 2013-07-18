@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ package java.io;
  * The piped input stream contains a buffer,
  * decoupling read operations from write operations,
  * within limits.
- * A pipe is said to be <a name=BROKEN> <i>broken</i> </a> if a
+ * A pipe is said to be <a name="BROKEN"> <i>broken</i> </a> if a
  * thread that was providing data bytes to the connected
  * piped output stream is no longer alive.
  *
@@ -193,7 +193,7 @@ public class PipedInputStream extends InputStream {
      * Receives a byte of data.  This method will block if no input is
      * available.
      * @param b the byte being received
-     * @exception IOException If the pipe is <a href=#BROKEN> <code>broken</code></a>,
+     * @exception IOException If the pipe is <a href="#BROKEN"> <code>broken</code></a>,
      *          {@link #connect(java.io.PipedOutputStream) unconnected},
      *          closed, or if an I/O error occurs.
      * @since     JDK1.1
@@ -219,7 +219,7 @@ public class PipedInputStream extends InputStream {
      * @param b the buffer into which the data is received
      * @param off the start offset of the data
      * @param len the maximum number of bytes received
-     * @exception IOException If the pipe is <a href=#BROKEN> broken</a>,
+     * @exception IOException If the pipe is <a href="#BROKEN"> broken</a>,
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
      *           closed,or if an I/O error occurs.
      */
@@ -298,7 +298,7 @@ public class PipedInputStream extends InputStream {
      *             stream is reached.
      * @exception  IOException  if the pipe is
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
-     *           <a href=#BROKEN> <code>broken</code></a>, closed,
+     *           <a href="#BROKEN"> <code>broken</code></a>, closed,
      *           or if an I/O error occurs.
      */
     public synchronized int read()  throws IOException {
@@ -361,7 +361,7 @@ public class PipedInputStream extends InputStream {
      * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
-     * @exception  IOException if the pipe is <a href=#BROKEN> <code>broken</code></a>,
+     * @exception  IOException if the pipe is <a href="#BROKEN"> <code>broken</code></a>,
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
      *           closed, or if an I/O error occurs.
      */
@@ -419,7 +419,7 @@ public class PipedInputStream extends InputStream {
      *         without blocking, or {@code 0} if this input stream has been
      *         closed by invoking its {@link #close()} method, or if the pipe
      *         is {@link #connect(java.io.PipedOutputStream) unconnected}, or
-     *          <a href=#BROKEN> <code>broken</code></a>.
+     *          <a href="#BROKEN"> <code>broken</code></a>.
      *
      * @exception  IOException  if an I/O error occurs.
      * @since   JDK1.0.2
