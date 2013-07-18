@@ -62,7 +62,6 @@
 package java.time.temporal;
 
 import java.time.DateTimeException;
-import java.time.ZoneId;
 
 /**
  * Framework-level interface defining read-write access to a temporal object,
@@ -81,7 +80,8 @@ import java.time.ZoneId;
  * See {@link ChronoField} for the standard set of fields.
  * <p>
  * Two pieces of date/time information cannot be represented by numbers,
- * the {@linkplain java.time.chrono.Chronology chronology} and the {@linkplain ZoneId time-zone}.
+ * the {@linkplain java.time.chrono.Chronology chronology} and the
+ * {@linkplain java.time.ZoneId time-zone}.
  * These can be accessed via {@link #query(TemporalQuery) queries} using
  * the static methods defined on {@link TemporalQuery}.
  * <p>
@@ -127,6 +127,29 @@ import java.time.ZoneId;
  * @since 1.8
  */
 public interface Temporal extends TemporalAccessor {
+
+    /**
+     * Checks if the specified unit is supported.
+     * <p>
+     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * If false, then calling the {@link #plus(long, TemporalUnit)} and
+     * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
+     *
+     * @implSpec
+     * Implementations must check and handle all units defined in {@link ChronoUnit}.
+     * If the unit is supported, then true must be returned, otherwise false must be returned.
+     * <p>
+     * If the field is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.isSupportedBy(Temporal)}
+     * passing {@code this} as the argument.
+     * <p>
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
+     *
+     * @param unit  the unit to check, null returns false
+     * @return true if the unit can be added/subtracted, false if not
+     */
+    boolean isSupported(TemporalUnit unit);
 
     /**
      * Returns an adjusted object of the same type as this object with the adjustment made.
@@ -352,7 +375,7 @@ public interface Temporal extends TemporalAccessor {
      * The start and end points are {@code this} and the specified temporal.
      * The result will be negative if the end is before the start.
      * For example, the period in hours between two temporal objects can be
-     * calculated using {@code startTime.periodUntil(endTime, HOURS)}.
+     * calculated using {@code startTime.until(endTime, HOURS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two temporals.
@@ -364,7 +387,7 @@ public interface Temporal extends TemporalAccessor {
      * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
      *   // these two lines are equivalent
-     *   temporal = start.periodUntil(end, unit);
+     *   temporal = start.until(end, unit);
      *   temporal = unit.between(start, end);
      * </pre>
      * The choice should be made based on which makes the code more readable.
@@ -372,7 +395,7 @@ public interface Temporal extends TemporalAccessor {
      * For example, this method allows the number of days between two dates to
      * be calculated:
      * <pre>
-     *  long daysBetween = start.periodUntil(end, DAYS);
+     *  long daysBetween = start.until(end, DAYS);
      *  // or alternatively
      *  long daysBetween = DAYS.between(start, end);
      * </pre>
@@ -399,7 +422,8 @@ public interface Temporal extends TemporalAccessor {
      *  return unit.between(this, endTemporal);
      * </pre>
      * <p>
-     * Neither this object, nor the specified temporal, may be altered.
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      *
      * @param endTemporal  the end temporal, of the same type as this object, not null
      * @param unit  the unit to measure the amount in, not null
@@ -410,6 +434,6 @@ public interface Temporal extends TemporalAccessor {
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
-    long periodUntil(Temporal endTemporal, TemporalUnit unit);
+    long until(Temporal endTemporal, TemporalUnit unit);
 
 }
