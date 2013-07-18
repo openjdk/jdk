@@ -63,10 +63,11 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
         if (self.getClass() != StaticClass.class) {
             return null;
         }
+        final Class<?> receiverClass = ((StaticClass) self).getRepresentedClass();
+        Bootstrap.checkReflectionAccess(receiverClass);
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         // We intercept "new" on StaticClass instances to provide additional capabilities
         if ("new".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
-            final Class<?> receiverClass = ((StaticClass) self).getRepresentedClass();
             // Is the class abstract? (This includes interfaces.)
             if (NashornLinker.isAbstractClass(receiverClass)) {
                 // Change this link request into a link request on the adapter class.

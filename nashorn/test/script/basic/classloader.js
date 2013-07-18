@@ -22,21 +22,20 @@
  */
 
 /**
- * NASHORN-473 : Java primitive arrays can not be iterated with for.. in and for each .. in constructs
+ * Try to extend ClassLoader.
  *
  * @test
- * @run
+ * @security
  */
 
-var boolArr = new (Java.type("boolean[]"))(2);
-boolArr[0] = true;
-boolArr[1] = false;
-
-for (i in boolArr) {
-    print(i + " -> " + boolArr[i]);
-}
-
-for each (i in boolArr) {
-    print(i);
+try {
+    var l = new (Java.extend(java.lang.ClassLoader))({});
+    fail("should have thrown SecurityException");
+} catch (e) {
+    if (e instanceof java.lang.SecurityException) {
+        print(e);
+    } else {
+        fail("expected SecurityException, got " + e);
+    }
 }
 
