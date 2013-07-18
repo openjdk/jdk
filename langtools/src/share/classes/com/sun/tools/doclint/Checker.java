@@ -31,9 +31,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Deque;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,6 +47,7 @@ import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.JavaFileObject;
 
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.AuthorTree;
@@ -88,9 +91,9 @@ import static com.sun.tools.doclint.Messages.Group.*;
 public class Checker extends DocTreePathScanner<Void, Void> {
     final Env env;
 
-    Set<Element> foundParams = new HashSet<Element>();
-    Set<TypeMirror> foundThrows = new HashSet<TypeMirror>();
-    Set<String> foundAnchors = new HashSet<String>();
+    Set<Element> foundParams = new HashSet<>();
+    Set<TypeMirror> foundThrows = new HashSet<>();
+    Map<JavaFileObject, Set<String>> foundAnchors = new HashMap<>();
     boolean foundInheritDoc = false;
     boolean foundReturn = false;
 
@@ -129,7 +132,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     Checker(Env env) {
         env.getClass();
         this.env = env;
-        tagStack = new LinkedList<TagStackItem>();
+        tagStack = new LinkedList<>();
         implicitHeaderLevel = env.implicitHeaderLevel;
     }
 
@@ -508,7 +511,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                             if (!validName.matcher(value).matches()) {
                                 env.messages.error(HTML, tree, "dc.invalid.anchor", value);
                             }
-                            if (!foundAnchors.add(value)) {
+                            if (!checkAnchor(value)) {
                                 env.messages.error(HTML, tree, "dc.anchor.already.defined", value);
                             }
                         }
@@ -549,6 +552,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         // TODO: basic check on value
 
         return super.visitAttribute(tree, ignore);
+    }
+
+    private boolean checkAnchor(String name) {
+        JavaFileObject fo = env.currPath.getCompilationUnit().getSourceFile();
+        Set<String> set = foundAnchors.get(fo);
+        if (set == null)
+            foundAnchors.put(fo, set = new HashSet<>());
+        return set.add(name);
     }
 
     // http://www.w3.org/TR/html401/types.html#type-name
