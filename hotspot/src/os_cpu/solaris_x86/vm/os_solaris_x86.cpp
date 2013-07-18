@@ -352,13 +352,6 @@ bool os::is_allocatable(size_t bytes) {
 
 }
 
-extern "C" void Fetch32PFI () ;
-extern "C" void Fetch32Resume () ;
-#ifdef AMD64
-extern "C" void FetchNPFI () ;
-extern "C" void FetchNResume () ;
-#endif // AMD64
-
 extern "C" JNIEXPORT int
 JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
                           int abort_if_unrecognized) {
@@ -440,17 +433,10 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     // factor me: getPCfromContext
     pc = (address) uc->uc_mcontext.gregs[REG_PC];
 
-    // SafeFetch32() support
-    if (pc == (address) Fetch32PFI) {
-      uc->uc_mcontext.gregs[REG_PC] = intptr_t(Fetch32Resume) ;
-      return true ;
+    if (StubRoutines::is_safefetch_fault(pc)) {
+      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      return true;
     }
-#ifdef AMD64
-    if (pc == (address) FetchNPFI) {
-       uc->uc_mcontext.gregs [REG_PC] = intptr_t(FetchNResume) ;
-       return true ;
-    }
-#endif // AMD64
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV && info->si_code == SEGV_ACCERR) {

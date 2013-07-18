@@ -47,6 +47,7 @@ import java.security.Permission;
  * in {@link java.io.FilePermission}. There are three different ways
  * as the following examples show:
  * <table border>
+ * <caption>URL Examples</caption>
  * <tr><th>Example url</th><th>Description</th></tr>
  * <tr><td style="white-space:nowrap;">http://www.oracle.com/a/b/c.html</td>
  *   <td>A url which identifies a specific (single) resource</td>
@@ -57,7 +58,7 @@ import java.security.Permission;
  *       which only differ in the final path component, represented by the '*'.
  *   </td>
  * </tr>
- * <tr><td>http://www.oracle.com/a/b/-</li>
+ * <tr><td>http://www.oracle.com/a/b/-</td>
  *   <td>The '-' character refers to all resources recursively below the
  *       preceding path (eg. http://www.oracle.com/a/b/c/d/e.html matches this
  *       example).
@@ -164,6 +165,8 @@ public final class HttpURLPermission extends Permission {
      * methods and request headers by invoking the two argument
      * constructor as follows: HttpURLPermission(url, "*:*")
      *
+     * @param url the url string
+     *
      * @throws    IllegalArgumentException if url does not result in a valid {@link URI}
      */
     public HttpURLPermission(String url) {
@@ -204,11 +207,10 @@ public final class HttpURLPermission extends Permission {
      * <li>if the path or paths specified by p's url are contained in the
      *     set of paths specified by this's url, then return true
      * <li>otherwise, return false</li>
-     * </ol>
-     * <p>
-     * Some examples of how paths are matched are shown below:
-     * <p>
-     * <table border>
+     * </ul>
+     * <p>Some examples of how paths are matched are shown below:
+     * <p><table border>
+     * <caption>Examples of Path Matching</caption>
      * <tr><th>this's path</th><th>p's path</th><th>match</th></tr>
      * <tr><td>/a/b</td><td>/a/b</td><td>yes</td></tr>
      * <tr><td>/a/b/*</td><td>/a/b/c</td><td>yes</td></tr>

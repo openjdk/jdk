@@ -209,13 +209,6 @@ enum {
   trap_page_fault = 0xE
 };
 
-extern "C" void Fetch32PFI () ;
-extern "C" void Fetch32Resume () ;
-#ifdef AMD64
-extern "C" void FetchNPFI () ;
-extern "C" void FetchNResume () ;
-#endif // AMD64
-
 extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int sig,
                         siginfo_t* info,
@@ -282,16 +275,10 @@ JVM_handle_linux_signal(int sig,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Linux::ucontext_get_pc(uc);
 
-    if (pc == (address) Fetch32PFI) {
-       uc->uc_mcontext.gregs[REG_PC] = intptr_t(Fetch32Resume) ;
-       return 1 ;
+    if (StubRoutines::is_safefetch_fault(pc)) {
+      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      return 1;
     }
-#ifdef AMD64
-    if (pc == (address) FetchNPFI) {
-       uc->uc_mcontext.gregs[REG_PC] = intptr_t (FetchNResume) ;
-       return 1 ;
-    }
-#endif // AMD64
 
 #ifndef AMD64
     // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs

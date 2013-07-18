@@ -28,13 +28,14 @@ package jdk.nashorn.internal.ir.visitor;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
-import jdk.nashorn.internal.ir.ExecuteNode;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
@@ -308,23 +309,43 @@ public abstract class NodeVisitor<T extends LexicalContext> {
     }
 
     /**
-     * Callback for entering an ExecuteNode
+     * Callback for entering an ExpressionStatement
      *
-     * @param  executeNode the node
+     * @param  expressionStatement the node
      * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public boolean enterExecuteNode(final ExecuteNode executeNode) {
-        return enterDefault(executeNode);
+    public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
+        return enterDefault(expressionStatement);
     }
 
     /**
-     * Callback for leaving an ExecuteNode
+     * Callback for leaving an ExpressionStatement
      *
-     * @param  executeNode the node
+     * @param  expressionStatement the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leaveExecuteNode(final ExecuteNode executeNode) {
-        return leaveDefault(executeNode);
+    public Node leaveExpressionStatement(final ExpressionStatement expressionStatement) {
+        return leaveDefault(expressionStatement);
+    }
+
+    /**
+     * Callback for entering a BlockStatement
+     *
+     * @param  blockStatement the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterBlockStatement(final BlockStatement blockStatement) {
+        return enterDefault(blockStatement);
+    }
+
+    /**
+     * Callback for leaving a BlockStatement
+     *
+     * @param  blockStatement the node
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveBlockStatement(final BlockStatement blockStatement) {
+        return leaveDefault(blockStatement);
     }
 
     /**

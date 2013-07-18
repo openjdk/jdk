@@ -385,13 +385,6 @@ enum {
   trap_page_fault = 0xE
 };
 
-extern "C" void Fetch32PFI () ;
-extern "C" void Fetch32Resume () ;
-#ifdef AMD64
-extern "C" void FetchNPFI () ;
-extern "C" void FetchNResume () ;
-#endif // AMD64
-
 extern "C" JNIEXPORT int
 JVM_handle_bsd_signal(int sig,
                         siginfo_t* info,
@@ -458,16 +451,10 @@ JVM_handle_bsd_signal(int sig,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Bsd::ucontext_get_pc(uc);
 
-    if (pc == (address) Fetch32PFI) {
-       uc->context_pc = intptr_t(Fetch32Resume) ;
-       return 1 ;
+    if (StubRoutines::is_safefetch_fault(pc)) {
+      uc->context_pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      return 1;
     }
-#ifdef AMD64
-    if (pc == (address) FetchNPFI) {
-       uc->context_pc = intptr_t (FetchNResume) ;
-       return 1 ;
-    }
-#endif // AMD64
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {

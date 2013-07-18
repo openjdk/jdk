@@ -100,7 +100,14 @@ public class LockStep {
                     new Hashtable(16),
                     new TreeMap(),
                     new ConcurrentHashMap(16),
-                    new ConcurrentSkipListMap() });
+                    new ConcurrentSkipListMap(),
+                    Collections.checkedMap(new HashMap(16), Integer.class, Integer.class),
+                    Collections.checkedSortedMap(new TreeMap(), Integer.class, Integer.class),
+                    Collections.checkedNavigableMap(new TreeMap(), Integer.class, Integer.class),
+                    Collections.synchronizedMap(new HashMap(16)),
+                    Collections.synchronizedSortedMap(new TreeMap()),
+                    Collections.synchronizedNavigableMap(new TreeMap())
+                    });
 
             for (int j = 0; j < 10; j++)
                 put(maps, r.nextInt(100), r.nextInt(100));

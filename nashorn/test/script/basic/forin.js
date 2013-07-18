@@ -49,8 +49,3 @@ for each (i in s) print(i);
 // 'each' is a contextual keyword. Ok to use as identifier elsewhere..
 var each = "This is each";
 print(each);
-
-// it is ok to use "each" is usual for loop. Ignored as noise word.
-for each (var i = 0; i < 10; i++) {
-    print(i);
-}

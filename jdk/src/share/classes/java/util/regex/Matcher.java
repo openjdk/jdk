@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package java.util.regex;
 import java.util.Objects;
 
 /**
- * An engine that performs match operations on a {@link java.lang.CharSequence
- * </code>character sequence<code>} by interpreting a {@link Pattern}.
+ * An engine that performs match operations on a {@linkplain java.lang.CharSequence
+ * character sequence} by interpreting a {@link Pattern}.
  *
  * <p> A matcher is created from a pattern by invoking the pattern's {@link
  * Pattern#matcher matcher} method.  Once created, a matcher can be used to
@@ -330,7 +330,7 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-     * Returns the start index of the previous match.  </p>
+     * Returns the start index of the previous match.
      *
      * @return  The index of the first character matched
      *
@@ -402,7 +402,7 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-     * Returns the offset after the last character matched.  </p>
+     * Returns the offset after the last character matched.
      *
      * @return  The offset after the last character matched
      *
@@ -647,6 +647,7 @@ public final class Matcher implements MatchResult {
      * invocations of the {@link #find()} method will start at the first
      * character not matched by this match.  </p>
      *
+     * @param start the index to start searching for a match
      * @throws  IndexOutOfBoundsException
      *          If start is less than zero or if start is greater than the
      *          length of the input sequence.
@@ -736,8 +737,8 @@ public final class Matcher implements MatchResult {
      * captured during the previous match: Each occurrence of
      * <tt>${</tt><i>name</i><tt>}</tt> or <tt>$</tt><i>g</i>
      * will be replaced by the result of evaluating the corresponding
-     * {@link #group(String) group(name)} or {@link #group(int) group(g)</tt>}
-     * respectively. For  <tt>$</tt><i>g</i><tt></tt>,
+     * {@link #group(String) group(name)} or {@link #group(int) group(g)}
+     * respectively. For  <tt>$</tt><i>g</i>,
      * the first number after the <tt>$</tt> is always treated as part of
      * the group reference. Subsequent numbers are incorporated into g if
      * they would form a legal group reference. Only the numerals '0'

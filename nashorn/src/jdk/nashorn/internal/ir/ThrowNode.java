@@ -34,7 +34,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 @Immutable
 public final class ThrowNode extends Statement {
     /** Exception expression. */
-    private final Node expression;
+    private final Expression expression;
 
     private final int flags;
 
@@ -50,13 +50,13 @@ public final class ThrowNode extends Statement {
      * @param expression expression to throw
      * @param flags      flags
      */
-    public ThrowNode(final int lineNumber, final long token, final int finish, final Node expression, final int flags) {
+    public ThrowNode(final int lineNumber, final long token, final int finish, final Expression expression, final int flags) {
         super(lineNumber, token, finish);
         this.expression = expression;
         this.flags = flags;
     }
 
-    private ThrowNode(final ThrowNode node, final Node expression, final int flags) {
+    private ThrowNode(final ThrowNode node, final Expression expression, final int flags) {
         super(node);
         this.expression = expression;
         this.flags = flags;
@@ -74,7 +74,7 @@ public final class ThrowNode extends Statement {
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterThrowNode(this)) {
-            return visitor.leaveThrowNode(setExpression(expression.accept(visitor)));
+            return visitor.leaveThrowNode(setExpression((Expression)expression.accept(visitor)));
         }
 
         return this;
@@ -93,7 +93,7 @@ public final class ThrowNode extends Statement {
      * Get the expression that is being thrown by this node
      * @return expression
      */
-    public Node getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
@@ -102,7 +102,7 @@ public final class ThrowNode extends Statement {
      * @param expression new expression
      * @return new or same thrownode
      */
-    public ThrowNode setExpression(final Node expression) {
+    public ThrowNode setExpression(final Expression expression) {
         if (this.expression == expression) {
             return this;
         }
