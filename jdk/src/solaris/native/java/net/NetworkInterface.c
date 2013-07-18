@@ -118,7 +118,6 @@ static jclass ni_ibcls;
 static jmethodID ni_ia4ctrID;
 static jmethodID ni_ia6ctrID;
 static jmethodID ni_ibctrID;
-static jfieldID ni_ia6ipaddressID;
 static jfieldID ni_ibaddressID;
 static jfieldID ni_ib4broadcastID;
 static jfieldID ni_ib4maskID;
@@ -193,7 +192,6 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls) {
     ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
     ni_ia6ctrID = (*env)->GetMethodID(env, ni_ia6cls, "<init>", "()V");
     ni_ibctrID = (*env)->GetMethodID(env, ni_ibcls, "<init>", "()V");
-    ni_ia6ipaddressID = (*env)->GetFieldID(env, ni_ia6cls, "ipaddress", "[B");
     ni_ibaddressID = (*env)->GetFieldID(env, ni_ibcls, "address", "Ljava/net/InetAddress;");
     ni_ib4broadcastID = (*env)->GetFieldID(env, ni_ibcls, "broadcast", "Ljava/net/Inet4Address;");
     ni_ib4maskID = (*env)->GetFieldID(env, ni_ibcls, "maskLength", "S");
@@ -332,11 +330,9 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
 #ifdef AF_INET6
                 if (family == AF_INET6) {
                     jbyte *bytes = (jbyte *)&(((struct sockaddr_in6*)addrP->addr)->sin6_addr);
-                    jbyteArray ipaddress = (*env)->GetObjectField(env, iaObj, ni_ia6ipaddressID);
                     jbyte caddr[16];
                     int i;
-
-                    (*env)->GetByteArrayRegion(env, ipaddress, 0, 16, caddr);
+                    getInet6Address_ipaddress(env, iaObj, (char *)caddr);
                     i = 0;
                     while (i < 16) {
                         if (caddr[i] != bytes[i]) {
@@ -670,21 +666,17 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
             int scope=0;
             iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
             if (iaObj) {
-                jbyteArray ipaddress = (*env)->NewByteArray(env, 16);
-                if (ipaddress == NULL) {
+                int ret = setInet6Address_ipaddress(env, iaObj, (char *)&(((struct sockaddr_in6*)addrP->addr)->sin6_addr));
+                if (ret == JNI_FALSE) {
                     return NULL;
                 }
-                (*env)->SetByteArrayRegion(env, ipaddress, 0, 16,
-                                                                        (jbyte *)&(((struct sockaddr_in6*)addrP->addr)->sin6_addr));
 
                 scope = ((struct sockaddr_in6*)addrP->addr)->sin6_scope_id;
 
                 if (scope != 0) { /* zero is default value, no need to set */
-                    (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
-                    (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
-                    (*env)->SetObjectField(env, iaObj, ia6_scopeifnameID, netifObj);
+                    setInet6Address_scopeid(env, iaObj, scope);
+                    setInet6Address_scopeifname(env, iaObj, netifObj);
                 }
-                (*env)->SetObjectField(env, iaObj, ni_ia6ipaddressID, ipaddress);
             }
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj) {

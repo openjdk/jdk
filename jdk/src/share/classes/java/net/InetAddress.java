@@ -213,6 +213,13 @@ class InetAddress implements java.io.Serializable {
             this.family = family;
         }
 
+        void init(String hostName, int family) {
+            this.hostName = hostName;
+            if (family != -1) {
+                this.family = family;
+            }
+        }
+
         String hostName;
 
         String getHostName() {
@@ -240,7 +247,7 @@ class InetAddress implements java.io.Serializable {
     }
 
     /* Used to store the serializable fields of InetAddress */
-    private final transient InetAddressHolder holder;
+    final transient InetAddressHolder holder;
 
     InetAddressHolder holder() {
         return holder;

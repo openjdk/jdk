@@ -58,6 +58,19 @@ extern jfieldID iac_familyID;
 extern jfieldID iac_hostNameID;
 extern jfieldID ia_preferIPv6AddressID;
 
+/** (Inet6Address accessors)
+ * set_ methods return JNI_TRUE on success JNI_FALSE on error
+ * get_ methods that return int/boolean, return -1 on error
+ * get_ methods that return objects return NULL on error.
+ */
+extern jobject getInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj);
+extern int setInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj, jobject scopeifname);
+extern int getInet6Address_scopeid_set(JNIEnv *env, jobject ia6Obj);
+extern int getInet6Address_scopeid(JNIEnv *env, jobject ia6Obj);
+extern int setInet6Address_scopeid(JNIEnv *env, jobject ia6Obj, int scopeid);
+extern int getInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *dest);
+extern int setInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *address);
+
 extern void setInetAddress_addr(JNIEnv *env, jobject iaObj, int address);
 extern void setInetAddress_family(JNIEnv *env, jobject iaObj, int family);
 extern void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject h);
@@ -93,12 +106,12 @@ extern jfieldID dp_bufLengthID;
 
 /* Inet6Address fields */
 extern jclass ia6_class;
+extern jfieldID ia6_holder6ID;
 extern jfieldID ia6_ipaddressID;
 extern jfieldID ia6_scopeidID;
 extern jfieldID ia6_cachedscopeidID;
 extern jfieldID ia6_scopeidsetID;
 extern jfieldID ia6_scopeifnameID;
-extern jfieldID ia6_scopeifnamesetID;
 extern jmethodID ia6_ctrID;
 
 /************************************************************************
