@@ -121,11 +121,6 @@ public final class Context {
      * @param global the global scope
      */
     public static void setGlobal(final ScriptObject global) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.setGlobal"));
-        }
-
         if (global != null && !(global instanceof Global)) {
             throw new IllegalArgumentException("global is not an instance of Global!");
         }
@@ -645,12 +640,7 @@ public final class Context {
      * @return the global script object
      */
     public ScriptObject newGlobal() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
-        }
-
-        return newGlobalTrusted();
+        return new Global(this);
     }
 
     /**
@@ -826,10 +816,6 @@ public final class Context {
                     return new ScriptLoader(sharedLoader, Context.this);
                 }
              });
-    }
-
-    private ScriptObject newGlobalTrusted() {
-        return new Global(this);
     }
 
     private long getUniqueScriptId() {

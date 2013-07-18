@@ -411,18 +411,33 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
+    // performs initialization checks for Global constructor and returns the
+    // PropertyMap, if everything is fine.
+    private static PropertyMap checkAndGetMap(final Context context) {
+        // security check first
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
+        }
+
+        // null check on context
+        context.getClass();
+
+        /*
+         * Duplicate global's map and use it. This way the initial Map filled
+         * by nasgen (referenced from static field in this class) is retained
+         * 'as is' (as that one is process wide singleton.
+         */
+        return $nasgenmap$.duplicate();
+    }
+
     /**
      * Constructor
      *
      * @param context the context
      */
     public Global(final Context context) {
-        /*
-         * Duplicate global's map and use it. This way the initial Map filled
-         * by nasgen (referenced from static field in this class) is retained
-         * 'as is' (as that one is process wide singleton.
-         */
-        super($nasgenmap$.duplicate());
+        super(checkAndGetMap(context));
         this.setContext(context);
         this.setIsScope();
 
