@@ -52,7 +52,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
