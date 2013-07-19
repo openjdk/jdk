@@ -132,13 +132,9 @@ public class TargetedNotification implements Serializable {
 //     }
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        ObjectInputStream.GetField gf = ois.readFields();
-        Notification notification = (Notification)gf.get("notif", null);
-        Integer listenerId = (Integer)gf.get("id", null);
+        ois.defaultReadObject();
         try {
-            validate(notification, listenerId);
-            this.notif = notification;
-            this.id = listenerId;
+            validate(this.notif, this.id);
         } catch (IllegalArgumentException e) {
             throw new InvalidObjectException(e.getMessage());
         }
