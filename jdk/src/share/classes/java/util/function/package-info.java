@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
  * adapted.  Functional interfaces can provide a target type in multiple contexts,
  * such as assignment context, method invocation, or cast context:
  *
- * <pre>
- *     Predicate&lt;String> p = String::isEmpty;
+ * <pre>{@code
+ *     Predicate<String> p = String::isEmpty;
  *
  *     stream.filter(e -> e.getSize() > 10)...
  *
  *     stream.map((ToIntFunction) e -> e.getSize())...
- * </pre>
+ * }</pre>
  *
  * <p>The interfaces in this package are functional interfaces used by the JDK,
  * and are available to be used by user code as well.  While they do not identify
