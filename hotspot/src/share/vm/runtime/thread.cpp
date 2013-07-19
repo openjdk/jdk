@@ -45,7 +45,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/privilegedStack.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
@@ -3680,7 +3679,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   if (Arguments::has_profile())       FlatProfiler::engage(main_thread, true);
-  if (Arguments::has_alloc_profile()) AllocationProfiler::engage();
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
