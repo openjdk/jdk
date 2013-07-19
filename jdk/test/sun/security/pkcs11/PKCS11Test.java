@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ public abstract class PKCS11Test {
 
     static String NSPR_PREFIX = "";
 
+    // The NSS library we need to search for in getNSSLibDir()
+    // Default is "libsoftokn3.so", listed as "softokn3"
+    // The other is "libnss3.so", listed as "nss3".
+    static String nss_library = "softokn3";
+
     static Provider getSunPKCS11(String config) throws Exception {
         Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
         Constructor cons = clazz.getConstructor(new Class[] {String.class});
@@ -79,24 +84,28 @@ public abstract class PKCS11Test {
             testNSS(test);
             testDeimos(test);
         } finally {
+            // NOTE: Do not place a 'return' in any finally block
+            // as it will suppress exceptions and hide test failures.
             Provider[] newProviders = Security.getProviders();
+            boolean found = true;
             // Do not restore providers if nothing changed. This is especailly
             // useful for ./Provider/Login.sh, where a SecurityManager exists.
             if (oldProviders.length == newProviders.length) {
-                boolean found = false;
+                found = false;
                 for (int i = 0; i<oldProviders.length; i++) {
                     if (oldProviders[i] != newProviders[i]) {
                         found = true;
                         break;
                     }
                 }
-                if (!found) return;
             }
-            for (Provider p: newProviders) {
-                Security.removeProvider(p.getName());
-            }
-            for (Provider p: oldProviders) {
-                Security.addProvider(p);
+            if (found) {
+                for (Provider p: newProviders) {
+                    Security.removeProvider(p.getName());
+                }
+                for (Provider p: oldProviders) {
+                    Security.addProvider(p);
+                }
             }
         }
     }
@@ -178,7 +187,8 @@ public abstract class PKCS11Test {
         }
         String nssLibDir = null;
         for (String dir : nssLibDirs) {
-            if (new File(dir).exists()) {
+            if (new File(dir).exists() &&
+                new File(dir + System.mapLibraryName(nss_library)).exists()) {
                 nssLibDir = dir;
                 System.setProperty("pkcs11test.nss.libdir", nssLibDir);
                 break;
@@ -207,6 +217,11 @@ public abstract class PKCS11Test {
         return true;
     }
 
+    // Used to set the nss_library file to search for libsoftokn3.so
+    public static void useNSS() {
+        nss_library = "nss3";
+    }
+
     public static void testNSS(PKCS11Test test) throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
@@ -218,7 +233,7 @@ public abstract class PKCS11Test {
             return;
         }
 
-        String libfile = libdir + System.mapLibraryName("softokn3");
+        String libfile = libdir + System.mapLibraryName(nss_library);
 
         String customDBdir = System.getProperty("CUSTOM_DB_DIR");
         String dbdir = (customDBdir != null) ?
@@ -252,7 +267,8 @@ public abstract class PKCS11Test {
         osMap.put("Linux-i386-32", new String[]{
             "/usr/lib/i386-linux-gnu/", "/usr/lib/"});
         osMap.put("Linux-amd64-64", new String[]{
-            "/usr/lib/x86_64-linux-gnu/", "/usr/lib64/"});
+            "/usr/lib/x86_64-linux-gnu/", "/usr/lib/x86_64-linux-gnu/nss/",
+            "/usr/lib64/"});
         osMap.put("Windows-x86-32", new String[]{
             PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP)});
         osMap.put("Windows-amd64-64", new String[]{
