@@ -255,6 +255,23 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
 # jdk_security
 
+# 8012971 PKCS11Test hiding exception failures
+sun/security/pkcs11/KeyStore/SecretKeysBasic.java		solaris-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.java		linux-all
+sun/security/pkcs11/ec/TestCurves.java				solaris-all
+sun/security/pkcs11/ec/TestCurves.java				linux-all
+sun/security/pkcs11/ec/TestECDH.java				solaris-all
+sun/security/pkcs11/ec/TestECDH2.java				solaris-all
+sun/security/pkcs11/ec/TestECDH2.java				linux-all
+sun/security/pkcs11/ec/TestECDSA.java				solaris-all
+sun/security/pkcs11/ec/TestECDSA.java				linux-all
+sun/security/pkcs11/ec/TestECDSA2.java				solaris-all
+sun/security/pkcs11/ec/TestECDSA2.java				linux-all
+sun/security/pkcs11/ec/TestECGenSpec.java			solaris-all
+sun/security/pkcs11/ec/TestECGenSpec.java			linux-all
+sun/security/pkcs11/ec/TestKeyFactory.java			solaris-all
+sun/security/pkcs11/ec/TestKeyFactory.java			linux-all
+
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
 
