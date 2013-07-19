@@ -1948,6 +1948,8 @@ public class Attr extends JCTree.Visitor {
             clazzid1 = make.at(clazz.pos).Select(make.Type(encltype),
                                                  ((JCIdent) clazzid).name);
 
+            EndPosTable endPosTable = this.env.toplevel.endPositions;
+            endPosTable.storeEnd(clazzid1, tree.getEndPosition(endPosTable));
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;
