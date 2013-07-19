@@ -1321,12 +1321,6 @@ void InstanceKlass::array_klasses_do(void f(Klass* k)) {
     ArrayKlass::cast(array_klasses())->array_klasses_do(f);
 }
 
-
-void InstanceKlass::with_array_klasses_do(void f(Klass* k)) {
-  f(this);
-  array_klasses_do(f);
-}
-
 #ifdef ASSERT
 static int linear_search(Array<Method*>* methods, Symbol* name, Symbol* signature) {
   int len = methods->length();

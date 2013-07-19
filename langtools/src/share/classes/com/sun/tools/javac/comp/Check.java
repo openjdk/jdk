@@ -2275,24 +2275,6 @@ public class Check {
         c.flags_field |= ACYCLIC;
     }
 
-    /**
-     * Check that functional interface methods would make sense when seen
-     * from the perspective of the implementing class
-     */
-    void checkFunctionalInterface(JCTree tree, Type funcInterface) {
-        ClassType c = new ClassType(Type.noType, List.<Type>nil(), null);
-        ClassSymbol csym = new ClassSymbol(0, names.empty, c, syms.noSymbol);
-        c.interfaces_field = List.of(types.removeWildcards(funcInterface));
-        c.supertype_field = syms.objectType;
-        c.tsym = csym;
-        csym.members_field = new Scope(csym);
-        Symbol descSym = types.findDescriptorSymbol(funcInterface.tsym);
-        Type descType = types.findDescriptorType(funcInterface);
-        csym.members_field.enter(new MethodSymbol(PUBLIC, descSym.name, descType, csym));
-        csym.completer = null;
-        checkImplementations(tree, csym, csym);
-    }
-
     /** Check that all methods which implement some
      *  method conform to the method they implement.
      *  @param tree         The class definition whose members are checked.
