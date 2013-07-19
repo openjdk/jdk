@@ -168,7 +168,6 @@ Klass::Klass() {
   set_subklass(NULL);
   set_next_sibling(NULL);
   set_next_link(NULL);
-  set_alloc_count(0);
   TRACE_INIT_ID(this);
 
   set_prototype_header(markOopDesc::prototype());
@@ -542,12 +541,6 @@ Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
   fatal("array_klass should be dispatched to InstanceKlass, ObjArrayKlass or TypeArrayKlass");
   return NULL;
 }
-
-
-void Klass::with_array_klasses_do(void f(Klass* k)) {
-  f(this);
-}
-
 
 oop Klass::class_loader() const { return class_loader_data()->class_loader(); }
 
