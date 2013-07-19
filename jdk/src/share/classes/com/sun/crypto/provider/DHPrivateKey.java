@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.io.*;
+import java.util.Objects;
 import java.math.BigInteger;
 import java.security.KeyRep;
 import java.security.PrivateKey;
@@ -67,7 +68,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
     // the base generator
     private BigInteger g;
 
-    // the private-value length
+    // the private-value length (optional)
     private int l;
 
     private int DH_data[] = { 1, 2, 840, 113549, 1, 3, 1 };
@@ -179,20 +180,9 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
             this.key = val.data.getOctetString();
             parseKeyBits();
 
-            // ignore OPTIONAL attributes
-
             this.encodedKey = encodedKey.clone();
-
-        } catch (NumberFormatException e) {
-            InvalidKeyException ike = new InvalidKeyException(
-                "Private-value length too big");
-            ike.initCause(e);
-            throw ike;
-        } catch (IOException e) {
-            InvalidKeyException ike = new InvalidKeyException(
-                "Error parsing key encoding: " + e.getMessage());
-            ike.initCause(e);
-            throw ike;
+        } catch (IOException | NumberFormatException e) {
+            throw new InvalidKeyException("Error parsing key encoding", e);
         }
     }
 
@@ -234,8 +224,9 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
                 DerOutputStream params = new DerOutputStream();
                 params.putInteger(this.p);
                 params.putInteger(this.g);
-                if (this.l != 0)
+                if (this.l != 0) {
                     params.putInteger(this.l);
+                }
                 // wrap parameters into SEQUENCE
                 DerValue paramSequence = new DerValue(DerValue.tag_Sequence,
                                                       params.toByteArray());
@@ -273,10 +264,11 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * @return the key parameters
      */
     public DHParameterSpec getParams() {
-        if (this.l != 0)
+        if (this.l != 0) {
             return new DHParameterSpec(this.p, this.g, this.l);
-        else
+        } else {
             return new DHParameterSpec(this.p, this.g);
+        }
     }
 
     public String toString() {
@@ -312,26 +304,21 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
      * Objects that are equal will also have the same hashcode.
      */
     public int hashCode() {
-        int retval = 0;
-        byte[] enc = getEncoded();
-
-        for (int i = 1; i < enc.length; i++) {
-            retval += enc[i] * i;
-        }
-        return(retval);
+        return Objects.hash(x, p, g);
     }
 
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
+        if (this == obj) return true;
 
-        if (!(obj instanceof PrivateKey))
+        if (!(obj instanceof javax.crypto.interfaces.DHPrivateKey)) {
             return false;
-
-        byte[] thisEncoded = this.getEncoded();
-        byte[] thatEncoded = ((PrivateKey)obj).getEncoded();
-
-        return java.util.Arrays.equals(thisEncoded, thatEncoded);
+        }
+        javax.crypto.interfaces.DHPrivateKey other =
+                (javax.crypto.interfaces.DHPrivateKey) obj;
+        DHParameterSpec otherParams = other.getParams();
+        return ((this.x.compareTo(other.getX()) == 0) &&
+                (this.p.compareTo(otherParams.getP()) == 0) &&
+                (this.g.compareTo(otherParams.getG()) == 0));
     }
 
     /**

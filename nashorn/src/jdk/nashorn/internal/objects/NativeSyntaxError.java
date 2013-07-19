@@ -58,13 +58,21 @@ public final class NativeSyntaxError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeSyntaxError(final Object msg) {
-        super(Global.instance().getSyntaxErrorPrototype(), $nasgenmap$);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    NativeSyntaxError(final Object msg, final Global global) {
+        super(global.getSyntaxErrorPrototype(), global.getSyntaxErrorMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+    }
+
+    private NativeSyntaxError(final Object msg) {
+        this(msg, Global.instance());
     }
 
     @Override

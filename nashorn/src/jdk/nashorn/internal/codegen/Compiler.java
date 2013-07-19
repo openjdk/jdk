@@ -528,8 +528,8 @@ public final class Compiler {
         return this.env;
     }
 
-    private static String safeSourceName(final Source source) {
-        String baseName = new File(source.getName()).getName();
+    private String safeSourceName(final Source src) {
+        String baseName = new File(src.getName()).getName();
 
         final int index = baseName.lastIndexOf(".js");
         if (index != -1) {
@@ -537,6 +537,9 @@ public final class Compiler {
         }
 
         baseName = baseName.replace('.', '_').replace('-', '_');
+        if (! env._loader_per_compile) {
+            baseName = baseName + installer.getUniqueScriptId();
+        }
         final String mangled = NameCodec.encode(baseName);
 
         return mangled != null ? mangled : baseName;

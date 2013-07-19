@@ -32,6 +32,7 @@ import java.util.List;
 import javax.swing.RootPaneContainer;
 
 import com.apple.eawt.AppEvent.FullScreenEvent;
+import sun.awt.SunToolkit;
 
 import java.lang.annotation.Native;
 
@@ -75,7 +76,7 @@ final class FullScreenHandler {
     static void handleFullScreenEventFromNative(final Window window, final int type) {
         if (!(window instanceof RootPaneContainer)) return; // handles null
 
-        EventQueue.invokeLater(new Runnable() {
+        SunToolkit.executeOnEventHandlerThread(window, new Runnable() {
             public void run() {
                 final FullScreenHandler handler = getHandlerFor((RootPaneContainer)window);
                 if (handler != null) handler.notifyListener(new FullScreenEvent(window), type);
