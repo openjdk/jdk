@@ -41,6 +41,7 @@ public class PropertyListenerManager implements PropertyListener {
     private static int listenersRemoved;
 
     /**
+     * Return aggregate listeners added to all PropertyListenerManagers
      * @return the listenersAdded
      */
     public static int getListenersAdded() {
@@ -48,10 +49,19 @@ public class PropertyListenerManager implements PropertyListener {
     }
 
     /**
+     * Return aggregate listeners removed from all PropertyListenerManagers
      * @return the listenersRemoved
      */
     public static int getListenersRemoved() {
         return listenersRemoved;
+    }
+
+    /**
+     * Return listeners added to this PropertyListenerManager.
+     * @return the listener count
+     */
+    public final int getListenerCount() {
+        return listeners != null? listeners.size() : 0;
     }
 
     // Property listener management methods

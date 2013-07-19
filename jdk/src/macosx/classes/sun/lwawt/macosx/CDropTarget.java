@@ -52,6 +52,8 @@ public final class CDropTarget {
         fPeer = peer;
 
         long nativePeer = CPlatformWindow.getNativeViewPtr(((LWComponentPeer) peer).getPlatformWindow());
+        if (nativePeer == 0L) return; // Unsupported for a window without a native view (plugin)
+
         // Create native dragging destination:
         fNativeDropTarget = this.createNativeDropTarget(dropTarget, component, peer, nativePeer);
         if (fNativeDropTarget == 0) {

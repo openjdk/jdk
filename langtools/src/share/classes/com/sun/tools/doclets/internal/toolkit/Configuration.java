@@ -467,7 +467,7 @@ public abstract class Configuration {
                 nodeprecated = true;
             } else if (opt.equals("-sourcepath")) {
                 sourcepath = os[1];
-            } else if (opt.equals("-classpath") &&
+            } else if ((opt.equals("-classpath") || opt.equals("-cp")) &&
                        sourcepath.length() == 0) {
                 sourcepath = os[1];
             } else if (opt.equals("-excludedocfilessubdir")) {

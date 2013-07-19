@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public final class DHKeyFactory extends KeyFactorySpi {
             }
         } catch (InvalidKeyException e) {
             throw new InvalidKeySpecException
-                ("Inappropriate key specification");
+                ("Inappropriate key specification", e);
         }
     }
 
@@ -118,7 +118,7 @@ public final class DHKeyFactory extends KeyFactorySpi {
             }
         } catch (InvalidKeyException e) {
             throw new InvalidKeySpecException
-                ("Inappropriate key specification");
+                ("Inappropriate key specification", e);
         }
     }
 
@@ -227,7 +227,7 @@ public final class DHKeyFactory extends KeyFactorySpi {
             }
 
         } catch (InvalidKeySpecException e) {
-            throw new InvalidKeyException("Cannot translate key");
+            throw new InvalidKeyException("Cannot translate key", e);
         }
     }
 }

@@ -865,8 +865,8 @@ class Thread implements Runnable {
      * will receive an {@link InterruptedException}.
      *
      * <p> If this thread is blocked in an I/O operation upon an {@link
-     * java.nio.channels.InterruptibleChannel </code>interruptible
-     * channel<code>} then the channel will be closed, the thread's interrupt
+     * java.nio.channels.InterruptibleChannel InterruptibleChannel}
+     * then the channel will be closed, the thread's interrupt
      * status will be set, and the thread will receive a {@link
      * java.nio.channels.ClosedByInterruptException}.
      *
@@ -1883,6 +1883,7 @@ class Thread implements Runnable {
      * there is no default.
      * @since 1.5
      * @see #setDefaultUncaughtExceptionHandler
+     * @return the default uncaught exception handler for all threads
      */
     public static UncaughtExceptionHandler getDefaultUncaughtExceptionHandler(){
         return defaultUncaughtExceptionHandler;
@@ -1895,6 +1896,7 @@ class Thread implements Runnable {
      * <tt>ThreadGroup</tt> object is returned, unless this thread
      * has terminated, in which case <tt>null</tt> is returned.
      * @since 1.5
+     * @return the uncaught exception handler for this thread
      */
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
         return uncaughtExceptionHandler != null ?

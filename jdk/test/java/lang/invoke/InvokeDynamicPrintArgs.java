@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 7050328 8007035
  * @summary smoke test for invokedynamic instructions
  * @build indify.Indify
  * @compile InvokeDynamicPrintArgs.java
@@ -42,6 +43,7 @@ import java.util.*;
 import java.io.*;
 
 import java.lang.invoke.*;
+import java.security.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
@@ -62,17 +64,10 @@ public class InvokeDynamicPrintArgs {
     }
 
     private static void checkConstantRefs() throws Throwable {
-        // check some constant references:
+        // check some constant references to its self class
         assertEquals(MT_bsm(), MH_bsm().type());
         assertEquals(MT_bsm2(), MH_bsm2().type());
-        try {
-            assertEquals(MT_bsm(), non_MH_bsm().type());
-            // if SM is installed, must throw before this point
-            assertEquals(false, System.getSecurityManager() != null);
-        } catch (SecurityException ex) {
-            // if SM is installed, must throw to this point
-            assertEquals(true, System.getSecurityManager() != null);
-        }
+        assertEquals(MT_bsm(), non_MH_bsm().type());
     }
     private static void assertEquals(Object exp, Object act) {
         if (exp == act || (exp != null && exp.equals(act)))  return;
@@ -80,21 +75,8 @@ public class InvokeDynamicPrintArgs {
     }
 
     private static void setSM() {
-        // Test for severe security manager interactions (7050328).
-        class SM extends SecurityManager {
-            public void checkPackageAccess(String pkg) {
-                if (pkg.startsWith("test."))
-                    throw new SecurityException("checkPackageAccess "+pkg);
-            }
-            public void checkMemberAccess(Class<?> clazz, int which) {
-                if (clazz == InvokeDynamicPrintArgs.class)
-                    throw new SecurityException("checkMemberAccess "+clazz.getName()+" #"+which);
-            }
-            // allow these others:
-            public void checkPermission(java.security.Permission perm) {
-            }
-        }
-        System.setSecurityManager(new SM());
+        Policy.setPolicy(new TestPolicy());
+        System.setSecurityManager(new SecurityManager());
     }
 
     private static PrintStream oldOut;
@@ -249,5 +231,23 @@ public class InvokeDynamicPrintArgs {
         // if this gets called, the transformation has not taken place
         if (System.getProperty("InvokeDynamicPrintArgs.allow-untransformed") != null)  return;
         throw new AssertionError("this code should be statically transformed away by Indify");
+    }
+
+    static class TestPolicy extends Policy {
+        final PermissionCollection permissions = new Permissions();
+        TestPolicy() {
+            permissions.add(new java.io.FilePermission("<<ALL FILES>>", "read"));
+        }
+        public PermissionCollection getPermissions(ProtectionDomain domain) {
+            return permissions;
+        }
+
+        public PermissionCollection getPermissions(CodeSource codesource) {
+            return permissions;
+        }
+
+        public boolean implies(ProtectionDomain domain, Permission perm) {
+            return permissions.implies(perm);
+        }
     }
 }

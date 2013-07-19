@@ -28,11 +28,11 @@ package jdk.nashorn.internal.codegen;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Assignment;
 import jdk.nashorn.internal.ir.BinaryNode;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
@@ -87,7 +87,7 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
     }
 
     //destination visited
-    private Symbol setRange(final Node dest, final Range range) {
+    private Symbol setRange(final Expression dest, final Range range) {
         if (range.isUnknown()) {
             return null;
         }
@@ -352,7 +352,6 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
             range = range.isUnknown() ? Range.createGenericRange() : range;
 
             setRange(node.getName(), range);
-            setRange(node, range);
         }
 
         return node;
@@ -438,12 +437,12 @@ final class RangeAnalyzer extends NodeOperatorVisitor<LexicalContext> {
      * @return
      */
     private static Symbol findLoopCounter(final LoopNode node) {
-        final Node test = node.getTest();
+        final Expression test = node.getTest();
 
         if (test != null && test.isComparison()) {
             final BinaryNode binaryNode = (BinaryNode)test;
-            final Node lhs = binaryNode.lhs();
-            final Node rhs = binaryNode.rhs();
+            final Expression lhs = binaryNode.lhs();
+            final Expression rhs = binaryNode.rhs();
 
             //detect ident cmp int_literal
             if (lhs instanceof IdentNode && rhs instanceof LiteralNode && ((LiteralNode<?>)rhs).getType().isInteger()) {

@@ -123,6 +123,10 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         return osname.equals("SunOS");
     }
 
+    static boolean isLinux() {
+        return (osname.equals("Linux"));
+    }
+
     static boolean isBSD() {
         return (osname.equals("Linux") ||
                 osname.contains("OS X"));
