@@ -527,7 +527,12 @@ class_get_methodID(JNIEnv *env, ClassIndex index, MethodIndex mnum)
     jmethodID  method;
 
     info = get_info(index);
-    HPROF_ASSERT(mnum < info->method_count);
+    if (mnum >= info->method_count) {
+        jclass newExcCls = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+        (*env)->ThrowNew(env, newExcCls, "Illegal mnum");
+
+        return NULL;
+    }
     method = info->method[mnum].method_id;
     if ( method == NULL ) {
         char * name;
@@ -535,7 +540,12 @@ class_get_methodID(JNIEnv *env, ClassIndex index, MethodIndex mnum)
         jclass clazz;
 
         name  = (char *)string_get(info->method[mnum].name_index);
-        HPROF_ASSERT(name!=NULL);
+        if (name==NULL) {
+            jclass newExcCls = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+            (*env)->ThrowNew(env, newExcCls, "Name not found");
+
+            return NULL;
+        }
         sig   = (char *)string_get(info->method[mnum].sig_index);
         HPROF_ASSERT(sig!=NULL);
         clazz = class_get_class(env, index);
