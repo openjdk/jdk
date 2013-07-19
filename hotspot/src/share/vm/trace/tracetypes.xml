@@ -55,18 +55,6 @@ Before we can use it we need also define a primary field data type:
               type="u8" sizeop="sizeof(u1)"/>
 
 Now we can use the content + data type in declaring event fields.
-Remember however, that for us to be able to resolve the value later we must also add
-creating the constant pool data in  VM_JFRCheckpoint::write_checkpoint
-
-   ...
-   //CGMODE
-   w->be_uint(CONTENT_TYPE_GCMODE);
-   w->be_uint(MM_GC_MODE_UNINITIALIZED);
-   for (i = 0; i < MM_GC_MODE_UNINITIALIZED; i++) {
-      w->uchar(i);
-      w->write_utf8(gcModeGetName(i));
-   }
-
  -->
 
  <types>
@@ -81,10 +69,6 @@ creating the constant pool data in  VM_JFRCheckpoint::write_checkpoint
       <value type="OSTHREAD" field="thread" label="VM Thread"/>
     </content_type>
 
-    <!-- The first argument ("JavaThread") is misleading, it's really a
-         java.lang.Thread id (long), but Mission Control depends on the name
-         being "JavaThread" so it shouldn't be changed.
-    -->
     <content_type id="JavaThread" hr_name="Java thread"
                   type="U8" builtin_type="JAVALANGTHREAD">
       <value type="OSTHREAD" field="thread" label="OS Thread ID"/>
@@ -284,6 +268,10 @@ creating the constant pool data in  VM_JFRCheckpoint::write_checkpoint
     <!-- UTF-encoded string, max length 64k -->
     <primary_type symbol="UTF8" datatype="UTF8" contenttype="NONE"
                   type="const char *" sizeop="sizeof_utf(%)"/>
+
+    <!-- UTF-16 encoded (Unicode) string, max length maxjuint -->
+    <primary_type symbol="STRING" datatype="STRING" contenttype="NONE"
+                  type="TraceUnicodeString*" sizeop="sizeof_unicode(%)"/>
 
     <!-- Symbol* constant. Note that this may currently ONLY be used by
           classes, methods fields.  This restriction might be lifted. -->
