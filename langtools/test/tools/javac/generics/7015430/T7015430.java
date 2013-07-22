@@ -4,7 +4,8 @@
  *
  * @summary  Incorrect thrown type determined for unchecked invocations
  * @author Daniel Smith
- * @compile/fail/ref=T7015430.out -Xlint:unchecked -XDrawDiagnostics T7015430.java
+ * @compile/fail/ref=T7015430_1.out -source 7 -Xlint:-options,unchecked -XDrawDiagnostics T7015430.java
+ * @compile/fail/ref=T7015430_2.out -Xlint:unchecked -XDrawDiagnostics T7015430.java
  *
  */
 

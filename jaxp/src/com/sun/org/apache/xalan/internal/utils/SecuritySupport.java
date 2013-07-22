@@ -229,7 +229,8 @@ public final class SecuritySupport {
      * @return the name of the protocol if rejected, null otherwise
      */
     public static String checkAccess(String systemId, String allowedProtocols, String accessAny) throws IOException {
-        if (systemId == null || allowedProtocols.equalsIgnoreCase(accessAny)) {
+        if (systemId == null || (allowedProtocols != null &&
+                allowedProtocols.equalsIgnoreCase(accessAny))) {
             return null;
         }
 
@@ -262,6 +263,9 @@ public final class SecuritySupport {
      * @return true if the protocol is in the list
      */
     private static boolean isProtocolAllowed(String protocol, String allowedProtocols) {
+         if (allowedProtocols == null) {
+             return false;
+         }
          String temp[] = allowedProtocols.split(",");
          for (String t : temp) {
              t = t.trim();
@@ -273,18 +277,16 @@ public final class SecuritySupport {
      }
 
     /**
-     * Read from $java.home/lib/jaxp.properties for the specified property
+     * Read JAXP system property in this order: system property,
+     * $java.home/lib/jaxp.properties if the system property is not specified
      *
      * @param propertyId the Id of the property
      * @return the value of the property
      */
-    public static String getDefaultAccessProperty(String sysPropertyId, String defaultVal) {
-        String accessExternal = SecuritySupport.getSystemProperty(sysPropertyId);
+    public static String getJAXPSystemProperty(String sysPropertyId) {
+        String accessExternal = getSystemProperty(sysPropertyId);
         if (accessExternal == null) {
             accessExternal = readJAXPProperty(sysPropertyId);
-            if (accessExternal == null) {
-                accessExternal = defaultVal;
-            }
         }
         return accessExternal;
     }

@@ -25,30 +25,19 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.Compiler.OBJECTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.Compiler.SCRIPTS_PACKAGE;
 import static jdk.nashorn.internal.codegen.Compiler.binaryName;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_PREFIX;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.CodeSigner;
-import java.security.CodeSource;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
- * Responsible for on the fly construction of structure classes as well
- * as loading jdk.nashorn.internal.objects.* classes.
+ * Responsible for on the fly construction of structure classes.
  *
  */
 final class StructureLoader extends NashornLoader {
     private static final String JS_OBJECT_PREFIX_EXTERNAL = binaryName(SCRIPTS_PACKAGE) + '.' + JS_OBJECT_PREFIX.symbolName();
-    private static final String OBJECTS_PACKAGE_EXTERNAL  = binaryName(OBJECTS_PACKAGE);
 
     /**
      * Constructor.
@@ -68,44 +57,8 @@ final class StructureLoader extends NashornLoader {
             return loadedClass;
         }
 
-        if (name.startsWith(binaryName(OBJECTS_PACKAGE_EXTERNAL))) {
-            try {
-                return AccessController.doPrivileged(new PrivilegedExceptionAction<Class<?>>() {
-                    @Override
-                    public Class<?> run() throws ClassNotFoundException {
-                        final String      source  = name.replace('.','/') + ".clazz";
-                        final URL         url     = getResource(source);
-                        try (final InputStream is = getResourceAsStream(source)) {
-                            if (is == null) {
-                                throw new ClassNotFoundException(name);
-                            }
-
-                            byte[] code;
-                            try {
-                                code = Source.readBytes(is);
-                            } catch (final IOException e) {
-                                Context.printStackTrace(e);
-                                throw new ClassNotFoundException(name, e);
-                            }
-
-                            final Class<?> cl = defineClass(name, code, 0, code.length, new CodeSource(url, (CodeSigner[])null));
-                            if (resolve) {
-                                resolveClass(cl);
-                            }
-                            return cl;
-                        } catch (final IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-            } catch (final PrivilegedActionException  e) {
-                throw new ClassNotFoundException(name, e);
-            }
-        }
-
         return super.loadClassTrusted(name, resolve);
     }
-
 
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
