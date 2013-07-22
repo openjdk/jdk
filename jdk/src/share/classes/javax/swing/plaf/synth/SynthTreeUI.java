@@ -344,7 +344,8 @@ public class SynthTreeUI extends BasicTreeUI
             configureRenderer(cellContext);
             while (!done && paintingEnumerator.hasMoreElements()) {
                 path = (TreePath)paintingEnumerator.nextElement();
-                if (path != null) {
+                bounds = getPathBounds(tree, path);
+                if ((path != null) && (bounds != null)) {
                     isLeaf = treeModel.isLeaf(path.getLastPathComponent());
                     if (isLeaf) {
                         isExpanded = hasBeenExpanded = false;
@@ -353,7 +354,6 @@ public class SynthTreeUI extends BasicTreeUI
                         isExpanded = treeState.getExpandedState(path);
                         hasBeenExpanded = tree.hasBeenExpanded(path);
                     }
-                    bounds = getPathBounds(tree, path);
                     rowBounds.y = bounds.y;
                     rowBounds.height = bounds.height;
                     paintRow(renderer, dtcr, context, cellContext, g,
@@ -383,7 +383,8 @@ public class SynthTreeUI extends BasicTreeUI
             paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
             while (!done && paintingEnumerator.hasMoreElements()) {
                 path = (TreePath)paintingEnumerator.nextElement();
-                if (path != null) {
+                bounds = getPathBounds(tree, path);
+                if ((path != null) && (bounds != null)) {
                     isLeaf = treeModel.isLeaf(path.getLastPathComponent());
                     if (isLeaf) {
                         isExpanded = hasBeenExpanded = false;
@@ -392,7 +393,6 @@ public class SynthTreeUI extends BasicTreeUI
                         isExpanded = treeState.getExpandedState(path);
                         hasBeenExpanded = tree.hasBeenExpanded(path);
                     }
-                    bounds = getPathBounds(tree, path);
                     // See if the vertical line to the parent has been drawn.
                     parentPath = path.getParentPath();
                     if (parentPath != null) {
