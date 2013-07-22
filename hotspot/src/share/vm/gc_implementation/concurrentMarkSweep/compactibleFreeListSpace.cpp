@@ -2017,12 +2017,6 @@ oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {              \
 
 ALL_SINCE_SAVE_MARKS_CLOSURES(CFLS_OOP_SINCE_SAVE_MARKS_DEFN)
 
-
-void CompactibleFreeListSpace::object_iterate_since_last_GC(ObjectClosure* cl) {
-  // ugghh... how would one do this efficiently for a non-contiguous space?
-  guarantee(false, "NYI");
-}
-
 bool CompactibleFreeListSpace::linearAllocationWouldFail() const {
   return _smallLinearAllocBlock._word_size == 0;
 }
