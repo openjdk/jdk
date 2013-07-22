@@ -40,7 +40,6 @@ public abstract class StateNode extends Node implements NodeStatus {
         if (isRecursion()) states.append("RECURSION ");
         if (isCalled()) states.append("CALLED ");
         if (isAddrFixed()) states.append("ADDR_FIXED ");
-        if (isNameRef()) states.append("NAME_REF ");
         if (isInRepeat()) states.append("IN_REPEAT ");
         if (isNestLevel()) states.append("NEST_LEVEL ");
         if (isByNumber()) states.append("BY_NUMBER ");
@@ -130,14 +129,6 @@ public abstract class StateNode extends Node implements NodeStatus {
 
     public void setAddrFixed() {
         state |= NST_ADDR_FIXED;
-    }
-
-    public boolean isNameRef() {
-        return (state & NST_NAME_REF) != 0;
-    }
-
-    public void setNameRef() {
-        state |= NST_NAME_REF;
     }
 
     public boolean isInRepeat() {

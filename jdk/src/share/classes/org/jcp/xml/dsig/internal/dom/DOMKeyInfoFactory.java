@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMKeyInfoFactory.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMKeyInfoFactory.java 1333869 2012-05-04 10:42:44Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -31,8 +33,7 @@ import java.security.KeyException;
 import java.security.PublicKey;
 import java.util.List;
 import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dom.*;
+import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.keyinfo.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -51,6 +52,7 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newKeyInfo(content, null);
     }
 
+    @SuppressWarnings("unchecked")
     public KeyInfo newKeyInfo(List content, String id) {
         return new DOMKeyInfo(content, id);
     }
@@ -60,17 +62,28 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
     }
 
     public KeyValue newKeyValue(PublicKey key)  throws KeyException {
-        return new DOMKeyValue(key);
+        String algorithm = key.getAlgorithm();
+        if (algorithm.equals("DSA")) {
+            return new DOMKeyValue.DSA(key);
+        } else if (algorithm.equals("RSA")) {
+            return new DOMKeyValue.RSA(key);
+        } else if (algorithm.equals("EC")) {
+            return new DOMKeyValue.EC(key);
+        } else {
+            throw new KeyException("unsupported key algorithm: " + algorithm);
+        }
     }
 
     public PGPData newPGPData(byte[] keyId) {
         return newPGPData(keyId, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public PGPData newPGPData(byte[] keyId, byte[] keyPacket, List other) {
         return new DOMPGPData(keyId, keyPacket, other);
     }
 
+    @SuppressWarnings("unchecked")
     public PGPData newPGPData(byte[] keyPacket, List other) {
         return new DOMPGPData(keyPacket, other);
     }
@@ -79,6 +92,7 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newRetrievalMethod(uri, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public RetrievalMethod newRetrievalMethod(String uri, String type,
         List transforms) {
         if (uri == null) {
@@ -87,6 +101,7 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return new DOMRetrievalMethod(uri, type, transforms);
     }
 
+    @SuppressWarnings("unchecked")
     public X509Data newX509Data(List content) {
         return new DOMX509Data(content);
     }
@@ -113,6 +128,9 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         if (xmlStructure == null) {
             throw new NullPointerException("xmlStructure cannot be null");
         }
+        if (!(xmlStructure instanceof javax.xml.crypto.dom.DOMStructure)) {
+            throw new ClassCastException("xmlStructure must be of type DOMStructure");
+        }
         Node node =
             ((javax.xml.crypto.dom.DOMStructure) xmlStructure).getNode();
         node.normalize();
@@ -134,9 +152,14 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
                 "support DOM Level 2 and be namespace aware");
         }
         if (tag.equals("KeyInfo")) {
-            return new DOMKeyInfo(element, null, getProvider());
+            return new DOMKeyInfo(element, new UnmarshalContext(), getProvider());
         } else {
             throw new MarshalException("invalid KeyInfo tag: " + tag);
         }
     }
+
+    private static class UnmarshalContext extends DOMCryptoContext {
+        UnmarshalContext() {}
+    }
+
 }

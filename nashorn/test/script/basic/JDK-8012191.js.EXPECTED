@@ -1,0 +1,6 @@
+obj.__noSuchProperty__ invoked for nonExistent
+JSAdapter.__put__
+x
+343
+JSAdapter.__get__
+y

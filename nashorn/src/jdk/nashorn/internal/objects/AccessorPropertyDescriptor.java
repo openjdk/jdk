@@ -67,12 +67,12 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    AccessorPropertyDescriptor() {
-        this(false, false, UNDEFINED, UNDEFINED);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    AccessorPropertyDescriptor(final boolean configurable, final boolean enumerable, final Object get, final Object set) {
-        super(Global.objectPrototype(), $nasgenmap$);
+    AccessorPropertyDescriptor(final boolean configurable, final boolean enumerable, final Object get, final Object set, final Global global) {
+        super(global.getObjectPrototype(), global.getAccessorPropertyDescriptorMap());
         this.configurable = configurable;
         this.enumerable   = enumerable;
         this.get          = get;
