@@ -19,18 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
-#define SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
-
-class KlassInfoEntry;
-
-class KlassInfoClosure : public StackObj {
- public:
-  // Called for each KlassInfoEntry.
-  virtual void do_cinfo(KlassInfoEntry* cie) = 0;
-};
-
-#endif // SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
+@interface Bridges {
+    Bridge[] value();
+}
