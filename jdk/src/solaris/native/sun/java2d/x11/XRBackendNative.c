@@ -267,12 +267,18 @@ Java_sun_java2d_xr_XRBackendNative_initIDs(JNIEnv *env, jclass cls) {
     char *maskData;
     XImage* defaultImg;
     jfieldID maskImgID;
-    jlong fmt8 =
-        ptr_to_jlong(XRenderFindStandardFormat(awt_display, PictStandardA8));
-    jlong fmt32 =
-       ptr_to_jlong(XRenderFindStandardFormat(awt_display, PictStandardARGB32));
+    jlong fmt8;
+    jlong fmt32;
+
     jfieldID a8ID = (*env)->GetStaticFieldID(env, cls, "FMTPTR_A8", "J");
     jfieldID argb32ID = (*env)->GetStaticFieldID(env, cls, "FMTPTR_ARGB32", "J");
+
+    if (awt_display == (Display *)NULL) {
+        return;
+    }
+
+    fmt8 = ptr_to_jlong(XRenderFindStandardFormat(awt_display, PictStandardA8));
+    fmt32 = ptr_to_jlong(XRenderFindStandardFormat(awt_display, PictStandardARGB32));
 
     (*env)->SetStaticLongField(env, cls, a8ID, fmt8);
     (*env)->SetStaticLongField(env, cls, argb32ID, fmt32);
