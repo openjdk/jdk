@@ -1263,6 +1263,4 @@ public class NodeOperatorVisitor<T extends LexicalContext> extends NodeVisitor<T
     public Node leaveSUB(final BinaryNode binaryNode) {
         return leaveDefault(binaryNode);
     }
-
-
 }

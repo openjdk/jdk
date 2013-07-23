@@ -34,9 +34,9 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * statements being added to the IR
  */
 @Immutable
-public final class ExecuteNode extends Statement {
+public final class ExpressionStatement extends Statement {
     /** Expression to execute. */
-    private final Node expression;
+    private final Expression expression;
 
     /**
      * Constructor
@@ -46,13 +46,13 @@ public final class ExecuteNode extends Statement {
      * @param finish     finish
      * @param expression the expression to execute
      */
-    public ExecuteNode(final int lineNumber, final long token, final int finish, final Node expression) {
+    public ExpressionStatement(final int lineNumber, final long token, final int finish, final Expression expression) {
         super(lineNumber, token, finish);
         this.expression = expression;
     }
 
-    private ExecuteNode(final ExecuteNode executeNode, final Node expression) {
-        super(executeNode);
+    private ExpressionStatement(final ExpressionStatement expressionStatement, final Expression expression) {
+        super(expressionStatement);
         this.expression = expression;
     }
 
@@ -63,8 +63,8 @@ public final class ExecuteNode extends Statement {
 
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
-        if (visitor.enterExecuteNode(this)) {
-            return visitor.leaveExecuteNode(setExpression(expression.accept(visitor)));
+        if (visitor.enterExpressionStatement(this)) {
+            return visitor.leaveExpressionStatement(setExpression((Expression)expression.accept(visitor)));
         }
 
         return this;
@@ -79,7 +79,7 @@ public final class ExecuteNode extends Statement {
      * Return the expression to be executed
      * @return the expression
      */
-    public Node getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
@@ -88,10 +88,10 @@ public final class ExecuteNode extends Statement {
      * @param expression the expression
      * @return new or same execute node
      */
-    public ExecuteNode setExpression(final Node expression) {
+    public ExpressionStatement setExpression(final Expression expression) {
         if (this.expression == expression) {
             return this;
         }
-        return new ExecuteNode(this, expression);
+        return new ExpressionStatement(this, expression);
     }
 }
