@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.lang.model.element.Name;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
@@ -151,18 +149,6 @@ public class DocLint implements Plugin {
             void visitDecl(Tree tree, Name name) {
                 TreePath p = getCurrentPath();
                 DocCommentTree dc = env.trees.getDocCommentTree(p);
-
-                if (p.getLeaf() == p.getCompilationUnit()) {
-                    JavaFileObject fo = p.getCompilationUnit().getSourceFile();
-                    boolean pkgInfo = fo.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE);
-                    if (!pkgInfo) {
-                        if (dc == null)
-                            return;
-                        env.setCurrent(p, dc);
-                        env.messages.report(Messages.Group.REFERENCE, Diagnostic.Kind.WARNING, p.getLeaf(),
-                                "dc.unexpected.comment");
-                    }
-                }
 
                 checker.scan(dc, p);
             }

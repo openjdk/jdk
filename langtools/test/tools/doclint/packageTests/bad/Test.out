@@ -1,4 +1,4 @@
-Test.java:11: warning: documentation comment not expected here
+Test.java:12: warning: documentation comment not expected here
 package bad;
 ^
 1 warning
