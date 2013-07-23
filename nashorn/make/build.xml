@@ -51,6 +51,11 @@
 	<condition property="cc.enabled">
 		<istrue value="${make.code.coverage}" />
 	</condition>
+
+    <!-- exclude tests in exclude lists -->
+    <condition property="exclude.list" value="./exclude/exclude_list_cc.txt" else="./exclude/exclude_list.txt">
+      <istrue value="${make.code.coverage}" />
+    </condition>
   </target>
 
   <target name="init" depends="init-conditions, init-cc">
@@ -262,6 +267,11 @@ grant codeBase "file:/${basedir}/test/script/basic/*" {
 grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
     permission java.util.PropertyPermission "java.security.policy", "read";
 };
+
+grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
+    permission java.lang.RuntimePermission "nashorn.JavaReflection";
+};
+
     </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
@@ -316,6 +326,7 @@ grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
         <propertyref prefix="test-sys-prop."/>
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
       </propertyset>
+      <sysproperty key="test.js.excludes.file" value="${exclude.list}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
       </classpath>

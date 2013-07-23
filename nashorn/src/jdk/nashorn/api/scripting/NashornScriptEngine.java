@@ -209,10 +209,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
 
         try {
-            final ScriptObject oldGlobal = getNashornGlobal();
+            final ScriptObject oldGlobal = Context.getGlobal();
             try {
                 if(oldGlobal != ctxtGlobal) {
-                    setNashornGlobal(ctxtGlobal);
+                    Context.setGlobal(ctxtGlobal);
                 }
 
                 if (! isInterfaceImplemented(clazz, realSelf)) {
@@ -221,7 +221,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz).invoke(realSelf));
             } finally {
                 if(oldGlobal != ctxtGlobal) {
-                    setNashornGlobal(oldGlobal);
+                    Context.setGlobal(oldGlobal);
                 }
             }
         } catch(final RuntimeException|Error e) {
@@ -357,7 +357,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
-        final ScriptObject oldGlobal     = getNashornGlobal();
+        final ScriptObject oldGlobal     = Context.getGlobal();
         final ScriptObject ctxtGlobal    = getNashornGlobalFrom(context);
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
 
@@ -365,7 +365,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         try {
             if (globalChanged) {
-                setNashornGlobal(ctxtGlobal);
+                Context.setGlobal(ctxtGlobal);
             }
 
             ScriptObject sobj;
@@ -398,7 +398,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             throw new NoSuchMethodException(name);
         } finally {
             if (globalChanged) {
-                setNashornGlobal(oldGlobal);
+                Context.setGlobal(oldGlobal);
             }
         }
     }
@@ -411,12 +411,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         if (script == null) {
             return null;
         }
-        final ScriptObject oldGlobal = getNashornGlobal();
+        final ScriptObject oldGlobal = Context.getGlobal();
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
             if (globalChanged) {
-                setNashornGlobal(ctxtGlobal);
+                Context.setGlobal(ctxtGlobal);
             }
 
             setContextVariables(ctxt);
@@ -426,7 +426,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             throw new AssertionError("should not reach here");
         } finally {
             if (globalChanged) {
-                setNashornGlobal(oldGlobal);
+                Context.setGlobal(oldGlobal);
             }
         }
     }
@@ -469,12 +469,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private ScriptFunction compileImpl(final Source source, final ScriptContext ctxt) throws ScriptException {
-        final ScriptObject oldGlobal = getNashornGlobal();
+        final ScriptObject oldGlobal = Context.getGlobal();
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
         final boolean globalChanged = (oldGlobal != ctxtGlobal);
         try {
             if (globalChanged) {
-                setNashornGlobal(ctxtGlobal);
+                Context.setGlobal(ctxtGlobal);
             }
 
             return nashornContext.compileScript(source, ctxtGlobal);
@@ -483,7 +483,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             throw new AssertionError("should not reach here");
         } finally {
             if (globalChanged) {
-                setNashornGlobal(oldGlobal);
+                Context.setGlobal(oldGlobal);
             }
         }
     }
@@ -501,20 +501,5 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
         }
         return true;
-    }
-
-    // don't make this public!!
-    static ScriptObject getNashornGlobal() {
-        return Context.getGlobal();
-    }
-
-    static void setNashornGlobal(final ScriptObject newGlobal) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-               Context.setGlobal(newGlobal);
-               return null;
-            }
-        });
     }
 }
