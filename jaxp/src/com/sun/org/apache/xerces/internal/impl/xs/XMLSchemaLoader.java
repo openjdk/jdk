@@ -54,6 +54,7 @@ import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -218,6 +219,10 @@ XSLoader, DOMConfiguration {
     protected static final String ENTITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.ENTITY_MANAGER_PROPERTY;
 
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
+
     /** Property identifier: access to external dtd */
     public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
 
@@ -238,8 +243,7 @@ XSLoader, DOMConfiguration {
         SECURITY_MANAGER,
         LOCALE,
         SCHEMA_DV_FACTORY,
-        ACCESS_EXTERNAL_DTD,
-        ACCESS_EXTERNAL_SCHEMA
+        XML_SECURITY_PROPERTY_MANAGER
     };
 
     // Data
@@ -270,7 +274,6 @@ XSLoader, DOMConfiguration {
     private final CMNodeFactory fNodeFactory = new CMNodeFactory(); //component mgr will be set later
     private CMBuilder fCMBuilder;
     private XSDDescription fXSDDescription = new XSDDescription();
-    private String faccessExternalDTD = Constants.EXTERNAL_ACCESS_DEFAULT;
     private String faccessExternalSchema = Constants.EXTERNAL_ACCESS_DEFAULT;
 
     private Map fJAXPCache;
@@ -466,11 +469,9 @@ XSLoader, DOMConfiguration {
                 fErrorReporter.putMessageFormatter(XSMessageFormatter.SCHEMA_DOMAIN, new XSMessageFormatter());
             }
         }
-        else if (propertyId.equals(ACCESS_EXTERNAL_DTD)) {
-            faccessExternalDTD = (String) state;
-        }
-        else if (propertyId.equals(ACCESS_EXTERNAL_SCHEMA)) {
-            faccessExternalSchema = (String) state;
+        else if (propertyId.equals(XML_SECURITY_PROPERTY_MANAGER)) {
+            XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)state;
+            faccessExternalSchema = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
         }
     } // setProperty(String, Object)
 
@@ -1066,8 +1067,8 @@ XSLoader, DOMConfiguration {
         fSchemaHandler.setGenerateSyntheticAnnotations(componentManager.getFeature(GENERATE_SYNTHETIC_ANNOTATIONS, false));
         fSchemaHandler.reset(componentManager);
 
-        faccessExternalDTD = (String) componentManager.getProperty(ACCESS_EXTERNAL_DTD);
-        faccessExternalSchema = (String) componentManager.getProperty(ACCESS_EXTERNAL_SCHEMA);
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        faccessExternalSchema = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
     }
 
     private void initGrammarBucket(){
