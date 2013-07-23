@@ -29,7 +29,9 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.util.Locale;
+import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
 
@@ -149,6 +151,14 @@ public enum JSType {
 
         if (obj instanceof StaticClass) {
             return JSType.FUNCTION;
+        }
+
+        if (BeansLinker.isDynamicMethod(obj)) {
+            return JSType.FUNCTION;
+        }
+
+        if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).isFunction()? JSType.FUNCTION : JSType.OBJECT;
         }
 
         return JSType.OBJECT;

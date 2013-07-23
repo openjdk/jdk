@@ -57,13 +57,21 @@ public final class NativeURIError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeURIError(final Object msg) {
-        super(Global.instance().getURIErrorPrototype(), $nasgenmap$);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    NativeURIError(final Object msg, final Global global) {
+        super(global.getURIErrorPrototype(), global.getURIErrorMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
             this.delete(NativeError.MESSAGE, false);
         }
+    }
+
+    private NativeURIError(final Object msg) {
+        this(msg, Global.instance());
     }
 
     @Override

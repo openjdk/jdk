@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -34,18 +36,25 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
-import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
-
 @ScriptClass("ArrayBufferView")
 abstract class ArrayBufferView extends ScriptObject {
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
+        super(global.getArrayBufferViewMap());
         checkConstructorArgs(buffer, byteOffset, elementLength);
-        this.setProto(getPrototype());
+        this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));
+    }
+
+    ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
+        this(buffer, byteOffset, elementLength, Global.instance());
     }
 
     private void checkConstructorArgs(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
@@ -266,12 +275,17 @@ abstract class ArrayBufferView extends ScriptObject {
 
     protected static abstract class Factory {
         final int bytesPerElement;
+        final int maxElementLength;
 
         public Factory(final int bytesPerElement) {
             this.bytesPerElement = bytesPerElement;
+            this.maxElementLength = Integer.MAX_VALUE / bytesPerElement;
         }
 
         public final ArrayBufferView construct(final int elementLength) {
+            if(elementLength > maxElementLength) {
+                throw rangeError("inappropriate.array.buffer.length", JSType.toString(elementLength));
+            }
             return construct(new NativeArrayBuffer(elementLength * bytesPerElement), 0, elementLength);
         }
 
@@ -282,7 +296,7 @@ abstract class ArrayBufferView extends ScriptObject {
 
     protected abstract Factory factory();
 
-    protected abstract ScriptObject getPrototype();
+    protected abstract ScriptObject getPrototype(final Global global);
 
     protected boolean isFloatArray() {
         return false;

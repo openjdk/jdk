@@ -75,8 +75,13 @@ public abstract class ArrayData {
      * @return ArrayData
      */
     public static ArrayData allocate(final int length) {
-        final ArrayData arrayData = new IntArrayData(length);
-        return length == 0 ? arrayData : new DeletedRangeArrayFilter(arrayData, 0, length - 1);
+        if (length == 0) {
+            return new IntArrayData();
+        } else if (length >= SparseArrayData.MAX_DENSE_LENGTH) {
+            return new SparseArrayData(EMPTY_ARRAY, length);
+        } else {
+            return new DeletedRangeArrayFilter(new IntArrayData(length), 0, length - 1);
+        }
     }
 
     /**
