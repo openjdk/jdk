@@ -23,11 +23,12 @@
 
 /*
  * @test /nodynamiccopyright/
- * @bug 8020664
+ * @bug 8020664 8021215
  * @summary doclint gives incorrect warnings on normal package statements
  * @library ../..
  * @build DocLintTester
  * @run main DocLintTester package-info.java
+ * @compile -Xdoclint:all package-info.java
  */
 
 /** Description. */
