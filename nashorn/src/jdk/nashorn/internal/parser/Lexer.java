@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.parser;
 
 import static jdk.nashorn.internal.parser.TokenType.ADD;
+import static jdk.nashorn.internal.parser.TokenType.COMMENT;
 import static jdk.nashorn.internal.parser.TokenType.DECIMAL;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
@@ -426,6 +427,9 @@ public class Lexer extends Scanner {
      * @return True if a comment.
      */
     protected boolean skipComments() {
+        // Save the current position.
+        final int start = position;
+
         if (ch0 == '/') {
             // Is it a // comment.
             if (ch1 == '/') {
@@ -436,10 +440,9 @@ public class Lexer extends Scanner {
                     skip(1);
                 }
                 // Did detect a comment.
+                add(COMMENT, start);
                 return true;
             } else if (ch1 == '*') {
-                // Record beginning of comment.
-                final int start = position;
                 // Skip over /*.
                 skip(2);
                 // Scan for */.
@@ -461,11 +464,11 @@ public class Lexer extends Scanner {
                 }
 
                 // Did detect a comment.
+                add(COMMENT, start);
                 return true;
             }
-        }
-
-        if (scripting && ch0 == '#') {
+        } else if (ch0 == '#') {
+            assert scripting;
             // shell style comment
             // Skip over #.
             skip(1);
@@ -474,6 +477,7 @@ public class Lexer extends Scanner {
                 skip(1);
             }
             // Did detect a comment.
+            add(COMMENT, start);
             return true;
         }
 
@@ -562,7 +566,7 @@ public class Lexer extends Scanner {
      *
      * @param token the token.
      * @param startTokenType the token type.
-     * @parasm lir LineInfoReceiver that receives line info for multi-line string literals.
+     * @param lir LineInfoReceiver that receives line info for multi-line string literals.
      * @return True if a literal beginning with startToken was found and scanned.
      */
     protected boolean scanLiteral(final long token, final TokenType startTokenType, final LineInfoReceiver lir) {
@@ -1460,11 +1464,10 @@ public class Lexer extends Scanner {
             final State restState = saveState();
             // keep line number updated
             int lastLine = line;
-            int lastLinePosition = linePosition;
 
             skipLine(false);
             lastLine++;
-            lastLinePosition = position;
+            int lastLinePosition = position;
             restState.setLimit(position);
 
             // Record beginning of string.
