@@ -84,6 +84,7 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -92,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import jdk.internal.dynalink.support.Lookup;
 
 /**
  * Base for classes that expose class field and method information to an {@link AbstractJavaLinker}. There are
@@ -99,6 +101,8 @@ import java.util.Map;
  * @author Attila Szegedi
  */
 abstract class FacetIntrospector {
+    private static final Lookup publicLookup = new Lookup(MethodHandles.publicLookup());
+
     private final Class<?> clazz;
     private final boolean instance;
     private final boolean isRestricted;
@@ -160,11 +164,11 @@ abstract class FacetIntrospector {
 
 
     MethodHandle unreflectGetter(Field field) {
-        return editMethodHandle(SafeUnreflector.unreflectGetter(field));
+        return editMethodHandle(publicLookup.unreflectGetter(field));
     }
 
     MethodHandle unreflectSetter(Field field) {
-        return editMethodHandle(SafeUnreflector.unreflectSetter(field));
+        return editMethodHandle(publicLookup.unreflectSetter(field));
     }
 
     /**
