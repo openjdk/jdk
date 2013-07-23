@@ -569,6 +569,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _restart_addr(NULL),
   _overflow_list(NULL),
   _stats(cmsGen),
+  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true)),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
   _eden_chunk_index(0),        // -- ditto --
@@ -2137,6 +2138,39 @@ void CMSCollector::do_mark_sweep_work(bool clear_all_soft_refs,
 }
 
 
+void CMSCollector::print_eden_and_survivor_chunk_arrays() {
+  DefNewGeneration* dng = _young_gen->as_DefNewGeneration();
+  EdenSpace* eden_space = dng->eden();
+  ContiguousSpace* from_space = dng->from();
+  ContiguousSpace* to_space   = dng->to();
+  // Eden
+  if (_eden_chunk_array != NULL) {
+    gclog_or_tty->print_cr("eden " PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "(" SIZE_FORMAT ")",
+                           eden_space->bottom(), eden_space->top(),
+                           eden_space->end(), eden_space->capacity());
+    gclog_or_tty->print_cr("_eden_chunk_index=" SIZE_FORMAT ", "
+                           "_eden_chunk_capacity=" SIZE_FORMAT,
+                           _eden_chunk_index, _eden_chunk_capacity);
+    for (size_t i = 0; i < _eden_chunk_index; i++) {
+      gclog_or_tty->print_cr("_eden_chunk_array[" SIZE_FORMAT "]=" PTR_FORMAT,
+                             i, _eden_chunk_array[i]);
+    }
+  }
+  // Survivor
+  if (_survivor_chunk_array != NULL) {
+    gclog_or_tty->print_cr("survivor " PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "(" SIZE_FORMAT ")",
+                           from_space->bottom(), from_space->top(),
+                           from_space->end(), from_space->capacity());
+    gclog_or_tty->print_cr("_survivor_chunk_index=" SIZE_FORMAT ", "
+                           "_survivor_chunk_capacity=" SIZE_FORMAT,
+                           _survivor_chunk_index, _survivor_chunk_capacity);
+    for (size_t i = 0; i < _survivor_chunk_index; i++) {
+      gclog_or_tty->print_cr("_survivor_chunk_array[" SIZE_FORMAT "]=" PTR_FORMAT,
+                             i, _survivor_chunk_array[i]);
+    }
+  }
+}
+
 void CMSCollector::getFreelistLocks() const {
   // Get locks for all free lists in all generations that this
   // collector is responsible for
@@ -3646,6 +3680,10 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
   // the klasses. The claimed marks need to be cleared before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
 
+  if (CMSPrintEdenSurvivorChunks) {
+    print_eden_and_survivor_chunk_arrays();
+  }
+
   CMKlassClosure klass_closure(&notOlder);
   {
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
@@ -4417,7 +4455,9 @@ void CMSCollector::preclean() {
   verify_overflow_empty();
   _abort_preclean = false;
   if (CMSPrecleaningEnabled) {
-    _eden_chunk_index = 0;
+    if (!CMSEdenChunksRecordAlways) {
+      _eden_chunk_index = 0;
+    }
     size_t used = get_eden_used();
     size_t capacity = get_eden_capacity();
     // Don't start sampling unless we will get sufficiently
@@ -4526,7 +4566,9 @@ void CMSCollector::sample_eden() {
   if (!_start_sampling) {
     return;
   }
-  if (_eden_chunk_array) {
+  // When CMSEdenChunksRecordAlways is true, the eden chunk array
+  // is populated by the young generation.
+  if (_eden_chunk_array != NULL && !CMSEdenChunksRecordAlways) {
     if (_eden_chunk_index < _eden_chunk_capacity) {
       _eden_chunk_array[_eden_chunk_index] = *_top_addr;   // take sample
       assert(_eden_chunk_array[_eden_chunk_index] <= *_end_addr,
@@ -5009,6 +5051,10 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
     gch->ensure_parsability(false);  // fill TLAB's, but no need to retire them
     // Update the saved marks which may affect the root scans.
     gch->save_marks();
+
+    if (CMSPrintEdenSurvivorChunks) {
+      print_eden_and_survivor_chunk_arrays();
+    }
 
     {
       COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
@@ -5528,6 +5574,32 @@ CMSParRemarkTask::do_work_steal(int i, Par_MarkRefsIntoAndScanClosure* cl,
   )
   assert(work_q->size() == 0 && _collector->overflow_list_is_empty(),
          "Else our work is not yet done");
+}
+
+// Record object boundaries in _eden_chunk_array by sampling the eden
+// top in the slow-path eden object allocation code path and record
+// the boundaries, if CMSEdenChunksRecordAlways is true. If
+// CMSEdenChunksRecordAlways is false, we use the other asynchronous
+// sampling in sample_eden() that activates during the part of the
+// preclean phase.
+void CMSCollector::sample_eden_chunk() {
+  if (CMSEdenChunksRecordAlways && _eden_chunk_array != NULL) {
+    if (_eden_chunk_lock->try_lock()) {
+      // Record a sample. This is the critical section. The contents
+      // of the _eden_chunk_array have to be non-decreasing in the
+      // address order.
+      _eden_chunk_array[_eden_chunk_index] = *_top_addr;
+      assert(_eden_chunk_array[_eden_chunk_index] <= *_end_addr,
+             "Unexpected state of Eden");
+      if (_eden_chunk_index == 0 ||
+          ((_eden_chunk_array[_eden_chunk_index] > _eden_chunk_array[_eden_chunk_index-1]) &&
+           (pointer_delta(_eden_chunk_array[_eden_chunk_index],
+                          _eden_chunk_array[_eden_chunk_index-1]) >= CMSSamplingGrain))) {
+        _eden_chunk_index++;  // commit sample
+      }
+      _eden_chunk_lock->unlock();
+    }
+  }
 }
 
 // Return a thread-local PLAB recording array, as appropriate.
@@ -9377,4 +9449,3 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
       ShouldNotReachHere();
   }
 }
-
