@@ -37,7 +37,17 @@ package java.util.concurrent;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.*;
+import java.util.AbstractQueue;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} that uses
@@ -342,7 +352,6 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @param k the position to fill
      * @param x the item to insert
      * @param array the heap array
-     * @param n heap size
      */
     private static <T> void siftUpComparable(int k, T x, Object[] array) {
         Comparable<? super T> key = (Comparable<? super T>) x;
@@ -934,6 +943,70 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         } finally {
             q = null;
         }
+    }
+
+    // Similar to Collections.ArraySnapshotSpliterator but avoids
+    // commitment to toArray until needed
+    static final class PBQSpliterator<E> implements Spliterator<E> {
+        final PriorityBlockingQueue<E> queue;
+        Object[] array;
+        int index;
+        int fence;
+
+        PBQSpliterator(PriorityBlockingQueue<E> queue, Object[] array,
+                       int index, int fence) {
+            this.queue = queue;
+            this.array = array;
+            this.index = index;
+            this.fence = fence;
+        }
+
+        final int getFence() {
+            int hi;
+            if ((hi = fence) < 0)
+                hi = fence = (array = queue.toArray()).length;
+            return hi;
+        }
+
+        public Spliterator<E> trySplit() {
+            int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+            return (lo >= mid) ? null :
+                new PBQSpliterator<E>(queue, array, lo, index = mid);
+        }
+
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> action) {
+            Object[] a; int i, hi; // hoist accesses and checks from loop
+            if (action == null)
+                throw new NullPointerException();
+            if ((a = array) == null)
+                fence = (a = queue.toArray()).length;
+            if ((hi = fence) <= a.length &&
+                (i = index) >= 0 && i < (index = hi)) {
+                do { action.accept((E)a[i]); } while (++i < hi);
+            }
+        }
+
+        public boolean tryAdvance(Consumer<? super E> action) {
+            if (action == null)
+                throw new NullPointerException();
+            if (getFence() > index && index >= 0) {
+                @SuppressWarnings("unchecked") E e = (E) array[index++];
+                action.accept(e);
+                return true;
+            }
+            return false;
+        }
+
+        public long estimateSize() { return (long)(getFence() - index); }
+
+        public int characteristics() {
+            return Spliterator.NONNULL | Spliterator.SIZED | Spliterator.SUBSIZED;
+        }
+    }
+
+    public Spliterator<E> spliterator() {
+        return new PBQSpliterator<E>(this, null, 0, -1);
     }
 
     // Unsafe mechanics

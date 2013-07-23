@@ -186,10 +186,10 @@ public final class OptionalDouble {
     }
 
     /**
-     * Indicates whether some other object is "equal to" this Optional. The
+     * Indicates whether some other object is "equal to" this OptionalDouble. The
      * other object is considered equal if:
      * <ul>
-     * <li>it is also an {@code OptionalInt} and;
+     * <li>it is also an {@code OptionalDouble} and;
      * <li>both instances have no value present or;
      * <li>the present values are "equal to" each other via {@code Double.compare() == 0}.
      * </ul>
@@ -226,12 +226,14 @@ public final class OptionalDouble {
     }
 
     /**
-     * Returns a non-empty string representation of this OptionalDouble suitable for
+     * {@inheritDoc}
+     *
+     * Returns a non-empty string representation of this object suitable for
      * debugging. The exact presentation format is unspecified and may vary
      * between implementations and versions.
      *
      * @implSpec If a value is present the result must include its string
-     * representation in the result. Empty and present OptionalDoubless must be
+     * representation in the result. Empty and present instances must be
      * unambiguously differentiable.
      *
      * @return the string representation of this instance
