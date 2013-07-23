@@ -1700,6 +1700,14 @@ class CommandLineFlags {
           "Whether to always record survivor space PLAB bdries"             \
           " (effective only if CMSParallelSurvivorRemarkEnabled)")          \
                                                                             \
+  product(bool, CMSEdenChunksRecordAlways, true,                            \
+          "Whether to always record eden chunks used for "                  \
+          "the parallel initial mark or remark of eden" )                   \
+                                                                            \
+  product(bool, CMSPrintEdenSurvivorChunks, false,                          \
+          "Print the eden and the survivor chunks used for the parallel "   \
+          "initial mark or remark of the eden/survivor spaces")             \
+                                                                            \
   product(bool, CMSConcurrentMTEnabled, true,                               \
           "Whether multi-threaded concurrent work enabled (if ParNewGC)")   \
                                                                             \

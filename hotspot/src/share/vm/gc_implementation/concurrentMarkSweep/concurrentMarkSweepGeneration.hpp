@@ -749,6 +749,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   Generation* _young_gen;  // the younger gen
   HeapWord** _top_addr;    // ... Top of Eden
   HeapWord** _end_addr;    // ... End of Eden
+  Mutex*     _eden_chunk_lock;
   HeapWord** _eden_chunk_array; // ... Eden partitioning array
   size_t     _eden_chunk_index; // ... top (exclusive) of array
   size_t     _eden_chunk_capacity;  // ... max entries in array
@@ -950,6 +951,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Support for parallel remark of survivor space
   void* get_data_recorder(int thr_num);
+  void sample_eden_chunk();
 
   CMSBitMap* markBitMap()  { return &_markBitMap; }
   void directAllocated(HeapWord* start, size_t size);
@@ -1027,6 +1029,8 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Initialization errors
   bool completed_initialization() { return _completed_initialization; }
+
+  void print_eden_and_survivor_chunk_arrays();
 };
 
 class CMSExpansionCause : public AllStatic  {
@@ -1316,6 +1320,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void* get_data_recorder(int thr_num) {
     //Delegate to collector
     return collector()->get_data_recorder(thr_num);
+  }
+  void sample_eden_chunk() {
+    //Delegate to collector
+    return collector()->sample_eden_chunk();
   }
 
   // Printing
