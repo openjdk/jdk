@@ -63,6 +63,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.scripts.JO;
 
@@ -548,7 +549,8 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             if (hint == String.class) {
 
                 final Object toString = TO_STRING.getGetter().invokeExact(sobj);
-                if (toString instanceof ScriptFunction) {
+
+                if (Bootstrap.isCallable(toString)) {
                     final Object value = TO_STRING.getInvoker().invokeExact(toString, sobj);
                     if (JSType.isPrimitive(value)) {
                         return value;
@@ -556,7 +558,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                 }
 
                 final Object valueOf = VALUE_OF.getGetter().invokeExact(sobj);
-                if (valueOf instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(valueOf)) {
                     final Object value = VALUE_OF.getInvoker().invokeExact(valueOf, sobj);
                     if (JSType.isPrimitive(value)) {
                         return value;
@@ -567,7 +569,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
 
             if (hint == Number.class) {
                 final Object valueOf = VALUE_OF.getGetter().invokeExact(sobj);
-                if (valueOf instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(valueOf)) {
                     final Object value = VALUE_OF.getInvoker().invokeExact(valueOf, sobj);
                     if (JSType.isPrimitive(value)) {
                         return value;
@@ -575,7 +577,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
                 }
 
                 final Object toString = TO_STRING.getGetter().invokeExact(sobj);
-                if (toString instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(toString)) {
                     final Object value = TO_STRING.getInvoker().invokeExact(toString, sobj);
                     if (JSType.isPrimitive(value)) {
                         return value;

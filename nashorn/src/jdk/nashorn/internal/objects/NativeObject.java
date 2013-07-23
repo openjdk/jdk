@@ -407,7 +407,7 @@ public final class NativeObject {
             try {
                 final Object toString = TO_STRING.getGetter().invokeExact(sobj);
 
-                if (toString instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(toString)) {
                     return TO_STRING.getInvoker().invokeExact(toString, sobj);
                 }
             } catch (final RuntimeException | Error e) {
