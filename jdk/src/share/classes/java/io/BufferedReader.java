@@ -587,6 +587,6 @@ public class BufferedReader extends Reader {
                 }
             }
         };
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED));
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED), false);
     }
 }
