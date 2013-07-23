@@ -141,10 +141,27 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         boolean isOverridingMethod = !env.currOverriddenMethods.isEmpty();
 
-        if (tree == null) {
-            if (!isSynthetic() && !isOverridingMethod)
-                reportMissing("dc.missing.comment");
-            return null;
+        if (p.getLeaf() == p.getCompilationUnit()) {
+            // If p points to a compilation unit, the implied declaration is the
+            // package declaration (if any) for the compilation unit.
+            // Handle this case specially, because doc comments are only
+            // expected in package-info files.
+            JavaFileObject fo = p.getCompilationUnit().getSourceFile();
+            boolean isPkgInfo = fo.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE);
+            if (tree == null) {
+                if (isPkgInfo)
+                    reportMissing("dc.missing.comment");
+                return null;
+            } else {
+                if (!isPkgInfo)
+                    reportReference("dc.unexpected.comment");
+            }
+        } else {
+            if (tree == null) {
+                if (!isSynthetic() && !isOverridingMethod)
+                    reportMissing("dc.missing.comment");
+                return null;
+            }
         }
 
         tagStack.clear();
@@ -185,6 +202,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     private void reportMissing(String code, Object... args) {
         env.messages.report(MISSING, Kind.WARNING, env.currPath.getLeaf(), code, args);
+    }
+
+    private void reportReference(String code, Object... args) {
+        env.messages.report(REFERENCE, Kind.WARNING, env.currPath.getLeaf(), code, args);
     }
 
     @Override
