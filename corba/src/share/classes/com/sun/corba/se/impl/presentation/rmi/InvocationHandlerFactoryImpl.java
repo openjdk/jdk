@@ -43,6 +43,8 @@ import com.sun.corba.se.spi.orbutil.proxy.InvocationHandlerFactory ;
 import com.sun.corba.se.spi.orbutil.proxy.DelegateInvocationHandlerImpl ;
 import com.sun.corba.se.spi.orbutil.proxy.CompositeInvocationHandler ;
 import com.sun.corba.se.spi.orbutil.proxy.CompositeInvocationHandlerImpl ;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 public class InvocationHandlerFactoryImpl implements InvocationHandlerFactory
 {
@@ -114,24 +116,32 @@ public class InvocationHandlerFactoryImpl implements InvocationHandlerFactory
         // which extends org.omg.CORBA.Object.  This handler delegates all
         // calls directly to a DynamicStubImpl, which extends
         // org.omg.CORBA.portable.ObjectImpl.
-        InvocationHandler dynamicStubHandler =
+        final InvocationHandler dynamicStubHandler =
             DelegateInvocationHandlerImpl.create( stub ) ;
 
         // Create an invocation handler that handles any remote interface
         // methods.
-        InvocationHandler stubMethodHandler = new StubInvocationHandlerImpl(
+        final InvocationHandler stubMethodHandler = new StubInvocationHandlerImpl(
             pm, classData, stub ) ;
 
         // Create a composite handler that handles the DynamicStub interface
         // as well as the remote interfaces.
         final CompositeInvocationHandler handler =
             new CustomCompositeInvocationHandlerImpl( stub ) ;
+
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
         handler.addInvocationHandler( DynamicStub.class,
             dynamicStubHandler ) ;
         handler.addInvocationHandler( org.omg.CORBA.Object.class,
             dynamicStubHandler ) ;
         handler.addInvocationHandler( Object.class,
             dynamicStubHandler ) ;
+                return null;
+            }
+        });
+
 
         // If the method passed to invoke is not from DynamicStub or its superclasses,
         // it must be from an implemented interface, so we just handle
