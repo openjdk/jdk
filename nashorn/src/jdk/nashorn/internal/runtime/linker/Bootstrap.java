@@ -41,6 +41,7 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -102,7 +103,7 @@ public final class Bootstrap {
      * @return true if the obj is an instance of @FunctionalInterface interface
      */
     public static boolean isFunctionalInterfaceObject(final Object obj) {
-        return obj != null && (NashornBottomLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
+        return !JSType.isPrimitive(obj) && (NashornBottomLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
     }
 
     /**
