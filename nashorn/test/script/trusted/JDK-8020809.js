@@ -22,21 +22,26 @@
  */
 
 /**
- * NASHORN-473 : Java primitive arrays can not be iterated with for.. in and for each .. in constructs
- *
+ * JDK-8020809: Java adapter should not allow overriding of caller sensitive methods
+ * 
  * @test
  * @run
  */
 
-var boolArr = new (Java.type("boolean[]"))(2);
-boolArr[0] = true;
-boolArr[1] = false;
+// This test runs as trusted as we need the
+// "enableContextClassLoaderOverride" runtime permission.
 
-for (i in boolArr) {
-    print(i + " -> " + boolArr[i]);
-}
+var T = Java.extend(java.lang.Thread, {
+    getContextClassLoader: function() {
+        // Since getContextClassLoader is caller sensitive, this won't
+        // actually act as an override; it will be ignored. If we could
+        // invoke it, it would be an error.
+        throw new Error()
+    }
+})
 
-for each (i in boolArr) {
-    print(i);
-}
+// Retrieve the context ClassLoader on our Thread adapter, ensure the
+// method was not, in fact, overridden.
+var cl = (new T()).contextClassLoader
 
+print("cl is class loader: "  + (cl instanceof java.lang.ClassLoader))

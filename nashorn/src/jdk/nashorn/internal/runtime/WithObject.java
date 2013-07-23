@@ -58,10 +58,8 @@ public final class WithObject extends ScriptObject implements Scope {
      * @param expression with expression
      */
     public WithObject(final ScriptObject scope, final Object expression) {
-        super();
-
+        super(scope, null);
         setIsScope();
-        setProto(scope);
         this.expression = expression;
     }
 

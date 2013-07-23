@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
@@ -157,7 +158,7 @@ public class ListAdapter extends AbstractList<Object> implements RandomAccess, D
         }
     }
     private static void checkFunction(Object fn, InvokeByName invoke) {
-        if(!(fn instanceof ScriptFunction)) {
+        if(!(Bootstrap.isCallable(fn))) {
             throw new UnsupportedOperationException("The script object doesn't have a function named " + invoke.getName());
         }
     }
