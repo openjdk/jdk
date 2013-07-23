@@ -26,8 +26,9 @@
 ##
 ## @test Test8017498.sh
 ## @bug 8017498
+## @bug 8020791
 ## @summary sigaction(sig) results in process hang/timed-out if sig is much greater than SIGRTMAX
-## @run shell Test8017498.sh
+## @run shell/timeout=30 Test8017498.sh
 ##
 
 if [ "${TESTSRC}" = "" ]
@@ -46,17 +47,13 @@ case "$OS" in
     echo "Testing on Linux"
     if [ "$VM_BITS" = "64" ]
     then
-        LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}amd64${FS}libjsig.so
+        MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}amd64${FS}libjsig.so
     else
-        LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}i386${FS}libjsig.so
+        MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}i386${FS}libjsig.so
     fi
-    echo LD_PRELOAD = ${LD_PRELOAD}
-    export LD_PRELOAD=${LD_PRELOAD}
+    echo MY_LD_PRELOAD = ${MY_LD_PRELOAD}
     ;;
   *)
-    NULL=NUL
-    PS=";"
-    FS="\\"
     echo "Test passed; only valid for Linux"
     exit 0;
     ;;
@@ -67,29 +64,29 @@ THIS_DIR=.
 cp ${TESTSRC}${FS}*.java ${THIS_DIR}
 ${TESTJAVA}${FS}bin${FS}javac *.java
 
-gcc -fPIC -shared -o ${TESTSRC}${FS}libTestJNI.so -I${TESTJAVA}${FS}include -I${TESTJAVA}${FS}include${FS}linux ${TESTSRC}${FS}TestJNI.c
+gcc -DLINUX -fPIC -shared \
+    -o ${TESTSRC}${FS}libTestJNI.so \
+    -I${TESTJAVA}${FS}include \
+    -I${TESTJAVA}${FS}include${FS}linux \
+    ${TESTSRC}${FS}TestJNI.c
+if [ $? != 0 ]
+then
+    echo "WARNING: the gcc command failed." 2>&1
+fi
 
 # run the java test in the background
-echo ${TESTJAVA}${FS}bin${FS}java -Djava.library.path=${TESTSRC}${FS} -server TestJNI 100 > test.out 2>&1 &
-${TESTJAVA}${FS}bin${FS}java -Djava.library.path=${TESTSRC}${FS} -server TestJNI 100 > test.out 2>&1 &
+cmd="LD_PRELOAD=$MY_LD_PRELOAD \
+    ${TESTJAVA}${FS}bin${FS}java \
+    -Djava.library.path=${TESTSRC}${FS} -server TestJNI 100"
+echo "$cmd > test.out 2>&1"
+eval $cmd > test.out 2>&1
 
-# obtain the process id
-C_PID=$!
-
-# sleep for 1s
-sleep 1
-
-# reset LD_PRELOAD
-unset LD_PRELOAD
-
-# check the output file (test.out)
 grep "old handler" test.out > ${NULL}
 if [ $? = 0 ]
 then
     echo "Test Passed"
     exit 0
-else
-    kill -9 ${C_PID}
-    echo "Test Failed"
-    exit 1
 fi
+
+echo "Test Failed"
+exit 1
