@@ -47,6 +47,7 @@ import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
@@ -862,7 +863,7 @@ public final class NativeDate extends ScriptObject {
 
         try {
             final Object func = TO_ISO_STRING.getGetter().invokeExact(sobj);
-            if (func instanceof ScriptFunction) {
+            if (Bootstrap.isCallable(func)) {
                 return TO_ISO_STRING.getInvoker().invokeExact(func, sobj, key);
             }
             throw typeError("not.a.function", ScriptRuntime.safeToString(func));

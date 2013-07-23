@@ -381,9 +381,7 @@ public final class ScriptRuntime {
      */
     public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
         final ScriptObject global = Context.getGlobalTrusted();
-        if (! (global instanceof GlobalObject)) {
-            throw new IllegalStateException("No current global set");
-        }
+        assert (global instanceof GlobalObject): "No current global set";
 
         if (target.getContext() != global.getContext()) {
             throw new IllegalArgumentException("'target' function is not from current Context");

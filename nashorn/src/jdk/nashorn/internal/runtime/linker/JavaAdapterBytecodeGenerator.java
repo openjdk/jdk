@@ -924,6 +924,6 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private static boolean isCallerSensitive(final AccessibleObject e) {
-        return e.getAnnotation(CallerSensitive.class) != null;
+        return e.isAnnotationPresent(CallerSensitive.class);
     }
 }

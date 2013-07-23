@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -555,6 +556,7 @@ public final class Context {
      * Checks that the given package can be accessed from current call stack.
      *
      * @param fullName fully qualified package name
+     * @throw SecurityException if not accessible
      */
     public static void checkPackageAccess(final String fullName) {
         final int index = fullName.lastIndexOf('.');
@@ -564,6 +566,31 @@ public final class Context {
                 sm.checkPackageAccess(fullName.substring(0, index));
             }
         }
+    }
+
+    /**
+     * Checks that the given package can be accessed from current call stack.
+     *
+     * @param fullName fully qualified package name
+     * @return true if package is accessible, false otherwise
+     */
+    public static boolean isAccessiblePackage(final String fullName) {
+        try {
+            checkPackageAccess(fullName);
+            return true;
+        } catch (final SecurityException se) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks that the given Class can be accessed from current call stack and is public.
+     *
+     * @param clazz Class object to check
+     * @return true if Class is accessible, false otherwise
+     */
+    public static boolean isAccessibleClass(final Class<?> clazz) {
+        return Modifier.isPublic(clazz.getModifiers()) && Context.isAccessiblePackage(clazz.getName());
     }
 
     /**
