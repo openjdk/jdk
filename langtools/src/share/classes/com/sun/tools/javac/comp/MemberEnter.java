@@ -358,7 +358,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  @param thrown      The method's thrown exceptions.
      *  @param env             The method's (local) environment.
      */
-    Type signature(List<JCTypeParameter> typarams,
+    Type signature(MethodSymbol msym,
+                   List<JCTypeParameter> typarams,
                    List<JCVariableDecl> params,
                    JCTree res,
                    JCVariableDecl recvparam,
@@ -392,8 +393,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         ListBuffer<Type> thrownbuf = new ListBuffer<Type>();
         for (List<JCExpression> l = thrown; l.nonEmpty(); l = l.tail) {
             Type exc = attr.attribType(l.head, env);
-            if (!exc.hasTag(TYPEVAR))
+            if (!exc.hasTag(TYPEVAR)) {
                 exc = chk.checkClassType(l.head.pos(), exc);
+            } else if (exc.tsym.owner == msym) {
+                //mark inference variables in 'throws' clause
+                exc.tsym.flags_field |= THROWS;
+            }
             thrownbuf.append(exc);
         }
         MethodType mtype = new MethodType(argbuf.toList(),
@@ -503,11 +508,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // process package annotations
         annotateLater(tree.packageAnnotations, env, tree.packge);
 
-        // Import-on-demand java.lang.
-        importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+        DeferredLintHandler prevLintHandler = chk.setDeferredLintHandler(DeferredLintHandler.immediateHandler);
 
-        // Process all import clauses.
-        memberEnter(tree.defs, env);
+        try {
+            // Import-on-demand java.lang.
+            importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+
+            // Process all import clauses.
+            memberEnter(tree.defs, env);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
     }
 
     // process the non-static imports and the static imports of types.
@@ -557,7 +568,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
         try {
             // Compute the method type
-            m.type = signature(tree.typarams, tree.params,
+            m.type = signature(m, tree.typarams, tree.params,
                                tree.restype, tree.recvparam,
                                tree.thrown,
                                localEnv);

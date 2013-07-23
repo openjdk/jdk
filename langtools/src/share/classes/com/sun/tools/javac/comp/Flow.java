@@ -373,6 +373,15 @@ public class Flow {
         boolean resolveBreaks(JCTree tree, ListBuffer<P> oldPendingExits) {
             return resolveJump(tree, oldPendingExits, JumpKind.BREAK);
         }
+
+        @Override
+        public void scan(JCTree tree) {
+            if (tree != null && (
+                    tree.type == null ||
+                    tree.type != Type.stuckType)) {
+                super.scan(tree);
+            }
+        }
     }
 
     /**

@@ -885,7 +885,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 continue;
             log.println(getMessage("main.opt." + name));
         }
-        String[] fmOptions = { "-classpath", "-bootclasspath" };
+        String[] fmOptions = { "-classpath", "-cp", "-bootclasspath" };
         for (String o: fmOptions) {
             if (fileManager.isSupportedOption(o) == -1)
                 continue;
