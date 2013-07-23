@@ -433,7 +433,7 @@ public class MethodHandles {
         Lookup(Class<?> lookupClass) {
             this(lookupClass, ALL_MODES);
             // make sure we haven't accidentally picked up a privileged class:
-            checkUnprivilegedlookupClass(lookupClass);
+            checkUnprivilegedlookupClass(lookupClass, ALL_MODES);
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
@@ -487,7 +487,7 @@ public class MethodHandles {
                 // No permissions.
                 newModes = 0;
             }
-            checkUnprivilegedlookupClass(requestedLookupClass);
+            checkUnprivilegedlookupClass(requestedLookupClass, newModes);
             return new Lookup(requestedLookupClass, newModes);
         }
 
@@ -503,10 +503,19 @@ public class MethodHandles {
         /** Package-private version of lookup which is trusted. */
         static final Lookup IMPL_LOOKUP = new Lookup(Object.class, TRUSTED);
 
-        private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
+        private static void checkUnprivilegedlookupClass(Class<?> lookupClass, int allowedModes) {
             String name = lookupClass.getName();
             if (name.startsWith("java.lang.invoke."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
+
+            // For caller-sensitive MethodHandles.lookup()
+            // disallow lookup more restricted packages
+            if (allowedModes == ALL_MODES && lookupClass.getClassLoader() == null) {
+                if (name.startsWith("java.") ||
+                        (name.startsWith("sun.") && !name.startsWith("sun.invoke."))) {
+                    throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
+                }
+            }
         }
 
         /**
