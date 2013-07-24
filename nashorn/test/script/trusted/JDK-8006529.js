@@ -124,7 +124,7 @@ function compile(source) {
 
     var env = getEnvMethod.invoke(getContextMethod.invoke(null))
 
-    var parser   = ParserConstructor.newInstance(env, source, new ThrowErrorManager());
+    var parser   = ParserConstructor.newInstance(env, source, ThrowErrorManager.class.newInstance());
     var func     = parseMethod.invoke(parser);
 
     var compiler = CompilerConstructor.newInstance(env);
