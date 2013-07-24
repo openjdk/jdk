@@ -131,9 +131,6 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 7196801
 java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
-# 8008200
-java/lang/Class/asSubclass/BasicUnit.java                       generic-all
-
 # 8015780
 java/lang/reflect/Method/GenericStringTest.java			generic-all
 
@@ -169,6 +166,9 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
+
+# 8021186
+jdk/lambda/vm/DefaultMethodsTest.java                           generic-all 
 
 ############################################################################
 
@@ -375,6 +375,9 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+
+# 8020435
+java/util/concurrent/CompletableFuture/Basic.java                generic-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
