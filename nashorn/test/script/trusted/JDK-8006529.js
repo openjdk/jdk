@@ -51,6 +51,7 @@ var ExpressionStatement = Java.type("jdk.nashorn.internal.ir.ExpressionStatement
 var UnaryNode           = Java.type("jdk.nashorn.internal.ir.UnaryNode")
 var BinaryNode          = Java.type("jdk.nashorn.internal.ir.BinaryNode")
 var ThrowErrorManager   = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager")
+var ErrorManager        = Java.type("jdk.nashorn.internal.runtime.ErrorManager")
 var Debug               = Java.type("jdk.nashorn.internal.runtime.Debug")
 
 var parseMethod = Parser.class.getMethod("parse");
@@ -111,18 +112,22 @@ function findFunction(node) {
 var getContextMethod = Context.class.getMethod("getContext")
 var getEnvMethod = Context.class.getMethod("getEnv")
 
+var SourceConstructor = Source.class.getConstructor(java.lang.String.class, java.lang.String.class)
+var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
+var CompilerConstructor = Compiler.class.getConstructor(ScriptEnvironment.class)
+
 // compile(script) -- compiles a script specified as a string with its 
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
 // representing it.
 function compile(source) {
-    var source   = new Source("<no name>", source);
+    var source = SourceConstructor.newInstance("<no name>", source);
 
     var env = getEnvMethod.invoke(getContextMethod.invoke(null))
 
-    var parser   = new Parser(env, source, new ThrowErrorManager());
+    var parser   = ParserConstructor.newInstance(env, source, new ThrowErrorManager());
     var func     = parseMethod.invoke(parser);
 
-    var compiler = new Compiler(env);
+    var compiler = CompilerConstructor.newInstance(env);
 
     return compileMethod.invoke(compiler, func);
 };

@@ -292,8 +292,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return new SimpleDynamicMethod(unreflectSafely(m), member.getDeclaringClass(), member.getName());
     }
 
-    private static final Lookup publicLookup = new Lookup(MethodHandles.publicLookup());
-
     /**
      * Unreflects a method handle from a Method or a Constructor using safe (zero-privilege) unreflection. Should be
      * only used for methods and constructors that are not caller sensitive. If a caller sensitive method were
@@ -305,13 +303,13 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     private static MethodHandle unreflectSafely(AccessibleObject m) {
         if(m instanceof Method) {
             final Method reflMethod = (Method)m;
-            final MethodHandle handle = publicLookup.unreflect(reflMethod);
+            final MethodHandle handle = Lookup.PUBLIC.unreflect(reflMethod);
             if(Modifier.isStatic(reflMethod.getModifiers())) {
                 return StaticClassIntrospector.editStaticMethodHandle(handle);
             }
             return handle;
         }
-        return StaticClassIntrospector.editConstructorMethodHandle(publicLookup.unreflectConstructor((Constructor<?>)m));
+        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.PUBLIC.unreflectConstructor((Constructor<?>)m));
     }
 
     private static DynamicMethod mergeMethods(SingleDynamicMethod method, DynamicMethod existing, Class<?> clazz, String name) {

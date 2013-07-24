@@ -22,24 +22,13 @@
  */
 
 /**
- * JDK-8021129: Test prevention of access to members of restricted classes.
- * Note that even though the script runs as trusted, we still don't allow
- * access to non-public portions of restricted classes.
+ * JDK-8021189: Prevent access to constructors of restricted classes
  * 
  * @test
  * @run
  */
-var R = Java.type("jdk.nashorn.internal.test.models.InternalRunnable")
-var r1 = R.class.newInstance()
-
-r1.run() // Can execute method from an implemented non-restricted interface
-print(r1.toString()) // Can execute public method from a superclass
-
-print(r1.restrictedRun === undefined) // Can't see method from a restricted interface
-print(r1.canNotInvokeThis === undefined) // Can't see any other public methods
-print(r1.invisibleProperty === undefined) // Can't see any other properties
-print(r1.canSeeThisField === undefined) // Can't see fields from superclasses
-print(r1.canNotSeeThisField === undefined) // Can't see its own fields
-
-var r2 = new (Java.type("jdk.nashorn.test.models.InternalRunnableSuperclass"))
-print(r2.canSeeThisField) // Superclass field works fine on its own
+try {
+    new (Java.type("jdk.nashorn.internal.test.models.InternalRunnable"))
+} catch(e) {
+    print(e)
+}
