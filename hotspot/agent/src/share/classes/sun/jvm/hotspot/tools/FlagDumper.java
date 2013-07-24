@@ -25,9 +25,18 @@
 package sun.jvm.hotspot.tools;
 
 import java.io.PrintStream;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.*;
 
 public class FlagDumper extends Tool {
+
+    public FlagDumper() {
+        super();
+    }
+
+    public FlagDumper(JVMDebugger d) {
+        super(d);
+    }
 
    public void run() {
       VM.Flag[] flags = VM.getVM().getCommandLineFlags();

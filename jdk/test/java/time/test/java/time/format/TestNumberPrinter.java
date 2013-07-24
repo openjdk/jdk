@@ -191,7 +191,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
             assertEquals(buf.toString(), result);
         } catch (DateTimeException ex) {
             if (result == null || value < 0) {
-                assertEquals(ex.getMessage().contains(DAY_OF_MONTH.getName()), true);
+                assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
             } else {
                 throw ex;
             }
@@ -210,7 +210,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
             if (result != null) {
                 throw ex;
             }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.getName()), true);
+            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
@@ -226,7 +226,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
             if (result != null) {
                 throw ex;
             }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.getName()), true);
+            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
@@ -242,7 +242,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
             if (result != null) {
                 throw ex;
             }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.getName()), true);
+            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
@@ -262,7 +262,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
             if (result != null) {
                 throw ex;
             }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.getName()), true);
+            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 

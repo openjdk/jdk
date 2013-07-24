@@ -137,6 +137,11 @@ java/lang/Class/asSubclass/BasicUnit.java                       generic-all
 # 8015780
 java/lang/reflect/Method/GenericStringTest.java			generic-all
 
+# 8019845 due to memleak not related to the tested fix
+java/lang/instrument/RedefineBigClass.sh                        linux-x64
+java/lang/instrument/RetransformBigClass.sh                     linux-x64
+
+
 ############################################################################
 
 # jdk_management

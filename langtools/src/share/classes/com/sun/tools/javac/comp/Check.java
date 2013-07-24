@@ -218,6 +218,14 @@ public class Check {
         return prev;
     }
 
+    /*  This idiom should be used only in cases when it is needed to set the lint
+     *  of an environment that has been created in a phase previous to annotations
+     *  processing.
+     */
+    Lint getLint() {
+        return lint;
+    }
+
     DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
         DeferredLintHandler prev = deferredLintHandler;
         deferredLintHandler = newDeferredLintHandler;

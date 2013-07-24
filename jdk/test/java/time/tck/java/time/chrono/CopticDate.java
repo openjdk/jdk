@@ -87,7 +87,7 @@ import java.time.temporal.UnsupportedTemporalTypeException;
  * This class is immutable and thread-safe.
  */
 public final class CopticDate
-        implements ChronoLocalDate<CopticDate>, Serializable {
+        implements ChronoLocalDate, Serializable {
 
     /**
      * Serialization version.
@@ -202,7 +202,7 @@ public final class CopticDate
                 }
                 return getChronology().range(f);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
@@ -224,7 +224,7 @@ public final class CopticDate
                 case YEAR: return prolepticYear;
                 case ERA: return (prolepticYear >= 1 ? 1 : 0);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
@@ -249,7 +249,7 @@ public final class CopticDate
                 case YEAR: return resolvePreviousValid(nvalue, month, day);
                 case ERA: return resolvePreviousValid(1 - prolepticYear, month, day);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.adjustInto(this, newValue);
     }
@@ -268,7 +268,7 @@ public final class CopticDate
                 case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
             }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -297,22 +297,22 @@ public final class CopticDate
     }
 
     @Override
-    public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+    public long until(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof ChronoLocalDate == false) {
             throw new DateTimeException("Unable to calculate period between objects of two different types");
         }
-        ChronoLocalDate<?> end = (ChronoLocalDate<?>) endDateTime;
+        ChronoLocalDate end = (ChronoLocalDate) endDateTime;
         if (getChronology().equals(end.getChronology()) == false) {
             throw new DateTimeException("Unable to calculate period between two different chronologies");
         }
         if (unit instanceof ChronoUnit) {
-            return LocalDate.from(this).periodUntil(end, unit);  // TODO: this is wrong
+            return LocalDate.from(this).until(end, unit);  // TODO: this is wrong
         }
         return unit.between(this, endDateTime);
     }
 
     @Override
-    public Period periodUntil(ChronoLocalDate<?> endDate) {
+    public Period until(ChronoLocalDate endDate) {
         // TODO: untested
         CopticDate end = (CopticDate) getChronology().date(endDate);
         long totalMonths = (end.prolepticYear - this.prolepticYear) * 13 + (end.month - this.month);  // safe

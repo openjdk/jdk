@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,12 +217,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         new HiddenOption(false, "-Xnew") {
             void process(JavahTask task, String opt, String arg) {
                 // we're already using the new javah
-            }
-        },
-
-        new HiddenOption(false, "-old") {
-            void process(JavahTask task, String opt, String arg) {
-                task.old = true;
             }
         },
 
@@ -663,7 +657,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     boolean llni;
     boolean doubleAlign;
     boolean force;
-    boolean old;
     Set<String> javac_extras = new LinkedHashSet<String>();
 
     PrintWriter log;

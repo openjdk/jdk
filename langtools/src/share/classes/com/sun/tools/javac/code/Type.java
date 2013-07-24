@@ -70,24 +70,18 @@ import static com.sun.tools.javac.code.TypeTag.*;
  *
  *  @see TypeTag
  */
-public class Type implements PrimitiveType {
+public abstract class Type implements TypeMirror {
 
     /** Constant type: no type at all. */
-    public static final JCNoType noType = new JCNoType(NONE);
+    public static final JCNoType noType = new JCNoType();
 
     /** Constant type: special type to be used during recovery of deferred expressions. */
-    public static final JCNoType recoveryType = new JCNoType(NONE);
+    public static final JCNoType recoveryType = new JCNoType();
 
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */
     public static boolean moreInfo = false;
-
-    /** The tag of this type.
-     *
-     *  @see TypeTag
-     */
-    protected TypeTag tag;
 
     /** The defining class / interface / package / type variable.
      */
@@ -98,39 +92,37 @@ public class Type implements PrimitiveType {
      * @return true if tag is equal to the current type tag.
      */
     public boolean hasTag(TypeTag tag) {
-        return this.tag == tag;
+        return tag == getTag();
     }
 
     /**
      * Returns the current type tag.
      * @return the value of the current type tag.
      */
-    public TypeTag getTag() {
-        return tag;
-    }
+    public abstract TypeTag getTag();
 
     public boolean isNumeric() {
-        return tag.isNumeric;
+        return false;
     }
 
     public boolean isPrimitive() {
-        return tag.isPrimitive;
+        return false;
     }
 
     public boolean isPrimitiveOrVoid() {
-        return tag.isPrimitiveOrVoid;
+        return false;
     }
 
     public boolean isReference() {
-        return tag.isReference;
+        return false;
     }
 
     public boolean isNullOrReference() {
-        return (tag.isReference || tag == BOT);
+        return false;
     }
 
     public boolean isPartial() {
-        return tag.isPartial;
+        return false;
     }
 
     /**
@@ -143,6 +135,18 @@ public class Type implements PrimitiveType {
         return null;
     }
 
+    /** Is this a constant type whose value is false?
+     */
+    public boolean isFalse() {
+        return false;
+    }
+
+    /** Is this a constant type whose value is true?
+     */
+    public boolean isTrue() {
+        return false;
+    }
+
     /**
      * Get the representation of this type used for modelling purposes.
      * By default, this is itself. For ErrorType, a different value
@@ -153,7 +157,7 @@ public class Type implements PrimitiveType {
     }
 
     public static List<Type> getModelTypes(List<Type> ts) {
-        ListBuffer<Type> lb = new ListBuffer<Type>();
+        ListBuffer<Type> lb = new ListBuffer<>();
         for (Type t: ts)
             lb.append(t.getModelType());
         return lb.toList();
@@ -163,8 +167,7 @@ public class Type implements PrimitiveType {
 
     /** Define a type given its tag and type symbol
      */
-    public Type(TypeTag tag, TypeSymbol tsym) {
-        this.tag = tag;
+    public Type(TypeSymbol tsym) {
         this.tsym = tsym;
     }
 
@@ -203,18 +206,7 @@ public class Type implements PrimitiveType {
      *  and with given constant value
      */
     public Type constType(Object constValue) {
-        final Object value = constValue;
-        Assert.check(isPrimitive());
-        return new Type(tag, tsym) {
-                @Override
-                public Object constValue() {
-                    return value;
-                }
-                @Override
-                public Type baseType() {
-                    return tsym.type;
-                }
-            };
+        throw new AssertionError();
     }
 
     /**
@@ -272,7 +264,9 @@ public class Type implements PrimitiveType {
         String s = (tsym == null || tsym.name == null)
             ? "<none>"
             : tsym.name.toString();
-        if (moreInfo && tag == TYPEVAR) s = s + hashCode();
+        if (moreInfo && hasTag(TYPEVAR)) {
+            s = s + hashCode();
+        }
         return s;
     }
 
@@ -298,12 +292,7 @@ public class Type implements PrimitiveType {
      */
     public String stringValue() {
         Object cv = Assert.checkNonNull(constValue());
-        if (tag == BOOLEAN)
-            return ((Integer) cv).intValue() == 0 ? "false" : "true";
-        else if (tag == CHAR)
-            return String.valueOf((char) ((Integer) cv).intValue());
-        else
-            return cv.toString();
+        return cv.toString();
     }
 
     /**
@@ -321,24 +310,6 @@ public class Type implements PrimitiveType {
         return super.hashCode();
     }
 
-    /** Is this a constant type whose value is false?
-     */
-    public boolean isFalse() {
-        return
-            tag == BOOLEAN &&
-            constValue() != null &&
-            ((Integer)constValue()).intValue() == 0;
-    }
-
-    /** Is this a constant type whose value is true?
-     */
-    public boolean isTrue() {
-        return
-            tag == BOOLEAN &&
-            constValue() != null &&
-            ((Integer)constValue()).intValue() != 0;
-    }
-
     public String argtypes(boolean varargs) {
         List<Type> args = getParameterTypes();
         if (!varargs) return args.toString();
@@ -348,7 +319,7 @@ public class Type implements PrimitiveType {
             args = args.tail;
             buf.append(',');
         }
-        if (args.head.unannotatedType().tag == ARRAY) {
+        if (args.head.unannotatedType().hasTag(ARRAY)) {
             buf.append(((ArrayType)args.head.unannotatedType()).elemtype);
             if (args.head.getAnnotationMirrors().nonEmpty()) {
                 buf.append(args.head.getAnnotationMirrors());
@@ -485,28 +456,122 @@ public class Type implements PrimitiveType {
         return tsym;
     }
 
+    @Override
     public TypeKind getKind() {
-        switch (tag) {
-        case BYTE:      return TypeKind.BYTE;
-        case CHAR:      return TypeKind.CHAR;
-        case SHORT:     return TypeKind.SHORT;
-        case INT:       return TypeKind.INT;
-        case LONG:      return TypeKind.LONG;
-        case FLOAT:     return TypeKind.FLOAT;
-        case DOUBLE:    return TypeKind.DOUBLE;
-        case BOOLEAN:   return TypeKind.BOOLEAN;
-        case VOID:      return TypeKind.VOID;
-        case BOT:       return TypeKind.NULL;
-        case NONE:      return TypeKind.NONE;
-        default:        return TypeKind.OTHER;
-        }
+        return TypeKind.OTHER;
     }
 
+    @Override
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-        if (isPrimitive())
+        throw new AssertionError();
+    }
+
+    public static class JCPrimitiveType extends Type
+            implements javax.lang.model.type.PrimitiveType {
+
+        TypeTag tag;
+
+        public JCPrimitiveType(TypeTag tag, TypeSymbol tsym) {
+            super(tsym);
+            this.tag = tag;
+            Assert.check(tag.isPrimitive);
+        }
+
+        @Override
+        public boolean isNumeric() {
+            return tag != BOOLEAN;
+        }
+
+        @Override
+        public boolean isPrimitive() {
+            return true;
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return tag;
+        }
+
+        @Override
+        public boolean isPrimitiveOrVoid() {
+            return true;
+        }
+
+        /** Define a constant type, of the same kind as this type
+         *  and with given constant value
+         */
+        @Override
+        public Type constType(Object constValue) {
+            final Object value = constValue;
+            return new JCPrimitiveType(tag, tsym) {
+                    @Override
+                    public Object constValue() {
+                        return value;
+                    }
+                    @Override
+                    public Type baseType() {
+                        return tsym.type;
+                    }
+                };
+        }
+
+        /**
+         * The constant value of this type, converted to String
+         */
+        @Override
+        public String stringValue() {
+            Object cv = Assert.checkNonNull(constValue());
+            if (tag == BOOLEAN) {
+                return ((Integer) cv).intValue() == 0 ? "false" : "true";
+            }
+            else if (tag == CHAR) {
+                return String.valueOf((char) ((Integer) cv).intValue());
+            }
+            else {
+                return cv.toString();
+            }
+        }
+
+        /** Is this a constant type whose value is false?
+         */
+        @Override
+        public boolean isFalse() {
+            return
+                tag == BOOLEAN &&
+                constValue() != null &&
+                ((Integer)constValue()).intValue() == 0;
+        }
+
+        /** Is this a constant type whose value is true?
+         */
+        @Override
+        public boolean isTrue() {
+            return
+                tag == BOOLEAN &&
+                constValue() != null &&
+                ((Integer)constValue()).intValue() != 0;
+        }
+
+        @Override
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitPrimitive(this, p);
-        else
+        }
+
+        @Override
+        public TypeKind getKind() {
+            switch (tag) {
+                case BYTE:      return TypeKind.BYTE;
+                case CHAR:      return TypeKind.CHAR;
+                case SHORT:     return TypeKind.SHORT;
+                case INT:       return TypeKind.INT;
+                case LONG:      return TypeKind.LONG;
+                case FLOAT:     return TypeKind.FLOAT;
+                case DOUBLE:    return TypeKind.DOUBLE;
+                case BOOLEAN:   return TypeKind.BOOLEAN;
+            }
             throw new AssertionError();
+        }
+
     }
 
     public static class WildcardType extends Type
@@ -522,7 +587,7 @@ public class Type implements PrimitiveType {
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym) {
-            super(WILDCARD, tsym);
+            super(tsym);
             this.type = Assert.checkNonNull(type);
             this.kind = kind;
         }
@@ -535,6 +600,12 @@ public class Type implements PrimitiveType {
             this.bound = bound;
         }
 
+        @Override
+        public TypeTag getTag() {
+            return WILDCARD;
+        }
+
+        @Override
         public boolean contains(Type t) {
             return kind != UNBOUND && type.contains(t);
         }
@@ -551,6 +622,17 @@ public class Type implements PrimitiveType {
             return kind == UNBOUND;
         }
 
+        @Override
+        public boolean isReference() {
+            return true;
+        }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
+        }
+
+        @Override
         public Type withTypeVar(Type t) {
             //-System.err.println(this+".withTypeVar("+t+");");//DEBUG
             if (bound == t)
@@ -640,7 +722,7 @@ public class Type implements PrimitiveType {
         public List<Type> all_interfaces_field;
 
         public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym) {
-            super(CLASS, tsym);
+            super(tsym);
             this.outer_field = outer;
             this.typarams_field = typarams;
             this.allparams_field = null;
@@ -655,6 +737,11 @@ public class Type implements PrimitiveType {
                 typarams.length() == 0 :
                 true;
             */
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return CLASS;
         }
 
         @Override
@@ -680,7 +767,7 @@ public class Type implements PrimitiveType {
          */
         public String toString() {
             StringBuilder buf = new StringBuilder();
-            if (getEnclosingType().tag == CLASS && tsym.owner.kind == TYP) {
+            if (getEnclosingType().hasTag(CLASS) && tsym.owner.kind == TYP) {
                 buf.append(getEnclosingType().toString());
                 buf.append(".");
                 buf.append(className(tsym, false));
@@ -763,6 +850,16 @@ public class Type implements PrimitiveType {
         public boolean isParameterized() {
             return allparams().tail != null;
             // optimization, was: allparams().nonEmpty();
+        }
+
+        @Override
+        public boolean isReference() {
+            return true;
+        }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
         }
 
         /** A cache for the rank. */
@@ -909,11 +1006,15 @@ public class Type implements PrimitiveType {
         public Type elemtype;
 
         public ArrayType(Type elemtype, TypeSymbol arrayClass) {
-            super(ARRAY, arrayClass);
+            super(arrayClass);
             this.elemtype = elemtype;
         }
 
         @Override
+        public TypeTag getTag() {
+            return ARRAY;
+        }
+
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitArrayType(this, s);
         }
@@ -945,6 +1046,16 @@ public class Type implements PrimitiveType {
 
         public boolean isParameterized() {
             return elemtype.isParameterized();
+        }
+
+        @Override
+        public boolean isReference() {
+            return true;
+        }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
         }
 
         public boolean isRaw() {
@@ -1001,13 +1112,17 @@ public class Type implements PrimitiveType {
                           Type restype,
                           List<Type> thrown,
                           TypeSymbol methodClass) {
-            super(METHOD, methodClass);
+            super(methodClass);
             this.argtypes = argtypes;
             this.restype = restype;
             this.thrown = thrown;
         }
 
         @Override
+        public TypeTag getTag() {
+            return METHOD;
+        }
+
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitMethodType(this, s);
         }
@@ -1077,7 +1192,12 @@ public class Type implements PrimitiveType {
     public static class PackageType extends Type implements NoType {
 
         PackageType(TypeSymbol tsym) {
-            super(PACKAGE, tsym);
+            super(tsym);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return PACKAGE;
         }
 
         @Override
@@ -1120,15 +1240,20 @@ public class Type implements PrimitiveType {
         public Type lower;
 
         public TypeVar(Name name, Symbol owner, Type lower) {
-            super(TYPEVAR, null);
+            super(null);
             tsym = new TypeVariableSymbol(0, name, this, owner);
             this.lower = lower;
         }
 
         public TypeVar(TypeSymbol tsym, Type bound, Type lower) {
-            super(TYPEVAR, tsym);
+            super(tsym);
             this.bound = bound;
             this.lower = lower;
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return TYPEVAR;
         }
 
         @Override
@@ -1138,8 +1263,9 @@ public class Type implements PrimitiveType {
 
         @Override
         public Type getUpperBound() {
-            if ((bound == null || bound.tag == NONE) && this != tsym.type)
+            if ((bound == null || bound.hasTag(NONE)) && this != tsym.type) {
                 bound = tsym.type.getUpperBound();
+            }
             return bound;
         }
 
@@ -1158,6 +1284,17 @@ public class Type implements PrimitiveType {
             return false;
         }
 
+        @Override
+        public boolean isReference() {
+            return true;
+        }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
+        }
+
+        @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitTypeVariable(this, p);
         }
@@ -1203,10 +1340,13 @@ public class Type implements PrimitiveType {
 
     public static abstract class DelegatedType extends Type {
         public Type qtype;
+        public TypeTag tag;
         public DelegatedType(TypeTag tag, Type qtype) {
-            super(tag, qtype.tsym);
+            super(qtype.tsym);
+            this.tag = tag;
             this.qtype = qtype;
         }
+        public TypeTag getTag() { return tag; }
         public String toString() { return qtype.toString(); }
         public List<Type> getTypeArguments() { return qtype.getTypeArguments(); }
         public Type getEnclosingType() { return qtype.getEnclosingType(); }
@@ -1340,6 +1480,12 @@ public class Type implements PrimitiveType {
             else return qtype + "?";
         }
 
+        @Override
+        public boolean isPartial() {
+            return true;
+        }
+
+        @Override
         public Type baseType() {
             if (inst != null) return inst.baseType();
             else return this;
@@ -1439,21 +1585,21 @@ public class Type implements PrimitiveType {
         }
     }
 
-    /** Represents VOID or NONE.
+    /** Represents NONE.
      */
-    static class JCNoType extends Type implements NoType {
-        public JCNoType(TypeTag tag) {
-            super(tag, null);
+    public static class JCNoType extends Type implements NoType {
+        public JCNoType() {
+            super(null);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return NONE;
         }
 
         @Override
         public TypeKind getKind() {
-            switch (tag) {
-            case VOID:  return TypeKind.VOID;
-            case NONE:  return TypeKind.NONE;
-            default:
-                throw new AssertionError("Unexpected tag: " + tag);
-            }
+            return TypeKind.NONE;
         }
 
         @Override
@@ -1462,9 +1608,43 @@ public class Type implements PrimitiveType {
         }
     }
 
+    /** Represents VOID.
+     */
+    public static class JCVoidType extends Type implements NoType {
+
+        public JCVoidType() {
+            super(null);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return VOID;
+        }
+
+        @Override
+        public TypeKind getKind() {
+            return TypeKind.VOID;
+        }
+
+        @Override
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+            return v.visitNoType(this, p);
+        }
+
+        @Override
+        public boolean isPrimitiveOrVoid() {
+            return true;
+        }
+    }
+
     static class BottomType extends Type implements NullType {
         public BottomType() {
-            super(BOT, null);
+            super(null);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return BOT;
         }
 
         @Override
@@ -1486,6 +1666,12 @@ public class Type implements PrimitiveType {
         public String stringValue() {
             return "null";
         }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
+        }
+
     }
 
     public static class ErrorType extends ClassType
@@ -1495,7 +1681,6 @@ public class Type implements PrimitiveType {
 
         public ErrorType(Type originalType, TypeSymbol tsym) {
             super(noType, List.<Type>nil(), null);
-            tag = ERROR;
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }
@@ -1505,6 +1690,26 @@ public class Type implements PrimitiveType {
             c.type = this;
             c.kind = ERR;
             c.members_field = new Scope.ErrorScope(c);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return ERROR;
+        }
+
+        @Override
+        public boolean isPartial() {
+            return true;
+        }
+
+        @Override
+        public boolean isReference() {
+            return true;
+        }
+
+        @Override
+        public boolean isNullOrReference() {
+            return true;
         }
 
         public ErrorType(Name name, TypeSymbol container, Type originalType) {
@@ -1559,7 +1764,7 @@ public class Type implements PrimitiveType {
         public Type underlyingType;
 
         public AnnotatedType(Type underlyingType) {
-            super(underlyingType.tag, underlyingType.tsym);
+            super(underlyingType.tsym);
             this.typeAnnotations = List.nil();
             this.underlyingType = underlyingType;
             Assert.check(!underlyingType.isAnnotated(),
@@ -1568,12 +1773,17 @@ public class Type implements PrimitiveType {
 
         public AnnotatedType(List<Attribute.TypeCompound> typeAnnotations,
                 Type underlyingType) {
-            super(underlyingType.tag, underlyingType.tsym);
+            super(underlyingType.tsym);
             this.typeAnnotations = typeAnnotations;
             this.underlyingType = underlyingType;
             Assert.check(!underlyingType.isAnnotated(),
                     "Can't annotate already annotated type: " + underlyingType +
                     "; adding: " + typeAnnotations);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return underlyingType.getTag();
         }
 
         @Override
@@ -1651,9 +1861,17 @@ public class Type implements PrimitiveType {
         @Override
         public List<Type> allparams()            { return underlyingType.allparams(); }
         @Override
+        public boolean isPrimitive()             { return underlyingType.isPrimitive(); }
+        @Override
+        public boolean isPrimitiveOrVoid()       { return underlyingType.isPrimitiveOrVoid(); }
+        @Override
         public boolean isNumeric()               { return underlyingType.isNumeric(); }
         @Override
         public boolean isReference()             { return underlyingType.isReference(); }
+        @Override
+        public boolean isNullOrReference()       { return underlyingType.isNullOrReference(); }
+        @Override
+        public boolean isPartial()               { return underlyingType.isPartial(); }
         @Override
         public boolean isParameterized()         { return underlyingType.isParameterized(); }
         @Override
@@ -1717,6 +1935,28 @@ public class Type implements PrimitiveType {
         public TypeMirror getExtendsBound()      { return ((WildcardType)underlyingType).getExtendsBound(); }
         @Override
         public TypeMirror getSuperBound()        { return ((WildcardType)underlyingType).getSuperBound(); }
+    }
+
+    public static class UnknownType extends Type {
+
+        public UnknownType() {
+            super(null);
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return UNKNOWN;
+        }
+
+        @Override
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+            return v.visitUnknown(this, p);
+        }
+
+        @Override
+        public boolean isPartial() {
+            return true;
+        }
     }
 
     /**

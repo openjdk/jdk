@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ import java.security.SignatureException;
  * sets of information, and they store and retrieve the information in
  * different ways.
  *
- * <p><em>Note: The classes in the package <code>javax.security.cert</code>
+ * <p><em>Note: The classes in the package {@code javax.security.cert}
  * exist for compatibility with earlier versions of the
  * Java Secure Sockets Extension (JSSE). New applications should instead
  * use the standard Java SE certificate classes located in
- * <code>java.security.cert</code>.</em></p>
+ * {@code java.security.cert}.</em></p>
  *
  * @since 1.4
  * @see X509Certificate
@@ -64,8 +64,8 @@ public abstract class Certificate {
 
     /**
      * Compares this certificate for equality with the specified
-     * object. If the <code>other</code> object is an
-     * <code>instanceof</code> <code>Certificate</code>, then
+     * object. If the {@code other} object is an
+     * {@code instanceof} {@code Certificate}, then
      * its encoded form is retrieved and compared with the
      * encoded form of this certificate.
      *

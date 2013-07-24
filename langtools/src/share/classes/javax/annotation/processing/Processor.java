@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.annotation.processing;
 
 import java.util.Set;
+import javax.lang.model.util.Elements;
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
 import javax.lang.model.SourceVersion;
 
@@ -88,23 +90,52 @@ import javax.lang.model.SourceVersion;
  * configuration mechanisms, such as command line options; for
  * details, refer to the particular tool's documentation.  Which
  * processors the tool asks to {@linkplain #process run} is a function
- * of what annotations are present on the {@linkplain
+ * of the types of the annotations <em>{@linkplain AnnotatedConstruct present}</em>
+ * on the {@linkplain
  * RoundEnvironment#getRootElements root elements}, what {@linkplain
  * #getSupportedAnnotationTypes annotation types a processor
- * processes}, and whether or not a processor {@linkplain #process
- * claims the annotations it processes}.  A processor will be asked to
+ * supports}, and whether or not a processor {@linkplain #process
+ * claims the annotation types it processes}.  A processor will be asked to
  * process a subset of the annotation types it supports, possibly an
  * empty set.
  *
- * For a given round, the tool computes the set of annotation types on
- * the root elements.  If there is at least one annotation type
- * present, as processors claim annotation types, they are removed
- * from the set of unmatched annotations.  When the set is empty or no
- * more processors are available, the round has run to completion.  If
+ * For a given round, the tool computes the set of annotation types
+ * that are present on the elements enclosed within the root elements.
+ * If there is at least one annotation type present, then as
+ * processors claim annotation types, they are removed from the set of
+ * unmatched annotation types.  When the set is empty or no more
+ * processors are available, the round has run to completion.  If
  * there are no annotation types present, annotation processing still
  * occurs but only <i>universal processors</i> which support
- * processing {@code "*"} can claim the (empty) set of annotation
- * types.
+ * processing all annotation types, {@code "*"}, can claim the (empty)
+ * set of annotation types.
+ *
+ * <p>An annotation type is considered present if there is at least
+ * one annotation of that type present on an element enclosed within
+ * the root elements of a round. For this purpose, a type parameter is
+ * considered to be enclosed by its {@linkplain
+ * TypeParameterElement#getGenericElement generic
+ * element}. Annotations on {@linkplain
+ * java.lang.annotation.ElementType#TYPE_USE type uses}, as opposed to
+ * annotations on elements, are ignored when computing whether or not
+ * an annotation type is present.
+ *
+ * <p>An annotation is present if it meets the definition of being
+ * present given in {@link AnnotatedConstruct}. In brief, an
+ * annotation is considered present for the purposes of discovery if
+ * it is directly present or present via inheritance. An annotation is
+ * <em>not</em> considered present by virtue of being wrapped by a
+ * container annotation. Operationally, this is equivalent to an
+ * annotation being present on an element if and only if it would be
+ * included in the results of {@link
+ * Elements#getAllAnnotationMirrors(Element)} called on that element. Since
+ * annotations inside container annotations are not considered
+ * present, to properly process {@linkplain
+ * java.lang.annotation.Repeatable repeatable annotation types},
+ * processors are advised to include both the repeatable annotation
+ * type and its containing annotation type in the set of {@linkplain
+ * #getSupportedAnnotationTypes() supported annotation types} of a
+ * processor.
  *
  * <p>Note that if a processor supports {@code "*"} and returns {@code
  * true}, all annotations are claimed.  Therefore, a universal
@@ -257,10 +288,10 @@ public interface Processor {
     /**
      * Processes a set of annotation types on type elements
      * originating from the prior round and returns whether or not
-     * these annotations are claimed by this processor.  If {@code
-     * true} is returned, the annotations are claimed and subsequent
+     * these annotation types are claimed by this processor.  If {@code
+     * true} is returned, the annotation types are claimed and subsequent
      * processors will not be asked to process them; if {@code false}
-     * is returned, the annotations are unclaimed and subsequent
+     * is returned, the annotation types are unclaimed and subsequent
      * processors may be asked to process them.  A processor may
      * always return the same boolean value or may vary the result
      * based on chosen criteria.
@@ -271,7 +302,7 @@ public interface Processor {
      *
      * @param annotations the annotation types requested to be processed
      * @param roundEnv  environment for information about the current and prior round
-     * @return whether or not the set of annotations are claimed by this processor
+     * @return whether or not the set of annotation types are claimed by this processor
      */
     boolean process(Set<? extends TypeElement> annotations,
                     RoundEnvironment roundEnv);
