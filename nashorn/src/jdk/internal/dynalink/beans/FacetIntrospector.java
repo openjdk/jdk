@@ -84,7 +84,6 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -101,8 +100,6 @@ import jdk.internal.dynalink.support.Lookup;
  * @author Attila Szegedi
  */
 abstract class FacetIntrospector {
-    private static final Lookup publicLookup = new Lookup(MethodHandles.publicLookup());
-
     private final Class<?> clazz;
     private final boolean instance;
     private final boolean isRestricted;
@@ -164,11 +161,11 @@ abstract class FacetIntrospector {
 
 
     MethodHandle unreflectGetter(Field field) {
-        return editMethodHandle(publicLookup.unreflectGetter(field));
+        return editMethodHandle(Lookup.PUBLIC.unreflectGetter(field));
     }
 
     MethodHandle unreflectSetter(Field field) {
-        return editMethodHandle(publicLookup.unreflectSetter(field));
+        return editMethodHandle(Lookup.PUBLIC.unreflectSetter(field));
     }
 
     /**
