@@ -817,6 +817,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.returnType == returnType) {
             return this;
         }
+        final Type type = Type.widest(this.returnType, returnType.isObject() ? Type.OBJECT : returnType);
         return Node.replaceInLexicalContext(
             lc,
             this,
@@ -825,12 +826,10 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 lastToken,
                 flags,
                 name,
-                Type.widest(this.returnType, returnType.isObject() ?
-                    Type.OBJECT :
-                    returnType),
+                type,
                 compileUnit,
                 compilationState,
-                body,
+                body.setReturnType(type),
                 parameters,
                 snapshot,
                 hints));
