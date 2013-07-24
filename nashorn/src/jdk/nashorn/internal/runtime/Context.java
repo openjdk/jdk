@@ -40,10 +40,13 @@ import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
@@ -201,6 +204,7 @@ public final class Context {
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
+    private static final AccessControlContext NO_PERMISSIONS_CONTEXT;
 
     static {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
@@ -209,6 +213,7 @@ public final class Context {
                 return new StructureLoader(myLoader, null);
             }
         });
+        NO_PERMISSIONS_CONTEXT = new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
 
     /**
@@ -479,7 +484,7 @@ public final class Context {
                 source = new Source(name, script);
             }
         } else if (src instanceof Map) {
-            final Map map = (Map)src;
+            final Map<?,?> map = (Map<?,?>)src;
             if (map.containsKey("script") && map.containsKey("name")) {
                 final String script = JSType.toString(map.get("script"));
                 final String name   = JSType.toString(map.get("name"));
@@ -549,11 +554,14 @@ public final class Context {
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
     public static Class<?> forStructureClass(final String fullName) throws ClassNotFoundException {
+        if (System.getSecurityManager() != null && !NashornLoader.isStructureClass(fullName)) {
+            throw new ClassNotFoundException(fullName);
+        }
         return Class.forName(fullName, true, sharedLoader);
     }
 
     /**
-     * Checks that the given package can be accessed from current call stack.
+     * Checks that the given package can be accessed from no permissions context.
      *
      * @param fullName fully qualified package name
      * @throw SecurityException if not accessible
@@ -563,13 +571,19 @@ public final class Context {
         if (index != -1) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPackageAccess(fullName.substring(0, index));
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    @Override
+                    public Void run() {
+                        sm.checkPackageAccess(fullName.substring(0, index));
+                        return null;
+                    }
+                }, NO_PERMISSIONS_CONTEXT);
             }
         }
     }
 
     /**
-     * Checks that the given package can be accessed from current call stack.
+     * Checks that the given package can be accessed from no permissions context.
      *
      * @param fullName fully qualified package name
      * @return true if package is accessible, false otherwise
@@ -584,7 +598,7 @@ public final class Context {
     }
 
     /**
-     * Checks that the given Class can be accessed from current call stack and is public.
+     * Checks that the given Class is public and it can be accessed from no permissions context.
      *
      * @param clazz Class object to check
      * @return true if Class is accessible, false otherwise

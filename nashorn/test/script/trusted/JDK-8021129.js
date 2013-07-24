@@ -29,9 +29,9 @@
  * @test
  * @run
  */
-var R = Java.type("jdk.nashorn.internal.test.models.InternalRunnable")
-var r1 = R.class.newInstance()
 
+var InternalRunnableSuperclass = Java.type("jdk.nashorn.test.models.InternalRunnableSuperclass");
+var r1 = InternalRunnableSuperclass.makeInternalRunnable();
 r1.run() // Can execute method from an implemented non-restricted interface
 print(r1.toString()) // Can execute public method from a superclass
 
@@ -41,5 +41,5 @@ print(r1.invisibleProperty === undefined) // Can't see any other properties
 print(r1.canSeeThisField === undefined) // Can't see fields from superclasses
 print(r1.canNotSeeThisField === undefined) // Can't see its own fields
 
-var r2 = new (Java.type("jdk.nashorn.test.models.InternalRunnableSuperclass"))
+var r2 = new InternalRunnableSuperclass();
 print(r2.canSeeThisField) // Superclass field works fine on its own

@@ -34,6 +34,7 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 
 /**
@@ -68,6 +69,9 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         // We intercept "new" on StaticClass instances to provide additional capabilities
         if ("new".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
+            // make sure new is on accessible Class
+            Context.checkPackageAccess(receiverClass.getName());
+
             // Is the class abstract? (This includes interfaces.)
             if (NashornLinker.isAbstractClass(receiverClass)) {
                 // Change this link request into a link request on the adapter class.

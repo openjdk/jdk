@@ -391,7 +391,7 @@ public final class ScriptRuntime {
         return construct(target, args);
     }
 
-    /*
+    /**
      * Call a script function as a constructor with given args.
      *
      * @param target ScriptFunction object.
