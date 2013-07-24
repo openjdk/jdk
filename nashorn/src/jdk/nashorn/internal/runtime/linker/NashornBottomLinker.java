@@ -169,31 +169,43 @@ final class NashornBottomLinker implements GuardingDynamicLinker {
         return ScriptRuntime.safeToString(linkRequest.getArguments()[1]);
     }
 
-    // Returns @FunctionalInterface annotated interface's single abstract method.
-    // If not found, returns null
-    static Method getFunctionalInterfaceMethod(final Class<?> clazz) {
-        if (clazz == null) {
-            return null;
+    // cache of @FunctionalInterface method of implementor classes
+    private static final ClassValue<Method> FUNCTIONAL_IFACE_METHOD = new ClassValue<Method>() {
+        @Override
+        protected Method computeValue(final Class<?> type) {
+            return findFunctionalInterfaceMethod(type);
         }
 
-        for (Class<?> iface : clazz.getInterfaces()) {
-            // check accessiblity up-front
-            if (! Context.isAccessibleClass(iface)) {
-                continue;
+        private Method findFunctionalInterfaceMethod(final Class<?> clazz) {
+            if (clazz == null) {
+                return null;
             }
 
-            // check for @FunctionalInterface
-            if (iface.isAnnotationPresent(FunctionalInterface.class)) {
-                // return the first abstract method
-                for (final Method m : iface.getMethods()) {
-                    if (Modifier.isAbstract(m.getModifiers())) {
-                        return m;
+            for (Class<?> iface : clazz.getInterfaces()) {
+                // check accessiblity up-front
+                if (! Context.isAccessibleClass(iface)) {
+                    continue;
+                }
+
+                // check for @FunctionalInterface
+                if (iface.isAnnotationPresent(FunctionalInterface.class)) {
+                    // return the first abstract method
+                    for (final Method m : iface.getMethods()) {
+                        if (Modifier.isAbstract(m.getModifiers())) {
+                            return m;
+                        }
                     }
                 }
             }
-        }
 
-        // did not find here, try super class
-        return getFunctionalInterfaceMethod(clazz.getSuperclass());
+            // did not find here, try super class
+            return findFunctionalInterfaceMethod(clazz.getSuperclass());
+        }
+    };
+
+    // Returns @FunctionalInterface annotated interface's single abstract
+    // method. If not found, returns null.
+    static Method getFunctionalInterfaceMethod(final Class<?> clazz) {
+        return FUNCTIONAL_IFACE_METHOD.get(clazz);
     }
 }

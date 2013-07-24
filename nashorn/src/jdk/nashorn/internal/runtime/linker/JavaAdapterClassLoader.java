@@ -73,16 +73,6 @@ final class JavaAdapterClassLoader {
         });
     }
 
-    private static class AdapterLoader extends SecureClassLoader {
-        AdapterLoader(ClassLoader parent) {
-            super(parent);
-        }
-    }
-
-    static boolean isAdapterClass(Class<?> clazz) {
-        return clazz.getClassLoader() instanceof AdapterLoader;
-    }
-
     // Note that the adapter class is created in the protection domain of the class/interface being
     // extended/implemented, and only the privileged global setter action class is generated in the protection domain
     // of Nashorn itself. Also note that the creation and loading of the global setter is deferred until it is
@@ -91,7 +81,7 @@ final class JavaAdapterClassLoader {
     // with ability to introspect on the class and use setAccessible(true) on it could invoke the method. It's a
     // security tradeoff...
     private ClassLoader createClassLoader(final ClassLoader parentLoader) {
-        return new AdapterLoader(parentLoader) {
+        return new SecureClassLoader(parentLoader) {
             private final ClassLoader myLoader = getClass().getClassLoader();
 
             @Override

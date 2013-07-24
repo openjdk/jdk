@@ -25,6 +25,9 @@
 
 package jdk.nashorn.test.models;
 
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.internal.test.models.InternalRunnable;
+
 /**
  * Acts as a non-restricted superclass for a restricted class.
  *
@@ -32,4 +35,11 @@ package jdk.nashorn.test.models;
 public class InternalRunnableSuperclass {
     public final int canSeeThisField = 19;
 
+    public static Object makeInternalRunnable() {
+        return new InternalRunnable();
+    }
+
+    public static StaticClass getInternalRunnableType() {
+        return StaticClass.forClass(InternalRunnable.class);
+    }
 }

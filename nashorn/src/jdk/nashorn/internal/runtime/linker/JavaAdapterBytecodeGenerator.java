@@ -51,7 +51,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -179,8 +178,6 @@ final class JavaAdapterBytecodeGenerator {
      */
     private static final Collection<MethodInfo> EXCLUDED = getExcludedMethods();
 
-    private static final Random random = new SecureRandom();
-
     // This is the superclass for our generated adapter.
     private final Class<?> superClass;
     // Class loader used as the parent for the class loader we'll create to load the generated class. It will be a class
@@ -229,12 +226,6 @@ final class JavaAdapterBytecodeGenerator {
         };
         superClassName = Type.getInternalName(superClass);
         generatedClassName = getGeneratedClassName(superClass, interfaces);
-
-        // Randomize the name of the privileged global setter, to make it non-feasible to find.
-        final long l;
-        synchronized(random) {
-            l = random.nextLong();
-        }
 
         cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER | ACC_FINAL, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
 

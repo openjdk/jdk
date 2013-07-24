@@ -3192,9 +3192,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return true;
     }
 
-    /*
+    /**
      * Make a new UserAccessorProperty property. getter and setter functions are stored in
      * this ScriptObject and slot values are used in property object.
+     *
+     * @param key the property name
+     * @param propertyFlags attribute flags of the property
+     * @param getter getter function for the property
+     * @param setter setter function for the property
+     * @return the newly created UserAccessorProperty
      */
     protected final UserAccessorProperty newUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
         final UserAccessorProperty property = getMap().newUserAccessors(key, propertyFlags);
