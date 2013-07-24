@@ -1754,7 +1754,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             caller.ifne(breakLabel);
             //has to be zero
             caller.label(new Label("split_return"));
-            method.loadCompilerConstant(RETURN);
+            caller.loadCompilerConstant(RETURN);
             caller._return(lc.getCurrentFunction().getReturnType());
             caller.label(breakLabel);
         } else {
@@ -1783,6 +1783,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
             }
             caller.label(breakLabel);
+        }
+
+        // If split has a return and caller is itself a split method it needs to propagate the return.
+        if (hasReturn) {
+            caller.setHasReturn();
         }
 
         return splitNode;

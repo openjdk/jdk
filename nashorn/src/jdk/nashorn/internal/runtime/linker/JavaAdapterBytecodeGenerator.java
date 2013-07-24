@@ -165,7 +165,7 @@ final class JavaAdapterBytecodeGenerator {
 
     // Package used when the adapter can't be defined in the adaptee's package (either because it's sealed, or because
     // it's a java.* package.
-    private static final String ADAPTER_PACKAGE_PREFIX = "jdk/nashorn/internal/javaadapters/";
+    private static final String ADAPTER_PACKAGE_PREFIX = "jdk/nashorn/javaadapters/";
     // Class name suffix used to append to the adaptee class name, when it can be defined in the adaptee's package.
     private static final String ADAPTER_CLASS_NAME_SUFFIX = "$$NashornJavaAdapter";
     private static final String JAVA_PACKAGE_PREFIX = "java/";
