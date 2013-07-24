@@ -112,6 +112,25 @@ static
 #define PKGINFO_LINE_LEN_MAX 256
 #define PKGINFO_LINE_CNT_MAX 50
 
+/*
+ * X protocol uses (u_int16)length to specify the length in 4 bytes quantities
+ * of the whole request.  Both XRenderFillRectangles() and XFillRectangles()
+ * have provisions to fragment into several requests if the number of rectangles
+ * plus the current x request does not fit into 65535*4 bytes.  While
+ * XRenderCreateLinearGradient() and XRenderCreateRadialGradient() have
+ * provisions to gracefully degrade if the resulting request would exceed
+ * 65535*4 bytes.
+ *
+ * Below, we define a cap of 65535*4 bytes for the maximum X request payload
+ * allowed for Non-(XRenderFillRectangles() or XFillRectangles()) API calls,
+ * just to be conservative.  This is offset by the size of our maximum x*Req
+ * type in this compilation unit, which is xRenderCreateRadiaGradientReq.
+ *
+ * Note that sizeof(xRenderCreateRadiaGradientReq) = 36
+ */
+#define MAX_PAYLOAD (262140u - 36u)
+#define MAXUINT (0xffffffffu)
+
 static jboolean IsXRenderAvailable(jboolean verbose) {
 
     void *xrenderlib;
@@ -410,6 +429,10 @@ Java_sun_java2d_xr_XRBackendNative_XRenderRectanglesNative
     if (rectCnt <= 256) {
         xRects = &sRects[0];
     } else {
+        if (MAXUINT / sizeof(XRectangle) < (unsigned)rectCnt) {
+            /* rectCnt too big, integer overflow */
+            return;
+        }
         xRects = (XRectangle *) malloc(sizeof(XRectangle) * rectCnt);
         if (xRects == NULL) {
             return;
@@ -466,6 +489,12 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateLinearGradientPaintNative
    XFixed *stops;
    XLinearGradient grad;
 
+   if (MAX_PAYLOAD / (sizeof(XRenderColor) + sizeof(XFixed))
+       < (unsigned)numStops) {
+       /* numStops too big, payload overflow */
+       return -1;
+   }
+
    if ((pixels = (jshort *)
         (*env)->GetPrimitiveArrayCritical(env, pixelsArray, NULL)) == NULL) {
        return -1;
@@ -485,6 +514,18 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateLinearGradientPaintNative
     /*TODO optimized & malloc check*/
     colors = (XRenderColor *) malloc(numStops * sizeof(XRenderColor));
     stops =  (XFixed *) malloc(numStops * sizeof(XFixed));
+
+    if (colors == NULL || stops == NULL) {
+        if (colors != NULL) {
+            free(colors);
+        }
+        if (stops != NULL) {
+            free(stops);
+        }
+        (*env)->ReleasePrimitiveArrayCritical(env, pixelsArray, pixels, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, fractionsArray, fractions, JNI_ABORT);
+        return -1;
+    }
 
     for (i=0; i < numStops; i++) {
       stops[i] = XDoubleToFixed(fractions[i]);
@@ -533,6 +574,11 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateRadialGradientPaintNative
    XFixed *stops;
    XRadialGradient grad;
 
+   if (MAX_PAYLOAD / (sizeof(XRenderColor) + sizeof(XFixed))
+       < (unsigned)numStops) {
+       /* numStops too big, payload overflow */
+       return -1;
+   }
 
    if ((pixels =
        (jshort *)(*env)->GetPrimitiveArrayCritical(env, pixelsArray, NULL)) == NULL) {
@@ -555,6 +601,18 @@ Java_sun_java2d_xr_XRBackendNative_XRCreateRadialGradientPaintNative
     /*TODO optimized & malloc check*/
     colors = (XRenderColor *) malloc(numStops * sizeof(XRenderColor));
     stops =  (XFixed *) malloc(numStops * sizeof(XFixed));
+
+    if (colors == NULL || stops == NULL) {
+        if (colors != NULL) {
+            free(colors);
+        }
+        if (stops != NULL) {
+            free(stops);
+        }
+        (*env)->ReleasePrimitiveArrayCritical(env, pixelsArray, pixels, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, fractionsArray, fractions, JNI_ABORT);
+        return -1;
+    }
 
     for (i=0; i < numStops; i++) {
       stops[i] = XDoubleToFixed(fractions[i]);
@@ -714,6 +772,12 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
     unsigned char *pixelData;
     int i;
 
+    if (MAX_PAYLOAD / (sizeof(XGlyphInfo) + sizeof(Glyph))
+        < (unsigned)glyphCnt) {
+        /* glyphCnt too big, payload overflow */
+        return;
+    }
+
     XGlyphInfo *xginfo = (XGlyphInfo *) malloc(sizeof(XGlyphInfo) * glyphCnt);
     Glyph *gid = (Glyph *) malloc(sizeof(Glyph) * glyphCnt);
 
@@ -775,6 +839,11 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
 JNIEXPORT void JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRFreeGlyphsNative
  (JNIEnv *env, jclass cls, jint glyphSet, jintArray gidArray, jint glyphCnt) {
+
+    if (MAX_PAYLOAD / sizeof(Glyph) < (unsigned)glyphCnt) {
+        /* glyphCnt too big, payload overflow */
+        return;
+    }
 
     /* The glyph ids are 32 bit but may be stored in a 64 bit long on
      * a 64 bit architecture. So optimise the 32 bit case to avoid
@@ -845,6 +914,15 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
     XGlyphElt32 selts[24];
     unsigned int sids[256];
     int charCnt = 0;
+
+    if ((MAX_PAYLOAD / sizeof(XGlyphElt32) < (unsigned)eltCnt)
+        || (MAX_PAYLOAD / sizeof(unsigned int) < (unsigned)glyphCnt)
+        || ((MAX_PAYLOAD - sizeof(XGlyphElt32)*(unsigned)eltCnt) /
+            sizeof(unsigned int) < (unsigned)glyphCnt))
+    {
+        /* (eltCnt, glyphCnt) too big, payload overflow */
+        return;
+    }
 
     if (eltCnt <= 24) {
       xelts = &selts[0];
@@ -944,6 +1022,11 @@ Java_sun_java2d_xr_XRBackendNative_GCRectanglesNative
     if (rectCnt <= 256) {
       xRects = &sRects[0];
     } else {
+      if (MAXUINT / sizeof(XRectangle) < (unsigned)rectCnt) {
+        /* rectCnt too big, integer overflow */
+        return;
+      }
+
       xRects = (XRectangle *) malloc(sizeof(XRectangle) * rectCnt);
       if (xRects == NULL) {
         return;
