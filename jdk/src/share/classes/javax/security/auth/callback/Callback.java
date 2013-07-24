@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@ package javax.security.auth.callback;
 
 /**
  * <p> Implementations of this interface are passed to a
- * <code>CallbackHandler</code>, allowing underlying security services
+ * {@code CallbackHandler}, allowing underlying security services
  * the ability to interact with a calling application to retrieve specific
  * authentication data such as usernames and passwords, or to display
  * certain information, such as error and warning messages.
  *
- * <p> <code>Callback</code> implementations do not retrieve or
+ * <p> {@code Callback} implementations do not retrieve or
  * display the information requested by underlying security services.
- * <code>Callback</code> implementations simply provide the means
+ * {@code Callback} implementations simply provide the means
  * to pass such requests to applications, and for applications,
  * if appropriate, to return requested information back to the
  * underlying security services.

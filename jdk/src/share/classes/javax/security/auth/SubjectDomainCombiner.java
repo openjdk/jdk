@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 
 /**
- * A <code>SubjectDomainCombiner</code> updates ProtectionDomains
- * with Principals from the <code>Subject</code> associated with this
- * <code>SubjectDomainCombiner</code>.
+ * A {@code SubjectDomainCombiner} updates ProtectionDomains
+ * with Principals from the {@code Subject} associated with this
+ * {@code SubjectDomainCombiner}.
  *
  */
 public class SubjectDomainCombiner implements java.security.DomainCombiner {
@@ -66,13 +66,13 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                                         (useJavaxPolicy && cachePolicy());
 
     /**
-     * Associate the provided <code>Subject</code> with this
-     * <code>SubjectDomainCombiner</code>.
+     * Associate the provided {@code Subject} with this
+     * {@code SubjectDomainCombiner}.
      *
      * <p>
      *
-     * @param subject the <code>Subject</code> to be associated with
-     *          with this <code>SubjectDomainCombiner</code>.
+     * @param subject the {@code Subject} to be associated with
+     *          with this {@code SubjectDomainCombiner}.
      */
     public SubjectDomainCombiner(Subject subject) {
         this.subject = subject;
@@ -85,19 +85,19 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
     }
 
     /**
-     * Get the <code>Subject</code> associated with this
-     * <code>SubjectDomainCombiner</code>.
+     * Get the {@code Subject} associated with this
+     * {@code SubjectDomainCombiner}.
      *
      * <p>
      *
-     * @return the <code>Subject</code> associated with this
-     *          <code>SubjectDomainCombiner</code>, or <code>null</code>
-     *          if no <code>Subject</code> is associated with this
-     *          <code>SubjectDomainCombiner</code>.
+     * @return the {@code Subject} associated with this
+     *          {@code SubjectDomainCombiner}, or {@code null}
+     *          if no {@code Subject} is associated with this
+     *          {@code SubjectDomainCombiner}.
      *
      * @exception SecurityException if the caller does not have permission
-     *          to get the <code>Subject</code> associated with this
-     *          <code>SubjectDomainCombiner</code>.
+     *          to get the {@code Subject} associated with this
+     *          {@code SubjectDomainCombiner}.
      */
     public Subject getSubject() {
         java.lang.SecurityManager sm = System.getSecurityManager();
@@ -110,18 +110,18 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
 
     /**
      * Update the relevant ProtectionDomains with the Principals
-     * from the <code>Subject</code> associated with this
-     * <code>SubjectDomainCombiner</code>.
+     * from the {@code Subject} associated with this
+     * {@code SubjectDomainCombiner}.
      *
-     * <p> A new <code>ProtectionDomain</code> instance is created
-     * for each <code>ProtectionDomain</code> in the
-     * <i>currentDomains</i> array.  Each new <code>ProtectionDomain</code>
-     * instance is created using the <code>CodeSource</code>,
-     * <code>Permission</code>s and <code>ClassLoader</code>
-     * from the corresponding <code>ProtectionDomain</code> in
+     * <p> A new {@code ProtectionDomain} instance is created
+     * for each {@code ProtectionDomain} in the
+     * <i>currentDomains</i> array.  Each new {@code ProtectionDomain}
+     * instance is created using the {@code CodeSource},
+     * {@code Permission}s and {@code ClassLoader}
+     * from the corresponding {@code ProtectionDomain} in
      * <i>currentDomains</i>, as well as with the Principals from
-     * the <code>Subject</code> associated with this
-     * <code>SubjectDomainCombiner</code>.
+     * the {@code Subject} associated with this
+     * {@code SubjectDomainCombiner}.
      *
      * <p> All of the newly instantiated ProtectionDomains are
      * combined into a new array.  The ProtectionDomains from the
@@ -136,23 +136,23 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      *
      * @param currentDomains the ProtectionDomains associated with the
      *          current execution Thread, up to the most recent
-     *          privileged <code>ProtectionDomain</code>.
+     *          privileged {@code ProtectionDomain}.
      *          The ProtectionDomains are are listed in order of execution,
-     *          with the most recently executing <code>ProtectionDomain</code>
+     *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
-     *          be <code>null</code> if the current execution Thread
+     *          be {@code null} if the current execution Thread
      *          has no associated ProtectionDomains.<p>
      *
      * @param assignedDomains the ProtectionDomains inherited from the
      *          parent Thread, or the ProtectionDomains from the
      *          privileged <i>context</i>, if a call to
      *          AccessController.doPrivileged(..., <i>context</i>)
-     *          had occurred  This parameter may be <code>null</code>
+     *          had occurred  This parameter may be {@code null}
      *          if there were no ProtectionDomains inherited from the
      *          parent Thread, or from the privileged <i>context</i>.
      *
      * @return a new array consisting of the updated ProtectionDomains,
-     *          or <code>null</code>.
+     *          or {@code null}.
      */
     public ProtectionDomain[] combine(ProtectionDomain[] currentDomains,
                                 ProtectionDomain[] assignedDomains) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.io.IOException;
  * used within.
  * <p>
  * The service principal name is the canonical name of the
- * <code>KereberosPrincipal</code> supplying the service, that is
+ * {@code KereberosPrincipal} supplying the service, that is
  * the KerberosPrincipal represents a Kerberos service
  * principal. This name is treated in a case sensitive manner.
  * An asterisk may appear by itself, to signify any service principal.
@@ -135,9 +135,9 @@ public final class ServicePermission extends Permission
                             // created and re-used in the getAction function.
 
     /**
-     * Create a new <code>ServicePermission</code>
-     * with the specified <code>servicePrincipal</code>
-     * and <code>action</code>.
+     * Create a new {@code ServicePermission}
+     * with the specified {@code servicePrincipal}
+     * and {@code action}.
      *
      * @param servicePrincipal the name of the service principal.
      * An asterisk may appear by itself, to signify any service principal.
@@ -169,7 +169,7 @@ public final class ServicePermission extends Permission
      * Checks if this Kerberos service permission object "implies" the
      * specified permission.
      * <P>
-     * If none of the above are true, <code>implies</code> returns false.
+     * If none of the above are true, {@code implies} returns false.
      * @param p the permission to check against.
      *
      * @return true if the specified permission is implied by this object,
