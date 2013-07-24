@@ -147,6 +147,20 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         }
 
         @Override
+        public Set<Element> visitType(TypeElement e, DeclaredType p) {
+            // Type parameters are not considered to be enclosed by a type
+            scan(e.getTypeParameters(), p);
+            return scan(e.getEnclosedElements(), p);
+        }
+
+        @Override
+        public Set<Element> visitExecutable(ExecutableElement e, DeclaredType p) {
+            // Type parameters are not considered to be enclosed by an executable
+            scan(e.getTypeParameters(), p);
+            return scan(e.getEnclosedElements(), p);
+        }
+
+        @Override
         public Set<Element> scan(Element e, DeclaredType p) {
             java.util.List<? extends AnnotationMirror> annotationMirrors =
                 processingEnv.getElementUtils().getAllAnnotationMirrors(e);
@@ -157,7 +171,6 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             e.accept(this, p);
             return annotatedElements;
         }
-
     }
 
     /**

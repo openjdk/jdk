@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import java.security.GeneralSecurityException;
 
 /**
  * An exception indicating one of a variety of problems retrieving
- * certificates and CRLs from a <code>CertStore</code>.
+ * certificates and CRLs from a {@code CertStore}.
  * <p>
- * A <code>CertStoreException</code> provides support for wrapping
+ * A {@code CertStoreException} provides support for wrapping
  * exceptions. The {@link #getCause getCause} method returns the throwable,
  * if any, that caused this exception to be thrown.
  * <p>
@@ -53,7 +53,7 @@ public class CertStoreException extends GeneralSecurityException {
     private static final long serialVersionUID = 2395296107471573245L;
 
     /**
-     * Creates a <code>CertStoreException</code> with <code>null</code> as
+     * Creates a {@code CertStoreException} with {@code null} as
      * its detail message.
      */
     public CertStoreException() {
@@ -61,8 +61,8 @@ public class CertStoreException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertStoreException</code> with the given detail
-     * message. A detail message is a <code>String</code> that describes this
+     * Creates a {@code CertStoreException} with the given detail
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message
@@ -72,15 +72,15 @@ public class CertStoreException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertStoreException</code> that wraps the specified
+     * Creates a {@code CertStoreException} that wraps the specified
      * throwable. This allows any exception to be converted into a
-     * <code>CertStoreException</code>, while retaining information about the
+     * {@code CertStoreException}, while retaining information about the
      * cause, which may be useful for debugging. The detail message is
-     * set to (<code>cause==null ? null : cause.toString()</code>) (which
+     * set to ({@code cause==null ? null : cause.toString()}) (which
      * typically contains the class and detail message of cause).
      *
      * @param cause the cause (which is saved for later retrieval by the
-     * {@link #getCause getCause()} method). (A <code>null</code> value is
+     * {@link #getCause getCause()} method). (A {@code null} value is
      * permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public CertStoreException(Throwable cause) {
@@ -88,12 +88,12 @@ public class CertStoreException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertStoreException</code> with the specified detail
+     * Creates a {@code CertStoreException} with the specified detail
      * message and cause.
      *
      * @param msg the detail message
      * @param cause the cause (which is saved for later retrieval by the
-     * {@link #getCause getCause()} method). (A <code>null</code> value is
+     * {@link #getCause getCause()} method). (A {@code null} value is
      * permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public CertStoreException(String msg, Throwable cause) {

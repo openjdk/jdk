@@ -90,7 +90,7 @@ import java.io.InputStream;
  * the intended columns, which can be assured with the SQL <i>AS</i> clause.
  * <P>
  * A set of updater methods were added to this interface
- * in the JDBC 2.0 API (Java<sup><font size=-2>TM</font></sup> 2 SDK,
+ * in the JDBC 2.0 API (Java&trade; 2 SDK,
  * Standard Edition, version 1.2). The comments regarding parameters
  * to the getter methods also apply to parameters to the
  * updater methods.
@@ -148,7 +148,7 @@ import java.io.InputStream;
 public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
-     * Moves the cursor froward one row from its current position.
+     * Moves the cursor forward one row from its current position.
      * A <code>ResultSet</code> cursor is initially positioned
      * before the first row; the first call to the method
      * <code>next</code> makes the first row the current row; the
@@ -4101,7 +4101,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * Appendix B, Table B-3 and conversion of appropriate user defined SQL
      * types to a Java type which implements {@code SQLData}, or {@code Struct}.
      * Additional conversions may be supported and are vendor defined.
-     *
+     * @param <T> the type of the class modeled by this Class object
      * @param columnIndex the first column is 1, the second is 2, ...
      * @param type Class representing the Java data type to convert the designated
      * column to.
@@ -4135,6 +4135,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * of the column
      * @param type Class representing the Java data type to convert the designated
      * column to.
+     * @param <T> the type of the class modeled by this Class object
      * @return an instance of {@code type} holding the column value
      * @throws SQLException if conversion is not supported, type is null or
      *         another error occurs. The getCause() method of the
@@ -4208,6 +4209,7 @@ public interface ResultSet extends Wrapper, AutoCloseable {
      * @param columnLabel the label for the column specified with the SQL AS
      * clause.  If the SQL AS clause was not specified, then the label is
      * the name of the column
+     * @param x the new column value
      * @param targetSqlType the SQL type to be sent to the database
      * @param scaleOrLength for an object of {@code java.math.BigDecimal} ,
      *          this is the number of digits after the decimal point. For

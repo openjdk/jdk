@@ -130,6 +130,7 @@ public interface AnnotatedElement {
      * Returns this element's annotation for the specified type if
      * such an annotation is present, else null.
      *
+     * @param <T> the type of the annotation to query for and return if present
      * @param annotationClass the Class object corresponding to the
      *        annotation type
      * @return this element's annotation for the specified annotation type if
@@ -154,6 +155,7 @@ public interface AnnotatedElement {
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
+     * @param <T> the type of the annotation to query for and return if present
      * @param annotationClass the Class object corresponding to the
      *        annotation type
      * @return all this element's annotations for the specified annotation type if
@@ -184,6 +186,7 @@ public interface AnnotatedElement {
      * This method ignores inherited annotations. (Returns null if no
      * annotations are directly present on this element.)
      *
+     * @param <T> the type of the annotation to query for and return if present
      * @param annotationClass the Class object corresponding to the
      *        annotation type
      * @return this element's annotation for the specified annotation type if
@@ -209,6 +212,8 @@ public interface AnnotatedElement {
      * The caller of this method is free to modify the returned array; it will
      * have no effect on the arrays returned to other callers.
      *
+     * @param <T> the type of the annotation to query for and return
+     * if directly present
      * @param annotationClass the Class object corresponding to the
      *        annotation type
      * @return all this element's annotations for the specified annotation type if

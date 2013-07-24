@@ -2914,7 +2914,9 @@ public class JavacParser implements Parser {
             pos = token.pos;
             accept(LBRACE);
             ListBuffer<JCExpression> buf = new ListBuffer<JCExpression>();
-            if (token.kind != RBRACE) {
+            if (token.kind == COMMA) {
+                nextToken();
+            } else if (token.kind != RBRACE) {
                 buf.append(annotationValue());
                 while (token.kind == COMMA) {
                     nextToken();

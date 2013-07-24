@@ -152,6 +152,8 @@ public final class Parameter implements AnnotatedElement {
      * defined in a class file, then that name will be returned by
      * this method.  Otherwise, this method will synthesize a name of
      * the form argN, where N is the index of the parameter.
+     *
+     * @return the name of the parameter
      */
     public String getName() {
         // Note: empty strings as paramete names are now outlawed.

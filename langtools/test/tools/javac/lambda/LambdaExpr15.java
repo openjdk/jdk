@@ -48,7 +48,7 @@ public class LambdaExpr15 {
             new Object() {
                 String get() { return ""; }
             };
-            assertTrue(t == 1);
+            assertTrue((Integer)t == 1);
         };
         ba1.apply(1);
 
@@ -58,7 +58,7 @@ public class LambdaExpr15 {
                 String get() { return ""; }
             };
             new A();
-            assertTrue(t == 2);
+            assertTrue((Integer)t == 2);
         };
         ba2.apply(2);
         assertTrue(assertionCount == 2);
