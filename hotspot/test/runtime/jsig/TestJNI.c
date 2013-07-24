@@ -21,9 +21,9 @@
  * questions.
  */
 
+#define _GNU_SOURCE // for the definition of REG_RIP in ucontext.h
 #include <stdio.h>
 #include <jni.h>
-#define __USE_GNU
 #include <signal.h>
 #include <sys/ucontext.h>
 
@@ -42,8 +42,6 @@ void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
 JNIEXPORT void JNICALL Java_TestJNI_doSomething(JNIEnv *env, jclass klass, jint val) {
     struct sigaction act;
     struct sigaction oact;
-    pthread_attr_t attr;
-    stack_t stack;
 
     act.sa_flags = SA_ONSTACK|SA_RESTART|SA_SIGINFO;
     sigfillset(&act.sa_mask);
