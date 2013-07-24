@@ -125,18 +125,25 @@ public class TreePath implements Iterable<Tree> {
         return parent;
     }
 
+    /**
+     *  Iterates from leaves to root.
+     */
+    @Override
     public Iterator<Tree> iterator() {
         return new Iterator<Tree>() {
+            @Override
             public boolean hasNext() {
                 return next != null;
             }
 
+            @Override
             public Tree next() {
                 Tree t = next.leaf;
                 next = next.parent;
                 return t;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }

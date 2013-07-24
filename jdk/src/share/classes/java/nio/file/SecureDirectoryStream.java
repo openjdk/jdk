@@ -122,6 +122,8 @@ public interface SecureDirectoryStream<T>
      *          an optional list of attributes to set atomically when creating
      *          the file
      *
+     * @return  the seekable byte channel
+     *
      * @throws  ClosedDirectoryStreamException
      *          if the directory stream is closed
      * @throws  IllegalArgumentException
@@ -260,6 +262,8 @@ public interface SecureDirectoryStream<T>
      * then all methods to read or update attributes will throw {@link
      * ClosedDirectoryStreamException ClosedDirectoryStreamException}.
      *
+     * @param   <V>
+     *          The {@code FileAttributeView} type
      * @param   type
      *          the {@code Class} object corresponding to the file attribute view
      *
@@ -288,6 +292,8 @@ public interface SecureDirectoryStream<T>
      * is created but methods to read or update attributes of the file will
      * fail when invoked and the file does not exist.
      *
+     * @param   <V>
+     *          The {@code FileAttributeView} type
      * @param   path
      *          the path of the file
      * @param   type

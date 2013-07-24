@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,8 @@
  * questions.
  */
 
-/**
- * This should be green, underlined and bold (Class): {@underline {@bold {@green My test}}} .
+/*
  * @test
- * @bug 0000000
  * @summary Test for nested inline tags. *
  * @author jamieh
  * @library ../lib/
@@ -36,6 +34,9 @@
  * @run main TestNestedInlineTag
  */
 
+/**
+ * This should be green, underlined and bold (Class): {@underline {@bold {@green My test}}} .
+ */
 public class TestNestedInlineTag extends JavadocTester {
 
     /**

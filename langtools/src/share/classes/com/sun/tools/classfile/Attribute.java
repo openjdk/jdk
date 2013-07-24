@@ -77,10 +77,12 @@ public abstract class Attribute {
 
         public Attribute createAttribute(ClassReader cr, int name_index, byte[] data)
                 throws IOException {
-            if (standardAttributes == null)
+            if (standardAttributes == null) {
                 init();
+            }
 
             ConstantPool cp = cr.getConstantPool();
+            String reasonForDefaultAttr;
             try {
                 String name = cp.getUTF8Value(name_index);
                 Class<? extends Attribute> attrClass = standardAttributes.get(name);
@@ -90,14 +92,18 @@ public abstract class Attribute {
                         Constructor<? extends Attribute> constr = attrClass.getDeclaredConstructor(constrArgTypes);
                         return constr.newInstance(new Object[] { cr, name_index, data.length });
                     } catch (Throwable t) {
+                        reasonForDefaultAttr = t.toString();
                         // fall through and use DefaultAttribute
                         // t.printStackTrace();
                     }
+                } else {
+                    reasonForDefaultAttr = "unknown attribute";
                 }
             } catch (ConstantPoolException e) {
+                reasonForDefaultAttr = e.toString();
                 // fall through and use DefaultAttribute
             }
-            return new DefaultAttribute(cr, name_index, data);
+            return new DefaultAttribute(cr, name_index, data, reasonForDefaultAttr);
         }
 
         protected void init() {

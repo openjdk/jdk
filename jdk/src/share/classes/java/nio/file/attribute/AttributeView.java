@@ -38,6 +38,8 @@ package java.nio.file.attribute;
 public interface AttributeView {
     /**
      * Returns the name of the attribute view.
+     *
+     * @return the name of the attribute view
      */
     String name();
 }

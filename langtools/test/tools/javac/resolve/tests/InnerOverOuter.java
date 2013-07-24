@@ -21,7 +21,7 @@
  * questions.
  */
 
-@TraceResolve
+@TraceResolve(keys={"compiler.err.cant.apply.symbol"})
 class Test {
 
     //no annotation here - this should NOT even be considered!
@@ -30,7 +30,6 @@ class Test {
     //no annotation here - this should NOT even be considered!
     void m(Object... o) { }
 
-    @TraceResolve(keys={"compiler.err.cant.apply.symbol"})
     class Inner {
         @Candidate
         void m(String s) {

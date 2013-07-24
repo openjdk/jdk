@@ -208,6 +208,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
       VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
       VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
+      # Remove any paths containing # (typically F#) as that messes up make
+      PATH=`$ECHO "$PATH" | $SED 's/[[^:#]]*#[^:]*://g'`
       VS_PATH="$PATH"
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)

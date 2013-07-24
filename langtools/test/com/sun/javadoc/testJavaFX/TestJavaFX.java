@@ -55,6 +55,8 @@ public class TestJavaFX extends JavadocTester {
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Default value:</span>"},
             {"./" + BUG_ID + "/C.html",
+                "<span class=\"strong\">Since:</span></dt>" + NL + "<dd>JavaFX 8.0</dd>" },
+            {"./" + BUG_ID + "/C.html",
                 "<p>Sets the value of the property <code>Property</code>"},
             {"./" + BUG_ID + "/C.html",
                 "<p>Gets the value of the property <code>Property</code>"},
@@ -78,7 +80,7 @@ public class TestJavaFX extends JavadocTester {
 
 
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-private", "-javafx",
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-javafx",
         SRC_DIR + FS + "C.java", SRC_DIR + FS + "D.java"
     };
 

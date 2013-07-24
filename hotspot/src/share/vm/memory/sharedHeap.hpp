@@ -166,11 +166,6 @@ public:
   // Same as above, restricted to a memory region.
   virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
 
-  // Iterate over all objects allocated since the last collection, calling
-  // "cl->do_object" on each.  The heap must have been initialized properly
-  // to support this function, or else this call will fail.
-  virtual void object_iterate_since_last_GC(ObjectClosure* cl) = 0;
-
   // Iterate over all spaces in use in the heap, in an undefined order.
   virtual void space_iterate(SpaceClosure* cl) = 0;
 
