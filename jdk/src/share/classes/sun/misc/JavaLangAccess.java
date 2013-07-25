@@ -38,16 +38,22 @@ public interface JavaLangAccess {
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
-     * Set the AnnotationType instance corresponding to this class.
+     * Compare-And-Swap the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
-    void setAnnotationType(Class<?> klass, AnnotationType annotationType);
+    boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType);
 
     /**
      * Get the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
     AnnotationType getAnnotationType(Class<?> klass);
+
+    /**
+     * Get the array of bytes that is the class-file representation
+     * of this Class' annotations.
+     */
+    byte[] getRawClassAnnotations(Class<?> klass);
 
     /**
      * Get the array of bytes that is the class-file representation

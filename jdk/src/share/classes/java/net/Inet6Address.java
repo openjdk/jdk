@@ -38,7 +38,7 @@ import java.util.Arrays;
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h4> <A NAME="format">Textual representation of IP addresses</a> </h4>
+ * <h3> <A NAME="format">Textual representation of IP addresses</a> </h3>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
@@ -159,7 +159,7 @@ import java.util.Arrays;
  * system. Usually, the numeric values can be determined through administration
  * tools on the system. Each interface may have multiple values, one for each
  * scope. If the scope is unspecified, then the default value used is zero.</li>
- * <p><li><i>As a string.</i> This must be the exact string that is returned by
+ * <li><i>As a string.</i> This must be the exact string that is returned by
  * {@link java.net.NetworkInterface#getName()} for the particular interface in
  * question. When an Inet6Address is created in this way, the numeric scope-id
  * is determined at the time the object is created by querying the relevant

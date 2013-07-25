@@ -46,6 +46,7 @@ ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   include $(MAKEFILES_DIR)/zeroshark.make
 else
   include $(MAKEFILES_DIR)/$(BUILDARCH).make
+  -include $(HS_ALT_MAKE)/$(Platform_os_family)/makefiles/$(BUILDARCH).make
 endif
 
 # set VPATH so make knows where to look for source files
@@ -210,6 +211,12 @@ endif
 ifeq ($(Platform_arch_model), x86_64)
 Src_Files_EXCLUDE += \*x86_32\*
 endif
+
+# Alternate vm.make
+# This has to be included here to allow changes to the source
+# directories and excluded files before they are expanded
+# by the definition of Src_Files.
+-include $(HS_ALT_MAKE)/$(Platform_os_family)/makefiles/vm.make
 
 # Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
 define findsrc
@@ -380,4 +387,4 @@ build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) dtraceChe
 
 install: install_jvm install_jsig install_saproc
 
-.PHONY: default build install install_jvm
+.PHONY: default build install install_jvm $(HS_ALT_MAKE)/$(Platform_os_family)/makefiles/$(BUILDARCH).make $(HS_ALT_MAKE)/$(Platform_os_family)/makefiles/vm.make

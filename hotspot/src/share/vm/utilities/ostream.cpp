@@ -296,6 +296,7 @@ stringStream::stringStream(size_t initial_size) : outputStream() {
   buffer        = NEW_RESOURCE_ARRAY(char, buffer_length);
   buffer_pos    = 0;
   buffer_fixed  = false;
+  DEBUG_ONLY(rm = Thread::current()->current_resource_mark();)
 }
 
 // useful for output to fixed chunks of memory, such as performance counters
@@ -321,6 +322,8 @@ void stringStream::write(const char* s, size_t len) {
         end = buffer_length * 2;
       }
       char* oldbuf = buffer;
+      assert(rm == NULL || Thread::current()->current_resource_mark() == rm,
+             "stringStream is re-allocated with a different ResourceMark");
       buffer = NEW_RESOURCE_ARRAY(char, end);
       strncpy(buffer, oldbuf, buffer_pos);
       buffer_length = end;

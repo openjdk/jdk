@@ -158,7 +158,7 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote>
  *
- * <h4> <a name="name">Binary names</a> </h4>
+ * <h3> <a name="name">Binary names</a> </h3>
  *
  * <p> Any class name provided as a {@link String} parameter to methods in
  * <tt>ClassLoader</tt> must be a binary name as defined by
@@ -343,7 +343,7 @@ public abstract class ClassLoader {
      * #loadClass(String, boolean)} method.  It is invoked by the Java virtual
      * machine to resolve class references.  Invoking this method is equivalent
      * to invoking {@link #loadClass(String, boolean) <tt>loadClass(name,
-     * false)</tt>}.  </p>
+     * false)</tt>}.
      *
      * @param  name
      *         The <a href="#name">binary name</a> of the class
@@ -442,7 +442,7 @@ public abstract class ClassLoader {
      * behaves as follows. If this ClassLoader object is registered as
      * parallel capable, the method returns a dedicated object associated
      * with the specified class name. Otherwise, the method returns this
-     * ClassLoader object. </p>
+     * ClassLoader object.
      *
      * @param  className
      *         The name of the to-be-loaded class
@@ -514,7 +514,7 @@ public abstract class ClassLoader {
      * follow the delegation model for loading classes, and will be invoked by
      * the {@link #loadClass <tt>loadClass</tt>} method after checking the
      * parent class loader for the requested class.  The default implementation
-     * throws a <tt>ClassNotFoundException</tt>.  </p>
+     * throws a <tt>ClassNotFoundException</tt>.
      *
      * @param  name
      *         The <a href="#name">binary name</a> of the class
@@ -780,16 +780,16 @@ public abstract class ClassLoader {
      * <i>bBuffer</i><tt>,</tt> <i>pd</i><tt>)</tt> yields exactly the same
      * result as the statements
      *
-     * <blockquote><tt>
+     *<p> <tt>
      * ...<br>
-     * byte[] temp = new byte[</tt><i>bBuffer</i><tt>.{@link
+     * byte[] temp = new byte[bBuffer.{@link
      * java.nio.ByteBuffer#remaining remaining}()];<br>
-     *     </tt><i>bBuffer</i><tt>.{@link java.nio.ByteBuffer#get(byte[])
+     *     bBuffer.{@link java.nio.ByteBuffer#get(byte[])
      * get}(temp);<br>
      *     return {@link #defineClass(String, byte[], int, int, ProtectionDomain)
-     * </tt><i>cl</i><tt>.defineClass}(</tt><i>name</i><tt>, temp, 0,
-     * temp.length, </tt><i>pd</i><tt>);<br>
-     * </tt></blockquote>
+     * cl.defineClass}(name, temp, 0,
+     * temp.length, pd);<br>
+     * </tt></p>
      *
      * @param  name
      *         The expected <a href="#name">binary name</a>. of the class, or
@@ -948,7 +948,6 @@ public abstract class ClassLoader {
      * already been linked, then this method simply returns. Otherwise, the
      * class is linked as described in the "Execution" chapter of
      * <cite>The Java&trade; Language Specification</cite>.
-     * </p>
      *
      * @param  c
      *         The class to link
@@ -1020,7 +1019,7 @@ public abstract class ClassLoader {
      * Returns the class with the given <a href="#name">binary name</a> if this
      * loader has been recorded by the Java virtual machine as an initiating
      * loader of a class with that <a href="#name">binary name</a>.  Otherwise
-     * <tt>null</tt> is returned.  </p>
+     * <tt>null</tt> is returned.
      *
      * @param  name
      *         The <a href="#name">binary name</a> of the class
@@ -1040,7 +1039,7 @@ public abstract class ClassLoader {
 
     /**
      * Sets the signers of a class.  This should be invoked after defining a
-     * class.  </p>
+     * class.
      *
      * @param  c
      *         The <tt>Class</tt> object
@@ -1133,7 +1132,7 @@ public abstract class ClassLoader {
 
     /**
      * Finds the resource with the given name. Class loader implementations
-     * should override this method to specify where to find resources.  </p>
+     * should override this method to specify where to find resources.
      *
      * @param  name
      *         The resource name
@@ -1151,7 +1150,7 @@ public abstract class ClassLoader {
      * Returns an enumeration of {@link java.net.URL <tt>URL</tt>} objects
      * representing all the resources with the given name. Class loader
      * implementations should override this method to specify where to load
-     * resources from.  </p>
+     * resources from.
      *
      * @param  name
      *         The resource name
@@ -1169,14 +1168,16 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Registers the caller as parallel capable.</p>
+     * Registers the caller as parallel capable.
      * The registration succeeds if and only if all of the following
-     * conditions are met: <br>
-     * 1. no instance of the caller has been created</p>
-     * 2. all of the super classes (except class Object) of the caller are
-     * registered as parallel capable</p>
-     * Note that once a class loader is registered as parallel capable, there
-     * is no way to change it back. </p>
+     * conditions are met:
+     * <ol>
+     * <li> no instance of the caller has been created</li>
+     * <li> all of the super classes (except class Object) of the caller are
+     * registered as parallel capable</li>
+     * </ol>
+     * <p>Note that once a class loader is registered as parallel capable, there
+     * is no way to change it back.</p>
      *
      * @return  true if the caller is successfully registered as
      *          parallel capable and false if otherwise.
@@ -1193,7 +1194,7 @@ public abstract class ClassLoader {
     /**
      * Find a resource of the specified name from the search path used to load
      * classes.  This method locates the resource through the system class
-     * loader (see {@link #getSystemClassLoader()}).  </p>
+     * loader (see {@link #getSystemClassLoader()}).
      *
      * @param  name
      *         The resource name
@@ -1300,7 +1301,7 @@ public abstract class ClassLoader {
     /**
      * Open for reading, a resource of the specified name from the search path
      * used to load classes.  This method locates the resource through the
-     * system class loader (see {@link #getSystemClassLoader()}).  </p>
+     * system class loader (see {@link #getSystemClassLoader()}).
      *
      * @param  name
      *         The resource name
@@ -1523,7 +1524,7 @@ public abstract class ClassLoader {
      * class loaders to define the packages for their classes. Packages must
      * be created before the class is defined, and package names must be
      * unique within a class loader and cannot be redefined or changed once
-     * created.  </p>
+     * created.
      *
      * @param  name
      *         The package name
@@ -1580,7 +1581,7 @@ public abstract class ClassLoader {
 
     /**
      * Returns a <tt>Package</tt> that has been defined by this class loader
-     * or any of its ancestors.  </p>
+     * or any of its ancestors.
      *
      * @param  name
      *         The package name
@@ -1617,7 +1618,7 @@ public abstract class ClassLoader {
 
     /**
      * Returns all of the <tt>Packages</tt> defined by this class loader and
-     * its ancestors.  </p>
+     * its ancestors.
      *
      * @return  The array of <tt>Package</tt> objects defined by this
      *          <tt>ClassLoader</tt>
@@ -1654,7 +1655,7 @@ public abstract class ClassLoader {
      * method to locate the native libraries that belong to classes loaded with
      * this class loader. If this method returns <tt>null</tt>, the VM
      * searches the library along the path specified as the
-     * "<tt>java.library.path</tt>" property.  </p>
+     * "<tt>java.library.path</tt>" property.
      *
      * @param  libname
      *         The library name
@@ -1974,7 +1975,7 @@ public abstract class ClassLoader {
      * in the future will have assertions enabled or disabled by default.
      * This setting may be overridden on a per-package or per-class basis by
      * invoking {@link #setPackageAssertionStatus(String, boolean)} or {@link
-     * #setClassAssertionStatus(String, boolean)}.  </p>
+     * #setClassAssertionStatus(String, boolean)}.
      *
      * @param  enabled
      *         <tt>true</tt> if classes loaded by this class loader will
@@ -2076,7 +2077,6 @@ public abstract class ClassLoader {
      * status settings associated with the class loader.  This method is
      * provided so that class loaders can be made to ignore any command line or
      * persistent assertion status settings and "start with a clean slate."
-     * </p>
      *
      * @since  1.4
      */

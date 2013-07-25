@@ -2,27 +2,25 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.signature;
-
-
-
-
 
 /**
  * Thrown by {@link com.sun.org.apache.xml.internal.security.signature.SignedInfo#verify()} when
@@ -34,97 +32,93 @@ package com.sun.org.apache.xml.internal.security.signature;
  */
 public class MissingResourceFailureException extends XMLSignatureException {
 
-   /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-   /** Field uninitializedReference */
-   Reference uninitializedReference = null;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-   /**
-    * MissingKeyResourceFailureException constructor.
-    * @param _msgID
-    * @param reference
-    * @see #getReference
-    */
-   public MissingResourceFailureException(String _msgID, Reference reference) {
+    /** Field uninitializedReference */
+    private Reference uninitializedReference = null;
 
-      super(_msgID);
+    /**
+     * MissingKeyResourceFailureException constructor.
+     * @param msgID
+     * @param reference
+     * @see #getReference
+     */
+    public MissingResourceFailureException(String msgID, Reference reference) {
+        super(msgID);
 
-      this.uninitializedReference = reference;
-   }
+        this.uninitializedReference = reference;
+    }
 
-   /**
-    * Constructor MissingResourceFailureException
-    *
-    * @param _msgID
-    * @param exArgs
-    * @param reference
-    * @see #getReference
-    */
-   public MissingResourceFailureException(String _msgID, Object exArgs[],
-                                          Reference reference) {
+    /**
+     * Constructor MissingResourceFailureException
+     *
+     * @param msgID
+     * @param exArgs
+     * @param reference
+     * @see #getReference
+     */
+    public MissingResourceFailureException(String msgID, Object exArgs[], Reference reference) {
+        super(msgID, exArgs);
 
-      super(_msgID, exArgs);
+        this.uninitializedReference = reference;
+    }
 
-      this.uninitializedReference = reference;
-   }
+    /**
+     * Constructor MissingResourceFailureException
+     *
+     * @param msgID
+     * @param originalException
+     * @param reference
+     * @see #getReference
+     */
+    public MissingResourceFailureException(
+        String msgID, Exception originalException, Reference reference
+    ) {
+        super(msgID, originalException);
 
-   /**
-    * Constructor MissingResourceFailureException
-    *
-    * @param _msgID
-    * @param _originalException
-    * @param reference
-    * @see #getReference
-    */
-   public MissingResourceFailureException(String _msgID,
-                                          Exception _originalException,
-                                          Reference reference) {
+        this.uninitializedReference = reference;
+    }
 
-      super(_msgID, _originalException);
+    /**
+     * Constructor MissingResourceFailureException
+     *
+     * @param msgID
+     * @param exArgs
+     * @param originalException
+     * @param reference
+     * @see #getReference
+     */
+    public MissingResourceFailureException(
+        String msgID, Object exArgs[], Exception originalException, Reference reference
+    ) {
+        super(msgID, exArgs, originalException);
 
-      this.uninitializedReference = reference;
-   }
+        this.uninitializedReference = reference;
+    }
 
-   /**
-    * Constructor MissingResourceFailureException
-    *
-    * @param _msgID
-    * @param exArgs
-    * @param _originalException
-    * @param reference
-    * @see #getReference
-    */
-   public MissingResourceFailureException(String _msgID, Object exArgs[],
-                                          Exception _originalException,
-                                          Reference reference) {
+    /**
+     * used to set the uninitialized {@link com.sun.org.apache.xml.internal.security.signature.Reference}
+     *
+     * @param reference the Reference object
+     * @see #getReference
+     */
+    public void setReference(Reference reference) {
+        this.uninitializedReference = reference;
+    }
 
-      super(_msgID, exArgs, _originalException);
-
-      this.uninitializedReference = reference;
-   }
-
-   /**
-    * used to set the uninitialized {@link com.sun.org.apache.xml.internal.security.signature.Reference}
-    *
-    * @param reference the Reference object
-    * @see #getReference
-    */
-   public void setReference(Reference reference) {
-      this.uninitializedReference = reference;
-   }
-
-   /**
-    * used to get the uninitialized {@link com.sun.org.apache.xml.internal.security.signature.Reference}
-    *
-    * This allows to supply the correct {@link com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput}
-    * to the {@link com.sun.org.apache.xml.internal.security.signature.Reference} to try again verification.
-    *
-    * @return the Reference object
-    * @see #setReference
-    */
-   public Reference getReference() {
-      return this.uninitializedReference;
-   }
+    /**
+     * used to get the uninitialized {@link com.sun.org.apache.xml.internal.security.signature.Reference}
+     *
+     * This allows to supply the correct {@link com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput}
+     * to the {@link com.sun.org.apache.xml.internal.security.signature.Reference} to try again verification.
+     *
+     * @return the Reference object
+     * @see #setReference
+     */
+    public Reference getReference() {
+        return this.uninitializedReference;
+    }
 }

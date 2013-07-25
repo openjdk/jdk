@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.AccessControlContext;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -185,10 +188,13 @@ public final class ServiceLoader<S>
     private static final String PREFIX = "META-INF/services/";
 
     // The class or interface representing the service being loaded
-    private Class<S> service;
+    private final Class<S> service;
 
     // The class loader used to locate, load, and instantiate providers
-    private ClassLoader loader;
+    private final ClassLoader loader;
+
+    // The access control context taken when the ServiceLoader is created
+    private final AccessControlContext acc;
 
     // Cached providers, in instantiation order
     private LinkedHashMap<String,S> providers = new LinkedHashMap<>();
@@ -215,6 +221,7 @@ public final class ServiceLoader<S>
     private ServiceLoader(Class<S> svc, ClassLoader cl) {
         service = Objects.requireNonNull(svc, "Service interface cannot be null");
         loader = (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
+        acc = (System.getSecurityManager() != null) ? AccessController.getContext() : null;
         reload();
     }
 
@@ -327,7 +334,7 @@ public final class ServiceLoader<S>
             this.loader = loader;
         }
 
-        public boolean hasNext() {
+        private boolean hasNextService() {
             if (nextName != null) {
                 return true;
             }
@@ -352,10 +359,9 @@ public final class ServiceLoader<S>
             return true;
         }
 
-        public S next() {
-            if (!hasNext()) {
+        private S nextService() {
+            if (!hasNextService())
                 throw new NoSuchElementException();
-            }
             String cn = nextName;
             nextName = null;
             Class<?> c = null;
@@ -379,6 +385,28 @@ public final class ServiceLoader<S>
                      x);
             }
             throw new Error();          // This cannot happen
+        }
+
+        public boolean hasNext() {
+            if (acc == null) {
+                return hasNextService();
+            } else {
+                PrivilegedAction<Boolean> action = new PrivilegedAction<Boolean>() {
+                    public Boolean run() { return hasNextService(); }
+                };
+                return AccessController.doPrivileged(action, acc);
+            }
+        }
+
+        public S next() {
+            if (acc == null) {
+                return nextService();
+            } else {
+                PrivilegedAction<S> action = new PrivilegedAction<S>() {
+                    public S run() { return nextService(); }
+                };
+                return AccessController.doPrivileged(action, acc);
+            }
         }
 
         public void remove() {

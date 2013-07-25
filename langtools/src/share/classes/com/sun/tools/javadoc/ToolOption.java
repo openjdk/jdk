@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,13 @@ public enum ToolOption {
     },
 
     CLASSPATH("-classpath", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setCompilerOpt(opt, arg);
+        }
+    },
+
+    CP("-cp", true) {
         @Override
         public void process(Helper helper, String arg) {
             helper.setCompilerOpt(opt, arg);
