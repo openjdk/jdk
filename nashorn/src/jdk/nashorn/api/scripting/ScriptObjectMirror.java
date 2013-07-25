@@ -599,12 +599,20 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     // package-privates below this.
 
     ScriptObjectMirror(final ScriptObject sobj, final ScriptObject global) {
+        assert sobj != null : "ScriptObjectMirror on null!";
+        assert global != null : "null global for ScriptObjectMirror!";
+
         this.sobj = sobj;
         this.global = global;
     }
 
+    // accessors for script engine
     ScriptObject getScriptObject() {
         return sobj;
+    }
+
+    ScriptObject getHomeGlobal() {
+        return global;
     }
 
     static Object translateUndefined(Object obj) {
