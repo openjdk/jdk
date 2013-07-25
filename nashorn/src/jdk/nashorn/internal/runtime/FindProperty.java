@@ -89,7 +89,7 @@ public final class FindProperty {
         MethodHandle setter = property.getSetter(type, getOwner().getMap());
         if (property instanceof UserAccessorProperty) {
             final UserAccessorProperty uc = (UserAccessorProperty) property;
-            setter = MH.insertArguments(setter, 0, (isInherited() ? getOwner() : null),
+            setter = MH.insertArguments(setter, 0, isInherited() ? getOwner() : null,
                     uc.getSetterSlot(), strict? property.getKey() : null);
         }
 
@@ -109,7 +109,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getGetterReceiver() {
-        return property != null && property.hasGetterFunction() ? self : prototype;
+        return property != null && property.hasGetterFunction(prototype) ? self : prototype;
     }
 
    /**
@@ -117,7 +117,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getSetterReceiver() {
-        return property != null && property.hasSetterFunction() ? self : prototype;
+        return property != null && property.hasSetterFunction(prototype) ? self : prototype;
     }
 
     /**
@@ -151,6 +151,25 @@ public final class FindProperty {
      */
     public boolean isScope() {
         return prototype.isScope();
+    }
+
+    /**
+     * Get the property value from self as object.
+     *
+     * @return the property value
+     */
+    public Object getObjectValue() {
+        return property.getObjectValue(getGetterReceiver(), getOwner());
+    }
+
+    /**
+     * Set the property value in self.
+     *
+     * @param value the new value
+     * @param strict strict flag
+     */
+    public void setObjectValue(final Object value, final boolean strict) {
+        property.setObjectValue(getSetterReceiver(), getOwner(), value, strict);
     }
 
 }

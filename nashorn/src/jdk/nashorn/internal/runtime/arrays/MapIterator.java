@@ -49,8 +49,8 @@ class MapIterator extends ArrayLikeIterator<Object> {
     }
 
     @Override
-    public int getLength() {
-        return (int) length;
+    public long getLength() {
+        return length;
     }
 
     @Override

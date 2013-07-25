@@ -195,7 +195,7 @@ public class MutableCallSite extends CallSite {
      * processed before the method returns abnormally.
      * Which elements these are (if any) is implementation-dependent.
      *
-     * <h3>Java Memory Model details</h3>
+     * <h1>Java Memory Model details</h1>
      * In terms of the Java Memory Model, this operation performs a synchronization
      * action which is comparable in effect to the writing of a volatile variable
      * by the current thread, and an eventual volatile read by every other thread

@@ -64,7 +64,6 @@ public class DistinctOpTest extends OpTestCase {
 
         node = withData(data).
                 stream(s -> s.unordered().distinct()).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
                 exercise();
         assertUnique(node);
 
@@ -87,8 +86,8 @@ public class DistinctOpTest extends OpTestCase {
     static class SortedTestData<T> extends TestData.AbstractTestData.RefTestData<T, List<T>> {
         SortedTestData(List<T> coll) {
             super("SortedTestData", coll,
-                  c -> StreamSupport.stream(Spliterators.spliterator(c.toArray(), Spliterator.ORDERED | Spliterator.SORTED)),
-                  c -> StreamSupport.parallelStream(Spliterators.spliterator(c.toArray(), Spliterator.ORDERED | Spliterator.SORTED)),
+                  c -> StreamSupport.stream(Spliterators.spliterator(c.toArray(), Spliterator.ORDERED | Spliterator.SORTED), false),
+                  c -> StreamSupport.stream(Spliterators.spliterator(c.toArray(), Spliterator.ORDERED | Spliterator.SORTED), true),
                   c -> Spliterators.spliterator(c.toArray(), Spliterator.ORDERED | Spliterator.SORTED),
                   List::size);
         }

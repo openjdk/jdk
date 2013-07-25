@@ -243,6 +243,147 @@ public:
   bool reading() const { return false; }
 };
 
+// This is for dumping detailed statistics for the allocations
+// in the shared spaces.
+class DumpAllocClosure : public Metaspace::AllocRecordClosure {
+public:
+
+  // Here's poor man's enum inheritance
+#define SHAREDSPACE_OBJ_TYPES_DO(f) \
+  METASPACE_OBJ_TYPES_DO(f) \
+  f(SymbolHashentry) \
+  f(SymbolBuckets) \
+  f(Other)
+
+#define SHAREDSPACE_OBJ_TYPE_DECLARE(name) name ## Type,
+#define SHAREDSPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
+
+  enum Type {
+    // Types are MetaspaceObj::ClassType, MetaspaceObj::SymbolType, etc
+    SHAREDSPACE_OBJ_TYPES_DO(SHAREDSPACE_OBJ_TYPE_DECLARE)
+    _number_of_types
+  };
+
+  static const char * type_name(Type type) {
+    switch(type) {
+    SHAREDSPACE_OBJ_TYPES_DO(SHAREDSPACE_OBJ_TYPE_NAME_CASE)
+    default:
+      ShouldNotReachHere();
+      return NULL;
+    }
+  }
+
+public:
+  enum {
+    RO = 0,
+    RW = 1
+  };
+
+  int _counts[2][_number_of_types];
+  int _bytes [2][_number_of_types];
+  int _which;
+
+  DumpAllocClosure() {
+    memset(_counts, 0, sizeof(_counts));
+    memset(_bytes,  0, sizeof(_bytes));
+  };
+
+  void iterate_metaspace(Metaspace* space, int which) {
+    assert(which == RO || which == RW, "sanity");
+    _which = which;
+    space->iterate(this);
+  }
+
+  virtual void doit(address ptr, MetaspaceObj::Type type, int byte_size) {
+    assert(int(type) >= 0 && type < MetaspaceObj::_number_of_types, "sanity");
+    _counts[_which][type] ++;
+    _bytes [_which][type] += byte_size;
+  }
+
+  void dump_stats(int ro_all, int rw_all, int md_all, int mc_all);
+};
+
+void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all) {
+  rw_all += (md_all + mc_all); // md and mc are all mapped Read/Write
+  int other_bytes = md_all + mc_all;
+
+  // Calculate size of data that was not allocated by Metaspace::allocate()
+  int symbol_count = _counts[RO][MetaspaceObj::SymbolType];
+  int symhash_bytes = symbol_count * sizeof (HashtableEntry<Symbol*, mtSymbol>);
+  int symbuck_count = SymbolTable::the_table()->table_size();
+  int symbuck_bytes = symbuck_count * sizeof(HashtableBucket<mtSymbol>);
+
+  _counts[RW][SymbolHashentryType] = symbol_count;
+  _bytes [RW][SymbolHashentryType] = symhash_bytes;
+  other_bytes -= symhash_bytes;
+
+  _counts[RW][SymbolBucketsType] = symbuck_count;
+  _bytes [RW][SymbolBucketsType] = symbuck_bytes;
+  other_bytes -= symbuck_bytes;
+
+  // TODO: count things like dictionary, vtable, etc
+  _bytes[RW][OtherType] =  other_bytes;
+
+  // prevent divide-by-zero
+  if (ro_all < 1) {
+    ro_all = 1;
+  }
+  if (rw_all < 1) {
+    rw_all = 1;
+  }
+
+  int all_ro_count = 0;
+  int all_ro_bytes = 0;
+  int all_rw_count = 0;
+  int all_rw_bytes = 0;
+
+  const char *fmt = "%-20s: %8d %10d %5.1f | %8d %10d %5.1f | %8d %10d %5.1f";
+  const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
+  const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
+
+  tty->print_cr("Detailed metadata info (rw includes md and mc):");
+  tty->print_cr(hdr);
+  tty->print_cr(sep);
+  for (int type = 0; type < int(_number_of_types); type ++) {
+    const char *name = type_name((Type)type);
+    int ro_count = _counts[RO][type];
+    int ro_bytes = _bytes [RO][type];
+    int rw_count = _counts[RW][type];
+    int rw_bytes = _bytes [RW][type];
+    int count = ro_count + rw_count;
+    int bytes = ro_bytes + rw_bytes;
+
+    double ro_perc = 100.0 * double(ro_bytes) / double(ro_all);
+    double rw_perc = 100.0 * double(rw_bytes) / double(rw_all);
+    double perc    = 100.0 * double(bytes)    / double(ro_all + rw_all);
+
+    tty->print_cr(fmt, name,
+                  ro_count, ro_bytes, ro_perc,
+                  rw_count, rw_bytes, rw_perc,
+                  count, bytes, perc);
+
+    all_ro_count += ro_count;
+    all_ro_bytes += ro_bytes;
+    all_rw_count += rw_count;
+    all_rw_bytes += rw_bytes;
+  }
+
+  int all_count = all_ro_count + all_rw_count;
+  int all_bytes = all_ro_bytes + all_rw_bytes;
+
+  double all_ro_perc = 100.0 * double(all_ro_bytes) / double(ro_all);
+  double all_rw_perc = 100.0 * double(all_rw_bytes) / double(rw_all);
+  double all_perc    = 100.0 * double(all_bytes)    / double(ro_all + rw_all);
+
+  tty->print_cr(sep);
+  tty->print_cr(fmt, "Total",
+                all_ro_count, all_ro_bytes, all_ro_perc,
+                all_rw_count, all_rw_bytes, all_rw_perc,
+                all_count, all_bytes, all_perc);
+
+  assert(all_ro_bytes == ro_all, "everything should have been counted");
+  assert(all_rw_bytes == rw_all, "everything should have been counted");
+}
 
 // Populate the shared space.
 
@@ -454,6 +595,14 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->close();
 
   memmove(vtbl_list, saved_vtbl, vtbl_list_size * sizeof(void*));
+
+  if (PrintSharedSpaces) {
+    DumpAllocClosure dac;
+    dac.iterate_metaspace(_loader_data->ro_metaspace(), DumpAllocClosure::RO);
+    dac.iterate_metaspace(_loader_data->rw_metaspace(), DumpAllocClosure::RW);
+
+    dac.dump_stats(int(ro_bytes), int(rw_bytes), int(md_bytes), int(mc_bytes));
+  }
 }
 
 static void link_shared_classes(Klass* obj, TRAPS) {
@@ -677,35 +826,15 @@ public:
   bool reading() const { return true; }
 };
 
-
-// Save bounds of shared spaces mapped in.
-static char* _ro_base = NULL;
-static char* _rw_base = NULL;
-static char* _md_base = NULL;
-static char* _mc_base = NULL;
-
 // Return true if given address is in the mapped shared space.
 bool MetaspaceShared::is_in_shared_space(const void* p) {
-  if (_ro_base == NULL || _rw_base == NULL) {
-    return false;
-  } else {
-    return ((p >= _ro_base && p < (_ro_base + SharedReadOnlySize)) ||
-            (p >= _rw_base && p < (_rw_base + SharedReadWriteSize)));
-  }
+  return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_space(p);
 }
 
 void MetaspaceShared::print_shared_spaces() {
-  gclog_or_tty->print_cr("Shared Spaces:");
-  gclog_or_tty->print("  read-only " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _ro_base, _ro_base + SharedReadOnlySize);
-  gclog_or_tty->print("  read-write " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _rw_base, _rw_base + SharedReadWriteSize);
-  gclog_or_tty->cr();
-  gclog_or_tty->print("  misc-data " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _md_base, _md_base + SharedMiscDataSize);
-  gclog_or_tty->print("  misc-code " INTPTR_FORMAT "-" INTPTR_FORMAT,
-    _mc_base, _mc_base + SharedMiscCodeSize);
-  gclog_or_tty->cr();
+  if (UseSharedSpaces) {
+    FileMapInfo::current_info()->print_shared_spaces();
+  }
 }
 
 
@@ -724,6 +853,11 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 #endif
 
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
+
+  char* _ro_base = NULL;
+  char* _rw_base = NULL;
+  char* _md_base = NULL;
+  char* _mc_base = NULL;
 
   // Map each shared region
   if ((_ro_base = mapinfo->map_region(ro)) != NULL &&

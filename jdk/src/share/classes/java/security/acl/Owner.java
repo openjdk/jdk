@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.security.Principal;
 /**
  * Interface for managing owners of Access Control Lists (ACLs) or ACL
  * configurations. (Note that the Acl interface in the
- * <code> java.security.acl </code> package extends this Owner
+ * {@code  java.security.acl} package extends this Owner
  * interface.) The initial owner Principal should be specified as an
  * argument to the constructor of the class implementing this interface.
  *

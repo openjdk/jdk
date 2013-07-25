@@ -258,7 +258,7 @@ public class FailoverToCRL {
         } catch (CertPathValidatorException cpve) {
             if (cpve.getReason() != BasicReason.REVOKED) {
                 throw new Exception(
-                    "unexpect exception, should be a REVOKED CPVE", cpve);
+                    "unexpected exception, should be a REVOKED CPVE", cpve);
             }
         }
     }

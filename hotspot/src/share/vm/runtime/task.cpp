@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,11 @@ PeriodicTask::~PeriodicTask() {
   disenroll();
 }
 
+/* enroll could be called from a JavaThread, so we have to check for
+ * safepoint when taking the lock to avoid deadlocking */
 void PeriodicTask::enroll() {
   MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ?
-                     NULL : PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+                     NULL : PeriodicTask_lock);
 
   if (_num_tasks == PeriodicTask::max_tasks) {
     fatal("Overflow in PeriodicTask table");
@@ -131,9 +133,11 @@ void PeriodicTask::enroll() {
   }
 }
 
+/* disenroll could be called from a JavaThread, so we have to check for
+ * safepoint when taking the lock to avoid deadlocking */
 void PeriodicTask::disenroll() {
   MutexLockerEx ml(PeriodicTask_lock->owned_by_self() ?
-                     NULL : PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
+                     NULL : PeriodicTask_lock);
 
   int index;
   for(index = 0; index < _num_tasks && _tasks[index] != this; index++)

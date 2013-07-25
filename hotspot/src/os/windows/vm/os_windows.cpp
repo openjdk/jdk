@@ -813,15 +813,21 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-// For now, we say that Windows does not support vtime.  I have no idea
-// whether it can actually be made to (DLD, 9/13/05).
-
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime() { return false; }
 bool os::vtime_enabled() { return false; }
+
 double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
+    // the resolution of windows_to_java_time() should be sufficient (ms)
+    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
+  } else {
+    return elapsedTime();
+  }
 }
 
 jlong os::javaTimeMillis() {
@@ -944,6 +950,8 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   MINIDUMP_TYPE dumpType;
   static const char* cwd;
 
+// Default is to always create dump for debug builds, on product builds only dump on server versions of Windows.
+#ifndef ASSERT
   // If running on a client version of Windows and user has not explicitly enabled dumping
   if (!os::win32::is_windows_server() && !CreateMinidumpOnCrash) {
     VMError::report_coredump_status("Minidumps are not enabled by default on client versions of Windows", false);
@@ -953,6 +961,12 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     VMError::report_coredump_status("Minidump has been disabled from the command line", false);
     return;
   }
+#else
+  if (!FLAG_IS_DEFAULT(CreateMinidumpOnCrash) && !CreateMinidumpOnCrash) {
+    VMError::report_coredump_status("Minidump has been disabled from the command line", false);
+    return;
+  }
+#endif
 
   dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
 
@@ -1004,7 +1018,21 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
   if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
       _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
-    VMError::report_coredump_status("Call to MiniDumpWriteDump() failed", false);
+        DWORD error = GetLastError();
+        LPTSTR msgbuf = NULL;
+
+        if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                      FORMAT_MESSAGE_FROM_SYSTEM |
+                      FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, error, 0, (LPTSTR)&msgbuf, 0, NULL) != 0) {
+
+          jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x: %s)", error, msgbuf);
+          LocalFree(msgbuf);
+        } else {
+          // Call to FormatMessage failed, just include the result from GetLastError
+          jio_snprintf(buffer, bufferSize, "Call to MiniDumpWriteDump() failed (Error 0x%x)", error);
+        }
+        VMError::report_coredump_status(buffer, false);
   } else {
     VMError::report_coredump_status(buffer, true);
   }
@@ -2496,7 +2524,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                   addr = (address)((uintptr_t)addr &
                          (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
                   os::commit_memory((char *)addr, thread->stack_base() - addr,
-                                    false );
+                                    !ExecMem);
                   return EXCEPTION_CONTINUE_EXECUTION;
           }
           else
@@ -2847,7 +2875,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                 PAGE_READWRITE);
   // If reservation failed, return NULL
   if (p_buf == NULL) return NULL;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, mtNone, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -2913,7 +2941,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-          bytes_to_release, CALLER_PC);
+          bytes_to_release, mtNone, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -2933,9 +2961,10 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   address pc = CALLER_PC;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, pc);
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_commit((address)p_buf, bytes, pc);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, mtNone, pc);
+  } else {
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, mtNone, pc);
   }
 
   // made it this far, success
@@ -3126,8 +3155,7 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
     if (res != NULL) {
       address pc = CALLER_PC;
-      MemTracker::record_virtual_memory_reserve((address)res, bytes, pc);
-      MemTracker::record_virtual_memory_commit((address)res, bytes, pc);
+      MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, mtNone, pc);
     }
 
     return res;
@@ -3136,12 +3164,19 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
 bool os::release_memory_special(char* base, size_t bytes) {
   assert(base != NULL, "Sanity check");
-  // Memory allocated via reserve_memory_special() is committed
-  MemTracker::record_virtual_memory_uncommit((address)base, bytes);
   return release_memory(base, bytes);
 }
 
 void os::print_statistics() {
+}
+
+static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
+  int err = os::get_last_error();
+  char buf[256];
+  size_t buf_len = os::lasterror(buf, sizeof(buf));
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (DOS error/errno=%d)", addr, bytes,
+          exec, buf_len != 0 ? buf : "<no_error_string>", err);
 }
 
 bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
@@ -3158,11 +3193,17 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   // is always within a reserve covered by a single VirtualAlloc
   // in that case we can just do a single commit for the requested size
   if (!UseNUMAInterleaving) {
-    if (VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) return false;
+    if (VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+      NOT_PRODUCT(warn_fail_commit_memory(addr, bytes, exec);)
+      return false;
+    }
     if (exec) {
       DWORD oldprot;
       // Windows doc says to use VirtualProtect to get execute permissions
-      if (!VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &oldprot)) return false;
+      if (!VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &oldprot)) {
+        NOT_PRODUCT(warn_fail_commit_memory(addr, bytes, exec);)
+        return false;
+      }
     }
     return true;
   } else {
@@ -3177,12 +3218,20 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
       MEMORY_BASIC_INFORMATION alloc_info;
       VirtualQuery(next_alloc_addr, &alloc_info, sizeof(alloc_info));
       size_t bytes_to_rq = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
-      if (VirtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT, PAGE_READWRITE) == NULL)
+      if (VirtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
+                       PAGE_READWRITE) == NULL) {
+        NOT_PRODUCT(warn_fail_commit_memory(next_alloc_addr, bytes_to_rq,
+                                            exec);)
         return false;
+      }
       if (exec) {
         DWORD oldprot;
-        if (!VirtualProtect(next_alloc_addr, bytes_to_rq, PAGE_EXECUTE_READWRITE, &oldprot))
+        if (!VirtualProtect(next_alloc_addr, bytes_to_rq,
+                            PAGE_EXECUTE_READWRITE, &oldprot)) {
+          NOT_PRODUCT(warn_fail_commit_memory(next_alloc_addr, bytes_to_rq,
+                                              exec);)
           return false;
+        }
       }
       bytes_remaining -= bytes_to_rq;
       next_alloc_addr += bytes_to_rq;
@@ -3194,7 +3243,24 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
 
 bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
-  return commit_memory(addr, size, exec);
+  // alignment_hint is ignored on this OS
+  return pd_commit_memory(addr, size, exec);
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
+                                  const char* mesg) {
+  assert(mesg != NULL, "mesg must be specified");
+  if (!pd_commit_memory(addr, size, exec)) {
+    warn_fail_commit_memory(addr, size, exec);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+  }
+}
+
+void os::pd_commit_memory_or_exit(char* addr, size_t size,
+                                  size_t alignment_hint, bool exec,
+                                  const char* mesg) {
+  // alignment_hint is ignored on this OS
+  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t bytes) {
@@ -3212,7 +3278,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size);
+  return os::commit_memory(addr, size, !ExecMem);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
@@ -3236,8 +3302,9 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
   // Strange enough, but on Win32 one can change protection only for committed
   // memory, not a big deal anyway, as bytes less or equal than 64K
-  if (!is_committed && !commit_memory(addr, bytes, prot == MEM_PROT_RWX)) {
-    fatal("cannot commit protection page");
+  if (!is_committed) {
+    commit_memory_or_exit(addr, bytes, prot == MEM_PROT_RWX,
+                          "cannot commit protection page");
   }
   // One cannot use os::guard_memory() here, as on Win32 guard page
   // have different (one-shot) semantics, from MSDN on PAGE_GUARD:
@@ -5018,6 +5085,71 @@ int os::get_sock_opt(int fd, int level, int optname,
 int os::set_sock_opt(int fd, int level, int optname,
                      const char* optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
+}
+
+// WINDOWS CONTEXT Flags for THREAD_SAMPLING
+#if defined(IA32)
+#  define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT | CONTEXT_EXTENDED_REGISTERS)
+#elif defined (AMD64)
+#  define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
+#endif
+
+// returns true if thread could be suspended,
+// false otherwise
+static bool do_suspend(HANDLE* h) {
+  if (h != NULL) {
+    if (SuspendThread(*h) != ~0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// resume the thread
+// calling resume on an active thread is a no-op
+static void do_resume(HANDLE* h) {
+  if (h != NULL) {
+    ResumeThread(*h);
+  }
+}
+
+// retrieve a suspend/resume context capable handle
+// from the tid. Caller validates handle return value.
+void get_thread_handle_for_extended_context(HANDLE* h, OSThread::thread_id_t tid) {
+  if (h != NULL) {
+    *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
+  }
+}
+
+//
+// Thread sampling implementation
+//
+void os::SuspendedThreadTask::internal_do_task() {
+  CONTEXT    ctxt;
+  HANDLE     h = NULL;
+
+  // get context capable handle for thread
+  get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
+
+  // sanity
+  if (h == NULL || h == INVALID_HANDLE_VALUE) {
+    return;
+  }
+
+  // suspend the thread
+  if (do_suspend(&h)) {
+    ctxt.ContextFlags = sampling_context_flags;
+    // get thread context
+    GetThreadContext(h, &ctxt);
+    SuspendedThreadTaskContext context(_thread, &ctxt);
+    // pass context to Thread Sampling impl
+    do_task(context);
+    // resume thread
+    do_resume(&h);
+  }
+
+  // close handle
+  CloseHandle(h);
 }
 
 

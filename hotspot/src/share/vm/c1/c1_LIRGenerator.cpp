@@ -2232,6 +2232,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
       // We still need to continue with the checks.
       if (src.is_constant()) {
         ciObject* src_con = src.get_jobject_constant();
+        guarantee(src_con != NULL, "no source constant");
 
         if (src_con->is_null_object()) {
           // The constant src object is null - We can skip
@@ -2991,6 +2992,12 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_Reference_get:
     do_Reference_get(x);
+    break;
+
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+    do_update_CRC32(x);
     break;
 
   default: ShouldNotReachHere(); break;

@@ -108,7 +108,11 @@ define add_native_source
         # setting -showIncludes, all included files are printed. These are filtered out and 
         # parsed into make dependences.
         ifeq ($(COMPILER_TYPE),CL)
-		$$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2 | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:"
+		($$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
+			$(CC_OUT_OPTION)$$($1_$2_OBJ) $2 ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
+			| $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:" \
+			&& exit `cat $$($1_$2_DEP).exitvalue`
+		$(RM) $$($1_$2_DEP).exitvalue
 		($(ECHO) $$@: \\ \
 		 && $(SED) -e '/^Note: including file:/!d' \
 			-e 's|Note: including file: *||' \
@@ -147,9 +151,9 @@ define SetupNativeCompilation
     #    CC the compiler to use, default is $(CC)
     #    LDEXE the linker to use for linking executables, default is $(LDEXE)
     #    OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
-    $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
-    $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25))
-    $(if $(26),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+    $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+    $(call LogSetupMacroEntry,SetupNativeCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15),$(16),$(17),$(18),$(19),$(20),$(21),$(22),$(23),$(24),$(25),$(26))
+    $(if $(27),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
 
     ifneq (,$$($1_BIN))
         $$(error BIN has been replaced with OBJECT_DIR)
@@ -567,6 +571,12 @@ define SetupNativeCompilation
         ifneq (,$$($1_GEN_MANIFEST))
 		$(MT) -nologo -manifest $$($1_GEN_MANIFEST) -outputresource:$$@;#1
         endif
-
+        # This only works if the openjdk_codesign identity is present on the system. Let
+        # silently fail otherwise.
+        ifneq (,$(CODESIGN))
+            ifneq (,$$($1_CODESIGN))
+		$(CODESIGN) -s openjdk_codesign $$@
+            endif
+        endif
     endif
 endef

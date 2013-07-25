@@ -377,7 +377,7 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
             Object arg = args[i];
             mark(arg, true);
         }
-        mark(stm.getTarget(), false);
+        mark(stm.getTarget(), stm instanceof Expression);
     }
 
 
@@ -487,6 +487,12 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
         }
         indentation--;
 
+        Statement statement = getMissedStatement();
+        while (statement != null) {
+            outputStatement(statement, this, false);
+            statement = getMissedStatement();
+        }
+
         try {
             out.flush();
         }
@@ -501,6 +507,17 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
         nameGenerator.clear();
         valueToExpression.clear();
         targetToStatementList.clear();
+    }
+
+    Statement getMissedStatement() {
+        for (List<Statement> statements : this.targetToStatementList.values()) {
+            for (int i = 0; i < statements.size(); i++) {
+                if (Statement.class == statements.get(i).getClass()) {
+                    return statements.remove(i);
+                }
+            }
+        }
+        return null;
     }
 
 
@@ -597,7 +614,7 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
                                                 "methodName") + " should not be null");
             }
 
-            if (target instanceof Field && methodName.equals("get")) {
+            if (isArgument && target instanceof Field && methodName.equals("get")) {
                 Field f = (Field)target;
                 writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
                         " field=" + quote(f.getName()) + "/>");

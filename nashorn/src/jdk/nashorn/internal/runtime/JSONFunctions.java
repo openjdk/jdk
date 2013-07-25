@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
-import java.util.List;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -35,6 +34,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.parser.JSONParser;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -64,13 +64,9 @@ public final class JSONFunctions {
      */
     public static Object parse(final Object text, final Object reviver) {
         final String     str     = JSType.toString(text);
-        final Context    context = Context.getContextTrusted();
         final JSONParser parser  = new JSONParser(
                 new Source("<json>", str),
-                new Context.ThrowErrorManager(),
-                (context != null) ?
-                    context.getEnv()._strict :
-                    false);
+                new Context.ThrowErrorManager());
 
         Node node;
 
@@ -94,7 +90,7 @@ public final class JSONFunctions {
         if (reviver instanceof ScriptFunction) {
             assert global instanceof GlobalObject;
             final ScriptObject root = ((GlobalObject)global).newObject();
-            root.set("", unfiltered, root.isStrictContext());
+            root.addOwnProperty("", Property.WRITABLE_ENUMERABLE_CONFIGURABLE, unfiltered);
             return walk(root, "", (ScriptFunction)reviver);
         }
         return unfiltered;
@@ -105,7 +101,6 @@ public final class JSONFunctions {
         final Object val = holder.get(name);
         if (val instanceof ScriptObject) {
             final ScriptObject     valueObj = (ScriptObject)val;
-            final boolean          strict   = valueObj.isStrictContext();
             final Iterator<String> iter     = valueObj.propertyIterator();
 
             while (iter.hasNext()) {
@@ -113,9 +108,9 @@ public final class JSONFunctions {
                 final Object newElement = walk(valueObj, key, reviver);
 
                 if (newElement == ScriptRuntime.UNDEFINED) {
-                    valueObj.delete(key, strict);
+                    valueObj.delete(key, false);
                 } else {
-                    valueObj.set(key, newElement, strict);
+                    setPropertyValue(valueObj, key, newElement, false);
                 }
             }
         }
@@ -168,14 +163,13 @@ public final class JSONFunctions {
         } else if (node instanceof ObjectNode) {
             final ObjectNode   objNode  = (ObjectNode) node;
             final ScriptObject object   = ((GlobalObject)global).newObject();
-            final boolean      strict   = global.isStrictContext();
-            final List<Node>   elements = objNode.getElements();
 
-            for (final Node elem : elements) {
-                final PropertyNode pNode     = (PropertyNode) elem;
+            for (final PropertyNode pNode: objNode.getElements()) {
                 final Node         valueNode = pNode.getValue();
 
-                object.set(pNode.getKeyName(), convertNode(global, valueNode), strict);
+                final String name = pNode.getKeyName();
+                final Object value = convertNode(global, valueNode);
+                setPropertyValue(object, name, value, false);
             }
 
             return object;
@@ -185,6 +179,21 @@ public final class JSONFunctions {
             return -((LiteralNode<?>)unaryNode.rhs()).getNumber();
         } else {
             return null;
+        }
+    }
+
+    // add a new property if does not exist already, or else set old property
+    private static void setPropertyValue(final ScriptObject sobj, final String name, final Object value, final boolean strict) {
+        final int index = ArrayIndex.getArrayIndex(name);
+        if (ArrayIndex.isValidArrayIndex(index)) {
+            // array index key
+            sobj.defineOwnProperty(index, value);
+        } else if (sobj.getMap().findProperty(name) != null) {
+            // pre-existing non-inherited property, call set
+            sobj.set(name, value, strict);
+        } else {
+            // add new property
+            sobj.addOwnProperty(name, Property.WRITABLE_ENUMERABLE_CONFIGURABLE, value);
         }
     }
 

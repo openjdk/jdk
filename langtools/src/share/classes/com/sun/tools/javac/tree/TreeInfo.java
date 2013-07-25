@@ -74,8 +74,11 @@ public class TreeInfo {
         context.put(treeInfoKey, this);
 
         Names names = Names.instance(context);
-        setOpname(POS, "+", names);
-        setOpname(NEG, names.hyphen);
+        /*  Internally we use +++, --- for unary +, - to reduce +, - operators
+         *  overloading
+         */
+        setOpname(POS, "+++", names);
+        setOpname(NEG, "---", names);
         setOpname(NOT, "!", names);
         setOpname(COMPL, "~", names);
         setOpname(PREINC, "++", names);
@@ -1131,6 +1134,14 @@ public class TreeInfo {
 
     private static class TypeAnnotationFinder extends TreeScanner {
         public boolean foundTypeAnno = false;
+
+        @Override
+        public void scan(JCTree tree) {
+            if (foundTypeAnno || tree == null)
+                return;
+            super.scan(tree);
+        }
+
         public void visitAnnotation(JCAnnotation tree) {
             foundTypeAnno = foundTypeAnno || tree.hasTag(TYPE_ANNOTATION);
         }

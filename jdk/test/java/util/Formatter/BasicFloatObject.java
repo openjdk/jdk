@@ -1139,6 +1139,15 @@ public class BasicFloatObject extends Basic {
 
 
 
+
+
+
+
+
+
+
+
+
         //---------------------------------------------------------------------
         // %g
         //
@@ -1167,6 +1176,13 @@ public class BasicFloatObject extends Basic {
         test("%.0g", "1e+05", create(100000.0));
         test("%.3G", "1.00E-05", recip(create(100000.0)));
         test("%.3G", "-1.00E-05", recip(create(-100000.0)));
+
+        test("%.1g", "-0", -0.0);
+        test("%3.0g", " -0", -0.0);
+        test("%.1g", "0", 0.0);
+        test("%3.0g", "  0", 0.0);
+        test("%.1g", "0", +0.0);
+        test("%3.0g", "  0", +0.0);
 
         test("%3.0g", "1e-06", 0.000001);
         test("%3.0g", "1e-05", 0.00001);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public interface ScriptEngineFactory {
      * identify the <code>ScriptEngine</code> by the <code>ScriptEngineManager</code>.
      * For instance, an implementation based on the Mozilla Rhino Javascript engine might
      * return list containing {&quot;javascript&quot;, &quot;rhino&quot;}.
+     * @return an immutable list of short names
      */
     public List<String> getNames();
 
@@ -195,18 +196,17 @@ public interface ScriptEngineFactory {
 
 
     /**
-     * Returns A valid scripting language executable progam with given statements.
+     * Returns a valid scripting language executable progam with given statements.
      * For instance an implementation for a PHP engine might be:
      * <p>
      * <pre>{@code
      * public String getProgram(String... statements) {
-     *      $retval = "<?\n";
+     *      String retval = "<?\n";
      *      int len = statements.length;
      *      for (int i = 0; i < len; i++) {
-     *          $retval += statements[i] + ";\n";
+     *          retval += statements[i] + ";\n";
      *      }
-     *      $retval += "?>";
-     *
+     *      return retval += "?>";
      * }
      * }</pre>
      *

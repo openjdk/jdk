@@ -28,7 +28,10 @@ package jdk.nashorn.internal.objects;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
+import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
@@ -37,7 +40,15 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  */
 @ScriptClass("Uint8Array")
 public final class NativeUint8Array extends ArrayBufferView {
-    private static final int BYTES_PER_ELEMENT = 1;
+    /**
+     * The size in bytes of each element in the array.
+     */
+    @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE, where = Where.CONSTRUCTOR)
+    public static final int BYTES_PER_ELEMENT = 1;
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {
         @Override
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteOffset, final int length) {

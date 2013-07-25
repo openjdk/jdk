@@ -25,10 +25,16 @@
 
 package jdk.nashorn.internal.runtime;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -65,6 +71,10 @@ import jdk.nashorn.internal.objects.annotations.Function;
  * </pre>
  */
 public final class NativeJavaPackage extends ScriptObject {
+    private static final MethodHandleFunctionality MH = MethodHandleFactory.getFunctionality();
+    private static final MethodHandle CLASS_NOT_FOUND = findOwnMH("classNotFound", Void.TYPE, NativeJavaPackage.class);
+    private static final MethodHandle TYPE_GUARD = Guards.getClassGuard(NativeJavaPackage.class);
+
     /** Full name of package (includes path.) */
     private final String name;
 
@@ -123,6 +133,30 @@ public final class NativeJavaPackage extends ScriptObject {
         return super.getDefaultValue(hint);
     }
 
+    @Override
+    protected GuardedInvocation findNewMethod(CallSiteDescriptor desc) {
+        return createClassNotFoundInvocation(desc);
+    }
+
+    @Override
+    protected GuardedInvocation findCallMethod(CallSiteDescriptor desc, LinkRequest request) {
+        return createClassNotFoundInvocation(desc);
+    }
+
+    private static GuardedInvocation createClassNotFoundInvocation(final CallSiteDescriptor desc) {
+        // If NativeJavaPackage is invoked either as a constructor or as a function, throw a ClassNotFoundException as
+        // we can assume the user attempted to instantiate a non-existent class.
+        final MethodType type = desc.getMethodType();
+        return new GuardedInvocation(
+                MH.dropArguments(CLASS_NOT_FOUND, 1, type.parameterList().subList(1, type.parameterCount())),
+                type.parameterType(0) == NativeJavaPackage.class ? null : TYPE_GUARD);
+    }
+
+    @SuppressWarnings("unused")
+    private static void classNotFound(final NativeJavaPackage pkg) throws ClassNotFoundException {
+        throw new ClassNotFoundException(pkg.name);
+    }
+
     /**
      * "No such property" call placeholder.
      *
@@ -165,7 +199,6 @@ public final class NativeJavaPackage extends ScriptObject {
         final String fullName     = name.isEmpty() ? propertyName : name + "." + propertyName;
 
         final Context context = getContext();
-        final boolean strict  = context._strict;
 
         Class<?> javaClass = null;
         try {
@@ -175,9 +208,9 @@ public final class NativeJavaPackage extends ScriptObject {
         }
 
         if (javaClass == null) {
-            set(propertyName, new NativeJavaPackage(fullName, getProto()), strict);
+            set(propertyName, new NativeJavaPackage(fullName, getProto()), false);
         } else {
-            set(propertyName, StaticClass.forClass(javaClass), strict);
+            set(propertyName, StaticClass.forClass(javaClass), false);
         }
 
         return super.lookup(desc, request);
@@ -188,4 +221,7 @@ public final class NativeJavaPackage extends ScriptObject {
         return noSuchProperty(desc, request);
     }
 
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), NativeJavaPackage.class, name, MH.type(rtype, types));
+    }
 }

@@ -75,7 +75,23 @@ public class AccessorProperty extends Property {
 
     private static final MethodType[] ACCESSOR_GETTER_TYPES = new MethodType[NOOF_TYPES];
     private static final MethodType[] ACCESSOR_SETTER_TYPES = new MethodType[NOOF_TYPES];
-    private static final MethodHandle SPILLGETTER = MH.asType(MH.getter(MethodHandles.lookup(), ScriptObject.class, "spill", Object[].class), Lookup.GET_OBJECT_TYPE);
+    private static final MethodHandle SPILL_ELEMENT_GETTER;
+    private static final MethodHandle SPILL_ELEMENT_SETTER;
+
+    private static final int SPILL_CACHE_SIZE = 8;
+    private static final MethodHandle[] SPILL_ACCESSORS = new MethodHandle[SPILL_CACHE_SIZE * 2];
+
+    static {
+        for (int i = 0; i < NOOF_TYPES; i++) {
+            final Type type = ACCESSOR_TYPES.get(i);
+            ACCESSOR_GETTER_TYPES[i] = MH.type(type.getTypeClass(), Object.class);
+            ACCESSOR_SETTER_TYPES[i] = MH.type(void.class, Object.class, type.getTypeClass());
+        }
+
+        final MethodHandle spillGetter = MH.getter(MethodHandles.lookup(), ScriptObject.class, "spill", Object[].class);
+        SPILL_ELEMENT_GETTER = MH.filterArguments(MH.arrayElementGetter(Object[].class), 0, spillGetter);
+        SPILL_ELEMENT_SETTER = MH.filterArguments(MH.arrayElementSetter(Object[].class), 0, spillGetter);
+    }
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
     private MethodHandle primitiveGetter;
@@ -96,14 +112,6 @@ public class AccessorProperty extends Property {
      */
     private Class<?> currentType;
 
-    static {
-        for (int i = 0; i < NOOF_TYPES; i++) {
-            final Type type = ACCESSOR_TYPES.get(i);
-            ACCESSOR_GETTER_TYPES[i] = MH.type(type.getTypeClass(), Object.class);
-            ACCESSOR_SETTER_TYPES[i] = MH.type(void.class, Object.class, type.getTypeClass());
-        }
-    }
-
     /**
      * Delegate constructor. This is used when adding properties to the Global scope, which
      * is necessary for outermost levels in a script (the ScriptObject is represented by
@@ -114,16 +122,28 @@ public class AccessorProperty extends Property {
      * @param delegate  delegate script object to rebind receiver to
      */
     public AccessorProperty(final AccessorProperty property, final ScriptObject delegate) {
-        this(property);
+        super(property);
 
-        this.getters = new MethodHandle[NOOF_TYPES];
-
-        this.primitiveGetter = bindTo(primitiveGetter, delegate);
-        this.primitiveSetter = bindTo(primitiveSetter, delegate);
-        this.objectGetter    = bindTo(objectGetter, delegate);
-        this.objectSetter    = bindTo(objectSetter, delegate);
+        this.primitiveGetter = bindTo(property.primitiveGetter, delegate);
+        this.primitiveSetter = bindTo(property.primitiveSetter, delegate);
+        this.objectGetter    = bindTo(property.objectGetter, delegate);
+        this.objectSetter    = bindTo(property.objectSetter, delegate);
 
         setCurrentType(property.getCurrentType());
+    }
+
+    /**
+     * Constructor for spill properties. Array getters and setters will be created on demand.
+     *
+     * @param key    the property key
+     * @param flags  the property flags
+     * @param slot   spill slot
+     */
+    public AccessorProperty(final String key, final int flags, final int slot) {
+        super(key, flags, slot);
+        assert (flags & IS_SPILL) == IS_SPILL;
+
+        setCurrentType(Object.class);
     }
 
     /**
@@ -268,7 +288,40 @@ public class AccessorProperty extends Property {
     }
 
     @Override
+    public void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict)  {
+        if (isSpill()) {
+            self.spill[getSlot()] = value;
+        } else {
+            try {
+                getSetter(Object.class, self.getMap()).invokeExact((Object)self, value);
+            } catch (final Error|RuntimeException e) {
+                throw e;
+            } catch (final Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
+        if (isSpill()) {
+            return self.spill[getSlot()];
+        }
+
+        try {
+            return getGetter(Object.class).invokeExact((Object)self);
+        } catch (final Error|RuntimeException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public MethodHandle getGetter(final Class<?> type) {
+        if (isSpill() && objectGetter == null) {
+            objectGetter = getSpillGetter();
+        }
         final int i = getAccessorTypeIndex(type);
         if (getters[i] == null) {
             getters[i] = debug(
@@ -284,7 +337,7 @@ public class AccessorProperty extends Property {
                 "get");
         }
 
-        return isSpill() ? MH.filterArguments(getters[i], 0, SPILLGETTER) : getters[i];
+        return getters[i];
     }
 
     private Property getWiderProperty(final Class<?> type) {
@@ -313,6 +366,9 @@ public class AccessorProperty extends Property {
     }
 
     private MethodHandle generateSetter(final Class<?> forType, final Class<?> type) {
+        if (isSpill() && objectSetter == null) {
+            objectSetter = getSpillSetter();
+        }
         MethodHandle mh = createSetter(forType, type, primitiveSetter, objectSetter);
         mh = MH.asType(mh, ACCESSOR_SETTER_TYPES[getAccessorTypeIndex(type)]); //has to be the case for invokeexact to work in ScriptObject
         mh = debug(mh, currentType, type, "set");
@@ -343,7 +399,7 @@ public class AccessorProperty extends Property {
             mh = generateSetter(forType, type);
         }
 
-        return isSpill() ? MH.filterArguments(mh, 0, SPILLGETTER) : mh;
+        return mh;
     }
 
     @Override
@@ -361,6 +417,30 @@ public class AccessorProperty extends Property {
     private void invalidate(final Class<?> newType) {
         getters = new MethodHandle[NOOF_TYPES];
         setCurrentType(newType);
+    }
+
+    private MethodHandle getSpillGetter() {
+        final int slot = getSlot();
+        MethodHandle getter = slot < SPILL_CACHE_SIZE ? SPILL_ACCESSORS[slot * 2] : null;
+        if (getter == null) {
+            getter = MH.asType(MH.insertArguments(SPILL_ELEMENT_GETTER, 1, slot), Lookup.GET_OBJECT_TYPE);
+            if (slot < SPILL_CACHE_SIZE) {
+                SPILL_ACCESSORS[slot * 2] = getter;
+            }
+        }
+        return getter;
+    }
+
+    private MethodHandle getSpillSetter() {
+        final int slot = getSlot();
+        MethodHandle setter = slot < SPILL_CACHE_SIZE ? SPILL_ACCESSORS[slot * 2 + 1] : null;
+        if (setter == null) {
+            setter = MH.asType(MH.insertArguments(SPILL_ELEMENT_SETTER, 1, slot), Lookup.SET_OBJECT_TYPE);
+            if (slot < SPILL_CACHE_SIZE) {
+                SPILL_ACCESSORS[slot * 2 + 1] = setter;
+            }
+        }
+        return setter;
     }
 
     private static void finest(final String str) {

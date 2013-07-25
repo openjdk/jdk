@@ -194,7 +194,7 @@ public final class Files {
      * <p> In the addition to {@code READ} and {@code WRITE}, the following
      * options may be present:
      *
-     * <table border=1 cellpadding=5 summary="">
+     * <table border=1 cellpadding=5 summary="Options">
      * <tr> <th>Option</th> <th>Description</th> </tr>
      * <tr>
      *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
@@ -1494,9 +1494,18 @@ public final class Files {
     // lazy loading of default and installed file type detectors
     private static class FileTypeDetectors{
         static final FileTypeDetector defaultFileTypeDetector =
-            sun.nio.fs.DefaultFileTypeDetector.create();
+            createDefaultFileTypeDetector();
         static final List<FileTypeDetector> installeDetectors =
             loadInstalledDetectors();
+
+        // creates the default file type detector
+        private static FileTypeDetector createDefaultFileTypeDetector() {
+            return AccessController
+                .doPrivileged(new PrivilegedAction<FileTypeDetector>() {
+                    @Override public FileTypeDetector run() {
+                        return sun.nio.fs.DefaultFileTypeDetector.create();
+                }});
+        }
 
         // loads all installed file type detectors
         private static List<FileTypeDetector> loadInstalledDetectors() {
@@ -1607,7 +1616,8 @@ public final class Files {
      *     }
      * </pre>
      *
-     *
+     * @param   <V>
+     *          The {@code FileAttributeView} type
      * @param   path
      *          the path to the file
      * @param   type
@@ -1656,6 +1666,8 @@ public final class Files {
      *    PosixFileAttributes attrs = Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
      * </pre>
      *
+     * @param   <A>
+     *          The {@code BasicFileAttributes} type
      * @param   path
      *          the path to the file
      * @param   type
@@ -1854,7 +1866,7 @@ public final class Files {
      * attributes} parameter:
      *
      * <blockquote>
-     * <table border="0">
+     * <table border="0" summary="Possible values">
      * <tr>
      *   <td> {@code "*"} </td>
      *   <td> Read all {@link BasicFileAttributes basic-file-attributes}. </td>
@@ -1962,9 +1974,11 @@ public final class Files {
      * System Interface (POSIX) family of standards.
      *
      * @param   path
-     *          A file reference that locates the file
+     *          The path to the file
      * @param   perms
      *          The new set of permissions
+     *
+     * @return  The path
      *
      * @throws  UnsupportedOperationException
      *          if the associated file system does not support the {@code
@@ -2000,7 +2014,7 @@ public final class Files {
      * access to a file attribute that is the owner of the file.
      *
      * @param   path
-     *          A file reference that locates the file
+     *          The path to the file
      * @param   options
      *          options indicating how symbolic links are handled
      *
@@ -2043,9 +2057,11 @@ public final class Files {
      * </pre>
      *
      * @param   path
-     *          A file reference that locates the file
+     *          The path to the file
      * @param   owner
      *          The new file owner
+     *
+     * @return  The path
      *
      * @throws  UnsupportedOperationException
      *          if the associated file system does not support the {@code
@@ -2080,6 +2096,8 @@ public final class Files {
      * read with the {@link #readAttributes(Path,Class,LinkOption[])
      * readAttributes} method and the file type tested with the {@link
      * BasicFileAttributes#isSymbolicLink} method.
+     *
+     * @param   path  The path to the file
      *
      * @return  {@code true} if the file is a symbolic link; {@code false} if
      *          the file does not exist, is not a symbolic link, or it cannot
@@ -2230,7 +2248,7 @@ public final class Files {
      * @param   time
      *          the new last modified time
      *
-     * @return  the file
+     * @return  the path
      *
      * @throws  IOException
      *          if an I/O error occurs
@@ -3251,9 +3269,10 @@ public final class Files {
             }
         };
 
-        return new DelegatingCloseableStream<>(ds,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(it,
-                                                                     Spliterator.DISTINCT)));
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(it, Spliterator.DISTINCT),
+                false);
+        return new DelegatingCloseableStream<>(ds, s);
     }
 
     /**
@@ -3340,9 +3359,12 @@ public final class Files {
         throws IOException
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-        return new DelegatingCloseableStream<>(iterator,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT))
-                   .map(entry -> entry.file()));
+
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
+                false).
+                map(entry -> entry.file());
+        return new DelegatingCloseableStream<>(iterator, s);
     }
 
     /**
@@ -3437,10 +3459,13 @@ public final class Files {
         throws IOException
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-        return new DelegatingCloseableStream<>(iterator,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT))
-                   .filter(entry -> matcher.test(entry.file(), entry.attributes()))
-                   .map(entry -> entry.file()));
+
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
+                false).
+                filter(entry -> matcher.test(entry.file(), entry.attributes())).
+                map(entry -> entry.file());
+        return new DelegatingCloseableStream<>(iterator, s);
     }
 
     /**

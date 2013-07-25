@@ -40,7 +40,7 @@ ConstMethod* ConstMethod::allocate(ClassLoaderData* loader_data,
                                    MethodType method_type,
                                    TRAPS) {
   int size = ConstMethod::size(byte_code_size, sizes);
-  return new (loader_data, size, true, THREAD) ConstMethod(
+  return new (loader_data, size, true, MetaspaceObj::ConstMethodType, THREAD) ConstMethod(
       byte_code_size, sizes, method_type, size);
 }
 
@@ -440,7 +440,6 @@ void ConstMethod::collect_statistics(KlassSizeStats *sz) const {
 
 void ConstMethod::verify_on(outputStream* st) {
   guarantee(is_constMethod(), "object must be constMethod");
-  guarantee(is_metadata(), err_msg("Should be metadata " PTR_FORMAT, this));
 
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.

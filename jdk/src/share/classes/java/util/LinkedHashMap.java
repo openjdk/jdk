@@ -25,6 +25,8 @@
 
 package java.util;
 import java.io.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * <p>Hash table and linked list implementation of the <tt>Map</tt> interface,
@@ -294,6 +296,32 @@ public class LinkedHashMap<K,V>
     public void clear() {
         super.clear();
         header.before = header.after = header;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        int expectedModCount = modCount;
+        for (Entry<K, V> entry = header.after; entry != header; entry = entry.after) {
+            action.accept(entry.key, entry.value);
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        int expectedModCount = modCount;
+        for (Entry<K, V> entry = header.after; entry != header; entry = entry.after) {
+            entry.value = function.apply(entry.key, entry.value);
+
+            if (expectedModCount != modCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
     }
 
     /**

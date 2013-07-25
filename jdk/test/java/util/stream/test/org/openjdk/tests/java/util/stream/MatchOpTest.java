@@ -23,19 +23,16 @@
 package org.openjdk.tests.java.util.stream;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
+import java.util.Spliterators;
 import java.util.function.DoublePredicate;
-import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
-import java.util.function.IntSupplier;
 import java.util.function.LongPredicate;
-import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -46,6 +43,7 @@ import java.util.stream.LongStream;
 import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
@@ -97,6 +95,7 @@ public class MatchOpTest extends OpTestCase {
 
     private <T> void assertPredicates(List<T> source, Kind kind, Predicate<T>[] predicates, boolean... answers) {
         for (int i = 0; i < predicates.length; i++) {
+            setContext("i", i);
             boolean match = this.<T>kinds().get(kind).apply(predicates[i]).apply(source.stream());
             assertEquals(answers[i], match, kind.toString() + predicates[i].toString());
         }
@@ -119,7 +118,9 @@ public class MatchOpTest extends OpTestCase {
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testStream(String name, TestData.OfRef<Integer> data) {
         for (Predicate<Integer> p : INTEGER_PREDICATES) {
+            setContext("p", p);
             for (Kind kind : Kind.values()) {
+                setContext("kind", kind);
                 exerciseTerminalOps(data, this.<Integer>kinds().get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(pFalse), this.<Integer>kinds().get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(pEven), this.<Integer>kinds().get(kind).apply(p));
@@ -128,29 +129,40 @@ public class MatchOpTest extends OpTestCase {
     }
 
     public void testInfinite() {
-        class CycleSupplier<T> implements Supplier<T> {
-            final Iterable<T> source;
-            Iterator<T> i = Collections.emptyIterator();
+        class CycleIterator implements Iterator<Integer> {
+            final Supplier<Iterator<Integer>> source;
+            Iterator<Integer> i = null;
 
-            CycleSupplier(Iterable<T> source) {
+            CycleIterator(Supplier<Iterator<Integer>> source) {
                 this.source = source;
             }
 
             @Override
-            public T get() {
-                if (!i.hasNext()) {
-                    i = source.iterator();
+            public Integer next() {
+                if (i == null || !i.hasNext()) {
+                    i = source.get();
                 }
                 return i.next();
             }
+
+            @Override
+            public boolean hasNext() {
+                if (i == null || !i.hasNext()) {
+                    i = source.get();
+                }
+                return i.hasNext();
+            }
         }
 
-        assertFalse(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).allMatch(i -> i > 3));
-        assertTrue(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).anyMatch(i -> i > 3));
-        assertFalse(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).noneMatch(i -> i > 3));
-        assertFalse(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).parallel().allMatch(i -> i > 3));
-        assertTrue(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).parallel().anyMatch(i -> i > 3));
-        assertFalse(Stream.generate(new CycleSupplier<>(Arrays.asList(1, 2, 3, 4))).parallel().noneMatch(i -> i > 3));
+        Supplier<Iterator<Integer>> source = () -> Arrays.asList(1, 2, 3, 4).iterator();
+        Supplier<Stream<Integer>> s = () -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
+
+        assertFalse(s.get().allMatch(i -> i > 3));
+        assertTrue(s.get().anyMatch(i -> i > 3));
+        assertFalse(s.get().noneMatch(i -> i > 3));
+        assertFalse(s.get().parallel().allMatch(i -> i > 3));
+        assertTrue(s.get().parallel().anyMatch(i -> i > 3));
+        assertFalse(s.get().parallel().noneMatch(i -> i > 3));
     }
 
     //
@@ -168,6 +180,7 @@ public class MatchOpTest extends OpTestCase {
 
     private void assertIntPredicates(Supplier<IntStream> source, Kind kind, IntPredicate[] predicates, boolean... answers) {
         for (int i = 0; i < predicates.length; i++) {
+            setContext("i", i);
             boolean match = intKinds.get(kind).apply(predicates[i]).apply(source.get());
             assertEquals(answers[i], match, kind.toString() + predicates[i].toString());
         }
@@ -189,40 +202,52 @@ public class MatchOpTest extends OpTestCase {
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
     public void testIntStream(String name, TestData.OfInt data) {
-        for (IntPredicate p : INT_PREDICATES)
+        for (IntPredicate p : INT_PREDICATES) {
+            setContext("p", p);
             for (Kind kind : Kind.values()) {
+                setContext("kind", kind);
                 exerciseTerminalOps(data, intKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(ipFalse), intKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(ipEven), intKinds.get(kind).apply(p));
             }
+        }
     }
 
     public void testIntInfinite() {
-        class CycleSupplier implements IntSupplier {
+        class CycleIterator implements PrimitiveIterator.OfInt {
             final Supplier<PrimitiveIterator.OfInt> source;
             PrimitiveIterator.OfInt i = null;
 
-            CycleSupplier(Supplier<PrimitiveIterator.OfInt> source) {
+            CycleIterator(Supplier<PrimitiveIterator.OfInt> source) {
                 this.source = source;
             }
 
             @Override
-            public int getAsInt() {
+            public int nextInt() {
                 if (i == null || !i.hasNext()) {
                     i = source.get();
                 }
                 return i.nextInt();
             }
+
+            @Override
+            public boolean hasNext() {
+                if (i == null || !i.hasNext()) {
+                    i = source.get();
+                }
+                return i.hasNext();
+            }
         }
 
         Supplier<PrimitiveIterator.OfInt> source = () -> Arrays.stream(new int[]{1, 2, 3, 4}).iterator();
+        Supplier<IntStream> s = () -> StreamSupport.intStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
-        assertFalse(IntStream.generate(new CycleSupplier(source)).allMatch(i -> i > 3));
-        assertTrue(IntStream.generate(new CycleSupplier(source)).anyMatch(i -> i > 3));
-        assertFalse(IntStream.generate(new CycleSupplier(source)).noneMatch(i -> i > 3));
-        assertFalse(IntStream.generate(new CycleSupplier(source)).parallel().allMatch(i -> i > 3));
-        assertTrue(IntStream.generate(new CycleSupplier(source)).parallel().anyMatch(i -> i > 3));
-        assertFalse(IntStream.generate(new CycleSupplier(source)).parallel().noneMatch(i -> i > 3));
+        assertFalse(s.get().allMatch(i -> i > 3));
+        assertTrue(s.get().anyMatch(i -> i > 3));
+        assertFalse(s.get().noneMatch(i -> i > 3));
+        assertFalse(s.get().parallel().allMatch(i -> i > 3));
+        assertTrue(s.get().parallel().anyMatch(i -> i > 3));
+        assertFalse(s.get().parallel().noneMatch(i -> i > 3));
     }
 
     //
@@ -240,6 +265,7 @@ public class MatchOpTest extends OpTestCase {
 
     private void assertLongPredicates(Supplier<LongStream> source, Kind kind, LongPredicate[] predicates, boolean... answers) {
         for (int i = 0; i < predicates.length; i++) {
+            setContext("i", i);
             boolean match = longKinds.get(kind).apply(predicates[i]).apply(source.get());
             assertEquals(answers[i], match, kind.toString() + predicates[i].toString());
         }
@@ -261,40 +287,52 @@ public class MatchOpTest extends OpTestCase {
 
     @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
     public void testLongStream(String name, TestData.OfLong data) {
-        for (LongPredicate p : LONG_PREDICATES)
+        for (LongPredicate p : LONG_PREDICATES) {
+            setContext("p", p);
             for (Kind kind : Kind.values()) {
+                setContext("kind", kind);
                 exerciseTerminalOps(data, longKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(lpFalse), longKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(lpEven), longKinds.get(kind).apply(p));
             }
+        }
     }
 
     public void testLongInfinite() {
-        class CycleSupplier implements LongSupplier {
+        class CycleIterator implements PrimitiveIterator.OfLong {
             final Supplier<PrimitiveIterator.OfLong> source;
             PrimitiveIterator.OfLong i = null;
 
-            CycleSupplier(Supplier<PrimitiveIterator.OfLong> source) {
+            CycleIterator(Supplier<PrimitiveIterator.OfLong> source) {
                 this.source = source;
             }
 
             @Override
-            public long getAsLong() {
+            public long nextLong() {
                 if (i == null || !i.hasNext()) {
                     i = source.get();
                 }
                 return i.nextLong();
             }
+
+            @Override
+            public boolean hasNext() {
+                if (i == null || !i.hasNext()) {
+                    i = source.get();
+                }
+                return i.hasNext();
+            }
         }
 
         Supplier<PrimitiveIterator.OfLong> source = () -> Arrays.stream(new long[]{1, 2, 3, 4}).iterator();
+        Supplier<LongStream> s = () -> StreamSupport.longStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
-        assertFalse(LongStream.generate(new CycleSupplier(source)).allMatch(i -> i > 3));
-        assertTrue(LongStream.generate(new CycleSupplier(source)).anyMatch(i -> i > 3));
-        assertFalse(LongStream.generate(new CycleSupplier(source)).noneMatch(i -> i > 3));
-        assertFalse(LongStream.generate(new CycleSupplier(source)).parallel().allMatch(i -> i > 3));
-        assertTrue(LongStream.generate(new CycleSupplier(source)).parallel().anyMatch(i -> i > 3));
-        assertFalse(LongStream.generate(new CycleSupplier(source)).parallel().noneMatch(i -> i > 3));
+        assertFalse(s.get().allMatch(i -> i > 3));
+        assertTrue(s.get().anyMatch(i -> i > 3));
+        assertFalse(s.get().noneMatch(i -> i > 3));
+        assertFalse(s.get().parallel().allMatch(i -> i > 3));
+        assertTrue(s.get().parallel().anyMatch(i -> i > 3));
+        assertFalse(s.get().parallel().noneMatch(i -> i > 3));
     }
 
     //
@@ -312,6 +350,7 @@ public class MatchOpTest extends OpTestCase {
 
     private void assertDoublePredicates(Supplier<DoubleStream> source, Kind kind, DoublePredicate[] predicates, boolean... answers) {
         for (int i = 0; i < predicates.length; i++) {
+            setContext("i", i);
             boolean match = doubleKinds.get(kind).apply(predicates[i]).apply(source.get());
             assertEquals(answers[i], match, kind.toString() + predicates[i].toString());
         }
@@ -333,39 +372,51 @@ public class MatchOpTest extends OpTestCase {
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
     public void testDoubleStream(String name, TestData.OfDouble data) {
-        for (DoublePredicate p : DOUBLE_PREDICATES)
+        for (DoublePredicate p : DOUBLE_PREDICATES) {
+            setContext("p", p);
             for (Kind kind : Kind.values()) {
+                setContext("kind", kind);
                 exerciseTerminalOps(data, doubleKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(dpFalse), doubleKinds.get(kind).apply(p));
                 exerciseTerminalOps(data, s -> s.filter(dpEven), doubleKinds.get(kind).apply(p));
             }
+        }
     }
 
     public void testDoubleInfinite() {
-        class CycleSupplier implements DoubleSupplier {
+        class CycleIterator implements PrimitiveIterator.OfDouble {
             final Supplier<PrimitiveIterator.OfDouble> source;
             PrimitiveIterator.OfDouble i = null;
 
-            CycleSupplier(Supplier<PrimitiveIterator.OfDouble> source) {
+            CycleIterator(Supplier<PrimitiveIterator.OfDouble> source) {
                 this.source = source;
             }
 
             @Override
-            public double getAsDouble() {
+            public double nextDouble() {
                 if (i == null || !i.hasNext()) {
                     i = source.get();
                 }
                 return i.nextDouble();
             }
+
+            @Override
+            public boolean hasNext() {
+                if (i == null || !i.hasNext()) {
+                    i = source.get();
+                }
+                return i.hasNext();
+            }
         }
 
         Supplier<PrimitiveIterator.OfDouble> source = () -> Arrays.stream(new double[]{1, 2, 3, 4}).iterator();
+        Supplier<DoubleStream> s = () -> StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
-        assertFalse(DoubleStream.generate(new CycleSupplier(source)).allMatch(i -> i > 3));
-        assertTrue(DoubleStream.generate(new CycleSupplier(source)).anyMatch(i -> i > 3));
-        assertFalse(DoubleStream.generate(new CycleSupplier(source)).noneMatch(i -> i > 3));
-        assertFalse(DoubleStream.generate(new CycleSupplier(source)).parallel().allMatch(i -> i > 3));
-        assertTrue(DoubleStream.generate(new CycleSupplier(source)).parallel().anyMatch(i -> i > 3));
-        assertFalse(DoubleStream.generate(new CycleSupplier(source)).parallel().noneMatch(i -> i > 3));
+        assertFalse(s.get().allMatch(i -> i > 3));
+        assertTrue(s.get().anyMatch(i -> i > 3));
+        assertFalse(s.get().noneMatch(i -> i > 3));
+        assertFalse(s.get().parallel().allMatch(i -> i > 3));
+        assertTrue(s.get().parallel().anyMatch(i -> i > 3));
+        assertFalse(s.get().parallel().noneMatch(i -> i > 3));
     }
 }

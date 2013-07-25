@@ -634,6 +634,8 @@ public final class System {
      *
      * <p>On UNIX systems, it returns {@code "\n"}; on Microsoft
      * Windows systems it returns {@code "\r\n"}.
+     *
+     * @return the system-dependent line separator string
      * @since 1.7
      */
     public static String lineSeparator() {
@@ -1218,11 +1220,14 @@ public final class System {
             public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
-            public void setAnnotationType(Class<?> klass, AnnotationType type) {
-                klass.setAnnotationType(type);
+            public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
+                return klass.casAnnotationType(oldType, newType);
             }
             public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
+            }
+            public byte[] getRawClassAnnotations(Class<?> klass) {
+                return klass.getRawAnnotations();
             }
             public byte[] getRawClassTypeAnnotations(Class<?> klass) {
                 return klass.getRawTypeAnnotations();

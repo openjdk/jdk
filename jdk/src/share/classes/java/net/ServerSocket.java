@@ -390,15 +390,29 @@ class ServerSocket implements java.io.Closeable {
      * If the socket was bound prior to being {@link #close closed},
      * then this method will continue to return the local address
      * after the socket is closed.
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * the {@link InetAddress#getLoopbackAddress loopback} address is returned.
      *
      * @return  the address to which this socket is bound,
-     *          or <code>null</code> if the socket is unbound.
+     *          or the loopback address if denied by the security manager,
+     *          or {@code null} if the socket is unbound.
+     *
+     * @see SecurityManager#checkConnect
      */
     public InetAddress getInetAddress() {
         if (!isBound())
             return null;
         try {
-            return getImpl().getInetAddress();
+            InetAddress in = getImpl().getInetAddress();
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkConnect(in.getHostAddress(), -1);
+            return in;
+        } catch (SecurityException e) {
+            return InetAddress.getLoopbackAddress();
         } catch (SocketException e) {
             // nothing
             // If we're bound, the impl has been created
@@ -431,18 +445,28 @@ class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Returns the address of the endpoint this socket is bound to, or
-     * <code>null</code> if it is not bound yet.
+     * Returns the address of the endpoint this socket is bound to.
      * <p>
      * If the socket was bound prior to being {@link #close closed},
      * then this method will continue to return the address of the endpoint
      * after the socket is closed.
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link InetAddress#getLoopbackAddress loopback} address and the local
+     * port to which the socket is bound is returned.
      *
-     * @return a <code>SocketAddress</code> representing the local endpoint of this
-     *         socket, or <code>null</code> if it is not bound yet.
+     * @return a {@code SocketAddress} representing the local endpoint of
+     *         this socket, or a {@code SocketAddress} representing the
+     *         loopback address if denied by the security manager,
+     *         or {@code null} if the socket is not bound yet.
+     *
      * @see #getInetAddress()
      * @see #getLocalPort()
      * @see #bind(SocketAddress)
+     * @see SecurityManager#checkConnect
      * @since 1.4
      */
 
@@ -709,13 +733,25 @@ class ServerSocket implements java.io.Closeable {
     /**
      * Returns the implementation address and implementation port of
      * this socket as a <code>String</code>.
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * an {@code InetAddress} representing the
+     * {@link InetAddress#getLoopbackAddress loopback} address is returned as
+     * the implementation address.
      *
      * @return  a string representation of this socket.
      */
     public String toString() {
         if (!isBound())
             return "ServerSocket[unbound]";
-        return "ServerSocket[addr=" + impl.getInetAddress() +
+        InetAddress in;
+        if (System.getSecurityManager() != null)
+            in = InetAddress.getLoopbackAddress();
+        else
+            in = impl.getInetAddress();
+        return "ServerSocket[addr=" + in +
                 ",localport=" + impl.getLocalPort()  + "]";
     }
 

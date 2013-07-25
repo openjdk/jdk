@@ -907,6 +907,8 @@ Java_sun_awt_X11GraphicsDevice_getDisplay(JNIEnv *env, jobject this)
 static jint canUseShmExt = UNSET_MITSHM;
 static jint canUseShmExtPixmaps = UNSET_MITSHM;
 
+extern int mitShmPermissionMask;
+
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     XShmSegmentInfo shminfo;
     int XShmMajor, XShmMinor;
@@ -930,7 +932,8 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
      * we need to test that we can actually do XShmAttach.
      */
     if (XShmQueryExtension(awt_display)) {
-        shminfo.shmid = shmget(IPC_PRIVATE, 0x10000, IPC_CREAT|0777);
+        shminfo.shmid = shmget(IPC_PRIVATE, 0x10000,
+                               IPC_CREAT|mitShmPermissionMask);
         if (shminfo.shmid < 0) {
             AWT_UNLOCK();
             J2dRlsTraceLn1(J2D_TRACE_ERROR,
@@ -1366,12 +1369,18 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
     mid = (*env)->GetMethodID(env, clazz, "<init>", "(IIII)V");
     if (mid != NULL) {
         if (usingXinerama) {
-            bounds = (*env)->NewObject(env, clazz, mid, fbrects[screen].x,
-                                                        fbrects[screen].y,
-                                                        fbrects[screen].width,
-                                                        fbrects[screen].height);
-        }
-        else {
+            if (0 <= screen && screen < awt_numScreens) {
+                bounds = (*env)->NewObject(env, clazz, mid, fbrects[screen].x,
+                                                            fbrects[screen].y,
+                                                            fbrects[screen].width,
+                                                            fbrects[screen].height);
+            } else {
+                jclass exceptionClass = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+                if (exceptionClass != NULL) {
+                    (*env)->ThrowNew(env, exceptionClass, "Illegal screen index");
+                }
+            }
+        } else {
             XWindowAttributes xwa;
             memset(&xwa, 0, sizeof(xwa));
 

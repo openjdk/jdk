@@ -25,14 +25,13 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
 /**
@@ -92,12 +91,13 @@ public abstract class ScriptFunctionData {
     CompiledFunction bind(final CompiledFunction originalInv, final ScriptFunction fn, final Object self, final Object[] args) {
         final MethodHandle boundInvoker = bindInvokeHandle(originalInv.getInvoker(), fn, self, args);
 
+        //TODO the boundinvoker.type() could actually be more specific here
         if (isConstructor()) {
             ensureConstructor(originalInv);
-            return new CompiledFunction(boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
+            return new CompiledFunction(boundInvoker.type(), boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
         }
 
-        return new CompiledFunction(boundInvoker);
+        return new CompiledFunction(boundInvoker.type(), boundInvoker);
     }
 
     /**
@@ -214,6 +214,12 @@ public abstract class ScriptFunctionData {
     public final MethodHandle getGenericInvoker() {
         ensureCodeGenerated();
         return composeGenericMethod(code.mostGeneric().getInvoker());
+    }
+
+    final MethodHandle getGenericConstructor() {
+        ensureCodeGenerated();
+        ensureConstructor(code.mostGeneric());
+        return composeGenericMethod(code.mostGeneric().getConstructor());
     }
 
     private CompiledFunction getBest(final MethodType callSiteType) {
@@ -389,7 +395,9 @@ public abstract class ScriptFunctionData {
                 boundInvoker = noArgBoundInvoker;
             }
         } else {
-            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount(), args.length + (isTargetBound ? 0 : (needsCallee  ? 2 : 1)))];
+            // If target is already bound, insert additional bound arguments after "this" argument, at position 1.
+            final int argInsertPos = isTargetBound ? 1 : 0;
+            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount() - argInsertPos, args.length + (isTargetBound ? 0 : (needsCallee  ? 2 : 1)))];
             int next = 0;
             if (!isTargetBound) {
                 if (needsCallee) {
@@ -403,7 +411,7 @@ public abstract class ScriptFunctionData {
             // "this" will get dropped anyway by the target invoker. We previously asserted that already bound functions
             // don't take a callee parameter, so we can know that the signature is (this[, args...]) therefore args
             // start at position 1. If the function is not bound, we start inserting arguments at position 0.
-            boundInvoker = MH.insertArguments(originalInvoker, isTargetBound ? 1 : 0, boundArgs);
+            boundInvoker = MH.insertArguments(originalInvoker, argInsertPos, boundArgs);
         }
 
         if (isTargetBound) {
@@ -533,8 +541,72 @@ public abstract class ScriptFunctionData {
         }
     }
 
+    Object construct(final ScriptFunction fn, final Object... arguments) throws Throwable {
+        final MethodHandle mh = getGenericConstructor();
+
+        final Object[]     args       = arguments == null ? ScriptRuntime.EMPTY_ARRAY : arguments;
+
+        if (isVarArg(mh)) {
+            if (needsCallee(mh)) {
+                return mh.invokeExact(fn, args);
+            }
+            return mh.invokeExact(args);
+        }
+
+        final int paramCount = mh.type().parameterCount();
+        if (needsCallee(mh)) {
+            switch (paramCount) {
+            case 1:
+                return mh.invokeExact(fn);
+            case 2:
+                return mh.invokeExact(fn, getArg(args, 0));
+            case 3:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1));
+            case 4:
+                return mh.invokeExact(fn, getArg(args, 0), getArg(args, 1), getArg(args, 2));
+            default:
+                return mh.invokeWithArguments(withArguments(fn, paramCount, args));
+            }
+        }
+
+        switch (paramCount) {
+        case 0:
+            return mh.invokeExact();
+        case 1:
+            return mh.invokeExact(getArg(args, 0));
+        case 2:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1));
+        case 3:
+            return mh.invokeExact(getArg(args, 0), getArg(args, 1), getArg(args, 2));
+        default:
+            return mh.invokeWithArguments(withArguments(null, paramCount, args));
+        }
+    }
+
     private static Object getArg(final Object[] args, final int i) {
         return i < args.length ? args[i] : UNDEFINED;
+    }
+
+    private static Object[] withArguments(final ScriptFunction fn, final int argCount, final Object[] args) {
+        final Object[] finalArgs = new Object[argCount];
+
+        int nextArg = 0;
+        if (fn != null) {
+            //needs callee
+            finalArgs[nextArg++] = fn;
+        }
+
+        // Don't add more args that there is argCount in the handle (including self and callee).
+        for (int i = 0; i < args.length && nextArg < argCount;) {
+            finalArgs[nextArg++] = args[i++];
+        }
+
+        // If we have fewer args than argCount, pad with undefined.
+        while (nextArg < argCount) {
+            finalArgs[nextArg++] = UNDEFINED;
+        }
+
+        return finalArgs;
     }
 
     private static Object[] withArguments(final ScriptFunction fn, final Object self, final int argCount, final Object[] args) {

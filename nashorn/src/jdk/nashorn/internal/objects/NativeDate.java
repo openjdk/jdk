@@ -39,8 +39,10 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.parser.DateParser;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -99,16 +101,19 @@ public final class NativeDate extends ScriptObject {
     private double time;
     private final TimeZone timezone;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeDate() {
         this(System.currentTimeMillis());
     }
 
     NativeDate(final double time) {
+        super(Global.instance().getDatePrototype(), $nasgenmap$);
         final ScriptEnvironment env = Global.getEnv();
 
         this.time = time;
         this.timezone = env._timezone;
-        this.setProto(Global.instance().getDatePrototype());
     }
 
     @Override
@@ -770,7 +775,7 @@ public final class NativeDate extends ScriptObject {
             nd.setTime(NaN);
             return nd.getTime();
         }
-        int yearInt = JSType.toInteger(yearNum);
+        int yearInt = (int)yearNum;
         if (0 <= yearInt && yearInt <= 99) {
             yearInt += 1900;
         }

@@ -39,7 +39,7 @@ public final class ReverseArrayIterator extends ArrayIterator {
      */
     public ReverseArrayIterator(final ScriptObject array, final boolean includeUndefined) {
         super(array, includeUndefined);
-        this.index = (int) (array.getArray().length() - 1);
+        this.index = array.getArray().length() - 1;
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class ReverseArrayIterator extends ArrayIterator {
     }
 
     @Override
-    protected int bumpIndex() {
+    protected long bumpIndex() {
         return index--;
     }
 }

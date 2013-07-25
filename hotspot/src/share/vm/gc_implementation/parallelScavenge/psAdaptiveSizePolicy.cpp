@@ -194,7 +194,7 @@ void PSAdaptiveSizePolicy::clear_generation_free_space_flags() {
 
 // If this is not a full GC, only test and modify the young generation.
 
-void PSAdaptiveSizePolicy::compute_generation_free_space(
+void PSAdaptiveSizePolicy::compute_generations_free_space(
                                            size_t young_live,
                                            size_t eden_live,
                                            size_t old_live,
@@ -729,7 +729,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
 
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr(
-      "PSAdaptiveSizePolicy::compute_old_gen_free_space "
+      "PSAdaptiveSizePolicy::adjust_promo_for_pause_time "
       "adjusting gen sizes for major pause (avg %f goal %f). "
       "desired_promo_size " SIZE_FORMAT " promo delta " SIZE_FORMAT,
       _avg_major_pause->average(), gc_pause_goal_sec(),
@@ -786,7 +786,7 @@ void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(bool is_full_gc,
 
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr(
-      "PSAdaptiveSizePolicy::compute_eden_space_size "
+      "PSAdaptiveSizePolicy::adjust_eden_for_pause_time "
       "adjusting gen sizes for major pause (avg %f goal %f). "
       "desired_eden_size " SIZE_FORMAT " eden delta " SIZE_FORMAT,
       _avg_major_pause->average(), gc_pause_goal_sec(),
@@ -1001,7 +1001,7 @@ size_t PSAdaptiveSizePolicy::adjust_promo_for_footprint(
 
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr(
-      "AdaptiveSizePolicy::compute_generation_free_space "
+      "AdaptiveSizePolicy::adjust_promo_for_footprint "
       "adjusting tenured gen for footprint. "
       "starting promo size " SIZE_FORMAT
       " reduced promo size " SIZE_FORMAT,
@@ -1025,7 +1025,7 @@ size_t PSAdaptiveSizePolicy::adjust_eden_for_footprint(
 
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr(
-      "AdaptiveSizePolicy::compute_generation_free_space "
+      "AdaptiveSizePolicy::adjust_eden_for_footprint "
       "adjusting eden for footprint. "
       " starting eden size " SIZE_FORMAT
       " reduced eden size " SIZE_FORMAT
@@ -1250,14 +1250,13 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                   avg_promoted()->deviation());
     }
 
-    gclog_or_tty->print( "  avg_promoted_padded_avg: %f"
+    gclog_or_tty->print_cr( "  avg_promoted_padded_avg: %f"
                 "  avg_pretenured_padded_avg: %f"
                 "  tenuring_thresh: %d"
                 "  target_size: " SIZE_FORMAT,
                 avg_promoted()->padded_average(),
                 _avg_pretenured->padded_average(),
                 tenuring_threshold, target_size);
-    tty->cr();
   }
 
   set_survivor_size(target_size);
@@ -1279,8 +1278,8 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
   avg_promoted()->sample(promoted + _avg_pretenured->padded_average());
 
   if (PrintAdaptiveSizePolicy) {
-    gclog_or_tty->print(
-                  "AdaptiveSizePolicy::compute_survivor_space_size_and_thresh:"
+    gclog_or_tty->print_cr(
+                  "AdaptiveSizePolicy::update_averages:"
                   "  survived: "  SIZE_FORMAT
                   "  promoted: "  SIZE_FORMAT
                   "  overflow: %s",

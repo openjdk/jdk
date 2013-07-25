@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #ifdef COMPILER1
@@ -179,9 +180,11 @@ int CompileBroker::_sum_standard_bytes_compiled  = 0;
 int CompileBroker::_sum_nmethod_size             = 0;
 int CompileBroker::_sum_nmethod_code_size        = 0;
 
-CompileQueue* CompileBroker::_c2_method_queue   = NULL;
-CompileQueue* CompileBroker::_c1_method_queue   = NULL;
-CompileTask*  CompileBroker::_task_free_list = NULL;
+long CompileBroker::_peak_compilation_time       = 0;
+
+CompileQueue* CompileBroker::_c2_method_queue    = NULL;
+CompileQueue* CompileBroker::_c1_method_queue    = NULL;
+CompileTask*  CompileBroker::_task_free_list     = NULL;
 
 GrowableArray<CompilerThread*>* CompileBroker::_method_threads = NULL;
 
@@ -1642,42 +1645,37 @@ void CompileBroker::compiler_thread_loop() {
 // Set up state required by +LogCompilation.
 void CompileBroker::init_compiler_thread_log() {
     CompilerThread* thread = CompilerThread::current();
-    char  fileBuf[4*K];
+    char  file_name[4*K];
     FILE* fp = NULL;
-    char* file = NULL;
     intx thread_id = os::current_thread_id();
     for (int try_temp_dir = 1; try_temp_dir >= 0; try_temp_dir--) {
       const char* dir = (try_temp_dir ? os::get_temp_directory() : NULL);
       if (dir == NULL) {
-        jio_snprintf(fileBuf, sizeof(fileBuf), "hs_c" UINTX_FORMAT "_pid%u.log",
+        jio_snprintf(file_name, sizeof(file_name), "hs_c" UINTX_FORMAT "_pid%u.log",
                      thread_id, os::current_process_id());
       } else {
-        jio_snprintf(fileBuf, sizeof(fileBuf),
+        jio_snprintf(file_name, sizeof(file_name),
                      "%s%shs_c" UINTX_FORMAT "_pid%u.log", dir,
                      os::file_separator(), thread_id, os::current_process_id());
       }
-      fp = fopen(fileBuf, "at");
+
+      fp = fopen(file_name, "at");
       if (fp != NULL) {
-        file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1, mtCompiler);
-        strcpy(file, fileBuf);
-        break;
+        if (LogCompilation && Verbose) {
+          tty->print_cr("Opening compilation log %s", file_name);
+        }
+        CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        thread->init_log(log);
+
+        if (xtty != NULL) {
+          ttyLocker ttyl;
+          // Record any per thread log files
+          xtty->elem("thread_logfile thread='%d' filename='%s'", thread_id, file_name);
+        }
+        return;
       }
     }
-    if (fp == NULL) {
-      warning("Cannot open log file: %s", fileBuf);
-    } else {
-      if (LogCompilation && Verbose)
-        tty->print_cr("Opening compilation log %s", file);
-      CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file, fp, thread_id);
-      thread->init_log(log);
-
-      if (xtty != NULL) {
-        ttyLocker ttyl;
-
-        // Record any per thread log files
-        xtty->elem("thread_logfile thread='%d' filename='%s'", thread_id, file);
-      }
-    }
+    warning("Cannot open log file: %s", file_name);
 }
 
 // ------------------------------------------------------------------
@@ -1800,6 +1798,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ciMethod* target = ci_env.get_method_from_handle(target_handle);
 
     TraceTime t1("compilation", &time);
+    EventCompilation event;
 
     AbstractCompiler *comp = compiler(task_level);
     if (comp == NULL) {
@@ -1841,6 +1840,16 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
     // simulate crash during compilation
     assert(task->compile_id() != CICrashAt, "just as planned");
+    if (event.should_commit()) {
+      event.set_method(target->get_Method());
+      event.set_compileID(compile_id);
+      event.set_compileLevel(task->comp_level());
+      event.set_succeded(task->is_success());
+      event.set_isOsr(is_osr);
+      event.set_codeSize((task->code() == NULL) ? 0 : task->code()->total_size());
+      event.set_inlinedBytes(task->num_inlined_bytecodes());
+      event.commit();
+    }
   }
   pop_jni_handle_block();
 
@@ -1921,6 +1930,10 @@ void CompileBroker::handle_full_code_cache() {
     }
     warning("CodeCache is full. Compiler has been disabled.");
     warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+
+    CodeCache::report_codemem_full();
+
+
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
       codecache_print(/* detailed= */ true);
@@ -2078,8 +2091,10 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     // java.lang.management.CompilationMBean
     _perf_total_compilation->inc(time.ticks());
 
+    _t_total_compilation.add(time);
+    _peak_compilation_time = time.milliseconds() > _peak_compilation_time ? time.milliseconds() : _peak_compilation_time;
+
     if (CITime) {
-      _t_total_compilation.add(time);
       if (is_osr) {
         _t_osr_compilation.add(time);
         _sum_osr_bytes_compiled += method->code_size() + task->num_inlined_bytecodes();
@@ -2176,7 +2191,6 @@ void CompileBroker::print_times() {
   tty->print_cr("  nmethod code size        : %6d bytes", CompileBroker::_sum_nmethod_code_size);
   tty->print_cr("  nmethod total size       : %6d bytes", CompileBroker::_sum_nmethod_size);
 }
-
 
 // Debugging output for failure
 void CompileBroker::print_last_compile() {

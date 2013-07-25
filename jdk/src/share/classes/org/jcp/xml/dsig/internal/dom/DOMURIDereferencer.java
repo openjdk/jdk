@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMURIDereferencer.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMURIDereferencer.java 1231033 2012-01-13 12:12:12Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -31,13 +33,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.sun.org.apache.xml.internal.security.Init;
-import com.sun.org.apache.xml.internal.security.utils.IdResolver;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.*;
-import javax.xml.crypto.dsig.*;
 
 /**
  * DOM-based implementation of URIDereferencer.
@@ -68,8 +69,11 @@ public class DOMURIDereferencer implements URIDereferencer {
         Attr uriAttr = (Attr) domRef.getHere();
         String uri = uriRef.getURI();
         DOMCryptoContext dcc = (DOMCryptoContext) context;
+        String baseURI = context.getBaseURI();
 
-        // Check if same-document URI and register ID
+        boolean secVal = Utils.secureValidation(context);
+
+        // Check if same-document URI and already registered on the context
         if (uri != null && uri.length() != 0 && uri.charAt(0) == '#') {
             String id = uri.substring(1);
 
@@ -79,19 +83,34 @@ public class DOMURIDereferencer implements URIDereferencer {
                 id = id.substring(i1+1, i2);
             }
 
-            // this is a bit of a hack to check for registered
-            // IDRefs and manually register them with Apache's IdResolver
-            // map which includes builtin schema knowledge of DSig/Enc IDs
             Node referencedElem = dcc.getElementById(id);
             if (referencedElem != null) {
-                IdResolver.registerElementById((Element) referencedElem, id);
+                if (secVal) {
+                    Element start = referencedElem.getOwnerDocument().getDocumentElement();
+                    if (!XMLUtils.protectAgainstWrappingAttack(start, (Element)referencedElem, id)) {
+                        String error = "Multiple Elements with the same ID " + id + " were detected";
+                        throw new URIReferenceException(error);
+                    }
+                }
+
+                XMLSignatureInput result = new XMLSignatureInput(referencedElem);
+                if (!uri.substring(1).startsWith("xpointer(id(")) {
+                    result.setExcludeComments(true);
+                }
+
+                result.setMIMEType("text/xml");
+                if (baseURI != null && baseURI.length() > 0) {
+                    result.setSourceURI(baseURI.concat(uriAttr.getNodeValue()));
+                } else {
+                    result.setSourceURI(uriAttr.getNodeValue());
+                }
+                return new ApacheNodeSetData(result);
             }
         }
 
         try {
-            String baseURI = context.getBaseURI();
             ResourceResolver apacheResolver =
-                ResourceResolver.getInstance(uriAttr, baseURI);
+                ResourceResolver.getInstance(uriAttr, baseURI, secVal);
             XMLSignatureInput in = apacheResolver.resolve(uriAttr, baseURI);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);

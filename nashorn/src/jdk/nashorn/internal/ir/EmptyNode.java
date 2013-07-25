@@ -56,7 +56,7 @@ public final class EmptyNode extends Statement {
 
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterEmptyNode(this)) {
             return visitor.leaveEmptyNode(this);
         }

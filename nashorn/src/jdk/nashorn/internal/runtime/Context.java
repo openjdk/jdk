@@ -46,8 +46,10 @@ import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -99,13 +101,7 @@ public final class Context {
     /** Is Context global debug mode enabled ? */
     public static final boolean DEBUG = Options.getBooleanProperty("nashorn.debug");
 
-    private static final ThreadLocal<ScriptObject> currentGlobal =
-        new ThreadLocal<ScriptObject>() {
-            @Override
-            protected ScriptObject initialValue() {
-                 return null;
-            }
-        };
+    private static final ThreadLocal<ScriptObject> currentGlobal = new ThreadLocal<>();
 
     /**
      * Get the current global scope
@@ -187,7 +183,7 @@ public final class Context {
     private final ScriptEnvironment env;
 
     /** is this context in strict mode? Cached from env. as this is used heavily. */
-    public final boolean _strict;
+    final boolean _strict;
 
     /** class loader to resolve classes from script. */
     private final ClassLoader  appLoader;
@@ -481,6 +477,13 @@ public final class Context {
                 final String name   = JSType.toString(sobj.get("name"));
                 source = new Source(name, script);
             }
+        } else if (src instanceof Map) {
+            final Map map = (Map)src;
+            if (map.containsKey("script") && map.containsKey("name")) {
+                final String script = JSType.toString(map.get("script"));
+                final String name   = JSType.toString(map.get("name"));
+                source = new Source(name, script);
+            }
         }
 
         if (source != null) {
@@ -488,6 +491,44 @@ public final class Context {
         }
 
         throw typeError("cant.load.script", ScriptRuntime.safeToString(from));
+    }
+
+    /**
+     * Implementation of {@code loadWithNewGlobal} Nashorn extension. Load a script file from a source
+     * expression, after creating a new global scope.
+     *
+     * @param from source expression for script
+     * @param args (optional) arguments to be passed to the loaded script
+     *
+     * @return return value for load call (undefined)
+     *
+     * @throws IOException if source cannot be found or loaded
+     */
+    public Object loadWithNewGlobal(final Object from, final Object...args) throws IOException {
+        final ScriptObject oldGlobal = getGlobalTrusted();
+        final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+           @Override
+           public ScriptObject run() {
+               try {
+                   return createGlobal();
+               } catch (final RuntimeException e) {
+                   if (Context.DEBUG) {
+                       e.printStackTrace();
+                   }
+                   throw e;
+               }
+           }
+        });
+        setGlobalTrusted(newGlobal);
+
+        final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, newGlobal);
+        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped));
+
+        try {
+            return ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal);
+        } finally {
+            setGlobalTrusted(oldGlobal);
+        }
     }
 
     /**

@@ -124,7 +124,7 @@
     <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
-  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar">
+  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar" unless="compile.suppress.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
       <fileset dir="${build.classes.dir}"/>
       <manifest>
@@ -139,7 +139,13 @@
       </manifest>
     </jar>
   </target>
-  
+
+  <target name="use-promoted-nashorn" depends="init">
+    <delete file="${dist.dir}/nashorn.jar"/>
+    <copy file="${java.home}/lib/ext/nashorn.jar" todir="${dist.dir}"/>
+    <property name="compile.suppress.jar" value="defined"/>
+  </target>
+
   <target name="build-fxshell" depends="jar">
     <description>Builds the javafx shell.</description>
     <mkdir dir="${fxshell.classes.dir}"/>
@@ -212,7 +218,9 @@
            target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
-           includeantruntime="false"/>
+           includeantruntime="false">
+        <compilerarg line="-extdirs &quot;&quot;"/>
+    </javac>
 
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
@@ -236,7 +244,7 @@
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    
+
     <!-- TestNG framework jar needs AllPermission -->
     <echo message="grant codeBase &quot;file:/${basedir}/${file.reference.testng.jar}&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
     <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
@@ -305,6 +313,8 @@
       <include name="**/codegen/*Test.class"/>
       <include name="**/parser/*Test.class"/>
       <include name="**/runtime/*Test.class"/>
+      <include name="**/runtime/regexp/*Test.class"/>
+      <include name="**/runtime/regexp/joni/*Test.class"/>
       <include name="**/framework/*Test.class"/>
     </fileset>
 
@@ -458,24 +468,24 @@
   <!-- get all external test scripts -->
   <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
     <!-- make external test dir -->
-    <mkdir dir="${test.external.dir}"/> 
+    <mkdir dir="${test.external.dir}"/>
 
     <!-- jquery -->
-    <mkdir dir="${test.external.dir}/jquery"/>    
+    <mkdir dir="${test.external.dir}/jquery"/>
     <get src="http://code.jquery.com/jquery-1.7.2.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
     <get src="http://code.jquery.com/jquery-1.7.2.min.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
 
     <!-- prototype -->
-    <mkdir dir="${test.external.dir}/prototype"/>    
+    <mkdir dir="${test.external.dir}/prototype"/>
     <get src="http://ajax.googleapis.com/ajax/libs/prototype/1.7.0/prototype.js" dest="${test.external.dir}/prototype" usetimestamp="true" skipexisting="true" ignoreerrors="true"/>
 
     <!-- underscorejs -->
-    <mkdir dir="${test.external.dir}/underscore"/> 
+    <mkdir dir="${test.external.dir}/underscore"/>
     <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
     <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
 
     <!-- yui -->
-    <mkdir dir="${test.external.dir}/yui"/> 
+    <mkdir dir="${test.external.dir}/yui"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
 

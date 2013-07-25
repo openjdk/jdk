@@ -126,7 +126,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
             final T      value  = valueIter.next();
 
             if (symbol != null && value != null) {
-                final int index = ArrayIndex.getArrayIndexNoThrow(key);
+                final int index = ArrayIndex.getArrayIndex(key);
 
                 if (index < 0) {
                     putField(method, key, symbol.getFieldIndex(), value);
@@ -145,15 +145,6 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
     protected abstract void loadValue(T value);
 
     /**
-     * Determine the type of a value. Defined by anonymous subclasses in code gen.
-     *
-     * @param value Value to inspect.
-     *
-     * @return Value type.
-     */
-    protected abstract Type getValueType(T value);
-
-    /**
      * Store a value in a field of the generated class object.
      *
      * @param method      Script method.
@@ -165,13 +156,6 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         method.dup();
 
         loadValue(value);
-
-        final Type valueType = getValueType(value);
-        // for example when we have a with scope
-        if (valueType.isObject() || valueType.isBoolean()) {
-            method.convert(OBJECT);
-        }
-
         method.convert(OBJECT);
         method.putField(getClassName(), ObjectClassGenerator.getFieldName(fieldIndex, Type.OBJECT), typeDescriptor(Object.class));
     }

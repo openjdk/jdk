@@ -468,7 +468,25 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
-    assert(abs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
+    // We have a problem here if we are running with a pre-hsx24 JDK (for example during bootstrap)
+    // because in that case, EnableInvokeDynamic is true by default but will be later switched off
+    // if java_lang_invoke_MethodHandle::compute_offsets() detects that the JDK only has the classes
+    // for the old JSR292 implementation.
+    // This leads to a situation where 'istate->_stack_limit' always accounts for
+    // methodOopDesc::extra_stack_entries() because it is computed in
+    // CppInterpreterGenerator::generate_compute_interpreter_state() which was generated while
+    // EnableInvokeDynamic was still true. On the other hand, istate->_method->max_stack() doesn't
+    // account for extra_stack_entries() anymore because at the time when it is called
+    // EnableInvokeDynamic was already set to false.
+    // So we have a second version of the assertion which handles the case where EnableInvokeDynamic was
+    // switched off because of the wrong classes.
+    if (EnableInvokeDynamic || FLAG_IS_CMDLINE(EnableInvokeDynamic)) {
+      assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
+    } else {
+      const int extra_stack_entries = Method::extra_stack_entries_for_jsr292;
+      assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + extra_stack_entries
+                                                                                               + 1), "bad stack limit");
+    }
 #ifndef SHARK
     IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
 #endif // !SHARK
@@ -1563,7 +1581,7 @@ run:
 #define ARRAY_LOADTO32(T, T2, format, stackRes, extra)                                \
       {                                                                               \
           ARRAY_INTRO(-2);                                                            \
-          extra;                                                                      \
+          (void)extra;                                                                \
           SET_ ## stackRes(*(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)), \
                            -2);                                                       \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);                                      \
@@ -1574,8 +1592,8 @@ run:
       {                                                                                    \
           ARRAY_INTRO(-2);                                                                 \
           SET_ ## stackRes(*(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)), -1); \
-          extra;                                                                           \
-          UPDATE_PC_AND_CONTINUE(1);                                            \
+          (void)extra;                                                                     \
+          UPDATE_PC_AND_CONTINUE(1);                                                       \
       }
 
       CASE(_iaload):
@@ -1599,7 +1617,7 @@ run:
 #define ARRAY_STOREFROM32(T, T2, format, stackSrc, extra)                            \
       {                                                                              \
           ARRAY_INTRO(-3);                                                           \
-          extra;                                                                     \
+          (void)extra;                                                               \
           *(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)) = stackSrc( -1); \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);                                     \
       }
@@ -1608,7 +1626,7 @@ run:
 #define ARRAY_STOREFROM64(T, T2, stackSrc, extra)                                    \
       {                                                                              \
           ARRAY_INTRO(-4);                                                           \
-          extra;                                                                     \
+          (void)extra;                                                               \
           *(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)) = stackSrc( -1); \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -4);                                     \
       }
@@ -2215,7 +2233,7 @@ run:
         }
 
         Method* method = cache->f1_as_method();
-        VERIFY_OOP(method);
+        if (VerifyOops) method->verify();
 
         if (cache->has_appendix()) {
           ConstantPool* constants = METHOD->constants();
@@ -2247,8 +2265,7 @@ run:
         }
 
         Method* method = cache->f1_as_method();
-
-        VERIFY_OOP(method);
+        if (VerifyOops) method->verify();
 
         if (cache->has_appendix()) {
           ConstantPool* constants = METHOD->constants();

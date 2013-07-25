@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -70,9 +71,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private final ScriptEngineFactory factory;
     private final Context             nashornContext;
     private final ScriptObject        global;
+    // initialized bit late to be made 'final'. Property object for "context"
+    // property of global object
+    private Property                  contextProperty;
 
     // default options passed to Nashorn Options object
-    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-af", "-doe" };
+    private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-doe" };
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
@@ -121,7 +125,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         try {
             if (reader instanceof URLReader) {
                 final URL url = ((URLReader)reader).getURL();
-                return evalImpl(compileImpl(new Source(url.toString(), url), ctxt), ctxt);
+                final Charset cs = ((URLReader)reader).getCharset();
+                return evalImpl(compileImpl(new Source(url.toString(), url, cs), ctxt), ctxt);
             }
             return evalImpl(Source.readFully(reader), ctxt);
         } catch (final IOException e) {
@@ -279,13 +284,16 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         nashornContext.initGlobal(newGlobal);
 
+        final int NON_ENUMERABLE_CONSTANT = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE;
         // current ScriptContext exposed as "context"
-        newGlobal.addOwnProperty("context", Property.NOT_ENUMERABLE, UNDEFINED);
+        // "context" is non-writable from script - but script engine still
+        // needs to set it and so save the context Property object
+        contextProperty = newGlobal.addOwnProperty("context", NON_ENUMERABLE_CONSTANT, UNDEFINED);
         // current ScriptEngine instance exposed as "engine". We added @SuppressWarnings("LeakingThisInConstructor") as
         // NetBeans identifies this assignment as such a leak - this is a false positive as we're setting this property
         // in the Global of a Context we just created - both the Context and the Global were just created and can not be
         // seen from another thread outside of this constructor.
-        newGlobal.addOwnProperty("engine", Property.NOT_ENUMERABLE, this);
+        newGlobal.addOwnProperty("engine", NON_ENUMERABLE_CONSTANT, this);
         // global script arguments with undefined value
         newGlobal.addOwnProperty("arguments", Property.NOT_ENUMERABLE, UNDEFINED);
         // file name default is null
@@ -320,9 +328,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     // scripts should see "context" and "engine" as variables
     private void setContextVariables(final ScriptContext ctxt) {
-        ctxt.setAttribute("context", ctxt, ScriptContext.ENGINE_SCOPE);
         final ScriptObject ctxtGlobal = getNashornGlobalFrom(ctxt);
-        ctxtGlobal.set("context", ctxt, false);
+        // set "context" global variable via contextProperty - because this
+        // property is non-writable
+        contextProperty.setObjectValue(ctxtGlobal, ctxtGlobal, ctxt, false);
         Object args = ScriptObjectMirror.unwrap(ctxt.getAttribute("arguments"), ctxtGlobal);
         if (args == null || args == UNDEFINED) {
             args = ScriptRuntime.EMPTY_ARRAY;

@@ -32,9 +32,8 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
@@ -46,7 +45,7 @@ import java.util.StringTokenizer;
 public final class ScriptingFunctions {
 
     /** Handle to implementation of {@link ScriptingFunctions#readLine} - Nashorn extension */
-    public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class);
+    public static final MethodHandle READLINE = findOwnMH("readLine", Object.class, Object.class, Object.class);
 
     /** Handle to implementation of {@link ScriptingFunctions#readFully} - Nashorn extension */
     public static final MethodHandle READFULLY = findOwnMH("readFully",     Object.class, Object.class, Object.class);
@@ -78,13 +77,17 @@ public final class ScriptingFunctions {
      * Nashorn extension: global.readLine (scripting-mode-only)
      * Read one line of input from the standard input.
      *
-     * @param self self reference
+     * @param self   self reference
+     * @param prompt String used as input prompt
      *
      * @return line that was read
      *
      * @throws IOException if an exception occurs
      */
-    public static Object readLine(final Object self) throws IOException {
+    public static Object readLine(final Object self, final Object prompt) throws IOException {
+        if (prompt != UNDEFINED) {
+            System.out.print(JSType.toString(prompt));
+        }
         final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         return reader.readLine();
     }
@@ -161,42 +164,73 @@ public final class ScriptingFunctions {
 
         // Start the process.
         final Process process = processBuilder.start();
+        final IOException exception[] = new IOException[2];
+
+        // Collect output.
+        final StringBuilder outBuffer = new StringBuilder();
+        Thread outThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                char buffer[] = new char[1024];
+                try (final InputStreamReader inputStream = new InputStreamReader(process.getInputStream())) {
+                    for (int length; (length = inputStream.read(buffer, 0, buffer.length)) != -1; ) {
+                        outBuffer.append(buffer, 0, length);
+                    }
+                } catch (IOException ex) {
+                    exception[0] = ex;
+                }
+            }
+        }, "$EXEC output");
+
+        // Collect errors.
+        final StringBuilder errBuffer = new StringBuilder();
+        Thread errThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                char buffer[] = new char[1024];
+                try (final InputStreamReader inputStream = new InputStreamReader(process.getErrorStream())) {
+                    for (int length; (length = inputStream.read(buffer, 0, buffer.length)) != -1; ) {
+                        outBuffer.append(buffer, 0, length);
+                    }
+                } catch (IOException ex) {
+                    exception[1] = ex;
+                }
+            }
+        }, "$EXEC error");
+
+        // Start gathering output.
+        outThread.start();
+        errThread.start();
 
         // If input is present, pass on to process.
-        try (OutputStream outputStream = process.getOutputStream()) {
+        try (OutputStreamWriter outputStream = new OutputStreamWriter(process.getOutputStream())) {
             if (input != UNDEFINED) {
-                outputStream.write(JSType.toString(input).getBytes());
+                String in = JSType.toString(input);
+                outputStream.write(in, 0, in.length());
             }
+        } catch (IOException ex) {
+            // Process was not expecting input.  May be normal state of affairs.
         }
 
         // Wait for the process to complete.
         final int exit = process.waitFor();
+        outThread.join();
+        errThread.join();
 
-        // Collect output.
-        String out;
-         try (InputStream inputStream = process.getInputStream()) {
-            final StringBuilder outBuffer = new StringBuilder();
-            for (int ch; (ch = inputStream.read()) != -1; ) {
-                outBuffer.append((char)ch);
-            }
-            out = outBuffer.toString();
-        }
-
-        // Collect errors.
-        String err;
-        try (InputStream errorStream = process.getErrorStream()) {
-            final StringBuilder errBuffer = new StringBuilder();
-            for (int ch; (ch = errorStream.read()) != -1; ) {
-                errBuffer.append((char)ch);
-            }
-            err = errBuffer.toString();
-        }
+        final String out = outBuffer.toString();
+        final String err = errBuffer.toString();
 
         // Set globals for secondary results.
-        final boolean isStrict = global.isStrictContext();
-        global.set(OUT_NAME, out, isStrict);
-        global.set(ERR_NAME, err, isStrict);
-        global.set(EXIT_NAME, exit, isStrict);
+        global.set(OUT_NAME, out, false);
+        global.set(ERR_NAME, err, false);
+        global.set(EXIT_NAME, exit, false);
+
+        // Propagate exception if present.
+        for (int i = 0; i < exception.length; i++) {
+            if (exception[i] != null) {
+                throw exception[i];
+            }
+        }
 
         // Return the result from stdout.
         return out;

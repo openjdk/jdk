@@ -75,7 +75,7 @@ class ObjArrayKlass : public ArrayKlass {
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
   // Compute protection domain
-  oop protection_domain() { return bottom_klass()->protection_domain(); }
+  oop protection_domain() const { return bottom_klass()->protection_domain(); }
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.
@@ -151,7 +151,7 @@ class ObjArrayKlass : public ArrayKlass {
   const char* internal_name() const;
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st, bool check_dictionary);
 
   void oop_verify_on(oop obj, outputStream* st);
 };

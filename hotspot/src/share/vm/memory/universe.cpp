@@ -108,9 +108,11 @@ oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
+LatestMethodOopCache* Universe::_pd_implies_cache         = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
-oop Universe::_out_of_memory_error_perm_gen           = NULL;
+oop Universe::_out_of_memory_error_metaspace          = NULL;
+oop Universe::_out_of_memory_error_class_metaspace    = NULL;
 oop Universe::_out_of_memory_error_array_size         = NULL;
 oop Universe::_out_of_memory_error_gc_overhead_limit  = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
@@ -179,7 +181,8 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_the_null_string);
   f->do_oop((oop*)&_the_min_jint_string);
   f->do_oop((oop*)&_out_of_memory_error_java_heap);
-  f->do_oop((oop*)&_out_of_memory_error_perm_gen);
+  f->do_oop((oop*)&_out_of_memory_error_metaspace);
+  f->do_oop((oop*)&_out_of_memory_error_class_metaspace);
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
     f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
@@ -224,15 +227,13 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
   _reflect_invoke_cache->serialize(f);
+  _pd_implies_cache->serialize(f);
 }
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
-    ResourceMark rm;
-    stringStream st;
-    st.print("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment);
-    char* error = st.as_string();
-    vm_exit_during_initialization(error);
+    vm_exit_during_initialization(
+      err_msg("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment));
   }
 }
 
@@ -532,7 +533,9 @@ void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   if (vt) vt->initialize_vtable(false, CHECK);
   if (ko->oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*)ko;
-    for (KlassHandle s_h(THREAD, ik->subklass()); s_h() != NULL; s_h = (THREAD, s_h()->next_sibling())) {
+    for (KlassHandle s_h(THREAD, ik->subklass());
+         s_h() != NULL;
+         s_h = KlassHandle(THREAD, s_h()->next_sibling())) {
       reinitialize_vtable_of(s_h, CHECK);
     }
   }
@@ -562,7 +565,8 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
   // a potential loop which could happen if an out of memory occurs when attempting
   // to allocate the backtrace.
   return ((throwable() != Universe::_out_of_memory_error_java_heap) &&
-          (throwable() != Universe::_out_of_memory_error_perm_gen)  &&
+          (throwable() != Universe::_out_of_memory_error_metaspace)  &&
+          (throwable() != Universe::_out_of_memory_error_class_metaspace)  &&
           (throwable() != Universe::_out_of_memory_error_array_size) &&
           (throwable() != Universe::_out_of_memory_error_gc_overhead_limit));
 }
@@ -648,6 +652,7 @@ jint universe_init() {
   // Metaspace::initialize_shared_spaces() tries to populate them.
   Universe::_finalizer_register_cache = new LatestMethodOopCache();
   Universe::_loader_addClass_cache    = new LatestMethodOopCache();
+  Universe::_pd_implies_cache         = new LatestMethodOopCache();
   Universe::_reflect_invoke_cache     = new ActiveMethodOopsCache();
 
   if (UseSharedSpaces) {
@@ -822,12 +827,14 @@ jint Universe::initialize_heap() {
       // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       if (verbose) {
-        tty->print(", Compressed Oops with base: "PTR_FORMAT, Universe::narrow_oop_base());
+        tty->print(", %s: "PTR_FORMAT,
+            narrow_oop_mode_to_string(HeapBasedNarrowOop),
+            Universe::narrow_oop_base());
       }
     } else {
       Universe::set_narrow_oop_base(0);
       if (verbose) {
-        tty->print(", zero based Compressed Oops");
+        tty->print(", %s", narrow_oop_mode_to_string(ZeroBasedNarrowOop));
       }
 #ifdef _WIN64
       if (!Universe::narrow_oop_use_implicit_null_checks()) {
@@ -842,7 +849,7 @@ jint Universe::initialize_heap() {
       } else {
         Universe::set_narrow_oop_shift(0);
         if (verbose) {
-          tty->print(", 32-bits Oops");
+          tty->print(", %s", narrow_oop_mode_to_string(UnscaledNarrowOop));
         }
       }
     }
@@ -916,7 +923,7 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   }
 
   if (!total_rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for object heap %d bytes", total_reserved));
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap", total_reserved/K));
     return total_rs;
   }
 
@@ -948,6 +955,33 @@ void Universe::update_heap_info_at_gc() {
   _heap_used_at_last_gc     = heap()->used();
 }
 
+
+const char* Universe::narrow_oop_mode_to_string(Universe::NARROW_OOP_MODE mode) {
+  switch (mode) {
+    case UnscaledNarrowOop:
+      return "32-bits Oops";
+    case ZeroBasedNarrowOop:
+      return "zero based Compressed Oops";
+    case HeapBasedNarrowOop:
+      return "Compressed Oops with base";
+  }
+
+  ShouldNotReachHere();
+  return "";
+}
+
+
+Universe::NARROW_OOP_MODE Universe::narrow_oop_mode() {
+  if (narrow_oop_base() != 0) {
+    return HeapBasedNarrowOop;
+  }
+
+  if (narrow_oop_shift() != 0) {
+    return ZeroBasedNarrowOop;
+  }
+
+  return UnscaledNarrowOop;
+}
 
 
 void universe2_init() {
@@ -983,7 +1017,8 @@ bool universe_post_init() {
     k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
     k_h = instanceKlassHandle(THREAD, k);
     Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_perm_gen = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_metaspace = k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_class_metaspace = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_gc_overhead_limit =
       k_h->allocate_instance(CHECK_false);
@@ -1016,7 +1051,9 @@ bool universe_post_init() {
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
 
     msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_perm_gen, msg());
+    java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
+    msg = java_lang_String::create_from_str("Class Metadata space", CHECK_false);
+    java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_array_size, msg());
@@ -1082,6 +1119,23 @@ bool universe_post_init() {
   Universe::_loader_addClass_cache->init(
     SystemDictionary::ClassLoader_klass(), m, CHECK_false);
 
+  // Setup method for checking protection domain
+  InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->link_class(CHECK_false);
+  m = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->
+            find_method(vmSymbols::impliesCreateAccessControlContext_name(),
+                        vmSymbols::void_boolean_signature());
+  // Allow NULL which should only happen with bootstrapping.
+  if (m != NULL) {
+    if (m->is_static()) {
+      // NoSuchMethodException doesn't actually work because it tries to run the
+      // <init> function before java_lang_Class is linked. Print error and exit.
+      tty->print_cr("ProtectionDomain.impliesCreateAccessControlContext() has the wrong linkage");
+      return false; // initialization failed
+    }
+    Universe::_pd_implies_cache->init(
+      SystemDictionary::ProtectionDomain_klass(), m, CHECK_false);;
+  }
+
   // The folowing is initializing converter functions for serialization in
   // JVM.cpp. If we clean up the StrictMath code above we may want to find
   // a better solution for this as well.
@@ -1099,6 +1153,7 @@ bool universe_post_init() {
 
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();
+  MemoryService::add_metaspace_memory_pools();
 
   GC_locker::unlock();  // allow gc after bootstrapping
 
@@ -1499,6 +1554,7 @@ bool ActiveMethodOopsCache::is_same_method(const Method* method) const {
 
 
 Method* LatestMethodOopCache::get_Method() {
+  if (klass() == NULL) return NULL;
   InstanceKlass* ik = InstanceKlass::cast(klass());
   Method* m = ik->method_with_idnum(method_idnum());
   assert(m != NULL, "sanity check");

@@ -256,12 +256,17 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(LambdaTestHelpers.identity()).parallel()
         );
 
-        for (Consumer<Stream<Integer>> terminalOp : terminalOps) {
-            for (UnaryOperator<Stream<Integer>> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            setContext("termOpIndex", i);
+            Consumer<Stream<Integer>> terminalOp = terminalOps.get(i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<Stream<Integer>> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     Spliterator<Integer> sp = intermediateOp.apply(l.stream()).spliterator();
                     ProxyNoExactSizeSpliterator<Integer> psp = new ProxyNoExactSizeSpliterator<>(sp, proxyEstimateSize);
-                    Stream<Integer> s = StreamSupport.parallelStream(psp);
+                    Stream<Integer> s = StreamSupport.stream(psp, true);
                     terminalOp.accept(s);
                     Assert.assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
@@ -285,14 +290,14 @@ public class StreamSpliteratorTest extends OpTestCase {
             withData(data).
                     stream((Stream<Integer> in) -> {
                         Stream<Integer> out = f.apply(in);
-                        return StreamSupport.stream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.stream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), false);
                     }).
                     exercise();
 
             withData(data).
                     stream((Stream<Integer> in) -> {
                         Stream<Integer> out = f.apply(in);
-                        return StreamSupport.parallelStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.stream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), true);
                     }).
                     exercise();
         }
@@ -345,14 +350,19 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<IntStream> terminalOp : terminalOps) {
-            for (UnaryOperator<IntStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            setContext("termOpIndex", i);
+            Consumer<IntStream> terminalOp = terminalOps.get(i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<IntStream> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfInt sp = intermediateOp.apply(IntStream.range(0, 1000)).spliterator();
                     ProxyNoExactSizeSpliterator.OfInt psp = new ProxyNoExactSizeSpliterator.OfInt(sp, proxyEstimateSize);
-                    IntStream s = StreamSupport.intParallelStream(psp);
+                    IntStream s = StreamSupport.intStream(psp, true);
                     terminalOp.accept(s);
                     Assert.assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
@@ -376,14 +386,14 @@ public class StreamSpliteratorTest extends OpTestCase {
             withData(data).
                     stream(in -> {
                         IntStream out = f.apply(in);
-                        return StreamSupport.intStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.intStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), false);
                     }).
                     exercise();
 
             withData(data).
                     stream((in) -> {
                         IntStream out = f.apply(in);
-                        return StreamSupport.intParallelStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.intStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), true);
                     }).
                     exercise();
         }
@@ -433,14 +443,19 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<LongStream> terminalOp : terminalOps) {
-            for (UnaryOperator<LongStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            Consumer<LongStream> terminalOp = terminalOps.get(i);
+            setContext("termOpIndex", i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<LongStream> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfLong sp = intermediateOp.apply(LongStream.range(0, 1000)).spliterator();
                     ProxyNoExactSizeSpliterator.OfLong psp = new ProxyNoExactSizeSpliterator.OfLong(sp, proxyEstimateSize);
-                    LongStream s = StreamSupport.longParallelStream(psp);
+                    LongStream s = StreamSupport.longStream(psp, true);
                     terminalOp.accept(s);
                     Assert.assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
@@ -464,14 +479,14 @@ public class StreamSpliteratorTest extends OpTestCase {
             withData(data).
                     stream(in -> {
                         LongStream out = f.apply(in);
-                        return StreamSupport.longStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.longStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), false);
                     }).
                     exercise();
 
             withData(data).
                     stream((in) -> {
                         LongStream out = f.apply(in);
-                        return StreamSupport.longParallelStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.longStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), true);
                     }).
                     exercise();
         }
@@ -521,14 +536,19 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<DoubleStream> terminalOp : terminalOps) {
-            for (UnaryOperator<DoubleStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            Consumer<DoubleStream> terminalOp = terminalOps.get(i);
+            setContext("termOpIndex", i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                UnaryOperator<DoubleStream> intermediateOp = intermediateOps.get(j);
+                setContext("intOpIndex", j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfDouble sp = intermediateOp.apply(IntStream.range(0, 1000).asDoubleStream()).spliterator();
                     ProxyNoExactSizeSpliterator.OfDouble psp = new ProxyNoExactSizeSpliterator.OfDouble(sp, proxyEstimateSize);
-                    DoubleStream s = StreamSupport.doubleParallelStream(psp);
+                    DoubleStream s = StreamSupport.doubleStream(psp, true);
                     terminalOp.accept(s);
                     Assert.assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
@@ -552,14 +572,14 @@ public class StreamSpliteratorTest extends OpTestCase {
             withData(data).
                     stream(in -> {
                         DoubleStream out = f.apply(in);
-                        return StreamSupport.doubleStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.doubleStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), false);
                     }).
                     exercise();
 
             withData(data).
                     stream((in) -> {
                         DoubleStream out = f.apply(in);
-                        return StreamSupport.doubleParallelStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out));
+                        return StreamSupport.doubleStream(() -> out.spliterator(), OpTestCase.getStreamFlags(out), true);
                     }).
                     exercise();
         }

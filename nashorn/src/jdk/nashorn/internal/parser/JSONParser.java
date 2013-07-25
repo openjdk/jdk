@@ -54,10 +54,9 @@ public class JSONParser extends AbstractParser {
      * Constructor
      * @param source  the source
      * @param errors  the error manager
-     * @param strict  are we in strict mode
      */
-    public JSONParser(final Source source, final ErrorManager errors, final boolean strict) {
-        super(source, errors, strict);
+    public JSONParser(final Source source, final ErrorManager errors) {
+        super(source, errors, false);
     }
 
     /**
@@ -135,6 +134,7 @@ public class JSONParser extends AbstractParser {
                 return ch == '\"';
             }
 
+            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONWhiteSpace
             @Override
             protected boolean isWhitespace(final char ch) {
                 return Lexer.isJsonWhitespace(ch);
@@ -143,6 +143,99 @@ public class JSONParser extends AbstractParser {
             @Override
             protected boolean isEOL(final char ch) {
                 return Lexer.isJsonEOL(ch);
+            }
+
+            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONNumber
+            @Override
+            protected void scanNumber() {
+                // Record beginning of number.
+                final int startPosition = position;
+                // Assume value is a decimal.
+                TokenType valueType = TokenType.DECIMAL;
+
+                // floating point can't start with a "." with no leading digit before
+                if (ch0 == '.') {
+                    error(Lexer.message("json.invalid.number"), STRING, position, limit);
+                }
+
+                // First digit of number.
+                int digit = convertDigit(ch0, 10);
+
+                // skip first digit
+                skip(1);
+
+                if (digit != 0) {
+                    // Skip over remaining digits.
+                    while (convertDigit(ch0, 10) != -1) {
+                        skip(1);
+                    }
+                }
+
+                if (ch0 == '.' || ch0 == 'E' || ch0 == 'e') {
+                    // Must be a double.
+                    if (ch0 == '.') {
+                        // Skip period.
+                        skip(1);
+
+                        boolean mantissa = false;
+                        // Skip mantissa.
+                        while (convertDigit(ch0, 10) != -1) {
+                            mantissa = true;
+                            skip(1);
+                        }
+
+                        if (! mantissa) {
+                            // no digit after "."
+                            error(Lexer.message("json.invalid.number"), STRING, position, limit);
+                        }
+                    }
+
+                    // Detect exponent.
+                    if (ch0 == 'E' || ch0 == 'e') {
+                        // Skip E.
+                        skip(1);
+                        // Detect and skip exponent sign.
+                        if (ch0 == '+' || ch0 == '-') {
+                            skip(1);
+                        }
+                        boolean exponent = false;
+                        // Skip exponent.
+                        while (convertDigit(ch0, 10) != -1) {
+                            exponent = true;
+                            skip(1);
+                        }
+
+                        if (! exponent) {
+                            // no digit after "E"
+                            error(Lexer.message("json.invalid.number"), STRING, position, limit);
+                        }
+                    }
+
+                    valueType = TokenType.FLOATING;
+                }
+
+                // Add number token.
+                add(valueType, startPosition);
+            }
+
+            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONEscapeCharacter
+            @Override
+            protected boolean isEscapeCharacter(final char ch) {
+                switch (ch) {
+                    case '"':
+                    case '/':
+                    case '\\':
+                    case 'b':
+                    case 'f':
+                    case 'n':
+                    case 'r':
+                    case 't':
+                    // could be unicode escape
+                    case 'u':
+                        return true;
+                    default:
+                        return false;
+                }
             }
         };
 
@@ -282,7 +375,7 @@ loop:
         next();
 
         // Prepare to accumulate elements.
-        final List<Node> elements = new ArrayList<>();
+        final List<PropertyNode> elements = new ArrayList<>();
 
         // Create a block for the object literal.
 loop:
@@ -298,7 +391,7 @@ loop:
 
             default:
                 // Get and add the next property.
-                final Node property = propertyAssignment();
+                final PropertyNode property = propertyAssignment();
                 elements.add(property);
 
                 // Comma between property assigments is mandatory in JSON.
@@ -317,7 +410,7 @@ loop:
      * Parse a property assignment from the token stream
      * @return the property assignment as a Node
      */
-    private Node propertyAssignment() {
+    private PropertyNode propertyAssignment() {
         // Capture firstToken.
         final long propertyToken = token;
         LiteralNode<?> name = null;

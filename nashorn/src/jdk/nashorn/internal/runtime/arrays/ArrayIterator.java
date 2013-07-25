@@ -36,7 +36,7 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
     protected final ScriptObject array;
 
     /** length of array */
-    protected final int length;
+    protected final long length;
 
     /**
      * Constructor
@@ -46,7 +46,7 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
     protected ArrayIterator(final ScriptObject array, final boolean includeUndefined) {
         super(includeUndefined);
         this.array = array;
-        this.length = (int) array.getArray().length();
+        this.length = array.getArray().length();
     }
 
     /**
@@ -63,7 +63,7 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
     }
 
     @Override
-    public int getLength() {
+    public long getLength() {
         return length;
     }
 
@@ -83,6 +83,6 @@ public class ArrayIterator extends ArrayLikeIterator<Object> {
 
     @Override
     public void remove() {
-        array.delete(index, array.isStrictContext());
+        array.delete(index, false);
     }
 }

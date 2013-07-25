@@ -86,7 +86,7 @@ public class ReturnNode extends Statement {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterReturnNode(this)) {
             if (expression != null) {
                 return visitor.leaveReturnNode(setExpression(expression.accept(visitor)));

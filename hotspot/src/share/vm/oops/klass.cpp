@@ -37,6 +37,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/atomic.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -140,7 +141,7 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) {
   return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             Metaspace::ClassType, CHECK_NULL);
+                             MetaspaceObj::ClassType, CHECK_NULL);
 }
 
 Klass::Klass() {
@@ -168,7 +169,7 @@ Klass::Klass() {
   set_next_sibling(NULL);
   set_next_link(NULL);
   set_alloc_count(0);
-  TRACE_SET_KLASS_TRACE_ID(this, 0);
+  TRACE_INIT_ID(this);
 
   set_prototype_header(markOopDesc::prototype());
   set_biased_lock_revocation_count(0);
@@ -376,7 +377,6 @@ void Klass::append_to_sibling_list() {
 }
 
 bool Klass::is_loader_alive(BoolObjectClosure* is_alive) {
-  assert(is_metadata(), "p is not meta-data");
   assert(ClassLoaderDataGraph::contains((address)this), "is in the metaspace");
 
 #ifdef ASSERT
@@ -511,8 +511,9 @@ void Klass::restore_unshareable_info(TRAPS) {
   // (same order as class file parsing)
   loader_data->add_class(this);
 
-  // Recreate the class mirror
-  java_lang_Class::create_mirror(this, CHECK);
+  // Recreate the class mirror.  The protection_domain is always null for
+  // boot loader, for now.
+  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
 }
 
 Klass* Klass::array_klass_or_null(int rank) {
@@ -646,27 +647,24 @@ void Klass::collect_statistics(KlassSizeStats *sz) const {
 
 // Verification
 
-void Klass::verify_on(outputStream* st) {
-  guarantee(!Universe::heap()->is_in_reserved(this), "Shouldn't be");
-  guarantee(this->is_metadata(), "should be in metaspace");
+void Klass::verify_on(outputStream* st, bool check_dictionary) {
 
+  // This can be expensive, but it is worth checking that this klass is actually
+  // in the CLD graph but not in production.
   assert(ClassLoaderDataGraph::contains((address)this), "Should be");
 
   guarantee(this->is_klass(),"should be klass");
 
   if (super() != NULL) {
-    guarantee(super()->is_metadata(), "should be in metaspace");
     guarantee(super()->is_klass(), "should be klass");
   }
   if (secondary_super_cache() != NULL) {
     Klass* ko = secondary_super_cache();
-    guarantee(ko->is_metadata(), "should be in metaspace");
     guarantee(ko->is_klass(), "should be klass");
   }
   for ( uint i = 0; i < primary_super_limit(); i++ ) {
     Klass* ko = _primary_supers[i];
     if (ko != NULL) {
-      guarantee(ko->is_metadata(), "should be in metaspace");
       guarantee(ko->is_klass(), "should be klass");
     }
   }
@@ -678,7 +676,6 @@ void Klass::verify_on(outputStream* st) {
 
 void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_oop(),  "should be oop");
-  guarantee(obj->klass()->is_metadata(), "should not be in Java heap");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 

@@ -258,6 +258,12 @@ abstract class DoublePipeline<E_IN>
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedDouble(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(double t) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         DoubleStream result = mapper.apply(t);
@@ -289,6 +295,11 @@ abstract class DoublePipeline<E_IN>
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedDouble(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
                     @Override
                     public void accept(double t) {
                         if (predicate.test(t))
@@ -461,7 +472,7 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final double[] toArray() {
         return Nodes.flattenDouble((Node.OfDouble) evaluateToArrayNode(Double[]::new))
-                        .asDoubleArray();
+                        .asPrimitiveArray();
     }
 
     //

@@ -265,7 +265,7 @@ import java.util.Set;
  * <p>
  * For example:
  * <blockquote><pre>
- *  DateTimeFormatter formatter = DateTimeFormatter.pattern("yyyy MM dd");
+ *  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd");
  *  String text = date.toString(formatter);
  *  LocalDate date = LocalDate.parse(text, formatter);
  * </pre></blockquote>
@@ -460,7 +460,7 @@ import java.util.Set;
  * <li>The {@code ChronoField} time fields are resolved.
  * This is documented on {@link ChronoField} and is the same for all chronologies.
  * <li>Any fields that are not {@code ChronoField} are processed.
- * This is achieved using {@link TemporalField#resolve(TemporalAccessor, long, ResolverStyle)}.
+ * This is achieved using {@link TemporalField#resolve(Map, Chronology, ZoneId, ResolverStyle)}.
  * Documentation about field resolution is located in the implementation
  * of {@code TemporalField}.
  * <li>The {@code ChronoField} date and time fields are re-resolved.
@@ -1304,6 +1304,7 @@ public final class DateTimeFormatter {
      *  LocalTime time = parsed.query(LocalTime::from);
      *  Period extraDays = parsed.query(DateTimeFormatter.parsedExcessDays());
      * </pre>
+     * @return a query that provides access to the excess days that were parsed
      */
     public static final TemporalQuery<Period> parsedExcessDays() {
         return PARSED_EXCESS_DAYS;
@@ -1344,6 +1345,7 @@ public final class DateTimeFormatter {
      *    // validate leap-second is correct and apply correct smoothing
      *  }
      * </pre>
+     * @return a query that provides access to whether a leap-second was parsed
      */
     public static final TemporalQuery<Boolean> parsedLeapSecond() {
         return PARSED_LEAP_SECOND;

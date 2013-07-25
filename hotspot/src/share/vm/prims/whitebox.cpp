@@ -37,6 +37,7 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/exceptions.hpp"
 
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/concurrentMark.hpp"
@@ -158,7 +159,7 @@ WB_END
 
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
-  os::commit_memory((char *)(uintptr_t)addr, size);
+  os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
   MemTracker::record_virtual_memory_type((address)(uintptr_t)addr, mtTest);
 WB_END
 
@@ -330,8 +331,18 @@ WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
 WB_END
 
 
-WB_ENTRY(jlong, WB_ReserveMemory(JNIEnv* env, jobject o, jlong size))
-  return (jlong)os::reserve_memory(size, NULL, 0);
+WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
+  // static+volatile in order to force the read to happen
+  // (not be eliminated by the compiler)
+  static char c;
+  static volatile char* p;
+
+  p = os::reserve_memory(os::vm_allocation_granularity(), NULL, 0);
+  if (p == NULL) {
+    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
+  }
+
+  c = *p;
 WB_END
 
 //Some convenience methods to deal with objects from java
@@ -437,7 +448,7 @@ static JNINativeMethod methods[] = {
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
 
-  {CC"reserveMemory", CC"(J)J", (void*)&WB_ReserveMemory },
+  {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
 };
 
 #undef CC

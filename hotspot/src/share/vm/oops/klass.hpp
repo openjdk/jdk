@@ -445,7 +445,7 @@ class Klass : public Metadata {
   Klass* array_klass_or_null(int rank);
   Klass* array_klass_or_null();
 
-  virtual oop protection_domain()       { return NULL; }
+  virtual oop protection_domain() const = 0;
 
   oop class_loader() const;
 
@@ -703,8 +703,8 @@ class Klass : public Metadata {
   virtual const char* internal_name() const = 0;
 
   // Verification
-  virtual void verify_on(outputStream* st);
-  void verify() { verify_on(tty); }
+  virtual void verify_on(outputStream* st, bool check_dictionary);
+  void verify(bool check_dictionary = true) { verify_on(tty, check_dictionary); }
 
 #ifndef PRODUCT
   void verify_vtable_index(int index);

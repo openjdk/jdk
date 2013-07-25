@@ -919,11 +919,15 @@ public class Code {
         if (o instanceof Long) return syms.longType;
         if (o instanceof Double) return syms.doubleType;
         if (o instanceof ClassSymbol) return syms.classType;
-        if (o instanceof Type.ArrayType) return syms.classType;
-        if (o instanceof Type.MethodType) return syms.methodTypeType;
-        if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
         if (o instanceof Pool.MethodHandle) return syms.methodHandleType;
-        throw new AssertionError(o);
+        if (o instanceof UniqueType) return typeForPool(((UniqueType)o).type);
+        if (o instanceof Type) {
+            Type ty = ((Type)o).unannotatedType();
+
+            if (ty instanceof Type.ArrayType) return syms.classType;
+            if (ty instanceof Type.MethodType) return syms.methodTypeType;
+        }
+        throw new AssertionError("Invalid type of constant pool entry: " + o.getClass());
     }
 
     /** Emit an opcode with a one-byte operand field;
@@ -1855,7 +1859,7 @@ public class Code {
         }
     }
 
-    static final Type jsrReturnValue = new Type(INT, null);
+    static final Type jsrReturnValue = new JCPrimitiveType(INT, null);
 
 
 /* **************************************************************************
@@ -1960,8 +1964,7 @@ public class Code {
     }
 
     private void fillLocalVarPosition(LocalVar lv) {
-        if (lv == null || lv.sym == null
-                || lv.sym.annotations.isTypesEmpty())
+        if (lv == null || lv.sym == null || !lv.sym.hasTypeAnnotations())
             return;
         for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
             TypeAnnotationPosition p = ta.position;
@@ -1979,7 +1982,7 @@ public class Code {
         for (int i = 0; i < varBufferSize; ++i) {
             LocalVar lv = varBuffer[i];
             if (lv == null || lv.sym == null
-                    || lv.sym.annotations.isTypesEmpty()
+                    || !lv.sym.hasTypeAnnotations()
                     || !lv.sym.isExceptionParameter())
                 continue;
 
@@ -2028,7 +2031,7 @@ public class Code {
         // 2) it is an exception type and it contains type annotations
         if (!varDebugInfo &&
                 (!var.sym.isExceptionParameter() ||
-                var.sym.annotations.isTypesEmpty())) return;
+                var.sym.hasTypeAnnotations())) return;
         if ((var.sym.flags() & Flags.SYNTHETIC) != 0) return;
         if (varBuffer == null)
             varBuffer = new LocalVar[20];

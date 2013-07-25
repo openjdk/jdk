@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ import sun.security.util.SecurityConstants;
  * based on the context it encapsulates.
  *
  * <p>More specifically, it encapsulates a context and
- * has a single method, <code>checkPermission</code>,
- * that is equivalent to the <code>checkPermission</code> method
+ * has a single method, {@code checkPermission},
+ * that is equivalent to the {@code checkPermission} method
  * in the AccessController class, with one difference: The AccessControlContext
- * <code>checkPermission</code> method makes access decisions based on the
+ * {@code checkPermission} method makes access decisions based on the
  * context it encapsulates,
  * rather than that of the current execution thread.
  *
@@ -49,8 +49,8 @@ import sun.security.util.SecurityConstants;
  * <i>different</i> context (for example, from within a worker thread).
  *
  * <p> An AccessControlContext is created by calling the
- * <code>AccessController.getContext</code> method.
- * The <code>getContext</code> method takes a "snapshot"
+ * {@code AccessController.getContext} method.
+ * The {@code getContext} method takes a "snapshot"
  * of the current calling context, and places
  * it in an AccessControlContext object, which it returns. A sample call is
  * the following:
@@ -61,7 +61,7 @@ import sun.security.util.SecurityConstants;
  *
  * <p>
  * Code within a different context can subsequently call the
- * <code>checkPermission</code> method on the
+ * {@code checkPermission} method on the
  * previously-saved AccessControlContext object. A sample call is the
  * following:
  *
@@ -77,7 +77,10 @@ import sun.security.util.SecurityConstants;
 public final class AccessControlContext {
 
     private ProtectionDomain context[];
+    // isPrivileged and isAuthorized are referenced by the VM - do not remove
+    // or change their names
     private boolean isPrivileged;
+    private boolean isAuthorized = false;
 
     // Note: This field is directly used by the virtual machine
     // native codes. Don't touch it.
@@ -118,7 +121,7 @@ public final class AccessControlContext {
      * @param context the ProtectionDomains associated with this context.
      * The non-duplicate domains are copied from the array. Subsequent
      * changes to the array will not affect this AccessControlContext.
-     * @throws NullPointerException if <code>context</code> is <code>null</code>
+     * @throws NullPointerException if {@code context} is {@code null}
      */
     public AccessControlContext(ProtectionDomain context[])
     {
@@ -144,22 +147,22 @@ public final class AccessControlContext {
     }
 
     /**
-     * Create a new <code>AccessControlContext</code> with the given
-     * <code>AccessControlContext</code> and <code>DomainCombiner</code>.
+     * Create a new {@code AccessControlContext} with the given
+     * {@code AccessControlContext} and {@code DomainCombiner}.
      * This constructor associates the provided
-     * <code>DomainCombiner</code> with the provided
-     * <code>AccessControlContext</code>.
+     * {@code DomainCombiner} with the provided
+     * {@code AccessControlContext}.
      *
      * <p>
      *
-     * @param acc the <code>AccessControlContext</code> associated
-     *          with the provided <code>DomainCombiner</code>.
+     * @param acc the {@code AccessControlContext} associated
+     *          with the provided {@code DomainCombiner}.
      *
-     * @param combiner the <code>DomainCombiner</code> to be associated
-     *          with the provided <code>AccessControlContext</code>.
+     * @param combiner the {@code DomainCombiner} to be associated
+     *          with the provided {@code AccessControlContext}.
      *
      * @exception NullPointerException if the provided
-     *          <code>context</code> is <code>null</code>.
+     *          {@code context} is {@code null}.
      *
      * @exception SecurityException if a security manager is installed and the
      *          caller does not have the "createAccessControlContext"
@@ -172,6 +175,7 @@ public final class AccessControlContext {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.CREATE_ACC_PERMISSION);
+            this.isAuthorized = true;
         }
 
         this.context = acc.context;
@@ -257,6 +261,7 @@ public final class AccessControlContext {
             this.parent = parent;
             this.privilegedContext = context; // used in checkPermission2()
         }
+        this.isAuthorized = true;
     }
 
 
@@ -265,10 +270,11 @@ public final class AccessControlContext {
      */
 
     AccessControlContext(ProtectionDomain context[],
-                                 boolean isPrivileged)
+                         boolean isPrivileged)
     {
         this.context = context;
         this.isPrivileged = isPrivileged;
+        this.isAuthorized = true;
     }
 
     /**
@@ -314,13 +320,13 @@ public final class AccessControlContext {
     }
 
     /**
-     * Get the <code>DomainCombiner</code> associated with this
-     * <code>AccessControlContext</code>.
+     * Get the {@code DomainCombiner} associated with this
+     * {@code AccessControlContext}.
      *
      * <p>
      *
-     * @return the <code>DomainCombiner</code> associated with this
-     *          <code>AccessControlContext</code>, or <code>null</code>
+     * @return the {@code DomainCombiner} associated with this
+     *          {@code AccessControlContext}, or {@code null}
      *          if there is none.
      *
      * @exception SecurityException if a security manager is installed and

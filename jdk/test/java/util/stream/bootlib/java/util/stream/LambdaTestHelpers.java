@@ -269,7 +269,7 @@ public class LambdaTestHelpers {
         Set<T> uniq = new HashSet<>();
         while(iter.hasNext()) {
             T each = iter.next();
-            assertTrue(!uniq.contains(each));
+            assertTrue(!uniq.contains(each), "Not unique");
             uniq.add(each);
         }
     }
@@ -360,35 +360,26 @@ public class LambdaTestHelpers {
     private static<T> Map<T, Integer> toBoxedMultiset(Iterator<T> it) {
         Map<Object, Integer> result = new HashMap<>();
 
-        it.forEachRemaining(new OmnivorousConsumer<T>() {
-            @Override
-            public void accept(T t) {
-                add(t);
-            }
-
-            @Override
-            public void accept(int value) {
-                add(value);
-            }
-
-            @Override
-            public void accept(long value) {
-                add(value);
-            }
-
-            @Override
-            public void accept(double value) {
-                add(value);
-            }
-
-            void add(Object o) {
+        it.forEachRemaining(toBoxingConsumer(o -> {
                 if (result.containsKey(o))
                     result.put(o, result.get(o) + 1);
                 else
                     result.put(o, 1);
-            }
+            }));
 
-        });
+        return (Map<T, Integer>) result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static<T> Map<T, Integer> toBoxedMultiset(Spliterator<T> it) {
+        Map<Object, Integer> result = new HashMap<>();
+
+        it.forEachRemaining(toBoxingConsumer(o -> {
+                if (result.containsKey(o))
+                    result.put(o, result.get(o) + 1);
+                else
+                    result.put(o, 1);
+            }));
 
         return (Map<T, Integer>) result;
     }

@@ -2,21 +2,23 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
@@ -29,7 +31,7 @@
  * ===========================================================================
  */
 /*
- * $Id: DOMRetrievalMethod.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMRetrievalMethod.java 1333415 2012-05-03 12:03:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -38,6 +40,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Provider;
 import java.util.*;
+
+import javax.xml.XMLConstants;
 import javax.xml.crypto.*;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
@@ -49,8 +53,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-
 /**
  * DOM-based implementation of RetrievalMethod.
  *
@@ -60,7 +62,7 @@ import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 public final class DOMRetrievalMethod extends DOMStructure
     implements RetrievalMethod, DOMURIReference {
 
-    private final List transforms;
+    private final List<Transform> transforms;
     private String uri;
     private String type;
     private Attr here;
@@ -82,24 +84,26 @@ public final class DOMRetrievalMethod extends DOMStructure
      * @throws ClassCastException if <code>transforms</code> contains any
      *    entries that are not of type {@link Transform}
      */
-    public DOMRetrievalMethod(String uri, String type, List transforms) {
+    public DOMRetrievalMethod(String uri, String type,
+                              List<? extends Transform> transforms)
+    {
         if (uri == null) {
             throw new NullPointerException("uri cannot be null");
         }
         if (transforms == null || transforms.isEmpty()) {
-            this.transforms = Collections.EMPTY_LIST;
+            this.transforms = Collections.emptyList();
         } else {
-            List transformsCopy = new ArrayList(transforms);
-            for (int i = 0, size = transformsCopy.size(); i < size; i++) {
-                if (!(transformsCopy.get(i) instanceof Transform)) {
+            this.transforms = Collections.unmodifiableList(
+                new ArrayList<Transform>(transforms));
+            for (int i = 0, size = this.transforms.size(); i < size; i++) {
+                if (!(this.transforms.get(i) instanceof Transform)) {
                     throw new ClassCastException
                         ("transforms["+i+"] is not a valid type");
                 }
             }
-            this.transforms = Collections.unmodifiableList(transformsCopy);
         }
         this.uri = uri;
-        if ((uri != null) && (!uri.equals(""))) {
+        if (!uri.equals("")) {
             try {
                 new URI(uri);
             } catch (URISyntaxException e) {
@@ -116,7 +120,9 @@ public final class DOMRetrievalMethod extends DOMStructure
      * @param rmElem a RetrievalMethod element
      */
     public DOMRetrievalMethod(Element rmElem, XMLCryptoContext context,
-        Provider provider) throws MarshalException {
+                              Provider provider)
+        throws MarshalException
+    {
         // get URI and Type attributes
         uri = DOMUtils.getAttributeValue(rmElem, "URI");
         type = DOMUtils.getAttributeValue(rmElem, "Type");
@@ -124,9 +130,13 @@ public final class DOMRetrievalMethod extends DOMStructure
         // get here node
         here = rmElem.getAttributeNodeNS(null, "URI");
 
+        boolean secVal = Utils.secureValidation(context);
+
         // get Transforms, if specified
-        List transforms = new ArrayList();
+        List<Transform> transforms = new ArrayList<Transform>();
         Element transformsElem = DOMUtils.getFirstChildElement(rmElem);
+
+        int transformCount = 0;
         if (transformsElem != null) {
             Element transformElem =
                 DOMUtils.getFirstChildElement(transformsElem);
@@ -134,10 +144,17 @@ public final class DOMRetrievalMethod extends DOMStructure
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
+
+                transformCount++;
+                if (secVal && (transformCount > DOMReference.MAXIMUM_TRANSFORM_COUNT)) {
+                    String error = "A maxiumum of " + DOMReference.MAXIMUM_TRANSFORM_COUNT + " "
+                        + "transforms per Reference are allowed with secure validation";
+                    throw new MarshalException(error);
+                }
             }
         }
         if (transforms.isEmpty()) {
-            this.transforms = Collections.EMPTY_LIST;
+            this.transforms = Collections.emptyList();
         } else {
             this.transforms = Collections.unmodifiableList(transforms);
         }
@@ -156,11 +173,11 @@ public final class DOMRetrievalMethod extends DOMStructure
     }
 
     public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)
-        throws MarshalException {
+        throws MarshalException
+    {
         Document ownerDoc = DOMUtils.getOwnerDocument(parent);
-
-        Element rmElem = DOMUtils.createElement
-            (ownerDoc, "RetrievalMethod", XMLSignature.XMLNS, dsPrefix);
+        Element rmElem = DOMUtils.createElement(ownerDoc, "RetrievalMethod",
+                                                XMLSignature.XMLNS, dsPrefix);
 
         // add URI and Type attributes
         DOMUtils.setAttribute(rmElem, "URI", uri);
@@ -168,12 +185,14 @@ public final class DOMRetrievalMethod extends DOMStructure
 
         // add Transforms elements
         if (!transforms.isEmpty()) {
-            Element transformsElem = DOMUtils.createElement
-                (ownerDoc, "Transforms", XMLSignature.XMLNS, dsPrefix);
+            Element transformsElem = DOMUtils.createElement(ownerDoc,
+                                                            "Transforms",
+                                                            XMLSignature.XMLNS,
+                                                            dsPrefix);
             rmElem.appendChild(transformsElem);
-            for (int i = 0, size = transforms.size(); i < size; i++) {
-                ((DOMTransform) transforms.get(i)).marshal
-                    (transformsElem, dsPrefix, context);
+            for (Transform transform : transforms) {
+                ((DOMTransform)transform).marshal(transformsElem,
+                                                   dsPrefix, context);
             }
         }
 
@@ -188,8 +207,8 @@ public final class DOMRetrievalMethod extends DOMStructure
     }
 
     public Data dereference(XMLCryptoContext context)
-        throws URIReferenceException {
-
+        throws URIReferenceException
+    {
         if (context == null) {
             throw new NullPointerException("context cannot be null");
         }
@@ -207,23 +226,38 @@ public final class DOMRetrievalMethod extends DOMStructure
 
         // pass dereferenced data through Transforms
         try {
-            for (int i = 0, size = transforms.size(); i < size; i++) {
-                Transform transform = (Transform) transforms.get(i);
-                data = ((DOMTransform) transform).transform(data, context);
+            for (Transform transform : transforms) {
+                data = ((DOMTransform)transform).transform(data, context);
             }
         } catch (Exception e) {
             throw new URIReferenceException(e);
         }
+
+        // guard against RetrievalMethod loops
+        if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
+            NodeSetData nsd = (NodeSetData)data;
+            Iterator i = nsd.iterator();
+            if (i.hasNext()) {
+                Node root = (Node)i.next();
+                if ("RetrievalMethod".equals(root.getLocalName())) {
+                    throw new URIReferenceException(
+                        "It is forbidden to have one RetrievalMethod point " +
+                        "to another when secure validation is enabled");
+                }
+            }
+        }
+
         return data;
     }
 
     public XMLStructure dereferenceAsXMLStructure(XMLCryptoContext context)
-        throws URIReferenceException {
-
+        throws URIReferenceException
+    {
         try {
-            ApacheData data = (ApacheData) dereference(context);
+            ApacheData data = (ApacheData)dereference(context);
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(new ByteArrayInputStream
                 (data.getXMLSignatureInput().getBytes()));
@@ -238,6 +272,7 @@ public final class DOMRetrievalMethod extends DOMStructure
         }
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -245,12 +280,24 @@ public final class DOMRetrievalMethod extends DOMStructure
         if (!(obj instanceof RetrievalMethod)) {
             return false;
         }
-        RetrievalMethod orm = (RetrievalMethod) obj;
+        RetrievalMethod orm = (RetrievalMethod)obj;
 
-        boolean typesEqual = (type == null ? orm.getType() == null :
-            type.equals(orm.getType()));
+        boolean typesEqual = (type == null ? orm.getType() == null
+                                           : type.equals(orm.getType()));
 
         return (uri.equals(orm.getURI()) &&
             transforms.equals(orm.getTransforms()) && typesEqual);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 17;
+        if (type != null) {
+            result = 31 * result + type.hashCode();
+        }
+        result = 31 * result + uri.hashCode();
+        result = 31 * result + transforms.hashCode();
+
+        return result;
     }
 }

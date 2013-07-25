@@ -1143,7 +1143,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 			  -D "JDK_INTERNAL_NAME=jdwp" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjdwp,\
-		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
+		DEBUG_SYMBOLS:=true))
 
 $(BUILD_LIBJDWP) : $(BUILD_LIBJAVA)
 
@@ -1332,7 +1332,7 @@ LIBFONTMANAGER_OPTIMIZATION:=HIGH
 ifeq ($(OPENJDK_TARGET_OS),windows)
     LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
 				    X11TextRenderer.c
-    LIBFONTMANAGER_OPTIMIZATION:=LOW
+LIBFONTMANAGER_OPTIMIZATION:=HIGHEST
 else
     LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c \
 				    lcdglyph.c
@@ -2055,7 +2055,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 	BUILD_LIBJLI_FILES += java_md.c \
-			      cmdtoargs.c
+			      cmdtoargs.c	
         # Staticically link with c runtime on windows.
 	LIBJLI_CFLAGS:=$(filter-out -MD,$(LIBJLI_CFLAGS))
 else ifneq ($(OPENJDK_TARGET_OS), macosx)
@@ -2609,21 +2609,22 @@ endif
 
 ##########################################################################################
 
-BUILD_LIBKRB5_NAME:=
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifneq ($(BUILD_CRYPTO),no)
+  BUILD_LIBKRB5_NAME:=
+  ifeq ($(OPENJDK_TARGET_OS), windows)
      BUILD_LIBKRB5_NAME:=w2k_lsa_auth
      BUILD_LIBKRB5_SRC:=$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/security/krb5
      BUILD_LIBKRB5_LIBS:=advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
 			 gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib \
 			 ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  else ifeq ($(OPENJDK_TARGET_OS), macosx)
      BUILD_LIBKRB5_NAME:=osxkrb5
      BUILD_LIBKRB5_SRC:=$(JDK_TOPDIR)/src/share/native/sun/security/krb5
      BUILD_LIBKRB5_LIBS:=-framework Kerberos
-endif
+  endif
 
-ifneq ($(BUILD_LIBKRB5_NAME),)
-$(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
+  ifneq ($(BUILD_LIBKRB5_NAME),)
+    $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
 		LIBRARY:=$(BUILD_LIBKRB5_NAME),\
                 OUTPUT_DIR:=$(INSTALL_LIBRARIES_HERE),\
 		SRC:=$(BUILD_LIBKRB5_SRC),\
@@ -2643,7 +2644,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libkrb5,\
 		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
-BUILD_LIBRARIES += $(BUILD_LIBKRB5)
+    BUILD_LIBRARIES += $(BUILD_LIBKRB5)
+  endif
 endif
 
 ##########################################################################################
@@ -2914,7 +2916,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA,\
 				PLATFORM_API_LinuxOS_ALSA_Ports.c,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
-		CFLAGS:=$(CFLAGS_JDKLIB) \
+		CFLAGS:=$(CFLAGS_JDKLIB) $(ALSA_CFLAGS) \
 			$(LIBJSOUND_CFLAGS) \
 			-DUSE_DAUDIO=TRUE \
 			-DUSE_PORTS=TRUE  \
@@ -2923,7 +2925,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjsoundalsa/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB)\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
-		LDFLAGS_SUFFIX:=-lasound -ljava -ljvm,\
+		LDFLAGS_SUFFIX:=$(ALSA_LIBS) -ljava -ljvm,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundalsa,\
 		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 

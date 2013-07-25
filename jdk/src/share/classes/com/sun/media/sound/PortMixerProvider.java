@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
-
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.spi.MixerProvider;
 
@@ -36,7 +34,7 @@ import javax.sound.sampled.spi.MixerProvider;
  *
  * @author Florian Bomers
  */
-public class PortMixerProvider extends MixerProvider {
+public final class PortMixerProvider extends MixerProvider {
 
     // STATIC VARIABLES
 
@@ -66,16 +64,17 @@ public class PortMixerProvider extends MixerProvider {
      * Required public no-arg constructor.
      */
     public PortMixerProvider() {
-        //if (Printer.trace) Printer.trace("PortMixerProvider: constructor");
-        if (Platform.isPortsEnabled()) {
-            init();
-        } else {
-            infos = new PortMixerInfo[0];
-            devices = new PortMixer[0];
+        synchronized (PortMixerProvider.class) {
+            if (Platform.isPortsEnabled()) {
+                init();
+            } else {
+                infos = new PortMixerInfo[0];
+                devices = new PortMixer[0];
+            }
         }
     }
 
-    private static synchronized void init() {
+    private static void init() {
         // get the number of input devices
         int numDevices = nGetNumDevices();
 
@@ -95,23 +94,28 @@ public class PortMixerProvider extends MixerProvider {
     }
 
     public Mixer.Info[] getMixerInfo() {
-        Mixer.Info[] localArray = new Mixer.Info[infos.length];
-        System.arraycopy(infos, 0, localArray, 0, infos.length);
-        return localArray;
+        synchronized (PortMixerProvider.class) {
+            Mixer.Info[] localArray = new Mixer.Info[infos.length];
+            System.arraycopy(infos, 0, localArray, 0, infos.length);
+            return localArray;
+        }
     }
 
 
     public Mixer getMixer(Mixer.Info info) {
-        for (int i = 0; i < infos.length; i++) {
-            if (infos[i].equals(info)) {
-                return getDevice(infos[i]);
+        synchronized (PortMixerProvider.class) {
+            for (int i = 0; i < infos.length; i++) {
+                if (infos[i].equals(info)) {
+                    return getDevice(infos[i]);
+                }
             }
         }
-        throw new IllegalArgumentException("Mixer " + info.toString() + " not supported by this provider.");
+        throw new IllegalArgumentException("Mixer " + info.toString()
+                                           + " not supported by this provider.");
     }
 
 
-    private Mixer getDevice(PortMixerInfo info) {
+    private static Mixer getDevice(PortMixerInfo info) {
         int index = info.getIndex();
         if (devices[index] == null) {
             devices[index] = new PortMixer(info);
@@ -127,8 +131,8 @@ public class PortMixerProvider extends MixerProvider {
      * making native references to a particular device.
      * This constructor is called from native.
      */
-    static class PortMixerInfo extends Mixer.Info {
-        private int index;
+    static final class PortMixerInfo extends Mixer.Info {
+        private final int index;
 
         private PortMixerInfo(int index, String name, String vendor, String description, String version) {
             super("Port " + name, vendor, description, version);

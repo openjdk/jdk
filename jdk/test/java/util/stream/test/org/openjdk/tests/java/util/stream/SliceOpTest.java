@@ -26,9 +26,16 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LambdaTestHelpers;
+import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
@@ -145,19 +152,20 @@ public class SliceOpTest extends OpTestCase {
         List<Integer> skips = sizes(data.size());
 
         for (int s : skips) {
-            Collection<Integer> sr = exerciseOpsInt(data,
-                                                      st -> st.substream(s),
-                                                      st -> st.substream(s),
-                                                      st -> st.substream(s),
-                                                      st -> st.substream(s));
-            assertEquals(sr.size(), sliceSize(data.size(), s));
+            setContext("skip", s);
+            testSliceMulti(data,
+                           sliceSize(data.size(), s),
+                           st -> st.substream(s),
+                           st -> st.substream(s),
+                           st -> st.substream(s),
+                           st -> st.substream(s));
 
-            sr = exerciseOpsInt(data,
-                                  st -> st.substream(s).substream(s / 2),
-                                  st -> st.substream(s).substream(s / 2),
-                                  st -> st.substream(s).substream(s / 2),
-                                  st -> st.substream(s).substream(s / 2));
-            assertEquals(sr.size(), sliceSize(sliceSize(data.size(), s), s/2));
+            testSliceMulti(data,
+                           sliceSize(sliceSize(data.size(), s), s/2),
+                           st -> st.substream(s).substream(s / 2),
+                           st -> st.substream(s).substream(s / 2),
+                           st -> st.substream(s).substream(s / 2),
+                           st -> st.substream(s).substream(s / 2));
         }
     }
 
@@ -167,54 +175,158 @@ public class SliceOpTest extends OpTestCase {
         List<Integer> limits = skips;
 
         for (int s : skips) {
-            for (int limit : limits) {
-                Collection<Integer> sr = exerciseOpsInt(data,
-                                                        st -> st.substream(s).limit(limit),
-                                                        st -> st.substream(s).limit(limit),
-                                                        st -> st.substream(s).limit(limit),
-                                                        st -> st.substream(s).limit(limit));
-                assertEquals(sr.size(), sliceSize(sliceSize(data.size(), s), 0, limit));
+            setContext("skip", s);
+            for (int l : limits) {
+                setContext("limit", l);
+                testSliceMulti(data,
+                               sliceSize(sliceSize(data.size(), s), 0, l),
+                               st -> st.substream(s).limit(l),
+                               st -> st.substream(s).limit(l),
+                               st -> st.substream(s).limit(l),
+                               st -> st.substream(s).limit(l));
 
-                sr = exerciseOpsInt(data,
-                                    st -> st.substream(s, limit+s),
-                                    st -> st.substream(s, limit+s),
-                                    st -> st.substream(s, limit+s),
-                                    st -> st.substream(s, limit+s));
-                assertEquals(sr.size(), sliceSize(data.size(), s, limit));
+                testSliceMulti(data,
+                               sliceSize(data.size(), s, l),
+                                st -> st.substream(s, l+s),
+                                st -> st.substream(s, l+s),
+                                st -> st.substream(s, l+s),
+                                st -> st.substream(s, l+s));
             }
         }
+    }
+
+    public void testSkipLimitOpsWithNonSplittingSpliterator() {
+        class NonSplittingNotSubsizedOrderedSpliterator<T> implements Spliterator<T> {
+            Spliterator<T> s;
+
+            NonSplittingNotSubsizedOrderedSpliterator(Spliterator<T> s) {
+                assert s.hasCharacteristics(Spliterator.ORDERED);
+                this.s = s;
+            }
+
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                return s.tryAdvance(action);
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super T> action) {
+                s.forEachRemaining(action);
+            }
+
+            @Override
+            public Spliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return s.estimateSize();
+            }
+
+            @Override
+            public int characteristics() {
+                return s.characteristics() & ~(Spliterator.SUBSIZED);
+            }
+
+            @Override
+            public Comparator<? super T> getComparator() {
+                return s.getComparator();
+            }
+        }
+        List<Integer> list = IntStream.range(0, 100).boxed().collect(Collectors.toList());
+        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier(
+                "Non splitting, not SUBSIZED, ORDERED, stream",
+                () -> StreamSupport.stream(new NonSplittingNotSubsizedOrderedSpliterator<>(list.spliterator()), false));
+
+        testSkipLimitOps("testSkipLimitOpsWithNonSplittingSpliterator", data);
     }
 
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> limits = sizes(data.size());
 
-        for (int limit : limits) {
-            Collection<Integer> sr = exerciseOpsInt(data,
-                                                    st -> st.limit(limit),
-                                                    st -> st.limit(limit),
-                                                    st -> st.limit(limit),
-                                                    st -> st.limit(limit));
-            assertEquals(sr.size(), sliceSize(data.size(), 0, limit));
+        for (int l : limits) {
+            setContext("limit", l);
+            testSliceMulti(data,
+                           sliceSize(data.size(), 0, l),
+                           st -> st.limit(l),
+                           st -> st.limit(l),
+                           st -> st.limit(l),
+                           st -> st.limit(l));
+        }
 
-            sr = exerciseOpsInt(data,
-                                st -> st.limit(limit).limit(limit / 2),
-                                st -> st.limit(limit).limit(limit / 2),
-                                st -> st.limit(limit).limit(limit / 2),
-                                st -> st.limit(limit).limit(limit / 2));
-            assertEquals(sr.size(), sliceSize(sliceSize(data.size(), 0, limit), 0, limit/2));
+        for (int l : limits) {
+            setContext("limit", l);
+            testSliceMulti(data,
+                           sliceSize(sliceSize(data.size(), 0, l), 0, l / 2),
+                           st -> st.limit(l).limit(l / 2),
+                           st -> st.limit(l).limit(l / 2),
+                           st -> st.limit(l).limit(l / 2),
+                           st -> st.limit(l).limit(l / 2));
+        }
+    }
+
+    private ResultAsserter<Iterable<Integer>> sliceResultAsserter(Iterable<Integer> data,
+                                                                  int expectedSize) {
+        return (act, exp, ord, par) -> {
+            if (par & !ord) {
+                List<Integer> expected = new ArrayList<>();
+                data.forEach(expected::add);
+
+                List<Integer> actual = new ArrayList<>();
+                act.forEach(actual::add);
+
+                assertEquals(actual.size(), expectedSize);
+                assertTrue(expected.containsAll(actual));
+            }
+            else {
+                LambdaTestHelpers.assertContents(act, exp);
+            }
+        };
+    }
+
+    private void testSliceMulti(TestData.OfRef<Integer> data,
+                                int expectedSize,
+                                Function<Stream<Integer>, Stream<Integer>> mRef,
+                                Function<IntStream, IntStream> mInt,
+                                Function<LongStream, LongStream> mLong,
+                                Function<DoubleStream, DoubleStream> mDouble) {
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        Function<Stream<Integer>, Stream<Integer>>[] ms = new Function[4];
+        ms[0] = mRef;
+        ms[1] = s -> mInt.apply(s.mapToInt(e -> e)).mapToObj(e -> e);
+        ms[2] = s -> mLong.apply(s.mapToLong(e -> e)).mapToObj(e -> (int) e);
+        ms[3] = s -> mDouble.apply(s.mapToDouble(e -> e)).mapToObj(e -> (int) e);
+        testSliceMulti(data, expectedSize, ms);
+    }
+
+    @SafeVarargs
+    private final void testSliceMulti(TestData.OfRef<Integer> data,
+                                      int expectedSize,
+                                      Function<Stream<Integer>, Stream<Integer>>... ms) {
+        for (int i = 0; i < ms.length; i++) {
+            setContext("mIndex", i);
+            Function<Stream<Integer>, Stream<Integer>> m = ms[i];
+            Collection<Integer> sr = withData(data)
+                    .stream(m)
+                    .resultAsserter(sliceResultAsserter(data, expectedSize))
+                    .exercise();
+            assertEquals(sr.size(), expectedSize);
         }
     }
 
     public void testLimitSort() {
         List<Integer> l = countTo(100);
         Collections.reverse(l);
-        exerciseOps(l, s -> s.limit(10).sorted(Comparators.naturalOrder()));
+        exerciseOps(l, s -> s.limit(10).sorted(Comparator.naturalOrder()));
     }
 
     @Test(groups = { "serialization-hostile" })
     public void testLimitShortCircuit() {
         for (int l : Arrays.asList(0, 10)) {
+            setContext("l", l);
             AtomicInteger ai = new AtomicInteger();
             countTo(100).stream()
                     .peek(i -> ai.getAndIncrement())
@@ -222,18 +334,6 @@ public class SliceOpTest extends OpTestCase {
             // For the case of a zero limit, one element will get pushed through the sink chain
             assertEquals(ai.get(), l, "tee block was called too many times");
         }
-    }
-
-    public void testSkipParallel() {
-        List<Integer> l = countTo(1000).parallelStream().substream(200).limit(200).sequential().collect(Collectors.toList());
-        assertEquals(l.size(), 200);
-        assertEquals(l.get(l.size() -1).intValue(), 400);
-    }
-
-    public void testLimitParallel() {
-        List<Integer> l = countTo(1000).parallelStream().limit(500).sequential().collect(Collectors.toList());
-        assertEquals(l.size(), 500);
-        assertEquals(l.get(l.size() -1).intValue(), 500);
     }
 
     private List<Integer> sizes(int size) {

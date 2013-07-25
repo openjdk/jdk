@@ -52,6 +52,7 @@ import javax.management.NotCompliantMBeanException;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 import sun.reflect.misc.MethodUtil;
@@ -64,7 +65,11 @@ import sun.reflect.misc.ReflectUtil;
  * @since 1.5
  */
 public class Introspector {
-
+    final public static boolean ALLOW_NONPUBLIC_MBEAN;
+    static {
+        String val = AccessController.doPrivileged(new GetPropertyAction("jdk.jmx.mbeans.allowNonPublic"));
+        ALLOW_NONPUBLIC_MBEAN = Boolean.parseBoolean(val);
+    }
 
      /*
      * ------------------------------------------
@@ -223,9 +228,30 @@ public class Introspector {
         return testCompliance(baseClass, null);
     }
 
+    /**
+     * Tests the given interface class for being a compliant MXBean interface.
+     * A compliant MXBean interface is any publicly accessible interface
+     * following the {@link MXBean} conventions.
+     * @param interfaceClass An interface class to test for the MXBean compliance
+     * @throws NotCompliantMBeanException Thrown when the tested interface
+     * is not public or contradicts the {@link MXBean} conventions.
+     */
     public static void testComplianceMXBeanInterface(Class<?> interfaceClass)
             throws NotCompliantMBeanException {
         MXBeanIntrospector.getInstance().getAnalyzer(interfaceClass);
+    }
+
+    /**
+     * Tests the given interface class for being a compliant MBean interface.
+     * A compliant MBean interface is any publicly accessible interface
+     * following the {@code MBean} conventions.
+     * @param interfaceClass An interface class to test for the MBean compliance
+     * @throws NotCompliantMBeanException Thrown when the tested interface
+     * is not public or contradicts the {@code MBean} conventions.
+     */
+    public static void testComplianceMBeanInterface(Class<?> interfaceClass)
+            throws NotCompliantMBeanException{
+        StandardMBeanIntrospector.getInstance().getAnalyzer(interfaceClass);
     }
 
     /**
@@ -248,6 +274,7 @@ public class Introspector {
             throws NotCompliantMBeanException {
         if (mbeanInterface == null)
             mbeanInterface = getStandardMBeanInterface(baseClass);
+        ReflectUtil.checkPackageAccess(mbeanInterface);
         MBeanIntrospector<?> introspector = StandardMBeanIntrospector.getInstance();
         return getClassMBeanInfo(introspector, baseClass, mbeanInterface);
     }
@@ -293,18 +320,18 @@ public class Introspector {
      * not a JMX compliant Standard MBean.
      */
     public static <T> Class<? super T> getStandardMBeanInterface(Class<T> baseClass)
-    throws NotCompliantMBeanException {
-        Class<? super T> current = baseClass;
-        Class<? super T> mbeanInterface = null;
-        while (current != null) {
-            mbeanInterface =
-                findMBeanInterface(current, current.getName());
-            if (mbeanInterface != null) break;
-            current = current.getSuperclass();
-        }
-        if (mbeanInterface != null) {
-            return mbeanInterface;
-        } else {
+        throws NotCompliantMBeanException {
+            Class<? super T> current = baseClass;
+            Class<? super T> mbeanInterface = null;
+            while (current != null) {
+                mbeanInterface =
+                    findMBeanInterface(current, current.getName());
+                if (mbeanInterface != null) break;
+                current = current.getSuperclass();
+            }
+                if (mbeanInterface != null) {
+                    return mbeanInterface;
+            } else {
             final String msg =
                 "Class " + baseClass.getName() +
                 " is not a JMX compliant Standard MBean";
@@ -372,13 +399,19 @@ public class Introspector {
         for (Annotation a : annots) {
             Class<? extends Annotation> c = a.annotationType();
             Method[] elements = c.getMethods();
+            boolean packageAccess = false;
             for (Method element : elements) {
                 DescriptorKey key = element.getAnnotation(DescriptorKey.class);
                 if (key != null) {
                     String name = key.value();
                     Object value;
                     try {
-                        value = element.invoke(a);
+                        // Avoid checking access more than once per annotation
+                        if (!packageAccess) {
+                            ReflectUtil.checkPackageAccess(c);
+                            packageAccess = true;
+                        }
+                        value = MethodUtil.invoke(element, a, null);
                     } catch (RuntimeException e) {
                         // we don't expect this - except for possibly
                         // security exceptions?
@@ -495,8 +528,11 @@ public class Introspector {
         }
         Class<?>[] interfaces = c.getInterfaces();
         for (int i = 0;i < interfaces.length; i++) {
-            if (interfaces[i].getName().equals(clMBeanName))
+            if (interfaces[i].getName().equals(clMBeanName) &&
+                (Modifier.isPublic(interfaces[i].getModifiers()) ||
+                 ALLOW_NONPUBLIC_MBEAN)) {
                 return Util.cast(interfaces[i]);
+            }
         }
 
         return null;

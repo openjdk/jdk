@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountedCompleter;
+import java.util.concurrent.ForkJoinTask;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -128,7 +129,7 @@ final class ForEachOps {
      *
      * @param <T> the output type of the stream pipeline
      */
-    private static abstract class ForEachOp<T>
+    static abstract class ForEachOp<T>
             implements TerminalOp<T, Void>, TerminalSink<T, Void> {
         private final boolean ordered;
 
@@ -169,7 +170,7 @@ final class ForEachOps {
         // Implementations
 
         /** Implementation class for reference streams */
-        private static class OfRef<T> extends ForEachOp<T> {
+        static final class OfRef<T> extends ForEachOp<T> {
             final Consumer<? super T> consumer;
 
             OfRef(Consumer<? super T> consumer, boolean ordered) {
@@ -184,7 +185,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code IntStream} */
-        private static class OfInt extends ForEachOp<Integer>
+        static final class OfInt extends ForEachOp<Integer>
                 implements Sink.OfInt {
             final IntConsumer consumer;
 
@@ -205,7 +206,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code LongStream} */
-        private static class OfLong extends ForEachOp<Long>
+        static final class OfLong extends ForEachOp<Long>
                 implements Sink.OfLong {
             final LongConsumer consumer;
 
@@ -226,7 +227,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code DoubleStream} */
-        private static class OfDouble extends ForEachOp<Double>
+        static final class OfDouble extends ForEachOp<Double>
                 implements Sink.OfDouble {
             final DoubleConsumer consumer;
 
@@ -248,20 +249,20 @@ final class ForEachOps {
     }
 
     /** A {@code ForkJoinTask} for performing a parallel for-each operation */
-    private static class ForEachTask<S, T> extends CountedCompleter<Void> {
+    static final class ForEachTask<S, T> extends CountedCompleter<Void> {
         private Spliterator<S> spliterator;
         private final Sink<S> sink;
         private final PipelineHelper<T> helper;
-        private final long targetSize;
+        private long targetSize;
 
         ForEachTask(PipelineHelper<T> helper,
                     Spliterator<S> spliterator,
                     Sink<S> sink) {
             super(null);
-            this.spliterator = spliterator;
             this.sink = sink;
-            this.targetSize = AbstractTask.suggestTargetSize(spliterator.estimateSize());
             this.helper = helper;
+            this.spliterator = spliterator;
+            this.targetSize = 0L;
         }
 
         ForEachTask(ForEachTask<S, T> parent, Spliterator<S> spliterator) {
@@ -272,28 +273,40 @@ final class ForEachOps {
             this.helper = parent.helper;
         }
 
+        // Similar to AbstractTask but doesn't need to track child tasks
         public void compute() {
+            Spliterator<S> rightSplit = spliterator, leftSplit;
+            long sizeEstimate = rightSplit.estimateSize(), sizeThreshold;
+            if ((sizeThreshold = targetSize) == 0L)
+                targetSize = sizeThreshold = AbstractTask.suggestTargetSize(sizeEstimate);
             boolean isShortCircuit = StreamOpFlag.SHORT_CIRCUIT.isKnown(helper.getStreamAndOpFlags());
-            while (true) {
-                if (isShortCircuit && sink.cancellationRequested()) {
-                    propagateCompletion();
-                    spliterator = null;
-                    return;
+            boolean forkRight = false;
+            Sink<S> taskSink = sink;
+            ForEachTask<S, T> task = this;
+            while (!isShortCircuit || !taskSink.cancellationRequested()) {
+                if (sizeEstimate <= sizeThreshold ||
+                    (leftSplit = rightSplit.trySplit()) == null) {
+                    task.helper.copyInto(taskSink, rightSplit);
+                    break;
                 }
-
-                Spliterator<S> split;
-                if (!AbstractTask.suggestSplit(spliterator, targetSize)
-                    || (split = spliterator.trySplit()) == null) {
-                    helper.copyInto(sink, spliterator);
-                    propagateCompletion();
-                    spliterator = null;
-                    return;
+                ForEachTask<S, T> leftTask = new ForEachTask<>(task, leftSplit);
+                task.addToPendingCount(1);
+                ForEachTask<S, T> taskToFork;
+                if (forkRight) {
+                    forkRight = false;
+                    rightSplit = leftSplit;
+                    taskToFork = task;
+                    task = leftTask;
                 }
                 else {
-                    addToPendingCount(1);
-                    new ForEachTask<>(this, split).fork();
+                    forkRight = true;
+                    taskToFork = leftTask;
                 }
+                taskToFork.fork();
+                sizeEstimate = rightSplit.estimateSize();
             }
+            task.spliterator = null;
+            task.propagateCompletion();
         }
     }
 
@@ -301,7 +314,7 @@ final class ForEachOps {
      * A {@code ForkJoinTask} for performing a parallel for-each operation
      * which visits the elements in encounter order
      */
-    private static class ForEachOrderedTask<S, T> extends CountedCompleter<Void> {
+    static final class ForEachOrderedTask<S, T> extends CountedCompleter<Void> {
         private final PipelineHelper<T> helper;
         private Spliterator<S> spliterator;
         private final long targetSize;
@@ -342,40 +355,50 @@ final class ForEachOps {
             doCompute(this);
         }
 
-        private static<S, T> void doCompute(ForEachOrderedTask<S, T> task) {
-            while (true) {
-                Spliterator<S> split;
-                if (!AbstractTask.suggestSplit(task.spliterator, task.targetSize)
-                    || (split = task.spliterator.trySplit()) == null) {
-                    if (task.getPendingCount() == 0) {
-                        task.helper.wrapAndCopyInto(task.action, task.spliterator);
-                    }
-                    else {
-                        Node.Builder<T> nb = task.helper.makeNodeBuilder(
-                                task.helper.exactOutputSizeIfKnown(task.spliterator),
-                                size -> (T[]) new Object[size]);
-                        task.node = task.helper.wrapAndCopyInto(nb, task.spliterator).build();
-                    }
-                    task.tryComplete();
-                    return;
+        private static <S, T> void doCompute(ForEachOrderedTask<S, T> task) {
+            Spliterator<S> rightSplit = task.spliterator, leftSplit;
+            long sizeThreshold = task.targetSize;
+            boolean forkRight = false;
+            while (rightSplit.estimateSize() > sizeThreshold &&
+                   (leftSplit = rightSplit.trySplit()) != null) {
+                ForEachOrderedTask<S, T> leftChild =
+                    new ForEachOrderedTask<>(task, leftSplit, task.leftPredecessor);
+                ForEachOrderedTask<S, T> rightChild =
+                    new ForEachOrderedTask<>(task, rightSplit, leftChild);
+                task.completionMap.put(leftChild, rightChild);
+                task.addToPendingCount(1); // forking
+                rightChild.addToPendingCount(1); // right pending on left child
+                if (task.leftPredecessor != null) {
+                    leftChild.addToPendingCount(1); // left pending on previous subtree, except left spine
+                    if (task.completionMap.replace(task.leftPredecessor, task, leftChild))
+                        task.addToPendingCount(-1); // transfer my "right child" count to my left child
+                    else
+                        leftChild.addToPendingCount(-1); // left child is ready to go when ready
+                }
+                ForEachOrderedTask<S, T> taskToFork;
+                if (forkRight) {
+                    forkRight = false;
+                    rightSplit = leftSplit;
+                    task = leftChild;
+                    taskToFork = rightChild;
                 }
                 else {
-                    ForEachOrderedTask<S, T> leftChild = new ForEachOrderedTask<>(task, split, task.leftPredecessor);
-                    ForEachOrderedTask<S, T> rightChild = new ForEachOrderedTask<>(task, task.spliterator, leftChild);
-                    task.completionMap.put(leftChild, rightChild);
-                    task.addToPendingCount(1); // forking
-                    rightChild.addToPendingCount(1); // right pending on left child
-                    if (task.leftPredecessor != null) {
-                        leftChild.addToPendingCount(1); // left pending on previous subtree, except left spine
-                        if (task.completionMap.replace(task.leftPredecessor, task, leftChild))
-                            task.addToPendingCount(-1);      // transfer my "right child" count to my left child
-                        else
-                            leftChild.addToPendingCount(-1); // left child is ready to go when ready
-                    }
-                    leftChild.fork();
+                    forkRight = true;
                     task = rightChild;
+                    taskToFork = leftChild;
                 }
+                taskToFork.fork();
             }
+            if (task.getPendingCount() == 0) {
+                task.helper.wrapAndCopyInto(task.action, rightSplit);
+            }
+            else {
+                Node.Builder<T> nb = task.helper.makeNodeBuilder(
+                  task.helper.exactOutputSizeIfKnown(rightSplit),
+                  size -> (T[]) new Object[size]);
+                task.node = task.helper.wrapAndCopyInto(nb, rightSplit).build();
+            }
+            task.tryComplete();
         }
 
         @Override

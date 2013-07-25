@@ -208,7 +208,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterLiteralNode(this)) {
             return visitor.leaveLiteralNode(this);
         }
@@ -241,8 +241,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      *
      * @return the new literal node
      */
-    public static LiteralNode<Node> newInstance(final long token, final int finish) {
-        return new NodeLiteralNode(token, finish);
+    public static LiteralNode<Object> newInstance(final long token, final int finish) {
+        return new NullLiteralNode(token, finish);
     }
 
     /**
@@ -252,8 +252,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      *
      * @return the new literal node
      */
-    public static LiteralNode<?> newInstance(final Node parent) {
-        return new NodeLiteralNode(parent.getToken(), parent.getFinish());
+    public static LiteralNode<Object> newInstance(final Node parent) {
+        return new NullLiteralNode(parent.getToken(), parent.getFinish());
     }
 
     @Immutable
@@ -495,33 +495,15 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         return new LexerTokenLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
-    private static final class NodeLiteralNode extends LiteralNode<Node> {
+    private static final class NullLiteralNode extends LiteralNode<Object> {
 
-        private NodeLiteralNode(final long token, final int finish) {
-            this(token, finish, null);
-        }
-
-        private NodeLiteralNode(final long token, final int finish, final Node value) {
-            super(Token.recast(token, TokenType.OBJECT), finish, value);
-        }
-
-        private NodeLiteralNode(final LiteralNode<Node> literalNode) {
-            super(literalNode);
-        }
-
-        private NodeLiteralNode(final LiteralNode<Node> literalNode, final Node value) {
-            super(literalNode, value);
+        private NullLiteralNode(final long token, final int finish) {
+            super(Token.recast(token, TokenType.OBJECT), finish, null);
         }
 
         @Override
-        public Node accept(final NodeVisitor visitor) {
+        public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
-                if (value != null) {
-                    final Node newValue = value.accept(visitor);
-                    if(value != newValue) {
-                        return visitor.leaveLiteralNode(new NodeLiteralNode(this, newValue));
-                    }
-                }
                 return visitor.leaveLiteralNode(this);
             }
 
@@ -530,38 +512,13 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
         @Override
         public Type getType() {
-            return value == null ? Type.OBJECT : super.getType();
+            return Type.OBJECT;
         }
 
         @Override
         public Type getWidestOperationType() {
-            return value == null ? Type.OBJECT : value.getWidestOperationType();
+            return Type.OBJECT;
         }
-
-    }
-    /**
-     * Create a new node literal for an arbitrary node
-     *
-     * @param token   token
-     * @param finish  finish
-     * @param value   the literal value node
-     *
-     * @return the new literal node
-     */
-    public static LiteralNode<Node> newInstance(final long token, final int finish, final Node value) {
-        return new NodeLiteralNode(token, finish, value);
-    }
-
-    /**
-     * Create a new node literal based on a parent node (source, token, finish)
-     *
-     * @param parent parent node
-     * @param value  node value
-     *
-     * @return the new literal node
-     */
-    public static LiteralNode<?> newInstance(final Node parent, final Node value) {
-        return new NodeLiteralNode(parent.getToken(), parent.getFinish(), value);
     }
 
     /**
@@ -664,8 +621,10 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
             elementType = Type.INT;
             analyzeElements();
 
-            if (elementType == Type.INT) {
+            if (elementType.isInteger()) {
                 presetIntArray();
+            } else if (elementType.isLong()) {
+                presetLongArray();
             } else if (elementType.isNumeric()) {
                 presetNumberArray();
             } else {
@@ -683,6 +642,25 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
                 if (element instanceof Number) {
                     array[i] = ((Number)element).intValue();
+                } else {
+                    computed[nComputed++] = i;
+                }
+            }
+
+            presets = array;
+            postsets = Arrays.copyOf(computed, nComputed);
+        }
+
+        private void presetLongArray() {
+            final long[] array = new long[value.length];
+            final int[] computed = new int[value.length];
+            int nComputed = 0;
+
+            for (int i = 0; i < value.length; i++) {
+                final Object element = objectAsConstant(value[i]);
+
+                if (element instanceof Number) {
+                    array[i] = ((Number)element).longValue();
                 } else {
                     computed[nComputed++] = i;
                 }
@@ -789,6 +767,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         public Type getType() {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
+            } else if (elementType.isLong()) {
+                return Type.LONG_ARRAY;
             } else if (elementType.isNumeric()) {
                 return Type.NUMBER_ARRAY;
             } else {
@@ -840,7 +820,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         @Override
-        public Node accept(final NodeVisitor visitor) {
+        public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 final List<Node> oldValue = Arrays.asList(value);
                 final List<Node> newValue = Node.accept(visitor, Node.class, oldValue);

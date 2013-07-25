@@ -32,11 +32,14 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Empty object class.
  */
 public class JO extends ScriptObject {
+
+    private static final PropertyMap map$ = PropertyMap.newMap(JO.class);
+
     /**
      * Constructor
      */
     public JO() {
-        super(PropertyMap.newMap(JO.class));
+        super(map$);
     }
 
     /**
@@ -46,6 +49,15 @@ public class JO extends ScriptObject {
      */
     public JO(final PropertyMap map) {
         super(map);
+    }
+
+    /**
+     * Constructor given an initial prototype using the default property map
+     *
+     * @param proto the prototype object
+     */
+    public JO(final ScriptObject proto) {
+        super(proto, map$);
     }
 
     /**

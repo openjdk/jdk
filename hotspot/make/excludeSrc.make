@@ -19,13 +19,13 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 ifeq ($(INCLUDE_JVMTI), false)
       CXXFLAGS += -DINCLUDE_JVMTI=0
       CFLAGS += -DINCLUDE_JVMTI=0
 
-      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp forte.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
+      Src_Files_EXCLUDE += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
 	jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
 	jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
 	jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
@@ -87,7 +87,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	g1BlockOffsetTable.cpp g1CardCounts.cpp g1CollectedHeap.cpp g1CollectorPolicy.cpp \
 	g1ErgoVerbose.cpp g1GCPhaseTimes.cpp g1HRPrinter.cpp g1HotCardCache.cpp g1Log.cpp \
 	g1MMUTracker.cpp g1MarkSweep.cpp g1MemoryPool.cpp g1MonitoringSupport.cpp \
-	g1RemSet.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
+	g1RemSet.cpp g1RemSetSummary.cpp g1SATBCardTableModRefBS.cpp g1_globals.cpp heapRegion.cpp \
 	heapRegionRemSet.cpp heapRegionSeq.cpp heapRegionSet.cpp heapRegionSets.cpp \
 	ptrQueue.cpp satbQueue.cpp sparsePRT.cpp survRateGroup.cpp vm_operations_g1.cpp \
 	adjoiningGenerations.cpp adjoiningVirtualSpaces.cpp asPSOldGen.cpp asPSYoungGen.cpp \
@@ -100,7 +100,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	parCardTableModRefBS.cpp parGCAllocBuffer.cpp parNewGeneration.cpp mutableSpace.cpp \
 	gSpaceCounters.cpp allocationStats.cpp spaceCounters.cpp gcAdaptivePolicyCounters.cpp \
 	mutableNUMASpace.cpp immutableSpace.cpp yieldingWorkGroup.cpp
-endif 
+endif
 
 ifeq ($(INCLUDE_NMT), false)
       CXXFLAGS += -DINCLUDE_NMT=0
@@ -110,3 +110,7 @@ ifeq ($(INCLUDE_NMT), false)
 	 memBaseline.cpp memPtr.cpp memRecorder.cpp memReporter.cpp memSnapshot.cpp memTrackWorker.cpp \
 	 memTracker.cpp nmtDCmd.cpp
 endif
+
+-include $(HS_ALT_MAKE)/excludeSrc.make
+
+.PHONY: $(HS_ALT_MAKE)/excludeSrc.make

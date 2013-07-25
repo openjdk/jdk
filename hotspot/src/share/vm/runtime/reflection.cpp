@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
-
-#define JAVA_1_5_VERSION                  49
 
 static void trace_class_resolution(Klass* to_class) {
   ResourceMark rm;
@@ -375,7 +373,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     }
   }
   klass = klass->array_klass(dim, CHECK_NULL);
-  oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, THREAD);
+  oop obj = ArrayKlass::cast(klass)->multi_allocate(len, dimensions, CHECK_NULL);
   assert(obj->is_array(), "just checking");
   return arrayOop(obj);
 }
@@ -460,7 +458,7 @@ bool Reflection::verify_class_access(Klass* current_class, Klass* new_class, boo
   // doesn't have a classloader.
   if ((current_class == NULL) ||
       (current_class == new_class) ||
-      (InstanceKlass::cast(new_class)->is_public()) ||
+      (new_class->is_public()) ||
       is_same_class_package(current_class, new_class)) {
     return true;
   }
@@ -507,9 +505,11 @@ bool Reflection::can_relax_access_check_for(
       under_host_klass(accessee_ik, accessor))
     return true;
 
-  if (RelaxAccessControlCheck ||
-      (accessor_ik->major_version() < JAVA_1_5_VERSION &&
-       accessee_ik->major_version() < JAVA_1_5_VERSION)) {
+  if ((RelaxAccessControlCheck &&
+        accessor_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION &&
+        accessee_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION) ||
+      (accessor_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION &&
+       accessee_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION)) {
     return classloader_only &&
       Verifier::relax_verify_for(accessor_ik->class_loader()) &&
       accessor_ik->protection_domain() == accessee_ik->protection_domain() &&
@@ -816,6 +816,10 @@ oop Reflection::new_constructor(methodHandle method, TRAPS) {
   if (java_lang_reflect_Constructor::has_parameter_annotations_field()) {
     typeArrayOop an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
     java_lang_reflect_Constructor::set_parameter_annotations(ch(), an_oop);
+  }
+  if (java_lang_reflect_Constructor::has_type_annotations_field()) {
+    typeArrayOop an_oop = Annotations::make_java_array(method->type_annotations(), CHECK_NULL);
+    java_lang_reflect_Constructor::set_type_annotations(ch(), an_oop);
   }
   return ch();
 }

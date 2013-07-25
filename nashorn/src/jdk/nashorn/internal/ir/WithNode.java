@@ -64,7 +64,7 @@ public final class WithNode extends LexicalContextNode {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterWithNode(this)) {
              return visitor.leaveWithNode(
                 setExpression(lc, expression.accept(visitor)).
