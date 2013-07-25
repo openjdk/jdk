@@ -2323,6 +2323,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
   Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
 
+  // Handle SafeFetch32 and SafeFetchN exceptions.
+  if (StubRoutines::is_safefetch_fault(pc)) {
+    return Handle_Exception(exceptionInfo, StubRoutines::continuation_for_safefetch_fault(pc));
+  }
+
 #ifndef _WIN64
   // Execution protection violation - win32 running on AMD64 only
   // Handled first to avoid misdiagnosis as a "normal" access violation;
@@ -4682,6 +4687,34 @@ void os::pause() {
     jio_fprintf(stderr,
       "Could not open pause file '%s', continuing immediately.\n", filename);
   }
+}
+
+os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
+  assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
+}
+
+/*
+ * See the caveats for this class in os_windows.hpp
+ * Protects the callback call so that raised OS EXCEPTIONS causes a jump back
+ * into this method and returns false. If no OS EXCEPTION was raised, returns
+ * true.
+ * The callback is supposed to provide the method that should be protected.
+ */
+bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
+  assert(!WatcherThread::watcher_thread()->has_crash_protection(),
+      "crash_protection already set?");
+
+  bool success = true;
+  __try {
+    WatcherThread::watcher_thread()->set_crash_protection(this);
+    cb.call();
+  } __except(EXCEPTION_EXECUTE_HANDLER) {
+    // only for protection, nothing to do
+    success = false;
+  }
+  WatcherThread::watcher_thread()->set_crash_protection(NULL);
+  return success;
 }
 
 // An Event wraps a win32 "CreateEvent" kernel handle.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.nio.cs.StreamDecoder;
 /**
  * An InputStreamReader is a bridge from byte streams to character streams: It
  * reads bytes and decodes them into characters using a specified {@link
- * java.nio.charset.Charset <code>charset</code>}.  The charset that it uses
+ * java.nio.charset.Charset charset}.  The charset that it uses
  * may be specified by name or may be given explicitly, or the platform's
  * default charset may be accepted.
  *
@@ -101,7 +101,7 @@ public class InputStreamReader extends Reader {
     }
 
     /**
-     * Creates an InputStreamReader that uses the given charset. </p>
+     * Creates an InputStreamReader that uses the given charset.
      *
      * @param  in       An InputStream
      * @param  cs       A charset
@@ -117,7 +117,7 @@ public class InputStreamReader extends Reader {
     }
 
     /**
-     * Creates an InputStreamReader that uses the given charset decoder.  </p>
+     * Creates an InputStreamReader that uses the given charset decoder.
      *
      * @param  in       An InputStream
      * @param  dec      A charset decoder

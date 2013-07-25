@@ -2330,7 +2330,7 @@ public class Types {
 
             @Override
             public Type visitErrorType(ErrorType t, Void ignored) {
-                return t;
+                return Type.noType;
             }
         };
     // </editor-fold>
@@ -2950,7 +2950,7 @@ public class Types {
             if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(upperBound(elemtype), t.tsym);
+                return new ArrayType(elemtype, t.tsym);
         }
 
         @Override

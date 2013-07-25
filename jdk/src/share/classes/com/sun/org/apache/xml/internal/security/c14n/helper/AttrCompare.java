@@ -2,21 +2,23 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.c14n.helper;
 
@@ -43,10 +45,10 @@ import java.util.Comparator;
  */
 public class AttrCompare implements Comparator<Attr>, Serializable {
 
-    private final static long serialVersionUID = -7113259629930576230L;
-    private final static int ATTR0_BEFORE_ATTR1 = -1;
-    private final static int ATTR1_BEFORE_ATTR0 = 1;
-    private final static String XMLNS=Constants.NamespaceSpecNS;
+    private static final long serialVersionUID = -7113259629930576230L;
+    private static final int ATTR0_BEFORE_ATTR1 = -1;
+    private static final int ATTR1_BEFORE_ATTR0 = 1;
+    private static final String XMLNS = Constants.NamespaceSpecNS;
 
     /**
      * Compares two attributes based on the C14n specification.
@@ -69,12 +71,11 @@ public class AttrCompare implements Comparator<Attr>, Serializable {
      *
      */
     public int compare(Attr attr0, Attr attr1) {
-
         String namespaceURI0 = attr0.getNamespaceURI();
         String namespaceURI1 = attr1.getNamespaceURI();
 
-        boolean isNamespaceAttr0 = XMLNS==namespaceURI0;
-        boolean isNamespaceAttr1 = XMLNS==namespaceURI1;
+        boolean isNamespaceAttr0 = XMLNS.equals(namespaceURI0);
+        boolean isNamespaceAttr1 = XMLNS.equals(namespaceURI1);
 
         if (isNamespaceAttr0) {
             if (isNamespaceAttr1) {
@@ -82,11 +83,11 @@ public class AttrCompare implements Comparator<Attr>, Serializable {
                 String localname0 = attr0.getLocalName();
                 String localname1 = attr1.getLocalName();
 
-                if (localname0.equals("xmlns")) {
+                if ("xmlns".equals(localname0)) {
                     localname0 = "";
                 }
 
-                if (localname1.equals("xmlns")) {
+                if ("xmlns".equals(localname1)) {
                     localname1 = "";
                 }
 
@@ -94,9 +95,7 @@ public class AttrCompare implements Comparator<Attr>, Serializable {
             }
             // attr0 is a namespace, attr1 is not
             return ATTR0_BEFORE_ATTR1;
-        }
-
-        if (isNamespaceAttr1) {
+        } else if (isNamespaceAttr1) {
             // attr1 is a namespace, attr0 is not
             return ATTR1_BEFORE_ATTR0;
         }
@@ -109,9 +108,7 @@ public class AttrCompare implements Comparator<Attr>, Serializable {
                 return name0.compareTo(name1);
             }
             return ATTR0_BEFORE_ATTR1;
-        }
-
-        if (namespaceURI1 == null) {
+        } else if (namespaceURI1 == null) {
             return ATTR1_BEFORE_ATTR0;
         }
 
