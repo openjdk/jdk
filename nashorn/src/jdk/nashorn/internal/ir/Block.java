@@ -93,7 +93,8 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.symbols    = new LinkedHashMap<>();
         this.entryLabel = new Label("block_entry");
         this.breakLabel = new Label("block_break");
-        this.flags     =  0;
+        final int len = statements.length;
+        this.flags = (len > 0 && statements[len - 1].hasTerminalFlags()) ? IS_TERMINAL : 0;
     }
 
     /**
