@@ -2970,7 +2970,9 @@ public class Attr extends JCTree.Visitor {
                 //check that functional interface class is well-formed
                 ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
                         names.empty, List.of(fExpr.targets.head), ABSTRACT);
-                chk.checkImplementations(env.tree, csym, csym);
+                if (csym != null) {
+                    chk.checkImplementations(env.tree, csym, csym);
+                }
             }
         }
     }
