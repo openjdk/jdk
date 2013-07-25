@@ -1046,6 +1046,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Checks if this object belongs to the given context
+     * @param ctx context to check against
+     * @return true if this object belongs to the given context
+     */
+    public final boolean isOfContext(final Context ctx) {
+        return context == ctx;
+    }
+
+    /**
      * Return the current context from the object's map.
      * @return Current context.
      */

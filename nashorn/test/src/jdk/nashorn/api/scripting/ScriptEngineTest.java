@@ -363,6 +363,90 @@ public class ScriptEngineTest {
     }
 
     @Test
+    /**
+     * Check that we can get interface out of a script object even after
+     * switching to use different ScriptContext.
+     */
+    public void getInterfaceDifferentContext() {
+       ScriptEngineManager m = new ScriptEngineManager();
+       ScriptEngine e = m.getEngineByName("nashorn");
+       try {
+           Object obj = e.eval("({ run: function() { } })");
+
+           // change script context
+           ScriptContext ctxt = new SimpleScriptContext();
+           ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+           e.setContext(ctxt);
+
+           Runnable r = ((Invocable)e).getInterface(obj, Runnable.class);
+           r.run();
+       }catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+       }
+    }
+
+    @Test
+    /**
+     * Check that getInterface on non-script object 'thiz' results in IllegalArgumentException.
+     */
+    public void getInterfaceNonScriptObjectThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).getInterface(new Object(), Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that getInterface on null 'thiz' results in IllegalArgumentException.
+     */
+    public void getInterfaceNullThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).getInterface(null, Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling getInterface on mirror created by another engine results in IllegalArgumentException.
+     */
+    public void getInterfaceMixEnginesTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine1 = m.getEngineByName("nashorn");
+        final ScriptEngine engine2 = m.getEngineByName("nashorn");
+
+        try {
+            Object obj = engine1.eval("({ run: function() {} })");
+            // pass object from engine1 to engine2 as 'thiz' for getInterface
+            ((Invocable)engine2).getInterface(obj, Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void accessGlobalTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
@@ -724,6 +808,48 @@ public class ScriptEngineTest {
 
         try {
             ((Invocable)e).invokeMethod(new Object(), "toString");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling method on null 'thiz' results in IllegalArgumentException.
+     */
+    public void invokeMethodNullThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).invokeMethod(null, "toString");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+
+    @Test
+    /**
+     * Check that calling method on mirror created by another engine results in IllegalArgumentException.
+     */
+    public void invokeMethodMixEnginesTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine1 = m.getEngineByName("nashorn");
+        final ScriptEngine engine2 = m.getEngineByName("nashorn");
+
+        try {
+            Object obj = engine1.eval("({ run: function() {} })");
+            // pass object from engine1 to engine2 as 'thiz' for invokeMethod
+            ((Invocable)engine2).invokeMethod(obj, "run");
             fail("should have thrown IllegalArgumentException");
         } catch (final Exception exp) {
             if (! (exp instanceof IllegalArgumentException)) {

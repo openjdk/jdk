@@ -40,6 +40,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -78,6 +81,28 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     // default options passed to Nashorn Options object
     private static final String[] DEFAULT_OPTIONS = new String[] { "-scripting", "-doe" };
+
+    private static final String MESSAGES_RESOURCE = "jdk.nashorn.api.scripting.resources.Messages";
+
+    // Without do privileged, under security manager messages can not be loaded.
+    private static final ResourceBundle MESSAGES_BUNDLE;
+    static {
+        MESSAGES_BUNDLE = AccessController.doPrivileged(
+        new PrivilegedAction<ResourceBundle>() {
+            @Override
+            public ResourceBundle run() {
+                return ResourceBundle.getBundle(MESSAGES_RESOURCE, Locale.getDefault());
+            }
+        });
+    }
+
+    private static String getMessage(final String msgId, final String... args) {
+        try {
+            return new MessageFormat(MESSAGES_BUNDLE.getString(msgId)).format(args);
+        } catch (final java.util.MissingResourceException e) {
+            throw new RuntimeException("no message resource found for message id: "+ msgId);
+        }
+    }
 
     NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
         this(factory, DEFAULT_OPTIONS, appLoader);
@@ -176,43 +201,63 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     @Override
-    public Object invokeMethod(final Object self, final String name, final Object... args)
+    public Object invokeMethod(final Object thiz, final String name, final Object... args)
             throws ScriptException, NoSuchMethodException {
-        if (self == null) {
-            throw new IllegalArgumentException("script object can not be null");
+        if (thiz == null) {
+            throw new IllegalArgumentException(getMessage("thiz.cannot.be.null"));
         }
-        return invokeImpl(self, name, args);
+        return invokeImpl(thiz, name, args);
     }
 
-    private <T> T getInterfaceInner(final Object self, final Class<T> clazz) {
+    private <T> T getInterfaceInner(final Object thiz, final Class<T> clazz) {
         if (clazz == null || !clazz.isInterface()) {
-            throw new IllegalArgumentException("interface Class expected");
+            throw new IllegalArgumentException(getMessage("interface.class.expected"));
         }
 
         // perform security access check as early as possible
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (! Modifier.isPublic(clazz.getModifiers())) {
-                throw new SecurityException("attempt to implement non-public interfce: " + clazz);
+                throw new SecurityException(getMessage("implementing.non.public.interface", clazz.getName()));
             }
             Context.checkPackageAccess(clazz.getName());
         }
 
-        final ScriptObject realSelf;
-        final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
-        if(self == null) {
-            realSelf = ctxtGlobal;
-        } else if (!(self instanceof ScriptObject)) {
-            realSelf = (ScriptObject)ScriptObjectMirror.unwrap(self, ctxtGlobal);
-        } else {
-            realSelf = (ScriptObject)self;
+        ScriptObject realSelf = null;
+        ScriptObject realGlobal = null;
+        if(thiz == null) {
+            // making interface out of global functions
+            realSelf = realGlobal = getNashornGlobalFrom(context);
+        } else if (thiz instanceof ScriptObjectMirror) {
+            final ScriptObjectMirror mirror = (ScriptObjectMirror)thiz;
+            realSelf = mirror.getScriptObject();
+            realGlobal = mirror.getHomeGlobal();
+            if (! realGlobal.isOfContext(nashornContext)) {
+                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
+            }
+        } else if (thiz instanceof ScriptObject) {
+            // called from script code.
+            realSelf = (ScriptObject)thiz;
+            realGlobal = Context.getGlobal();
+            if (realGlobal == null) {
+                throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
+            }
+
+            if (! realGlobal.isOfContext(nashornContext)) {
+                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
+            }
+        }
+
+        if (realSelf == null) {
+            throw new IllegalArgumentException(getMessage("interface.on.non.script.object"));
         }
 
         try {
             final ScriptObject oldGlobal = Context.getGlobal();
+            final boolean globalChanged = (oldGlobal != realGlobal);
             try {
-                if(oldGlobal != ctxtGlobal) {
-                    Context.setGlobal(ctxtGlobal);
+                if (globalChanged) {
+                    Context.setGlobal(realGlobal);
                 }
 
                 if (! isInterfaceImplemented(clazz, realSelf)) {
@@ -220,7 +265,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 }
                 return clazz.cast(JavaAdapterFactory.getConstructor(realSelf.getClass(), clazz).invoke(realSelf));
             } finally {
-                if(oldGlobal != ctxtGlobal) {
+                if (globalChanged) {
                     Context.setGlobal(oldGlobal);
                 }
             }
@@ -237,11 +282,11 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     @Override
-    public <T> T getInterface(final Object self, final Class<T> clazz) {
-        if (self == null) {
-            throw new IllegalArgumentException("script object can not be null");
+    public <T> T getInterface(final Object thiz, final Class<T> clazz) {
+        if (thiz == null) {
+            throw new IllegalArgumentException(getMessage("thiz.cannot.be.null"));
         }
-        return getInterfaceInner(self, clazz);
+        return getInterfaceInner(thiz, clazz);
     }
 
     // These are called from the "engine.js" script
@@ -362,13 +407,22 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         ScriptObjectMirror selfMirror = null;
         if (selfObject instanceof ScriptObjectMirror) {
             selfMirror = (ScriptObjectMirror)selfObject;
+            if (! selfMirror.getHomeGlobal().isOfContext(nashornContext)) {
+                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
+            }
         } else if (selfObject instanceof ScriptObject) {
             // invokeMethod called from script code - in which case we may get 'naked' ScriptObject
             // Wrap it with oldGlobal to make a ScriptObjectMirror for the same.
             final ScriptObject oldGlobal = Context.getGlobal();
-            if (oldGlobal != null) {
-                selfMirror = (ScriptObjectMirror)ScriptObjectMirror.wrap(selfObject, oldGlobal);
+            if (oldGlobal == null) {
+                throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
             }
+
+            if (! oldGlobal.isOfContext(nashornContext)) {
+                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
+            }
+
+            selfMirror = (ScriptObjectMirror)ScriptObjectMirror.wrap(selfObject, oldGlobal);
         } else if (selfObject == null) {
             // selfObject is null => global function call
             final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
@@ -389,7 +443,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
 
         // Non-script object passed as selfObject
-        throw new IllegalArgumentException("can not call invokeMethod on non-script objects");
+        throw new IllegalArgumentException(getMessage("interface.on.non.script.object"));
     }
 
     private Object evalImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
