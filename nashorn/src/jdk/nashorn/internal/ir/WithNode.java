@@ -32,9 +32,9 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for {@code with} statements.
  */
 @Immutable
-public final class WithNode extends LexicalContextNode {
+public final class WithNode extends LexicalContextStatement {
    /** This expression. */
-    private final Node expression;
+    private final Expression expression;
 
     /** Statements. */
     private final Block body;
@@ -52,7 +52,7 @@ public final class WithNode extends LexicalContextNode {
         this.body       = null;
     }
 
-    private WithNode(final WithNode node, final Node expression, final Block body) {
+    private WithNode(final WithNode node, final Expression expression, final Block body) {
         super(node);
         this.expression = expression;
         this.body       = body;
@@ -67,7 +67,7 @@ public final class WithNode extends LexicalContextNode {
     public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterWithNode(this)) {
              return visitor.leaveWithNode(
-                setExpression(lc, expression.accept(visitor)).
+                setExpression(lc, (Expression)expression.accept(visitor)).
                 setBody(lc, (Block)body.accept(visitor)));
         }
         return this;
@@ -110,7 +110,7 @@ public final class WithNode extends LexicalContextNode {
      * Get the expression of this WithNode
      * @return the expression
      */
-    public Node getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
@@ -120,7 +120,7 @@ public final class WithNode extends LexicalContextNode {
      * @param expression new expression
      * @return new or same withnode
      */
-    public WithNode setExpression(final LexicalContext lc, final Node expression) {
+    public WithNode setExpression(final LexicalContext lc, final Expression expression) {
         if (this.expression == expression) {
             return this;
         }

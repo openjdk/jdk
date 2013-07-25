@@ -1,0 +1,10 @@
+BadPackageCommentTest.java:11: error: no tag name after @
+ * @@@
+   ^
+BadPackageCommentTest.java:11: error: no tag name after @
+ * @@@
+    ^
+BadPackageCommentTest.java:11: error: no tag name after @
+ * @@@
+     ^
+3 errors

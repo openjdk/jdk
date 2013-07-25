@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import sun.security.util.ResourcesMgr;
 
 /**
  * This class is used to protect access to private Credentials
- * belonging to a particular <code>Subject</code>.  The <code>Subject</code>
+ * belonging to a particular {@code Subject}.  The {@code Subject}
  * is represented by a Set of Principals.
  *
- * <p> The target name of this <code>Permission</code> specifies
+ * <p> The target name of this {@code Permission} specifies
  * a Credential class name, and a Set of Principals.
  * The only valid value for this Permission's actions is, "read".
  * The target name must abide by the following syntax:
@@ -65,12 +65,12 @@ import sun.security.util.ResourcesMgr;
  *
  * If CredentialClass is "*", then access is granted to
  * all private Credentials belonging to the specified
- * <code>Subject</code>.
+ * {@code Subject}.
  * If "PrincipalName" is "*", then access is granted to the
- * specified Credential owned by any <code>Subject</code> that has the
- * specified <code>Principal</code> (the actual PrincipalName doesn't matter).
+ * specified Credential owned by any {@code Subject} that has the
+ * specified {@code Principal} (the actual PrincipalName doesn't matter).
  * For example, the following grants access to the
- * a.b.Credential owned by any <code>Subject</code> that has
+ * a.b.Credential owned by any {@code Subject} that has
  * an a.b.Principal.
  *
  * <pre>
@@ -83,7 +83,7 @@ import sun.security.util.ResourcesMgr;
  *
  * If both the PrincipalClass and "PrincipalName" are "*",
  * then access is granted to the specified Credential owned by
- * any <code>Subject</code>.
+ * any {@code Subject}.
  *
  * <p> In addition, the PrincipalClass/PrincipalName pairing may be repeated:
  *
@@ -96,7 +96,7 @@ import sun.security.util.ResourcesMgr;
  * </pre>
  *
  * The above grants access to the private Credential, "a.b.Credential",
- * belonging to a <code>Subject</code> with at least two associated Principals:
+ * belonging to a {@code Subject} with at least two associated Principals:
  * "a.b.Principal" with the name, "duke", and "c.d.Principal", with the name,
  * "dukette".
  *
@@ -115,7 +115,7 @@ public final class PrivateCredentialPermission extends Permission {
     /**
      * @serial The Principals associated with this permission.
      *          The set contains elements of type,
-     *          <code>PrivateCredentialPermission.CredOwner</code>.
+     *          {@code PrivateCredentialPermission.CredOwner}.
      */
     private Set<Principal> principals;  // ignored - kept around for compatibility
     private transient CredOwner[] credOwners;
@@ -126,8 +126,8 @@ public final class PrivateCredentialPermission extends Permission {
     private boolean testing = false;
 
     /**
-     * Create a new <code>PrivateCredentialPermission</code>
-     * with the specified <code>credentialClass</code> and Principals.
+     * Create a new {@code PrivateCredentialPermission}
+     * with the specified {@code credentialClass} and Principals.
      */
     PrivateCredentialPermission(String credentialClass,
                         Set<Principal> principals) {
@@ -153,19 +153,19 @@ public final class PrivateCredentialPermission extends Permission {
     }
 
     /**
-     * Creates a new <code>PrivateCredentialPermission</code>
-     * with the specified <code>name</code>.  The <code>name</code>
-     * specifies both a Credential class and a <code>Principal</code> Set.
+     * Creates a new {@code PrivateCredentialPermission}
+     * with the specified {@code name}.  The {@code name}
+     * specifies both a Credential class and a {@code Principal} Set.
      *
      * <p>
      *
      * @param name the name specifying the Credential class and
-     *          <code>Principal</code> Set. <p>
+     *          {@code Principal} Set. <p>
      *
      * @param actions the actions specifying that the Credential can be read.
      *
-     * @throws IllegalArgumentException if <code>name</code> does not conform
-     *          to the correct syntax or if <code>actions</code> is not "read".
+     * @throws IllegalArgumentException if {@code name} does not conform
+     *          to the correct syntax or if {@code actions} is not "read".
      */
     public PrivateCredentialPermission(String name, String actions) {
         super(name);
@@ -178,34 +178,34 @@ public final class PrivateCredentialPermission extends Permission {
 
     /**
      * Returns the Class name of the Credential associated with this
-     * <code>PrivateCredentialPermission</code>.
+     * {@code PrivateCredentialPermission}.
      *
      * <p>
      *
      * @return the Class name of the Credential associated with this
-     *          <code>PrivateCredentialPermission</code>.
+     *          {@code PrivateCredentialPermission}.
      */
     public String getCredentialClass() {
         return credentialClass;
     }
 
     /**
-     * Returns the <code>Principal</code> classes and names
-     * associated with this <code>PrivateCredentialPermission</code>.
+     * Returns the {@code Principal} classes and names
+     * associated with this {@code PrivateCredentialPermission}.
      * The information is returned as a two-dimensional array (array[x][y]).
-     * The 'x' value corresponds to the number of <code>Principal</code>
+     * The 'x' value corresponds to the number of {@code Principal}
      * class and name pairs.  When (y==0), it corresponds to
-     * the <code>Principal</code> class value, and when (y==1),
-     * it corresponds to the <code>Principal</code> name value.
+     * the {@code Principal} class value, and when (y==1),
+     * it corresponds to the {@code Principal} name value.
      * For example, array[0][0] corresponds to the class name of
-     * the first <code>Principal</code> in the array.  array[0][1]
-     * corresponds to the <code>Principal</code> name of the
-     * first <code>Principal</code> in the array.
+     * the first {@code Principal} in the array.  array[0][1]
+     * corresponds to the {@code Principal} name of the
+     * first {@code Principal} in the array.
      *
      * <p>
      *
-     * @return the <code>Principal</code> class and names associated
-     *          with this <code>PrivateCredentialPermission</code>.
+     * @return the {@code Principal} class and names associated
+     *          with this {@code PrivateCredentialPermission}.
      */
     public String[][] getPrincipals() {
 
@@ -222,8 +222,8 @@ public final class PrivateCredentialPermission extends Permission {
     }
 
     /**
-     * Checks if this <code>PrivateCredentialPermission</code> implies
-     * the specified <code>Permission</code>.
+     * Checks if this {@code PrivateCredentialPermission} implies
+     * the specified {@code Permission}.
      *
      * <p>
      *
@@ -241,10 +241,10 @@ public final class PrivateCredentialPermission extends Permission {
      *
      * <p>
      *
-     * @param p the <code>Permission</code> to check against.
+     * @param p the {@code Permission} to check against.
      *
-     * @return true if this <code>PrivateCredentialPermission</code> implies
-     * the specified <code>Permission</code>, false if not.
+     * @return true if this {@code PrivateCredentialPermission} implies
+     * the specified {@code Permission}, false if not.
      */
     public boolean implies(Permission p) {
 
@@ -260,9 +260,9 @@ public final class PrivateCredentialPermission extends Permission {
     }
 
     /**
-     * Checks two <code>PrivateCredentialPermission</code> objects for
+     * Checks two {@code PrivateCredentialPermission} objects for
      * equality.  Checks that <i>obj</i> is a
-     * <code>PrivateCredentialPermission</code>,
+     * {@code PrivateCredentialPermission},
      * and has the same credential class as this object,
      * as well as the same Principals as this object.
      * The order of the Principals in the respective Permission's
@@ -272,7 +272,7 @@ public final class PrivateCredentialPermission extends Permission {
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if obj is a <code>PrivateCredentialPermission</code>,
+     * @return true if obj is a {@code PrivateCredentialPermission},
      *          has the same credential class as this object,
      *          and has the same Principals as this object.
      */
@@ -311,9 +311,9 @@ public final class PrivateCredentialPermission extends Permission {
 
     /**
      * Return a homogeneous collection of PrivateCredentialPermissions
-     * in a <code>PermissionCollection</code>.
-     * No such <code>PermissionCollection</code> is defined,
-     * so this method always returns <code>null</code>.
+     * in a {@code PermissionCollection}.
+     * No such {@code PermissionCollection} is defined,
+     * so this method always returns {@code null}.
      *
      * <p>
      *

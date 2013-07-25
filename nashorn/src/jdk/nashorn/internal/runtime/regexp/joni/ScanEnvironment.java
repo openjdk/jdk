@@ -39,13 +39,10 @@ public final class ScanEnvironment {
 
     final public Regex reg;
 
-    int numCall;
     public int numMem;
 
     public Node memNodes[];
 
-    int currMaxRegNum;
-    boolean hasRecursion;
 
     public ScanEnvironment(Regex regex, Syntax syntax) {
         this.reg = regex;
@@ -60,13 +57,8 @@ public final class ScanEnvironment {
         btMemEnd = bsClear();
         backrefedMem = bsClear();
 
-        numCall = 0;
         numMem = 0;
-
         memNodes = null;
-
-        currMaxRegNum = 0;
-        hasRecursion = false;
     }
 
     public int addMemEntry() {
@@ -117,11 +109,4 @@ public final class ScanEnvironment {
         }
     }
 
-    void closeBracketWithoutEscapeWarn(String s) {
-        if (Config.USE_WARN) {
-            if (syntax.warnCCOpNotEscaped()) {
-                reg.warnings.warn("regular expression has '" + s + "' without escape");
-            }
-        }
-    }
 }

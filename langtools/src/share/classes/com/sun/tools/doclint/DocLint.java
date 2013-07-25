@@ -187,6 +187,8 @@ public class DocLint implements Plugin {
                 javacBootClassPath = splitPath(args[++i]);
             } else if (arg.equals("-classpath") && i + 1 < args.length) {
                 javacClassPath = splitPath(args[++i]);
+            } else if (arg.equals("-cp") && i + 1 < args.length) {
+                javacClassPath = splitPath(args[++i]);
             } else if (arg.equals("-sourcepath") && i + 1 < args.length) {
                 javacSourcePath = splitPath(args[++i]);
             } else if (arg.equals(XMSGS_OPTION)) {
@@ -324,6 +326,14 @@ public class DocLint implements Plugin {
 
     static abstract class DeclScanner extends TreePathScanner<Void, Void> {
         abstract void visitDecl(Tree tree, Name name);
+
+        @Override
+        public Void visitCompilationUnit(CompilationUnitTree tree, Void ignore) {
+            if (tree.getPackageName() != null) {
+                visitDecl(tree, null);
+            }
+            return super.visitCompilationUnit(tree, ignore);
+        }
 
         @Override
         public Void visitClass(ClassTree tree, Void ignore) {
