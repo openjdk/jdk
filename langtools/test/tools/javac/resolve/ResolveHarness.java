@@ -32,6 +32,8 @@
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.util.JCDiagnostic;
 
@@ -43,6 +45,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -85,6 +88,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
     Set<String> declaredKeys = new HashSet<>();
     List<Diagnostic<? extends JavaFileObject>> diags = new ArrayList<>();
     List<ElementKey> seenCandidates = new ArrayList<>();
+    Map<String, String> predefTranslationMap = new HashMap<>();
 
     protected ResolveHarness(JavaFileObject jfo) {
         this.jfo = jfo;
@@ -93,12 +97,36 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
             new VerboseDeferredInferenceNoteProcessor(),
             new ErrorProcessor()
         };
+        predefTranslationMap.put("+", "_plus");
+        predefTranslationMap.put("-", "_minus");
+        predefTranslationMap.put("~", "_not");
+        predefTranslationMap.put("++", "_plusplus");
+        predefTranslationMap.put("--", "_minusminus");
+        predefTranslationMap.put("!", "_bang");
+        predefTranslationMap.put("*", "_mul");
+        predefTranslationMap.put("/", "_div");
+        predefTranslationMap.put("%", "_mod");
+        predefTranslationMap.put("&", "_and");
+        predefTranslationMap.put("|", "_or");
+        predefTranslationMap.put("^", "_xor");
+        predefTranslationMap.put("<<", "_lshift");
+        predefTranslationMap.put(">>", "_rshift");
+        predefTranslationMap.put("<<<", "_lshiftshift");
+        predefTranslationMap.put(">>>", "_rshiftshift");
+        predefTranslationMap.put("<", "_lt");
+        predefTranslationMap.put(">", "_gt");
+        predefTranslationMap.put("<=", "_lteq");
+        predefTranslationMap.put(">=", "_gteq");
+        predefTranslationMap.put("==", "_eq");
+        predefTranslationMap.put("!=", "_neq");
+        predefTranslationMap.put("&&", "_andand");
+        predefTranslationMap.put("||", "_oror");
     }
 
     protected void check() throws Exception {
         String[] options = {
             "-XDshouldStopPolicy=ATTR",
-            "-XDverboseResolution=success,failure,applicable,inapplicable,deferred-inference"
+            "-XDverboseResolution=success,failure,applicable,inapplicable,deferred-inference,predef"
         };
 
         AbstractProcessor[] processors = { new ResolveCandidateFinder(), null };
@@ -128,7 +156,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         //check all candidates have been used up
         for (Map.Entry<ElementKey, Candidate> entry : candidatesMap.entrySet()) {
             if (!seenCandidates.contains(entry.getKey())) {
-                error("Redundant @Candidate annotation on method " + entry.getKey().elem);
+                error("Redundant @Candidate annotation on method " + entry.getKey().elem + " sig = " + entry.getKey().elem.asType());
             }
         }
     }
@@ -223,7 +251,8 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         @Override
         void process(Diagnostic<? extends JavaFileObject> diagnostic) {
             Element siteSym = getSiteSym(diagnostic);
-            if (siteSym.getAnnotation(TraceResolve.class) == null) {
+            if (siteSym.getSimpleName().length() != 0 &&
+                    ((Symbol)siteSym).outermostClass().getAnnotation(TraceResolve.class) == null) {
                 return;
             }
             int candidateIdx = 0;
@@ -281,7 +310,11 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
         @Override
         void process(Diagnostic<? extends JavaFileObject> diagnostic) {
-            Element methodSym = methodSym(diagnostic);
+            Symbol methodSym = (Symbol)methodSym(diagnostic);
+            if ((methodSym.flags() & Flags.GENERATEDCONSTR) != 0) {
+                //skip resolution of default constructor (put there by javac)
+                return;
+            }
             Candidate c = getCandidateAtPos(methodSym,
                     asJCDiagnostic(diagnostic).getLineNumber(),
                     asJCDiagnostic(diagnostic).getColumnNumber());
@@ -307,7 +340,7 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
 
             if (Arrays.asList(c.applicable()).contains(phase)) { //applicable
                 if (c.mostSpecific() != mostSpecific) {
-                    error("Invalid most specific value for method " + methodSym);
+                    error("Invalid most specific value for method " + methodSym + " " + new ElementKey(methodSym).key);
                 }
                 MethodType mtype = getSig(diagnostic);
                 if (mtype != null) {
@@ -443,13 +476,10 @@ public class ResolveHarness implements javax.tools.DiagnosticListener<JavaFileOb
         }
 
         String computeKey(Element e) {
-            StringBuilder buf = new StringBuilder();
-            while (e != null) {
-                buf.append(e.toString());
-                e = e.getEnclosingElement();
-            }
-            buf.append(jfo.getName());
-            return buf.toString();
+            String simpleName = e.getSimpleName().toString();
+            String opName = predefTranslationMap.get(simpleName);
+            String name = opName != null ? opName : simpleName;
+            return name + e.asType();
         }
 
         @Override

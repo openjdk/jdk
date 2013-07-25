@@ -78,6 +78,10 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+// Executable parameter flag for os::commit_memory() and
+// os::commit_memory_or_exit().
+const bool ExecMem = true;
+
 // Typedef for structured exception handling support
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
@@ -104,9 +108,16 @@ class os: AllStatic {
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
-  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable = false);
+                                 bool executable);
+  // Same as pd_commit_memory() that either succeeds or calls
+  // vm_exit_out_of_memory() with the specified mesg.
+  static void   pd_commit_memory_or_exit(char* addr, size_t bytes,
+                                         bool executable, const char* mesg);
+  static void   pd_commit_memory_or_exit(char* addr, size_t size,
+                                         size_t alignment_hint,
+                                         bool executable, const char* mesg);
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
@@ -261,9 +272,16 @@ class os: AllStatic {
   static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
-  static bool   commit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable = false);
+                              bool executable);
+  // Same as commit_memory() that either succeeds or calls
+  // vm_exit_out_of_memory() with the specified mesg.
+  static void   commit_memory_or_exit(char* addr, size_t bytes,
+                                      bool executable, const char* mesg);
+  static void   commit_memory_or_exit(char* addr, size_t size,
+                                      size_t alignment_hint,
+                                      bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
 
@@ -780,6 +798,104 @@ class os: AllStatic {
   // (for Unix, that stimulus is a signal, for Windows, an external
   // ResumeThread call)
   static void pause();
+
+  class SuspendedThreadTaskContext {
+  public:
+    SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
+    Thread* thread() const { return _thread; }
+    void* ucontext() const { return _ucontext; }
+  private:
+    Thread* _thread;
+    void* _ucontext;
+  };
+
+  class SuspendedThreadTask {
+  public:
+    SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
+    virtual ~SuspendedThreadTask() {}
+    void run();
+    bool is_done() { return _done; }
+    virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
+  protected:
+  private:
+    void internal_do_task();
+    Thread* _thread;
+    bool _done;
+  };
+
+#ifndef TARGET_OS_FAMILY_windows
+  // Suspend/resume support
+  // Protocol:
+  //
+  // a thread starts in SR_RUNNING
+  //
+  // SR_RUNNING can go to
+  //   * SR_SUSPEND_REQUEST when the WatcherThread wants to suspend it
+  // SR_SUSPEND_REQUEST can go to
+  //   * SR_RUNNING if WatcherThread decides it waited for SR_SUSPENDED too long (timeout)
+  //   * SR_SUSPENDED if the stopped thread receives the signal and switches state
+  // SR_SUSPENDED can go to
+  //   * SR_WAKEUP_REQUEST when the WatcherThread has done the work and wants to resume
+  // SR_WAKEUP_REQUEST can go to
+  //   * SR_RUNNING when the stopped thread receives the signal
+  //   * SR_WAKEUP_REQUEST on timeout (resend the signal and try again)
+  class SuspendResume {
+   public:
+    enum State {
+      SR_RUNNING,
+      SR_SUSPEND_REQUEST,
+      SR_SUSPENDED,
+      SR_WAKEUP_REQUEST
+    };
+
+  private:
+    volatile State _state;
+
+  private:
+    /* try to switch state from state "from" to state "to"
+     * returns the state set after the method is complete
+     */
+    State switch_state(State from, State to);
+
+  public:
+    SuspendResume() : _state(SR_RUNNING) { }
+
+    State state() const { return _state; }
+
+    State request_suspend() {
+      return switch_state(SR_RUNNING, SR_SUSPEND_REQUEST);
+    }
+
+    State cancel_suspend() {
+      return switch_state(SR_SUSPEND_REQUEST, SR_RUNNING);
+    }
+
+    State suspended() {
+      return switch_state(SR_SUSPEND_REQUEST, SR_SUSPENDED);
+    }
+
+    State request_wakeup() {
+      return switch_state(SR_SUSPENDED, SR_WAKEUP_REQUEST);
+    }
+
+    State running() {
+      return switch_state(SR_WAKEUP_REQUEST, SR_RUNNING);
+    }
+
+    bool is_running() const {
+      return _state == SR_RUNNING;
+    }
+
+    bool is_suspend_request() const {
+      return _state == SR_SUSPEND_REQUEST;
+    }
+
+    bool is_suspended() const {
+      return _state == SR_SUSPENDED;
+    }
+  };
+#endif
+
 
  protected:
   static long _rand_seed;                   // seed for random number generator

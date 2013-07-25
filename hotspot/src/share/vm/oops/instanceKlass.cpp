@@ -268,8 +268,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_fields(NULL, 0);
   set_constants(NULL);
   set_class_loader_data(NULL);
-  set_protection_domain(NULL);
-  set_signers(NULL);
   set_source_file_name(NULL);
   set_source_debug_extension(NULL, 0);
   set_array_name(NULL);
@@ -279,7 +277,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_is_marked_dependent(false);
   set_init_state(InstanceKlass::allocated);
   set_init_thread(NULL);
-  set_init_lock(NULL);
   set_reference_type(rt);
   set_oop_map_cache(NULL);
   set_jni_ids(NULL);
@@ -408,12 +405,6 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_inner_classes(NULL);
 
-  // Null out Java heap objects, although these won't be walked to keep
-  // alive once this InstanceKlass is deallocated.
-  set_protection_domain(NULL);
-  set_signers(NULL);
-  set_init_lock(NULL);
-
   // We should deallocate the Annotations instance
   MetadataFactory::free_metadata(loader_data, annotations());
   set_annotations(NULL);
@@ -451,6 +442,24 @@ void InstanceKlass::eager_initialize(Thread *thread) {
   }
 }
 
+// JVMTI spec thinks there are signers and protection domain in the
+// instanceKlass.  These accessors pretend these fields are there.
+// The hprof specification also thinks these fields are in InstanceKlass.
+oop InstanceKlass::protection_domain() const {
+  // return the protection_domain from the mirror
+  return java_lang_Class::protection_domain(java_mirror());
+}
+
+// To remove these from requires an incompatible change and CCC request.
+objArrayOop InstanceKlass::signers() const {
+  // return the signers from the mirror
+  return java_lang_Class::signers(java_mirror());
+}
+
+volatile oop InstanceKlass::init_lock() const {
+  // return the init lock from the mirror
+  return java_lang_Class::init_lock(java_mirror());
+}
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
@@ -1883,16 +1892,6 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
 
 // Garbage collection
 
-void InstanceKlass::oops_do(OopClosure* cl) {
-  Klass::oops_do(cl);
-
-  cl->do_oop(adr_protection_domain());
-  cl->do_oop(adr_signers());
-  cl->do_oop(adr_init_lock());
-
-  // Don't walk the arrays since they are walked from the ClassLoaderData objects.
-}
-
 #ifdef ASSERT
 template <class T> void assert_is_in(T *p) {
   T heap_oop = oopDesc::load_heap_oop(p);
@@ -2241,9 +2240,6 @@ void InstanceKlass::remove_unshareable_info() {
     m->remove_unshareable_info();
   }
 
-  // Need to reinstate when reading back the class.
-  set_init_lock(NULL);
-
   // do array classes also.
   array_klasses_do(remove_unshareable_in_class);
 }
@@ -2274,13 +2270,6 @@ void InstanceKlass::restore_unshareable_info(TRAPS) {
     ik->vtable()->initialize_vtable(false, CHECK);
     ik->itable()->initialize_itable(false, CHECK);
   }
-
-  // Allocate a simple java object for a lock.
-  // This needs to be a java object because during class initialization
-  // it can be held across a java call.
-  typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
-  Handle h(THREAD, (oop)r);
-  ik->set_init_lock(h());
 
   // restore constant pool resolved references
   ik->constants()->restore_unshareable_info(CHECK);
@@ -2331,10 +2320,15 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  MemberNameTable* mnt = member_names();
-  if (mnt != NULL) {
-    delete mnt;
-    set_member_names(NULL);
+  // Deallocate MemberNameTable
+  {
+    Mutex* lock_or_null = SafepointSynchronize::is_at_safepoint() ? NULL : MemberNameTable_lock;
+    MutexLockerEx ml(lock_or_null, Mutex::_no_safepoint_check_flag);
+    MemberNameTable* mnt = member_names();
+    if (mnt != NULL) {
+      delete mnt;
+      set_member_names(NULL);
+    }
   }
 
   int* indices = methods_cached_itable_indices_acquire();
@@ -2765,15 +2759,28 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-void InstanceKlass::add_member_name(Handle mem_name) {
+void InstanceKlass::add_member_name(int index, Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
+  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
   DEBUG_ONLY(No_Safepoint_Verifier nsv);
 
   if (_member_names == NULL) {
-    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable();
+    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  _member_names->add_member_name(mem_name_wref);
+  _member_names->add_member_name(index, mem_name_wref);
+}
+
+oop InstanceKlass::get_member_name(int index) {
+  MutexLocker ml(MemberNameTable_lock);
+  assert(0 <= index && index < idnum_allocated_count(), "index is out of bounds");
+  DEBUG_ONLY(No_Safepoint_Verifier nsv);
+
+  if (_member_names == NULL) {
+    return NULL;
+  }
+  oop mem_name =_member_names->get_member_name(index);
+  return mem_name;
 }
 
 // -----------------------------------------------------------------------------------------------------
@@ -2836,10 +2843,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     class_loader_data()->print_value_on(st);
     st->cr();
   }
-  st->print(BULLET"protection domain: "); ((InstanceKlass*)this)->protection_domain()->print_value_on(st); st->cr();
   st->print(BULLET"host class:        "); host_klass()->print_value_on_maybe_null(st); st->cr();
-  st->print(BULLET"signers:           "); signers()->print_value_on(st);               st->cr();
-  st->print(BULLET"init_lock:         "); ((oop)_init_lock)->print_value_on(st);       st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);
@@ -3040,7 +3044,6 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   n += (sz->_method_ordering_bytes       = sz->count_array(method_ordering()));
   n += (sz->_local_interfaces_bytes      = sz->count_array(local_interfaces()));
   n += (sz->_transitive_interfaces_bytes = sz->count_array(transitive_interfaces()));
-  n += (sz->_signers_bytes               = sz->count_array(signers()));
   n += (sz->_fields_bytes                = sz->count_array(fields()));
   n += (sz->_inner_classes_bytes         = sz->count_array(inner_classes()));
   sz->_ro_bytes += n;
@@ -3085,27 +3088,26 @@ class VerifyFieldClosure: public OopClosure {
   virtual void do_oop(narrowOop* p) { VerifyFieldClosure::do_oop_work(p); }
 };
 
-void InstanceKlass::verify_on(outputStream* st) {
-  Klass::verify_on(st);
-  Thread *thread = Thread::current();
-
+void InstanceKlass::verify_on(outputStream* st, bool check_dictionary) {
 #ifndef PRODUCT
-  // Avoid redundant verifies
+  // Avoid redundant verifies, this really should be in product.
   if (_verify_count == Universe::verify_count()) return;
   _verify_count = Universe::verify_count();
 #endif
-  // Verify that klass is present in SystemDictionary
-  if (is_loaded() && !is_anonymous()) {
+
+  // Verify Klass
+  Klass::verify_on(st, check_dictionary);
+
+  // Verify that klass is present in SystemDictionary if not already
+  // verifying the SystemDictionary.
+  if (is_loaded() && !is_anonymous() && check_dictionary) {
     Symbol* h_name = name();
     SystemDictionary::verify_obj_klass_present(h_name, class_loader_data());
   }
 
-  // Verify static fields
-  VerifyFieldClosure blk;
-
   // Verify vtables
   if (is_linked()) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     // $$$ This used to be done only for m/s collections.  Doing it
     // always seemed a valid generalization.  (DLD -- 6/00)
     vtable()->verify(st);
@@ -3113,7 +3115,6 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify first subklass
   if (subklass_oop() != NULL) {
-    guarantee(subklass_oop()->is_metadata(), "should be in metaspace");
     guarantee(subklass_oop()->is_klass(), "should be klass");
   }
 
@@ -3125,7 +3126,6 @@ void InstanceKlass::verify_on(outputStream* st) {
       fatal(err_msg("subclass points to itself " PTR_FORMAT, sib));
     }
 
-    guarantee(sib->is_metadata(), "should be in metaspace");
     guarantee(sib->is_klass(), "should be klass");
     guarantee(sib->super() == super, "siblings should have same superklass");
   }
@@ -3161,7 +3161,6 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (methods() != NULL) {
     Array<Method*>* methods = this->methods();
     for (int j = 0; j < methods->length(); j++) {
-      guarantee(methods->at(j)->is_metadata(), "should be in metaspace");
       guarantee(methods->at(j)->is_method(), "non-method in methods array");
     }
     for (int j = 0; j < methods->length() - 1; j++) {
@@ -3199,23 +3198,14 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify other fields
   if (array_klasses() != NULL) {
-    guarantee(array_klasses()->is_metadata(), "should be in metaspace");
     guarantee(array_klasses()->is_klass(), "should be klass");
   }
   if (constants() != NULL) {
-    guarantee(constants()->is_metadata(), "should be in metaspace");
     guarantee(constants()->is_constantPool(), "should be constant pool");
-  }
-  if (protection_domain() != NULL) {
-    guarantee(protection_domain()->is_oop(), "should be oop");
   }
   const Klass* host = host_klass();
   if (host != NULL) {
-    guarantee(host->is_metadata(), "should be in metaspace");
     guarantee(host->is_klass(), "should be klass");
-  }
-  if (signers() != NULL) {
-    guarantee(signers()->is_objArray(), "should be obj array");
   }
 }
 

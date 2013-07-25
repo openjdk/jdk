@@ -294,6 +294,12 @@ abstract class IntPipeline<E_IN>
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
                 return new Sink.ChainedInt(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
                     public void accept(int t) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         IntStream result = mapper.apply(t);
@@ -325,6 +331,11 @@ abstract class IntPipeline<E_IN>
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
                 return new Sink.ChainedInt(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
                     @Override
                     public void accept(int t) {
                         if (predicate.test(t))
@@ -498,7 +509,7 @@ abstract class IntPipeline<E_IN>
     @Override
     public final int[] toArray() {
         return Nodes.flattenInt((Node.OfInt) evaluateToArrayNode(Integer[]::new))
-                        .asIntArray();
+                        .asPrimitiveArray();
     }
 
     //

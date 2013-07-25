@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * A factory for <code>PooledConnection</code>
  * objects.  An object that implements this interface will typically be
  * registered with a naming service that is based on the
- * Java<sup><font size=-2>TM</font></sup> Naming and Directory Interface
+ * Java&trade; Naming and Directory Interface
  * (JNDI).
  *
  * @since 1.4

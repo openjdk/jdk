@@ -38,6 +38,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jlong.h>
+#include <sizecalc.h>
 
 #include <awt.h>
 #include <jvm.h>
@@ -1946,13 +1947,16 @@ secondary_loop_event(Display* dpy, XEvent* event, char* arg) {
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent(JNIEnv *env, jclass clazz,
                                                      jlong display, jlong ptr) {
+    uint32_t timeout = 1;
+
     AWT_CHECK_HAVE_LOCK();
     exitSecondaryLoop = False;
     while (!exitSecondaryLoop) {
         if (XCheckIfEvent((Display*) jlong_to_ptr(display), (XEvent*) jlong_to_ptr(ptr), secondary_loop_event, NULL)) {
             return JNI_TRUE;
         }
-        AWT_WAIT(AWT_SECONDARY_LOOP_TIMEOUT);
+        timeout = (timeout < AWT_SECONDARY_LOOP_TIMEOUT) ? (timeout << 1) : AWT_SECONDARY_LOOP_TIMEOUT;
+        AWT_WAIT(timeout);
     }
     return JNI_FALSE;
 }
@@ -2225,6 +2229,10 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
     RECT_T * pRect;
     int numrects;
 
+    if (!IS_SAFE_SIZE_MUL(width / 2 + 1, height)) {
+        return;
+    }
+
     AWT_CHECK_HAVE_LOCK();
 
     len = (*env)->GetArrayLength(env, bitmap);
@@ -2237,7 +2245,10 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
         return;
     }
 
-    pRect = (RECT_T *)malloc(worstBufferSize * sizeof(RECT_T));
+    pRect = (RECT_T *)SAFE_SIZE_ARRAY_ALLOC(malloc, worstBufferSize, sizeof(RECT_T));
+    if (!pRect) {
+        return;
+    }
 
     /* Note: the values[0] and values[1] are supposed to contain the width
      * and height (see XIconInfo.getIntData() for details). So, we do +2.

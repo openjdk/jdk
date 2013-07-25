@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+
+-->
+
+
+<!DOCTYPE trace SYSTEM "trace.dtd" [
+<!ENTITY % xinclude SYSTEM "xinclude.mod">
+%xinclude;
+]>
+
+<trace>
+  <xi:include href="tracetypes.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+
+  <relation_decls>
+    <relation_decl id="GC_ID" uri="vm/gc/id"/>
+    <relation_decl id="COMP_ID" uri="vm/compiler/id"/>
+    <relation_decl id="SWEEP_ID" uri="vm/code_sweeper/id"/>
+    <relation_decl id="JAVA_MONITOR_ADDRESS" uri="java/monitor/address"/>
+  </relation_decls>
+
+<!--
+
+Events in the JVM are by default timed (it's more common)
+Perhaps a little strange. Might change.
+
+EVENTS
+
+Declard with the 'event' tag.
+
+<value fields> can be one or more of
+   value            - a simple primitive or constant type value
+   structvalue      - value is a sub-struct. This type must be previously defined
+                      with 'struct'
+All these require you to declare type, field and label of the field. They also accept
+an optional description of the field. If the meaning of the field is not obvious
+from the label you should provide a description. If an event however is not actually
+meant for end-users, you should probably _not_ write descriptions at all, since you
+might just add more concepts the user has no notion of/interest in.
+
+Events should be modeled after what conceptual process you are expressing, _NOT_
+from whatever data structures you might use inside the JVM for expressing a process.
+
+
+STRUCT
+
+Declared with the 'struct' tag.
+
+Declares a structure type that can be used in other events.
+
+-->
+
+  <events>
+    <event id="ThreadStart" path="java/thread_start" label="Java Thread Start"
+           has_thread="true" is_instant="true">
+      <value type="JAVALANGTHREAD" field="javalangthread" label="Java Thread"/>
+    </event>
+
+    <event id="ThreadEnd" path="java/thread_end" label="Java Thread End"
+           has_thread="true" is_instant="true">
+      <value type="JAVALANGTHREAD" field="javalangthread" label="Java Thread"/>
+    </event>
+
+    <event id="ThreadSleep" path="java/thread_sleep" label="Java Thread Sleep"
+            has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="MILLIS" field="time" label="Sleep Time"/>
+    </event>
+
+    <event id="ThreadPark" path="java/thread_park" label="Java Thread Park"
+            has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="CLASS" field="klass" label="Class Parked On"/>
+      <value type="MILLIS" field="timeout" label="Park Timeout"/>
+      <value type="ADDRESS" field="address" label="Address of Object Parked" relation="JAVA_MONITOR_ADDRESS"/>
+    </event>
+
+    <event id="JavaMonitorEnter" path="java/monitor_enter" label="Java Monitor Blocked"
+            has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="CLASS" field="klass" label="Monitor Class"/>
+      <value type="JAVALANGTHREAD" field="previousOwner" label="Previous Monitor Owner"/>
+      <value type="ADDRESS" field="address" label="Monitor Address" relation="JAVA_MONITOR_ADDRESS"/>
+    </event>
+
+    <event id="JavaMonitorWait" path="java/monitor_wait" label="Java Monitor Wait" description="Waiting on a Java monitor"
+            has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="CLASS" field="klass" label="Monitor Class" description="Class of object waited on"/>
+      <value type="OSTHREAD" field="notifier" label="Notifier Thread" description="Notifying Thread"/>
+      <value type="MILLIS" field="timeout" label="Timeout" description="Maximum wait time"/>
+      <value type="BOOLEAN" field="timedOut" label="Timed Out" description="Wait has been timed out"/>
+      <value type="ADDRESS" field="address" label="Monitor Address" description="Address of object waited on" relation="JAVA_MONITOR_ADDRESS"/>
+    </event>
+
+    <event id="ClassLoad" path="vm/class/load" label="Class Load"
+            has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="CLASS" field="loadedClass" label="Loaded Class"/>
+      <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
+      <value type="CLASS" field="initiatingClassLoader" label="Initiating Class Loader"/>
+    </event>
+
+    <event id="ClassUnload" path="vm/class/unload" label="Class Unload"
+        has_thread="true" is_instant="true">
+      <value type="CLASS" field="unloadedClass" label="Unloaded Class"/>
+      <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
+    </event>
+
+    <struct id="VirtualSpace">
+      <value type="ADDRESS" field="start" label="Start Address" description="Start address of the virtual space" />
+      <value type="ADDRESS" field="committedEnd" label="Committed End Address" description="End address of the committed memory for the virtual space" />
+      <value type="BYTES64" field="committedSize" label="Committed Size" description="Size of the committed memory for the virtual space" />
+      <value type="ADDRESS" field="reservedEnd" label="Reserved End Address" description="End address of the reserved memory for the virtual space" />
+      <value type="BYTES64" field="reservedSize" label="Reserved Size" description="Size of the reserved memory for the virtual space" />
+    </struct>
+
+    <struct id="ObjectSpace">
+      <value type="ADDRESS" field="start" label="Start Address" description="Start address of the space" />
+      <value type="ADDRESS" field="end" label="End Address" description="End address of the space" />
+      <value type="BYTES64" field="used" label="Used" description="Bytes allocated by objects in the space" />
+      <value type="BYTES64" field="size" label="Size" description="Size of the space" />
+    </struct>
+
+    <event id="GCHeapSummary" path="vm/gc/heap/summary" label="Heap Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+      <structvalue type="VirtualSpace" field="heapSpace" label="Heap Space"/>
+      <value type="BYTES64" field="heapUsed" label="Heap Used" description="Bytes allocated by objects in the heap"/>
+    </event>
+
+    <struct id="MetaspaceSizes">
+      <value type="BYTES64" field="capacity" label="Capacity" description="Total available memory to allocate in" />
+      <value type="BYTES64" field="used" label="Used" description="Bytes allocated by objects in the space" />
+      <value type="BYTES64" field="reserved" label="Reserved" description="Reserved memory for this space" />
+    </struct>
+
+    <event id="MetaspaceSummary" path="vm/gc/heap/metaspace_summary" label="Metaspace Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+      <structvalue type="MetaspaceSizes" field="metaspace" label="Total"/>
+      <structvalue type="MetaspaceSizes" field="dataSpace" label="Data"/>
+      <structvalue type="MetaspaceSizes" field="classSpace" label="Class"/>
+    </event>
+
+    <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+
+      <structvalue type="VirtualSpace" field="oldSpace" label="Old Space"/>
+      <structvalue type="ObjectSpace" field="oldObjectSpace" label="Old Object Space"/>
+
+      <structvalue type="VirtualSpace" field="youngSpace" label="Young Space"/>
+      <structvalue type="ObjectSpace" field="edenSpace" label="Eden Space"/>
+      <structvalue type="ObjectSpace" field="fromSpace" label="From Space"/>
+      <structvalue type="ObjectSpace" field="toSpace" label="To Space"/>
+    </event>
+
+    <event id="GCGarbageCollection" path="vm/gc/collector/garbage_collection" label="Garbage Collection"
+           description="Garbage collection performed by the JVM">
+      <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
+      <value type="GCNAME" field="name" label="Name" description="The name of the Garbage Collector" />
+      <value type="GCCAUSE" field="cause" label="Cause" description="The reason for triggering this Garbage Collection" />
+      <value type="RELATIVE_TICKS" field="sumOfPauses" label="Sum of Pauses" description="Sum of all the times in which Java execution was paused during the garbage collection" />
+      <value type="RELATIVE_TICKS" field="longestPause" label="Longest Pause" description="Longest individual pause during the garbage collection" />
+    </event>
+
+    <event id="GCParallelOld" path="vm/gc/collector/parold_garbage_collection" label="Parallel Old Garbage Collection"
+           description="Extra information specific to Parallel Old Garbage Collections">
+      <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
+      <value type="ADDRESS" field="densePrefix" label="Dense Prefix" description="The address of the dense prefix, used when compacting" />
+    </event>
+
+    <event id="GCYoungGarbageCollection" path="vm/gc/collector/young_garbage_collection" label="Young Garbage Collection"
+           description="Extra information specific to Young Garbage Collections">
+      <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
+      <value type="UINT" field="tenuringThreshold" label="Tenuring Threshold" />
+    </event>
+
+    <event id="GCOldGarbageCollection" path="vm/gc/collector/old_garbage_collection" label="Old Garbage Collection"
+           description="Extra information specific to Old Garbage Collections">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+    </event>
+
+    <event id="GCG1GarbageCollection" path="vm/gc/collector/g1_garbage_collection" label="G1 Garbage Collection"
+           description="Extra information specific to G1 Garbage Collections">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="G1YCTYPE" field="type" label="Type" />
+    </event>
+
+    <event id="EvacuationInfo" path="vm/gc/detailed/evacuation_info" label="Evacuation Information" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UINT" field="cSetRegions" label="Collection Set Regions"/>
+      <value type="BYTES64" field="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions"/>
+      <value type="BYTES64" field="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions"/>
+      <value type="UINT" field="allocationRegions" label="Allocation Regions" description="Regions chosen as allocation regions during evacuation (includes survivors and old space regions)"/>
+      <value type="BYTES64" field="allocRegionsUsedBefore" label="Alloc Regions Before" description="Memory usage before GC in allocation regions"/>
+      <value type="BYTES64" field="allocRegionsUsedAfter" label="Alloc Regions After" description="Memory usage after GC in allocation regions"/>
+      <value type="BYTES64" field="bytesCopied" label="Bytes Copied"/>
+      <value type="UINT" field="regionsFreed" label="Regions Freed"/>
+    </event>
+
+    <event id="GCReferenceStatistics" path="vm/gc/reference/statistics"
+           label="GC Reference Statistics" is_instant="true"
+           description="Total count of processed references during GC">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="REFERENCETYPE" field="type" label="Type" />
+      <value type="ULONG" field="count" label="Total Count" />
+    </event>
+
+    <struct id="CopyFailed">
+      <value type="ULONG" field="objectCount" label="Object Count"/>
+      <value type="BYTES64" field="firstSize" label="First Failed Object Size"/>
+      <value type="BYTES64" field="smallestSize" label="Smallest Failed Object Size"/>
+      <value type="BYTES64" field="totalSize" label="Total Object Size"/>
+    </struct>
+
+    <event id="ObjectCountAfterGC" path="vm/gc/detailed/object_count_after_gc" is_instant="true" label="Object Count after GC">
+      <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
+      <value type="CLASS" field="class" label="Class" />
+      <value type="LONG" field="count" label="Count" />
+      <value type="BYTES64" field="totalSize" label="Total Size" />
+    </event>
+
+    <event id="PromotionFailed" path="vm/gc/detailed/promotion_failed" label="Promotion Failed" is_instant="true"
+           description="Promotion of an object failed">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <structvalue type="CopyFailed" field="data" label="Data"/>
+      <value type="OSTHREAD" field="thread" label="Running thread"/>
+    </event>
+
+    <event id="EvacuationFailed" path="vm/gc/detailed/evacuation_failed" label="Evacuation Failed" is_instant="true"
+           description="Evacuation of an object failed">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <structvalue type="CopyFailed" field="data" label="Data"/>
+    </event>
+
+    <event id="ConcurrentModeFailure" path="vm/gc/detailed/concurrent_mode_failure" label="Concurrent Mode Failure"
+           is_instant="true" description="Concurrent Mode failed">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+    </event>
+
+    <event id="GCPhasePause" path="vm/gc/phases/pause" label="GC Phase Pause">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
+    <event id="GCPhasePauseLevel1" path="vm/gc/phases/pause_level_1" label="GC Phase Pause Level 1">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
+    <event id="GCPhasePauseLevel2" path="vm/gc/phases/pause_level_2" label="GC Phase Pause Level 2">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
+    <event id="GCPhasePauseLevel3" path="vm/gc/phases/pause_level_3" label="GC Phase Pause Level 3">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
+    <!-- Compiler events -->
+
+    <event id="Compilation" path="vm/compiler/compilation" label="Compilation"
+         has_thread="true" is_requestable="false" is_constant="false">
+      <value type="METHOD" field="method" label="Java Method"/>
+      <value type="UINT" field="compileID" label="Compilation ID" relation="COMP_ID"/>
+      <value type="USHORT" field="compileLevel" label="Compilation Level"/>
+      <value type="BOOLEAN" field="succeded" label="Succeeded"/>
+      <value type="BOOLEAN" field="isOsr" label="On Stack Replacement"/>
+      <value type="BYTES" field="codeSize" label="Compiled Code Size"/>
+      <value type="BYTES" field="inlinedBytes" label="Inlined Code Size"/>
+    </event>
+
+    <event id="CompilerPhase" path="vm/compiler/phase" label="Compiler Phase"
+            has_thread="true" is_requestable="false" is_constant="false">
+      <value type="COMPILERPHASETYPE" field="phase" label="Compile Phase"/>
+      <value type="UINT" field="compileID" label="Compilation ID" relation="COMP_ID"/>
+      <value type="USHORT" field="phaseLevel" label="Phase Level"/>
+    </event>
+
+    <event id="CompilerFailure" path="vm/compiler/failure" label="Compilation Failure"
+            has_thread="true" is_requestable="false" is_constant="false" is_instant="true">
+      <value type="UTF8" field="failure" label="Message"/>
+      <value type="UINT" field="compileID" label="Compilation ID" relation="COMP_ID"/>
+    </event>
+
+    <!-- Code sweeper events -->
+
+    <event id="SweepCodeCache" path="vm/code_sweeper/sweep" label="Sweep Code Cache"
+       has_thread="true" is_requestable="false" is_constant="false">
+      <value type="INTEGER" field="sweepIndex" label="Sweep Index" relation="SWEEP_ID"/>
+      <value type="USHORT" field="sweepFractionIndex" label="Fraction Index"/>
+      <value type="UINT" field="sweptCount" label="Methods Swept"/>
+      <value type="UINT" field="flushedCount" label="Methods Flushed"/>
+      <value type="UINT" field="markedCount" label="Methods Reclaimed"/>
+      <value type="UINT" field="zombifiedCount" label="Methods Zombified"/>
+    </event>
+
+    <event id="CleanCodeCache" path="vm/code_sweeper/clean" label="Clean Code Cache"
+             description="Clean code cache from oldest methods"
+             has_thread="true" is_requestable="false" is_constant="false">
+      <value type="UINT" field="disconnectedCount" label="Methods Disconnected"/>
+      <value type="UINT" field="madeNonEntrantCount" label="Methods Made Non-Entrant"/>
+    </event>
+
+    <!-- Code cache events -->
+
+    <event id="CodeCacheFull" path="vm/code_cache/full" label="Code Cache Full"
+         has_thread="true" is_requestable="false" is_constant="false" is_instant="true">
+      <value type="ADDRESS" field="startAddress" label="Start Address"/>
+      <value type="ADDRESS" field="commitedTopAddress" label="Commited Top"/>
+      <value type="ADDRESS" field="reservedTopAddress" label="Reserved Top"/>
+      <value type="INTEGER" field="entryCount" label="Entries"/>
+      <value type="INTEGER" field="methodCount" label="Methods"/>
+      <value type="INTEGER" field="adaptorCount" label="Adaptors"/>
+      <value type="BYTES64" field="unallocatedCapacity" label="Unallocated"/>
+      <value type="INTEGER" field="fullCount" label="Full Count"/>
+    </event>
+
+    <event id="ExecuteVMOperation" path="vm/runtime/execute_vm_operation" label="VM Operation"
+        description="Execution of a VM Operation" has_thread="true">
+      <value type="VMOPERATIONTYPE" field="operation" label="Operation" />
+      <value type="BOOLEAN" field="safepoint" label="At Safepoint" description="If the operation occured at a safepoint."/>
+      <value type="BOOLEAN" field="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete."/>
+      <value type="OSTHREAD" field="caller" label="Caller" transition="FROM" description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown."/>
+    </event>
+
+    <!-- Allocation events -->
+    <event id="AllocObjectInNewTLAB" path="java/object_alloc_in_new_TLAB" label="Allocation in new TLAB"
+        description="Allocation in new Thread Local Allocation Buffer" has_thread="true" has_stacktrace="true" is_instant="true">
+      <value type="CLASS" field="class" label="Class" description="Class of allocated object"/>
+      <value type="BYTES64" field="allocationSize" label="Allocation Size"/>
+      <value type="BYTES64" field="tlabSize" label="TLAB Size"/>
+    </event>
+
+    <event id="AllocObjectOutsideTLAB" path="java/object_alloc_outside_TLAB" label="Allocation outside TLAB"
+        description="Allocation outside Thread Local Allocation Buffers" has_thread="true" has_stacktrace="true" is_instant="true">
+      <value type="CLASS" field="class" label="Class" description="Class of allocated object"/>
+      <value type="BYTES64" field="allocationSize" label="Allocation Size"/>
+    </event>
+  </events>
+
+  <xi:include href="../../../closed/share/vm/trace/traceeventtypes.xml" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:fallback/>
+  </xi:include>
+
+  <xi:include href="../../../closed/share/vm/trace/traceevents.xml" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:fallback/>
+  </xi:include>
+</trace>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ package sun.awt.X11;
 
 import java.awt.Component;
 import java.awt.Window;
-import sun.util.logging.PlatformLogger;
+
+import sun.awt.AWTAccessor;
 import sun.awt.CausedFocusEvent;
 import sun.awt.KeyboardFocusManagerPeerImpl;
+import sun.util.logging.PlatformLogger;
 
 public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
@@ -60,7 +62,7 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
 
     @Override
     public void setCurrentFocusedWindow(Window win) {
-        if (focusLog.isLoggable(PlatformLogger.FINER)) {
+        if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Setting current focused window " + win);
         }
 
@@ -68,13 +70,13 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
 
         synchronized(this) {
             if (currentFocusedWindow != null) {
-                from = (XWindowPeer)currentFocusedWindow.getPeer();
+                from = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
             }
 
             currentFocusedWindow = win;
 
             if (currentFocusedWindow != null) {
-                to = (XWindowPeer)currentFocusedWindow.getPeer();
+                to = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
             }
         }
 

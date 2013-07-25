@@ -34,6 +34,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.net.httpserver.HttpConnection.State;
 
 /**
@@ -244,7 +246,14 @@ class ServerImpl implements TimeSource {
     }
 
     public InetSocketAddress getAddress() {
-        return (InetSocketAddress)schan.socket().getLocalSocketAddress();
+        return AccessController.doPrivileged(
+                new PrivilegedAction<InetSocketAddress>() {
+                    public InetSocketAddress run() {
+                        return
+                            (InetSocketAddress)schan.socket()
+                                .getLocalSocketAddress();
+                    }
+                });
     }
 
     Selector getSelector () {

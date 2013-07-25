@@ -40,7 +40,9 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(NEW_JAVAC),\
-     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
+     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 8 -target 8 \
+	    -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS) \
+	    $(GENERATE_JDKBYTECODE_EXTRA_FLAGS),\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 

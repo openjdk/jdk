@@ -300,7 +300,7 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_MSYS],
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
 [
-  SRC_ROOT_LENGTH=`$THEPWDCMD|$WC -m`
+  SRC_ROOT_LENGTH=`$THEPWDCMD -L|$WC -m`
   if test $SRC_ROOT_LENGTH -gt 100; then
       AC_MSG_ERROR([Your base path is too long. It is $SRC_ROOT_LENGTH characters long, but only 100 is supported])
   fi

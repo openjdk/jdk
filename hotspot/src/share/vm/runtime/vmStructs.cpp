@@ -60,6 +60,7 @@
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
 #include "memory/metablock.hpp"
+#include "memory/referenceType.hpp"
 #include "memory/space.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "memory/universe.hpp"
@@ -292,10 +293,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<Klass*>*)                        \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
-  nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                  \
+  nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(InstanceKlass,               _protection_domain,                            oop)                                   \
-  nonstatic_field(InstanceKlass,               _signers,                                      objArrayOop)                           \
   nonstatic_field(InstanceKlass,               _source_file_name,                             Symbol*)                               \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(InstanceKlass,               _inner_classes,                               Array<jushort>*)                       \
@@ -380,7 +379,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ConstMethod,          _size_of_parameters,                           u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
-  volatile_nonstatic_field(Symbol,             _refcount,                                     int)                                   \
+  volatile_nonstatic_field(Symbol,             _refcount,                                     short)                                 \
   nonstatic_field(Symbol,                      _identity_hash,                                int)                                   \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
@@ -438,10 +437,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
      static_field(Universe,                    _main_thread_group,                            oop)                                   \
      static_field(Universe,                    _system_thread_group,                          oop)                                   \
      static_field(Universe,                    _the_empty_class_klass_array,                  objArrayOop)                           \
-     static_field(Universe,                    _out_of_memory_error_java_heap,                oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_perm_gen,                 oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_array_size,               oop)                                   \
-     static_field(Universe,                    _out_of_memory_error_gc_overhead_limit,        oop)                                   \
      static_field(Universe,                    _null_ptr_exception_instance,                  oop)                                   \
      static_field(Universe,                    _arithmetic_exception_instance,                oop)                                   \
      static_field(Universe,                    _vm_exception,                                 oop)                                   \

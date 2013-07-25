@@ -447,6 +447,8 @@ AWT_ASSERT_APPKIT_THREAD;
         // TODO: create generic AWT assert
     }
 
+    [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
+
     NSRect frame = ConvertNSScreenRect(env, [self.nsWindow frame]);
 
     static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIIIZ)V");
@@ -539,7 +541,7 @@ AWT_ASSERT_APPKIT_THREAD;
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
     if (!IS(self.styleBits, IS_DIALOG)) {
         [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
-    } else if (IS(self.styleBits, IS_MODAL)) {
+    } else if ((opposite != NULL) && IS(self.styleBits, IS_MODAL)) {
         [CMenuBar activate:opposite->javaMenuBar modallyDisabled:YES];        
     }
     [AWTWindow setLastKeyWindow:nil];
@@ -630,6 +632,7 @@ AWT_ASSERT_APPKIT_THREAD;
         [self _notifyFullScreenOp:com_apple_eawt_FullScreenHandler_FULLSCREEN_DID_ENTER withEnv:env];
         (*env)->DeleteLocalRef(env, platformWindow);
     }
+    [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
 }
 
 - (void)windowWillExitFullScreen:(NSNotification *)notification {
@@ -652,6 +655,7 @@ AWT_ASSERT_APPKIT_THREAD;
         [self _notifyFullScreenOp:com_apple_eawt_FullScreenHandler_FULLSCREEN_DID_EXIT withEnv:env];
         (*env)->DeleteLocalRef(env, platformWindow);
     }
+    [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
 }
 
 - (void)sendEvent:(NSEvent *)event {
@@ -891,8 +895,6 @@ JNF_COCOA_ENTER(env);
         // ensure we repaint the whole window after the resize operation
         // (this will also re-enable screen updates, which were disabled above)
         // TODO: send PaintEvent
-
-        [AWTWindow synthesizeMouseEnteredExitedEventsForAllWindows];
     }];
 
 JNF_COCOA_EXIT(env);

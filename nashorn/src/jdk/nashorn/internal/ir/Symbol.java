@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
@@ -53,23 +55,25 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int KINDMASK = (1 << 3) - 1; // Kinds are represented by lower three bits
 
     /** Is this scope */
-    public static final int IS_SCOPE         = 1 << 4;
+    public static final int IS_SCOPE             = 1 <<  4;
     /** Is this a this symbol */
-    public static final int IS_THIS          = 1 << 5;
+    public static final int IS_THIS              = 1 <<  5;
     /** Can this symbol ever be undefined */
-    public static final int CAN_BE_UNDEFINED = 1 << 6;
+    public static final int CAN_BE_UNDEFINED     = 1 <<  6;
+    /** Is this symbol always defined? */
+    public static final int IS_ALWAYS_DEFINED    = 1 <<  8;
     /** Can this symbol ever have primitive types */
-    public static final int CAN_BE_PRIMITIVE = 1 << 7;
+    public static final int CAN_BE_PRIMITIVE     = 1 <<  9;
     /** Is this a let */
-    public static final int IS_LET           = 1 << 8;
+    public static final int IS_LET               = 1 << 10;
     /** Is this an internal symbol, never represented explicitly in source code */
-    public static final int IS_INTERNAL      = 1 << 9;
+    public static final int IS_INTERNAL          = 1 << 11;
     /** Is this a function self-reference symbol */
-    public static final int IS_FUNCTION_SELF = 1 << 10;
+    public static final int IS_FUNCTION_SELF     = 1 << 12;
     /** Is this a specialized param? */
-    public static final int IS_SPECIALIZED_PARAM = 1 << 11;
+    public static final int IS_SPECIALIZED_PARAM = 1 << 13;
     /** Is this symbol a shared temporary? */
-    public static final int IS_SHARED = 1 << 12;
+    public static final int IS_SHARED            = 1 << 14;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -88,6 +92,9 @@ public final class Symbol implements Comparable<Symbol> {
 
     /** Number of times this symbol is used in code */
     private int useCount;
+
+    /** Range for symbol */
+    private Range range;
 
     /** Debugging option - dump info and stack trace when symbols with given names are manipulated */
     private static final Set<String> TRACE_SYMBOLS;
@@ -131,6 +138,7 @@ public final class Symbol implements Comparable<Symbol> {
         this.type       = type;
         this.slot       = slot;
         this.fieldIndex = -1;
+        this.range      = Range.createUnknownRange();
         trace("CREATE SYMBOL");
     }
 
@@ -157,12 +165,13 @@ public final class Symbol implements Comparable<Symbol> {
 
     private Symbol(final Symbol base, final String name, final int flags) {
         this.flags = flags;
-        this.name = name;
+        this.name  = name;
 
         this.fieldIndex = base.fieldIndex;
-        this.slot = base.slot;
-        this.type = base.type;
-        this.useCount = base.useCount;
+        this.slot       = base.slot;
+        this.type       = base.type;
+        this.useCount   = base.useCount;
+        this.range      = base.range;
     }
 
     private static String align(final String string, final int max) {
@@ -276,7 +285,7 @@ public final class Symbol implements Comparable<Symbol> {
 
     @Override
     public String toString() {
-        final StringBuilder sb   = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         sb.append(name).
             append(' ').
@@ -377,7 +386,7 @@ public final class Symbol implements Comparable<Symbol> {
       * Mark this symbol as one being shared by multiple expressions. The symbol must be a temporary.
       */
      public void setIsShared() {
-         if(!isShared()) {
+         if (!isShared()) {
              assert isTemp();
              trace("SET IS SHARED");
              flags |= IS_SHARED;
@@ -410,6 +419,30 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
+     * Check if this symbol is always defined, which overrides all canBeUndefined tags
+     * @return true if always defined
+     */
+    public boolean isAlwaysDefined() {
+        return isParam() || (flags & IS_ALWAYS_DEFINED) == IS_ALWAYS_DEFINED;
+    }
+
+    /**
+     * Get the range for this symbol
+     * @return range for symbol
+     */
+    public Range getRange() {
+        return range;
+    }
+
+    /**
+     * Set the range for this symbol
+     * @param range range
+     */
+    public void setRange(final Range range) {
+        this.range = range;
+    }
+
+    /**
      * Check if this symbol is a function parameter of known
      * narrowest type
      * @return true if parameter
@@ -439,7 +472,9 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setCanBeUndefined() {
         assert type.isObject() : type;
-        if(!canBeUndefined()) {
+        if (isAlwaysDefined()) {
+            return;
+        } else if (!canBeUndefined()) {
             assert !isShared();
             flags |= CAN_BE_UNDEFINED;
         }

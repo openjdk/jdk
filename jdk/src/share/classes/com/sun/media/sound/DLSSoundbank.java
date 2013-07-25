@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import javax.sound.sampled.AudioFormat.Encoding;
  *
  * @author Karl Helgason
  */
-public class DLSSoundbank implements Soundbank {
+public final class DLSSoundbank implements Soundbank {
 
     static private class DLSID {
         long i1;
@@ -69,7 +69,7 @@ public class DLSSoundbank implements Soundbank {
         private DLSID() {
         }
 
-        public DLSID(long i1, int s1, int s2, int x1, int x2, int x3, int x4,
+        DLSID(long i1, int s1, int s2, int x1, int x2, int x3, int x4,
                 int x5, int x6, int x7, int x8) {
             this.i1 = i1;
             this.s1 = s1;
@@ -174,10 +174,10 @@ public class DLSSoundbank implements Soundbank {
     private long major = -1;
     private long minor = -1;
 
-    private DLSInfo info = new DLSInfo();
+    private final DLSInfo info = new DLSInfo();
 
-    private List<DLSInstrument> instruments = new ArrayList<DLSInstrument>();
-    private List<DLSSample> samples = new ArrayList<DLSSample>();
+    private final List<DLSInstrument> instruments = new ArrayList<DLSInstrument>();
+    private final List<DLSSample> samples = new ArrayList<DLSSample>();
 
     private boolean largeFormat = false;
     private File sampleFile;

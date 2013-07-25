@@ -77,7 +77,19 @@ public final class LWCToolkit extends LWToolkit {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        inAWT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return !Boolean.parseBoolean(System.getProperty("javafx.embed.singleThread", "false"));
+            }
+        });
     }
+
+    /*
+     * If true  we operate in normal mode and nested runloop is executed in JavaRunLoopMode
+     * If false we operate in singleThreaded FX/AWT interop mode and nested loop uses NSDefaultRunLoopMode
+     */
+    private static final boolean inAWT;
 
     public LWCToolkit() {
         SunToolkit.setDataTransfererClassName("sun.lwawt.macosx.CDataTransferer");
@@ -164,6 +176,11 @@ public final class LWCToolkit extends LWToolkit {
             assert (peerType == PeerType.SIMPLEWINDOW || peerType == PeerType.DIALOG || peerType == PeerType.FRAME);
             return new CPlatformWindow();
         }
+    }
+
+    @Override
+    protected SecurityWarningWindow createSecurityWarning(Window ownerWindow, LWWindowPeer ownerPeer) {
+        return new CWarningWindow(ownerWindow, ownerPeer);
     }
 
     @Override
@@ -701,7 +718,10 @@ public final class LWCToolkit extends LWToolkit {
      *
      *                      if false - all events come after exit form the nested loop
      */
-    static native void doAWTRunLoop(long mediator, boolean processEvents);
+    static void doAWTRunLoop(long mediator, boolean processEvents) {
+        doAWTRunLoopImpl(mediator, processEvents, inAWT);
+    }
+    static private native void doAWTRunLoopImpl(long mediator, boolean processEvents, boolean inAWT);
     static native void stopAWTRunLoop(long mediator);
 
     private native boolean nativeSyncQueue(long timeout);

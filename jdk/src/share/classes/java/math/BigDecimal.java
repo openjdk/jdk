@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2572,6 +2572,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * ({@code this} * 10<sup>n</sup>).  The scale of
      * the result is {@code (this.scale() - n)}.
      *
+     * @param n the exponent power of ten to scale by
+     * @return a BigDecimal whose numerical value is equal to
+     * ({@code this} * 10<sup>n</sup>)
      * @throws ArithmeticException if the scale would be
      *         outside the range of a 32-bit integer.
      *
@@ -2589,14 +2592,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * the {@code BigDecimal} value {@code 600.0}, which has
      * [{@code BigInteger}, {@code scale}] components equals to
      * [6000, 1], yields {@code 6E2} with [{@code BigInteger},
-     * {@code scale}] components equals to [6, -2]
+     * {@code scale}] components equals to [6, -2].  If
+     * this BigDecimal is numerically equal to zero, then
+     * {@code BigDecimal.ZERO} is returned.
      *
      * @return a numerically equal {@code BigDecimal} with any
      * trailing zeros removed.
      * @since 1.5
      */
     public BigDecimal stripTrailingZeros() {
-        if(intCompact!=INFLATED) {
+        if (intCompact == 0 || (intVal != null && intVal.signum() == 0)) {
+            return BigDecimal.ZERO;
+        } else if (intCompact != INFLATED) {
             return createAndStripZerosToMatchScale(intCompact, scale, Long.MIN_VALUE);
         } else {
             return createAndStripZerosToMatchScale(intVal, scale, Long.MIN_VALUE);
@@ -3538,24 +3545,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return expandBigIntegerTenPowers(n);
         }
 
-        if (n < 1024*524288) {
-            // BigInteger.pow is slow, so make 10**n by constructing a
-            // BigInteger from a character string (still not very fast)
-            // which occupies no more than 1GB (!) of memory.
-            char tenpow[] = new char[n + 1];
-            tenpow[0] = '1';
-            for (int i = 1; i <= n; i++) {
-                tenpow[i] = '0';
-            }
-            return new BigInteger(tenpow, 1, tenpow.length);
-        }
-
-        if ((n & 0x1) == 0x1) {
-            return BigInteger.TEN.multiply(bigTenToThe(n - 1));
-        } else {
-            BigInteger tmp = bigTenToThe(n/2);
-            return tmp.multiply(tmp);
-        }
+        return BigInteger.TEN.pow(n);
     }
 
     /**

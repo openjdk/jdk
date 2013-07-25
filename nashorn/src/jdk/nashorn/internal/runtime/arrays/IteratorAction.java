@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -49,7 +50,7 @@ public abstract class IteratorAction<T> {
     protected T result;
 
     /** Current array index of iterator */
-    protected int index;
+    protected long index;
 
     /** Iterator object */
     private final ArrayLikeIterator<Object> iter;
@@ -96,12 +97,18 @@ public abstract class IteratorAction<T> {
      * @return result of apply
      */
     public final T apply() {
-        if (!(callbackfn instanceof ScriptFunction)) {
+        final boolean strict;
+        if (callbackfn instanceof ScriptFunction) {
+            strict = ((ScriptFunction)callbackfn).isStrict();
+        } else if (callbackfn instanceof ScriptObjectMirror &&
+            ((ScriptObjectMirror)callbackfn).isFunction()) {
+            strict = ((ScriptObjectMirror)callbackfn).isStrictFunction();
+        } else {
             throw typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
         }
-        final ScriptFunction func = ((ScriptFunction)callbackfn);
+
         // for non-strict callback, need to translate undefined thisArg to be global object
-        thisArg = (thisArg == ScriptRuntime.UNDEFINED && !func.isStrict()) ? Context.getGlobal() : thisArg;
+        thisArg = (thisArg == ScriptRuntime.UNDEFINED && !strict)? Context.getGlobal() : thisArg;
 
         applyLoopBegin(iter);
         final boolean reverse = iter.isReverse();
@@ -134,6 +141,6 @@ public abstract class IteratorAction<T> {
      *
      * @throws Throwable if invocation throws an exception/error
      */
-    protected abstract boolean forEach(final Object val, final int i) throws Throwable;
+    protected abstract boolean forEach(final Object val, final long i) throws Throwable;
 
 }

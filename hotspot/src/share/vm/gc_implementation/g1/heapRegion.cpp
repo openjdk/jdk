@@ -139,7 +139,7 @@ public:
         _n_failures++;
       }
 
-      if (!_g1h->full_collection()) {
+      if (!_g1h->full_collection() || G1VerifyRSetsDuringFullGC) {
         HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
         HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&
@@ -798,7 +798,7 @@ void HeapRegion::verify(VerifyOption vo,
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
         Klass* klass = obj->klass();
-        if (!klass->is_metadata()) {
+        if (!klass->is_metaspace_object()) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
                                  "not metadata", klass, obj);
           *failures = true;

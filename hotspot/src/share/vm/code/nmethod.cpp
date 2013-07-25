@@ -1081,11 +1081,6 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
     }
-
-    // There must not be any interfering patches or breakpoints.
-    assert(!(iter.type() == relocInfo::breakpoint_type
-             && iter.breakpoint_reloc()->active()),
-           "no active breakpoint");
   }
 }
 
@@ -1976,11 +1971,10 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke call(ssd.method(), ssd.bci());
-    // compiled invokedynamic call sites have an implicit receiver at
-    // resolution time, so make sure it gets GC'ed.
-    bool has_receiver = !call.is_invokestatic();
+    bool has_receiver = call.has_receiver();
+    bool has_appendix = call.has_appendix();
     Symbol* signature = call.signature();
-    fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
+    fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
 #endif // !SHARK
 }
@@ -2616,7 +2610,8 @@ void nmethod::print_relocations() {
                       relocation_begin()-1+ip[1]);
       for (; ip < index_end; ip++)
         tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip++);
+      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip);
+      ip++;
       tty->print_cr("reloc_end @" INTPTR_FORMAT ":", ip);
     }
   }

@@ -93,6 +93,10 @@ address os::current_stack_pointer() {
   register void *esp;
   __asm__("mov %%"SPELL_REG_SP", %0":"=r"(esp));
   return (address) ((char*)esp + sizeof(long)*2);
+#elif defined(__clang__)
+  intptr_t* esp;
+  __asm__ __volatile__ ("mov %%"SPELL_REG_SP", %0":"=r"(esp):);
+  return (address) esp;
 #else
   register void *esp __asm__ (SPELL_REG_SP);
   return (address) esp;
@@ -175,6 +179,9 @@ intptr_t* _get_previous_fp() {
 #ifdef SPARC_WORKS
   register intptr_t **ebp;
   __asm__("mov %%"SPELL_REG_FP", %0":"=r"(ebp));
+#elif defined(__clang__)
+  intptr_t **ebp;
+  __asm__ __volatile__ ("mov %%"SPELL_REG_FP", %0":"=r"(ebp):);
 #else
   register intptr_t **ebp __asm__ (SPELL_REG_FP);
 #endif
@@ -279,6 +286,16 @@ JVM_handle_linux_signal(int sig,
     if (pc == (address) FetchNPFI) {
        uc->uc_mcontext.gregs[REG_PC] = intptr_t (FetchNResume) ;
        return 1 ;
+    }
+#endif // AMD64
+
+#ifndef AMD64
+    // Halt if SI_KERNEL before more crashes get misdiagnosed as Java bugs
+    // This can happen in any running code (currently more frequently in
+    // interpreter code but has been seen in compiled code)
+    if (sig == SIGSEGV && info->si_addr == 0 && info->si_code == SI_KERNEL) {
+      fatal("An irrecoverable SI_KERNEL SIGSEGV has occurred due "
+            "to unstable signal handling in this distribution.");
     }
 #endif // AMD64
 

@@ -27,7 +27,9 @@ package javax.management;
 
 import com.sun.jmx.mbeanserver.Introspector;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * Static methods from the JMX API.  There are no instances of this class.
@@ -158,6 +160,10 @@ public class JMX {
      * example, then the return type is {@code MyMBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a <a href="package-summary.html#mgIface">compliant MBean
+     * interface</a>
      */
     public static <T> T newMBeanProxy(MBeanServerConnection connection,
                                       ObjectName objectName,
@@ -198,16 +204,16 @@ public class JMX {
      * example, then the return type is {@code MyMBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a <a href="package-summary.html#mgIface">compliant MBean
+     * interface</a>
      */
     public static <T> T newMBeanProxy(MBeanServerConnection connection,
                                       ObjectName objectName,
                                       Class<T> interfaceClass,
                                       boolean notificationEmitter) {
-        return MBeanServerInvocationHandler.newProxyInstance(
-                connection,
-                objectName,
-                interfaceClass,
-                notificationEmitter);
+        return createProxy(connection, objectName, interfaceClass, notificationEmitter, false);
     }
 
     /**
@@ -300,6 +306,9 @@ public class JMX {
      * example, then the return type is {@code MyMXBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a {@link javax.management.MXBean compliant MXBean interface}
      */
     public static <T> T newMXBeanProxy(MBeanServerConnection connection,
                                        ObjectName objectName,
@@ -340,50 +349,38 @@ public class JMX {
      * example, then the return type is {@code MyMXBean}.
      *
      * @return the new proxy instance.
+     *
+     * @throws IllegalArgumentException if {@code interfaceClass} is not
+     * a {@link javax.management.MXBean compliant MXBean interface}
      */
     public static <T> T newMXBeanProxy(MBeanServerConnection connection,
                                        ObjectName objectName,
                                        Class<T> interfaceClass,
                                        boolean notificationEmitter) {
-        // Check interface for MXBean compliance
-        //
-        try {
-            Introspector.testComplianceMXBeanInterface(interfaceClass);
-        } catch (NotCompliantMBeanException e) {
-            throw new IllegalArgumentException(e);
-        }
-        InvocationHandler handler = new MBeanServerInvocationHandler(
-                connection, objectName, true);
-        final Class<?>[] interfaces;
-        if (notificationEmitter) {
-            interfaces =
-                new Class<?>[] {interfaceClass, NotificationEmitter.class};
-        } else
-            interfaces = new Class<?>[] {interfaceClass};
-        Object proxy = Proxy.newProxyInstance(
-                interfaceClass.getClassLoader(),
-                interfaces,
-                handler);
-        return interfaceClass.cast(proxy);
+        return createProxy(connection, objectName, interfaceClass, notificationEmitter, true);
     }
 
     /**
      * <p>Test whether an interface is an MXBean interface.
-     * An interface is an MXBean interface if it is annotated
-     * {@link MXBean &#64;MXBean} or {@code @MXBean(true)}
+     * An interface is an MXBean interface if it is public,
+     * annotated {@link MXBean &#64;MXBean} or {@code @MXBean(true)}
      * or if it does not have an {@code @MXBean} annotation
      * and its name ends with "{@code MXBean}".</p>
      *
      * @param interfaceClass The candidate interface.
      *
-     * @return true if {@code interfaceClass} is an interface and
-     * meets the conditions described.
+     * @return true if {@code interfaceClass} is a
+     * {@link javax.management.MXBean compliant MXBean interface}
      *
      * @throws NullPointerException if {@code interfaceClass} is null.
      */
     public static boolean isMXBeanInterface(Class<?> interfaceClass) {
         if (!interfaceClass.isInterface())
             return false;
+        if (!Modifier.isPublic(interfaceClass.getModifiers()) &&
+            !Introspector.ALLOW_NONPUBLIC_MBEAN) {
+            return false;
+        }
         MXBean a = interfaceClass.getAnnotation(MXBean.class);
         if (a != null)
             return a.value();
@@ -391,5 +388,50 @@ public class JMX {
         // We don't bother excluding the case where the name is
         // exactly the string "MXBean" since that would mean there
         // was no package name, which is pretty unlikely in practice.
+    }
+
+    /**
+     * Centralised M(X)Bean proxy creation code
+     * @param connection {@linkplain MBeanServerConnection} to use
+     * @param objectName M(X)Bean object name
+     * @param interfaceClass M(X)Bean interface class
+     * @param notificationEmitter Is a notification emitter?
+     * @param isMXBean Is an MXBean?
+     * @return Returns an M(X)Bean proxy generated for the provided interface class
+     * @throws SecurityException
+     * @throws IllegalArgumentException
+     */
+    private static <T> T createProxy(MBeanServerConnection connection,
+                                     ObjectName objectName,
+                                     Class<T> interfaceClass,
+                                     boolean notificationEmitter,
+                                     boolean isMXBean) {
+
+        try {
+            if (isMXBean) {
+                // Check interface for MXBean compliance
+                Introspector.testComplianceMXBeanInterface(interfaceClass);
+            } else {
+                // Check interface for MBean compliance
+                Introspector.testComplianceMBeanInterface(interfaceClass);
+            }
+        } catch (NotCompliantMBeanException e) {
+            throw new IllegalArgumentException(e);
+        }
+
+        InvocationHandler handler = new MBeanServerInvocationHandler(
+                connection, objectName, isMXBean);
+        final Class<?>[] interfaces;
+        if (notificationEmitter) {
+            interfaces =
+                new Class<?>[] {interfaceClass, NotificationEmitter.class};
+        } else
+            interfaces = new Class<?>[] {interfaceClass};
+
+        Object proxy = Proxy.newProxyInstance(
+                interfaceClass.getClassLoader(),
+                interfaces,
+                handler);
+        return interfaceClass.cast(proxy);
     }
 }

@@ -26,7 +26,6 @@
  * @bug 8007464
  * @summary Add graph inference support
  *          smoke test for graph inference
- * @ignore  8008682: Core stream API classes
  * @compile TargetType53.java
  */
 import java.util.*;

@@ -130,7 +130,17 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public synchronized int charToGlyph(int unicode) {
-        return charToGlyph((char)unicode);
+        if (unicode >= 0x10000) {
+            int[] glyphs = new int[2];
+            char[] surrogates = new char[2];
+            int base = unicode - 0x10000;
+            surrogates[0] = (char)((base >>> 10) + HI_SURROGATE_START);
+            surrogates[1] = (char)((base % 0x400) + LO_SURROGATE_START);
+            charsToGlyphs(2, surrogates, glyphs);
+            return glyphs[0];
+         } else {
+             return charToGlyph((char)unicode);
+         }
     }
 
     public synchronized void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
@@ -138,9 +148,9 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public synchronized void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
-        final char[] unicodeChars = new char[count];
-        for (int i = 0; i < count; i++) unicodeChars[i] = (char)unicodes[i];
-        cache.get(count, unicodeChars, glyphs);
+        for (int i = 0; i < count; i++) {
+            glyphs[i] = charToGlyph(unicodes[i]);
+        };
     }
 
     // This mapper returns either the glyph code, or if the character can be
@@ -166,7 +176,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             firstLayerCache[1] = 1;
         }
 
-        public int get(final char index) {
+        public synchronized int get(final int index) {
             if (index < FIRST_LAYER_SIZE) {
                 // catch common glyphcodes
                 return firstLayerCache[index];
@@ -179,12 +189,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             }
 
             if (generalCache == null) return 0;
-            final Integer value = generalCache.get(new Integer(index));
+            final Integer value = generalCache.get(index);
             if (value == null) return 0;
             return value.intValue();
         }
 
-        public void put(final char index, final int value) {
+        public synchronized void put(final int index, final int value) {
             if (index < FIRST_LAYER_SIZE) {
                 // catch common glyphcodes
                 firstLayerCache[index] = value;
@@ -204,7 +214,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                 generalCache = new HashMap<Integer, Integer>();
             }
 
-            generalCache.put(new Integer(index), new Integer(value));
+            generalCache.put(index, value);
         }
 
         private class SparseBitShiftingTwoLayerArray {
@@ -220,14 +230,14 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                 this.secondLayerLength = size >> shift;
             }
 
-            public int get(final char index) {
+            public int get(final int index) {
                 final int firstIndex = index >> shift;
                 final int[] firstLayerRow = cache[firstIndex];
                 if (firstLayerRow == null) return 0;
                 return firstLayerRow[index - (firstIndex * (1 << shift))];
             }
 
-            public void put(final char index, final int value) {
+            public void put(final int index, final int value) {
                 final int firstIndex = index >> shift;
                 int[] firstLayerRow = cache[firstIndex];
                 if (firstLayerRow == null) {
@@ -237,77 +247,81 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             }
         }
 
-        public void get(int count, char[] indicies, int[] values){
+        public synchronized void get(int count, char[] indicies, int[] values)
+        {
+            // "missed" is the count of 'char' that are not mapped.
+            // Surrogates count for 2.
+            // unmappedChars is the unique list of these chars.
+            // unmappedCharIndices is the location in the original array
             int missed = 0;
-            for(int i = 0; i < count; i++){
-                char code = indicies[i];
+            char[] unmappedChars = null;
+            int [] unmappedCharIndices = null;
+
+            for (int i = 0; i < count; i++){
+                int code = indicies[i];
+                if (code >= HI_SURROGATE_START &&
+                    code <= HI_SURROGATE_END && i < count - 1)
+                {
+                    char low = indicies[i + 1];
+                    if (low >= LO_SURROGATE_START && low <= LO_SURROGATE_END) {
+                        code = (code - HI_SURROGATE_START) * 0x400 +
+                            low - LO_SURROGATE_START + 0x10000;
+                    }
+                }
 
                 final int value = get(code);
-                if(value != 0){
+                if (value != 0 && value != -1) {
                     values[i] = value;
-                }else{
-                    // zero this element out, because the caller does not
-                    // promise to keep it clean
+                    if (code >= 0x10000) {
+                        values[i+1] = INVISIBLE_GLYPH_ID;
+                        i++;
+                    }
+                } else {
                     values[i] = 0;
+                    put(code, -1);
+                    if (unmappedChars == null) {
+                        // This is likely to be longer than we need,
+                        // but is the simplest and cheapest option.
+                        unmappedChars = new char[indicies.length];
+                        unmappedCharIndices = new int[indicies.length];
+                    }
+                    unmappedChars[missed] = indicies[i];
+                    unmappedCharIndices[missed] = i;
+                    if (code >= 0x10000) { // was a surrogate pair
+                        unmappedChars[++missed] = indicies[++i];
+                    }
                     missed++;
                 }
             }
 
-            if (missed == 0) return; // horray! everything is already cached!
-
-            final char[] filteredCodes = new char[missed]; // all index codes requested (partially filled)
-            final int[] filteredIndicies = new int[missed]; // local indicies into filteredCodes array (totally filled)
-
-            // scan, mark, and store the index codes again to send into native
-            int j = 0;
-            int dupes = 0;
-            for (int i = 0; i < count; i++){
-                if (values[i] != 0L) continue; // already filled
-
-                final char code = indicies[i];
-
-                // we have already promised to fill this code - this is a dupe
-                if (get(code) == -1){
-                    filteredIndicies[j] = -1;
-                    dupes++;
-                    j++;
-                    continue;
-                }
-
-                // this is a code we have not obtained before
-                // mark this one as "promise to get" in the global cache with a -1
-                final int k = j - dupes;
-                filteredCodes[k] = code;
-                put(code, -1);
-                filteredIndicies[j] = k;
-                j++;
+            if (missed == 0) {
+                return;
             }
 
-            final int filteredRunLen = j - dupes;
-            final int[] filteredValues = new int[filteredRunLen];
+            final int[] glyphCodes = new int[missed];
 
-            // bulk call to fill in the distinct values
-            nativeCharsToGlyphs(fFont.getNativeFontPtr(), filteredRunLen, filteredCodes, filteredValues);
+            // bulk call to fill in the unmapped code points.
+            nativeCharsToGlyphs(fFont.getNativeFontPtr(),
+                                missed, unmappedChars, glyphCodes);
 
-            // scan the requested list, and fill in values from our
-            // distinct code list which has been filled from "getDistinct"
-            j = 0;
-            for (int i = 0; i < count; i++){
-                if (values[i] != 0L && values[i] != -1L) continue; // already placed
-
-                final int k = filteredIndicies[j]; // index into filteredImages array
-                final char code = indicies[i];
-                if(k == -1L){
-                    // we should have already filled the cache with this value
-                    values[i] = get(code);
-                }else{
-                    // fill the particular code request, and store in the cache
-                    final int ptr = filteredValues[k];
-                    values[i] = ptr;
-                    put(code, ptr);
+            for (int m = 0; m < missed; m++){
+                int i = unmappedCharIndices[m];
+                int code = unmappedChars[m];
+                if (code >= HI_SURROGATE_START &&
+                    code <= HI_SURROGATE_END && m < missed - 1)
+                {
+                    char low = indicies[m + 1];
+                    if (low >= LO_SURROGATE_START && low <= LO_SURROGATE_END) {
+                        code = (code - HI_SURROGATE_START) * 0x400 +
+                            low - LO_SURROGATE_START + 0x10000;
+                    }
                 }
-
-                j++;
+               values[i] = glyphCodes[m];
+               put(code, values[i]);
+               if (code >= 0x10000) {
+                   m++;
+                   values[i + 1] = INVISIBLE_GLYPH_ID;
+                }
             }
         }
     }

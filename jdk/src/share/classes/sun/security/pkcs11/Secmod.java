@@ -158,11 +158,17 @@ public final class Secmod {
      */
     public void initialize(String configDir, String nssLibDir)
             throws IOException {
-        initialize(DbMode.READ_WRITE, configDir, nssLibDir);
+        initialize(DbMode.READ_WRITE, configDir, nssLibDir, false);
     }
 
-    public synchronized void initialize(DbMode dbMode, String configDir, String nssLibDir)
+    public void initialize(DbMode dbMode, String configDir, String nssLibDir)
             throws IOException {
+        initialize(dbMode, configDir, nssLibDir, false);
+    }
+
+    public synchronized void initialize(DbMode dbMode, String configDir,
+        String nssLibDir, boolean nssOptimizeSpace) throws IOException {
+
         if (isInitialized()) {
             throw new IOException("NSS is already initialized");
         }
@@ -211,7 +217,8 @@ public final class Secmod {
         }
 
         if (DEBUG) System.out.println("dir: " + configDir);
-        boolean initok = nssInit(dbMode.functionName, nssHandle, configDir);
+        boolean initok = nssInitialize(dbMode.functionName, nssHandle,
+            configDir, nssOptimizeSpace);
         if (DEBUG) System.out.println("init: " + initok);
         if (initok == false) {
             throw new IOException("NSS initialization failed");
@@ -764,7 +771,7 @@ public final class Secmod {
 
     private static native boolean nssVersionCheck(long handle, String minVersion);
 
-    private static native boolean nssInit(String functionName, long handle, String configDir);
+    private static native boolean nssInitialize(String functionName, long handle, String configDir, boolean nssOptimizeSpace);
 
     private static native Object nssGetModuleList(long handle, String libDir);
 

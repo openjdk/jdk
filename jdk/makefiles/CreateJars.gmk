@@ -132,7 +132,7 @@ $(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR,,\
 ##########################################################################################
 
 # Full JRE exclude list for rt.jar and resources.jar
-# This value should exclude types destined for jars other than rt.jar and resources.jar. 
+# This value should exclude types destined for jars other than rt.jar and resources.jar.
 # When building a Profile this value augments the profile specific exclusions
 RT_JAR_EXCLUDES += \
 	com/oracle/security \
@@ -246,7 +246,8 @@ RT_JAR_EXCLUDES += \
 	sun/util/resources/cldr \
 	$(LOCALEDATA_INCLUDES) \
 	com/oracle/jrockit/jfr \
-	oracle/jrockit/jfr
+	oracle/jrockit/jfr \
+	jdk/jfr
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
         RT_JAR_EXCLUDES += com/sun/nio/sctp \
@@ -337,7 +338,7 @@ $(PROFILE_VERSION_CLASS_TARGETS) : $(PROFILE_VERSION_JAVA_TARGETS)
 
 
 # Support for removing the addPropertyChangeListener and removePropertyChangeListener
-# methods from classes that only go into the profile builds. 
+# methods from classes that only go into the profile builds.
 BEANLESS_CLASSES = $(IMAGES_OUTPUTDIR)/beanless
 
 # When there are $ characters in filenames we have some very subtle interactions between
@@ -352,7 +353,7 @@ CLASSES_TO_DEBEAN = \
     java/util/jar/Pack200\$$Packer.class \
     java/util/jar/Pack200\$$Unpacker.class \
     com/sun/java/util/jar/pack/PackerImpl.class \
-    com/sun/java/util/jar/pack/UnpackerImpl.class 
+    com/sun/java/util/jar/pack/UnpackerImpl.class
 
 ifneq ($(PROFILE),)
     BEANLESS_CLASSES_TARGETS := $(addprefix $(BEANLESS_CLASSES)/, $(CLASSES_TO_DEBEAN))
@@ -426,8 +427,10 @@ ifndef OPENJDK
 ifeq ($(ENABLE_JFR), true)
     $(eval $(call SetupArchive,BUILD_JFR_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
+		SUFFIXES:=.class .jfc .xsd,\
 		INCLUDES:=com/oracle/jrockit/jfr \
-			  oracle/jrockit/jfr,\
+			  oracle/jrockit/jfr \
+			  jdk/jfr,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/jfr.jar,\
 		SKIP_METAINF:=true,\
 		MANIFEST:=$(MAINMANIFEST), \
@@ -467,10 +470,15 @@ $(JCE_MANIFEST): $(MAINMANIFEST)
 	$(MV) $@.tmp $@
 
 ##########################################################################################
-# For all security jars, always build the jar, but for closed, install the prebuilt signed
-# version instead of the newly built jar. Unsigned jars are treated as intermediate targets
-# and explicitly added to the JARS list. For open, signing is not needed. See SignJars.gmk
-# for more information.
+# For security and crypto jars, always build the jar, but for closed, install the prebuilt
+# signed version instead of the newly built jar. Unsigned jars are treated as intermediate
+# targets and explicitly added to the JARS list. For open, signing is not needed. See
+# SignJars.gmk for more information.
+#
+# The source for the crypto jars is not available for all licensees. The BUILD_CRYPTO
+# variable is set to no if these jars can't be built to skip that step of the build.
+# Note that for OPENJDK, the build will fail if BUILD_CRYPTO=no since then there is no
+# other way to get the jars than to build them.
 
 SUNPKCS11_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 SUNPKCS11_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunpkcs11.jar
@@ -540,7 +548,8 @@ $(eval $(call SetupArchive,BUILD_SWINGBEANS_JAR,,\
 SUNJCE_PROVIDER_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/sunjce_provider.jar
 SUNJCE_PROVIDER_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/sunjce_provider.jar
 
-$(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
+ifneq ($(BUILD_CRYPTO),no)
+  $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= com/sun/crypto/provider,\
@@ -548,7 +557,10 @@ $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR,,\
                 MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
 
-$(SUNJCE_PROVIDER_JAR_UNSIGNED): $(JCE_MANIFEST)
+  $(SUNJCE_PROVIDER_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+  JARS += $(SUNJCE_PROVIDER_JAR_UNSIGNED)
+endif
 
 ifndef OPENJDK
     SUNJCE_PROVIDER_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/sunjce_provider.jar
@@ -560,14 +572,13 @@ else
 	$(install-file)
 endif
 
-JARS += $(SUNJCE_PROVIDER_JAR_UNSIGNED)
-
 ##########################################################################################
 
 JCE_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/jce.jar
 JCE_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/jce.jar
 
-$(eval $(call SetupArchive,BUILD_JCE_JAR,,\
+ifneq ($(BUILD_CRYPTO),no)
+  $(eval $(call SetupArchive,BUILD_JCE_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes, \
 		SUFFIXES:=.class,\
 		INCLUDES:= javax/crypto sun/security/internal,\
@@ -575,100 +586,105 @@ $(eval $(call SetupArchive,BUILD_JCE_JAR,,\
                 MANIFEST:=$(JCE_MANIFEST), \
 		SKIP_METAINF := true))
 
-$(JCE_JAR_UNSIGNED): $(JCE_MANIFEST)
+  $(JCE_JAR_UNSIGNED): $(JCE_MANIFEST)
+
+  JARS +=  $(JCE_JAR_UNSIGNED)
+endif
 
 ifndef OPENJDK
-    JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
-    $(JCE_JAR_DST) : $(JCE_JAR_SRC)
+  JCE_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
+  $(JCE_JAR_DST) : $(JCE_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt jce.jar..."
 	$(install-file)
 else
-    $(JCE_JAR_DST) : $(JCE_JAR_UNSIGNED)
+  $(JCE_JAR_DST) : $(JCE_JAR_UNSIGNED)
 	$(install-file)
 endif
-
-JARS +=  $(JCE_JAR_UNSIGNED)
 
 ##########################################################################################
 
 US_EXPORT_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/US_export_policy.jar
 US_EXPORT_POLICY_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/US_export_policy.jar
 
-#
-# TODO fix so that SetupArchive does not write files into SRCS
-#   then we don't need this extra copying
-#
-# NOTE:  We currently do not place restrictions on our limited export
-# policy.  This was not a typo.
-#
-US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
-US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
+ifneq ($(BUILD_CRYPTO),no)
+  #
+  # TODO fix so that SetupArchive does not write files into SRCS
+  #   then we don't need this extra copying
 
-$(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
+  # NOTE:  We currently do not place restrictions on our limited export
+  # policy.  This was not a typo.
+  #
+  US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
+  US_EXPORT_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/US_export_policy_jar.tmp
+
+  $(US_EXPORT_POLICY_JAR_TMP)/% : $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
 	$(install-file)
 
-US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
+  US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
-$(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
+  $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR,$(US_EXPORT_POLICY_JAR_DEPS),\
 		SRCS:=$(US_EXPORT_POLICY_JAR_TMP), \
 		SUFFIXES:= .policy,\
 		JAR:=$(US_EXPORT_POLICY_JAR_UNSIGNED), \
 		EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
 		SKIP_METAINF := true))
 
+  JARS += $(US_EXPORT_POLICY_JAR_UNSIGNED)
+endif
+
 ifndef OPENJDK
-    $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
+  $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
 	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(install-file)
 else
-    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNSIGNED)
+  $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNSIGNED)
 	$(install-file)
 endif
-
-JARS += $(US_EXPORT_POLICY_JAR_UNSIGNED)
 
 ##########################################################################################
 
 LOCAL_POLICY_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/security/local_policy.jar
 LOCAL_POLICY_JAR_UNSIGNED := $(IMAGES_OUTPUTDIR)/unsigned/local_policy.jar
 
-#
-# TODO fix so that SetupArchive does not write files into SRCS
-#   then we don't need this extra copying
-#
-LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
+ifneq ($(BUILD_CRYPTO),no)
+  #
+  # TODO fix so that SetupArchive does not write files into SRCS
+  #   then we don't need this extra copying
+  #
+  LOCAL_POLICY_JAR_TMP := $(IMAGES_OUTPUTDIR)/local_policy_jar.tmp
 
-ifeq ($(UNLIMITED_CRYPTO), true)
+  ifeq ($(UNLIMITED_CRYPTO), true)
     LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/unlimited
     LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/default_local.policy
     LOCAL_POLICY_JAR_ATTR := Crypto-Strength: unlimited
-else
+  else
     LOCAL_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/javax/crypto/policy/limited
     LOCAL_POLICY_JAR_DEPS := $(LOCAL_POLICY_JAR_TMP)/exempt_local.policy \
                              $(LOCAL_POLICY_JAR_TMP)/default_local.policy
     LOCAL_POLICY_JAR_ATTR := Crypto-Strength: limited
-endif
+  endif
 
-$(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
+  $(LOCAL_POLICY_JAR_TMP)/% : $(LOCAL_POLICY_JAR_SRC_DIR)/%
 	$(install-file)
 
-$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
+  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR,$(LOCAL_POLICY_JAR_DEPS),\
 		SRCS:=$(LOCAL_POLICY_JAR_TMP),\
 		SUFFIXES:= .policy,\
 		JAR:=$(LOCAL_POLICY_JAR_UNSIGNED), \
 		EXTRA_MANIFEST_ATTR := $(LOCAL_POLICY_JAR_ATTR), \
 		SKIP_METAINF := true))
 
+  JARS += $(LOCAL_POLICY_JAR_UNSIGNED)
+endif
+
 ifndef OPENJDK
-    $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
+  $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
 	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(install-file)
 else
-    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNSIGNED)
+  $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNSIGNED)
 	$(install-file)
 endif
-
-JARS += $(LOCAL_POLICY_JAR_UNSIGNED)
 
 ##########################################################################################
 
@@ -724,7 +740,7 @@ $(UCRYPTO_JAR_DST) : $(UCRYPTO_JAR_SRC)
 	@$(ECHO) $(LOG_INFO) "\n>>>Installing prebuilt OracleUcrypto provider..."
 	$(install-file)
 
-JARS += $(UCRYPTO_JAR_UNSIGNED) 
+JARS += $(UCRYPTO_JAR_UNSIGNED)
 
 endif
 endif

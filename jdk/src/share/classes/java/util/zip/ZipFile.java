@@ -59,9 +59,10 @@ import static java.util.zip.ZipUtils.*;
  */
 public
 class ZipFile implements ZipConstants, Closeable {
-    private long jzfile;  // address of jzfile data
-    private String name;  // zip file name
-    private int total;    // total number of entries
+    private long jzfile;           // address of jzfile data
+    private final String name;     // zip file name
+    private final int total;       // total number of entries
+    private final boolean locsig;  // if zip file starts with LOCSIG (usually true)
     private volatile boolean closeRequested = false;
 
     private static final int STORED = ZipEntry.STORED;
@@ -221,6 +222,7 @@ class ZipFile implements ZipConstants, Closeable {
         sun.misc.PerfCounter.getZipFileCount().increment();
         this.name = name;
         this.total = getTotal(jzfile);
+        this.locsig = startsWithLOC(jzfile);
     }
 
     /**
@@ -549,7 +551,7 @@ class ZipFile implements ZipConstants, Closeable {
         return StreamSupport.stream(Spliterators.spliterator(
                 new ZipEntryIterator(), size(),
                 Spliterator.ORDERED | Spliterator.DISTINCT |
-                        Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                        Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     private ZipEntry getZipEntry(String name, long jzentry) {
@@ -805,10 +807,28 @@ class ZipFile implements ZipConstants, Closeable {
         }
     }
 
+    static {
+        sun.misc.SharedSecrets.setJavaUtilZipFileAccess(
+            new sun.misc.JavaUtilZipFileAccess() {
+                public boolean startsWithLocHeader(ZipFile zip) {
+                    return zip.startsWithLocHeader();
+                }
+             }
+        );
+    }
+
+    /**
+     * Returns {@code true} if, and only if, the zip file begins with {@code
+     * LOCSIG}.
+     */
+    private boolean startsWithLocHeader() {
+        return locsig;
+    }
 
     private static native long open(String name, int mode, long lastModified,
                                     boolean usemmap) throws IOException;
     private static native int getTotal(long jzfile);
+    private static native boolean startsWithLOC(long jzfile);
     private static native int read(long jzfile, long jzentry,
                                    long pos, byte[] b, int off, int len);
 

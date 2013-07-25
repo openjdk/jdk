@@ -310,7 +310,7 @@ public class Cursor implements java.io.Serializable {
             String key    = prefix + DotFileSuffix;
 
             if (!systemCustomCursorProperties.containsKey(key)) {
-                if (log.isLoggable(PlatformLogger.FINER)) {
+                if (log.isLoggable(PlatformLogger.Level.FINER)) {
                     log.finer("Cursor.getSystemCustomCursor(" + name + ") returned null");
                 }
                 return null;
@@ -365,7 +365,7 @@ public class Cursor implements java.io.Serializable {
             }
 
             if (cursor == null) {
-                if (log.isLoggable(PlatformLogger.FINER)) {
+                if (log.isLoggable(PlatformLogger.Level.FINER)) {
                     log.finer("Cursor.getSystemCustomCursor(" + name + ") returned null");
                 }
             } else {

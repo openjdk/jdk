@@ -258,7 +258,7 @@ public final class Float extends Number implements Comparable<Float> {
      * </ul>
      *
      * <table border>
-     * <caption><h3>Examples</h3></caption>
+     * <caption>Examples</caption>
      * <tr><th>Floating-point Value</th><th>Hexadecimal String</th>
      * <tr><td>{@code 1.0}</td> <td>{@code 0x1.0p0}</td>
      * <tr><td>{@code -1.0}</td>        <td>{@code -0x1.0p0}</td>
@@ -664,9 +664,9 @@ public final class Float extends Number implements Comparable<Float> {
      * Returns a hash code for a {@code float} value; compatible with
      * {@code Float.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code float} value.
+     * @since 1.8
      */
     public static int hashCode(float value) {
         return floatToIntBits(value);

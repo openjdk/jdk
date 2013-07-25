@@ -35,10 +35,12 @@
 
 package java.util.concurrent;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
- * A {@link java.util.Map} providing additional atomic
- * {@code putIfAbsent}, {@code remove}, and {@code replace} methods.
+ * A {@link java.util.Map} providing thread safety and atomicity
+ * guarantees.
  *
  * <p>Memory consistency effects: As with other concurrent
  * collections, actions in a thread prior to placing an object into a
@@ -87,11 +89,11 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
-     *         <tt>null</tt> if there was no mapping for the key.
-     *         (A <tt>null</tt> return can also indicate that the map
-     *         previously associated <tt>null</tt> with the key,
+     *         {@code null} if there was no mapping for the key.
+     *         (A {@code null} return can also indicate that the map
+     *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the <tt>put</tt> operation
+     * @throws UnsupportedOperationException if the {@code put} operation
      *         is not supported by this map
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
@@ -183,4 +185,26 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      *         or value prevents it from being stored in this map
      */
     V replace(K key, V value);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implNote This implementation assumes that the ConcurrentMap cannot
+     * contain null values and get() returning null unambiguously means the key
+     * is absent. Implementations which support null values
+     * <strong>must</strong> override this default implementation.
+     */
+    @Override
+    default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        forEach((k,v) -> {
+            while(!replace(k, v, function.apply(k, v))) {
+                // v changed or k is gone
+                if( (v = get(k)) == null) {
+                    // k is no longer in the map.
+                    break;
+                }
+            }
+        });
+    }
 }

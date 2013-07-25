@@ -78,7 +78,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "typeannos\">@ClassParamA</a> java.lang.String&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "ExtendsGeneric.html",
-            "<pre> class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
+            "<pre>class <span class=\"strong\">ExtendsGeneric&lt;K extends " +
             "<a href=\"../typeannos/ClassParamA.html\" title=\"annotation in " +
             "typeannos\">@ClassParamA</a> <a href=\"../typeannos/Unannotated.html\" " +
             "title=\"class in typeannos\">Unannotated</a>&lt;<a href=\"" +
@@ -86,7 +86,7 @@ public class TestTypeAnnotations extends JavadocTester {
             "@ClassParamB</a> java.lang.String&gt;&gt;</span>"
         },
         {BUG_ID + FS + "typeannos" + FS + "TwoBounds.html",
-            "<pre> class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
+            "<pre>class <span class=\"strong\">TwoBounds&lt;K extends <a href=\"" +
             "../typeannos/ClassParamA.html\" title=\"annotation in typeannos\">" +
             "@ClassParamA</a> java.lang.String,V extends <a href=\"../typeannos/" +
             "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB" +

@@ -434,7 +434,7 @@ public class Flow {
             Lint lintPrev = lint;
 
             pendingExits = new ListBuffer<PendingExit>();
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // process all the static initializers
@@ -470,7 +470,7 @@ public class Flow {
             if (tree.body == null) return;
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -496,7 +496,7 @@ public class Flow {
         public void visitVarDef(JCVariableDecl tree) {
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scan(tree.init);
                 } finally {
@@ -808,9 +808,10 @@ public class Flow {
          */
         void markThrown(JCTree tree, Type exc) {
             if (!chk.isUnchecked(tree.pos(), exc)) {
-                if (!chk.isHandled(exc, caught))
+                if (!chk.isHandled(exc, caught)) {
                     pendingExits.append(new FlowPendingExit(tree, exc));
-                    thrown = chk.incl(exc, thrown);
+                }
+                thrown = chk.incl(exc, thrown);
             }
         }
 
@@ -835,7 +836,7 @@ public class Flow {
             }
             classDef = tree;
             thrown = List.nil();
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // process all the static initializers
@@ -915,7 +916,7 @@ public class Flow {
             List<Type> mthrown = tree.sym.type.getThrownTypes();
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -954,7 +955,7 @@ public class Flow {
         public void visitVarDef(JCVariableDecl tree) {
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scan(tree.init);
                 } finally {
@@ -1066,8 +1067,9 @@ public class Flow {
                                 names.close,
                                 List.<Type>nil(),
                                 List.<Type>nil());
+                        Type mt = types.memberType(resource.type, closeMethod);
                         if (closeMethod.kind == MTH) {
-                            for (Type t : ((MethodSymbol)closeMethod).getThrownTypes()) {
+                            for (Type t : mt.getThrownTypes()) {
                                 markThrown(resource, t);
                             }
                         }
@@ -1578,7 +1580,7 @@ public class Flow {
                 firstadr = nextadr;
             }
             classDef = tree;
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             try {
                 // define all the static fields
@@ -1646,7 +1648,7 @@ public class Flow {
             int returnadrPrev = returnadr;
             Lint lintPrev = lint;
 
-            lint = lint.augment(tree.sym.annotations);
+            lint = lint.augment(tree.sym);
 
             Assert.check(pendingExits.isEmpty());
 
@@ -1698,7 +1700,7 @@ public class Flow {
             if (track && tree.sym.owner.kind == MTH) newVar(tree.sym);
             if (tree.init != null) {
                 Lint lintPrev = lint;
-                lint = lint.augment(tree.sym.annotations);
+                lint = lint.augment(tree.sym);
                 try{
                     scanExpr(tree.init);
                     if (track) letInit(tree.pos(), tree.sym);
@@ -1943,10 +1945,17 @@ public class Flow {
                 }
             }
 
+            /*  The analysis of each catch should be independent.
+             *  Each one should have the same initial values of inits and
+             *  uninits.
+             */
+            final Bits initsCatchPrev = new Bits(initsTry);
+            final Bits uninitsCatchPrev = new Bits(uninitsTry);
+
             for (List<JCCatch> l = tree.catchers; l.nonEmpty(); l = l.tail) {
                 JCVariableDecl param = l.head.param;
-                inits.assign(initsTry);
-                uninits.assign(uninitsTry);
+                inits.assign(initsCatchPrev);
+                uninits.assign(uninitsCatchPrev);
                 scan(param);
                 inits.incl(param.sym.adr);
                 uninits.excl(param.sym.adr);

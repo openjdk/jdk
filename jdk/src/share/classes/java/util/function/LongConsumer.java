@@ -27,10 +27,13 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * An operation which accepts a single long argument and returns no result.
- * This is the {@code long}-consuming primitive type specialization of
- * {@link Consumer}. Unlike most other functional interfaces, {@code LongConsumer}
- * is expected to operate via side-effects.
+ * Represents an operation that accepts a single {@code long}-valued argument and
+ * returns no result.  This is the primitive type specialization of
+ * {@link Consumer} for {@code long}.  Unlike most other functional interfaces,
+ * {@code LongConsumer} is expected to operate via side-effects.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #accept(long)}.
  *
  * @see Consumer
  * @since 1.8
@@ -39,30 +42,26 @@ import java.util.Objects;
 public interface LongConsumer {
 
     /**
-     * Accept an input value.
+     * Performs this operation on the given argument.
      *
-     * @param value the input value
+     * @param value the input argument
      */
     void accept(long value);
 
     /**
-     * Returns a {@code LongConsumer} which performs, in sequence, the operation
-     * represented by this object followed by the operation represented by
-     * another {@code LongConsumer}.
+     * Returns a composed {@code LongConsumer} that performs, in sequence, this
+     * operation followed by the {@code after} operation. If performing either
+     * operation throws an exception, it is relayed to the caller of the
+     * composed operation.  If performing this operation throws an exception,
+     * the {@code after} operation will not be performed.
      *
-     * <p>Any exceptions thrown by either {@code accept} method are relayed
-     * to the caller; if performing this operation throws an exception, the
-     * other operation will not be performed.
-     *
-     * @param other a LongConsumer which will be chained after this
-     * LongConsumer
-     * @return a LongConsumer which performs in sequence the {@code accept} method
-     * of this LongConsumer and the {@code accept} method of the specified LongConsumer
-     * operation
-     * @throws NullPointerException if other is null
+     * @param after the operation to perform after this operation
+     * @return a composed {@code LongConsumer} that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
      */
-    default LongConsumer chain(LongConsumer other) {
-        Objects.requireNonNull(other);
-        return (long t) -> { accept(t); other.accept(t); };
+    default LongConsumer andThen(LongConsumer after) {
+        Objects.requireNonNull(after);
+        return (long t) -> { accept(t); after.accept(t); };
     }
 }

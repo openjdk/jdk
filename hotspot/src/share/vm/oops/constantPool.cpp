@@ -55,7 +55,7 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   // the resolved_references array, which is recreated at startup time.
   // But that could be moved to InstanceKlass (although a pain to access from
   // assembly code).  Maybe it could be moved to the cpCache which is RW.
-  return new (loader_data, size, false, THREAD) ConstantPool(tags);
+  return new (loader_data, size, false, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
 ConstantPool::ConstantPool(Array<u1>* tags) {
@@ -1063,9 +1063,10 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
     int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
     int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
     int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
-    bool match = compare_entry_to(k1, cp2, k2, CHECK_false) &&
-                 compare_operand_to(i1, cp2, i2, CHECK_false);
-    return match;
+    // separate statements and variables because CHECK_false is used
+    bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
+    bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
+    return (match_entry && match_operand);
   } break;
 
   case JVM_CONSTANT_String:
@@ -2094,12 +2095,10 @@ void ConstantPool::verify_on(outputStream* st) {
     CPSlot entry = slot_at(i);
     if (tag.is_klass()) {
       if (entry.is_resolved()) {
-        guarantee(entry.get_klass()->is_metadata(), "should be metadata");
         guarantee(entry.get_klass()->is_klass(),    "should be klass");
       }
     } else if (tag.is_unresolved_klass()) {
       if (entry.is_resolved()) {
-        guarantee(entry.get_klass()->is_metadata(), "should be metadata");
         guarantee(entry.get_klass()->is_klass(),    "should be klass");
       }
     } else if (tag.is_symbol()) {
@@ -2111,13 +2110,11 @@ void ConstantPool::verify_on(outputStream* st) {
   if (cache() != NULL) {
     // Note: cache() can be NULL before a class is completely setup or
     // in temporary constant pools used during constant pool merging
-    guarantee(cache()->is_metadata(),          "should be metadata");
     guarantee(cache()->is_constantPoolCache(), "should be constant pool cache");
   }
   if (pool_holder() != NULL) {
     // Note: pool_holder() can be NULL in temporary constant pools
     // used during constant pool merging
-    guarantee(pool_holder()->is_metadata(), "should be metadata");
     guarantee(pool_holder()->is_klass(),    "should be klass");
   }
 }

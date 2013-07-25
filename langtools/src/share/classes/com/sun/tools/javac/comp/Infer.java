@@ -96,7 +96,7 @@ public class Infer {
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
-    public static final Type anyPoly = new Type(NONE, null);
+    public static final Type anyPoly = new JCNoType();
 
    /**
     * This exception class is design to store a list of diagnostics corresponding
@@ -218,8 +218,8 @@ public class Infer {
         //we need to skip capture?
         Warner retWarn = new Warner();
         if (!resultInfo.checkContext.compatible(qtype1, resultInfo.checkContext.inferenceContext().asFree(to), retWarn) ||
-                //unchecked conversion is not allowed
-                retWarn.hasLint(Lint.LintCategory.UNCHECKED)) {
+                //unchecked conversion is not allowed in source 7 mode
+                (!allowGraphInference && retWarn.hasLint(Lint.LintCategory.UNCHECKED))) {
             throw inferenceException
                     .setMessage("infer.no.conforming.instance.exists",
                     inferenceContext.restvars(), mt.getReturnType(), to);
@@ -952,8 +952,9 @@ public class Infer {
             Type solve(UndetVar uv, InferenceContext inferenceContext) {
                 Infer infer = inferenceContext.infer();
                 List<Type> lobounds = filterBounds(uv, inferenceContext);
-                Type owntype = infer.types.lub(lobounds);
-                if (owntype.hasTag(ERROR)) {
+                //note: lobounds should have at least one element
+                Type owntype = lobounds.tail.tail == null  ? lobounds.head : infer.types.lub(lobounds);
+                if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
                     throw infer.inferenceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     uv.qtype, lobounds);
@@ -971,8 +972,9 @@ public class Infer {
             Type solve(UndetVar uv, InferenceContext inferenceContext) {
                 Infer infer = inferenceContext.infer();
                 List<Type> hibounds = filterBounds(uv, inferenceContext);
-                Type owntype = infer.types.glb(hibounds);
-                if (owntype.isErroneous()) {
+                //note: lobounds should have at least one element
+                Type owntype = hibounds.tail.tail == null  ? hibounds.head : infer.types.glb(hibounds);
+                if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
                     throw infer.inferenceException
                         .setMessage("no.unique.maximal.instance.exists",
                                     uv.qtype, hibounds);
@@ -1100,10 +1102,11 @@ public class Infer {
                             }
                         }
                         //no progress
-                        throw inferenceException;
+                        throw inferenceException.setMessage();
                     }
                 }
                 catch (InferenceException ex) {
+                    //did we fail because of interdependent ivars?
                     inferenceContext.rollback();
                     instantiateAsUninferredVars(varsToSolve, inferenceContext);
                     checkWithinBounds(inferenceContext, warn);

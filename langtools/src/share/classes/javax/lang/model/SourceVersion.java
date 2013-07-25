@@ -53,6 +53,8 @@ public enum SourceVersion {
      * 1.4: assert
      * 1.5: annotations, generics, autoboxing, var-args...
      * 1.6: no changes
+     * 1.7: diamond syntax, try-with-resources, etc.
+     * 1.8: lambda expressions and default methods
      */
 
     /**
@@ -122,6 +124,9 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 7.
      *
+     * Additions in this release include, diamond syntax for
+     * constructors, {@code try}-with-resources, strings in switch,
+     * binary literals, and multi-catch.
      * @since 1.7
      */
     RELEASE_7,
@@ -130,6 +135,7 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 8.
      *
+     * Additions in this release include lambda expressions and default methods.
      * @since 1.8
      */
     RELEASE_8;

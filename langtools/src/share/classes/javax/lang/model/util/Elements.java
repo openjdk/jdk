@@ -143,12 +143,13 @@ public interface Elements {
     List<? extends Element> getAllMembers(TypeElement type);
 
     /**
-     * Returns all annotations of an element, whether
-     * inherited or directly present.
+     * Returns all annotations <i>present</i> on an element, whether
+     * directly present or present via inheritance.
      *
      * @param e  the element being examined
      * @return all annotations of the element
      * @see Element#getAnnotationMirrors
+     * @see javax.lang.model.AnnotatedConstruct
      */
     List<? extends AnnotationMirror> getAllAnnotationMirrors(Element e);
 

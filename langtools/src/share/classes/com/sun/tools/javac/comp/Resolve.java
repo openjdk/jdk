@@ -349,7 +349,7 @@ public class Resolve {
             : isAccessible(env, t.tsym, checkInner);
     }
 
-    /** Is symbol accessible as a member of given type in given evironment?
+    /** Is symbol accessible as a member of given type in given environment?
      *  @param env    The current environment.
      *  @param site   The type of which the tested symbol is regarded
      *                as a member.
@@ -490,11 +490,11 @@ public class Resolve {
     };
 
     /** Try to instantiate the type of a method so that it fits
-     *  given type arguments and argument types. If succesful, return
+     *  given type arguments and argument types. If successful, return
      *  the method's instantiated type, else return null.
      *  The instantiation will take into account an additional leading
      *  formal parameter if the method is an instance method seen as a member
-     *  of un underdetermined site In this case, we treat site as an additional
+     *  of an under determined site. In this case, we treat site as an additional
      *  parameter and the parameters of the class containing the method as
      *  additional type variables that get instantiated.
      *
@@ -1207,7 +1207,7 @@ public class Resolve {
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
              l = l.tail) {
             sym = findField(env, site, name, l.head.tsym);
-            if (bestSoFar.kind < AMBIGUOUS && sym.kind < AMBIGUOUS &&
+            if (bestSoFar.exists() && sym.exists() &&
                 sym.owner != bestSoFar.owner)
                 bestSoFar = new AmbiguityError(bestSoFar, sym);
             else if (sym.kind < bestSoFar.kind)
@@ -1343,7 +1343,7 @@ public class Resolve {
         try {
             Type mt = rawInstantiate(env, site, sym, null, argtypes, typeargtypes,
                                allowBoxing, useVarargs, types.noWarnings);
-            if (!operator)
+            if (!operator || verboseResolutionMode.contains(VerboseResolutionMode.PREDEF))
                 currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
             if (!operator)
@@ -1573,7 +1573,6 @@ public class Resolve {
                           allowBoxing,
                           useVarargs,
                           operator);
-        reportVerboseResolutionDiagnostic(env.tree.pos(), name, site, argtypes, typeargtypes, bestSoFar);
         return bestSoFar;
     }
     // where
@@ -2224,7 +2223,7 @@ public class Resolve {
         return lookupMethod(env, pos, env.enclClass.sym, resolveMethodCheck,
                 new BasicLookupHelper(name, env.enclClass.sym.type, argtypes, typeargtypes) {
                     @Override
-                    Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                         return findFun(env, name, argtypes, typeargtypes,
                                 phase.isBoxingRequired(),
                                 phase.isVarargsRequired());
@@ -2256,7 +2255,7 @@ public class Resolve {
                                   List<Type> typeargtypes) {
         return lookupMethod(env, pos, location, resolveContext, new BasicLookupHelper(name, site, argtypes, typeargtypes) {
             @Override
-            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                 return findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(),
                         phase.isVarargsRequired(), false);
@@ -2267,7 +2266,7 @@ public class Resolve {
                     sym = super.access(env, pos, location, sym);
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
-                    if (msym.isSignaturePolymorphic(types)) {
+                    if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
                         return findPolymorphicSignatureInstance(env, sym, argtypes);
                     }
                 }
@@ -2355,7 +2354,7 @@ public class Resolve {
                               List<Type> typeargtypes) {
         return lookupMethod(env, pos, site.tsym, resolveContext, new BasicLookupHelper(names.init, site, argtypes, typeargtypes) {
             @Override
-            Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                 return findConstructor(pos, env, site, argtypes, typeargtypes,
                         phase.isBoxingRequired(),
                         phase.isVarargsRequired());
@@ -2413,7 +2412,7 @@ public class Resolve {
         return lookupMethod(env, pos, site.tsym, resolveMethodCheck,
                 new BasicLookupHelper(names.init, site, argtypes, typeargtypes) {
                     @Override
-                    Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
                         return findDiamond(env, site, argtypes, typeargtypes,
                                 phase.isBoxingRequired(),
                                 phase.isVarargsRequired());
@@ -2500,17 +2499,21 @@ public class Resolve {
         try {
             currentResolutionContext = new MethodResolutionContext();
             Name name = treeinfo.operatorName(optag);
-            env.info.pendingResolutionPhase = currentResolutionContext.step = BASIC;
-            Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                                    null, false, false, true);
-            if (boxingEnabled && sym.kind >= WRONG_MTHS)
-                env.info.pendingResolutionPhase = currentResolutionContext.step = BOX;
-                sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                                 null, true, false, true);
-            return accessMethod(sym, pos, env.enclClass.sym.type, name,
+            return lookupMethod(env, pos, syms.predefClass, currentResolutionContext,
+                    new BasicLookupHelper(name, syms.predefClass.type, argtypes, null, BOX) {
+                @Override
+                Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+                    return findMethod(env, site, name, argtypes, typeargtypes,
+                            phase.isBoxingRequired(),
+                            phase.isVarargsRequired(), true);
+                }
+                @Override
+                Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+                    return accessMethod(sym, pos, env.enclClass.sym.type, name,
                           false, argtypes, null);
-        }
-        finally {
+                }
+            });
+        } finally {
             currentResolutionContext = prevResolutionContext;
         }
     }
@@ -2665,6 +2668,13 @@ public class Resolve {
         abstract Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase);
 
         /**
+         * Dump overload resolution info
+         */
+        void debug(DiagnosticPosition pos, Symbol sym) {
+            //do nothing
+        }
+
+        /**
          * Validate the result of the lookup
          */
         abstract Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym);
@@ -2673,20 +2683,37 @@ public class Resolve {
     abstract class BasicLookupHelper extends LookupHelper {
 
         BasicLookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes) {
-            super(name, site, argtypes, typeargtypes, MethodResolutionPhase.VARARITY);
+            this(name, site, argtypes, typeargtypes, MethodResolutionPhase.VARARITY);
+        }
+
+        BasicLookupHelper(Name name, Type site, List<Type> argtypes, List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
+            super(name, site, argtypes, typeargtypes, maxPhase);
         }
 
         @Override
-        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+        final Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
+            Symbol sym = doLookup(env, phase);
             if (sym.kind == AMBIGUOUS) {
                 AmbiguityError a_err = (AmbiguityError)sym;
                 sym = a_err.mergeAbstracts(site);
             }
+            return sym;
+        }
+
+        abstract Symbol doLookup(Env<AttrContext> env, MethodResolutionPhase phase);
+
+        @Override
+        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
             if (sym.kind >= AMBIGUOUS) {
                 //if nothing is found return the 'first' error
                 sym = accessMethod(sym, pos, location, site, name, true, argtypes, typeargtypes);
             }
             return sym;
+        }
+
+        @Override
+        void debug(DiagnosticPosition pos, Symbol sym) {
+            reportVerboseResolutionDiagnostic(pos, name, site, argtypes, typeargtypes, sym);
         }
     }
 
@@ -2835,7 +2862,7 @@ public class Resolve {
         protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
             Scope sc = new Scope(syms.arrayClass);
             MethodSymbol arrayConstr = new MethodSymbol(PUBLIC, name, null, site.tsym);
-            arrayConstr.type = new MethodType(List.of(syms.intType), site, List.<Type>nil(), syms.methodClass);
+            arrayConstr.type = new MethodType(List.<Type>of(syms.intType), site, List.<Type>nil(), syms.methodClass);
             sc.enter(arrayConstr);
             return findMethodInScope(env, site, name, argtypes, typeargtypes, sc, methodNotFound, phase.isBoxingRequired(), phase.isVarargsRequired(), false, false);
         }
@@ -2916,7 +2943,9 @@ public class Resolve {
                 MethodResolutionPhase prevPhase = currentResolutionContext.step;
                 Symbol prevBest = bestSoFar;
                 currentResolutionContext.step = phase;
-                bestSoFar = phase.mergeResults(bestSoFar, lookupHelper.lookup(env, phase));
+                Symbol sym = lookupHelper.lookup(env, phase);
+                lookupHelper.debug(pos, sym);
+                bestSoFar = phase.mergeResults(bestSoFar, sym);
                 env.info.pendingResolutionPhase = (prevBest == bestSoFar) ? prevPhase : phase;
             }
             return lookupHelper.access(env, pos, location, bestSoFar);
@@ -3622,35 +3651,39 @@ public class Resolve {
          * is more specific than the others, attempt to merge their signatures.
          */
         Symbol mergeAbstracts(Type site) {
-            Symbol fst = ambiguousSyms.last();
-            Symbol res = fst;
-            for (Symbol s : ambiguousSyms.reverse()) {
-                Type mt1 = types.memberType(site, res);
-                Type mt2 = types.memberType(site, s);
-                if ((s.flags() & ABSTRACT) == 0 ||
-                        !types.overrideEquivalent(mt1, mt2) ||
-                        !types.isSameTypes(fst.erasure(types).getParameterTypes(),
-                                       s.erasure(types).getParameterTypes())) {
-                    //ambiguity cannot be resolved
-                    return this;
-                } else {
-                    Type mst = mostSpecificReturnType(mt1, mt2);
-                    if (mst == null) {
-                        // Theoretically, this can't happen, but it is possible
-                        // due to error recovery or mixing incompatible class files
+            List<Symbol> ambiguousInOrder = ambiguousSyms.reverse();
+            for (Symbol s : ambiguousInOrder) {
+                Type mt = types.memberType(site, s);
+                boolean found = true;
+                List<Type> allThrown = mt.getThrownTypes();
+                for (Symbol s2 : ambiguousInOrder) {
+                    Type mt2 = types.memberType(site, s2);
+                    if ((s2.flags() & ABSTRACT) == 0 ||
+                        !types.overrideEquivalent(mt, mt2) ||
+                        !types.isSameTypes(s.erasure(types).getParameterTypes(),
+                                       s2.erasure(types).getParameterTypes())) {
+                        //ambiguity cannot be resolved
                         return this;
                     }
-                    Symbol mostSpecific = mst == mt1 ? res : s;
-                    List<Type> allThrown = chk.intersect(mt1.getThrownTypes(), mt2.getThrownTypes());
-                    Type newSig = types.createMethodTypeWithThrown(mostSpecific.type, allThrown);
-                    res = new MethodSymbol(
-                            mostSpecific.flags(),
-                            mostSpecific.name,
-                            newSig,
-                            mostSpecific.owner);
+                    Type mst = mostSpecificReturnType(mt, mt2);
+                    if (mst == null || mst != mt) {
+                        found = false;
+                        break;
+                    }
+                    allThrown = chk.intersect(allThrown, mt2.getThrownTypes());
+                }
+                if (found) {
+                    //all ambiguous methods were abstract and one method had
+                    //most specific return type then others
+                    return (allThrown == mt.getThrownTypes()) ?
+                            s : new MethodSymbol(
+                                s.flags(),
+                                s.name,
+                                types.createMethodTypeWithThrown(mt, allThrown),
+                                s.owner);
                 }
             }
-            return res;
+            return this;
         }
 
         @Override

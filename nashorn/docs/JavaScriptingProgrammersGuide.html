@@ -71,9 +71,20 @@ Classes</a></span></li>
 Arrays</a></span></li>
 <li><span><a href="#jsimplement">Implementing Java
 Interfaces</a></span></li>
-<li><span><a href="#jsextend">Extending Java classes
+<li><span><a href="#jsextendabstract">Extending Abstract Java Classes
+</a></span></li>
+<li><span><a href="#jsextendconcrete">Extending Concrete Java Classes
+</a></span></li>
+<li><span><a href="#jsimplementmultiple">Implementing Multiple Java Interfaces
+</a></span></li>
+<li><span><a href="#classBoundImplementations">Class-Bound Implementations
 </a></span></li>
 <li><span><a href="#jsoverload">Overload Resolution</a></span></li>
+<li><span><a href="#dataTypeMapping">Mapping of Data Types Between Java
+and JavaScript</a></span></li>
+
+
+
 </ul>
 </li>
 <li><span><a href="#engineimpl">Implementing Your Own Script
@@ -216,6 +227,16 @@ access the variable - for example, it can call public methods on
 it. Note that the syntax to access Java objects, methods and fields
 is dependent on the scripting language. JavaScript supports the
 most "natural" Java-like syntax.</p>
+<p>
+Nashorn script engine pre-defines two global variables named "context"
+and "engine". The "context" variable is of type javax.script.ScriptContext
+and refers to the current ScriptContext instance passed to script engine's
+eval method. The "engine" variable is of type javax.script.ScriptEngine and
+refers to the current nashorn script engine instance evaluating the script.
+Both of these variables are non-writable, non-enumerable and non-configurable
+- which implies script code can not write overwrite the value, for..loop iteration
+on global object will not iterate these variables and these variables can not be
+deleted by script.
 <pre><code>
 // <a href="source/ScriptVars.java">ScriptVars.java</a>
 
@@ -466,10 +487,10 @@ language rather than JavaScript.</p>
 </code>
 </pre> 
 
-Note that the name of the type is always a string for a fully qualified name. You can use any of these types to create new instances, e.g.:
+Note that the name of the type is always a string for a fully qualified name. You can use any of these expressions to create new instances, e.g.:
 
 <pre><code>
- var anArrayList = new Java.type("java.util.ArrayList")
+ var anArrayList = new (Java.type("java.util.ArrayList"))
 </code></pre> 
 
 or
@@ -495,6 +516,37 @@ However, once you retrieved the outer class, you can access the inner class as a
 </code></pre> 
 <p>
 You can access both static and non-static inner classes. If you want to create an instance of a non-static inner class, remember to pass an instance of its outer class as the first argument to the constructor.
+</p>
+<p>
+In addition to creating new instances, the type objects returned from <code>Java.type</code> calls can also be used to access the
+static fields and methods of the classes:
+<pre><code>
+ var File = Java.type("java.io.File")
+ File.createTempFile("nashorn", ".tmp")
+</code></pre> 
+<p>
+Methods with names of the form <code>isXxx()</code>, <code>getXxx()</code>, and <code>setXxx()</code> can also be used as properties, for both instances and statics.
+</p>
+<p>
+A type object returned from <code>Java.type</code> is distinct from a <code>java.lang.Class</code> object. You can obtain one from the other using properties <code>class</code> and <code>static</code> on them.
+<pre><code>
+ var ArrayList = Java.type("java.util.ArrayList")
+ var a = new ArrayList
+
+ // All of the following print true:
+ print("Type acts as target of instanceof: " + (a instanceof ArrayList))
+ print("Class doesn't act as target of instanceof: " + !(a instanceof a.getClass()))
+ print("Type is not same as instance's getClass(): " + (a.getClass() !== ArrayList))
+ print("Type's `class` property is same as instance getClass(): " + (a.getClass() === ArrayList.class))
+ print("Type is same as instance getClass()'s `static` property: " + (a.getClass().static === ArrayList))
+</code></pre> 
+<p>
+You can think of the type object as similar to the class names as used in Java source code: you use them as the
+arguments to the <code>new</code> and <code>instanceof</code> operators and as the namespace for the static fields
+and methods, but they are different than the runtime <code>Class</code> objects returned by <code>getClass()</code> calls.
+Syntactically and semantically, this separation produces code that is most similar to Java code, where a distinction
+between compile-time class expressions and runtime class objects also exists. (Also, Java can't have the equivalent of <code>static</code>
+property on a <code>Class</code> object since compile-time class expressions are never reified as objects).
 </p>
 <hr>
 <a name="jsimport" id="jsimport"></a>
@@ -558,10 +610,7 @@ with (SwingGui) {
 <a name="jsarrays" id="jsarrays"></a>
 <h3>Creating, Converting and Using Java Arrays</h3>
 <p>
-Array element access or length access is
-the same as in Java. Also, a script array can be used when a Java
-method expects a Java array (auto conversion). So in most cases we
-don't have to create Java arrays explicitly.</p>
+Array element access or length access is the same as in Java.</p>
 <pre><code>
 // <a href="source/javaarray.js">javaarray.js</a>
 
@@ -577,27 +626,31 @@ print(a[0]);
 </pre>
 <p>
 It is also possible to convert between JavaScript and Java arrays.
-Given a JavaScript array and a Java type, <code>Java.toJavaArray</code> returns a Java array with the same initial contents, and with the specified component type. 
+Given a JavaScript array and a Java type, <code>Java.to</code> returns a Java array with the same initial contents, and with the specified array type. 
 </p>
 <pre><code>
  var anArray = [1, "13", false]
- var javaIntArray = Java.toJavaArray(anArray, "int")
+ var javaIntArray = Java.to(anArray, "int[]")
  print(javaIntArray[0]) // prints 1
  print(javaIntArray[1]) // prints 13, as string "13" was converted to number 13 as per ECMAScript ToNumber conversion
  print(javaIntArray[2]) // prints 0, as boolean false was converted to number 0 as per ECMAScript ToNumber conversion
 </code></pre>
 <p>
-Given a Java array or Collection, <code>Java.toJavaScriptArray</code> returns a JavaScript array with a shallow copy of its contents. Note that in most cases, you can use Java arrays and lists natively in Nashorn; in cases where for some reason you need to have an actual JavaScript native array (e.g. to work with the array comprehensions functions), you will want to use this method.i
+You can use either a string or a type object returned from <code>Java.type()</code> to specify the type of the array. 
+You can also omit the array type, in which case a <code>Object[]</code> will be created.
+</p>
+<p>
+Given a Java array or Collection, <code>Java.from</code> returns a JavaScript array with a shallow copy of its contents. Note that in most cases, you can use Java arrays and lists natively in Nashorn; in cases where for some reason you need to have an actual JavaScript native array (e.g. to work with the array comprehensions functions), you will want to use this method.
 </p>
 <pre><code>
 var File = Java.type("java.io.File");
 var listCurDir = new File(".").listFiles();
-var jsList = Java.toJavaScriptArray(listCurDir);
+var jsList = Java.from(listCurDir);
 print(jsList);
 </code></pre>
 <hr>
 <a name="jsimplement" id="jsimplement"></a>
-<h3>Implementing Java Interfaces</h3>
+<h3>Implementing Java interfaces</h3>
 <p>A Java interface can be implemented in JavaScript by using a
 Java anonymous class-like syntax:</p>
 <pre><code>
@@ -631,8 +684,8 @@ th.join();
 </code>
 </pre>
 <hr>
-<a name="jsextend" id="jsextend"></a>
-<h3>Extending Java classes</h3>
+<a name="jsextendabstract" id="jsextendabstract"></a>
+<h3>Extending Abstract Java Classes</h3>
 <p>
 If a Java class is abstract, you can instantiate an anonymous subclass of it using an argument list that is applicable to any of its public or protected constructors, but inserting a JavaScript object with functions properties that provide JavaScript implementations of the abstract methods. If method names are overloaded, the JavaScript function will provide implementation for all overloads. E.g.:
 </p>
@@ -671,6 +724,9 @@ The use of functions can be taken even further; if you are invoking a Java metho
 
 Here, <code>Timer.schedule()</code> expects a <code>TimerTask</code> as its argument, so Nashorn creates an instance of a TimerTask subclass and uses the passed function to implement its only abstract method, run(). In this usage though, you can't use non-default constructors; the type must be either an interface, or must have a protected or public no-arg constructor.
 
+<hr>
+<a name="jsextendconcrete" id="jsextendconcrete"></a>
+<h3>Extending Concrete Java Classes</h3>
 <p>
 To extend a concrete Java class, you have to use <code>Java.extend</code> function.
 <code>Java.extend</code> returns a type object for a subclass of the specified Java class (or implementation of the specified interface) that acts as a script-to-Java adapter for it.  
@@ -695,26 +751,178 @@ var printAddInvokedArrayList = new ArrayListExtender() {
 printSizeInvokedArrayList.size();
 printAddInvokedArrayList.add(33, 33);
 </code></pre>
+<p>
+The reason you must use <code>Java.extend()</code> with concrete classes is that with concrete classes, there can be a 
+syntactic ambiguity if you just invoke their constructor. Consider this example:
+</p>
+<pre><code>
+var t = new java.lang.Thread({ run: function() { print("Hello!") } })
+</code></pre>
+<p>
+If we allowed subclassing of concrete classes with constructor syntax, Nashorn couldn't tell if you're creating a new 
+<code>Thread</code> and passing it a <code>Runnable</code> at this point, or you are subclassing <code>Thread</code> and
+passing it a new implementation for its own <code>run()</code> method.
+</p>
+<hr>
+<a name="jsimplementmultiple" id="jsimplementmultiple"></a>
+<h3>Implementing Multiple Interfaces</h3>
+<p>
+<code>Java.extend</code> can in fact take a list of multiple types. At most one of the types can be a class, and the rest must
+be interfaces (the class doesn't have to be the first in the list). You will get back an object that extends the class and 
+implements all the interfaces. (Obviously, if you only specify interfaces and no class, the object will extend <code>java.lang.Object</code>).
+<hr>
+<a name="classBoundImplementations" id="classBoundImplementations"></a>
+<h3>Class-Bound Implementations</h3>
+<p>
+The methods shown so far for extending Java classes and implementing interfaces &ndash; passing an implementation JavaScript object 
+or function to a constructor, or using <code>Java.extend</code> with <code>new</code> &ndash; all produce classes that take an
+extra JavaScript object parameter in their constructors that specifies the implementation. The implementation is therefore always bound
+to the actual instance being created with <code>new</code>, and not to the whole class. This has some advantages, for example in the
+memory footprint of the runtime, as Nashorn can just create a single "universal adapter" for every combination of types being implemented.
+In reality, the below code shows that different instantiations of, say, <code>Runnable</code> have the same class regardless of them having
+different JavaScript implementation objects:
+</p>
+<pre><code>
+var Runnable = java.lang.Runnable;
+var r1 = new Runnable(function() { print("I'm runnable 1!") })
+var r2 = new Runnable(function() { print("I'm runnable 2!") })
+r1.run()
+r2.run()
+print("We share the same class: " + (r1.class === r2.class))
+</code></pre>
+<p>
+prints:
+</p>
+<pre><code>
+I'm runnable 1!
+I'm runnable 2!
+We share the same class: true
+</code></pre>
+<p>
+Sometimes, however, you'll want to extend a Java class or implement an interface with implementation bound to the class, not to
+its instances. Such a need arises, for example, when you need to pass the class for instantiation to an external API; prime example
+of this is the JavaFX framework where you need to pass an Application class to the FX API and let it instantiate it.
+</p>
+<p>
+Fortunately, there's a solution for that: <code>Java.extend()</code> &ndash; aside from being able to take any number of type parameters
+denoting a class to extend and interfaces to implement &ndash; can also take one last argument that has to be a JavaScript object
+that serves as the implementation for the methods. In this case, <code>Java.extend()</code> will create a class that has the same
+constructors as the original class had, as they don't need to take an an extra implementation object parameter. The example below
+shows how you can create class-bound implementations, and shows that in this case, the implementation classes for different invocations
+are indeed different:
+</p>
+<pre><code>
+var RunnableImpl1 = Java.extend(java.lang.Runnable, function() { print("I'm runnable 1!") })
+var RunnableImpl2 = Java.extend(java.lang.Runnable, function() { print("I'm runnable 2!") })
+var r1 = new RunnableImpl1()
+var r2 = new RunnableImpl2()
+r1.run()
+r2.run()
+print("We share the same class: " + (r1.class === r2.class))
+</code></pre>
+<p>
+prints:
+</p>
+<pre><code>
+I'm runnable 1!
+I'm runnable 2!
+We share the same class: false
+</code></pre>
+<p>
+As you can see, the major difference here is that we moved the implementation object into the invocation of <code>Java.extend</code>
+from the constructor invocations &ndash; indeed the constructor invocations now don't even need to take an extra parameter! Since
+the implementations are bound to a class, the two classes obviously can't be the same, and we indeed see that the two runnables no
+longer share the same class &ndash; every invocation of <code>Java.extend()</code> with a class-specific implementation object triggers
+the creation of a new Java adapter class.
+</p>
+<p>
+Finally, the adapter classes with class-bound implementations can <i>still</i> take an additional constructor parameter to further
+override the behavior on a per-instance basis. Thus, you can even combine the two approaches: you can provide part of the implementation
+in a class-based JavaScript implementation object passed to <code>Java.extend</code>, and part in another object passed to the constructor.
+Whatever functions are provided by the constructor-passed object will override the functions in the class-bound object.
+</p>
+<pre><code>
+var RunnableImpl = Java.extend(java.lang.Runnable, function() { print("I'm runnable 1!") })
+var r1 = new RunnableImpl()
+var r2 = new RunnableImpl(function() { print("I'm runnable 2!") })
+r1.run()
+r2.run()
+print("We share the same class: " + (r1.class === r2.class))
+</code></pre>
+<p>
+prints:
+</p>
+<pre><code>
+I'm runnable 1!
+I'm runnable 2!
+We share the same class: true
+</code></pre>
 <hr>
 <a name="jsoverload" id="jsoverload"></a>
 <h3>Overload Resolution</h3>
 <p>Java methods can be overloaded by argument types. In Java,
 overload resolution occurs at compile time (performed by javac).
-When calling Java methods from a script, the script
-interpreter/compiler needs to select the appropriate method. With
-the JavaScript engine, you do not need to do anything special - the
-correct Java method overload variant is selected based on the
-argument types. But, sometimes you may want (or have) to explicitly
-select a particular overload variant.</p>
+When calling Java methods from Nashorn, the appropriate method will be
+selected based on the argument types at invocation time. You do not need
+to do anything special &ndash; the correct Java method overload variant 
+is selected based automatically. You still have the option of explicitly
+specifying a particular overload variant. Reasons for this include 
+either running into a genuine ambiguity with actual argument types, or 
+rarely reasons of performance &ndash; if you specify the actual overload
+then the engine doesn't have to perform resolution during invocation.
+Individual overloads of a Java methods are exposed as special properties
+with the name of the method followed with its signature in parentheses. 
+You can invoke them like this:</p>
 <pre><code>
 // <a href="source/overload.js">overload.js</a>
 
 var out = java.lang.System.out;
 
 // select a particular print function 
-out["println(java.lang.Object)"]("hello");
+out["println(Object)"]("hello");
 </code>
 </pre>
+<p>
+Note that you normally don't even have to use qualified class names in 
+the signatures as long as the unqualified name of the type is sufficient
+for uniquely identifying the signature. In practice this means that only
+in the extremely unlikely case that two overloads only differ in 
+parameter types that have identical unqualified names but come from 
+different packages would you need to use the fully qualified name of the
+class.
+</p>
+<hr>
+<a name="dataTypeMapping" id="dataTypeMapping"></a>
+<h3>Mapping of Data Types Between Java and JavaScript</h3>
+<p>
+We have previously shown some of the data type mappings between Java and JavaScript.
+We saw that arrays need to be explicitly converted. We have also shown that JavaScript functions
+are automatically converted to SAM types when passed as parameters to Java methods. Most other
+conversions work as you would expect.
+</p>
+<p>
+Every JavaScript object is also a <code>java.util.Map</code> so APIs receiving maps will receive them directly.
+</p>
+<p>
+When numbers are passed to a Java API, they will be converted to the expected target numeric type, either boxed or
+primitive, but if the target type is less specific, say <code>Number</code> or <code>Object</code>, you can only
+count on them being a <code>Number</code>, and have to test specifically for whether it's a boxed <code>Double</code>,
+<code>Integer</code>, <code>Long</code>, etc. &ndash; it can be any of these due to internal optimizations. Also, you 
+can pass any JavaScript value to a Java API expecting either a boxed or primitive number; the JavaScript specification's
+<code>ToNumber</code> conversion algorithm will be applied to the value.
+</p>
+<p>
+In a similar vein, if a Java method expects a <code>String</code> or a <code>Boolean</code>, the values will be
+converted using all conversions allowed by the JavaScript specification's <code>ToString</code> and <code>ToBoolean</code>
+conversions.
+</p>
+<p>
+Finally, a word of caution about strings. Due to internal performance optimizations of string operations, JavaScript strings are
+not always necessarily of type <code>java.lang.String</code>, but they will always be of type <code>java.lang.CharSequence</code>.
+If you pass them to a Java method that expects a <code>java.lang.String</code> parameter, then you will naturally receive a Java
+String, but if the signature of your method is more generic, i.e. it receives a <code>java.lang.Object</code> parameter, you can 
+end up with an object of private engine implementation class that implements <code>CharSequence</code> but is not a Java String.
+</p>
 <hr>
 <a name="engineimpl" id="engineimpl"></a>
 <h2>Implementing Your Own Script Engine</h2>

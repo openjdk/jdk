@@ -235,6 +235,9 @@ bool InstructForm::is_parm(FormDict &globals) {
   return false;
 }
 
+bool InstructForm::is_ideal_negD() const {
+  return (_matrule && _matrule->_rChild && strcmp(_matrule->_rChild->_opType, "NegD") == 0);
+}
 
 // Return 'true' if this instruction matches an ideal 'Copy*' node
 int InstructForm::is_ideal_copy() const {
@@ -533,6 +536,12 @@ bool InstructForm::rematerialize(FormDict &globals, RegisterForm *registers ) {
   if( data_type != Form::none )
     rematerialize = true;
 
+  // Ugly: until a better fix is implemented, disable rematerialization for
+  // negD nodes because they are proved to be problematic.
+  if (is_ideal_negD()) {
+    return false;
+  }
+
   // Constants
   if( _components.count() == 1 && _components[0]->is(Component::USE_DEF) )
     rematerialize = true;
@@ -796,11 +805,11 @@ uint InstructForm::num_opnds() {
   return num_opnds;
 }
 
-const char *InstructForm::opnd_ident(int idx) {
+const char* InstructForm::opnd_ident(int idx) {
   return _components.at(idx)->_name;
 }
 
-const char *InstructForm::unique_opnd_ident(int idx) {
+const char* InstructForm::unique_opnd_ident(uint idx) {
   uint i;
   for (i = 1; i < num_opnds(); ++i) {
     if (unique_opnds_idx(i) == idx) {
@@ -1315,36 +1324,36 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
 // Seach through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
-  int  nopnds = num_opnds();
+  uint  nopnds = num_opnds();
   uint  num_uniq = nopnds;
-  int i;
+  uint i;
   _uniq_idx_length = 0;
-  if ( nopnds > 0 ) {
+  if (nopnds > 0) {
     // Allocate index array.  Worst case we're mapping from each
     // component back to an index and any DEF always goes at 0 so the
     // length of the array has to be the number of components + 1.
     _uniq_idx_length = _components.count() + 1;
-    uniq_idx = (uint*) malloc(sizeof(uint)*(_uniq_idx_length));
-    for( i = 0; i < _uniq_idx_length; i++ ) {
+    uniq_idx = (uint*) malloc(sizeof(uint) * _uniq_idx_length);
+    for (i = 0; i < _uniq_idx_length; i++) {
       uniq_idx[i] = i;
     }
   }
   // Do it only if there is a match rule and no expand rule.  With an
   // expand rule it is done by creating new mach node in Expand()
   // method.
-  if ( nopnds > 0 && _matrule != NULL && _exprule == NULL ) {
+  if (nopnds > 0 && _matrule != NULL && _exprule == NULL) {
     const char *name;
     uint count;
     bool has_dupl_use = false;
 
     _parameters.reset();
-    while( (name = _parameters.iter()) != NULL ) {
+    while ((name = _parameters.iter()) != NULL) {
       count = 0;
-      int position = 0;
-      int uniq_position = 0;
+      uint position = 0;
+      uint uniq_position = 0;
       _components.reset();
       Component *comp = NULL;
-      if( sets_result() ) {
+      if (sets_result()) {
         comp = _components.iter();
         position++;
       }
@@ -1352,11 +1361,11 @@ void InstructForm::set_unique_opnds() {
       for (; (comp = _components.iter()) != NULL; ++position) {
         // When the first component is not a DEF,
         // leave space for the result operand!
-        if ( position==0 && (! comp->isa(Component::DEF)) ) {
+        if (position==0 && (!comp->isa(Component::DEF))) {
           ++position;
         }
-        if( strcmp(name, comp->_name)==0 ) {
-          if( ++count > 1 ) {
+        if (strcmp(name, comp->_name) == 0) {
+          if (++count > 1) {
             assert(position < _uniq_idx_length, "out of bounds");
             uniq_idx[position] = uniq_position;
             has_dupl_use = true;
@@ -1364,22 +1373,25 @@ void InstructForm::set_unique_opnds() {
             uniq_position = position;
           }
         }
-        if( comp->isa(Component::DEF)
-            && comp->isa(Component::USE) ) {
+        if (comp->isa(Component::DEF) && comp->isa(Component::USE)) {
           ++position;
-          if( position != 1 )
+          if (position != 1)
             --position;   // only use two slots for the 1st USE_DEF
         }
       }
     }
-    if( has_dupl_use ) {
-      for( i = 1; i < nopnds; i++ )
-        if( i != uniq_idx[i] )
+    if (has_dupl_use) {
+      for (i = 1; i < nopnds; i++) {
+        if (i != uniq_idx[i]) {
           break;
-      int  j = i;
-      for( ; i < nopnds; i++ )
-        if( i == uniq_idx[i] )
+        }
+      }
+      uint j = i;
+      for (; i < nopnds; i++) {
+        if (i == uniq_idx[i]) {
           uniq_idx[i] = j++;
+        }
+      }
       num_uniq = j;
     }
   }
@@ -2216,21 +2228,27 @@ RegClass* OperandForm::get_RegClass() const {
 
 
 bool OperandForm::is_bound_register() const {
-  RegClass *reg_class  = get_RegClass();
-  if (reg_class == NULL) return false;
+  RegClass* reg_class = get_RegClass();
+  if (reg_class == NULL) {
+    return false;
+  }
 
-  const char * name = ideal_type(globalAD->globalNames());
-  if (name == NULL) return false;
+  const char* name = ideal_type(globalAD->globalNames());
+  if (name == NULL) {
+    return false;
+  }
 
-  int size = 0;
-  if (strcmp(name,"RegFlags")==0) size =  1;
-  if (strcmp(name,"RegI")==0) size =  1;
-  if (strcmp(name,"RegF")==0) size =  1;
-  if (strcmp(name,"RegD")==0) size =  2;
-  if (strcmp(name,"RegL")==0) size =  2;
-  if (strcmp(name,"RegN")==0) size =  1;
-  if (strcmp(name,"RegP")==0) size =  globalAD->get_preproc_def("_LP64") ? 2 : 1;
-  if (size == 0) return false;
+  uint size = 0;
+  if (strcmp(name, "RegFlags") == 0) size = 1;
+  if (strcmp(name, "RegI") == 0) size = 1;
+  if (strcmp(name, "RegF") == 0) size = 1;
+  if (strcmp(name, "RegD") == 0) size = 2;
+  if (strcmp(name, "RegL") == 0) size = 2;
+  if (strcmp(name, "RegN") == 0) size = 1;
+  if (strcmp(name, "RegP") == 0) size = globalAD->get_preproc_def("_LP64") ? 2 : 1;
+  if (size == 0) {
+    return false;
+  }
   return size == reg_class->size();
 }
 

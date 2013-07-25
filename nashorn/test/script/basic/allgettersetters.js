@@ -34,6 +34,9 @@ function checkGetterSetter(obj, expectError) {
         for (var i in properties) {
             var prop = properties[i];
             try {
+                if (!/\d.*/.test(prop)) {
+                    eval("obj." + prop + " = " + "obj." + prop + ";");
+                }
                 obj[prop] = obj[prop];
             } catch (e) {
                 if (!expectError || !(e instanceof TypeError)) {

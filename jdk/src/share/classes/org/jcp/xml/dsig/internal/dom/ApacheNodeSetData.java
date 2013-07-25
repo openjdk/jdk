@@ -2,32 +2,33 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: ApacheNodeSetData.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: ApacheNodeSetData.java 1203890 2011-11-18 22:47:56Z mullan $
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,7 +49,7 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData {
 
     public Iterator iterator() {
         // If nodefilters are set, must execute them first to create node-set
-        if (xi.getNodeFilters() != null) {
+        if (xi.getNodeFilters() != null && !xi.getNodeFilters().isEmpty()) {
             return Collections.unmodifiableSet
                 (getNodeSet(xi.getNodeFilters())).iterator();
         }
@@ -65,24 +66,22 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData {
         return xi;
     }
 
-    private Set getNodeSet(List nodeFilters) {
+    private Set<Node> getNodeSet(List<NodeFilter> nodeFilters) {
         if (xi.isNeedsToBeExpanded()) {
             XMLUtils.circumventBug2650
                 (XMLUtils.getOwnerDocument(xi.getSubNode()));
         }
 
-        Set inputSet = new LinkedHashSet();
-        XMLUtils.getSet
-          (xi.getSubNode(), inputSet, null, !xi.isExcludeComments());
-        Set nodeSet = new LinkedHashSet();
-        Iterator i = inputSet.iterator();
-        while (i.hasNext()) {
-            Node currentNode = (Node) i.next();
-            Iterator it = nodeFilters.iterator();
+        Set<Node> inputSet = new LinkedHashSet<Node>();
+        XMLUtils.getSet(xi.getSubNode(), inputSet,
+                        null, !xi.isExcludeComments());
+        Set<Node> nodeSet = new LinkedHashSet<Node>();
+        for (Node currentNode : inputSet) {
+            Iterator<NodeFilter> it = nodeFilters.iterator();
             boolean skipNode = false;
             while (it.hasNext() && !skipNode) {
-                NodeFilter nf = (NodeFilter) it.next();
-                if (nf.isNodeInclude(currentNode)!=1) {
+                NodeFilter nf = it.next();
+                if (nf.isNodeInclude(currentNode) != 1) {
                     skipNode = true;
                 }
             }

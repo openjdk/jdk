@@ -94,6 +94,7 @@
   template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
+  template(impliesCreateAccessControlContext_name,    "impliesCreateAccessControlContext")        \
   template(java_io_OutputStream,                      "java/io/OutputStream")                     \
   template(java_io_Reader,                            "java/io/Reader")                           \
   template(java_io_BufferedReader,                    "java/io/BufferedReader")                   \
@@ -346,6 +347,7 @@
   template(contextClassLoader_name,                   "contextClassLoader")                       \
   template(inheritedAccessControlContext_name,        "inheritedAccessControlContext")            \
   template(isPrivileged_name,                         "isPrivileged")                             \
+  template(isAuthorized_name,                         "isAuthorized")                             \
   template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait")                                     \
   template(checkPackageAccess_name,                   "checkPackageAccess")                       \
@@ -392,6 +394,9 @@
   template(array_klass_name,                          "array_klass")                              \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
+  template(protection_domain_name,                    "protection_domain")                        \
+  template(init_lock_name,                            "init_lock")                                \
+  template(signers_name,                              "signers_name")                             \
   template(loader_data_name,                          "loader_data")                              \
   template(dependencies_name,                         "dependencies")                             \
                                                                                                   \
@@ -765,6 +770,17 @@
    do_name(     encrypt_name,                                      "encrypt")                                           \
    do_name(     decrypt_name,                                      "decrypt")                                           \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)V")                                        \
+                                                                                                                        \
+  /* support for java.util.zip */                                                                                       \
+  do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
+  do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
+   do_name(     update_name,                                      "update")                                             \
+  do_intrinsic(_updateBytesCRC32,          java_util_zip_CRC32,   updateBytes_name, updateBytes_signature,       F_SN)  \
+   do_name(     updateBytes_name,                                "updateBytes")                                         \
+   do_signature(updateBytes_signature,                           "(I[BII)I")                                            \
+  do_intrinsic(_updateByteBufferCRC32,     java_util_zip_CRC32,   updateByteBuffer_name, updateByteBuffer_signature, F_SN) \
+   do_name(     updateByteBuffer_name,                           "updateByteBuffer")                                    \
+   do_signature(updateByteBuffer_signature,                      "(IJII)I")                                             \
                                                                                                                         \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \

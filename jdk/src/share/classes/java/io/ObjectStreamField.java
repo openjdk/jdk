@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package java.io;
 
 import java.lang.reflect.Field;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A description of a Serializable field from a Serializable class.  An array
@@ -157,7 +160,14 @@ public class ObjectStreamField
      * @return  a <code>Class</code> object representing the type of the
      *          serializable field
      */
+    @CallerSensitive
     public Class<?> getType() {
+        if (System.getSecurityManager() != null) {
+            Class<?> caller = Reflection.getCallerClass();
+            if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(), type.getClassLoader())) {
+                ReflectUtil.checkPackageAccess(type);
+            }
+        }
         return type;
     }
 
@@ -229,6 +239,8 @@ public class ObjectStreamField
     /**
      * Returns boolean value indicating whether or not the serializable field
      * represented by this ObjectStreamField instance is unshared.
+     *
+     * @return {@code true} if this field is unshared
      *
      * @since 1.4
      */

@@ -76,6 +76,10 @@ class Linux {
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
+  static int commit_memory_impl(char* addr, size_t bytes, bool exec);
+  static int commit_memory_impl(char* addr, size_t bytes,
+                                size_t alignment_hint, bool exec);
+
   static void set_glibc_version(const char *s)      { _glibc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
@@ -210,35 +214,6 @@ class Linux {
   // LinuxThreads work-around for 6292965
   static int safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime);
 
-
-  // Linux suspend/resume support - this helper is a shadow of its former
-  // self now that low-level suspension is barely used, and old workarounds
-  // for LinuxThreads are no longer needed.
-  class SuspendResume {
-  private:
-    volatile int  _suspend_action;
-    volatile jint _state;
-  public:
-    // values for suspend_action:
-    enum {
-      SR_NONE              = 0x00,
-      SR_SUSPEND           = 0x01,  // suspend request
-      SR_CONTINUE          = 0x02,  // resume request
-      SR_SUSPENDED         = 0x20   // values for _state: + SR_NONE
-    };
-
-    SuspendResume() { _suspend_action = SR_NONE; _state = SR_NONE; }
-
-    int suspend_action() const     { return _suspend_action; }
-    void set_suspend_action(int x) { _suspend_action = x;    }
-
-    // atomic updates for _state
-    inline void set_suspended();
-    inline void clear_suspended();
-    bool is_suspended()            { return _state & SR_SUSPENDED;       }
-
-  };
-
 private:
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
@@ -333,6 +308,6 @@ class PlatformParker : public CHeapObj<mtInternal> {
       status = pthread_mutex_init (_mutex, NULL);
       assert_status(status == 0, status, "mutex_init");
     }
-} ;
+};
 
 #endif // OS_LINUX_VM_OS_LINUX_HPP

@@ -57,7 +57,7 @@ import java.nio.channels.spi.SelectorProvider;
  * setOption} method. A datagram channel to an Internet Protocol socket supports
  * the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -117,6 +117,9 @@ public abstract class DatagramChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected DatagramChannel(SelectorProvider provider) {
         super(provider);
@@ -564,5 +567,26 @@ public abstract class DatagramChannel
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If there is a security manager set, its {@code checkConnect} method is
+     * called with the local address and {@code -1} as its arguments to see
+     * if the operation is allowed. If the operation is not allowed,
+     * a {@code SocketAddress} representing the
+     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
+     * local port of the channel's socket is returned.
+     *
+     * @return  The {@code SocketAddress} that the socket is bound to, or the
+     *          {@code SocketAddress} representing the loopback address if
+     *          denied by the security manager, or {@code null} if the
+     *          channel's socket is not bound
+     *
+     * @throws  ClosedChannelException     {@inheritDoc}
+     * @throws  IOException                {@inheritDoc}
+     */
+    @Override
+    public abstract SocketAddress getLocalAddress() throws IOException;
 
 }

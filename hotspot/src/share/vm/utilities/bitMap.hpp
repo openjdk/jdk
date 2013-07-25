@@ -48,6 +48,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   } RangeSizeHint;
 
  private:
+  ArrayAllocator<bm_word_t, mtInternal> _map_allocator;
   bm_word_t* _map;     // First word in bitmap
   idx_t      _size;    // Size of bitmap (in bits)
 
@@ -113,7 +114,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
  public:
 
   // Constructs a bitmap with no map, and size 0.
-  BitMap() : _map(NULL), _size(0) {}
+  BitMap() : _map(NULL), _size(0), _map_allocator(false) {}
 
   // Constructs a bitmap with the given map and size.
   BitMap(bm_word_t* map, idx_t size_in_bits);

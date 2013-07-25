@@ -340,7 +340,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     public JCTree visitThrow(ThrowTree node, P p) {
         JCThrow t = (JCThrow) node;
-        JCTree expr = copy(t.expr, p);
+        JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Throw(expr);
     }
 

@@ -59,7 +59,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.ir.AccessNode;
@@ -192,36 +191,110 @@ public class Parser extends AbstractParser {
             // Begin parse.
             return program(scriptName);
         } catch (final Exception e) {
-            // Extract message from exception.  The message will be in error
-            // message format.
-            String message = e.getMessage();
-
-            // If empty message.
-            if (message == null) {
-                message = e.toString();
-            }
-
-            // Issue message.
-            if (e instanceof ParserException) {
-                errors.error((ParserException)e);
-            } else {
-                errors.error(message);
-            }
-
-            if (env._dump_on_error) {
-                e.printStackTrace(env.getErr());
-            }
+            handleParseException(e);
 
             return null;
-         } finally {
-             final String end = this + " end '" + scriptName + "'";
-             if (Timing.isEnabled()) {
-                 Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                 LOG.info(end, "' in ", (System.currentTimeMillis() - t0), " ms");
-             } else {
-                 LOG.info(end);
-             }
-         }
+        } finally {
+            final String end = this + " end '" + scriptName + "'";
+            if (Timing.isEnabled()) {
+                Timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
+                LOG.info(end, "' in ", (System.currentTimeMillis() - t0), " ms");
+            } else {
+                LOG.info(end);
+            }
+        }
+    }
+
+    /**
+     * Parse and return the list of function parameter list. A comma
+     * separated list of function parameter identifiers is expected to be parsed.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail. This method is used to check if parameter Strings
+     * passed to "Function" constructor is a valid or not.
+     *
+     * @return the list of IdentNodes representing the formal parameter list
+     */
+    public List<IdentNode> parseFormalParameterList() {
+        try {
+            stream = new TokenStream();
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+
+            // Set up first token (skips opening EOL.)
+            k = -1;
+            next();
+
+            return formalParameterList(TokenType.EOF);
+        } catch (final Exception e) {
+            handleParseException(e);
+            return null;
+        }
+    }
+
+    /**
+     * Execute parse and return the resulting function node.
+     * Errors will be thrown and the error manager will contain information
+     * if parsing should fail. This method is used to check if code String
+     * passed to "Function" constructor is a valid function body or not.
+     *
+     * @return function node resulting from successful parse
+     */
+    public FunctionNode parseFunctionBody() {
+        try {
+            stream = new TokenStream();
+            lexer  = new Lexer(source, stream, scripting && !env._no_syntax_extensions);
+
+            // Set up first token (skips opening EOL.)
+            k = -1;
+            next();
+
+            // Make a fake token for the function.
+            final long functionToken = Token.toDesc(FUNCTION, 0, source.getLength());
+            // Set up the function to append elements.
+
+            FunctionNode function = newFunctionNode(
+                functionToken,
+                new IdentNode(functionToken, Token.descPosition(functionToken), RUN_SCRIPT.symbolName()),
+                new ArrayList<IdentNode>(),
+                FunctionNode.Kind.NORMAL);
+
+            functionDeclarations = new ArrayList<>();
+            sourceElements();
+            addFunctionDeclarations(function);
+            functionDeclarations = null;
+
+            expect(EOF);
+
+            function.setFinish(source.getLength() - 1);
+
+            function = restoreFunctionNode(function, token); //commit code
+            function = function.setBody(lc, function.getBody().setNeedsScope(lc));
+            return function;
+        } catch (final Exception e) {
+            handleParseException(e);
+            return null;
+        }
+    }
+
+    private void handleParseException(final Exception e) {
+        // Extract message from exception.  The message will be in error
+        // message format.
+        String message = e.getMessage();
+
+        // If empty message.
+        if (message == null) {
+            message = e.toString();
+        }
+
+        // Issue message.
+        if (e instanceof ParserException) {
+            errors.error((ParserException)e);
+        } else {
+            errors.error(message);
+        }
+
+        if (env._dump_on_error) {
+            e.printStackTrace(env.getErr());
+        }
     }
 
     /**
@@ -462,15 +535,12 @@ loop:
             if (!(lhs instanceof AccessNode ||
                   lhs instanceof IndexNode ||
                   lhs instanceof IdentNode)) {
-                if (env._early_lvalue_error) {
-                    throw error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
-                }
-                return referenceError(lhs, rhs);
+                return referenceError(lhs, rhs, env._early_lvalue_error);
             }
 
             if (lhs instanceof IdentNode) {
                 if (!checkIdentLValue((IdentNode)lhs)) {
-                    return referenceError(lhs, rhs);
+                    return referenceError(lhs, rhs, false);
                 }
                 verifyStrictIdent((IdentNode)lhs, "assignment");
             }
@@ -693,8 +763,6 @@ loop:
         switch (type) {
         case LBRACE:
             block();
-            break;
-        case RBRACE:
             break;
         case VAR:
             variableStatement(true);
@@ -1194,6 +1262,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1241,6 +1310,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1295,6 +1365,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1330,6 +1401,7 @@ loop:
         case RBRACE:
         case SEMICOLON:
         case EOL:
+        case EOF:
             break;
 
         default:
@@ -1537,7 +1609,7 @@ loop:
 
         endOfLine();
 
-        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression));
+        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression, 0));
     }
 
     /**
@@ -1597,7 +1669,7 @@ loop:
                 try {
                     // Get CATCH body.
                     final Block catchBody = getBlock(true);
-                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody);
+                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody, 0);
                     appendStatement(catchNode);
                 } finally {
                     catchBlock = restoreBlock(catchBlock);
@@ -1855,7 +1927,7 @@ loop:
 
         // Object context.
         // Prepare to accumulate elements.
-       // final List<Node> elements = new ArrayList<>();
+        // final List<Node> elements = new ArrayList<>();
         final Map<String, PropertyNode> map = new LinkedHashMap<>();
 
         // Create a block for the object literal.
@@ -1868,6 +1940,9 @@ loop:
                     break loop;
 
                 case COMMARIGHT:
+                    if (commaSeen) {
+                        throw error(AbstractParser.message("expected.property.id", type.getNameOrType()));
+                    }
                     next();
                     commaSeen = true;
                     break;
@@ -1954,7 +2029,7 @@ loop:
             }
         }
 
-        return new ObjectNode(objectToken, finish, new ArrayList<Node>(map.values()));
+        return new ObjectNode(objectToken, finish, new ArrayList<>(map.values()));
     }
 
     /**
@@ -2330,7 +2405,7 @@ loop:
             verifyStrictIdent(name, "function name");
         } else if (isStatement) {
             // Nashorn extension: anonymous function statements
-            if (env._no_syntax_extensions || !env._anon_functions) {
+            if (env._no_syntax_extensions) {
                 expect(IDENT);
             }
         }
@@ -2424,12 +2499,29 @@ loop:
      * @return List of parameter nodes.
      */
     private List<IdentNode> formalParameterList() {
+        return formalParameterList(RPAREN);
+    }
+
+    /**
+     * Same as the other method of the same name - except that the end
+     * token type expected is passed as argument to this method.
+     *
+     * FormalParameterList :
+     *      Identifier
+     *      FormalParameterList , Identifier
+     *
+     * See 13
+     *
+     * Parse function parameter list.
+     * @return List of parameter nodes.
+     */
+    private List<IdentNode> formalParameterList(final TokenType endType) {
         // Prepare to gather parameters.
         final List<IdentNode> parameters = new ArrayList<>();
         // Track commas.
         boolean first = true;
 
-        while (type != RPAREN) {
+        while (type != endType) {
             // Comma prior to every argument except the first.
             if (!first) {
                 expect(COMMARIGHT);
@@ -2476,7 +2568,7 @@ loop:
                  */
 
                 // just expression as function body
-                final Node expr = expression();
+                final Node expr = assignmentExpression(true);
                 assert lc.getCurrentBlock() == lc.getFunctionBody(functionNode);
                 // create a return statement - this creates code in itself and does not need to be
                 // wrapped into an ExecuteNode
@@ -2522,7 +2614,10 @@ loop:
         }
     }
 
-    private static RuntimeNode referenceError(final Node lhs, final Node rhs) {
+    private RuntimeNode referenceError(final Node lhs, final Node rhs, final boolean earlyError) {
+        if (earlyError) {
+            throw error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
+        }
         final ArrayList<Node> args = new ArrayList<>();
         args.add(lhs);
         if (rhs == null) {
@@ -2600,18 +2695,18 @@ loop:
             final Node lhs = leftHandSideExpression();
             // ++, -- without operand..
             if (lhs == null) {
-                // error would have been issued when looking for 'lhs'
-                return null;
+                throw error(AbstractParser.message("expected.lvalue", type.getNameOrType()));
             }
+
             if (!(lhs instanceof AccessNode ||
                   lhs instanceof IndexNode ||
                   lhs instanceof IdentNode)) {
-                return referenceError(lhs, null);
+                return referenceError(lhs, null, env._early_lvalue_error);
             }
 
             if (lhs instanceof IdentNode) {
                 if (!checkIdentLValue((IdentNode)lhs)) {
-                    return referenceError(lhs, null);
+                    return referenceError(lhs, null, false);
                 }
                 verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
             }
@@ -2630,16 +2725,21 @@ loop:
             case DECPREFIX:
                 final TokenType opType = type;
                 final Node lhs = expression;
+                // ++, -- without operand..
+                if (lhs == null) {
+                    throw error(AbstractParser.message("expected.lvalue", type.getNameOrType()));
+                }
+
                 if (!(lhs instanceof AccessNode ||
                    lhs instanceof IndexNode ||
                    lhs instanceof IdentNode)) {
                     next();
-                    return referenceError(lhs, null);
+                    return referenceError(lhs, null, env._early_lvalue_error);
                 }
                 if (lhs instanceof IdentNode) {
                     if (!checkIdentLValue((IdentNode)lhs)) {
                         next();
-                        return referenceError(lhs, null);
+                        return referenceError(lhs, null, false);
                     }
                     verifyStrictIdent((IdentNode)lhs, "operand for " + opType.getName() + " operator");
                 }

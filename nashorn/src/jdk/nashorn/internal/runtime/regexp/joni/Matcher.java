@@ -58,15 +58,8 @@ public abstract class Matcher extends IntHolder {
     // main matching method
     protected abstract int matchAt(int range, int sstart, int sprev);
 
-    protected abstract void stateCheckBuffInit(int strLength, int offset, int stateNum);
-    protected abstract void stateCheckBuffClear();
-
     public final Region getRegion() {
         return msaRegion;
-    }
-
-    public final Region getEagerRegion() {
-        return msaRegion != null ? msaRegion : new Region(msaBegin, msaEnd);
     }
 
     public final int getBegin() {
@@ -85,11 +78,6 @@ public abstract class Matcher extends IntHolder {
 
     public final int match(int at, int range, int option) {
         msaInit(option, at);
-
-        if (Config.USE_COMBINATION_EXPLOSION_CHECK) {
-            int offset = at = str;
-            stateCheckBuffInit(end - str, offset, regex.numCombExpCheck); // move it to construction?
-        } // USE_COMBINATION_EXPLOSION_CHECK
 
         int prev = EncodingHelper.prevCharHead(str, at);
 
@@ -377,8 +365,6 @@ public abstract class Matcher extends IntHolder {
                 prev = -1;
                 msaInit(option, start);
 
-                if (Config.USE_COMBINATION_EXPLOSION_CHECK) stateCheckBuffClear();
-
                 if (matchCheck(end, s, prev)) return match(s);
                 return mismatch();
             }
@@ -393,10 +379,6 @@ public abstract class Matcher extends IntHolder {
         }
 
         msaInit(option, origStart);
-        if (Config.USE_COMBINATION_EXPLOSION_CHECK) {
-            int offset = Math.min(start, range) - str;
-            stateCheckBuffInit(end - str, offset, regex.numCombExpCheck);
-        }
 
         s = start;
         if (range > start) {    /* forward search */

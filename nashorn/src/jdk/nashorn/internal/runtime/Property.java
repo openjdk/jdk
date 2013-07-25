@@ -52,6 +52,9 @@ public abstract class Property {
      * we can use leave flag byte initialized with (the default) zero value.
      */
 
+    /** Mask for property being both writable, enumerable and configurable */
+    public static final int WRITABLE_ENUMERABLE_CONFIGURABLE = 0b0000_0000_0000;
+
     /** ECMA 8.6.1 - Is this property not writable? */
     public static final int NOT_WRITABLE     = 0b0000_0000_0001;
 
@@ -177,17 +180,19 @@ public abstract class Property {
 
     /**
      * Check whether this property has a user defined getter function. See {@link UserAccessorProperty}
+     * @param obj object containing getter
      * @return true if getter function exists, false is default
      */
-    public boolean hasGetterFunction() {
+    public boolean hasGetterFunction(final ScriptObject obj) {
         return false;
     }
 
     /**
      * Check whether this property has a user defined setter function. See {@link UserAccessorProperty}
+     * @param obj object containing setter
      * @return true if getter function exists, false is default
      */
-    public boolean hasSetterFunction() {
+    public boolean hasSetterFunction(final ScriptObject obj) {
         return false;
     }
 
@@ -350,6 +355,27 @@ public abstract class Property {
     public int getSlot() {
         return slot;
     }
+
+    /**
+     * Set the value of this property in {@code owner}. This allows to bypass creation of the
+     * setter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @param value the new property value
+     * @param strict is this a strict setter?
+     */
+    public abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
+
+    /**
+     * Set the Object value of this property from {@code owner}. This allows to bypass creation of the
+     * getter MethodHandle for spill and user accessor properties.
+     *
+     * @param self the this object
+     * @param owner the owner object
+     * @return  the property value
+     */
+    public abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
 
     /**
      * Abstract method for retrieving the setter for the property. We do not know

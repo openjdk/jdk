@@ -94,7 +94,7 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, KlassHandle super_kl
   ResourceMark rm(THREAD);
   k->initialize_supers(super_klass(), CHECK);
   k->vtable()->initialize_vtable(false, CHECK);
-  java_lang_Class::create_mirror(k, CHECK);
+  java_lang_Class::create_mirror(k, Handle(NULL), CHECK);
 }
 
 GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots) {
@@ -221,8 +221,8 @@ void ArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 // Verification
 
-void ArrayKlass::verify_on(outputStream* st) {
-  Klass::verify_on(st);
+void ArrayKlass::verify_on(outputStream* st, bool check_dictionary) {
+  Klass::verify_on(st, check_dictionary);
 
   if (component_mirror() != NULL) {
     guarantee(component_mirror()->klass() != NULL, "should have a class");

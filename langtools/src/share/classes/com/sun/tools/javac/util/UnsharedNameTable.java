@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,8 +124,6 @@ public class UnsharedNameTable extends Name.Table {
         byte[] bytes = new byte[len];
         System.arraycopy(cs, start, bytes, 0, len);
         n = new NameImpl(this, bytes, index++);
-
-        System.arraycopy(cs, start, n.bytes, 0, len);
 
         HashEntry newEntry = new HashEntry(n);
 

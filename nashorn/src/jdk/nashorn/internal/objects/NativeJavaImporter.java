@@ -34,6 +34,7 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -55,9 +56,12 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 public final class NativeJavaImporter extends ScriptObject {
     private final Object[] args;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeJavaImporter(final Object[] args) {
+        super(Global.instance().getJavaImporterPrototype(), $nasgenmap$);
         this.args = args;
-        this.setProto(Global.instance().getJavaImporterPrototype());
     }
 
     @Override
@@ -121,7 +125,7 @@ public final class NativeJavaImporter extends ScriptObject {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final Object value = createProperty(name);
         if(value != null) {
-            set(name, value, isStrictContext());
+            set(name, value, false);
             return true;
         }
         return false;

@@ -662,7 +662,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      *
      * @return a stream builder
      */
-    public static StreamBuilder.OfDouble builder() {
+    public static Builder builder() {
         return new Streams.DoubleStreamBuilderImpl();
     }
 
@@ -672,7 +672,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @return an empty sequential stream
      */
     public static DoubleStream empty() {
-        return StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator());
+        return StreamSupport.doubleStream(Spliterators.emptyDoubleSpliterator(), false);
     }
 
     /**
@@ -682,7 +682,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @return a singleton sequential stream
      */
     public static DoubleStream of(double t) {
-        return StreamSupport.doubleStream(new Streams.DoubleStreamBuilderImpl(t));
+        return StreamSupport.doubleStream(new Streams.DoubleStreamBuilderImpl(t), false);
     }
 
     /**
@@ -730,7 +730,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
         };
         return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     /**
@@ -743,14 +743,84 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      */
     public static DoubleStream generate(DoubleSupplier s) {
         Objects.requireNonNull(s);
-        return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(
-                new PrimitiveIterator.OfDouble() {
-                    @Override
-                    public boolean hasNext() { return true; }
+        return StreamSupport.doubleStream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfDouble(Long.MAX_VALUE, s), false);
+    }
 
-                    @Override
-                    public double nextDouble() { return s.getAsDouble(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+    /**
+     * Creates a lazy concatenated {@code DoubleStream} whose elements are all the
+     * elements of a first {@code DoubleStream} succeeded by all the elements of the
+     * second {@code DoubleStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static DoubleStream concat(DoubleStream a, DoubleStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfDouble split = new Streams.ConcatSpliterator.OfDouble(
+                a.spliterator(), b.spliterator());
+        return StreamSupport.doubleStream(split, a.isParallel() || b.isParallel());
+    }
+
+    /**
+     * A mutable builder for a {@code DoubleStream}.
+     *
+     * <p>A stream builder has a lifecycle, where it starts in a building
+     * phase, during which elements can be added, and then transitions to a
+     * built phase, after which elements may not be added.  The built phase
+     * begins when the {@link #build()} method is called, which creates an
+     * ordered stream whose elements are the elements that were added to the
+     * stream builder, in the order they were added.
+     *
+     * @see DoubleStream#builder()
+     * @since 1.8
+     */
+    public interface Builder extends DoubleConsumer {
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        @Override
+        void accept(double t);
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @implSpec
+         * The default implementation behaves as if:
+         * <pre>{@code
+         *     accept(t)
+         *     return this;
+         * }</pre>
+         *
+         * @param t the element to add
+         * @return {@code this} builder
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        default Builder add(double t) {
+            accept(t);
+            return this;
+        }
+
+        /**
+         * Builds the stream, transitioning this builder to the built state.
+         * An {@code IllegalStateException} is thrown if there are further
+         * attempts to operate on the builder after it has entered the built
+         * state.
+         *
+         * @return the built stream
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        DoubleStream build();
     }
 }

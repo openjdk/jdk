@@ -91,6 +91,15 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     AC_MSG_ERROR([Cannot locate a valid Visual Studio installation])
   fi  
 
+  if test "x$VS100COMNTOOLS" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$VS100COMNTOOLS/../..], [VS100COMNTOOLS variable])
+  fi
+  if test "x$PROGRAMFILES" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$PROGRAMFILES/Microsoft Visual Studio 10.0], [well-known name])
+  fi
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files/Microsoft Visual Studio 10.0], [well-known name])
+  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files (x86)/Microsoft Visual Studio 10.0], [well-known name])
+
   if test "x$ProgramW6432" != x; then
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$ProgramW6432/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
   fi
@@ -102,15 +111,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   fi
   TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([C:/Program Files/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1/Bin], [well-known name])
-
-  if test "x$VS100COMNTOOLS" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$VS100COMNTOOLS/../..], [VS100COMNTOOLS variable])
-  fi
-  if test "x$PROGRAMFILES" != x; then
-    TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$PROGRAMFILES/Microsoft Visual Studio 10.0], [well-known name])
-  fi
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files/Microsoft Visual Studio 10.0], [well-known name])
-  TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([C:/Program Files (x86)/Microsoft Visual Studio 10.0], [well-known name])
 ])
 
 # Check if the VS env variables were setup prior to running configure.
@@ -208,6 +208,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
       VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
       VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
+      # Remove any paths containing # (typically F#) as that messes up make
+      PATH=`$ECHO "$PATH" | $SED 's/[[^:#]]*#[^:]*://g'`
       VS_PATH="$PATH"
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)
@@ -248,10 +250,23 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
         AC_MSG_NOTICE([Warning: msvcr100.dll not found in VCINSTALLDIR: $VCINSTALLDIR])
       fi
     fi
+    # Try some fallback alternatives
     if test "x$MSVCR_DLL" = x; then
-      if test -f "$SYSTEMROOT/system32/msvcr100.dll"; then
-        AC_MSG_NOTICE([msvcr100.dll found in $SYSTEMROOT/system32])
-        MSVCR_DLL="$SYSTEMROOT/system32/msvcr100.dll"
+      # If visual studio express is installed, there is usually one with the debugger
+      if test "x$VS100COMNTOOLS" != x; then
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          MSVCR_DLL=`find "$VS100COMNTOOLS/.." -name msvcr100.dll | grep -i x64 | head --lines 1`
+          AC_MSG_NOTICE([msvcr100.dll found in $VS100COMNTOOLS..: $VS100COMNTOOLS..])
+        fi
+      fi
+    fi
+    if test "x$MSVCR_DLL" = x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        # Fallback for 32bit builds, look in the windows directory.
+        if test -f "$SYSTEMROOT/system32/msvcr100.dll"; then
+          AC_MSG_NOTICE([msvcr100.dll found in $SYSTEMROOT/system32])
+          MSVCR_DLL="$SYSTEMROOT/system32/msvcr100.dll"
+        fi
       fi
     fi
   fi

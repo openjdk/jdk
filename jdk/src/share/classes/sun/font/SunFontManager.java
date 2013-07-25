@@ -3236,7 +3236,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             registeredFontFiles.add(fullName);
 
             if (FontUtilities.debugFonts()
-                && FontUtilities.getLogger().isLoggable(PlatformLogger.INFO)) {
+                && FontUtilities.getLogger().isLoggable(PlatformLogger.Level.INFO)) {
                 String message = "Registering font " + fullName;
                 String[] natNames = getNativeNames(fullName, null);
                 if (natNames == null) {

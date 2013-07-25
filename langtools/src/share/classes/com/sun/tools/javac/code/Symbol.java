@@ -32,6 +32,7 @@ import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -74,35 +75,6 @@ public abstract class Symbol implements Element {
      */
     public long flags() { return flags_field; }
 
-    /** The attributes of this symbol are contained in this
-     * Annotations. The Annotations instance is NOT immutable.
-     */
-    public final Annotations annotations = new Annotations(this);
-
-    /** An accessor method for the attributes of this symbol.
-     *  Attributes of class symbols should be accessed through the accessor
-     *  method to make sure that the class symbol is loaded.
-     */
-    public List<Attribute.Compound> getRawAttributes() {
-        return annotations.getDeclarationAttributes();
-    }
-
-    /** An accessor method for the type attributes of this symbol.
-     *  Attributes of class symbols should be accessed through the accessor
-     *  method to make sure that the class symbol is loaded.
-     */
-    public List<Attribute.TypeCompound> getRawTypeAttributes() {
-        return annotations.getTypeAttributes();
-    }
-
-    /** Fetch a particular annotation from a symbol. */
-    public Attribute.Compound attribute(Symbol anno) {
-        for (Attribute.Compound a : getRawAttributes()) {
-            if (a.type.tsym == anno) return a;
-        }
-        return null;
-    }
-
     /** The name of this symbol in Utf8 representation.
      */
     public Name name;
@@ -122,6 +94,146 @@ public abstract class Symbol implements Element {
     /** A cache for the type erasure of this symbol.
      */
     public Type erasure_field;
+
+    // <editor-fold defaultstate="collapsed" desc="annotations">
+
+    /** The attributes of this symbol are contained in this
+     * Annotations. The Annotations instance is NOT immutable.
+     */
+    protected Annotations annotations;
+
+    /** An accessor method for the attributes of this symbol.
+     *  Attributes of class symbols should be accessed through the accessor
+     *  method to make sure that the class symbol is loaded.
+     */
+    public List<Attribute.Compound> getRawAttributes() {
+        return (annotations == null)
+                ? List.<Attribute.Compound>nil()
+                : annotations.getDeclarationAttributes();
+    }
+
+    /** An accessor method for the type attributes of this symbol.
+     *  Attributes of class symbols should be accessed through the accessor
+     *  method to make sure that the class symbol is loaded.
+     */
+    public List<Attribute.TypeCompound> getRawTypeAttributes() {
+        return (annotations == null)
+                ? List.<Attribute.TypeCompound>nil()
+                : annotations.getTypeAttributes();
+    }
+
+    /** Fetch a particular annotation from a symbol. */
+    public Attribute.Compound attribute(Symbol anno) {
+        for (Attribute.Compound a : getRawAttributes()) {
+            if (a.type.tsym == anno) return a;
+        }
+        return null;
+    }
+
+    public boolean annotationsPendingCompletion() {
+        return annotations == null ? false : annotations.pendingCompletion();
+    }
+
+    public void appendAttributes(List<Attribute.Compound> l) {
+        if (l.nonEmpty()) {
+            initedAnnos().append(l);
+        }
+    }
+
+    public void appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.nonEmpty()) {
+            initedAnnos().appendClassInitTypeAttributes(l);
+        }
+    }
+
+    public void appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.nonEmpty()) {
+            initedAnnos().appendInitTypeAttributes(l);
+        }
+    }
+
+    public void appendTypeAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.TypeCompound> ctx) {
+        initedAnnos().appendTypeAttributesWithCompletion(ctx);
+    }
+
+    public void appendUniqueTypeAttributes(List<Attribute.TypeCompound> l) {
+        if (l.nonEmpty()) {
+            initedAnnos().appendUniqueTypes(l);
+        }
+    }
+
+    public List<Attribute.TypeCompound> getClassInitTypeAttributes() {
+        return (annotations == null)
+                ? List.<Attribute.TypeCompound>nil()
+                : annotations.getClassInitTypeAttributes();
+    }
+
+    public List<Attribute.TypeCompound> getInitTypeAttributes() {
+        return (annotations == null)
+                ? List.<Attribute.TypeCompound>nil()
+                : annotations.getInitTypeAttributes();
+    }
+
+    public List<Attribute.Compound> getDeclarationAttributes() {
+        return (annotations == null)
+                ? List.<Attribute.Compound>nil()
+                : annotations.getDeclarationAttributes();
+    }
+
+    public boolean hasAnnotations() {
+        return (annotations != null && !annotations.isEmpty());
+    }
+
+    public boolean hasTypeAnnotations() {
+        return (annotations != null && !annotations.isTypesEmpty());
+    }
+
+    public void prependAttributes(List<Attribute.Compound> l) {
+        if (l.nonEmpty()) {
+            initedAnnos().prepend(l);
+        }
+    }
+
+    public void resetAnnotations() {
+        initedAnnos().reset();
+    }
+
+    public void setAttributes(Symbol other) {
+        if (annotations != null || other.annotations != null) {
+            initedAnnos().setAttributes(other.annotations);
+        }
+    }
+
+    public void setDeclarationAttributes(List<Attribute.Compound> a) {
+        if (annotations != null || a.nonEmpty()) {
+            initedAnnos().setDeclarationAttributes(a);
+        }
+    }
+
+    public void setDeclarationAttributesWithCompletion(final Annotate.AnnotateRepeatedContext<Attribute.Compound> ctx) {
+        initedAnnos().setDeclarationAttributesWithCompletion(ctx);
+    }
+
+    public void setTypeAttributes(List<Attribute.TypeCompound> a) {
+        if (annotations != null || a.nonEmpty()) {
+            if (annotations == null)
+                annotations = new Annotations(this);
+            annotations.setTypeAttributes(a);
+        }
+    }
+
+    private Annotations initedAnnos() {
+        if (annotations == null)
+            annotations = new Annotations(this);
+        return annotations;
+    }
+
+    /** This method is intended for debugging only. */
+    public Annotations getAnnotations() {
+        return annotations;
+    }
+
+    // </editor-fold>
 
     /** Construct a symbol with given kind, flags, name, type and owner.
      */
@@ -205,6 +317,10 @@ public abstract class Symbol implements Element {
         } else {
             return t;
         }
+    }
+
+    public boolean isDeprecated() {
+        return (flags_field & DEPRECATED) != 0;
     }
 
     public boolean isStatic() {
@@ -583,17 +699,17 @@ public abstract class Symbol implements Element {
         public final boolean precedes(TypeSymbol that, Types types) {
             if (this == that)
                 return false;
-            if (this.type.tag == that.type.tag) {
-                if (this.type.hasTag(CLASS)) {
+            if (type.hasTag(that.type.getTag())) {
+                if (type.hasTag(CLASS)) {
                     return
                         types.rank(that.type) < types.rank(this.type) ||
                         types.rank(that.type) == types.rank(this.type) &&
                         that.getQualifiedName().compareTo(this.getQualifiedName()) < 0;
-                } else if (this.type.hasTag(TYPEVAR)) {
+                } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
                 }
             }
-            return this.type.hasTag(TYPEVAR);
+            return type.hasTag(TYPEVAR);
         }
 
         @Override
@@ -726,8 +842,9 @@ public abstract class Symbol implements Element {
         }
 
         private void mergeAttributes() {
-            if (annotations.isEmpty() &&
-                !package_info.annotations.isEmpty()) {
+            if (annotations == null &&
+                package_info.annotations != null) {
+                annotations = new Annotations(this);
                 annotations.setAttributes(package_info.annotations);
             }
         }
@@ -1418,25 +1535,6 @@ public abstract class Symbol implements Element {
         public boolean isStaticOrInstanceInit() {
             return getKind() == ElementKind.STATIC_INIT ||
                     getKind() == ElementKind.INSTANCE_INIT;
-        }
-
-        /**
-         * A polymorphic signature method (JLS SE 7, 8.4.1) is a method that
-         * (i) is declared in the java.lang.invoke.MethodHandle class, (ii) takes
-         * a single variable arity parameter (iii) whose declared type is Object[],
-         * (iv) has a return type of Object and (v) is native.
-         */
-        public boolean isSignaturePolymorphic(Types types) {
-            List<Type> argtypes = type.getParameterTypes();
-            Type firstElemType = argtypes.nonEmpty() ?
-                    types.elemtype(argtypes.head) :
-                    null;
-            return owner == types.syms.methodHandleType.tsym &&
-                    argtypes.length() == 1 &&
-                    firstElemType != null &&
-                    types.isSameType(firstElemType, types.syms.objectType) &&
-                    types.isSameType(type.getReturnType(), types.syms.objectType) &&
-                    (flags() & NATIVE) != 0;
         }
 
         public Attribute getDefaultValue() {

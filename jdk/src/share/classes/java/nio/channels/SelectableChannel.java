@@ -64,8 +64,8 @@ import java.nio.channels.spi.SelectorProvider;
  * threads. </p>
  *
  *
- * <a name="bm">
- * <h4>Blocking mode</h4>
+ * <a name="bm"></a>
+ * <h2>Blocking mode</h2>
  *
  * A selectable channel is either in <i>blocking</i> mode or in
  * <i>non-blocking</i> mode.  In blocking mode, every I/O operation invoked
@@ -111,7 +111,7 @@ public abstract class SelectableChannel
      * identifying this channel's supported operations.  The bits that are set
      * in this integer value denote exactly the operations that are valid for
      * this channel.  This method always returns the same value for a given
-     * concrete channel class. </p>
+     * concrete channel class.
      *
      * @return  The valid-operation set
      */
@@ -140,7 +140,10 @@ public abstract class SelectableChannel
 
     /**
      * Retrieves the key representing the channel's registration with the given
-     * selector.  </p>
+     * selector.
+     *
+     * @param   sel
+     *          The selector
      *
      * @return  The key returned when this channel was last registered with the
      *          given selector, or <tt>null</tt> if this channel is not
@@ -333,7 +336,6 @@ public abstract class SelectableChannel
      * configureBlocking} and {@link #register register} methods synchronize.
      * This is often useful in the implementation of adaptors that require a
      * specific blocking mode to be maintained for a short period of time.
-     * </p>
      *
      * @return  The blocking-mode lock object
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,6 +397,20 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
                 if (nextSeq < nextSequenceNumber()) {
                     candidate = notificationAt(nextSeq);
+                    // Skip security check if NotificationBufferFilter is not overloaded
+                    if (!(filter instanceof ServerNotifForwarder.NotifForwarderBufferFilter)) {
+                        try {
+                            ServerNotifForwarder.checkMBeanPermission(this.mBeanServer,
+                                                      candidate.getObjectName(),"addNotificationListener");
+                        } catch (InstanceNotFoundException | SecurityException e) {
+                            if (logger.debugOn()) {
+                                logger.debug("fetchNotifications", "candidate: " + candidate + " skipped. exception " + e);
+                            }
+                            ++nextSeq;
+                            continue;
+                        }
+                    }
+
                     if (logger.debugOn()) {
                         logger.debug("fetchNotifications", "candidate: " +
                                      candidate);

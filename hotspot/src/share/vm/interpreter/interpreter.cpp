@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,17 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     return kind;
   }
 
+#ifndef CC_INTERP
+  if (UseCRC32Intrinsics && m->is_native()) {
+    // Use optimized stub code for CRC32 native methods.
+    switch (m->intrinsic_id()) {
+      case vmIntrinsics::_updateCRC32            : return java_util_zip_CRC32_update;
+      case vmIntrinsics::_updateBytesCRC32       : return java_util_zip_CRC32_updateBytes;
+      case vmIntrinsics::_updateByteBufferCRC32  : return java_util_zip_CRC32_updateByteBuffer;
+    }
+  }
+#endif
+
   // Native method?
   // Note: This test must come _before_ the test for intrinsic
   //       methods. See also comments below.
@@ -297,6 +308,9 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
+    case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
+    case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
+    case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;
     default:
       if (kind >= method_handle_invoke_FIRST &&
           kind <= method_handle_invoke_LAST) {

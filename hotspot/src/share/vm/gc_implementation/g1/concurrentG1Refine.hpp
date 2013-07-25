@@ -35,6 +35,7 @@ class ConcurrentG1RefineThread;
 class G1CollectedHeap;
 class G1HotCardCache;
 class G1RemSet;
+class DirtyCardQueue;
 
 class ConcurrentG1Refine: public CHeapObj<mtGC> {
   ConcurrentG1RefineThread** _threads;
@@ -78,8 +79,14 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   void reinitialize_threads();
 
-  // Iterate over the conc refine threads
+  // Iterate over all concurrent refinement threads
   void threads_do(ThreadClosure *tc);
+
+  // Iterate over all worker refinement threads
+  void worker_threads_do(ThreadClosure * tc);
+
+  // The RS sampling thread
+  ConcurrentG1RefineThread * sampling_thread() const;
 
   static int thread_num();
 

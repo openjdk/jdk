@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>AlgorithmParameterGenerator</code> class, which
+ * for the {@code AlgorithmParameterGenerator} class, which
  * is used to generate a set of parameters to be used with a certain algorithm.
  *
  * <p> All the abstract methods in this class must be implemented by each
@@ -37,7 +37,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * of a parameter generator for a particular algorithm.
  *
  * <p> In case the client does not explicitly initialize the
- * AlgorithmParameterGenerator (via a call to an <code>engineInit</code>
+ * AlgorithmParameterGenerator (via a call to an {@code engineInit}
  * method), each provider must supply (and document) a default initialization.
  * For example, the Sun provider uses a default modulus prime size of 1024
  * bits for the generation of DSA parameters.
