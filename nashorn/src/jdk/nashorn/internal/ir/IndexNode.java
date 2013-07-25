@@ -35,7 +35,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 @Immutable
 public final class IndexNode extends BaseNode {
     /** Property index. */
-    private final Node index;
+    private final Expression index;
 
     /**
      * Constructors
@@ -45,12 +45,12 @@ public final class IndexNode extends BaseNode {
      * @param base    base node for access
      * @param index   index for access
      */
-    public IndexNode(final long token, final int finish, final Node base, final Node index) {
+    public IndexNode(final long token, final int finish, final Expression base, final Expression index) {
         super(token, finish, base, false, false);
         this.index = index;
     }
 
-    private IndexNode(final IndexNode indexNode, final Node base, final Node index, final boolean isFunction, final boolean hasCallSiteType) {
+    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final boolean hasCallSiteType) {
         super(indexNode, base, isFunction, hasCallSiteType);
         this.index = index;
     }
@@ -59,8 +59,8 @@ public final class IndexNode extends BaseNode {
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterIndexNode(this)) {
             return visitor.leaveIndexNode(
-                setBase(base.accept(visitor)).
-                setIndex(index.accept(visitor)));
+                setBase((Expression)base.accept(visitor)).
+                setIndex((Expression)index.accept(visitor)));
         }
         return this;
     }
@@ -95,11 +95,11 @@ public final class IndexNode extends BaseNode {
      * Get the index expression for this IndexNode
      * @return the index
      */
-    public Node getIndex() {
+    public Expression getIndex() {
         return index;
     }
 
-    private IndexNode setBase(final Node base) {
+    private IndexNode setBase(final Expression base) {
         if (this.base == base) {
             return this;
         }
@@ -111,7 +111,7 @@ public final class IndexNode extends BaseNode {
      * @param index new index expression
      * @return a node equivalent to this one except for the requested change.
      */
-    public IndexNode setIndex(Node index) {
+    public IndexNode setIndex(Expression index) {
         if(this.index == index) {
             return this;
         }

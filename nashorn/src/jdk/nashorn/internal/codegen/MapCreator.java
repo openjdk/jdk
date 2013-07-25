@@ -41,10 +41,10 @@ public class MapCreator {
     private final Class<?> structure;
 
     /** key set for object map */
-    private final String[] keys;
+    final List<String> keys;
 
     /** corresponding symbol set for object map */
-    private final Symbol[] symbols;
+    final List<Symbol> symbols;
 
     /**
      * Constructor
@@ -54,11 +54,9 @@ public class MapCreator {
      * @param symbols   list of symbols for map
      */
     MapCreator(final Class<?> structure, final List<String> keys, final List<Symbol> symbols) {
-        final int size   = keys.size();
-
         this.structure = structure;
-        this.keys      = keys.toArray(new String[size]);
-        this.symbols   = symbols.toArray(new Symbol[size]);
+        this.keys      = keys;
+        this.symbols   = symbols;
     }
 
     /**
@@ -70,21 +68,37 @@ public class MapCreator {
      *
      * @return New map populated with accessor properties.
      */
-    PropertyMap makeMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum) {
+    PropertyMap makeFieldMap(final boolean hasArguments, final int fieldCount, final int fieldMaximum) {
         final List<Property> properties = new ArrayList<>();
-
         assert keys != null;
 
-        for (int i = 0; i < keys.length; i++) {
-            final String key    = keys[i];
-            final Symbol symbol = symbols[i];
+        for (int i = 0, length = keys.size(); i < length; i++) {
+            final String key    = keys.get(i);
+            final Symbol symbol = symbols.get(i);
 
             if (symbol != null && !ArrayIndex.isIntArrayIndex(key)) {
                 properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), structure, symbol.getFieldIndex()));
             }
         }
 
-        return PropertyMap.newMap(structure, properties, fieldCount, fieldMaximum);
+        return PropertyMap.newMap(properties, fieldCount, fieldMaximum, 0);
+    }
+
+    PropertyMap makeSpillMap(final boolean hasArguments) {
+        final List<Property> properties = new ArrayList<>();
+        int spillIndex = 0;
+        assert keys != null;
+
+        for (int i = 0, length = keys.size(); i < length; i++) {
+            final String key    = keys.get(i);
+            final Symbol symbol = symbols.get(i);
+
+            if (symbol != null && !ArrayIndex.isIntArrayIndex(key)) {
+                properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), spillIndex++));
+            }
+        }
+
+        return PropertyMap.newMap(properties, 0, 0, spillIndex);
     }
 
     /**

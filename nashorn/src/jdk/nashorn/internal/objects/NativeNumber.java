@@ -48,7 +48,6 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
 /**
@@ -87,16 +86,25 @@ public final class NativeNumber extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeNumber(final double value) {
-        this(value, Global.instance().getNumberPrototype());
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    private NativeNumber(final double value, final ScriptObject proto) {
-        super(proto, $nasgenmap$);
+    private NativeNumber(final double value, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         this.value = value;
         this.isInt  = isRepresentableAsInt(value);
         this.isLong = isRepresentableAsLong(value);
     }
+
+    NativeNumber(final double value, final Global global) {
+        this(value, global.getNumberPrototype(), global.getNumberMap());
+    }
+
+    private NativeNumber(final double value) {
+        this(value, Global.instance());
+    }
+
 
     @Override
     public String safeToString() {
@@ -165,16 +173,7 @@ public final class NativeNumber extends ScriptObject {
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
         final double num = (args.length > 0) ? JSType.toNumber(args[0]) : 0.0;
 
-        if (newObj) {
-            final ScriptObject proto =
-                (self instanceof ScriptObject) ?
-                    ((ScriptObject)self).getProto() :
-                    Global.instance().getNumberPrototype();
-
-            return new NativeNumber(num, proto);
-        }
-
-        return num;
+        return newObj? new NativeNumber(num) : num;
     }
 
     /**
@@ -380,10 +379,6 @@ public final class NativeNumber extends ScriptObject {
     }
 
     private static MethodHandle findWrapFilter() {
-        try {
-            return MethodHandles.lookup().findStatic(NativeNumber.class, "wrapFilter", MH.type(NativeNumber.class, Object.class));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeNumber.class, "wrapFilter", MH.type(NativeNumber.class, Object.class));
     }
 }
