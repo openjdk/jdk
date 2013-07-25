@@ -294,25 +294,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   // If reference is volatile, prevent following volatiles ops from
   // floating up before the volatile write.
   if (is_vol) {
-    // First place the specific membar for THIS volatile index. This first
-    // membar is dependent on the store, keeping any other membars generated
-    // below from floating up past the store.
-    int adr_idx = C->get_alias_index(adr_type);
-    insert_mem_bar_volatile(Op_MemBarVolatile, adr_idx, store);
-
-    // Now place a membar for AliasIdxBot for the unknown yet-to-be-parsed
-    // volatile alias indices. Skip this if the membar is redundant.
-    if (adr_idx != Compile::AliasIdxBot) {
-      insert_mem_bar_volatile(Op_MemBarVolatile, Compile::AliasIdxBot, store);
-    }
-
-    // Finally, place alias-index-specific membars for each volatile index
-    // that isn't the adr_idx membar. Typically there's only 1 or 2.
-    for( int i = Compile::AliasIdxRaw; i < C->num_alias_types(); i++ ) {
-      if (i != adr_idx && C->alias_type(i)->is_volatile()) {
-        insert_mem_bar_volatile(Op_MemBarVolatile, i, store);
-      }
-    }
+    insert_mem_bar(Op_MemBarVolatile); // Use fat membar
   }
 
   // If the field is final, the rules of Java say we are in <init> or <clinit>.

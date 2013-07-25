@@ -37,10 +37,7 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.$CLINIT$;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.CLINIT;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.DEFAULT_INIT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.INIT;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_FIELD_NAME;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_INIT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_TYPE;
 
 import java.io.BufferedInputStream;
@@ -159,14 +156,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
             public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc) {
                 if (isConstructor && opcode == INVOKESPECIAL &&
                         INIT.equals(name) && SCRIPTOBJECT_TYPE.equals(owner)) {
-
-                    // replace call to empty super-constructor with one passing PropertyMap argument
-                    if (DEFAULT_INIT_DESC.equals(desc)) {
-                        super.visitFieldInsn(GETSTATIC, scriptClassInfo.getJavaName(), MAP_FIELD_NAME, MAP_DESC);
-                        super.visitMethodInsn(INVOKESPECIAL, SCRIPTOBJECT_TYPE, INIT, SCRIPTOBJECT_INIT_DESC);
-                    } else {
-                        super.visitMethodInsn(opcode, owner, name, desc);
-                    }
+                    super.visitMethodInsn(opcode, owner, name, desc);
 
                     if (memberCount > 0) {
                         // initialize @Property fields if needed
@@ -256,7 +246,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
         }
         // Now generate $clinit$
         final MethodGenerator mi = ClassGenerator.makeStaticInitializer(this, $CLINIT$);
-        ClassGenerator.emitStaticInitPrefix(mi, className);
+        ClassGenerator.emitStaticInitPrefix(mi, className, memberCount);
         if (memberCount > 0) {
             for (final MemberInfo memInfo : scriptClassInfo.getMembers()) {
                 if (memInfo.isInstanceProperty() || memInfo.isInstanceFunction()) {
