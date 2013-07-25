@@ -240,10 +240,10 @@ inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
 #endif // CC_INTERP
 
 
-inline JavaCallWrapper* frame::entry_frame_call_wrapper() const {
+inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
   // note: adjust this code if the link argument in StubGenerator::call_stub() changes!
   const Argument link = Argument(0, false);
-  return (JavaCallWrapper*)sp()[link.as_in().as_register()->sp_offset_in_saved_window()];
+  return (JavaCallWrapper**)&sp()[link.as_in().as_register()->sp_offset_in_saved_window()];
 }
 
 
