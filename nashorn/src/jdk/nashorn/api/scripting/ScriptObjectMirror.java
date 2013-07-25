@@ -89,7 +89,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
 
             final Object val = functionName == null? sobj : sobj.get(functionName);
             if (! (val instanceof ScriptFunction)) {
-                throw new RuntimeException("No such function " + ((functionName != null)? functionName : ""));
+                throw new NoSuchMethodException("No such function " + ((functionName != null)? functionName : ""));
             }
 
             final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
@@ -630,5 +630,4 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             }
         }
     }
-
 }

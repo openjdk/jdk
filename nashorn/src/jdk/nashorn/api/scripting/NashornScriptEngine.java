@@ -357,50 +357,39 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
-        final ScriptObject oldGlobal     = Context.getGlobal();
-        final ScriptObject ctxtGlobal    = getNashornGlobalFrom(context);
-        final boolean globalChanged = (oldGlobal != ctxtGlobal);
+        name.getClass(); // null check
 
-        Object self = globalChanged? ScriptObjectMirror.wrap(selfObject, oldGlobal) : selfObject;
-
-        try {
-            if (globalChanged) {
-                Context.setGlobal(ctxtGlobal);
+        ScriptObjectMirror selfMirror = null;
+        if (selfObject instanceof ScriptObjectMirror) {
+            selfMirror = (ScriptObjectMirror)selfObject;
+        } else if (selfObject instanceof ScriptObject) {
+            // invokeMethod called from script code - in which case we may get 'naked' ScriptObject
+            // Wrap it with oldGlobal to make a ScriptObjectMirror for the same.
+            final ScriptObject oldGlobal = Context.getGlobal();
+            if (oldGlobal != null) {
+                selfMirror = (ScriptObjectMirror)ScriptObjectMirror.wrap(selfObject, oldGlobal);
             }
+        } else if (selfObject == null) {
+            // selfObject is null => global function call
+            final ScriptObject ctxtGlobal = getNashornGlobalFrom(context);
+            selfMirror = (ScriptObjectMirror)ScriptObjectMirror.wrap(ctxtGlobal, ctxtGlobal);
+        }
 
-            ScriptObject sobj;
-            Object       value = null;
-
-            self = ScriptObjectMirror.unwrap(self, ctxtGlobal);
-
-            // FIXME: should convert when self is not ScriptObject
-            if (self instanceof ScriptObject) {
-                sobj = (ScriptObject)self;
-                value = sobj.get(name);
-            } else if (self == null) {
-                self  = ctxtGlobal;
-                sobj  = ctxtGlobal;
-                value = sobj.get(name);
-            }
-
-            if (value instanceof ScriptFunction) {
-                final Object res;
-                try {
-                    final Object[] modArgs = globalChanged? ScriptObjectMirror.wrapArray(args, oldGlobal) : args;
-                    res = ScriptRuntime.checkAndApply((ScriptFunction)value, self, ScriptObjectMirror.unwrapArray(modArgs, ctxtGlobal));
-                } catch (final Exception e) {
-                    throwAsScriptException(e);
-                    throw new AssertionError("should not reach here");
+        if (selfMirror != null) {
+            try {
+                return ScriptObjectMirror.translateUndefined(selfMirror.call(name, args));
+            } catch (final Exception e) {
+                final Throwable cause = e.getCause();
+                if (cause instanceof NoSuchMethodException) {
+                    throw (NoSuchMethodException)cause;
                 }
-                return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
-            }
-
-            throw new NoSuchMethodException(name);
-        } finally {
-            if (globalChanged) {
-                Context.setGlobal(oldGlobal);
+                throwAsScriptException(e);
+                throw new AssertionError("should not reach here");
             }
         }
+
+        // Non-script object passed as selfObject
+        throw new IllegalArgumentException("can not call invokeMethod on non-script objects");
     }
 
     private Object evalImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {

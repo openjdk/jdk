@@ -649,6 +649,91 @@ public class ScriptEngineTest {
     }
 
     @Test
+    /**
+     * Check that we can call invokeMethod on an object that we got by evaluating
+     * script with different Context set.
+     */
+    public void invokeMethodDifferentContextTest() {
+       ScriptEngineManager m = new ScriptEngineManager();
+       ScriptEngine e = m.getEngineByName("nashorn");
+
+       try {
+           // define an object with method on it
+           Object obj = e.eval("({ hello: function() { return 'Hello World!'; } })");
+
+           final ScriptContext ctxt = new SimpleScriptContext();
+           ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+           e.setContext(ctxt);
+
+           // invoke 'func' on obj - but with current script context changed
+           final Object res = ((Invocable)e).invokeMethod(obj, "hello");
+           assertEquals(res, "Hello World!");
+       } catch (final Exception exp) {
+           exp.printStackTrace();
+           fail(exp.getMessage());
+       }
+    }
+
+    @Test
+    /**
+     * Check that invokeMethod throws NPE on null method name.
+     */
+    public void invokeMethodNullNameTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object obj = e.eval("({})");
+            final Object res = ((Invocable)e).invokeMethod(obj, null);
+            fail("should have thrown NPE");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NullPointerException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that invokeMethod throws NoSuchMethodException on missing method.
+     */
+    public void invokeMethodMissingTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object obj = e.eval("({})");
+            final Object res = ((Invocable)e).invokeMethod(obj, "nonExistentMethod");
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling method on non-script object 'thiz' results in IllegalArgumentException.
+     */
+    public void invokeMethodNonScriptObjectThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).invokeMethod(new Object(), "toString");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void noEnumerablePropertiesTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
@@ -763,6 +848,70 @@ public class ScriptEngineTest {
         } catch (final Exception exp) {
             exp.printStackTrace();
             fail(exp.getMessage());
+        }
+    }
+
+    @Test
+    /**
+     * check that null function name results in NPE.
+     */
+    public void invokeFunctionNullNameTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object res = ((Invocable)e).invokeFunction(null);
+            fail("should have thrown NPE");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NullPointerException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that attempt to call missing function results in NoSuchMethodException.
+     */
+    public void invokeFunctionMissingTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object res = ((Invocable)e).invokeFunction("NonExistentFunc");
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that invokeFunction calls functions only from current context's Bindings.
+     */
+    public void invokeFunctionDifferentContextTest() {
+        ScriptEngineManager m = new ScriptEngineManager();
+        ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            // define an object with method on it
+            Object obj = e.eval("function hello() { return 'Hello World!'; }");
+            final ScriptContext ctxt = new SimpleScriptContext();
+            ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+            // change engine's current context
+            e.setContext(ctxt);
+
+            ((Invocable)e).invokeFunction("hello"); // no 'hello' in new context!
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
         }
     }
 
