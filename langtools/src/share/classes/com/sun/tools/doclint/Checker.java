@@ -753,8 +753,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         Element ex = env.trees.getElement(new DocTreePath(getCurrentPath(), exName));
         if (ex == null) {
             env.messages.error(REFERENCE, tree, "dc.ref.not.found");
-        } else if (ex.asType().getKind() == TypeKind.DECLARED
-                && env.types.isAssignable(ex.asType(), env.java_lang_Throwable)) {
+        } else if (isThrowable(ex.asType())) {
             switch (env.currElement.getKind()) {
                 case CONSTRUCTOR:
                 case METHOD:
@@ -771,6 +770,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         warnIfEmpty(tree, tree.getDescription());
         return scan(tree.getDescription(), ignore);
+    }
+
+    private boolean isThrowable(TypeMirror tm) {
+        switch (tm.getKind()) {
+            case DECLARED:
+            case TYPEVAR:
+                return env.types.isAssignable(tm, env.java_lang_Throwable);
+        }
+        return false;
     }
 
     private void checkThrowsDeclared(ReferenceTree tree, TypeMirror t, List<? extends TypeMirror> list) {
