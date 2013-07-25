@@ -530,7 +530,7 @@ public final class URI
      * href="http://www.ietf.org/rfc/rfc2396.txt">RFC&nbsp;2396</a>,
      * Appendix&nbsp;A, <b><i>except for the following deviations:</i></b> </p>
      *
-     * <ul type=disc>
+     * <ul>
      *
      *   <li><p> An empty authority component is permitted as long as it is
      *   followed by a non-empty path, a query component, or a fragment
@@ -993,7 +993,7 @@ public final class URI
      *   <li><p> Otherwise the new URI's authority component is copied from
      *   this URI, and its path is computed as follows: </p>
      *
-     *   <ol type=a>
+     *   <ol>
      *
      *     <li><p> If the given URI's path is absolute then the new URI's path
      *     is taken from the given URI. </p></li>
@@ -1241,7 +1241,7 @@ public final class URI
      * <p> The host component of a URI, if defined, will have one of the
      * following forms: </p>
      *
-     * <ul type=disc>
+     * <ul>
      *
      *   <li><p> A domain name consisting of one or more <i>labels</i>
      *   separated by period characters (<tt>'.'</tt>), optionally followed by
@@ -1495,7 +1495,7 @@ public final class URI
      *
      * <p> The ordering of URIs is defined as follows: </p>
      *
-     * <ul type=disc>
+     * <ul>
      *
      *   <li><p> Two URIs with different schemes are ordered according the
      *   ordering of their schemes, without regard to case. </p></li>
@@ -1513,7 +1513,7 @@ public final class URI
      *   <li><p> Two hierarchical URIs with identical schemes are ordered
      *   according to the ordering of their authority components: </p>
      *
-     *   <ul type=disc>
+     *   <ul>
      *
      *     <li><p> If both authority components are server-based then the URIs
      *     are ordered according to their user-information components; if these
