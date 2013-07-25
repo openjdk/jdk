@@ -23,11 +23,10 @@
 
 /*
  * @test
- * @ignore 8013404: Test awaits spec clarification
- * @bug 8003280
+ * @bug 8003280 8013404
  * @summary Add lambda tests
- *  check that target type of cast is propagated to conditional subexpressions
- * @compile TargetType36.java
+ *  check that target type of cast is not propagated to conditional subexpressions
+ * @compile/fail/ref=TargetType36.out -XDrawDiagnostics TargetType36.java
  */
 class TargetType36 { //awaits spec wording on cast vs. poly
 
