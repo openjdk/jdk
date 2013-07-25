@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.__DIR__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
+
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -38,7 +39,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for an identifier.
  */
 @Immutable
-public final class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
+public final class IdentNode extends Expression implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
     private static final int PROPERTY_NAME    = 1 << 0;
     private static final int INITIALIZED_HERE = 1 << 1;
     private static final int FUNCTION         = 1 << 2;
