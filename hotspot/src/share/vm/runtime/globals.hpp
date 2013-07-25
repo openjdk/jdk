@@ -1689,6 +1689,9 @@ class CommandLineFlags {
   product(bool, CMSAbortSemantics, false,                                   \
           "Whether abort-on-overflow semantics is implemented")             \
                                                                             \
+  product(bool, CMSParallelInitialMarkEnabled, true,                        \
+          "Use the parallel initial mark.")                                 \
+                                                                            \
   product(bool, CMSParallelRemarkEnabled, true,                             \
           "Whether parallel remark enabled (only if ParNewGC)")             \
                                                                             \

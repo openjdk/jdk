@@ -515,6 +515,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   friend class ConcurrentMarkSweepThread;
   friend class ConcurrentMarkSweepGeneration;
   friend class CompactibleFreeListSpace;
+  friend class CMSParMarkTask;
+  friend class CMSParInitialMarkTask;
   friend class CMSParRemarkTask;
   friend class CMSConcMarkingTask;
   friend class CMSRefProcTaskProxy;
