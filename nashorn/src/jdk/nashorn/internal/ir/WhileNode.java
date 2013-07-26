@@ -59,7 +59,7 @@ public final class WhileNode extends LoopNode {
      * @param body      body
      * @param controlFlowEscapes control flow escapes?
      */
-    protected WhileNode(final WhileNode whileNode, final Node test, final Block body, final boolean controlFlowEscapes) {
+    protected WhileNode(final WhileNode whileNode, final Expression test, final Block body, final boolean controlFlowEscapes) {
         super(whileNode, test, body, controlFlowEscapes);
         this.isDoWhile = whileNode.isDoWhile;
     }
@@ -75,28 +75,28 @@ public final class WhileNode extends LoopNode {
     }
 
     @Override
-    protected Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterWhileNode(this)) {
             if (isDoWhile()) {
                 return visitor.leaveWhileNode(
-                        setTest(lc, test.accept(visitor)).
+                        setTest(lc, (Expression)test.accept(visitor)).
                         setBody(lc, (Block)body.accept(visitor)));
             }
             return visitor.leaveWhileNode(
                     setBody(lc, (Block)body.accept(visitor)).
-                    setTest(lc, test.accept(visitor)));
+                    setTest(lc, (Expression)test.accept(visitor)));
 
         }
         return this;
     }
 
     @Override
-    public Node getTest() {
+    public Expression getTest() {
         return test;
     }
 
     @Override
-    public WhileNode setTest(final LexicalContext lc, final Node test) {
+    public WhileNode setTest(final LexicalContext lc, final Expression test) {
         if (this.test == test) {
             return this;
         }

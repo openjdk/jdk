@@ -100,10 +100,10 @@ public enum CompilerConstants {
     CALLEE(":callee", ScriptFunction.class),
 
     /** the varargs variable when necessary */
-    VARARGS(":varargs"),
+    VARARGS(":varargs", Object[].class),
 
     /** the arguments vector when necessary and the slot */
-    ARGUMENTS("arguments", Object.class, 2),
+    ARGUMENTS("arguments", ScriptObject.class, 2),
 
     /** prefix for iterators for for (x in ...) */
     ITERATOR_PREFIX(":i", Iterator.class),

@@ -133,6 +133,8 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
   uint _count;
 };
 
+struct JvmtiCachedClassFileData;
+
 class InstanceKlass: public Klass {
   friend class VMStructs;
   friend class ClassFileParser;
@@ -249,8 +251,8 @@ class InstanceKlass: public Klass {
   // InstanceKlass. See PreviousVersionWalker below.
   GrowableArray<PreviousVersionNode *>* _previous_versions;
   // JVMTI fields can be moved to their own structure - see 6315920
-  unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
-  jint            _cached_class_file_len;         // JVMTI: length of above
+  // JVMTI: cached class file, before retransformable agent modified it in CFLH
+  JvmtiCachedClassFileData* _cached_class_file;
 
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
@@ -615,11 +617,12 @@ class InstanceKlass: public Klass {
   static void purge_previous_versions(InstanceKlass* ik);
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
-  void set_cached_class_file(unsigned char *class_file_bytes,
-                             jint class_file_len)     { _cached_class_file_len = class_file_len;
-                                                        _cached_class_file_bytes = class_file_bytes; }
-  jint get_cached_class_file_len()                    { return _cached_class_file_len; }
-  unsigned char * get_cached_class_file_bytes()       { return _cached_class_file_bytes; }
+  void set_cached_class_file(JvmtiCachedClassFileData *data) {
+    _cached_class_file = data;
+  }
+  JvmtiCachedClassFileData * get_cached_class_file() { return _cached_class_file; }
+  jint get_cached_class_file_len();
+  unsigned char * get_cached_class_file_bytes();
 
   // JVMTI: Support for caching of field indices, types, and offsets
   void set_jvmti_cached_class_field_map(JvmtiCachedClassFieldMap* descriptor) {
@@ -794,7 +797,6 @@ class InstanceKlass: public Klass {
   void methods_do(void f(Method* method));
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
-  void with_array_klasses_do(void f(Klass* k));
   bool super_types_do(SuperTypeClosure* blk);
 
   // Casting from Klass*
@@ -873,10 +875,6 @@ class InstanceKlass: public Klass {
       return NULL;
     }
   }
-
-  // Allocation profiling support
-  juint alloc_size() const            { return _alloc_count * size_helper(); }
-  void set_alloc_size(juint n)        {}
 
   // Use this to return the size of an instance in heap words:
   int size_helper() const {

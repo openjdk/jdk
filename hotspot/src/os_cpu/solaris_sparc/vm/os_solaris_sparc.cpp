@@ -303,17 +303,16 @@ bool os::is_allocatable(size_t bytes) {
 #endif
 }
 
-extern "C" void Fetch32PFI () ;
-extern "C" void Fetch32Resume () ;
-extern "C" void FetchNPFI () ;
-extern "C" void FetchNResume () ;
-
 extern "C" JNIEXPORT int
 JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
                           int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
   Thread* t = ThreadLocalStorage::get_thread_slow();
+
+  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
+  // (no destructors can be run)
+  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -379,17 +378,10 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     npc = (address) uc->uc_mcontext.gregs[REG_nPC];
 
     // SafeFetch() support
-    // Implemented with either a fixed set of addresses such
-    // as Fetch32*, or with Thread._OnTrap.
-    if (uc->uc_mcontext.gregs[REG_PC] == intptr_t(Fetch32PFI)) {
-      uc->uc_mcontext.gregs [REG_PC]  = intptr_t(Fetch32Resume) ;
-      uc->uc_mcontext.gregs [REG_nPC] = intptr_t(Fetch32Resume) + 4 ;
-      return true ;
-    }
-    if (uc->uc_mcontext.gregs[REG_PC] == intptr_t(FetchNPFI)) {
-      uc->uc_mcontext.gregs [REG_PC]  = intptr_t(FetchNResume) ;
-      uc->uc_mcontext.gregs [REG_nPC] = intptr_t(FetchNResume) + 4 ;
-      return true ;
+    if (StubRoutines::is_safefetch_fault(pc)) {
+      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      uc->uc_mcontext.gregs[REG_nPC] = uc->uc_mcontext.gregs[REG_PC] + 4;
+      return 1;
     }
 
     // Handle ALL stack overflow variations here
