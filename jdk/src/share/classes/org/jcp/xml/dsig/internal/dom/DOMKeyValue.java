@@ -218,9 +218,11 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
                         ("unable to create RSA KeyFactory: " + e.getMessage());
                 }
             }
-            Element modulusElem = DOMUtils.getFirstChildElement(kvtElem);
+            Element modulusElem = DOMUtils.getFirstChildElement(kvtElem,
+                                                                "Modulus");
             modulus = new DOMCryptoBinary(modulusElem.getFirstChild());
-            Element exponentElem = DOMUtils.getNextSiblingElement(modulusElem);
+            Element exponentElem = DOMUtils.getNextSiblingElement(modulusElem,
+                                                                  "Exponent");
             exponent = new DOMCryptoBinary(exponentElem.getFirstChild());
             RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus.getBigNum(),
                                                          exponent.getBigNum());
@@ -289,13 +291,13 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
             // check for P and Q
             if (curElem.getLocalName().equals("P")) {
                 p = new DOMCryptoBinary(curElem.getFirstChild());
-                curElem = DOMUtils.getNextSiblingElement(curElem);
+                curElem = DOMUtils.getNextSiblingElement(curElem, "Q");
                 q = new DOMCryptoBinary(curElem.getFirstChild());
                 curElem = DOMUtils.getNextSiblingElement(curElem);
             }
             if (curElem.getLocalName().equals("G")) {
                 g = new DOMCryptoBinary(curElem.getFirstChild());
-                curElem = DOMUtils.getNextSiblingElement(curElem);
+                curElem = DOMUtils.getNextSiblingElement(curElem, "Y");
             }
             y = new DOMCryptoBinary(curElem.getFirstChild());
             curElem = DOMUtils.getNextSiblingElement(curElem);
@@ -460,7 +462,7 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
             } else {
                 throw new MarshalException("Invalid ECKeyValue");
             }
-            curElem = DOMUtils.getNextSiblingElement(curElem);
+            curElem = DOMUtils.getNextSiblingElement(curElem, "PublicKey");
             ECPoint ecPoint = null;
             try {
                 Object[] args = new Object[] { Base64.decode(curElem),
