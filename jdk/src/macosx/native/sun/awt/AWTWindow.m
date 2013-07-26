@@ -30,6 +30,7 @@
 #import "sun_lwawt_macosx_CPlatformWindow.h"
 #import "com_apple_eawt_event_GestureHandler.h"
 #import "com_apple_eawt_FullScreenHandler.h"
+#import "ApplicationDelegate.h"
 
 #import "AWTWindow.h"
 #import "AWTView.h"
@@ -55,7 +56,7 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 // doesn't provide information about "opposite" window, so we
 // have to do a bit of tracking. This variable points to a window
 // which had been the key window just before a new key window
-// was set. It would be nil if the new key window isn't an AWT 
+// was set. It would be nil if the new key window isn't an AWT
 // window or the app currently has no key window.
 static AWTWindow* lastKeyWindow = nil;
 
@@ -542,17 +543,26 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
-    
+
     // Finds appropriate menubar in our hierarchy,
     AWTWindow *awtWindow = self;
     while (awtWindow.ownerWindow != nil) {
         awtWindow = awtWindow.ownerWindow;
     }
+
     CMenuBar *menuBar = nil;
+    BOOL isDisabled = NO;
     if ([awtWindow.nsWindow isVisible]){
         menuBar = awtWindow.javaMenuBar;
+        isDisabled = !awtWindow.isEnabled;
     }
-    [CMenuBar activate:menuBar modallyDisabled:!awtWindow.isEnabled];
+
+    if (menuBar == nil) {
+        menuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+        isDisabled = NO;
+    }
+
+    [CMenuBar activate:menuBar modallyDisabled:isDisabled];
 
     [AWTWindow setLastKeyWindow:nil];
 
@@ -564,6 +574,14 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     [self.javaMenuBar deactivate];
+
+    // In theory, this might cause flickering if the window gaining focus
+    // has its own menu. However, I couldn't reproduce it on practice, so
+    // perhaps this is a non issue.
+    CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+    if (defaultMenu != nil) {
+        [CMenuBar activate:defaultMenu modallyDisabled:NO];
+    }
 
     // the new key window
     NSWindow *keyWindow = [NSApp keyWindow];
@@ -829,11 +847,19 @@ JNF_COCOA_ENTER(env);
 
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
-        if ([nsWindow isKeyWindow]) [window.javaMenuBar deactivate];
+        if ([nsWindow isKeyWindow]) {
+            [window.javaMenuBar deactivate];
+        }
+
         window.javaMenuBar = menuBar;
 
+        CMenuBar* actualMenuBar = menuBar;
+        if (actualMenuBar == nil) {
+            actualMenuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+        }
+
         if ([nsWindow isKeyWindow]) {
-            [CMenuBar activate:window.javaMenuBar modallyDisabled:NO];
+            [CMenuBar activate:actualMenuBar modallyDisabled:NO];
         }
     }];
 
