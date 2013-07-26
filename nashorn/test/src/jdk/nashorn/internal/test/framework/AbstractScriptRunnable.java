@@ -109,7 +109,6 @@ public abstract class AbstractScriptRunnable {
         this.copyExpectedFileName = buildDir + File.separator + testName + ".EXPECTED";
         this.expectedFileName = testFile.getPath() + ".EXPECTED";
 
-        final String failListString = System.getProperty(TEST_JS_FAIL_LIST);
         if (failListString != null) {
             final String[] failedTests = failListString.split(" ");
             for (final String failedTest : failedTests) {
@@ -151,10 +150,15 @@ public abstract class AbstractScriptRunnable {
     }
 
     // shared context or not?
-    protected static final boolean sharedContext;
+    protected static final boolean sharedContext = Boolean.getBoolean(TEST_JS_SHARED_CONTEXT);
+    protected static final String failListString = System.getProperty(TEST_JS_FAIL_LIST);
+    // VM options when a @fork test is executed by a separate process
+    protected static final String[] forkJVMOptions;
     static {
-        sharedContext = Boolean.getBoolean(TEST_JS_SHARED_CONTEXT);
+        String vmOptions = System.getProperty(TestConfig.TEST_FORK_JVM_OPTIONS);
+        forkJVMOptions = (vmOptions != null)? vmOptions.split(" ") : new String[0];
     }
+
     private static ThreadLocal<ScriptEvaluator> evaluators = new ThreadLocal<>();
 
     /**
