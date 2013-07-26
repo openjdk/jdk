@@ -96,6 +96,9 @@ define_pd_global(uintx, CMSYoungGenPerWorker, 64*M);  // default max size of CMS
   product(intx, UseAVX, 99,                                                 \
           "Highest supported AVX instructions set on x86/x64")              \
                                                                             \
+  product(bool, UseCLMUL, false,                                            \
+          "Control whether CLMUL instructions can be used on x86/x64")      \
+                                                                            \
   diagnostic(bool, UseIncDec, true,                                         \
           "Use INC, DEC instructions on x86")                               \
                                                                             \

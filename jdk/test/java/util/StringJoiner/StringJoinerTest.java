@@ -27,6 +27,7 @@
  * @run testng StringJoinerTest
  * @author Jim Gish
  */
+import java.util.ArrayList;
 import java.util.StringJoiner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
@@ -44,7 +45,6 @@ public class StringJoinerTest {
     private static final String FIVE = "Five";
     private static final String DASH = "-";
 
-    /* Uncomment when we have streams
     public void addAddAll() {
         StringJoiner sj = new StringJoiner(DASH, "{", "}");
         sj.add(ONE);
@@ -52,7 +52,7 @@ public class StringJoinerTest {
         ArrayList<String> nextOne = new ArrayList<>();
         nextOne.add(TWO);
         nextOne.add(THREE);
-        nextOne.stream().forEach(sj::add);
+        nextOne.stream().forEachOrdered(sj::add);
 
         String expected = "{"+ONE+DASH+TWO+DASH+THREE+"}";
         assertEquals(sj.toString(), expected);
@@ -64,7 +64,7 @@ public class StringJoinerTest {
         ArrayList<String> firstOne = new ArrayList<>();
         firstOne.add(ONE);
         firstOne.add(TWO);
-        firstOne.stream().forEach(sj::add);
+        firstOne.stream().forEachOrdered(sj::add);
 
         sj.add(THREE);
 
@@ -79,28 +79,16 @@ public class StringJoinerTest {
         firstOne.add(ONE);
         firstOne.add(TWO);
         firstOne.add(THREE);
-        firstOne.stream().forEach(sj::add);
+        firstOne.stream().forEachOrdered(sj::add);
 
         ArrayList<String> nextOne = new ArrayList<>();
         nextOne.add(FOUR);
         nextOne.add(FIVE);
-        nextOne.stream().forEach(sj::add);
+        nextOne.stream().forEachOrdered(sj::add);
 
         String expected = "{"+ONE+DASH+TWO+DASH+THREE+DASH+FOUR+DASH+FIVE+"}";
         assertEquals(sj.toString(), expected);
     }
-
-    public void testInto() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add(ONE);
-        list.add(TWO);
-        list.add(THREE);
-
-        StringJoiner target = new StringJoiner(",", "{", "}");
-        assertEquals(target.toString(), "{" + ONE + "," + TWO + "," + THREE +
-            "}");
-    }
-    */
 
     public void addCharSequence() {
         StringJoiner sj = new StringJoiner(",");

@@ -35,28 +35,28 @@ for (i in literals) {
         eval(literals[i] + "++");
         print("ERROR!! post increment : " + literals[i]);
     } catch (e) {
-        print(e);
+        print(e.toString().replace(/\\/g, '/'));
     }
 
     try {
         eval(literals[i] + "--");
         print("ERROR!! post decrement : " + literals[i]);
     } catch (e) {
-        print(e);
+        print(e.toString().replace(/\\/g, '/'));
     }
 
     try {
         eval("++" + literals[i]);
         print("ERROR!! pre increment : " + literals[i]);
     } catch (e) {
-        print(e);
+        print(e.toString().replace(/\\/g, '/'));
     }
 
     try {
         eval("--" + literals[i]);
         print("ERROR!! pre decrement : " + literals[i]);
     } catch (e) {
-        print(e);
+        print(e.toString().replace(/\\/g, '/'));
     }
 }
 

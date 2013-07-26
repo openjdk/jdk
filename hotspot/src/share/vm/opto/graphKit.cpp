@@ -3332,9 +3332,14 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
   if (ptr == NULL) {     // reduce dumb test in callers
     return NULL;
   }
-  ptr = ptr->uncast();  // strip a raw-to-oop cast
-  if (ptr == NULL)  return NULL;
-
+  if (ptr->is_CheckCastPP()) { // strip only one raw-to-oop cast
+    ptr = ptr->in(1);
+    if (ptr == NULL) return NULL;
+  }
+  // Return NULL for allocations with several casts:
+  //   j.l.reflect.Array.newInstance(jobject, jint)
+  //   Object.clone()
+  // to keep more precise type from last cast.
   if (ptr->is_Proj()) {
     Node* allo = ptr->in(0);
     if (allo != NULL && allo->is_Allocate()) {

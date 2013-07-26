@@ -32,6 +32,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -41,8 +42,13 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 @ScriptClass("Math")
 public final class NativeMath extends ScriptObject {
 
-    NativeMath() {
-        this.setProto(Global.objectPrototype());
+    // initialized by nasgen
+    @SuppressWarnings("unused")
+    private static PropertyMap $nasgenmap$;
+
+    private NativeMath() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     /** ECMA 15.8.1.1 - E, always a double constant. Not writable or configurable */

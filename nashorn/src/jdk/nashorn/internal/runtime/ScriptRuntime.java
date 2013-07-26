@@ -127,6 +127,17 @@ public final class ScriptRuntime {
      * @param deflt default to use if not convertible.
      * @return int tag value (or deflt.)
      */
+    public static int switchTagAsInt(final boolean tag, final int deflt) {
+        return deflt;
+    }
+
+    /**
+     * Converts a switch tag value to a simple integer. deflt value if it can't.
+     *
+     * @param tag   Switch statement tag value.
+     * @param deflt default to use if not convertible.
+     * @return int tag value (or deflt.)
+     */
     public static int switchTagAsInt(final long tag, final int deflt) {
         return isRepresentableAsInt(tag) ? (int)tag : deflt;
     }
@@ -361,6 +372,47 @@ public final class ScriptRuntime {
     }
 
     /**
+     * Check that the target function is associated with current Context.
+     * And also make sure that 'self', if ScriptObject, is from current context.
+     *
+     * Call a function as a constructor given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
+        final ScriptObject global = Context.getGlobalTrusted();
+        if (! (global instanceof GlobalObject)) {
+            throw new IllegalStateException("No current global set");
+        }
+
+        if (target.getContext() != global.getContext()) {
+            throw new IllegalArgumentException("'target' function is not from current Context");
+        }
+
+        // all in order - call real 'construct'
+        return construct(target, args);
+    }
+
+    /*
+     * Call a script function as a constructor with given args.
+     *
+     * @param target ScriptFunction object.
+     * @param args   Call arguments.
+     * @return Constructor call result.
+     */
+    public static Object construct(final ScriptFunction target, final Object... args) {
+        try {
+            return target.construct(args);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    /**
      * Generic implementation of ECMA 9.12 - SameValue algorithm
      *
      * @param x first value to compare
@@ -540,29 +592,14 @@ public final class ScriptRuntime {
                 throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
+            } else if (obj instanceof ScriptObjectMirror) {
+                obj = ((ScriptObjectMirror)obj).getMember(property.toString());
             } else {
                 obj = UNDEFINED;
             }
         }
 
         return JSType.of(obj).typeName();
-    }
-
-    /**
-     * ECMA 11.4.2 - void operator
-     *
-     * @param object object to evaluate
-     *
-     * @return Undefined as the object type
-     */
-    public static Object VOID(final Object object) {
-        if (object instanceof Number) {
-            if (Double.isNaN(((Number)object).doubleValue())) {
-                return Double.NaN;
-            }
-        }
-
-        return UNDEFINED;
     }
 
     /**

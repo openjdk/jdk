@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,24 @@ package com.sun.tools.classfile;
  */
 public class DefaultAttribute extends Attribute {
     DefaultAttribute(ClassReader cr, int name_index, byte[] data) {
+        this(cr, name_index, data, null);
+    }
+
+    DefaultAttribute(ClassReader cr, int name_index, byte[] data, String reason) {
         super(name_index, data.length);
         info = data;
+        this.reason = reason;
     }
 
     public DefaultAttribute(ConstantPool constant_pool, int name_index, byte[] info) {
+        this(constant_pool, name_index, info, null);
+    }
+
+    public DefaultAttribute(ConstantPool constant_pool, int name_index,
+            byte[] info, String reason) {
         super(name_index, info.length);
         this.info = info;
+        this.reason = reason;
     }
 
     public <R, P> R accept(Visitor<R, P> visitor, P p) {
@@ -47,4 +58,7 @@ public class DefaultAttribute extends Attribute {
     }
 
     public final byte[] info;
+    /** Why did we need to generate a DefaultAttribute
+     */
+    public final String reason;
 }

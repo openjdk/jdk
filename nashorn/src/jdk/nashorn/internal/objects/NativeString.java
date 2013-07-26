@@ -41,7 +41,7 @@ import java.util.Locale;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.lookup.MethodHandleFactory.LookupException;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -52,6 +52,7 @@ import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -70,14 +71,25 @@ public final class NativeString extends ScriptObject {
 
     static final MethodHandle WRAPFILTER = findWrapFilter();
 
-    NativeString(final CharSequence value) {
-        this(value, Global.instance().getStringPrototype());
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    private NativeString(final CharSequence value, final ScriptObject proto) {
+    private NativeString(final CharSequence value) {
+        this(value, Global.instance());
+    }
+
+    NativeString(final CharSequence value, final Global global) {
+        this(value, global.getStringPrototype(), global.getStringMap());
+    }
+
+    private NativeString(final CharSequence value, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         assert value instanceof String || value instanceof ConsString;
         this.value = value;
-        this.setProto(proto);
     }
 
     @Override
@@ -143,9 +155,9 @@ public final class NativeString extends ScriptObject {
 
         if (returnType == Object.class && (self instanceof String || self instanceof ConsString)) {
             try {
-                MethodHandle mh = MethodHandles.lookup().findStatic(NativeString.class, "get", desc.getMethodType());
+                MethodHandle mh = MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType());
                 return new GuardedInvocation(mh, NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
-            } catch (final NoSuchMethodException | IllegalAccessException e) {
+            } catch (final LookupException e) {
                 // Shouldn't happen. Fall back to super
             }
         }
@@ -1061,10 +1073,7 @@ public final class NativeString extends ScriptObject {
     }
 
     private static Object newObj(final Object self, final CharSequence str) {
-        if (self instanceof ScriptObject) {
-            return new NativeString(str, ((ScriptObject)self).getProto());
-        }
-        return new NativeString(str, Global.instance().getStringPrototype());
+        return new NativeString(str);
     }
 
     /**
@@ -1198,10 +1207,6 @@ public final class NativeString extends ScriptObject {
     }
 
     private static MethodHandle findWrapFilter() {
-        try {
-            return MethodHandles.lookup().findStatic(NativeString.class, "wrapFilter", MH.type(NativeString.class, Object.class));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeString.class, "wrapFilter", MH.type(NativeString.class, Object.class));
     }
 }

@@ -26,15 +26,16 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getPaddedFieldCount;
 import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
 
 import java.util.Iterator;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
@@ -48,6 +49,13 @@ import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
  * @see jdk.nashorn.internal.ir.Node
  */
 public abstract class FieldObjectCreator<T> extends ObjectCreator {
+
+    private         String        fieldObjectClassName;
+    private         Class<?>      fieldObjectClass;
+    private         int           fieldCount;
+    private         int           paddedFieldCount;
+    private         int           paramCount;
+
     /** array of corresponding values to symbols (null for no values) */
     private final List<T> values;
 
@@ -80,14 +88,9 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         super(codegen, keys, symbols, isScope, hasArguments);
         this.values        = values;
         this.callSiteFlags = codegen.getCallSiteFlags();
-    }
 
-    /**
-     * Loads the scope on the stack through the passed method emitter.
-     * @param method the method emitter to use
-     */
-    protected void loadScope(final MethodEmitter method) {
-        method.loadCompilerConstant(SCOPE);
+        countFields();
+        findClass();
     }
 
     /**
@@ -137,6 +140,13 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         }
     }
 
+    @Override
+    protected PropertyMap makeMap() {
+        assert propertyMap == null : "property map already initialized";
+        propertyMap = newMapCreator(fieldObjectClass).makeFieldMap(hasArguments(), fieldCount, paddedFieldCount);
+        return propertyMap;
+    }
+
     /**
      * Technique for loading an initial value. Defined by anonymous subclasses in code gen.
      *
@@ -173,4 +183,47 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
         loadValue(value);
         method.dynamicSetIndex(callSiteFlags);
     }
+
+    /**
+     * Locate (or indirectly create) the object container class.
+     */
+    private void findClass() {
+        fieldObjectClassName = isScope() ?
+                ObjectClassGenerator.getClassName(fieldCount, paramCount) :
+                ObjectClassGenerator.getClassName(paddedFieldCount);
+
+        try {
+            this.fieldObjectClass = Context.forStructureClass(Compiler.binaryName(fieldObjectClassName));
+        } catch (final ClassNotFoundException e) {
+            throw new AssertionError("Nashorn has encountered an internal error.  Structure can not be created.");
+        }
+    }
+
+    /**
+     * Get the class name for the object class,
+     * e.g. {@code com.nashorn.oracle.scripts.JO2P0}
+     *
+     * @return script class name
+     */
+    String getClassName() {
+        return fieldObjectClassName;
+    }
+
+    /**
+     * Tally the number of fields and parameters.
+     */
+    private void countFields() {
+        for (final Symbol symbol : this.symbols) {
+            if (symbol != null) {
+                if (hasArguments() && symbol.isParam()) {
+                    symbol.setFieldIndex(paramCount++);
+                } else {
+                    symbol.setFieldIndex(fieldCount++);
+                }
+            }
+        }
+
+        paddedFieldCount = getPaddedFieldCount(fieldCount);
+    }
+
 }

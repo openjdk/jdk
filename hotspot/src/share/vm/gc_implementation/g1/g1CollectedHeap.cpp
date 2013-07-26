@@ -54,7 +54,6 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#include "runtime/aprofiler.hpp"
 #include "runtime/vmThread.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
@@ -2665,11 +2664,6 @@ void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
   heap_region_iterate(&blk);
 }
 
-void G1CollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {
-  // FIXME: is this right?
-  guarantee(false, "object_iterate_since_last_GC not supported by G1 heap");
-}
-
 // Calls a SpaceClosure on a HeapRegion.
 
 class SpaceClosureRegionClosure: public HeapRegionClosure {
@@ -3598,8 +3592,6 @@ G1CollectedHeap* G1CollectedHeap::heap() {
 void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
   // always_do_update_barrier = false;
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-  // Call allocation profiler
-  AllocationProfiler::iterate_since_last_gc();
   // Fill TLAB's and such
   ensure_parsability(true);
 }

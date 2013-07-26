@@ -100,7 +100,8 @@
            target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
-           includeantruntime="false">
+           includeantruntime="false" fork="true">
+      <compilerarg value="-J-Djava.ext.dirs="/>
       <compilerarg value="-Xlint:unchecked"/>
       <compilerarg value="-Xlint:deprecation"/>
       <compilerarg value="-XDignore.symbol.file"/>
@@ -124,7 +125,7 @@
     <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
-  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar">
+  <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar" unless="compile.suppress.jar">
     <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
       <fileset dir="${build.classes.dir}"/>
       <manifest>
@@ -139,7 +140,13 @@
       </manifest>
     </jar>
   </target>
-  
+
+  <target name="use-promoted-nashorn" depends="init">
+    <delete file="${dist.dir}/nashorn.jar"/>
+    <copy file="${java.home}/lib/ext/nashorn.jar" todir="${dist.dir}"/>
+    <property name="compile.suppress.jar" value="defined"/>
+  </target>
+
   <target name="build-fxshell" depends="jar">
     <description>Builds the javafx shell.</description>
     <mkdir dir="${fxshell.classes.dir}"/>
@@ -212,8 +219,10 @@
            target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
-           includeantruntime="false">
-        <compilerarg line="-extdirs &quot;&quot;"/>
+           includeantruntime="false" fork="true">
+        <compilerarg value="-J-Djava.ext.dirs="/>
+        <compilerarg value="-Xlint:unchecked"/>
+        <compilerarg value="-Xlint:deprecation"/>
     </javac>
 
     <!-- tests that check nashorn internals and internal API -->
@@ -229,44 +238,31 @@
   </target>
 
   <target name="generate-policy-file" depends="prepare">
-    <!-- Generating nashorn.policy file -->
+    <echo file="${build.dir}/nashorn.policy">
 
-    <!-- nashorn internal tests jar requires AllPermission -->
-    <echo message="grant codeBase &quot;file:/${basedir}/${nashorn.internal.tests.jar}&quot; {" file="${build.dir}/nashorn.policy"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    
-    <!-- TestNG framework jar needs AllPermission -->
-    <echo message="grant codeBase &quot;file:/${basedir}/${file.reference.testng.jar}&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+grant codeBase "file:/${basedir}/${nashorn.internal.tests.jar}" {
+    permission java.security.AllPermission;
+};
 
-    <!-- AllPermission to test/script/trusted tests -->
-    <echo message="grant codeBase &quot;file:/${basedir}/test/script/trusted/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+grant codeBase "file:/${basedir}/${file.reference.testng.jar}" {
+    permission java.security.AllPermission;
+};
 
-    <echo message="grant codeBase &quot;file:/${basedir}/test/script/basic/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <!-- test/script/basic .js scripts load other script tests -->
-    <echo message="    permission java.io.FilePermission &quot;${basedir}/test/script/-&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.io.FilePermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="    permission java.util.PropertyPermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <!-- test/script/basic .js scripts can read nashorn.test.* properties -->
-    <echo message="    permission java.util.PropertyPermission &quot;nashorn.test.*&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
-    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+grant codeBase "file:/${basedir}/test/script/trusted/*" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:/${basedir}/test/script/basic/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
+grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
+    permission java.util.PropertyPermission "java.security.policy", "read";
+};
+    </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
     <replace file="${build.dir}/nashorn.policy"><replacetoken>//</replacetoken><replacevalue>/</replacevalue></replace>   <!--hack for Unix - to avoid leading // in URLs -->
@@ -462,24 +458,24 @@
   <!-- get all external test scripts -->
   <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
     <!-- make external test dir -->
-    <mkdir dir="${test.external.dir}"/> 
+    <mkdir dir="${test.external.dir}"/>
 
     <!-- jquery -->
-    <mkdir dir="${test.external.dir}/jquery"/>    
+    <mkdir dir="${test.external.dir}/jquery"/>
     <get src="http://code.jquery.com/jquery-1.7.2.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
     <get src="http://code.jquery.com/jquery-1.7.2.min.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
 
     <!-- prototype -->
-    <mkdir dir="${test.external.dir}/prototype"/>    
+    <mkdir dir="${test.external.dir}/prototype"/>
     <get src="http://ajax.googleapis.com/ajax/libs/prototype/1.7.0/prototype.js" dest="${test.external.dir}/prototype" usetimestamp="true" skipexisting="true" ignoreerrors="true"/>
 
     <!-- underscorejs -->
-    <mkdir dir="${test.external.dir}/underscore"/> 
+    <mkdir dir="${test.external.dir}/underscore"/>
     <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
     <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
 
     <!-- yui -->
-    <mkdir dir="${test.external.dir}/yui"/> 
+    <mkdir dir="${test.external.dir}/yui"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
 

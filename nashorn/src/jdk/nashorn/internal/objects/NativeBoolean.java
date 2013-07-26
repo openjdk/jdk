@@ -37,9 +37,9 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
 /**
@@ -52,13 +52,24 @@ public final class NativeBoolean extends ScriptObject {
 
     final static MethodHandle WRAPFILTER = findWrapFilter();
 
-    NativeBoolean(final boolean value) {
-        this(value, Global.instance().getBooleanPrototype());
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    private NativeBoolean(final boolean value, final ScriptObject proto) {
+    private NativeBoolean(final boolean value, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         this.value = value;
-        this.setProto(proto);
+    }
+
+    NativeBoolean(final boolean flag, final Global global) {
+        this(flag, global.getBooleanPrototype(), global.getBooleanMap());
+    }
+
+    NativeBoolean(final boolean flag) {
+        this(flag, Global.instance());
     }
 
     @Override
@@ -127,11 +138,7 @@ public final class NativeBoolean extends ScriptObject {
         final boolean flag = JSType.toBoolean(value);
 
         if (newObj) {
-            final ScriptObject proto = (self instanceof ScriptObject) ?
-                ((ScriptObject)self).getProto() :
-                Global.instance().getBooleanPrototype();
-
-            return new NativeBoolean(flag, proto);
+            return new NativeBoolean(flag);
         }
 
         return flag;
@@ -172,10 +179,6 @@ public final class NativeBoolean extends ScriptObject {
     }
 
     private static MethodHandle findWrapFilter() {
-        try {
-            return MethodHandles.lookup().findStatic(NativeBoolean.class, "wrapFilter", MH.type(NativeBoolean.class, Object.class));
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeBoolean.class, "wrapFilter", MH.type(NativeBoolean.class, Object.class));
     }
 }

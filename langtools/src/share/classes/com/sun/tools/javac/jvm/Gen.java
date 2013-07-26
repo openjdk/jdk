@@ -991,9 +991,19 @@ public class Gen extends JCTree.Visitor {
          */
         void genMethod(JCMethodDecl tree, Env<GenContext> env, boolean fatcode) {
             MethodSymbol meth = tree.sym;
-//      System.err.println("Generating " + meth + " in " + meth.owner); //DEBUG
-            if (Code.width(types.erasure(env.enclMethod.sym.type).getParameterTypes())  +
-                (((tree.mods.flags & STATIC) == 0 || meth.isConstructor()) ? 1 : 0) >
+            int extras = 0;
+            // Count up extra parameters
+            if (meth.isConstructor()) {
+                extras++;
+                if (meth.enclClass().isInner() &&
+                    !meth.enclClass().isStatic()) {
+                    extras++;
+                }
+            } else if ((tree.mods.flags & STATIC) == 0) {
+                extras++;
+            }
+            //      System.err.println("Generating " + meth + " in " + meth.owner); //DEBUG
+            if (Code.width(types.erasure(env.enclMethod.sym.type).getParameterTypes()) + extras >
                 ClassFile.MAX_PARAMETERS) {
                 log.error(tree.pos(), "limit.parameters");
                 nerrs++;
@@ -1773,7 +1783,16 @@ public class Gen extends JCTree.Visitor {
             r.load();
             code.emitop0(ireturn + Code.truncate(Code.typecode(pt)));
         } else {
+            /*  If we have a statement like:
+             *
+             *  return;
+             *
+             *  we need to store the code.pendingStatPos value before generating
+             *  the finalizer.
+             */
+            int tmpPos = code.pendingStatPos;
             targetEnv = unwind(env.enclMethod, env);
+            code.pendingStatPos = tmpPos;
             code.emitop0(return_);
         }
         endFinalizerGaps(env, targetEnv);

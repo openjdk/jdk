@@ -136,7 +136,8 @@ public class CompileJavaPackages implements Transformer {
         // for each compile.....
         int kbPerFile = 175;
         String osarch = System.getProperty("os.arch");
-        if (osarch.equals("i386")) {
+        String dataModel = System.getProperty("sun.arch.data.model");
+        if ("32".equals(dataModel)) {
             // For 32 bit platforms, assume it is slightly smaller
             // because of smaller object headers and pointers.
             kbPerFile = 119;

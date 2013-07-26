@@ -142,7 +142,7 @@ public class Env {
         currElement = trees.getElement(currPath);
         currOverriddenMethods = ((JavacTypes) types).getOverriddenMethods(currElement);
 
-        AccessKind ak = null;
+        AccessKind ak = AccessKind.PUBLIC;
         for (TreePath p = path; p != null; p = p.getParentPath()) {
             Element e = trees.getElement(p);
             if (e != null && e.getKind() != ElementKind.PACKAGE) {

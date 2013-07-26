@@ -27,9 +27,18 @@ package sun.jvm.hotspot.tools;
 import java.io.PrintStream;
 import java.util.*;
 
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.*;
 
 public class SysPropsDumper extends Tool {
+
+   public SysPropsDumper() {
+      super();
+   }
+
+   public SysPropsDumper(JVMDebugger d) {
+      super(d);
+   }
 
    public void run() {
       Properties sysProps = VM.getVM().getSystemProperties();

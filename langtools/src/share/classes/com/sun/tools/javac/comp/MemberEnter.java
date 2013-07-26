@@ -109,7 +109,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         source = Source.instance(context);
         target = Target.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
+        allowTypeAnnos = source.allowTypeAnnotations();
     }
+
+    /** Switch: support type annotations.
+     */
+    boolean allowTypeAnnos;
 
     /** A queue for classes whose members still need to be entered into the
      *  symbol table.
@@ -117,7 +122,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     ListBuffer<Env<AttrContext>> halfcompleted = new ListBuffer<Env<AttrContext>>();
 
     /** Set to true only when the first of a set of classes is
-     *  processed from the halfcompleted queue.
+     *  processed from the half completed queue.
      */
     boolean isFirst = true;
 
@@ -353,7 +358,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  @param thrown      The method's thrown exceptions.
      *  @param env             The method's (local) environment.
      */
-    Type signature(List<JCTypeParameter> typarams,
+    Type signature(MethodSymbol msym,
+                   List<JCTypeParameter> typarams,
                    List<JCVariableDecl> params,
                    JCTree res,
                    JCVariableDecl recvparam,
@@ -387,8 +393,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         ListBuffer<Type> thrownbuf = new ListBuffer<Type>();
         for (List<JCExpression> l = thrown; l.nonEmpty(); l = l.tail) {
             Type exc = attr.attribType(l.head, env);
-            if (!exc.hasTag(TYPEVAR))
+            if (!exc.hasTag(TYPEVAR)) {
                 exc = chk.checkClassType(l.head.pos(), exc);
+            } else if (exc.tsym.owner == msym) {
+                //mark inference variables in 'throws' clause
+                exc.tsym.flags_field |= THROWS;
+            }
             thrownbuf.append(exc);
         }
         MethodType mtype = new MethodType(argbuf.toList(),
@@ -498,11 +508,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // process package annotations
         annotateLater(tree.packageAnnotations, env, tree.packge);
 
-        // Import-on-demand java.lang.
-        importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+        DeferredLintHandler prevLintHandler = chk.setDeferredLintHandler(DeferredLintHandler.immediateHandler);
 
-        // Process all import clauses.
-        memberEnter(tree.defs, env);
+        try {
+            // Import-on-demand java.lang.
+            importAll(tree.pos, reader.enterPackage(names.java_lang), env);
+
+            // Process all import clauses.
+            memberEnter(tree.defs, env);
+        } finally {
+            chk.setDeferredLintHandler(prevLintHandler);
+        }
     }
 
     // process the non-static imports and the static imports of types.
@@ -552,7 +568,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
         try {
             // Compute the method type
-            m.type = signature(tree.typarams, tree.params,
+            m.type = signature(m, tree.typarams, tree.params,
                                tree.restype, tree.recvparam,
                                tree.thrown,
                                localEnv);
@@ -1072,7 +1088,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 isFirst = true;
             }
         }
-        TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+        if (allowTypeAnnos) {
+            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+        }
     }
 
     /*
@@ -1117,7 +1135,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     public void typeAnnotate(final JCTree tree, final Env<AttrContext> env, final Symbol sym) {
-        tree.accept(new TypeAnnotate(env, sym));
+        if (allowTypeAnnos) {
+            tree.accept(new TypeAnnotate(env, sym));
+        }
     }
 
     /**
