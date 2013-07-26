@@ -26,8 +26,8 @@ package sun.jvm.hotspot.debugger.linux;
 
 import sun.jvm.hotspot.debugger.*;
 
-class LinuxOopHandle extends LinuxAddress implements OopHandle {
-  LinuxOopHandle(LinuxDebugger debugger, long addr) {
+public class LinuxOopHandle extends LinuxAddress implements OopHandle {
+  public LinuxOopHandle(LinuxDebugger debugger, long addr) {
     super(debugger, addr);
   }
 

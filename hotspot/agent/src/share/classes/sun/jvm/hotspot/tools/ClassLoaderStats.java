@@ -41,6 +41,14 @@ import sun.jvm.hotspot.utilities.*;
 public class ClassLoaderStats extends Tool {
    boolean verbose = true;
 
+   public ClassLoaderStats() {
+      super();
+   }
+
+   public ClassLoaderStats(JVMDebugger d) {
+      super(d);
+   }
+
    public static void main(String[] args) {
       ClassLoaderStats cls = new ClassLoaderStats();
       cls.start(args);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package javax.security.auth.callback;
 
 /**
  * <p> Underlying security services instantiate and pass a
- * <code>NameCallback</code> to the <code>handle</code>
- * method of a <code>CallbackHandler</code> to retrieve name information.
+ * {@code NameCallback} to the {@code handle}
+ * method of a {@code CallbackHandler} to retrieve name information.
  *
  * @see javax.security.auth.callback.CallbackHandler
  */
@@ -53,14 +53,14 @@ public class NameCallback implements Callback, java.io.Serializable {
     private String inputName;
 
     /**
-     * Construct a <code>NameCallback</code> with a prompt.
+     * Construct a {@code NameCallback} with a prompt.
      *
      * <p>
      *
      * @param prompt the prompt used to request the name.
      *
-     * @exception IllegalArgumentException if <code>prompt</code> is null
-     *                  or if <code>prompt</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code prompt} is null
+     *                  or if {@code prompt} has a length of 0.
      */
     public NameCallback(String prompt) {
         if (prompt == null || prompt.length() == 0)
@@ -69,7 +69,7 @@ public class NameCallback implements Callback, java.io.Serializable {
     }
 
     /**
-     * Construct a <code>NameCallback</code> with a prompt
+     * Construct a {@code NameCallback} with a prompt
      * and default name.
      *
      * <p>
@@ -79,10 +79,10 @@ public class NameCallback implements Callback, java.io.Serializable {
      * @param defaultName the name to be used as the default name displayed
      *                  with the prompt.
      *
-     * @exception IllegalArgumentException if <code>prompt</code> is null,
-     *                  if <code>prompt</code> has a length of 0,
-     *                  if <code>defaultName</code> is null,
-     *                  or if <code>defaultName</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code prompt} is null,
+     *                  if {@code prompt} has a length of 0,
+     *                  if {@code defaultName} is null,
+     *                  or if {@code defaultName} has a length of 0.
      */
     public NameCallback(String prompt, String defaultName) {
         if (prompt == null || prompt.length() == 0 ||
@@ -109,8 +109,8 @@ public class NameCallback implements Callback, java.io.Serializable {
      *
      * <p>
      *
-     * @return the default name, or null if this <code>NameCallback</code>
-     *          was not instantiated with a <code>defaultName</code>.
+     * @return the default name, or null if this {@code NameCallback}
+     *          was not instantiated with a {@code defaultName}.
      */
     public String getDefaultName() {
         return defaultName;

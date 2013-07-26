@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class x86 {
  private:
   static address _get_previous_fp_entry;
   static address _get_previous_sp_entry;
-  static address _verify_mxcsr_entry;
 
   static address _f2i_fixup;
   static address _f2l_fixup;
@@ -53,9 +52,6 @@ class x86 {
   static address _float_sign_flip;
   static address _double_sign_mask;
   static address _double_sign_flip;
-  static address _mxcsr_std;
-  // shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers
-  static address _key_shuffle_mask_addr;
 
  public:
 
@@ -67,11 +63,6 @@ class x86 {
   static address get_previous_sp_entry()
   {
     return _get_previous_sp_entry;
-  }
-
-  static address verify_mxcsr_entry()
-  {
-    return _verify_mxcsr_entry;
   }
 
   static address f2i_fixup()
@@ -114,12 +105,7 @@ class x86 {
     return _double_sign_flip;
   }
 
-  static address mxcsr_std()
-  {
-    return _mxcsr_std;
-  }
-
-  static address key_shuffle_mask_addr()                     { return _key_shuffle_mask_addr; }
+# include "stubRoutines_x86.hpp"
 
 };
 

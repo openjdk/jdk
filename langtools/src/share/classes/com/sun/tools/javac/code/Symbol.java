@@ -699,17 +699,17 @@ public abstract class Symbol implements Element {
         public final boolean precedes(TypeSymbol that, Types types) {
             if (this == that)
                 return false;
-            if (this.type.tag == that.type.tag) {
-                if (this.type.hasTag(CLASS)) {
+            if (type.hasTag(that.type.getTag())) {
+                if (type.hasTag(CLASS)) {
                     return
                         types.rank(that.type) < types.rank(this.type) ||
                         types.rank(that.type) == types.rank(this.type) &&
                         that.getQualifiedName().compareTo(this.getQualifiedName()) < 0;
-                } else if (this.type.hasTag(TYPEVAR)) {
+                } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
                 }
             }
-            return this.type.hasTag(TYPEVAR);
+            return type.hasTag(TYPEVAR);
         }
 
         @Override

@@ -140,8 +140,15 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     _f1 = f1;
   }
   void release_set_f1(Metadata* f1);
-  void set_f2(intx f2)                           { assert(_f2 == 0 || _f2 == f2,            "illegal field change"); _f2 = f2; }
-  void set_f2_as_vfinal_method(Method* f2)     { assert(_f2 == 0 || _f2 == (intptr_t) f2, "illegal field change"); assert(is_vfinal(), "flags must be set"); _f2 = (intptr_t) f2; }
+  void set_f2(intx f2) {
+    intx existing_f2 = _f2; // read once
+    assert(existing_f2 == 0 || existing_f2 == f2, "illegal field change");
+    _f2 = f2;
+  }
+  void set_f2_as_vfinal_method(Method* f2) {
+    assert(is_vfinal(), "flags must be set");
+    set_f2((intx)f2);
+  }
   int make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
   bool init_flags_atomic(intx flags);

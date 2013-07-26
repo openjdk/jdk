@@ -548,6 +548,10 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
         for (i=0; i < nOuts; i++) {
 
             cmsToneCurve* InversePostLin = cmsReverseToneCurve(Curves[i]);
+            if (InversePostLin == NULL) {
+                WhiteOut[i] = 0;
+                continue;
+            }
             WhiteOut[i] = cmsEvalToneCurve16(InversePostLin, WhitePointOut[i]);
             cmsFreeToneCurve(InversePostLin);
         }

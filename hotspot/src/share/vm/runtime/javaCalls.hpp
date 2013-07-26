@@ -80,6 +80,8 @@ class JavaCallWrapper: StackObj {
   oop              receiver()               { return _receiver; }
   void             oops_do(OopClosure* f);
 
+  bool             is_first_frame() const   { return _anchor.last_Java_sp() == NULL; }
+
 };
 
 

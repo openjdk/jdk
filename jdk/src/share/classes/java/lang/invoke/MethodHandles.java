@@ -41,6 +41,7 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import sun.security.util.SecurityConstants;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -305,36 +306,30 @@ public class MethodHandles {
      * <a name="secmgr"></a>
      * If a security manager is present, member lookups are subject to
      * additional checks.
-     * From one to four calls are made to the security manager.
+     * From one to three calls are made to the security manager.
      * Any of these calls can refuse access by throwing a
      * {@link java.lang.SecurityException SecurityException}.
      * Define {@code smgr} as the security manager,
+     * {@code lookc} as the lookup class of the current lookup object,
      * {@code refc} as the containing class in which the member
      * is being sought, and {@code defc} as the class in which the
      * member is actually defined.
+     * The value {@code lookc} is defined as <em>not present</em>
+     * if the current lookup object does not have
+     * {@linkplain java.lang.invoke.MethodHandles.Lookup#PRIVATE private access}.
      * The calls are made according to the following rules:
      * <ul>
-     * <li>In all cases, {@link SecurityManager#checkMemberAccess
-     *     smgr.checkMemberAccess(refc, Member.PUBLIC)} is called.
-     * <li>If the class loader of the lookup class is not
+     * <li>If {@code lookc} is not present, or if its class loader is not
      *     the same as or an ancestor of the class loader of {@code refc},
      *     then {@link SecurityManager#checkPackageAccess
      *     smgr.checkPackageAccess(refcPkg)} is called,
      *     where {@code refcPkg} is the package of {@code refc}.
+     * <li>If the retrieved member is not public and
+     *     {@code lookc} is not present, then
+     *     {@link SecurityManager#checkPermission smgr.checkPermission}
+     *     with {@code RuntimePermission("accessDeclaredMembers")} is called.
      * <li>If the retrieved member is not public,
-     *     {@link SecurityManager#checkMemberAccess
-     *     smgr.checkMemberAccess(defc, Member.DECLARED)} is called.
-     *     (Note that {@code defc} might be the same as {@code refc}.)
-     *     The default implementation of this security manager method
-     *     inspects the stack to determine the original caller of
-     *     the reflective request (such as {@code findStatic}),
-     *     and performs additional permission checks if the
-     *     class loader of {@code defc} differs from the class
-     *     loader of the class from which the reflective request came.
-     * <li>If the retrieved member is not public,
-     *     and if {@code defc} and {@code refc} are in different class loaders,
-     *     and if the class loader of the lookup class is not
-     *     the same as or an ancestor of the class loader of {@code defc},
+     *     and if {@code defc} and {@code refc} are different,
      *     then {@link SecurityManager#checkPackageAccess
      *     smgr.checkPackageAccess(defcPkg)} is called,
      *     where {@code defcPkg} is the package of {@code defc}.
@@ -1054,22 +1049,6 @@ return mh1;
         }
 
         /**
-         * Determine whether a security manager has an overridden
-         * SecurityManager.checkMemberAccess method.
-         */
-        private boolean isCheckMemberAccessOverridden(SecurityManager sm) {
-            final Class<? extends SecurityManager> cls = sm.getClass();
-            if (cls == SecurityManager.class) return false;
-
-            try {
-                return cls.getMethod("checkMemberAccess", Class.class, int.class).
-                    getDeclaringClass() != SecurityManager.class;
-            } catch (NoSuchMethodException e) {
-                throw new InternalError("should not reach here");
-            }
-        }
-
-        /**
          * Perform necessary <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
          * Determines a trustable caller class to compare with refc, the symbolic reference class.
          * If this lookup object has private access, then the caller class is the lookupClass.
@@ -1079,45 +1058,22 @@ return mh1;
             if (smgr == null)  return;
             if (allowedModes == TRUSTED)  return;
 
-            final boolean overridden = isCheckMemberAccessOverridden(smgr);
             // Step 1:
-            {
-                // Default policy is to allow Member.PUBLIC; no need to check
-                // permission if SecurityManager is the default implementation
-                final int which = Member.PUBLIC;
-                final Class<?> clazz = refc;
-                if (overridden) {
-                    // Don't refactor; otherwise break the stack depth for
-                    // checkMemberAccess of subclasses of SecurityManager as specified.
-                    smgr.checkMemberAccess(clazz, which);
-                }
-            }
-
-            // Step 2:
             if (!isFullPowerLookup() ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
-            // Step 3:
+            // Step 2:
             if (m.isPublic()) return;
             Class<?> defc = m.getDeclaringClass();
             {
-                // Inline SecurityManager.checkMemberAccess
-                final int which = Member.DECLARED;
-                final Class<?> clazz = defc;
-                if (!overridden) {
-                    if (!isFullPowerLookup()) {
-                        smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
-                    }
-                } else {
-                    // Don't refactor; otherwise break the stack depth for
-                    // checkMemberAccess of subclasses of SecurityManager as specified.
-                    smgr.checkMemberAccess(clazz, which);
+                if (!isFullPowerLookup()) {
+                    smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
                 }
             }
 
-            // Step 4:
+            // Step 3:
             if (defc != refc) {
                 ReflectUtil.checkPackageAccess(defc);
             }

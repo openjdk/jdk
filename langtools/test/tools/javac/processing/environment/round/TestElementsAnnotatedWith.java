@@ -30,11 +30,13 @@
  * @build   JavacTestingAbstractProcessor
  * @compile TestElementsAnnotatedWith.java
  * @compile InheritedAnnotation.java
+ * @compile TpAnno.java
  * @compile -processor TestElementsAnnotatedWith -proc:only SurfaceAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only BuriedAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only Part1.java Part2.java
  * @compile -processor TestElementsAnnotatedWith -proc:only C2.java
  * @compile -processor TestElementsAnnotatedWith -proc:only Foo.java
+ * @compile -processor TestElementsAnnotatedWith -proc:only TypeParameterAnnotations.java
  * @compile Foo.java
  * @compile/process -processor TestElementsAnnotatedWith -proc:only Foo
  */

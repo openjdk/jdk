@@ -1,0 +1,5 @@
+SerializableAbstractClassWithNonAbstractMethodsTest.java:40:5: compiler.warn.missing.SVUID: SerializableAbstractClassWithNonAbstractMethodsTest.IDefault
+SerializableAbstractClassWithNonAbstractMethodsTest.java:31:10: compiler.warn.missing.SVUID: SerializableAbstractClassWithNonAbstractMethodsTest
+- compiler.err.warnings.and.werror
+1 error
+2 warnings
