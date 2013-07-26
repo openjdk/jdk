@@ -29,6 +29,7 @@
 #include "io_util.h"
 #include "io_util_md.h"
 #include <stdio.h>
+#include <windows.h>
 
 #include <wchar.h>
 #include <io.h>
@@ -39,6 +40,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <wincon.h>
+
 
 static DWORD MAX_INPUT_EVENTS = 2000;
 
@@ -569,42 +571,75 @@ handleLseek(FD fd, jlong offset, jint whence)
 }
 
 size_t
-getLastErrorString(char *buf, size_t len)
+getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
 {
-    DWORD errval;
-    if (len > 0) {
-        if ((errval = GetLastError()) != 0) {
-            // DOS error
-            size_t n = (size_t)FormatMessage(
-                FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL,
-                errval,
-                0,
-                buf,
-                (DWORD)len,
-                NULL);
-            if (n > 3) {
-                // Drop final '.', CR, LF
-                if (buf[n - 1] == '\n') n--;
-                if (buf[n - 1] == '\r') n--;
-                if (buf[n - 1] == '.') n--;
-                buf[n] = '\0';
+    size_t n = 0;
+    if (cbErrorMsg > 0) {
+        BOOLEAN noError = FALSE;
+        WCHAR *utf16_osErrorMsg = (WCHAR *)malloc(cbErrorMsg*sizeof(WCHAR));
+        if (utf16_osErrorMsg == NULL) {
+            // OOM accident
+            strncpy(utf8_jvmErrorMsg, "Out of memory", cbErrorMsg);
+            // truncate if too long
+            utf8_jvmErrorMsg[cbErrorMsg - 1] = '\0';
+            n = strlen(utf8_jvmErrorMsg);
+        } else {
+            DWORD errval = GetLastError();
+            if (errval != 0) {
+                // WIN32 error
+                n = (size_t)FormatMessageW(
+                    FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL,
+                    errval,
+                    0,
+                    utf16_osErrorMsg,
+                    (DWORD)cbErrorMsg,
+                    NULL);
+                if (n > 3) {
+                    // Drop final '.', CR, LF
+                    if (utf16_osErrorMsg[n - 1] == L'\n') --n;
+                    if (utf16_osErrorMsg[n - 1] == L'\r') --n;
+                    if (utf16_osErrorMsg[n - 1] == L'.') --n;
+                    utf16_osErrorMsg[n] = L'\0';
+                }
+            } else if (errno != 0) {
+                // C runtime error that has no corresponding WIN32 error code
+                const WCHAR *rtError = _wcserror(errno);
+                if (rtError != NULL) {
+                    wcsncpy(utf16_osErrorMsg, rtError, cbErrorMsg);
+                    // truncate if too long
+                    utf16_osErrorMsg[cbErrorMsg - 1] = L'\0';
+                    n = wcslen(utf16_osErrorMsg);
+                }
+            } else
+                noError = TRUE; //OS has no error to report
+
+            if (!noError) {
+                if (n > 0) {
+                    n = WideCharToMultiByte(
+                        CP_UTF8,
+                        0,
+                        utf16_osErrorMsg,
+                        n,
+                        utf8_jvmErrorMsg,
+                        cbErrorMsg,
+                        NULL,
+                        NULL);
+
+                    // no way to die
+                    if (n > 0)
+                        utf8_jvmErrorMsg[min(cbErrorMsg - 1, n)] = '\0';
+                }
+
+                if (n <= 0) {
+                    strncpy(utf8_jvmErrorMsg, "Secondary error while OS message extraction", cbErrorMsg);
+                    // truncate if too long
+                    utf8_jvmErrorMsg[cbErrorMsg - 1] = '\0';
+                    n = strlen(utf8_jvmErrorMsg);
+                }
             }
-            return n;
-        }
-
-        if (errno != 0) {
-            // C runtime error that has no corresponding DOS error code
-            const char *err = strerror(errno);
-            size_t n = strlen(err);
-            if (n >= len)
-                n = len - 1;
-
-            strncpy(buf, err, n);
-            buf[n] = '\0';
-            return n;
+            free(utf16_osErrorMsg);
         }
     }
-
-    return 0;
+    return n;
 }
