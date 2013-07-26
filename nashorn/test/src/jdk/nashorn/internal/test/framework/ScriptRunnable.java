@@ -174,6 +174,9 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
         cmd.add(System.getProperty("java.home") + separator + "bin" + separator + "java");
         cmd.add("-Djava.ext.dirs=dist");
+        for (String str : forkJVMOptions) {
+            cmd.add(str);
+        }
         cmd.add(Shell.class.getName());
         // now add the rest of the "in process" runtime arguments
         cmd.addAll(getRuntimeArgs());

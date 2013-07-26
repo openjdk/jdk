@@ -47,7 +47,7 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
  * {@code pop}.
  */
-public class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
+public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // These add to the back and front of the list
     private static final InvokeByName PUSH    = new InvokeByName("push",    ScriptObject.class, void.class, Object.class);
     private static final InvokeByName UNSHIFT = new InvokeByName("unshift", ScriptObject.class, void.class, Object.class);
