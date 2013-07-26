@@ -36,6 +36,7 @@ public interface TestConfig {
     public static final String   OPTIONS_EXPECT_RUN_FAIL     = "expect-run-fail";
     public static final String   OPTIONS_IGNORE_STD_ERROR    = "ignore-std-error";
     public static final String   OPTIONS_COMPARE             = "compare";
+    public static final String   OPTIONS_FORK                = "fork";
 
     // System property names used for various test configurations
 

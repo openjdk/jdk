@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_CHECK_COMPI
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_COMPARE;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_COMPILE_FAIL;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_RUN_FAIL;
+import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_FORK;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_IGNORE_STD_ERROR;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_RUN;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_FAILED_LIST_FILE;
@@ -208,6 +209,7 @@ final class TestFinder {
         boolean checkCompilerMsg = false;
         boolean noCompare = false;
         boolean ignoreStdError = false;
+        boolean fork = false;
 
         final List<String> engineOptions = new ArrayList<>();
         final List<String> scriptArguments = new ArrayList<>();
@@ -284,6 +286,9 @@ final class TestFinder {
                 case "@option":
                     engineOptions.add(scanner.next());
                     break;
+                case "@fork":
+                    fork = true;
+                    break;
                 }
 
                 // negative tests are expected to fail at runtime only
@@ -323,6 +328,9 @@ final class TestFinder {
             }
             if (ignoreStdError) {
                 testOptions.put(OPTIONS_IGNORE_STD_ERROR, "true");
+            }
+            if (fork) {
+                testOptions.put(OPTIONS_FORK, "true");
             }
 
             tests.add(factory.createTest(framework, testFile.toFile(), engineOptions, testOptions, scriptArguments));
