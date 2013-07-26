@@ -218,6 +218,14 @@ public class Check {
         return prev;
     }
 
+    /*  This idiom should be used only in cases when it is needed to set the lint
+     *  of an environment that has been created in a phase previous to annotations
+     *  processing.
+     */
+    Lint getLint() {
+        return lint;
+    }
+
     DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
         DeferredLintHandler prev = deferredLintHandler;
         deferredLintHandler = newDeferredLintHandler;
@@ -889,7 +897,8 @@ public class Check {
                     assertConvertible(arg, arg.type, varArg, warn);
                     args = args.tail;
                 }
-            } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
+            } else if ((sym.flags() & (VARARGS | SIGNATURE_POLYMORPHIC)) == VARARGS &&
+                    allowVarargs) {
                 // non-varargs call to varargs method
                 Type varParam = owntype.getParameterTypes().last();
                 Type lastArg = argtypes.last();
@@ -2265,24 +2274,6 @@ public class Check {
             ((ClassType)c.type).supertype_field = types.createErrorType((ClassSymbol)st.tsym, Type.noType);
         c.type = types.createErrorType(c, c.type);
         c.flags_field |= ACYCLIC;
-    }
-
-    /**
-     * Check that functional interface methods would make sense when seen
-     * from the perspective of the implementing class
-     */
-    void checkFunctionalInterface(JCTree tree, Type funcInterface) {
-        ClassType c = new ClassType(Type.noType, List.<Type>nil(), null);
-        ClassSymbol csym = new ClassSymbol(0, names.empty, c, syms.noSymbol);
-        c.interfaces_field = List.of(types.removeWildcards(funcInterface));
-        c.supertype_field = syms.objectType;
-        c.tsym = csym;
-        csym.members_field = new Scope(csym);
-        Symbol descSym = types.findDescriptorSymbol(funcInterface.tsym);
-        Type descType = types.findDescriptorType(funcInterface);
-        csym.members_field.enter(new MethodSymbol(PUBLIC, descSym.name, descType, csym));
-        csym.completer = null;
-        checkImplementations(tree, csym, csym);
     }
 
     /** Check that all methods which implement some

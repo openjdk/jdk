@@ -31,6 +31,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
@@ -39,6 +40,11 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
  */
 @ScriptClass("Int16Array")
 public final class NativeInt16Array extends ArrayBufferView {
+
+    // initialized by nasgen
+    @SuppressWarnings("unused")
+    private static PropertyMap $nasgenmap$;
+
     /**
      * The size in bytes of each element in the array.
      */
@@ -145,7 +151,7 @@ public final class NativeInt16Array extends ArrayBufferView {
     }
 
     @Override
-    protected ScriptObject getPrototype() {
-        return Global.instance().getInt16ArrayPrototype();
+    protected ScriptObject getPrototype(final Global global) {
+        return global.getInt16ArrayPrototype();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package javax.security.auth.callback;
 
 /**
  * <p> Underlying security services instantiate and pass a
- * <code>TextInputCallback</code> to the <code>handle</code>
- * method of a <code>CallbackHandler</code> to retrieve generic text
+ * {@code TextInputCallback} to the {@code handle}
+ * method of a {@code CallbackHandler} to retrieve generic text
  * information.
  *
  * @see javax.security.auth.callback.CallbackHandler
@@ -54,14 +54,14 @@ public class TextInputCallback implements Callback, java.io.Serializable {
     private String inputText;
 
     /**
-     * Construct a <code>TextInputCallback</code> with a prompt.
+     * Construct a {@code TextInputCallback} with a prompt.
      *
      * <p>
      *
      * @param prompt the prompt used to request the information.
      *
-     * @exception IllegalArgumentException if <code>prompt</code> is null
-     *                  or if <code>prompt</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code prompt} is null
+     *                  or if {@code prompt} has a length of 0.
      */
     public TextInputCallback(String prompt) {
         if (prompt == null || prompt.length() == 0)
@@ -70,7 +70,7 @@ public class TextInputCallback implements Callback, java.io.Serializable {
     }
 
     /**
-     * Construct a <code>TextInputCallback</code> with a prompt
+     * Construct a {@code TextInputCallback} with a prompt
      * and default input value.
      *
      * <p>
@@ -80,10 +80,10 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      * @param defaultText the text to be used as the default text displayed
      *                  with the prompt.
      *
-     * @exception IllegalArgumentException if <code>prompt</code> is null,
-     *                  if <code>prompt</code> has a length of 0,
-     *                  if <code>defaultText</code> is null
-     *                  or if <code>defaultText</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code prompt} is null,
+     *                  if {@code prompt} has a length of 0,
+     *                  if {@code defaultText} is null
+     *                  or if {@code defaultText} has a length of 0.
      */
     public TextInputCallback(String prompt, String defaultText) {
         if (prompt == null || prompt.length() == 0 ||
@@ -110,8 +110,8 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      *
      * <p>
      *
-     * @return the default text, or null if this <code>TextInputCallback</code>
-     *          was not instantiated with <code>defaultText</code>.
+     * @return the default text, or null if this {@code TextInputCallback}
+     *          was not instantiated with {@code defaultText}.
      */
     public String getDefaultText() {
         return defaultText;

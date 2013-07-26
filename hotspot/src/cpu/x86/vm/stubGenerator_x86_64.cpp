@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      ExternalAddress mxcsr_std(StubRoutines::x86::mxcsr_std());
+      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
       __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
@@ -729,17 +729,18 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls) {
       Label ok_ret;
+      ExternalAddress mxcsr_std(StubRoutines::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      __ cmpl(rax, *(int *)(StubRoutines::x86::mxcsr_std()));
+      __ cmp32(rax, mxcsr_std);
       __ jcc(Assembler::equal, ok_ret);
 
       __ warn("MXCSR changed by native JNI code, use -XX:+RestoreMXCSROnJNICall");
 
-      __ ldmxcsr(ExternalAddress(StubRoutines::x86::mxcsr_std()));
+      __ ldmxcsr(mxcsr_std);
 
       __ bind(ok_ret);
       __ addptr(rsp, wordSize);
@@ -3357,7 +3358,45 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Safefetch stubs.
+  void generate_safefetch(const char* name, int size, address* entry,
+                          address* fault_pc, address* continuation_pc) {
+    // safefetch signatures:
+    //   int      SafeFetch32(int*      adr, int      errValue);
+    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
+    //
+    // arguments:
+    //   c_rarg0 = adr
+    //   c_rarg1 = errValue
+    //
+    // result:
+    //   PPC_RET  = *adr or errValue
 
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    // Entry point, pc or function descriptor.
+    *entry = __ pc();
+
+    // Load *adr into c_rarg1, may fault.
+    *fault_pc = __ pc();
+    switch (size) {
+      case 4:
+        // int32_t
+        __ movl(c_rarg1, Address(c_rarg0, 0));
+        break;
+      case 8:
+        // int64_t
+        __ movq(c_rarg1, Address(c_rarg0, 0));
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+
+    // return errValue or *adr
+    *continuation_pc = __ pc();
+    __ movq(rax, c_rarg1);
+    __ ret(0);
+  }
 
   // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
   // to hide instruction latency
@@ -3584,7 +3623,45 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Ouput:
+   *       rax   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions");
 
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
+
+    address start = __ pc();
+    // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
+    // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
+    // rscratch1: r10
+    const Register crc   = c_rarg0;  // crc
+    const Register buf   = c_rarg1;  // source java byte array address
+    const Register len   = c_rarg2;  // length
+    const Register table = c_rarg3;  // crc_table address (reuse register)
+    const Register tmp   = r11;
+    assert_different_registers(crc, buf, len, table, tmp, rax);
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len, table, tmp);
+
+    __ movl(rax, crc);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+  }
 
 #undef __
 #define __ masm->
@@ -3691,12 +3768,35 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+  void create_control_words() {
+    // Round to nearest, 53-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_std   = 0x027F;
+    // Round to zero, 53-bit mode, exception mased
+    StubRoutines::_fpu_cntrl_wrd_trunc = 0x0D7F;
+    // Round to nearest, 24-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_24    = 0x007F;
+    // Round to nearest, 64-bit mode, exceptions masked
+    StubRoutines::_fpu_cntrl_wrd_64    = 0x037F;
+    // Round to nearest, 64-bit mode, exceptions masked
+    StubRoutines::_mxcsr_std           = 0x1F80;
+    // Note: the following two constants are 80-bit values
+    //       layout is critical for correct loading by FPU.
+    // Bias for strict fp multiply/divide
+    StubRoutines::_fpu_subnormal_bias1[0]= 0x00000000; // 2^(-15360) == 0x03ff 8000 0000 0000 0000
+    StubRoutines::_fpu_subnormal_bias1[1]= 0x80000000;
+    StubRoutines::_fpu_subnormal_bias1[2]= 0x03ff;
+    // Un-Bias for strict fp multiply/divide
+    StubRoutines::_fpu_subnormal_bias2[0]= 0x00000000; // 2^(+15360) == 0x7bff 8000 0000 0000 0000
+    StubRoutines::_fpu_subnormal_bias2[1]= 0x80000000;
+    StubRoutines::_fpu_subnormal_bias2[2]= 0x7bff;
+  }
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
-    // This platform-specific stub is needed by generate_call_stub()
-    StubRoutines::x86::_mxcsr_std        = generate_fp_mask("mxcsr_std",        0x0000000000001F80);
+    // This platform-specific settings are needed by generate_call_stub()
+    create_control_words();
 
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
@@ -3736,6 +3836,11 @@ class StubGenerator: public StubCodeGenerator {
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
                                                 throw_StackOverflowError));
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
   void generate_all() {
@@ -3790,6 +3895,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
     }
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
+                                                       &StubRoutines::_safefetch32_fault_pc,
+                                                       &StubRoutines::_safefetch32_continuation_pc);
+    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
+                                                       &StubRoutines::_safefetchN_fault_pc,
+                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
  public:

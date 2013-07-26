@@ -22,25 +22,34 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
-public final class CodeRangeBuffer {
+public final class CodeRangeBuffer implements Cloneable {
     private static final int INIT_MULTI_BYTE_RANGE_SIZE = 5;
     private static final int ALL_MULTI_BYTE_RANGE = 0x7fffffff;
 
-    int[]p;
+    int[] p;
     int used;
 
-    public CodeRangeBuffer(int[]ranges) {
-        p = ranges;
-        used = ranges[0] + 1;
-    }
 
     public CodeRangeBuffer() {
         p = new int[INIT_MULTI_BYTE_RANGE_SIZE];
         writeCodePoint(0, 0);
     }
 
-    public int[]getCodeRange() {
-        return p;
+    // CodeRange.isInCodeRange
+    public boolean isInCodeRange(int code) {
+        int low = 0;
+        int n = p[0];
+        int high = n;
+
+        while (low < high) {
+            int x = (low + high) >> 1;
+            if (code > p[(x << 1) + 2]) {
+                low = x + 1;
+            } else {
+                high = x;
+            }
+        }
+        return low < n && code >= p[(low << 1) + 1];
     }
 
     private CodeRangeBuffer(CodeRangeBuffer orig) {
@@ -52,12 +61,12 @@ public final class CodeRangeBuffer {
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("CodeRange");
-        buf.append("\n  used: " + used);
-        buf.append("\n  code point: " + p[0]);
+        buf.append("\n  used: ").append(used);
+        buf.append("\n  code point: ").append(p[0]);
         buf.append("\n  ranges: ");
 
         for (int i=0; i<p[0]; i++) {
-            buf.append("[" + rangeNumToString(p[i * 2 + 1]) + ".." + rangeNumToString(p[i * 2 + 2]) + "]");
+            buf.append("[").append(rangeNumToString(p[i * 2 + 1])).append("..").append(rangeNumToString(p[i * 2 + 2])).append("]");
             if (i > 0 && i % 6 == 0) buf.append("\n          ");
         }
 
@@ -108,6 +117,7 @@ public final class CodeRangeBuffer {
         if (used < u) used = u;
     }
 
+    @Override
     public CodeRangeBuffer clone() {
         return new CodeRangeBuffer(this);
     }
@@ -183,7 +193,7 @@ public final class CodeRangeBuffer {
 
     // add_code_range, be aware of it returning null!
     public static CodeRangeBuffer addCodeRange(CodeRangeBuffer pbuf, ScanEnvironment env, int from, int to) {
-        if (from >to) {
+        if (from > to) {
             if (env.syntax.allowEmptyRangeInCC()) {
                 return pbuf;
             } else {
