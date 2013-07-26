@@ -353,7 +353,8 @@ class Chunk: CHeapObj<mtChunk> {
     slack      = 20,            // suspected sizeof(Chunk) + internal malloc headers
 #endif
 
-    init_size  =  1*K  - slack, // Size of first chunk
+    tiny_size  =  256  - slack, // Size of first chunk (tiny)
+    init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
     medium_size= 10*K  - slack, // Size of medium-sized chunk
     size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
     non_pool_size = init_size + 32 // An initial size which is not one of above

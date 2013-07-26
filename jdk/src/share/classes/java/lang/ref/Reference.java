@@ -89,7 +89,7 @@ public abstract class Reference<T> {
 
     private T referent;         /* Treated specially by GC */
 
-    ReferenceQueue<? super T> queue;
+    volatile ReferenceQueue<? super T> queue;
 
     /* When active:   NULL
      *     pending:   this
@@ -225,9 +225,7 @@ public abstract class Reference<T> {
      *           been enqueued
      */
     public boolean isEnqueued() {
-        synchronized (this) {
-            return (this.next != null && this.queue == ReferenceQueue.ENQUEUED);
-        }
+        return (this.queue == ReferenceQueue.ENQUEUED);
     }
 
     /**

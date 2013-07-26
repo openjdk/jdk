@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,11 +181,11 @@ public final class KerberosPrincipal
     /**
      * Returns a hashcode for this principal. The hash code is defined to
      * be the result of the following  calculation:
-     * <pre><code>
+     * <pre>{@code
      *  hashCode = getName().hashCode();
-     * </code></pre>
+     * }</pre>
      *
-     * @return a hashCode() for the <code>KerberosPrincipal</code>
+     * @return a hashCode() for the {@code KerberosPrincipal}
      */
     public int hashCode() {
         return getName().hashCode();
@@ -194,11 +194,11 @@ public final class KerberosPrincipal
     /**
      * Compares the specified Object with this Principal for equality.
      * Returns true if the given object is also a
-     * <code>KerberosPrincipal</code> and the two
-     * <code>KerberosPrincipal</code> instances are equivalent.
-     * More formally two <code>KerberosPrincipal</code> instances are equal
-     * if the values returned by <code>getName()</code> are equal and the
-     * values returned by <code>getNameType()</code> are equal.
+     * {@code KerberosPrincipal} and the two
+     * {@code KerberosPrincipal} instances are equivalent.
+     * More formally two {@code KerberosPrincipal} instances are equal
+     * if the values returned by {@code getName()} are equal and the
+     * values returned by {@code getNameType()} are equal.
      *
      * @param other the Object to compare to
      * @return true if the Object passed in represents the same principal
@@ -225,7 +225,7 @@ public final class KerberosPrincipal
     /**
      * Save the KerberosPrincipal object to a stream
      *
-     * @serialData this <code>KerberosPrincipal</code> is serialized
+     * @serialData this {@code KerberosPrincipal} is serialized
      *          by writing out the PrincipalName and the
      *          realm in their DER-encoded form as specified in Section 5.2.2 of
      *          <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.

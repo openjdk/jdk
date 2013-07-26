@@ -321,6 +321,21 @@ public class SpliteratorTraversingAndSplittingTest {
             db.addCollection(
                     c -> new AbstractSortedSetImpl(c));
 
+            class IterableWrapper implements Iterable<Integer> {
+                final Iterable<Integer> it;
+
+                IterableWrapper(Iterable<Integer> it) {
+                    this.it = it;
+                }
+
+                @Override
+                public Iterator<Integer> iterator() {
+                    return it.iterator();
+                }
+            }
+            db.add("new Iterable.spliterator()",
+                   () -> new IterableWrapper(exp).spliterator());
+
             //
 
             db.add("Arrays.asList().spliterator()",

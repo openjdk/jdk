@@ -96,7 +96,7 @@ import sun.util.spi.CalendarProvider;
  * concrete subclass, such as <code>ERA</code>.  See individual field
  * documentation and subclass documentation for details.
  *
- * <h4>Getting and Setting Calendar Field Values</h4>
+ * <h3>Getting and Setting Calendar Field Values</h3>
  *
  * <p>The calendar field values can be set by calling the <code>set</code>
  * methods. Any field values set in a <code>Calendar</code> will not be
@@ -207,7 +207,7 @@ import sun.util.spi.CalendarProvider;
  * <h4>Field Manipulation</h4>
  *
  * The calendar fields can be changed using three methods:
- * <code>set()</code>, <code>add()</code>, and <code>roll()</code>.</p>
+ * <code>set()</code>, <code>add()</code>, and <code>roll()</code>.
  *
  * <p><strong><code>set(f, value)</code></strong> changes calendar field
  * <code>f</code> to <code>value</code>.  In addition, it sets an
@@ -2024,6 +2024,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * including cases that the value has been set by internal fields
      * calculations triggered by a <code>get</code> method call.
      *
+     * @param field the calendar field to test
      * @return <code>true</code> if the given calendar field has a value set;
      * <code>false</code> otherwise.
      */

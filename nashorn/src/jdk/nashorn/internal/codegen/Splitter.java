@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -221,14 +220,13 @@ final class Splitter extends NodeVisitor<LexicalContext> {
      * @return New split node.
      */
     private SplitNode createBlockSplitNode(final Block parent, final FunctionNode function, final List<Statement> statements, final long weight) {
-        final int    lineNumber = parent.getLineNumber();
         final long   token      = parent.getToken();
         final int    finish     = parent.getFinish();
         final String name       = function.uniqueName(SPLIT_PREFIX.symbolName());
 
-        final Block newBlock = new Block(lineNumber, token, finish, statements);
+        final Block newBlock = new Block(token, finish, statements);
 
-        return new SplitNode(lineNumber, name, newBlock, compiler.findUnit(weight + WeighNodes.FUNCTION_WEIGHT));
+        return new SplitNode(name, newBlock, compiler.findUnit(weight + WeighNodes.FUNCTION_WEIGHT));
     }
 
     @Override

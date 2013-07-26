@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMExcC14NMethod.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMExcC14NMethod.java 1197150 2011-11-03 14:34:57Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -50,18 +52,20 @@ import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerExcepti
 public final class DOMExcC14NMethod extends ApacheCanonicalizer {
 
     public void init(TransformParameterSpec params)
-        throws InvalidAlgorithmParameterException {
+        throws InvalidAlgorithmParameterException
+    {
         if (params != null) {
             if (!(params instanceof ExcC14NParameterSpec)) {
                 throw new InvalidAlgorithmParameterException
                     ("params must be of type ExcC14NParameterSpec");
             }
-            this.params = (C14NMethodParameterSpec) params;
+            this.params = (C14NMethodParameterSpec)params;
         }
     }
 
     public void init(XMLStructure parent, XMLCryptoContext context)
-        throws InvalidAlgorithmParameterException {
+        throws InvalidAlgorithmParameterException
+    {
         super.init(parent, context);
         Element paramsElem = DOMUtils.getFirstChildElement(transformElem);
         if (paramsElem == null) {
@@ -77,7 +81,7 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         this.inclusiveNamespaces = prefixListAttr;
         int begin = 0;
         int end = prefixListAttr.indexOf(' ');
-        List prefixList = new ArrayList();
+        List<String> prefixList = new ArrayList<String>();
         while (end != -1) {
             prefixList.add(prefixListAttr.substring(begin, end));
             begin = end + 1;
@@ -90,39 +94,42 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
     }
 
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
-        throws MarshalException {
-
+        throws MarshalException
+    {
         super.marshalParams(parent, context);
         AlgorithmParameterSpec spec = getParameterSpec();
         if (spec == null) {
             return;
         }
 
-        String prefix =
-            DOMUtils.getNSPrefix(context, CanonicalizationMethod.EXCLUSIVE);
-        Element excElem = DOMUtils.createElement
-            (ownerDoc, "InclusiveNamespaces",
-             CanonicalizationMethod.EXCLUSIVE, prefix);
+        String prefix = DOMUtils.getNSPrefix(context,
+                                             CanonicalizationMethod.EXCLUSIVE);
+        Element eElem = DOMUtils.createElement(ownerDoc,
+                                               "InclusiveNamespaces",
+                                               CanonicalizationMethod.EXCLUSIVE,
+                                               prefix);
         if (prefix == null || prefix.length() == 0) {
-            excElem.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns",
-                CanonicalizationMethod.EXCLUSIVE);
+            eElem.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns",
+                                 CanonicalizationMethod.EXCLUSIVE);
         } else {
-            excElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
-                "xmlns:" + prefix, CanonicalizationMethod.EXCLUSIVE);
+            eElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
+                                   "xmlns:" + prefix,
+                                   CanonicalizationMethod.EXCLUSIVE);
         }
 
-        ExcC14NParameterSpec params = (ExcC14NParameterSpec) spec;
+        ExcC14NParameterSpec params = (ExcC14NParameterSpec)spec;
         StringBuffer prefixListAttr = new StringBuffer("");
-        List prefixList = params.getPrefixList();
+        @SuppressWarnings("unchecked")
+        List<String> prefixList = params.getPrefixList();
         for (int i = 0, size = prefixList.size(); i < size; i++) {
-            prefixListAttr.append((String) prefixList.get(i));
+            prefixListAttr.append(prefixList.get(i));
             if (i < size - 1) {
                 prefixListAttr.append(" ");
             }
         }
-        DOMUtils.setAttribute(excElem, "PrefixList", prefixListAttr.toString());
+        DOMUtils.setAttribute(eElem, "PrefixList", prefixListAttr.toString());
         this.inclusiveNamespaces = prefixListAttr.toString();
-        transformElem.appendChild(excElem);
+        transformElem.appendChild(eElem);
     }
 
     public String getParamsNSURI() {
@@ -130,13 +137,13 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
     }
 
     public Data transform(Data data, XMLCryptoContext xc)
-        throws TransformException {
-
+        throws TransformException
+    {
         // ignore comments if dereferencing same-document URI that require
         // you to omit comments, even if the Transform says otherwise -
         // this is to be compliant with section 4.3.3.3 of W3C Rec.
         if (data instanceof DOMSubTreeData) {
-            DOMSubTreeData subTree = (DOMSubTreeData) data;
+            DOMSubTreeData subTree = (DOMSubTreeData)data;
             if (subTree.excludeComments()) {
                 try {
                     apacheCanonicalizer = Canonicalizer.getInstance
