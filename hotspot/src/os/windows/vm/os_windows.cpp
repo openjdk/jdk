@@ -1420,34 +1420,40 @@ static int _locate_module_by_addr(int pid, char * mod_fname, address base_addr,
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
 // NOTE: the reason we don't use SymGetModuleInfo() is it doesn't always
 //       return the full path to the DLL file, sometimes it returns path
 //       to the corresponding PDB file (debug info); sometimes it only
 //       returns partial path, which makes life painful.
 
-   struct _modinfo mi;
-   mi.addr      = addr;
-   mi.full_path = buf;
-   mi.buflen    = buflen;
-   int pid = os::current_process_id();
-   if (enumerate_modules(pid, _locate_module_by_addr, (void *)&mi)) {
-      // buf already contains path name
-      if (offset) *offset = addr - mi.base_addr;
-      return true;
-   } else {
-      if (buf) buf[0] = '\0';
-      if (offset) *offset = -1;
-      return false;
-   }
+  struct _modinfo mi;
+  mi.addr      = addr;
+  mi.full_path = buf;
+  mi.buflen    = buflen;
+  int pid = os::current_process_id();
+  if (enumerate_modules(pid, _locate_module_by_addr, (void *)&mi)) {
+    // buf already contains path name
+    if (offset) *offset = addr - mi.base_addr;
+    return true;
+  }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   if (Decoder::decode(addr, buf, buflen, offset)) {
     return true;
   }
   if (offset != NULL)  *offset  = -1;
-  if (buf != NULL) buf[0] = '\0';
+  buf[0] = '\0';
   return false;
 }
 
@@ -2317,6 +2323,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
   Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
 
+  // Handle SafeFetch32 and SafeFetchN exceptions.
+  if (StubRoutines::is_safefetch_fault(pc)) {
+    return Handle_Exception(exceptionInfo, StubRoutines::continuation_for_safefetch_fault(pc));
+  }
+
 #ifndef _WIN64
   // Execution protection violation - win32 running on AMD64 only
   // Handled first to avoid misdiagnosis as a "normal" access violation;
@@ -2686,6 +2697,19 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
     default:        ShouldNotReachHere();
   }
   return (address)-1;
+}
+#endif
+
+#ifndef PRODUCT
+void os::win32::call_test_func_with_wrapper(void (*funcPtr)(void)) {
+  // Install a win32 structured exception handler around the test
+  // function call so the VM can generate an error dump if needed.
+  __try {
+    (*funcPtr)();
+  } __except(topLevelExceptionFilter(
+             (_EXCEPTION_POINTERS*)_exception_info())) {
+    // Nothing to do.
+  }
 }
 #endif
 
@@ -4663,6 +4687,34 @@ void os::pause() {
     jio_fprintf(stderr,
       "Could not open pause file '%s', continuing immediately.\n", filename);
   }
+}
+
+os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
+  assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
+}
+
+/*
+ * See the caveats for this class in os_windows.hpp
+ * Protects the callback call so that raised OS EXCEPTIONS causes a jump back
+ * into this method and returns false. If no OS EXCEPTION was raised, returns
+ * true.
+ * The callback is supposed to provide the method that should be protected.
+ */
+bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
+  assert(!WatcherThread::watcher_thread()->has_crash_protection(),
+      "crash_protection already set?");
+
+  bool success = true;
+  __try {
+    WatcherThread::watcher_thread()->set_crash_protection(this);
+    cb.call();
+  } __except(EXCEPTION_EXECUTE_HANDLER) {
+    // only for protection, nothing to do
+    success = false;
+  }
+  WatcherThread::watcher_thread()->set_crash_protection(NULL);
+  return success;
 }
 
 // An Event wraps a win32 "CreateEvent" kernel handle.

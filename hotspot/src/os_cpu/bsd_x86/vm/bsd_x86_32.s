@@ -63,24 +63,6 @@ SYMBOL(fixcw):
         popl     %eax
         ret
 
-        .globl  SYMBOL(SafeFetch32), SYMBOL(Fetch32PFI), SYMBOL(Fetch32Resume)
-        .globl  SYMBOL(SafeFetchN)
-        ## TODO: avoid exposing Fetch32PFI and Fetch32Resume.
-        ## Instead, the signal handler would call a new SafeFetchTriage(FaultingEIP)
-        ## routine to vet the address.  If the address is the faulting LD then
-        ## SafeFetchTriage() would return the resume-at EIP, otherwise null.
-        ELF_TYPE(SafeFetch32,@function)
-        .p2align 4,,15
-SYMBOL(SafeFetch32):
-SYMBOL(SafeFetchN):
-         movl    0x8(%esp), %eax
-         movl    0x4(%esp), %ecx
-SYMBOL(Fetch32PFI):
-         movl    (%ecx), %eax
-SYMBOL(Fetch32Resume):
-         ret
-
-
         .globl  SYMBOL(SpinPause)
         ELF_TYPE(SpinPause,@function)
         .p2align 4,,15
