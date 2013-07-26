@@ -27,6 +27,7 @@
 # Default arch; it is changed below as needed.
 ARCH		= i386
 OS		= $(shell uname)
+AR		= ar
 
 ## OS = SunOS ##
 ifeq		($(OS),SunOS)
@@ -73,6 +74,7 @@ ARCH=$(ARCH1:i686=i386)
 ifdef LP64
 CFLAGS/sparcv9	+= -m64
 CFLAGS/amd64	+= -m64
+CFLAGS/ppc64	+= -m64
 else
 ARCH=$(ARCH1:amd64=i386)
 CFLAGS/i386	+= -m32
@@ -88,8 +90,20 @@ CFLAGS		+= -O
 DLDFLAGS	+= -shared
 LDFLAGS         += -ldl
 OUTFLAGS	+= -o $@
-## OS = Windows ##
-else   # !SunOS, !Linux => Darwin or Windows
+else
+## OS = AIX ##
+ifeq		($(OS),AIX)
+OS              = aix
+ARCH            = ppc64
+CC              = xlc_r
+CFLAGS          += -DAIX -g -qpic=large -q64
+CFLAGS/ppc64    += -q64
+AR              = ar -X64
+DLDFLAGS        += -qmkshrobj -lz
+OUTFLAGS        += -o $@
+LIB_EXT		= .so
+else
+## OS = Darwin ##
 ifeq ($(OS),Darwin)
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
@@ -113,7 +127,8 @@ DLDFLAGS        += -shared
 DLDFLAGS        += -lz
 LDFLAGS         += -ldl
 OUTFLAGS        += -o $@
-else #Windows
+else
+## OS = Windows ##
 OS		= windows
 CC		= gcc
 CFLAGS		+=  /nologo /MD /W3 /WX /O2 /Fo$(@:.dll=.obj) /Gi-
@@ -123,6 +138,7 @@ DLDFLAGS	+= /dll /subsystem:windows /incremental:no \
 OUTFLAGS	+= /link /out:$@
 LIB_EXT		= .dll
 endif   # Darwin
+endif   # AIX
 endif	# Linux
 endif	# SunOS
 
@@ -176,7 +192,7 @@ $(LIBRARIES): $(TARGET_DIR) $(TARGET_DIR)/Makefile
 	if [ ! -f $@ ]; then cd $(TARGET_DIR); make all-opcodes; fi
 
 $(TARGET_DIR)/Makefile:
-	(cd $(TARGET_DIR); CC=$(CC) CFLAGS="$(CFLAGS)" $(BINUTILSDIR)/configure --disable-nls $(CONFIGURE_ARGS))
+	(cd $(TARGET_DIR); CC=$(CC) CFLAGS="$(CFLAGS)" AR="$(AR)" $(BINUTILSDIR)/configure --disable-nls $(CONFIGURE_ARGS))
 
 $(TARGET): $(SOURCE) $(LIBS) $(LIBRARIES) $(TARGET_DIR)
 	$(CC) $(OUTFLAGS) $(CPPFLAGS) $(CFLAGS) $(SOURCE) $(DLDFLAGS) $(LIBRARIES)
