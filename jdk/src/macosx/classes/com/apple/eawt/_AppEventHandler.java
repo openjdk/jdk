@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.File;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 
 import com.apple.eawt.AppEvent.*;
 
@@ -269,11 +271,9 @@ class _AppEventHandler {
     }
 
     class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReOpenedListener> {
-        void performOnListeners(final List<AppReOpenedListener> listeners, final _NativeEvent event) {
+        void performOnListener(AppReOpenedListener listener, final _NativeEvent event) {
             final AppReOpenedEvent e = new AppReOpenedEvent();
-            for (final AppReOpenedListener listener : listeners) {
-                listener.appReOpened(e);
-            }
+            listener.appReOpened(e);
         }
     }
 
@@ -415,50 +415,67 @@ class _AppEventHandler {
     }
 
     abstract class _AppEventMultiplexor<L> {
-        final List<L> _listeners = new ArrayList<L>(0);
+        private final Map<L, AppContext> listenerToAppContext =
+                new IdentityHashMap<L, AppContext>();
         boolean nativeListenerRegistered;
 
         // called from AppKit Thread-0
         void dispatch(final _NativeEvent event, final Object... args) {
-            // grab a local ref to the listeners
-            final List<L> localListeners;
+            // grab a local ref to the listeners and its contexts as an array of the map's entries
+            final ArrayList<Map.Entry<L, AppContext>> localEntries;
             synchronized (this) {
-                if (_listeners.size() == 0) return;
-                localListeners = new ArrayList<L>(_listeners);
+                if (listenerToAppContext.size() == 0) {
+                    return;
+                }
+                localEntries = new ArrayList<Map.Entry<L, AppContext>>(listenerToAppContext.size());
+                localEntries.addAll(listenerToAppContext.entrySet());
             }
 
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    performOnListeners(localListeners, event);
-                }
-            });
+            for (final Map.Entry<L, AppContext> e : localEntries) {
+                final L listener = e.getKey();
+                final AppContext listenerContext = e.getValue();
+                SunToolkit.invokeLaterOnAppContext(listenerContext, new Runnable() {
+                    public void run() {
+                        performOnListener(listener, event);
+                    }
+                });
+            }
         }
 
         synchronized void addListener(final L listener) {
+            setListenerContext(listener, AppContext.getAppContext());
+
             if (!nativeListenerRegistered) {
                 registerNativeListener();
                 nativeListenerRegistered = true;
             }
-            _listeners.add(listener);
         }
 
         synchronized void removeListener(final L listener) {
-            _listeners.remove(listener);
+            listenerToAppContext.remove(listener);
         }
 
-        abstract void performOnListeners(final List<L> listeners, final _NativeEvent event);
+        abstract void performOnListener(L listener, final _NativeEvent event);
         void registerNativeListener() { }
+
+        private void setListenerContext(L listener, AppContext listenerContext) {
+            if (listenerContext == null) {
+                throw new RuntimeException(
+                        "Attempting to add a listener from a thread group without AppContext");
+            }
+            listenerToAppContext.put(listener, AppContext.getAppContext());
+        }
     }
 
     abstract class _BooleanAppEventMultiplexor<L, E> extends _AppEventMultiplexor<L> {
         @Override
-        void performOnListeners(final List<L> listeners, final _NativeEvent event) {
+        void performOnListener(L listener, final _NativeEvent event) {
             final boolean isTrue = Boolean.TRUE.equals(event.get(0));
             final E e = createEvent(isTrue);
             if (isTrue) {
-                for (final L listener : listeners) performTrueEventOn(listener, e);
+                performTrueEventOn(listener, e);
             } else {
-                for (final L listener : listeners) performFalseEventOn(listener, e);
+                performFalseEventOn(listener, e);
             }
         }
 
@@ -479,29 +496,33 @@ class _AppEventHandler {
      */
     abstract class _AppEventDispatcher<H> {
         H _handler;
+        AppContext handlerContext;
 
         // called from AppKit Thread-0
         void dispatch(final _NativeEvent event) {
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    // grab a local ref to the handler
-                    final H localHandler;
-                    synchronized (_AppEventDispatcher.this) {
-                        localHandler = _handler;
-                    }
+            // grab a local ref to the handler
+            final H localHandler;
+            final AppContext localHandlerContext;
+            synchronized (_AppEventDispatcher.this) {
+                localHandler = _handler;
+                localHandlerContext = handlerContext;
+            }
 
-                    // invoke the handler outside of the synchronized block
-                    if (localHandler == null) {
-                        performDefaultAction(event);
-                    } else {
+            if (localHandler == null) {
+                performDefaultAction(event);
+            } else {
+                SunToolkit.invokeLaterOnAppContext(localHandlerContext, new Runnable() {
+                    public void run() {
                         performUsing(localHandler, event);
                     }
-                }
-            });
+                });
+            }
         }
 
         synchronized void setHandler(final H handler) {
             this._handler = handler;
+
+            setHandlerContext(AppContext.getAppContext());
 
             // if a new handler is installed, block addition of legacy ApplicationListeners
             if (handler == legacyHandler) return;
@@ -510,6 +531,15 @@ class _AppEventHandler {
 
         void performDefaultAction(final _NativeEvent event) { } // by default, do nothing
         abstract void performUsing(final H handler, final _NativeEvent event);
+
+        protected void setHandlerContext(AppContext ctx) {
+            if (ctx == null) {
+                throw new RuntimeException(
+                        "Attempting to set a handler from a thread group without AppContext");
+            }
+
+            handlerContext = ctx;
+        }
     }
 
     abstract class _QueuingAppEventDispatcher<H> extends _AppEventDispatcher<H> {
@@ -530,6 +560,8 @@ class _AppEventHandler {
 
         synchronized void setHandler(final H handler) {
             this._handler = handler;
+
+            setHandlerContext(AppContext.getAppContext());
 
             // dispatch any events in the queue
             if (queuedEvents != null) {

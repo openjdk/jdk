@@ -36,7 +36,7 @@ Options:
     Show this message.
 
 The following javac options are also supported
-  -bootclasspath, -classpath, -sourcepath, -Xmaxerrs, -Xmaxwarns
+  -bootclasspath, -classpath, -cp, -sourcepath, -Xmaxerrs, -Xmaxwarns
 
 To run doclint on part of a project, put the compiled classes for your
 project on the classpath (or bootclasspath), then specify the source files

@@ -24,12 +24,10 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.TokenType;
 final class Token {
     TokenType type;
     boolean escaped;
-    int base;               /* is number: 8, 16 (used in [....]) */
     int backP;
 
     // union fields
-    private int INT1, INT2, INT3, INT4, INT5;
-    private int []INTA1;
+    private int INT1, INT2, INT3, INT4;
 
     // union accessors
     int getC() {
@@ -51,13 +49,6 @@ final class Token {
     }
     void setAnchor(int anchor) {
         INT1 = anchor;
-    }
-
-    int getSubtype() {
-        return INT1;
-    }
-    void setSubtype(int subtype) {
-        INT1 = subtype;
     }
 
     // repeat union member
@@ -89,70 +80,11 @@ final class Token {
         INT4 = possessive ? 1 : 0;
     }
 
-    // backref union member
-    int getBackrefNum() {
-        return INT1;
-    }
-    void setBackrefNum(int num) {
-        INT1 = num;
-    }
-
-    int getBackrefRef1() {
+    int getBackrefRef() {
         return INT2;
     }
-    void setBackrefRef1(int ref1) {
+    void setBackrefRef(int ref1) {
         INT2 = ref1;
-    }
-
-    int[]getBackrefRefs() {
-        return INTA1;
-    }
-    void setBackrefRefs(int[]refs) {
-        INTA1 = refs;
-    }
-
-    boolean getBackrefByName() {
-        return INT3 != 0;
-    }
-    void setBackrefByName(boolean byName) {
-        INT3 = byName ? 1 : 0;
-    }
-
-    // USE_BACKREF_AT_LEVEL
-    boolean getBackrefExistLevel() {
-        return INT4 != 0;
-    }
-    void setBackrefExistLevel(boolean existLevel) {
-        INT4 = existLevel ? 1 : 0;
-    }
-
-    int getBackrefLevel() {
-        return INT5;
-    }
-    void setBackrefLevel(int level) {
-        INT5 = level;
-    }
-
-    // call union member
-    int getCallNameP() {
-        return INT1;
-    }
-    void setCallNameP(int nameP) {
-        INT1 = nameP;
-    }
-
-    int getCallNameEnd() {
-        return INT2;
-    }
-    void setCallNameEnd(int nameEnd) {
-        INT2 = nameEnd;
-    }
-
-    int getCallGNum() {
-        return INT3;
-    }
-    void setCallGNum(int gnum) {
-        INT3 = gnum;
     }
 
     // prop union member

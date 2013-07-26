@@ -78,6 +78,9 @@ public abstract class Type implements TypeMirror {
     /** Constant type: special type to be used during recovery of deferred expressions. */
     public static final JCNoType recoveryType = new JCNoType();
 
+    /** Constant type: special type to be used for marking stuck trees. */
+    public static final JCNoType stuckType = new JCNoType();
+
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */
@@ -1449,7 +1452,7 @@ public abstract class Type implements TypeMirror {
         }
 
         /** inference variable bounds */
-        private Map<InferenceBound, List<Type>> bounds;
+        protected Map<InferenceBound, List<Type>> bounds;
 
         /** inference variable's inferred type (set from Infer.java) */
         public Type inst = null;
@@ -1511,8 +1514,17 @@ public abstract class Type implements TypeMirror {
             return buf.toList();
         }
 
+        /** internal method used to override an undetvar bounds */
+        public void setBounds(InferenceBound ib, List<Type> newBounds) {
+            bounds.put(ib, newBounds);
+        }
+
         /** add a bound of a given kind - this might trigger listener notification */
-        public void addBound(InferenceBound ib, Type bound, Types types) {
+        public final void addBound(InferenceBound ib, Type bound, Types types) {
+            addBound(ib, bound, types, false);
+        }
+
+        protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             Type bound2 = toTypeVarMap.apply(bound);
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
@@ -1529,7 +1541,7 @@ public abstract class Type implements TypeMirror {
                 public Type apply(Type t) {
                     if (t.hasTag(UNDETVAR)) {
                         UndetVar uv = (UndetVar)t;
-                        return uv.qtype;
+                        return uv.inst != null ? uv.inst : uv.qtype;
                     } else {
                         return t.map(this);
                     }
@@ -1567,7 +1579,7 @@ public abstract class Type implements TypeMirror {
                     bounds.put(ib, newBounds.toList());
                     //step 3 - for each dependency, add new replaced bound
                     for (Type dep : deps) {
-                        addBound(ib, types.subst(dep, from, to), types);
+                        addBound(ib, types.subst(dep, from, to), types, true);
                     }
                 }
             } finally {
@@ -1582,6 +1594,39 @@ public abstract class Type implements TypeMirror {
             if (listener != null) {
                 listener.varChanged(this, ibs);
             }
+        }
+
+        public boolean isCaptured() {
+            return false;
+        }
+    }
+
+    /**
+     * This class is used to represent synthetic captured inference variables
+     * that can be generated during nested generic method calls. The only difference
+     * between these inference variables and ordinary ones is that captured inference
+     * variables cannot get new bounds through incorporation.
+     */
+    public static class CapturedUndetVar extends UndetVar {
+
+        public CapturedUndetVar(CapturedType origin, Types types) {
+            super(origin, types);
+            if (!origin.lower.hasTag(BOT)) {
+                bounds.put(InferenceBound.LOWER, List.of(origin.lower));
+            }
+        }
+
+        @Override
+        public void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
+            if (update) {
+                //only change bounds if request comes from substBounds
+                super.addBound(ib, bound, types, update);
+            }
+        }
+
+        @Override
+        public boolean isCaptured() {
+            return true;
         }
     }
 

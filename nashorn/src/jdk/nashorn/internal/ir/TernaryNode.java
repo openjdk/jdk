@@ -32,43 +32,43 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * TernaryNode nodes represent three operand operations (?:).
  */
 @Immutable
-public final class TernaryNode extends Node {
-    private final Node lhs;
+public final class TernaryNode extends Expression {
+    private final Expression test;
 
-    private final Node rhs;
+    private final Expression trueExpr;
 
     /** Third argument. */
-    private final Node third;
+    private final Expression falseExpr;
 
     /**
      * Constructor
      *
-     * @param token  token
-     * @param lhs    left hand side node
-     * @param rhs    right hand side node
-     * @param third  third node
+     * @param token     token
+     * @param test      test expression
+     * @param trueExpr  expression evaluated when test evaluates to true
+     * @param falseExpr expression evaluated when test evaluates to true
      */
-    public TernaryNode(final long token, final Node lhs, final Node rhs, final Node third) {
-        super(token, third.getFinish());
-        this.lhs = lhs;
-        this.rhs = rhs;
-        this.third = third;
+    public TernaryNode(final long token, final Expression test, final Expression trueExpr, final Expression falseExpr) {
+        super(token, falseExpr.getFinish());
+        this.test = test;
+        this.trueExpr = trueExpr;
+        this.falseExpr = falseExpr;
     }
 
-    private TernaryNode(final TernaryNode ternaryNode, final Node lhs, final Node rhs, final Node third) {
+    private TernaryNode(final TernaryNode ternaryNode, final Expression test, final Expression trueExpr, final Expression falseExpr) {
         super(ternaryNode);
-        this.lhs = lhs;
-        this.rhs = rhs;
-        this.third = third;
+        this.test = test;
+        this.trueExpr = trueExpr;
+        this.falseExpr = falseExpr;
     }
 
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterTernaryNode(this)) {
-            final Node newLhs = lhs().accept(visitor);
-            final Node newRhs = rhs().accept(visitor);
-            final Node newThird = third.accept(visitor);
-            return visitor.leaveTernaryNode(setThird(newThird).setLHS(newLhs).setRHS(newRhs));
+            final Expression newTest = (Expression)getTest().accept(visitor);
+            final Expression newTrueExpr = (Expression)getTrueExpression().accept(visitor);
+            final Expression newFalseExpr = (Expression)falseExpr.accept(visitor);
+            return visitor.leaveTernaryNode(setTest(newTest).setTrueExpression(newTrueExpr).setFalseExpression1(newFalseExpr));
         }
 
         return this;
@@ -76,96 +76,96 @@ public final class TernaryNode extends Node {
 
     @Override
     public void toString(final StringBuilder sb) {
-        final boolean lhsParen   = tokenType().needsParens(lhs().tokenType(), true);
-        final boolean rhsParen   = tokenType().needsParens(rhs().tokenType(), false);
-        final boolean thirdParen = tokenType().needsParens(third().tokenType(), false);
+        final boolean testParen  = tokenType().needsParens(getTest().tokenType(), true);
+        final boolean trueParen  = tokenType().needsParens(getTrueExpression().tokenType(), false);
+        final boolean falseParen = tokenType().needsParens(getFalseExpression().tokenType(), false);
 
-        if (lhsParen) {
+        if (testParen) {
             sb.append('(');
         }
-        lhs().toString(sb);
-        if (lhsParen) {
+        getTest().toString(sb);
+        if (testParen) {
             sb.append(')');
         }
 
         sb.append(" ? ");
 
-        if (rhsParen) {
+        if (trueParen) {
             sb.append('(');
         }
-        rhs().toString(sb);
-        if (rhsParen) {
+        getTrueExpression().toString(sb);
+        if (trueParen) {
             sb.append(')');
         }
 
         sb.append(" : ");
 
-        if (thirdParen) {
+        if (falseParen) {
             sb.append('(');
         }
-        third().toString(sb);
-        if (thirdParen) {
+        getFalseExpression().toString(sb);
+        if (falseParen) {
             sb.append(')');
         }
     }
 
     /**
-     * Get the lhs node for this ternary expression, i.e. "x" in x ? y : z
-     * @return a node
+     * Get the test expression for this ternary expression, i.e. "x" in x ? y : z
+     * @return the test expression
      */
-    public Node lhs() {
-        return lhs;
+    public Expression getTest() {
+        return test;
     }
 
     /**
-     * Get the rhs node for this ternary expression, i.e. "y" in x ? y : z
-     * @return a node
+     * Get the true expression for this ternary expression, i.e. "y" in x ? y : z
+     * @return the true expression
      */
-    public Node rhs() {
-        return rhs;
+    public Expression getTrueExpression() {
+        return trueExpr;
     }
 
     /**
-     * Get the "third" node for this ternary expression, i.e. "z" in x ? y : z
-     * @return a node
+     * Get the false expression for this ternary expression, i.e. "z" in x ? y : z
+     * @return the false expression
      */
-    public Node third() {
-        return third;
+    public Expression getFalseExpression() {
+        return falseExpr;
     }
 
     /**
-     * Set the left hand side expression for this node
-     * @param lhs new left hand side expression
+     * Set the test expression for this node
+     * @param test new test expression
      * @return a node equivalent to this one except for the requested change.
      */
-    public TernaryNode setLHS(final Node lhs) {
-        if (this.lhs == lhs) {
+    public TernaryNode setTest(final Expression test) {
+        if (this.test == test) {
             return this;
         }
-        return new TernaryNode(this, lhs, rhs, third);
+        return new TernaryNode(this, test, trueExpr, falseExpr);
     }
 
     /**
-     * Set the right hand side expression for this node
-     * @param rhs new left hand side expression
+     * Set the true expression for this node
+     * @param trueExpr new true expression
      * @return a node equivalent to this one except for the requested change.
      */
-    public TernaryNode setRHS(final Node rhs) {
-        if (this.rhs == rhs) {
+    public TernaryNode setTrueExpression(final Expression trueExpr) {
+        if (this.trueExpr == trueExpr) {
             return this;
         }
-        return new TernaryNode(this, lhs, rhs, third);
+        return new TernaryNode(this, test, trueExpr, falseExpr);
     }
 
     /**
-     * Reset the "third" node for this ternary expression, i.e. "z" in x ? y : z
-     * @param third a node
+     * Set the false expression for this node
+     * @param falseExpr new false expression
      * @return a node equivalent to this one except for the requested change.
      */
-    public TernaryNode setThird(final Node third) {
-        if (this.third == third) {
+    public TernaryNode setFalseExpression1(final Expression falseExpr) {
+        if (this.falseExpr == falseExpr) {
             return this;
         }
-        return new TernaryNode(this, lhs, rhs, third);
+        return new TernaryNode(this, test, trueExpr, falseExpr);
     }
 }

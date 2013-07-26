@@ -223,7 +223,6 @@ SUNWprivate_1.1 {
                 JVM_SetLength;
                 JVM_SetNativeThreadName;
                 JVM_SetPrimitiveArrayElement;
-                JVM_SetProtectionDomain;
                 JVM_SetSockOpt;
                 JVM_SetThreadPriority;
                 JVM_Sleep;
