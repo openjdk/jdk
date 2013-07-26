@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_CHECK_COMPI
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_COMPARE;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_COMPILE_FAIL;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_EXPECT_RUN_FAIL;
+import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_FORK;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_IGNORE_STD_ERROR;
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_RUN;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_FAIL_LIST;
@@ -68,6 +69,8 @@ public abstract class AbstractScriptRunnable {
     protected final boolean checkCompilerMsg;
     // .EXPECTED file compared for this or test?
     protected final boolean compare;
+    // should test run in a separate process?
+    protected final boolean fork;
     // ignore stderr output?
     protected final boolean ignoreStdError;
     // Foo.js.OUTPUT file where test stdout messages go
@@ -98,6 +101,7 @@ public abstract class AbstractScriptRunnable {
         this.checkCompilerMsg = testOptions.containsKey(OPTIONS_CHECK_COMPILE_MSG);
         this.ignoreStdError = testOptions.containsKey(OPTIONS_IGNORE_STD_ERROR);
         this.compare = testOptions.containsKey(OPTIONS_COMPARE);
+        this.fork = testOptions.containsKey(OPTIONS_FORK);
 
         final String testName = testFile.getName();
         this.outputFileName = buildDir + File.separator + testName + ".OUTPUT";
