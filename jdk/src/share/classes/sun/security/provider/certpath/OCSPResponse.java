@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -121,8 +122,8 @@ public final class OCSPResponse {
 
     public enum ResponseStatus {
         SUCCESSFUL,            // Response has valid confirmations
-        MALFORMED_REQUEST,     // Illegal confirmation request
-        INTERNAL_ERROR,        // Internal error in issuer
+        MALFORMED_REQUEST,     // Illegal request
+        INTERNAL_ERROR,        // Internal error in responder
         TRY_LATER,             // Try again later
         UNUSED,                // is not used
         SIG_REQUIRED,          // Must sign the request
@@ -381,9 +382,18 @@ public final class OCSPResponse {
                 Date date, byte[] nonce)
         throws CertPathValidatorException
     {
-        if (responseStatus != ResponseStatus.SUCCESSFUL) {
-            throw new CertPathValidatorException
-                ("OCSP response error: " + responseStatus);
+        switch (responseStatus) {
+            case SUCCESSFUL:
+                break;
+            case UNAUTHORIZED:
+            case TRY_LATER:
+            case INTERNAL_ERROR:
+                throw new CertPathValidatorException(
+                    "OCSP response error: " + responseStatus, null, null, -1,
+                    BasicReason.UNDETERMINED_REVOCATION_STATUS);
+            default:
+                throw new CertPathValidatorException("OCSP response error: " +
+                                                     responseStatus);
         }
 
         // Check that the response includes a response for all of the

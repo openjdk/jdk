@@ -265,7 +265,8 @@ import java.util.stream.Stream;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements ConcurrentMap<K,V>, Serializable {
+public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
+    implements ConcurrentMap<K,V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
 
     /*
@@ -439,16 +440,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * related operations (which is the main reason we cannot use
      * existing collections such as TreeMaps). TreeBins contain
      * Comparable elements, but may contain others, as well as
-     * elements that are Comparable but not necessarily Comparable
-     * for the same T, so we cannot invoke compareTo among them. To
-     * handle this, the tree is ordered primarily by hash value, then
-     * by Comparable.compareTo order if applicable.  On lookup at a
-     * node, if elements are not comparable or compare as 0 then both
-     * left and right children may need to be searched in the case of
-     * tied hash values. (This corresponds to the full list search
-     * that would be necessary if all elements were non-Comparable and
-     * had tied hashes.)  The red-black balancing code is updated from
-     * pre-jdk-collections
+     * elements that are Comparable but not necessarily Comparable for
+     * the same T, so we cannot invoke compareTo among them. To handle
+     * this, the tree is ordered primarily by hash value, then by
+     * Comparable.compareTo order if applicable.  On lookup at a node,
+     * if elements are not comparable or compare as 0 then both left
+     * and right children may need to be searched in the case of tied
+     * hash values. (This corresponds to the full list search that
+     * would be necessary if all elements were non-Comparable and had
+     * tied hashes.) On insertion, to keep a total ordering (or as
+     * close as is required here) across rebalancings, we compare
+     * classes and identityHashCodes as tie-breakers. The red-black
+     * balancing code is updated from pre-jdk-collections
      * (http://gee.cs.oswego.edu/dl/classes/collections/RBCell.java)
      * based in turn on Cormen, Leiserson, and Rivest "Introduction to
      * Algorithms" (CLR).
@@ -477,6 +480,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * time that we can guarantee to honor it.) We also declare an
      * unused "Segment" class that is instantiated in minimal form
      * only when serializing.
+     *
+     * Also, solely for compatibility with previous versions of this
+     * class, it extends AbstractMap, even though all of its methods
+     * are overridden, so it is just useless baggage.
      *
      * This file is organized to make things a little easier to follow
      * while reading than they might otherwise: First the main static
@@ -1352,6 +1359,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * Saves the state of the {@code ConcurrentHashMap} instance to a
      * stream (i.e., serializes it).
      * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      * @serialData
      * the key (Object) and value (Object)
      * for each key-value mapping, followed by a null pair.
@@ -1394,6 +1402,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
     /**
      * Reconstitutes the instance from a stream (that is, deserializes it).
      * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -2080,6 +2091,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * Creates a new {@link Set} backed by a ConcurrentHashMap
      * from the given type to {@code Boolean.TRUE}.
      *
+     * @param <K> the element type of the returned set
      * @return the new set
      * @since 1.8
      */
@@ -2094,9 +2106,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      *
      * @param initialCapacity The implementation performs internal
      * sizing to accommodate this many elements.
+     * @param <K> the element type of the returned set
+     * @return the new set
      * @throws IllegalArgumentException if the initial capacity of
      * elements is negative
-     * @return the new set
      * @since 1.8
      */
     public static <K> KeySetView<K,Boolean> newKeySet(int initialCapacity) {
@@ -2643,19 +2656,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
                         p = pr;
                     else if ((pk = p.key) == k || (pk != null && k.equals(pk)))
                         return p;
-                    else if (pl == null && pr == null)
-                        break;
+                    else if (pl == null)
+                        p = pr;
+                    else if (pr == null)
+                        p = pl;
                     else if ((kc != null ||
                               (kc = comparableClassFor(k)) != null) &&
                              (dir = compareComparables(kc, k, pk)) != 0)
                         p = (dir < 0) ? pl : pr;
-                    else if (pl == null)
-                        p = pr;
-                    else if (pr == null ||
-                             (q = pr.findTreeNode(h, k, kc)) == null)
-                        p = pl;
-                    else
+                    else if ((q = pr.findTreeNode(h, k, kc)) != null)
                         return q;
+                    else
+                        p = pl;
                 } while (p != null);
             }
             return null;
@@ -2682,6 +2694,23 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
         static final int READER = 4; // increment value for setting read lock
 
         /**
+         * Tie-breaking utility for ordering insertions when equal
+         * hashCodes and non-comparable. We don't require a total
+         * order, just a consistent insertion rule to maintain
+         * equivalence across rebalancings. Tie-breaking further than
+         * necessary simplifies testing a bit.
+         */
+        static int tieBreakOrder(Object a, Object b) {
+            int d;
+            if (a == null || b == null ||
+                (d = a.getClass().getName().
+                 compareTo(b.getClass().getName())) == 0)
+                d = (System.identityHashCode(a) <= System.identityHashCode(b) ?
+                     -1 : 1);
+            return d;
+        }
+
+        /**
          * Creates bin with initial set of nodes headed by b.
          */
         TreeBin(TreeNode<K,V> b) {
@@ -2697,21 +2726,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
                     r = x;
                 }
                 else {
-                    Object key = x.key;
-                    int hash = x.hash;
+                    K k = x.key;
+                    int h = x.hash;
                     Class<?> kc = null;
                     for (TreeNode<K,V> p = r;;) {
                         int dir, ph;
-                        if ((ph = p.hash) > hash)
+                        K pk = p.key;
+                        if ((ph = p.hash) > h)
                             dir = -1;
-                        else if (ph < hash)
+                        else if (ph < h)
                             dir = 1;
-                        else if ((kc != null ||
-                                  (kc = comparableClassFor(key)) != null))
-                            dir = compareComparables(kc, key, p.key);
-                        else
-                            dir = 0;
-                        TreeNode<K,V> xp = p;
+                        else if ((kc == null &&
+                                  (kc = comparableClassFor(k)) == null) ||
+                                 (dir = compareComparables(kc, k, pk)) == 0)
+                            dir = tieBreakOrder(k, pk);
+                            TreeNode<K,V> xp = p;
                         if ((p = (dir <= 0) ? p.left : p.right) == null) {
                             x.parent = xp;
                             if (dir <= 0)
@@ -2725,6 +2754,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
                 }
             }
             this.root = r;
+            assert checkInvariants(root);
         }
 
         /**
@@ -2805,8 +2835,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
          */
         final TreeNode<K,V> putTreeVal(int h, K k, V v) {
             Class<?> kc = null;
+            boolean searched = false;
             for (TreeNode<K,V> p = root;;) {
-                int dir, ph; K pk; TreeNode<K,V> q, pr;
+                int dir, ph; K pk;
                 if (p == null) {
                     first = root = new TreeNode<K,V>(h, k, v, null, null);
                     break;
@@ -2820,21 +2851,25 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
                 else if ((kc == null &&
                           (kc = comparableClassFor(k)) == null) ||
                          (dir = compareComparables(kc, k, pk)) == 0) {
-                    if (p.left == null)
-                        dir = 1;
-                    else if ((pr = p.right) == null ||
-                             (q = pr.findTreeNode(h, k, kc)) == null)
-                        dir = -1;
-                    else
-                        return q;
+                    if (!searched) {
+                        TreeNode<K,V> q, ch;
+                        searched = true;
+                        if (((ch = p.left) != null &&
+                             (q = ch.findTreeNode(h, k, kc)) != null) ||
+                            ((ch = p.right) != null &&
+                             (q = ch.findTreeNode(h, k, kc)) != null))
+                            return q;
+                    }
+                    dir = tieBreakOrder(k, pk);
                 }
+
                 TreeNode<K,V> xp = p;
-                if ((p = (dir < 0) ? p.left : p.right) == null) {
+                if ((p = (dir <= 0) ? p.left : p.right) == null) {
                     TreeNode<K,V> x, f = first;
                     first = x = new TreeNode<K,V>(h, k, v, f, xp);
                     if (f != null)
                         f.prev = x;
-                    if (dir < 0)
+                    if (dir <= 0)
                         xp.left = x;
                     else
                         xp.right = x;
@@ -3546,6 +3581,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case the action is not applied)
      * @param action the action
+     * @param <U> the return type of the transformer
      * @since 1.8
      */
     public <U> void forEach(long parallelismThreshold,
@@ -3569,6 +3605,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * needed for this operation to be executed in parallel
      * @param searchFunction a function returning a non-null
      * result on success, else null
+     * @param <U> the return type of the search function
      * @return a non-null result from applying the given search
      * function on each (key, value), or null if none
      * @since 1.8
@@ -3592,6 +3629,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case it is not combined)
      * @param reducer a commutative associative combining function
+     * @param <U> the return type of the transformer
      * @return the result of accumulating the given transformation
      * of all (key, value) pairs
      * @since 1.8
@@ -3710,6 +3748,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case the action is not applied)
      * @param action the action
+     * @param <U> the return type of the transformer
      * @since 1.8
      */
     public <U> void forEachKey(long parallelismThreshold,
@@ -3733,6 +3772,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * needed for this operation to be executed in parallel
      * @param searchFunction a function returning a non-null
      * result on success, else null
+     * @param <U> the return type of the search function
      * @return a non-null result from applying the given search
      * function on each key, or null if none
      * @since 1.8
@@ -3775,6 +3815,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case it is not combined)
      * @param reducer a commutative associative combining function
+     * @param <U> the return type of the transformer
      * @return the result of accumulating the given transformation
      * of all keys
      * @since 1.8
@@ -3894,6 +3935,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case the action is not applied)
      * @param action the action
+     * @param <U> the return type of the transformer
      * @since 1.8
      */
     public <U> void forEachValue(long parallelismThreshold,
@@ -3917,6 +3959,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * needed for this operation to be executed in parallel
      * @param searchFunction a function returning a non-null
      * result on success, else null
+     * @param <U> the return type of the search function
      * @return a non-null result from applying the given search
      * function on each value, or null if none
      * @since 1.8
@@ -3958,6 +4001,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case it is not combined)
      * @param reducer a commutative associative combining function
+     * @param <U> the return type of the transformer
      * @return the result of accumulating the given transformation
      * of all values
      * @since 1.8
@@ -4075,6 +4119,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case the action is not applied)
      * @param action the action
+     * @param <U> the return type of the transformer
      * @since 1.8
      */
     public <U> void forEachEntry(long parallelismThreshold,
@@ -4098,6 +4143,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * needed for this operation to be executed in parallel
      * @param searchFunction a function returning a non-null
      * result on success, else null
+     * @param <U> the return type of the search function
      * @return a non-null result from applying the given search
      * function on each entry, or null if none
      * @since 1.8
@@ -4139,6 +4185,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V> implements Concurre
      * for an element, or null if there is no transformation (in
      * which case it is not combined)
      * @param reducer a commutative associative combining function
+     * @param <U> the return type of the transformer
      * @return the result of accumulating the given transformation
      * of all entries
      * @since 1.8
