@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.ObjectStreamException;
  * and <a href="http://www.ietf.org/rfc/rfc2365.txt"><i>RFC&nbsp;2365:
  * Administratively Scoped IP Multicast</i></a>
  *
- * <h4> <A NAME="format">Textual representation of IP addresses</a> </h4>
+ * <h3> <A NAME="format">Textual representation of IP addresses</a> </h3>
  *
  * Textual representation of IPv4 address used as input to methods
  * takes one of the following forms:
