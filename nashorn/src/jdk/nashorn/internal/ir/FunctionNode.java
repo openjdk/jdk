@@ -47,7 +47,7 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  * IR representation for function (or script.)
  */
 @Immutable
-public final class FunctionNode extends LexicalContextNode implements Flags<FunctionNode> {
+public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode> {
 
     /** Type used for all FunctionNodes */
     public static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
@@ -131,8 +131,14 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
     @Ignore
     private final Compiler.Hints hints;
 
+    /** Properties of this object assigned in this function */
+    @Ignore
+    private HashSet<String> thisProperties;
+
     /** Function flags. */
     private final int flags;
+
+    private final int lineNumber;
 
     /** Is anonymous function flag. */
     public static final int IS_ANONYMOUS                = 1 << 0;
@@ -155,6 +161,10 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
 
     /** Does a nested function contain eval? If it does, then all variables in this function might be get/set by it. */
     public static final int HAS_NESTED_EVAL = 1 << 6;
+
+    /** Does this function have any blocks that create a scope? This is used to determine if the function needs to
+     * have a local variable slot for the scope symbol. */
+    public static final int HAS_SCOPE_BLOCK = 1 << 7;
 
     /**
      * Flag this function as one that defines the identifier "arguments" as a function parameter or nested function
@@ -226,9 +236,10 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
         final int flags) {
-        super(lineNumber, token, finish);
+        super(token, finish);
 
         this.source           = source;
+        this.lineNumber       = lineNumber;
         this.ident            = ident;
         this.name             = name;
         this.kind             = kind;
@@ -258,7 +269,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         final FunctionNode snapshot,
         final Compiler.Hints hints) {
         super(functionNode);
-
+        this.lineNumber       = functionNode.lineNumber;
         this.flags            = flags;
         this.name             = name;
         this.returnType       = returnType;
@@ -277,6 +288,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         this.declaredSymbols = functionNode.declaredSymbols;
         this.kind            = functionNode.kind;
         this.firstToken      = functionNode.firstToken;
+        this.thisProperties  = functionNode.thisProperties;
     }
 
     @Override
@@ -293,6 +305,14 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public Source getSource() {
         return source;
+    }
+
+    /**
+     * Returns the line number.
+     * @return the line number.
+     */
+    public int getLineNumber() {
+        return lineNumber;
     }
 
     /**
@@ -572,7 +592,7 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
         if(this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags, name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
+        return Node.replaceInLexicalContext(lc, this, new FunctionNode(this, lastToken, flags | (body.needsScope() ? FunctionNode.HAS_SCOPE_BLOCK : 0), name, returnType, compileUnit, compilationState, body, parameters, snapshot, hints));
     }
 
     /**
@@ -611,6 +631,33 @@ public final class FunctionNode extends LexicalContextNode implements Flags<Func
      */
     public boolean needsParentScope() {
         return getFlag(NEEDS_PARENT_SCOPE) || isProgram();
+    }
+
+    /**
+     * Register a property assigned to the this object in this function.
+     * @param key the property name
+     */
+    public void addThisProperty(final String key) {
+        if (thisProperties == null) {
+            thisProperties = new HashSet<>();
+        }
+        thisProperties.add(key);
+    }
+
+    /**
+     * Get the number of properties assigned to the this object in this function.
+     * @return number of properties
+     */
+    public int countThisProperties() {
+        return thisProperties == null ? 0 : thisProperties.size();
+    }
+
+    /**
+     * Returns true if any of the blocks in this function create their own scope.
+     * @return true if any of the blocks in this function create their own scope.
+     */
+    public boolean hasScopeBlock() {
+        return getFlag(HAS_SCOPE_BLOCK);
     }
 
     /**

@@ -27,18 +27,17 @@ package jdk.nashorn.internal.ir;
 
 import java.util.Arrays;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.Label;
 
 /**
  * A loop node, for example a while node, do while node or for node
  */
-public abstract class LoopNode extends BreakableNode {
+public abstract class LoopNode extends BreakableStatement {
     /** loop continue label. */
     protected final Label continueLabel;
 
     /** Loop test node, null if infinite */
-    protected final Node test;
+    protected final Expression test;
 
     /** Loop body */
     protected final Block body;
@@ -56,7 +55,7 @@ public abstract class LoopNode extends BreakableNode {
      * @param body               loop body
      * @param controlFlowEscapes controlFlowEscapes
      */
-    protected LoopNode(final int lineNumber, final long token, final int finish, final Node test, final Block body, final boolean controlFlowEscapes) {
+    protected LoopNode(final int lineNumber, final long token, final int finish, final Expression test, final Block body, final boolean controlFlowEscapes) {
         super(lineNumber, token, finish, new Label("while_break"));
         this.continueLabel = new Label("while_continue");
         this.test = test;
@@ -72,7 +71,7 @@ public abstract class LoopNode extends BreakableNode {
      * @param body     new body
      * @param controlFlowEscapes controlFlowEscapes
      */
-    protected LoopNode(final LoopNode loopNode, final Node test, final Block body, final boolean controlFlowEscapes) {
+    protected LoopNode(final LoopNode loopNode, final Expression test, final Block body, final boolean controlFlowEscapes) {
         super(loopNode);
         this.continueLabel = new Label(loopNode.continueLabel);
         this.test = test;
@@ -151,7 +150,7 @@ public abstract class LoopNode extends BreakableNode {
      * Get the test for this for node
      * @return the test
      */
-    public abstract Node getTest();
+    public abstract Expression getTest();
 
     /**
      * Set the test for this for node
@@ -160,7 +159,7 @@ public abstract class LoopNode extends BreakableNode {
      * @param test new test
      * @return same or new node depending on if test was changed
      */
-    public abstract LoopNode setTest(final LexicalContext lc, final Node test);
+    public abstract LoopNode setTest(final LexicalContext lc, final Expression test);
 
     /**
      * Set the control flow escapes flag for this node.

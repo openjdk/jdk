@@ -140,9 +140,9 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
         void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
             DoubleStream s = m.apply(data.parallelStream());
             Spliterator.OfDouble sp = s.spliterator();
-            DoubleStream ss = StreamSupport.doubleParallelStream(() -> sp,
-                                                                 StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
-                                                                 | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED));
+            DoubleStream ss = StreamSupport.doubleStream(() -> sp,
+                                                         StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
+                                                         | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED), true);
             for (double t : ss.toArray())
                 b.accept(t);
         }

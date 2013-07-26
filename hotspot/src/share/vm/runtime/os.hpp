@@ -32,15 +32,18 @@
 #include "utilities/top.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
+# include <setjmp.h>
 #endif
 #ifdef TARGET_OS_FAMILY_solaris
 # include "jvm_solaris.h"
+# include <setjmp.h>
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "jvm_bsd.h"
+# include <setjmp.h>
 #endif
 
 // os defines the interface to operating system; this includes traditional
@@ -730,6 +733,10 @@ class os: AllStatic {
 #include "runtime/os_ext.hpp"
 
  public:
+  class CrashProtectionCallback : public StackObj {
+  public:
+    virtual void call() = 0;
+  };
 
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
@@ -908,6 +915,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
   static char** split_path(const char* path, int* n);
+
 };
 
 // Note that "PAUSE" is almost always used with synchronization
@@ -915,8 +923,6 @@ class os: AllStatic {
 // of the global SpinPause() with C linkage.
 // It'd also be eligible for inlining on many platforms.
 
-extern "C" int SpinPause () ;
-extern "C" int SafeFetch32 (int * adr, int errValue) ;
-extern "C" intptr_t SafeFetchN (intptr_t * adr, intptr_t errValue) ;
+extern "C" int SpinPause();
 
 #endif // SHARE_VM_RUNTIME_OS_HPP

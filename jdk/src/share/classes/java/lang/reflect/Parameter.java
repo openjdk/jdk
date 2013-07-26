@@ -95,6 +95,19 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
+     * Returns true if the parameter has a name according to the class
+     * file; returns false otherwise. Whether a parameter has a name
+     * is determined by the {@literal MethodParameters} attribute of
+     * the method which declares the parameter.
+     *
+     * @return true if and only if the parameter has a name according
+     * to the class file.
+     */
+    public boolean isNamePresent() {
+        return executable.hasRealParameterData();
+    }
+
+    /**
      * Returns a string describing this parameter.  The format is the
      * modifiers for the parameter, if any, in canonical order as
      * recommended by <cite>The Java&trade; Language
@@ -149,11 +162,15 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * Returns the name of the parameter.  If the parameter's name is
-     * defined in a class file, then that name will be returned by
-     * this method.  Otherwise, this method will synthesize a name of
-     * the form argN, where N is the index of the parameter.
+     * {@linkplain isNamePresent() present}, then this method returns
+     * the name provided by the class file. Otherwise, this method
+     * synthesizes a name of the form argN, where N is the index of
+     * the parameter in the descriptor of the method which declares
+     * the parameter.
      *
-     * @return the name of the parameter
+     * @return The name of the parameter, either provided by the class
+     *         file or synthesized if the class file does not provide
+     *         a name.
      */
     public String getName() {
         // Note: empty strings as paramete names are now outlawed.

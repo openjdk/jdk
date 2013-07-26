@@ -2,25 +2,25 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.c14n.implementations;
-
-
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,344 +47,348 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-
 /**
  * Implements <A HREF="http://www.w3.org/TR/2001/REC-xml-c14n-20010315">Canonical
  * XML Version 1.0</A>, a W3C Recommendation from 15 March 2001.
  *
  * @author Christian Geuer-Pollmann <geuerp@apache.org>
- * @version $Revision: 1.5 $
  */
 public abstract class Canonicalizer20010315 extends CanonicalizerBase {
-        boolean firstCall=true;
-        final SortedSet<Attr> result= new TreeSet<Attr>(COMPARE);
-    static final String XMLNS_URI=Constants.NamespaceSpecNS;
-    static final String XML_LANG_URI=Constants.XML_LANG_SPACE_SpecNS;
-    static class XmlAttrStack {
-        int currentLevel=0;
-        int lastlevel=0;
-        XmlsStackElement cur;
+    private static final String XMLNS_URI = Constants.NamespaceSpecNS;
+    private static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
+
+    private boolean firstCall = true;
+    private final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
+
+    private static class XmlAttrStack {
         static class XmlsStackElement {
-                int level;
-                boolean rendered=false;
-                List<Attr> nodes=new ArrayList<Attr>();
+            int level;
+            boolean rendered = false;
+            List<Attr> nodes = new ArrayList<Attr>();
         };
-        List<XmlsStackElement> levels=new ArrayList<XmlsStackElement>();
+
+        int currentLevel = 0;
+        int lastlevel = 0;
+        XmlsStackElement cur;
+        List<XmlsStackElement> levels = new ArrayList<XmlsStackElement>();
+
         void push(int level) {
-                currentLevel=level;
-                if (currentLevel==-1)
-                        return;
-                cur=null;
-                while (lastlevel>=currentLevel) {
-                        levels.remove(levels.size()-1);
-                        if (levels.size()==0) {
-                                lastlevel=0;
-                                return;
-                        }
-                        lastlevel=(levels.get(levels.size()-1)).level;
+            currentLevel = level;
+            if (currentLevel == -1) {
+                return;
+            }
+            cur = null;
+            while (lastlevel >= currentLevel) {
+                levels.remove(levels.size() - 1);
+                int newSize = levels.size();
+                if (newSize == 0) {
+                    lastlevel = 0;
+                    return;
                 }
+                lastlevel = (levels.get(newSize - 1)).level;
+            }
         }
+
         void addXmlnsAttr(Attr n) {
-                if (cur==null) {
-                        cur=new XmlsStackElement();
-                        cur.level=currentLevel;
-                        levels.add(cur);
-                        lastlevel=currentLevel;
-                }
-                cur.nodes.add(n);
+            if (cur == null) {
+                cur = new XmlsStackElement();
+                cur.level = currentLevel;
+                levels.add(cur);
+                lastlevel = currentLevel;
+            }
+            cur.nodes.add(n);
         }
+
         void getXmlnsAttr(Collection<Attr> col) {
-                int size=levels.size()-1;
-                if (cur==null) {
-                        cur=new XmlsStackElement();
-                        cur.level=currentLevel;
-                        lastlevel=currentLevel;
-                        levels.add(cur);
+            int size = levels.size() - 1;
+            if (cur == null) {
+                cur = new XmlsStackElement();
+                cur.level = currentLevel;
+                lastlevel = currentLevel;
+                levels.add(cur);
+            }
+            boolean parentRendered = false;
+            XmlsStackElement e = null;
+            if (size == -1) {
+                parentRendered = true;
+            } else {
+                e = levels.get(size);
+                if (e.rendered && e.level + 1 == currentLevel) {
+                    parentRendered = true;
                 }
-                boolean parentRendered=false;
-                XmlsStackElement e=null;
-                if (size==-1) {
-                        parentRendered=true;
-                } else {
-                        e=levels.get(size);
-                        if (e.rendered && e.level+1==currentLevel)
-                                parentRendered=true;
+            }
+            if (parentRendered) {
+                col.addAll(cur.nodes);
+                cur.rendered = true;
+                return;
+            }
 
+            Map<String, Attr> loa = new HashMap<String, Attr>();
+            for (; size >= 0; size--) {
+                e = levels.get(size);
+                Iterator<Attr> it = e.nodes.iterator();
+                while (it.hasNext()) {
+                    Attr n = it.next();
+                    if (!loa.containsKey(n.getName())) {
+                        loa.put(n.getName(), n);
+                    }
                 }
-                if (parentRendered) {
-                                col.addAll(cur.nodes);
-                                cur.rendered=true;
-                                return;
-                        }
+            }
 
-                        Map<String,Attr> loa = new HashMap<String,Attr>();
-                for (;size>=0;size--) {
-                        e=levels.get(size);
-                        Iterator<Attr> it=e.nodes.iterator();
-                        while (it.hasNext()) {
-                                Attr n=it.next();
-                                if (!loa.containsKey(n.getName()))
-                                        loa.put(n.getName(),n);
-                        }
-                        //if (e.rendered)
-                                //break;
-
-                };
-                //cur.nodes.clear();
-                //cur.nodes.addAll(loa.values());
-                        cur.rendered=true;
-                col.addAll(loa.values());
+            cur.rendered = true;
+            col.addAll(loa.values());
         }
 
     }
-    XmlAttrStack xmlattrStack=new XmlAttrStack();
+
+    private XmlAttrStack xmlattrStack = new XmlAttrStack();
+
     /**
-    * Constructor Canonicalizer20010315
-    *
-    * @param includeComments
-    */
-   public Canonicalizer20010315(boolean includeComments) {
-      super(includeComments);
-   }
-
-   /**
-    * Returns the Attr[]s to be outputted for the given element.
-    * <br>
-    * The code of this method is a copy of {@link #handleAttributes(Element,
-    * NameSpaceSymbTable)},
-    * whereas it takes into account that subtree-c14n is -- well -- subtree-based.
-    * So if the element in question isRoot of c14n, it's parent is not in the
-    * node set, as well as all other ancestors.
-    *
-    * @param E
-    * @param ns
-    * @return the Attr[]s to be outputted
-    * @throws CanonicalizationException
-    */
-   Iterator<Attr> handleAttributesSubtree(Element E,  NameSpaceSymbTable ns )
-           throws CanonicalizationException {
-          if (!E.hasAttributes() && !firstCall) {
-         return null;
-      }
-      // result will contain the attrs which have to be outputted
-      final SortedSet<Attr> result = this.result;
-      result.clear();
-      NamedNodeMap attrs = E.getAttributes();
-      int attrsLength = attrs.getLength();
-
-      for (int i = 0; i < attrsLength; i++) {
-         Attr N = (Attr) attrs.item(i);
-         String NUri =N.getNamespaceURI();
-
-         if (XMLNS_URI!=NUri) {
-                //It's not a namespace attr node. Add to the result and continue.
-            result.add(N);
-            continue;
-         }
-
-         String NName=N.getLocalName();
-         String NValue=N.getValue();
-         if (XML.equals(NName)
-                 && XML_LANG_URI.equals(NValue)) {
-                //The default mapping for xml must not be output.
-                continue;
-         }
-
-         Node n=ns.addMappingAndRender(NName,NValue,N);
-
-          if (n!=null) {
-                 //Render the ns definition
-             result.add((Attr)n);
-             if (C14nHelper.namespaceIsRelative(N)) {
-                Object exArgs[] = { E.getTagName(), NName, N.getNodeValue() };
-                throw new CanonicalizationException(
-                   "c14n.Canonicalizer.RelativeNamespace", exArgs);
-             }
-          }
-      }
-
-      if (firstCall) {
-        //It is the first node of the subtree
-        //Obtain all the namespaces defined in the parents, and added to the output.
-        ns.getUnrenderedNodes(getSortedSetAsCollection(result));
-        //output the attributes in the xml namespace.
-        xmlattrStack.getXmlnsAttr(result);
-                firstCall=false;
-      }
-
-      return result.iterator();
-   }
-
-   /**
-    * Returns the Attr[]s to be outputted for the given element.
-    * <br>
-    * IMPORTANT: This method expects to work on a modified DOM tree, i.e. a DOM which has
-    * been prepared using {@link com.sun.org.apache.xml.internal.security.utils.XMLUtils#circumventBug2650(
-    * org.w3c.dom.Document)}.
-    *
-    * @param E
-    * @param ns
-    * @return the Attr[]s to be outputted
-    * @throws CanonicalizationException
-    */
-   Iterator<Attr> handleAttributes(Element E,  NameSpaceSymbTable ns ) throws CanonicalizationException {
-    // result will contain the attrs which have to be outputted
-        xmlattrStack.push(ns.getLevel());
-    boolean isRealVisible=isVisibleDO(E,ns.getLevel())==1;
-    NamedNodeMap attrs = null;
-    int attrsLength = 0;
-    if (E.hasAttributes()) {
-        attrs=E.getAttributes();
-       attrsLength= attrs.getLength();
+     * Constructor Canonicalizer20010315
+     *
+     * @param includeComments
+     */
+    public Canonicalizer20010315(boolean includeComments) {
+        super(includeComments);
     }
 
+    /**
+     * Always throws a CanonicalizationException because this is inclusive c14n.
+     *
+     * @param xpathNodeSet
+     * @param inclusiveNamespaces
+     * @return none it always fails
+     * @throws CanonicalizationException always
+     */
+    public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces)
+        throws CanonicalizationException {
 
-    SortedSet<Attr> result = this.result;
-    result.clear();
+        /** $todo$ well, should we throw UnsupportedOperationException ? */
+        throw new CanonicalizationException("c14n.Canonicalizer.UnsupportedOperation");
+    }
 
-    for (int i = 0; i < attrsLength; i++) {
-       Attr N = (Attr) attrs.item(i);
-       String NUri =N.getNamespaceURI();
+    /**
+     * Always throws a CanonicalizationException because this is inclusive c14n.
+     *
+     * @param rootNode
+     * @param inclusiveNamespaces
+     * @return none it always fails
+     * @throws CanonicalizationException
+     */
+    public byte[] engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces)
+        throws CanonicalizationException {
 
-       if (XMLNS_URI!=NUri) {
-          //A non namespace definition node.
-           if (XML_LANG_URI==NUri) {
-                          xmlattrStack.addXmlnsAttr(N);
-           } else if (isRealVisible){
-                //The node is visible add the attribute to the list of output attributes.
-                result.add(N);
-          }
-          //keep working
-          continue;
-       }
+        /** $todo$ well, should we throw UnsupportedOperationException ? */
+        throw new CanonicalizationException("c14n.Canonicalizer.UnsupportedOperation");
+    }
 
-       String NName=N.getLocalName();
-       String NValue=N.getValue();
-       if ("xml".equals(NName)
-               && XML_LANG_URI.equals(NValue)) {
-          /* except omit namespace node with local name xml, which defines
-           * the xml prefix, if its string value is http://www.w3.org/XML/1998/namespace.
-           */
-          continue;
-       }
-       //add the prefix binding to the ns symb table.
-       //ns.addInclusiveMapping(NName,NValue,N,isRealVisible);
-            if  (isVisible(N))  {
-                if (!isRealVisible && ns.removeMappingIfRender(NName)) {
-                        continue;
-                }
-                        //The xpath select this node output it if needed.
-                //Node n=ns.addMappingAndRenderXNodeSet(NName,NValue,N,isRealVisible);
-                Node n=ns.addMappingAndRender(NName,NValue,N);
-                        if (n!=null) {
-                                        result.add((Attr)n);
-                    if (C14nHelper.namespaceIsRelative(N)) {
-                       Object exArgs[] = { E.getTagName(), NName, N.getNodeValue() };
-                       throw new CanonicalizationException(
-                          "c14n.Canonicalizer.RelativeNamespace", exArgs);
-                   }
-                         }
-        } else {
-                if (isRealVisible && NName!=XMLNS) {
-                        ns.removeMapping(NName);
-                } else {
-                        ns.addMapping(NName,NValue,N);
-                }
+    /**
+     * Returns the Attr[]s to be output for the given element.
+     * <br>
+     * The code of this method is a copy of {@link #handleAttributes(Element,
+     * NameSpaceSymbTable)},
+     * whereas it takes into account that subtree-c14n is -- well -- subtree-based.
+     * So if the element in question isRoot of c14n, it's parent is not in the
+     * node set, as well as all other ancestors.
+     *
+     * @param element
+     * @param ns
+     * @return the Attr[]s to be output
+     * @throws CanonicalizationException
+     */
+    @Override
+    protected Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
+        throws CanonicalizationException {
+        if (!element.hasAttributes() && !firstCall) {
+            return null;
         }
+        // result will contain the attrs which have to be output
+        final SortedSet<Attr> result = this.result;
+        result.clear();
+
+        if (element.hasAttributes()) {
+            NamedNodeMap attrs = element.getAttributes();
+            int attrsLength = attrs.getLength();
+
+            for (int i = 0; i < attrsLength; i++) {
+                Attr attribute = (Attr) attrs.item(i);
+                String NUri = attribute.getNamespaceURI();
+                String NName = attribute.getLocalName();
+                String NValue = attribute.getValue();
+
+                if (!XMLNS_URI.equals(NUri)) {
+                    //It's not a namespace attr node. Add to the result and continue.
+                    result.add(attribute);
+                } else if (!(XML.equals(NName) && XML_LANG_URI.equals(NValue))) {
+                    //The default mapping for xml must not be output.
+                    Node n = ns.addMappingAndRender(NName, NValue, attribute);
+
+                    if (n != null) {
+                        //Render the ns definition
+                        result.add((Attr)n);
+                        if (C14nHelper.namespaceIsRelative(attribute)) {
+                            Object exArgs[] = { element.getTagName(), NName, attribute.getNodeValue() };
+                            throw new CanonicalizationException(
+                                "c14n.Canonicalizer.RelativeNamespace", exArgs
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        if (firstCall) {
+            //It is the first node of the subtree
+            //Obtain all the namespaces defined in the parents, and added to the output.
+            ns.getUnrenderedNodes(result);
+            //output the attributes in the xml namespace.
+            xmlattrStack.getXmlnsAttr(result);
+            firstCall = false;
+        }
+
+        return result.iterator();
     }
-    if (isRealVisible) {
-        //The element is visible, handle the xmlns definition
-        Attr xmlns = E.getAttributeNodeNS(XMLNS_URI, XMLNS);
-        Node n=null;
-        if (xmlns == null) {
+
+    /**
+     * Returns the Attr[]s to be output for the given element.
+     * <br>
+     * IMPORTANT: This method expects to work on a modified DOM tree, i.e. a DOM which has
+     * been prepared using {@link com.sun.org.apache.xml.internal.security.utils.XMLUtils#circumventBug2650(
+     * org.w3c.dom.Document)}.
+     *
+     * @param element
+     * @param ns
+     * @return the Attr[]s to be output
+     * @throws CanonicalizationException
+     */
+    @Override
+    protected Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
+        throws CanonicalizationException {
+        // result will contain the attrs which have to be output
+        xmlattrStack.push(ns.getLevel());
+        boolean isRealVisible = isVisibleDO(element, ns.getLevel()) == 1;
+        final SortedSet<Attr> result = this.result;
+        result.clear();
+
+        if (element.hasAttributes()) {
+            NamedNodeMap attrs = element.getAttributes();
+            int attrsLength = attrs.getLength();
+
+            for (int i = 0; i < attrsLength; i++) {
+                Attr attribute = (Attr) attrs.item(i);
+                String NUri = attribute.getNamespaceURI();
+                String NName = attribute.getLocalName();
+                String NValue = attribute.getValue();
+
+                if (!XMLNS_URI.equals(NUri)) {
+                    //A non namespace definition node.
+                    if (XML_LANG_URI.equals(NUri)) {
+                        xmlattrStack.addXmlnsAttr(attribute);
+                    } else if (isRealVisible) {
+                        //The node is visible add the attribute to the list of output attributes.
+                        result.add(attribute);
+                    }
+                } else if (!XML.equals(NName) || !XML_LANG_URI.equals(NValue)) {
+                    /* except omit namespace node with local name xml, which defines
+                     * the xml prefix, if its string value is http://www.w3.org/XML/1998/namespace.
+                     */
+                    //add the prefix binding to the ns symb table.
+                    if (isVisible(attribute))  {
+                        if (isRealVisible || !ns.removeMappingIfRender(NName)) {
+                            //The xpath select this node output it if needed.
+                            Node n = ns.addMappingAndRender(NName, NValue, attribute);
+                            if (n != null) {
+                                result.add((Attr)n);
+                                if (C14nHelper.namespaceIsRelative(attribute)) {
+                                    Object exArgs[] = { element.getTagName(), NName, attribute.getNodeValue() };
+                                    throw new CanonicalizationException(
+                                        "c14n.Canonicalizer.RelativeNamespace", exArgs
+                                    );
+                                }
+                            }
+                        }
+                    } else {
+                        if (isRealVisible && !XMLNS.equals(NName)) {
+                            ns.removeMapping(NName);
+                        } else {
+                            ns.addMapping(NName, NValue, attribute);
+                        }
+                    }
+                }
+            }
+        }
+        if (isRealVisible) {
+            //The element is visible, handle the xmlns definition
+            Attr xmlns = element.getAttributeNodeNS(XMLNS_URI, XMLNS);
+            Node n = null;
+            if (xmlns == null) {
                 //No xmlns def just get the already defined.
-                n=ns.getMapping(XMLNS);
-        } else if ( !isVisible(xmlns)) {
+                n = ns.getMapping(XMLNS);
+            } else if (!isVisible(xmlns)) {
                 //There is a definition but the xmlns is not selected by the xpath.
                 //then xmlns=""
-                n=ns.addMappingAndRender(XMLNS,"",nullNode);
+                n = ns.addMappingAndRender(XMLNS, "", nullNode);
+            }
+            //output the xmlns def if needed.
+            if (n != null) {
+                result.add((Attr)n);
+            }
+            //Float all xml:* attributes of the unselected parent elements to this one.
+            xmlattrStack.getXmlnsAttr(result);
+            ns.getUnrenderedNodes(result);
         }
-        //output the xmlns def if needed.
-        if (n!=null) {
-                        result.add((Attr)n);
-        }
-        //Float all xml:* attributes of the unselected parent elements to this one.
-        //addXmlAttributes(E,result);
-        xmlattrStack.getXmlnsAttr(result);
-        ns.getUnrenderedNodes(getSortedSetAsCollection(result));
 
+        return result.iterator();
     }
 
-    return result.iterator();
-   }
-   /**
-    * Always throws a CanonicalizationException because this is inclusive c14n.
-    *
-    * @param xpathNodeSet
-    * @param inclusiveNamespaces
-    * @return none it always fails
-    * @throws CanonicalizationException always
-    */
-   public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, String inclusiveNamespaces)
-           throws CanonicalizationException {
+    protected void circumventBugIfNeeded(XMLSignatureInput input)
+        throws CanonicalizationException, ParserConfigurationException, IOException, SAXException {
+        if (!input.isNeedsToBeExpanded()) {
+            return;
+        }
+        Document doc = null;
+        if (input.getSubNode() != null) {
+            doc = XMLUtils.getOwnerDocument(input.getSubNode());
+        } else {
+            doc = XMLUtils.getOwnerDocument(input.getNodeSet());
+        }
+        XMLUtils.circumventBug2650(doc);
+    }
 
-      /** $todo$ well, should we throw UnsupportedOperationException ? */
-      throw new CanonicalizationException(
-         "c14n.Canonicalizer.UnsupportedOperation");
-   }
+    @Override
+    protected void handleParent(Element e, NameSpaceSymbTable ns) {
+        if (!e.hasAttributes() && e.getNamespaceURI() == null) {
+            return;
+        }
+        xmlattrStack.push(-1);
+        NamedNodeMap attrs = e.getAttributes();
+        int attrsLength = attrs.getLength();
+        for (int i = 0; i < attrsLength; i++) {
+            Attr attribute = (Attr) attrs.item(i);
+            String NName = attribute.getLocalName();
+            String NValue = attribute.getNodeValue();
 
-   /**
-    * Always throws a CanonicalizationException because this is inclusive c14n.
-    *
-    * @param rootNode
-    * @param inclusiveNamespaces
-    * @return none it always fails
-    * @throws CanonicalizationException
-    */
-   public byte[] engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces)
-           throws CanonicalizationException {
-
-      /** $todo$ well, should we throw UnsupportedOperationException ? */
-      throw new CanonicalizationException(
-         "c14n.Canonicalizer.UnsupportedOperation");
-   }
-   void circumventBugIfNeeded(XMLSignatureInput input) throws CanonicalizationException, ParserConfigurationException, IOException, SAXException {
-           if (!input.isNeedsToBeExpanded())
-                   return;
-           Document doc = null;
-       if (input.getSubNode() != null) {
-           doc=XMLUtils.getOwnerDocument(input.getSubNode());
-       } else {
-           doc=XMLUtils.getOwnerDocument(input.getNodeSet());
-       }
-           XMLUtils.circumventBug2650(doc);
-
-   }
-
-   void handleParent(Element e, NameSpaceSymbTable ns) {
-           if (!e.hasAttributes()) {
-                        return;
-           }
-           xmlattrStack.push(-1);
-           NamedNodeMap attrs = e.getAttributes();
-           int attrsLength = attrs.getLength();
-           for (int i = 0; i < attrsLength; i++) {
-                   Attr N = (Attr) attrs.item(i);
-                   if (Constants.NamespaceSpecNS!=N.getNamespaceURI()) {
-                           //Not a namespace definition, ignore.
-                           if (XML_LANG_URI==N.getNamespaceURI()) {
-                                   xmlattrStack.addXmlnsAttr(N);
-                           }
-                           continue;
-                   }
-
-                   String NName=N.getLocalName();
-                   String NValue=N.getNodeValue();
-                   if (XML.equals(NName)
-                                   && Constants.XML_LANG_SPACE_SpecNS.equals(NValue)) {
-                                continue;
-                   }
-                   ns.addMapping(NName,NValue,N);
-           }
-   }
+            if (Constants.NamespaceSpecNS.equals(attribute.getNamespaceURI())) {
+                if (!XML.equals(NName) || !Constants.XML_LANG_SPACE_SpecNS.equals(NValue)) {
+                    ns.addMapping(NName, NValue, attribute);
+                }
+            } else if (XML_LANG_URI.equals(attribute.getNamespaceURI())) {
+                xmlattrStack.addXmlnsAttr(attribute);
+            }
+        }
+        if (e.getNamespaceURI() != null) {
+            String NName = e.getPrefix();
+            String NValue = e.getNamespaceURI();
+            String Name;
+            if (NName == null || NName.equals("")) {
+                NName = "xmlns";
+                Name = "xmlns";
+            } else {
+                Name = "xmlns:" + NName;
+            }
+            Attr n = e.getOwnerDocument().createAttributeNS("http://www.w3.org/2000/xmlns/", Name);
+            n.setValue(NValue);
+            ns.addMapping(NName, NValue, n);
+        }
+    }
 }
