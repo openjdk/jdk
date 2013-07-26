@@ -29,7 +29,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * This is a subclass of lexical context used for filling
@@ -63,6 +62,16 @@ public class BlockLexicalContext extends LexicalContext {
         return sstack.pop();
     }
 
+    /**
+     * Override this method to perform some additional processing on the block after its statements have been set. By
+     * default does nothing and returns the original block.
+     * @param block the block to operate on
+     * @return a modified block.
+     */
+    protected Block afterSetStatements(Block block) {
+        return block;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T extends LexicalContextNode> T pop(final T node) {
@@ -70,6 +79,7 @@ public class BlockLexicalContext extends LexicalContext {
         if (node instanceof Block) {
             final List<Statement> newStatements = popStatements();
             expected = (T)((Block)node).setStatements(this, newStatements);
+            expected = (T)afterSetStatements((Block)expected);
             if (!sstack.isEmpty()) {
                 lastStatement = lastStatement(sstack.peek());
             }
@@ -107,10 +117,7 @@ public class BlockLexicalContext extends LexicalContext {
     }
 
     private static Statement lastStatement(final List<Statement> statements) {
-        for (final ListIterator<Statement> iter = statements.listIterator(statements.size()); iter.hasPrevious(); ) {
-            final Statement node = iter.previous();
-            return node;
-        }
-        return null;
+        final int s = statements.size();
+        return s == 0 ? null : statements.get(s - 1);
     }
 }

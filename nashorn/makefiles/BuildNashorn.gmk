@@ -71,7 +71,6 @@ $(eval $(call SetupJavaCompilation,BUILD_NASGEN,\
 $(BUILD_NASGEN): $(BUILD_NASHORN)
 
 # Copy classes to final classes dir and run nasgen to modify classes in jdk.nashorn.internal.objects package
-# Finally rename classes in jdk.nashorn.internal.objects package
 $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
 	$(ECHO) Running nasgen
 	$(MKDIR) -p $(@D)
@@ -80,9 +79,6 @@ $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run: $(BUILD_NASGEN)
 	$(FIXPATH) $(JAVA) \
 		-cp "$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
 		jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
-	for f in `$(FIND) $(@D)/jdk/nashorn/internal/objects/ -name "*.class"`; do \
-	  mv "$$f" `$(ECHO) "$$f" | $(SED) "s/\.class$$/\.clazz/"`; \
-        done
 	$(TOUCH) $@
 
 # Version file needs to be processed with version numbers
@@ -104,7 +100,7 @@ $(eval $(call SetupArchive,BUILD_NASHORN_JAR,\
     $(NASHORN_OUTPUTDIR)/classes/_the.nasgen.run \
     $(VERSION_FILE),\
     SRCS:=$(NASHORN_OUTPUTDIR)/classes,\
-    SUFFIXES:=.class .clazz .js .properties Factory,\
+    SUFFIXES:=.class .js .properties Factory,\
     MANIFEST:=$(NASHORN_TOPDIR)/src/META-INF/MANIFEST.MF,\
     EXTRA_MANIFEST_ATTR:=$(MANIFEST_ATTRIBUTES),\
     SKIP_METAINF:=true,\

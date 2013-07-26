@@ -37,5 +37,24 @@ protected:
 
 };
 
+/*
+ * Crash protection for the watcher thread. Wrap the callback
+ * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp
+ * back.
+ * To be able to use this - don't take locks, don't rely on destructors,
+ * don't make OS library calls, don't allocate memory, don't print,
+ * don't call code that could leave the heap / memory in an inconsistent state,
+ * or anything else where we are not in control if we suddenly jump out.
+ */
+class WatcherThreadCrashProtection : public StackObj {
+public:
+  WatcherThreadCrashProtection();
+  bool call(os::CrashProtectionCallback& cb);
+
+  static void check_crash_protection(int signal, Thread* thread);
+private:
+  void restore();
+  sigjmp_buf _jmpbuf;
+};
 
 #endif

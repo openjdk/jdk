@@ -29,15 +29,13 @@ import java.util.Spliterator;
 
 /**
  * Base interface for stream types such as {@link Stream}, {@link IntStream},
- * etc.  Contains methods common to all stream types.  Many of these methods
- * are implemented by {@link AbstractPipeline}, even though
- * {@code AbstractPipeline} does not directly implement {@code BaseStream}.
+ * etc.  Contains methods common to all stream types.
  *
  * @param <T> type of stream elements
  * @param <S> type of stream implementing {@code BaseStream}
  * @since 1.8
  */
-interface BaseStream<T, S extends BaseStream<T, S>> {
+public interface BaseStream<T, S extends BaseStream<T, S>> {
     /**
      * Returns an iterator for the elements of this stream.
      *

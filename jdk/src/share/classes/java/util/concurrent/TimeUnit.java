@@ -36,10 +36,10 @@
 package java.util.concurrent;
 
 /**
- * A <tt>TimeUnit</tt> represents time durations at a given unit of
+ * A {@code TimeUnit} represents time durations at a given unit of
  * granularity and provides utility methods to convert across units,
  * and to perform timing and delay operations in these units.  A
- * <tt>TimeUnit</tt> does not maintain time information, but only
+ * {@code TimeUnit} does not maintain time information, but only
  * helps organize and use time representations that may be maintained
  * separately across various contexts.  A nanosecond is defined as one
  * thousandth of a microsecond, a microsecond as one thousandth of a
@@ -47,7 +47,7 @@ package java.util.concurrent;
  * as sixty seconds, an hour as sixty minutes, and a day as twenty four
  * hours.
  *
- * <p>A <tt>TimeUnit</tt> is mainly used to inform time-based methods
+ * <p>A {@code TimeUnit} is mainly used to inform time-based methods
  * how a given timing parameter should be interpreted. For example,
  * the following code will timeout in 50 milliseconds if the {@link
  * java.util.concurrent.locks.Lock lock} is not available:
@@ -63,7 +63,7 @@ package java.util.concurrent;
  *
  * Note however, that there is no guarantee that a particular timeout
  * implementation will be able to notice the passage of time at the
- * same granularity as the given <tt>TimeUnit</tt>.
+ * same granularity as the given {@code TimeUnit}.
  *
  * @since 1.5
  * @author Doug Lea
@@ -174,83 +174,82 @@ public enum TimeUnit {
     // etc. are not declared abstract but otherwise act as abstract methods.
 
     /**
-     * Convert the given time duration in the given unit to this
-     * unit.  Conversions from finer to coarser granularities
-     * truncate, so lose precision. For example converting
-     * <tt>999</tt> milliseconds to seconds results in
-     * <tt>0</tt>. Conversions from coarser to finer granularities
-     * with arguments that would numerically overflow saturate to
-     * <tt>Long.MIN_VALUE</tt> if negative or <tt>Long.MAX_VALUE</tt>
-     * if positive.
+     * Converts the given time duration in the given unit to this unit.
+     * Conversions from finer to coarser granularities truncate, so
+     * lose precision. For example, converting {@code 999} milliseconds
+     * to seconds results in {@code 0}. Conversions from coarser to
+     * finer granularities with arguments that would numerically
+     * overflow saturate to {@code Long.MIN_VALUE} if negative or
+     * {@code Long.MAX_VALUE} if positive.
      *
      * <p>For example, to convert 10 minutes to milliseconds, use:
-     * <tt>TimeUnit.MILLISECONDS.convert(10L, TimeUnit.MINUTES)</tt>
+     * {@code TimeUnit.MILLISECONDS.convert(10L, TimeUnit.MINUTES)}
      *
-     * @param sourceDuration the time duration in the given <tt>sourceUnit</tt>
-     * @param sourceUnit the unit of the <tt>sourceDuration</tt> argument
+     * @param sourceDuration the time duration in the given {@code sourceUnit}
+     * @param sourceUnit the unit of the {@code sourceDuration} argument
      * @return the converted duration in this unit,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long convert(long sourceDuration, TimeUnit sourceUnit) {
         throw new AbstractMethodError();
     }
 
     /**
-     * Equivalent to <tt>NANOSECONDS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) NANOSECONDS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long toNanos(long duration) {
         throw new AbstractMethodError();
     }
 
     /**
-     * Equivalent to <tt>MICROSECONDS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) MICROSECONDS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long toMicros(long duration) {
         throw new AbstractMethodError();
     }
 
     /**
-     * Equivalent to <tt>MILLISECONDS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) MILLISECONDS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long toMillis(long duration) {
         throw new AbstractMethodError();
     }
 
     /**
-     * Equivalent to <tt>SECONDS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) SECONDS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      */
     public long toSeconds(long duration) {
         throw new AbstractMethodError();
     }
 
     /**
-     * Equivalent to <tt>MINUTES.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) MINUTES.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      * @since 1.6
      */
     public long toMinutes(long duration) {
@@ -258,12 +257,12 @@ public enum TimeUnit {
     }
 
     /**
-     * Equivalent to <tt>HOURS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) HOURS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration,
-     * or <tt>Long.MIN_VALUE</tt> if conversion would negatively
-     * overflow, or <tt>Long.MAX_VALUE</tt> if it would positively overflow.
-     * @see #convert
+     * or {@code Long.MIN_VALUE} if conversion would negatively
+     * overflow, or {@code Long.MAX_VALUE} if it would positively overflow.
      * @since 1.6
      */
     public long toHours(long duration) {
@@ -271,10 +270,10 @@ public enum TimeUnit {
     }
 
     /**
-     * Equivalent to <tt>DAYS.convert(duration, this)</tt>.
+     * Equivalent to
+     * {@link #convert(long, TimeUnit) DAYS.convert(duration, this)}.
      * @param duration the duration
      * @return the converted duration
-     * @see #convert
      * @since 1.6
      */
     public long toDays(long duration) {
@@ -294,9 +293,9 @@ public enum TimeUnit {
      * Performs a timed {@link Object#wait(long, int) Object.wait}
      * using this time unit.
      * This is a convenience method that converts timeout arguments
-     * into the form required by the <tt>Object.wait</tt> method.
+     * into the form required by the {@code Object.wait} method.
      *
-     * <p>For example, you could implement a blocking <tt>poll</tt>
+     * <p>For example, you could implement a blocking {@code poll}
      * method (see {@link BlockingQueue#poll BlockingQueue.poll})
      * using:
      *
@@ -327,7 +326,7 @@ public enum TimeUnit {
      * Performs a timed {@link Thread#join(long, int) Thread.join}
      * using this time unit.
      * This is a convenience method that converts time arguments into the
-     * form required by the <tt>Thread.join</tt> method.
+     * form required by the {@code Thread.join} method.
      *
      * @param thread the thread to wait for
      * @param timeout the maximum time to wait. If less than
@@ -347,7 +346,7 @@ public enum TimeUnit {
      * Performs a {@link Thread#sleep(long, int) Thread.sleep} using
      * this time unit.
      * This is a convenience method that converts time arguments into the
-     * form required by the <tt>Thread.sleep</tt> method.
+     * form required by the {@code Thread.sleep} method.
      *
      * @param timeout the minimum time to sleep. If less than
      * or equal to zero, do not sleep at all.
