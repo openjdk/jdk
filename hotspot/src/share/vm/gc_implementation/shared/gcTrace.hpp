@@ -30,7 +30,6 @@
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "memory/allocation.hpp"
-#include "memory/klassInfoClosure.hpp"
 #include "memory/referenceType.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1YCTypes.hpp"
@@ -113,7 +112,6 @@ class G1YoungGCInfo VALUE_OBJ_CLASS_SPEC {
 #endif // INCLUDE_ALL_GCS
 
 class GCTracer : public ResourceObj {
-  friend class ObjectCountEventSenderClosure;
  protected:
   SharedGCInfo _shared_gc_info;
 
@@ -123,7 +121,6 @@ class GCTracer : public ResourceObj {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary, const MetaspaceSummary& meta_space_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
-
   bool has_reported_gc_start() const;
 
  protected:
@@ -137,25 +134,6 @@ class GCTracer : public ResourceObj {
   void send_meta_space_summary_event(GCWhen::Type when, const MetaspaceSummary& meta_space_summary) const;
   void send_reference_stats_event(ReferenceType type, size_t count) const;
   void send_phase_events(TimePartitions* time_partitions) const;
-  void send_object_count_after_gc_event(Klass* klass, jlong count, julong total_size) const NOT_SERVICES_RETURN;
-  bool should_send_object_count_after_gc_event() const;
-};
-
-class ObjectCountEventSenderClosure : public KlassInfoClosure {
-  GCTracer* _gc_tracer;
-  const double _size_threshold_percentage;
-  const size_t _total_size_in_words;
- public:
-  ObjectCountEventSenderClosure(GCTracer* gc_tracer, size_t total_size_in_words) :
-    _gc_tracer(gc_tracer),
-    _size_threshold_percentage(ObjectCountCutOffPercent / 100),
-    _total_size_in_words(total_size_in_words)
-  {}
-  virtual void do_cinfo(KlassInfoEntry* entry);
- protected:
-  virtual void send_event(KlassInfoEntry* entry);
- private:
-  bool should_send_event(KlassInfoEntry* entry) const;
 };
 
 class YoungGCTracer : public GCTracer {

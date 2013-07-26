@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,9 @@ address StubRoutines::_aescrypt_decryptBlock               = NULL;
 address StubRoutines::_cipherBlockChaining_encryptAESCrypt = NULL;
 address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
 
+address StubRoutines::_updateBytesCRC32 = NULL;
+address StubRoutines::_crc_table_adr = NULL;
+
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
 double (* StubRoutines::_intrinsic_exp   )(double) = NULL;
@@ -132,6 +135,13 @@ double (* StubRoutines::_intrinsic_pow   )(double, double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
 double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
 double (* StubRoutines::_intrinsic_tan   )(double) = NULL;
+
+address StubRoutines::_safefetch32_entry                 = NULL;
+address StubRoutines::_safefetch32_fault_pc              = NULL;
+address StubRoutines::_safefetch32_continuation_pc       = NULL;
+address StubRoutines::_safefetchN_entry                  = NULL;
+address StubRoutines::_safefetchN_fault_pc               = NULL;
+address StubRoutines::_safefetchN_continuation_pc        = NULL;
 
 // Initialization
 //

@@ -140,9 +140,9 @@ public enum LongStreamTestScenario implements OpTestCase.BaseStreamTestScenario 
         void _run(TestData<T, S_IN> data, LongConsumer b, Function<S_IN, LongStream> m) {
             LongStream s = m.apply(data.parallelStream());
             Spliterator.OfLong sp = s.spliterator();
-            LongStream ss = StreamSupport.longParallelStream(() -> sp,
-                                                             StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
-                                                             | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED));
+            LongStream ss = StreamSupport.longStream(() -> sp,
+                                                     StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
+                                                     | (sp.getExactSizeIfKnown() < 0 ? 0 : Spliterator.SIZED), true);
             for (long t : ss.toArray())
                 b.accept(t);
         }

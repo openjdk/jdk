@@ -28,7 +28,6 @@ package com.sun.tools.javac.code;
 import java.util.*;
 
 import javax.lang.model.element.ElementVisitor;
-import javax.lang.model.type.TypeVisitor;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -65,16 +64,16 @@ public class Symtab {
 
     /** Builtin types.
      */
-    public final Type byteType = new Type(BYTE, null);
-    public final Type charType = new Type(CHAR, null);
-    public final Type shortType = new Type(SHORT, null);
-    public final Type intType = new Type(INT, null);
-    public final Type longType = new Type(LONG, null);
-    public final Type floatType = new Type(FLOAT, null);
-    public final Type doubleType = new Type(DOUBLE, null);
-    public final Type booleanType = new Type(BOOLEAN, null);
+    public final JCPrimitiveType byteType = new JCPrimitiveType(BYTE, null);
+    public final JCPrimitiveType charType = new JCPrimitiveType(CHAR, null);
+    public final JCPrimitiveType shortType = new JCPrimitiveType(SHORT, null);
+    public final JCPrimitiveType intType = new JCPrimitiveType(INT, null);
+    public final JCPrimitiveType longType = new JCPrimitiveType(LONG, null);
+    public final JCPrimitiveType floatType = new JCPrimitiveType(FLOAT, null);
+    public final JCPrimitiveType doubleType = new JCPrimitiveType(DOUBLE, null);
+    public final JCPrimitiveType booleanType = new JCPrimitiveType(BOOLEAN, null);
     public final Type botType = new BottomType();
-    public final JCNoType voidType = new JCNoType(VOID);
+    public final JCVoidType voidType = new JCVoidType();
 
     private final Names names;
     private final ClassReader reader;
@@ -208,7 +207,7 @@ public class Symtab {
 
     public void initType(Type type, ClassSymbol c) {
         type.tsym = c;
-        typeOfTag[type.tag.ordinal()] = type;
+        typeOfTag[type.getTag().ordinal()] = type;
     }
 
     public void initType(Type type, String name) {
@@ -220,7 +219,7 @@ public class Symtab {
 
     public void initType(Type type, String name, String bname) {
         initType(type, name);
-            boxedName[type.tag.ordinal()] = names.fromString("java.lang." + bname);
+            boxedName[type.getTag().ordinal()] = names.fromString("java.lang." + bname);
     }
 
     /** The class symbol that owns all predefined symbols.
@@ -330,7 +329,7 @@ public class Symtab {
     }
 
     public void synthesizeBoxTypeIfMissing(final Type type) {
-        ClassSymbol sym = reader.enterClass(boxedName[type.tag.ordinal()]);
+        ClassSymbol sym = reader.enterClass(boxedName[type.getTag().ordinal()]);
         final Completer completer = sym.completer;
         if (completer != null) {
             sym.completer = new Completer() {
@@ -388,12 +387,7 @@ public class Symtab {
         target = Target.instance(context);
 
         // Create the unknown type
-        unknownType = new Type(UNKNOWN, null) {
-            @Override
-            public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-                return v.visitUnknown(this, p);
-            }
-        };
+        unknownType = new UnknownType();
 
         // create the basic builtin symbols
         rootPackage = new PackageSymbol(names.empty, null);

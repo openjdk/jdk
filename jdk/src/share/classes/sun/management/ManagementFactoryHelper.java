@@ -147,18 +147,20 @@ public class ManagementFactoryHelper {
         }
     }
 
-    // The logging MXBean object is an instance of
-    // PlatformLoggingMXBean and java.util.logging.LoggingMXBean
-    // but it can't directly implement two MXBean interfaces
-    // as a compliant MXBean implements exactly one MXBean interface,
-    // or if it implements one interface that is a subinterface of
-    // all the others; otherwise, it is a non-compliant MXBean
-    // and MBeanServer will throw NotCompliantMBeanException.
-    // See the Definition of an MXBean section in javax.management.MXBean spec.
-    //
-    // To create a compliant logging MXBean, define a LoggingMXBean interface
-    // that extend PlatformLoggingMXBean and j.u.l.LoggingMXBean
-    interface LoggingMXBean
+    /**
+     * The logging MXBean object is an instance of
+     * PlatformLoggingMXBean and java.util.logging.LoggingMXBean
+     * but it can't directly implement two MXBean interfaces
+     * as a compliant MXBean implements exactly one MXBean interface,
+     * or if it implements one interface that is a subinterface of
+     * all the others; otherwise, it is a non-compliant MXBean
+     * and MBeanServer will throw NotCompliantMBeanException.
+     * See the Definition of an MXBean section in javax.management.MXBean spec.
+     *
+     * To create a compliant logging MXBean, define a LoggingMXBean interface
+     * that extend PlatformLoggingMXBean and j.u.l.LoggingMXBean
+    */
+    public interface LoggingMXBean
         extends PlatformLoggingMXBean, java.util.logging.LoggingMXBean {
     }
 

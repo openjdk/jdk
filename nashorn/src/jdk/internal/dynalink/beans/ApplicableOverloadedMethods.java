@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink.beans;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,7 +94,7 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * @author Attila Szegedi
  */
 class ApplicableOverloadedMethods {
-    private final List<MethodHandle> methods;
+    private final List<SingleDynamicMethod> methods;
     private final boolean varArgs;
 
     /**
@@ -106,10 +105,10 @@ class ApplicableOverloadedMethods {
      * @param test applicability test. One of {@link #APPLICABLE_BY_SUBTYPING},
      * {@link #APPLICABLE_BY_METHOD_INVOCATION_CONVERSION}, or {@link #APPLICABLE_BY_VARIABLE_ARITY}.
      */
-    ApplicableOverloadedMethods(final List<MethodHandle> methods, final MethodType callSiteType,
+    ApplicableOverloadedMethods(final List<SingleDynamicMethod> methods, final MethodType callSiteType,
             final ApplicabilityTest test) {
         this.methods = new LinkedList<>();
-        for(MethodHandle m: methods) {
+        for(SingleDynamicMethod m: methods) {
             if(test.isApplicable(callSiteType, m)) {
                 this.methods.add(m);
             }
@@ -122,7 +121,7 @@ class ApplicableOverloadedMethods {
      *
      * @return list of all methods.
      */
-    List<MethodHandle> getMethods() {
+    List<SingleDynamicMethod> getMethods() {
         return methods;
     }
 
@@ -131,12 +130,12 @@ class ApplicableOverloadedMethods {
      *
      * @return a list of maximally specific methods.
      */
-    List<MethodHandle> findMaximallySpecificMethods() {
+    List<SingleDynamicMethod> findMaximallySpecificMethods() {
         return MaximallySpecific.getMaximallySpecificMethods(methods, varArgs);
     }
 
     abstract static class ApplicabilityTest {
-        abstract boolean isApplicable(MethodType callSiteType, MethodHandle method);
+        abstract boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method);
     }
 
     /**
@@ -144,8 +143,8 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_SUBTYPING = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, MethodHandle method) {
-            final MethodType methodType = method.type();
+        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+            final MethodType methodType = method.getMethodType();
             final int methodArity = methodType.parameterCount();
             if(methodArity != callSiteType.parameterCount()) {
                 return false;
@@ -166,8 +165,8 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_METHOD_INVOCATION_CONVERSION = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, MethodHandle method) {
-            final MethodType methodType = method.type();
+        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+            final MethodType methodType = method.getMethodType();
             final int methodArity = methodType.parameterCount();
             if(methodArity != callSiteType.parameterCount()) {
                 return false;
@@ -189,11 +188,11 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_VARIABLE_ARITY = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, MethodHandle method) {
-            if(!method.isVarargsCollector()) {
+        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+            if(!method.isVarArgs()) {
                 return false;
             }
-            final MethodType methodType = method.type();
+            final MethodType methodType = method.getMethodType();
             final int methodArity = methodType.parameterCount();
             final int fixArity = methodArity - 1;
             final int callSiteArity = callSiteType.parameterCount();

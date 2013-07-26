@@ -42,6 +42,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.parser.DateParser;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -100,16 +101,31 @@ public final class NativeDate extends ScriptObject {
     private double time;
     private final TimeZone timezone;
 
-    NativeDate() {
-        this(System.currentTimeMillis());
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
     }
 
-    NativeDate(final double time) {
+    private NativeDate(final double time, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         final ScriptEnvironment env = Global.getEnv();
 
         this.time = time;
         this.timezone = env._timezone;
-        this.setProto(Global.instance().getDatePrototype());
+    }
+
+    NativeDate(final double time, final Global global) {
+        this(time, global.getDatePrototype(), global.getDateMap());
+    }
+
+    private NativeDate (final double time) {
+        this(time, Global.instance());
+    }
+
+    private NativeDate() {
+        this(System.currentTimeMillis());
     }
 
     @Override
@@ -149,6 +165,10 @@ public final class NativeDate extends ScriptObject {
      */
     @Constructor(arity = 7)
     public static Object construct(final boolean isNew, final Object self, final Object... args) {
+        if (! isNew) {
+            return toStringImpl(new NativeDate(), FORMAT_DATE_TIME);
+        }
+
         NativeDate result;
         switch (args.length) {
         case 0:
@@ -178,7 +198,7 @@ public final class NativeDate extends ScriptObject {
             break;
          }
 
-         return isNew ? result : toStringImpl(new NativeDate(), FORMAT_DATE_TIME);
+         return result;
     }
 
     @Override

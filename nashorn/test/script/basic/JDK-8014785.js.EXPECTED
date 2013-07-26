@@ -1,0 +1,8 @@
+foo.x = 34
+obj.x = hello
+obj.x = 42
+foo.x = 42
+x = 33
+y = hello
+obj.x = 3.141592653589793
+y = 32

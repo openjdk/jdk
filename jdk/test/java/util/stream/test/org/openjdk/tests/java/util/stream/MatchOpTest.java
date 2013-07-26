@@ -155,7 +155,7 @@ public class MatchOpTest extends OpTestCase {
         }
 
         Supplier<Iterator<Integer>> source = () -> Arrays.asList(1, 2, 3, 4).iterator();
-        Supplier<Stream<Integer>> s = () -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0));
+        Supplier<Stream<Integer>> s = () -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
         assertFalse(s.get().allMatch(i -> i > 3));
         assertTrue(s.get().anyMatch(i -> i > 3));
@@ -240,7 +240,7 @@ public class MatchOpTest extends OpTestCase {
         }
 
         Supplier<PrimitiveIterator.OfInt> source = () -> Arrays.stream(new int[]{1, 2, 3, 4}).iterator();
-        Supplier<IntStream> s = () -> StreamSupport.intStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0));
+        Supplier<IntStream> s = () -> StreamSupport.intStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
         assertFalse(s.get().allMatch(i -> i > 3));
         assertTrue(s.get().anyMatch(i -> i > 3));
@@ -325,7 +325,7 @@ public class MatchOpTest extends OpTestCase {
         }
 
         Supplier<PrimitiveIterator.OfLong> source = () -> Arrays.stream(new long[]{1, 2, 3, 4}).iterator();
-        Supplier<LongStream> s = () -> StreamSupport.longStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0));
+        Supplier<LongStream> s = () -> StreamSupport.longStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
         assertFalse(s.get().allMatch(i -> i > 3));
         assertTrue(s.get().anyMatch(i -> i > 3));
@@ -410,7 +410,7 @@ public class MatchOpTest extends OpTestCase {
         }
 
         Supplier<PrimitiveIterator.OfDouble> source = () -> Arrays.stream(new double[]{1, 2, 3, 4}).iterator();
-        Supplier<DoubleStream> s = () -> StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0));
+        Supplier<DoubleStream> s = () -> StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(new CycleIterator(source), 0), false);
 
         assertFalse(s.get().allMatch(i -> i > 3));
         assertTrue(s.get().anyMatch(i -> i > 3));

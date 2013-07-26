@@ -41,7 +41,7 @@ package jdk.nashorn.internal.runtime;
 public class FunctionScope extends ScriptObject implements Scope {
 
     /** Area to store scope arguments. (public for access from scripts.) */
-    public final Object arguments;
+    public final ScriptObject arguments;
 
     /** Flag to indicate that a split method issued a return statement */
     private int splitState = -1;
@@ -53,10 +53,9 @@ public class FunctionScope extends ScriptObject implements Scope {
      * @param callerScope caller scope
      * @param arguments   arguments
      */
-    public FunctionScope(final PropertyMap map, final ScriptObject callerScope, final Object arguments) {
-        super(map);
+    public FunctionScope(final PropertyMap map, final ScriptObject callerScope, final ScriptObject arguments) {
+        super(callerScope, map);
         this.arguments = arguments;
-        setProto(callerScope);
         setIsScope();
     }
 
@@ -67,9 +66,8 @@ public class FunctionScope extends ScriptObject implements Scope {
      * @param callerScope caller scope
      */
     public FunctionScope(final PropertyMap map, final ScriptObject callerScope) {
-        super(map);
+        super(callerScope, map);
         this.arguments = null;
-        setProto(callerScope);
         setIsScope();
     }
 

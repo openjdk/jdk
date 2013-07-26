@@ -42,12 +42,13 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
+import jdk.nashorn.internal.scripts.JO;
 
 /**
  * This class is the implementation of the Nashorn-specific global object named {@code JSAdapter}. It can be
@@ -142,9 +143,16 @@ public final class NativeJSAdapter extends ScriptObject {
 
     private static final MethodHandle IS_JSADAPTOR = findOwnMH("isJSAdaptor", boolean.class, Object.class, Object.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
-    NativeJSAdapter(final ScriptObject proto, final Object overrides, final ScriptObject adaptee) {
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    NativeJSAdapter(final Object overrides, final ScriptObject adaptee, final ScriptObject proto, final PropertyMap map) {
+        super(proto, map);
         this.adaptee = wrapAdaptee(adaptee);
-        this.setProto(proto);
         if (overrides instanceof ScriptObject) {
             this.overrides = true;
             final ScriptObject sobj = (ScriptObject)overrides;
@@ -155,9 +163,7 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static ScriptObject wrapAdaptee(final ScriptObject adaptee) {
-        final ScriptObject sobj = new jdk.nashorn.internal.scripts.JO();
-        sobj.setProto(adaptee);
-        return sobj;
+        return new JO(adaptee, Global.instance().getObjectMap());
     }
 
     @Override
@@ -566,11 +572,12 @@ public final class NativeJSAdapter extends ScriptObject {
             throw typeError("not.an.object", ScriptRuntime.safeToString(adaptee));
         }
 
+        final Global global = Global.instance();
         if (proto != null && !(proto instanceof ScriptObject)) {
-            proto = Global.instance().getJSAdapterPrototype();
+            proto = global.getJSAdapterPrototype();
         }
 
-        return new NativeJSAdapter((ScriptObject)proto, overrides, (ScriptObject)adaptee);
+        return new NativeJSAdapter(overrides, (ScriptObject)adaptee, (ScriptObject)proto, global.getJSAdapterMap());
     }
 
     @Override
@@ -615,12 +622,15 @@ public final class NativeJSAdapter extends ScriptObject {
         case "getMethod":
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
-                final ScriptFunctionImpl func = (ScriptFunctionImpl)getObjectValue(find);
-                // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
-                // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
-                return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
-                        func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
-                        adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__), testJSAdaptor(adaptee, null, null, null));
+                final Object value = getObjectValue(find);
+                if (value instanceof ScriptFunction) {
+                    final ScriptFunctionImpl func = (ScriptFunctionImpl)value;
+                    // TODO: It's a shame we need to produce a function bound to this and name, when we'd only need it bound
+                    // to name. Probably not a big deal, but if we can ever make it leaner, it'd be nice.
+                    return new GuardedInvocation(MH.dropArguments(MH.constant(Object.class,
+                            func.makeBoundFunction(this, new Object[] { name })), 0, Object.class),
+                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), __call__), testJSAdaptor(adaptee, null, null, null));
+                }
             }
             throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
         default:
@@ -680,16 +690,19 @@ public final class NativeJSAdapter extends ScriptObject {
         final MethodType type = desc.getMethodType();
         if (findData != null) {
             final String name = desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null;
-            final ScriptFunction func = (ScriptFunction)getObjectValue(findData);
+            final Object value = getObjectValue(findData);
+            if (value instanceof ScriptFunction) {
+                final ScriptFunction func = (ScriptFunction)value;
 
-            final MethodHandle methodHandle = getCallMethodHandle(findData, type,
+                final MethodHandle methodHandle = getCallMethodHandle(findData, type,
                     useName ? name : null);
-            if (methodHandle != null) {
-                return new GuardedInvocation(
-                        methodHandle,
-                        adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook),
-                        testJSAdaptor(adaptee, findData.getGetter(Object.class), findData.getOwner(), func));
-            }
+                if (methodHandle != null) {
+                    return new GuardedInvocation(
+                            methodHandle,
+                            adaptee.getMap().getProtoGetSwitchPoint(adaptee.getProto(), hook),
+                            testJSAdaptor(adaptee, findData.getGetter(Object.class), findData.getOwner(), func));
+                }
+             }
         }
 
         switch (hook) {
@@ -732,10 +745,6 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(NativeJSAdapter.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), NativeJSAdapter.class, name, MH.type(rtype, types));
     }
 }

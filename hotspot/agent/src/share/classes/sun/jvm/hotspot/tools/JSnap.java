@@ -25,9 +25,19 @@
 package sun.jvm.hotspot.tools;
 
 import java.io.*;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.*;
 
 public class JSnap extends Tool {
+
+    public JSnap() {
+        super();
+    }
+
+    public JSnap(JVMDebugger d) {
+        super(d);
+    }
+
     public void run() {
         final PrintStream out = System.out;
         if (PerfMemory.initialized()) {

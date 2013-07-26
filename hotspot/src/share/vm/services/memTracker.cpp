@@ -81,13 +81,13 @@ void MemTracker::init_tracking_options(const char* option_line) {
   } else if (strcmp(option_line, "=detail") == 0) {
     // detail relies on a stack-walking ability that may not
     // be available depending on platform and/or compiler flags
-    if (PLATFORM_NMT_DETAIL_SUPPORTED) {
+#if PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
       _tracking_level = NMT_detail;
-    } else {
+#else
       jio_fprintf(defaultStream::error_stream(),
-        "NMT detail is not supported on this platform.  Using NMT summary instead.");
+        "NMT detail is not supported on this platform.  Using NMT summary instead.\n");
       _tracking_level = NMT_summary;
-    }
+#endif
   } else if (strcmp(option_line, "=off") != 0) {
     vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
   }
@@ -385,6 +385,7 @@ void MemTracker::enqueue_pending_recorder(MemRecorder* rec) {
 #define SAFE_SEQUENCE_THRESHOLD    30
 #define HIGH_GENERATION_THRESHOLD  60
 #define MAX_RECORDER_THREAD_RATIO  30
+#define MAX_RECORDER_PER_THREAD    100
 
 void MemTracker::sync() {
   assert(_tracking_level > NMT_off, "NMT is not enabled");
@@ -437,6 +438,11 @@ void MemTracker::sync() {
         // means that worker thread is lagging behind in processing them.
         if (!AutoShutdownNMT) {
           _slowdown_calling_thread = (MemRecorder::_instance_count > MAX_RECORDER_THREAD_RATIO * _thread_count);
+        } else {
+          // If auto shutdown is on, enforce MAX_RECORDER_PER_THREAD threshold to prevent OOM
+          if (MemRecorder::_instance_count >= _thread_count * MAX_RECORDER_PER_THREAD) {
+            shutdown(NMT_out_of_memory);
+          }
         }
 
         // check _worker_thread with lock to avoid racing condition

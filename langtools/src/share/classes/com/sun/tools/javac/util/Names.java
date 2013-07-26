@@ -174,8 +174,8 @@ public class Names {
 
     //lambda-related
     public final Name lambda;
-    public final Name metaFactory;
-    public final Name altMetaFactory;
+    public final Name metafactory;
+    public final Name altMetafactory;
 
     public final Name.Table table;
 
@@ -310,8 +310,8 @@ public class Names {
 
         //lambda-related
         lambda = fromString("lambda$");
-        metaFactory = fromString("metaFactory");
-        altMetaFactory = fromString("altMetaFactory");
+        metafactory = fromString("metafactory");
+        altMetafactory = fromString("altMetafactory");
     }
 
     protected Name.Table createTable(Options options) {

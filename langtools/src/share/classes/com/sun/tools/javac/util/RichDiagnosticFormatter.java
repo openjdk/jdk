@@ -303,8 +303,9 @@ public class RichDiagnosticFormatter extends
                     conflicts.contains(s))) {
                     List<Name> l = List.nil();
                     Symbol s2 = s;
-                    while (s2.type.getEnclosingType().hasTag(CLASS)
-                            && s2.owner.kind == Kinds.TYP) {
+                    while (s2.type.hasTag(CLASS) &&
+                            s2.type.getEnclosingType().hasTag(CLASS) &&
+                            s2.owner.kind == Kinds.TYP) {
                         l = l.prepend(s2.getSimpleName());
                         s2 = s2.owner;
                     }

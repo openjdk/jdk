@@ -41,6 +41,8 @@ import javax.security.auth.callback.CallbackHandler;
  */
 public abstract class AuthProvider extends Provider {
 
+    private static final long serialVersionUID = 4197859053084546461L;
+
     /**
      * Constructs a provider with the specified name, version number,
      * and information.
