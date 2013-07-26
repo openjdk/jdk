@@ -41,17 +41,18 @@ import java.util.*;
  * for the deque to become non-empty when retrieving an element, and wait for
  * space to become available in the deque when storing an element.
  *
- * <p><tt>BlockingDeque</tt> methods come in four forms, with different ways
+ * <p>{@code BlockingDeque} methods come in four forms, with different ways
  * of handling operations that cannot be satisfied immediately, but may be
  * satisfied at some point in the future:
  * one throws an exception, the second returns a special value (either
- * <tt>null</tt> or <tt>false</tt>, depending on the operation), the third
+ * {@code null} or {@code false}, depending on the operation), the third
  * blocks the current thread indefinitely until the operation can succeed,
  * and the fourth blocks for only a given maximum time limit before giving
  * up.  These methods are summarized in the following table:
  *
  * <p>
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <caption>Summary of BlockingDeque methods</caption>
  *  <tr>
  *    <td ALIGN=CENTER COLSPAN = 5> <b>First Element (Head)</b></td>
  *  </tr>
@@ -116,20 +117,21 @@ import java.util.*;
  *  </tr>
  * </table>
  *
- * <p>Like any {@link BlockingQueue}, a <tt>BlockingDeque</tt> is thread safe,
+ * <p>Like any {@link BlockingQueue}, a {@code BlockingDeque} is thread safe,
  * does not permit null elements, and may (or may not) be
  * capacity-constrained.
  *
- * <p>A <tt>BlockingDeque</tt> implementation may be used directly as a FIFO
- * <tt>BlockingQueue</tt>. The methods inherited from the
- * <tt>BlockingQueue</tt> interface are precisely equivalent to
- * <tt>BlockingDeque</tt> methods as indicated in the following table:
+ * <p>A {@code BlockingDeque} implementation may be used directly as a FIFO
+ * {@code BlockingQueue}. The methods inherited from the
+ * {@code BlockingQueue} interface are precisely equivalent to
+ * {@code BlockingDeque} methods as indicated in the following table:
  *
  * <p>
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <caption>Comparison of BlockingQueue and BlockingDeque methods</caption>
  *  <tr>
- *    <td ALIGN=CENTER> <b><tt>BlockingQueue</tt> Method</b></td>
- *    <td ALIGN=CENTER> <b>Equivalent <tt>BlockingDeque</tt> Method</b></td>
+ *    <td ALIGN=CENTER> <b>{@code BlockingQueue} Method</b></td>
+ *    <td ALIGN=CENTER> <b>Equivalent {@code BlockingDeque} Method</b></td>
  *  </tr>
  *  <tr>
  *    <td ALIGN=CENTER COLSPAN = 2> <b>Insert</b></td>
@@ -208,7 +210,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
-     * throwing an <tt>IllegalStateException</tt> if no space is currently
+     * throwing an {@code IllegalStateException} if no space is currently
      * available.  When using a capacity-restricted deque, it is generally
      * preferable to use {@link #offerFirst(Object) offerFirst}.
      *
@@ -223,7 +225,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Inserts the specified element at the end of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
-     * throwing an <tt>IllegalStateException</tt> if no space is currently
+     * throwing an {@code IllegalStateException} if no space is currently
      * available.  When using a capacity-restricted deque, it is generally
      * preferable to use {@link #offerLast(Object) offerLast}.
      *
@@ -238,7 +240,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
-     * returning <tt>true</tt> upon success and <tt>false</tt> if no space is
+     * returning {@code true} upon success and {@code false} if no space is
      * currently available.
      * When using a capacity-restricted deque, this method is generally
      * preferable to the {@link #addFirst(Object) addFirst} method, which can
@@ -254,7 +256,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Inserts the specified element at the end of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
-     * returning <tt>true</tt> upon success and <tt>false</tt> if no space is
+     * returning {@code true} upon success and {@code false} if no space is
      * currently available.
      * When using a capacity-restricted deque, this method is generally
      * preferable to the {@link #addLast(Object) addLast} method, which can
@@ -302,10 +304,10 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      *
      * @param e the element to add
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return <tt>true</tt> if successful, or <tt>false</tt> if
+     *        {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     *        {@code timeout} parameter
+     * @return {@code true} if successful, or {@code false} if
      *         the specified waiting time elapses before space is available
      * @throws InterruptedException if interrupted while waiting
      * @throws ClassCastException if the class of the specified element
@@ -324,10 +326,10 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      *
      * @param e the element to add
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return <tt>true</tt> if successful, or <tt>false</tt> if
+     *        {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     *        {@code timeout} parameter
+     * @return {@code true} if successful, or {@code false} if
      *         the specified waiting time elapses before space is available
      * @throws InterruptedException if interrupted while waiting
      * @throws ClassCastException if the class of the specified element
@@ -363,10 +365,10 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * become available.
      *
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return the head of this deque, or <tt>null</tt> if the specified
+     *        {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     *        {@code timeout} parameter
+     * @return the head of this deque, or {@code null} if the specified
      *         waiting time elapses before an element is available
      * @throws InterruptedException if interrupted while waiting
      */
@@ -379,10 +381,10 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * become available.
      *
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
-     * @return the tail of this deque, or <tt>null</tt> if the specified
+     *        {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     *        {@code timeout} parameter
+     * @return the tail of this deque, or {@code null} if the specified
      *         waiting time elapses before an element is available
      * @throws InterruptedException if interrupted while waiting
      */
@@ -392,13 +394,13 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Removes the first occurrence of the specified element from this deque.
      * If the deque does not contain the element, it is unchanged.
-     * More formally, removes the first element <tt>e</tt> such that
-     * <tt>o.equals(e)</tt> (if such an element exists).
-     * Returns <tt>true</tt> if this deque contained the specified element
+     * More formally, removes the first element {@code e} such that
+     * {@code o.equals(e)} (if such an element exists).
+     * Returns {@code true} if this deque contained the specified element
      * (or equivalently, if this deque changed as a result of the call).
      *
      * @param o element to be removed from this deque, if present
-     * @return <tt>true</tt> if an element was removed as a result of this call
+     * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
      *         (<a href="../Collection.html#optional-restrictions">optional</a>)
@@ -410,13 +412,13 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Removes the last occurrence of the specified element from this deque.
      * If the deque does not contain the element, it is unchanged.
-     * More formally, removes the last element <tt>e</tt> such that
-     * <tt>o.equals(e)</tt> (if such an element exists).
-     * Returns <tt>true</tt> if this deque contained the specified element
+     * More formally, removes the last element {@code e} such that
+     * {@code o.equals(e)} (if such an element exists).
+     * Returns {@code true} if this deque contained the specified element
      * (or equivalently, if this deque changed as a result of the call).
      *
      * @param o element to be removed from this deque, if present
-     * @return <tt>true</tt> if an element was removed as a result of this call
+     * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
      *         (<a href="../Collection.html#optional-restrictions">optional</a>)
@@ -431,8 +433,8 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * Inserts the specified element into the queue represented by this deque
      * (in other words, at the tail of this deque) if it is possible to do so
      * immediately without violating capacity restrictions, returning
-     * <tt>true</tt> upon success and throwing an
-     * <tt>IllegalStateException</tt> if no space is currently available.
+     * {@code true} upon success and throwing an
+     * {@code IllegalStateException} if no space is currently available.
      * When using a capacity-restricted deque, it is generally preferable to
      * use {@link #offer(Object) offer}.
      *
@@ -452,7 +454,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * Inserts the specified element into the queue represented by this deque
      * (in other words, at the tail of this deque) if it is possible to do so
      * immediately without violating capacity restrictions, returning
-     * <tt>true</tt> upon success and <tt>false</tt> if no space is currently
+     * {@code true} upon success and {@code false} if no space is currently
      * available.  When using a capacity-restricted deque, this method is
      * generally preferable to the {@link #add} method, which can fail to
      * insert an element only by throwing an exception.
@@ -494,8 +496,8 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * {@link #offerLast(Object,long,TimeUnit) offerLast}.
      *
      * @param e the element to add
-     * @return <tt>true</tt> if the element was added to this deque, else
-     *         <tt>false</tt>
+     * @return {@code true} if the element was added to this deque, else
+     *         {@code false}
      * @throws InterruptedException {@inheritDoc}
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this deque
@@ -522,11 +524,11 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Retrieves and removes the head of the queue represented by this deque
      * (in other words, the first element of this deque), or returns
-     * <tt>null</tt> if this deque is empty.
+     * {@code null} if this deque is empty.
      *
      * <p>This method is equivalent to {@link #pollFirst()}.
      *
-     * @return the head of this deque, or <tt>null</tt> if this deque is empty
+     * @return the head of this deque, or {@code null} if this deque is empty
      */
     E poll();
 
@@ -550,7 +552,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      * <p>This method is equivalent to
      * {@link #pollFirst(long,TimeUnit) pollFirst}.
      *
-     * @return the head of this deque, or <tt>null</tt> if the
+     * @return the head of this deque, or {@code null} if the
      *         specified waiting time elapses before an element is available
      * @throws InterruptedException if interrupted while waiting
      */
@@ -573,27 +575,27 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Retrieves, but does not remove, the head of the queue represented by
      * this deque (in other words, the first element of this deque), or
-     * returns <tt>null</tt> if this deque is empty.
+     * returns {@code null} if this deque is empty.
      *
      * <p>This method is equivalent to {@link #peekFirst() peekFirst}.
      *
-     * @return the head of this deque, or <tt>null</tt> if this deque is empty
+     * @return the head of this deque, or {@code null} if this deque is empty
      */
     E peek();
 
     /**
      * Removes the first occurrence of the specified element from this deque.
      * If the deque does not contain the element, it is unchanged.
-     * More formally, removes the first element <tt>e</tt> such that
-     * <tt>o.equals(e)</tt> (if such an element exists).
-     * Returns <tt>true</tt> if this deque contained the specified element
+     * More formally, removes the first element {@code e} such that
+     * {@code o.equals(e)} (if such an element exists).
+     * Returns {@code true} if this deque contained the specified element
      * (or equivalently, if this deque changed as a result of the call).
      *
      * <p>This method is equivalent to
      * {@link #removeFirstOccurrence(Object) removeFirstOccurrence}.
      *
      * @param o element to be removed from this deque, if present
-     * @return <tt>true</tt> if this deque changed as a result of the call
+     * @return {@code true} if this deque changed as a result of the call
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
      *         (<a href="../Collection.html#optional-restrictions">optional</a>)
@@ -603,12 +605,12 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     boolean remove(Object o);
 
     /**
-     * Returns <tt>true</tt> if this deque contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this deque contains
-     * at least one element <tt>e</tt> such that <tt>o.equals(e)</tt>.
+     * Returns {@code true} if this deque contains the specified element.
+     * More formally, returns {@code true} if and only if this deque contains
+     * at least one element {@code e} such that {@code o.equals(e)}.
      *
      * @param o object to be checked for containment in this deque
-     * @return <tt>true</tt> if this deque contains the specified element
+     * @return {@code true} if this deque contains the specified element
      * @throws ClassCastException if the class of the specified element
      *         is incompatible with this deque
      *         (<a href="../Collection.html#optional-restrictions">optional</a>)
@@ -635,9 +637,10 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     // *** Stack methods ***
 
     /**
-     * Pushes an element onto the stack represented by this deque.  In other
-     * words, inserts the element at the front of this deque unless it would
-     * violate capacity restrictions.
+     * Pushes an element onto the stack represented by this deque (in other
+     * words, at the head of this deque) if it is possible to do so
+     * immediately without violating capacity restrictions, throwing an
+     * {@code IllegalStateException} if no space is currently available.
      *
      * <p>This method is equivalent to {@link #addFirst(Object) addFirst}.
      *

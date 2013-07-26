@@ -2,28 +2,28 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
-
 import java.util.Iterator;
 import org.w3c.dom.Element;
-
 
 /**
  * A wrapper for a pointer from a key value of an <code>EncryptedKey</code> to
@@ -44,6 +44,13 @@ import org.w3c.dom.Element;
  * @see ReferenceList
  */
 public interface Reference {
+    /**
+     * Returns the <code>Element</code> tag name for this <code>Reference</code>.
+     *
+     * @return the tag name of this <code>Reference</code>.
+     */
+    String getType();
+
     /**
      * Returns a <code>URI</code> that points to an <code>Element</code> that
      * were encrypted using the key defined in the enclosing
@@ -79,14 +86,14 @@ public interface Reference {
     /**
      * Adds retrieval information.
      *
-     * @param info.
+     * @param info
      */
     void addElementRetrievalInformation(Element info);
 
     /**
      * Removes the specified retrieval information.
      *
-     * @param info.
+     * @param info
      */
     void removeElementRetrievalInformation(Element info);
 }

@@ -598,9 +598,9 @@ final class SliceOps {
                 final Node.Builder<P_OUT> nb = op.makeNodeBuilder(sizeIfKnown, generator);
                 Sink<P_OUT> opSink = op.opWrapSink(helper.getStreamAndOpFlags(), nb);
                 helper.copyIntoWithCancel(helper.wrapSink(opSink), spliterator);
-                // It is necessary to truncate here since the result at the root
-                // can only be set once
-                return doTruncate(nb.build());
+                // There is no need to truncate since the op performs the
+                // skipping and limiting of elements
+                return nb.build();
             }
             else {
                 Node<P_OUT> node = helper.wrapAndCopyInto(helper.makeNodeBuilder(-1, generator),

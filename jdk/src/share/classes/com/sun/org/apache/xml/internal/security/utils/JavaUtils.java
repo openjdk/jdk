@@ -2,21 +2,23 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
@@ -33,8 +35,8 @@ import java.io.InputStream;
  */
 public class JavaUtils {
 
-    /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
+    /** {@link org.apache.commons.logging} logging facility */
+    private static java.util.logging.Logger log =
         java.util.logging.Logger.getLogger(JavaUtils.class.getName());
 
     private JavaUtils() {
@@ -45,7 +47,7 @@ public class JavaUtils {
      * Method getBytesFromFile
      *
      * @param fileName
-     * @return the bytes readed from the file
+     * @return the bytes read from the file
      *
      * @throws FileNotFoundException
      * @throws IOException
@@ -55,9 +57,11 @@ public class JavaUtils {
 
         byte refBytes[] = null;
 
-        FileInputStream fisRef = new FileInputStream(fileName);
+        FileInputStream fisRef = null;
+        UnsyncByteArrayOutputStream baos = null;
         try {
-            UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream();
+            fisRef = new FileInputStream(fileName);
+            baos = new UnsyncByteArrayOutputStream();
             byte buf[] = new byte[1024];
             int len;
 
@@ -67,7 +71,12 @@ public class JavaUtils {
 
             refBytes = baos.toByteArray();
         } finally {
-            fisRef.close();
+            if (baos != null) {
+                baos.close();
+            }
+            if (fisRef != null) {
+                fisRef.close();
+            }
         }
 
         return refBytes;
@@ -80,7 +89,6 @@ public class JavaUtils {
      * @param bytes
      */
     public static void writeBytesToFilename(String filename, byte[] bytes) {
-
         FileOutputStream fos = null;
         try {
             if (filename != null && bytes != null) {
@@ -91,13 +99,19 @@ public class JavaUtils {
                 fos.write(bytes);
                 fos.close();
             } else {
-                log.log(java.util.logging.Level.FINE, "writeBytesToFilename got null byte[] pointed");
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "writeBytesToFilename got null byte[] pointed");
+                }
             }
         } catch (IOException ex) {
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (IOException ioe) {}
+                } catch (IOException ioe) {
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.log(java.util.logging.Level.FINE, ioe.getMessage(), ioe);
+                    }
+                }
             }
         }
     }
@@ -107,25 +121,28 @@ public class JavaUtils {
      * returns them as a byte array.
      *
      * @param inputStream
-     * @return the bytes readed from the stream
+     * @return the bytes read from the stream
      *
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public static byte[] getBytesFromStream(InputStream inputStream)
-        throws IOException {
+    public static byte[] getBytesFromStream(InputStream inputStream) throws IOException {
+        UnsyncByteArrayOutputStream baos = null;
 
-        byte refBytes[] = null;
+        byte[] retBytes = null;
+        try {
+            baos = new UnsyncByteArrayOutputStream();
+            byte buf[] = new byte[4 * 1024];
+            int len;
 
-        UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream();
-        byte buf[] = new byte[1024];
-        int len;
-
-        while ((len = inputStream.read(buf)) > 0) {
-            baos.write(buf, 0, len);
+            while ((len = inputStream.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            retBytes = baos.toByteArray();
+        } finally {
+            baos.close();
         }
 
-        refBytes = baos.toByteArray();
-        return refBytes;
+        return retBytes;
     }
 }

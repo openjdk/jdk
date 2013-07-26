@@ -186,7 +186,7 @@ public final class OptionalInt {
     }
 
     /**
-     * Indicates whether some other object is "equal to" this Optional. The
+     * Indicates whether some other object is "equal to" this OptionalInt. The
      * other object is considered equal if:
      * <ul>
      * <li>it is also an {@code OptionalInt} and;
@@ -226,12 +226,14 @@ public final class OptionalInt {
     }
 
     /**
-     * Returns a non-empty string representation of this OptionalInt suitable for
+     * {@inheritDoc}
+     *
+     * Returns a non-empty string representation of this object suitable for
      * debugging. The exact presentation format is unspecified and may vary
      * between implementations and versions.
      *
      * @implSpec If a value is present the result must include its string
-     * representation in the result. Empty and present OptionalInts must be
+     * representation in the result. Empty and present instances must be
      * unambiguously differentiable.
      *
      * @return the string representation of this instance
