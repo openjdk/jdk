@@ -136,8 +136,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Creates a {@code PriorityQueue} with the default initial capacity
-     * that orders its elements according to the specified comparator.
+     * Creates a {@code PriorityQueue} with the default initial capacity and
+     * whose elements are ordered according to the specified comparator.
      *
      * @param  comparator the comparator that will be used to order this
      *         priority queue.  If {@code null}, the {@linkplain Comparable
