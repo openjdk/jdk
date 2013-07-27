@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import sun.misc.DoubleConsts;
@@ -101,6 +100,7 @@ import sun.misc.FloatConsts;
  * @author  Josh Bloch
  * @author  Michael McCloskey
  * @author  Alan Eliasen
+ * @author  Timothy Buktu
  * @since JDK1.1
  */
 
@@ -213,6 +213,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * experimentally to work well.
      */
     private static final int TOOM_COOK_SQUARE_THRESHOLD = 140;
+
+    /**
+     * The threshold value for using Burnikel-Ziegler division.  If the number
+     * of ints in the number are larger than this value,
+     * Burnikel-Ziegler division will be used.   This value is found
+     * experimentally to work well.
+     */
+    static final int BURNIKEL_ZIEGLER_THRESHOLD = 50;
 
     /**
      * The threshold value for using Schoenhage recursive base conversion. If
@@ -1781,7 +1789,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             if (len < TOOM_COOK_SQUARE_THRESHOLD)
                 return squareKaratsuba();
             else
-               return squareToomCook3();
+                return squareToomCook3();
     }
 
     /**
@@ -1936,11 +1944,26 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger divide(BigInteger val) {
+        if (mag.length<BURNIKEL_ZIEGLER_THRESHOLD || val.mag.length<BURNIKEL_ZIEGLER_THRESHOLD)
+            return divideKnuth(val);
+        else
+            return divideBurnikelZiegler(val);
+    }
+
+    /**
+     * Returns a BigInteger whose value is {@code (this / val)} using an O(n^2) algorithm from Knuth.
+     *
+     * @param  val value by which this BigInteger is to be divided.
+     * @return {@code this / val}
+     * @throws ArithmeticException if {@code val} is zero.
+     * @see MutableBigInteger#divideKnuth(MutableBigInteger, MutableBigInteger, boolean)
+     */
+    private BigInteger divideKnuth(BigInteger val) {
         MutableBigInteger q = new MutableBigInteger(),
                           a = new MutableBigInteger(this.mag),
                           b = new MutableBigInteger(val.mag);
 
-        a.divide(b, q, false);
+        a.divideKnuth(b, q, false);
         return q.toBigInteger(this.signum * val.signum);
     }
 
@@ -1956,11 +1979,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger[] divideAndRemainder(BigInteger val) {
+        if (mag.length<BURNIKEL_ZIEGLER_THRESHOLD || val.mag.length<BURNIKEL_ZIEGLER_THRESHOLD)
+            return divideAndRemainderKnuth(val);
+        else
+            return divideAndRemainderBurnikelZiegler(val);
+    }
+
+    /** Long division */
+    private BigInteger[] divideAndRemainderKnuth(BigInteger val) {
         BigInteger[] result = new BigInteger[2];
         MutableBigInteger q = new MutableBigInteger(),
                           a = new MutableBigInteger(this.mag),
                           b = new MutableBigInteger(val.mag);
-        MutableBigInteger r = a.divide(b, q);
+        MutableBigInteger r = a.divideKnuth(b, q);
         result[0] = q.toBigInteger(this.signum == val.signum ? 1 : -1);
         result[1] = r.toBigInteger(this.signum);
         return result;
@@ -1975,11 +2006,51 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger remainder(BigInteger val) {
+        if (mag.length<BURNIKEL_ZIEGLER_THRESHOLD || val.mag.length<BURNIKEL_ZIEGLER_THRESHOLD)
+            return remainderKnuth(val);
+        else
+            return remainderBurnikelZiegler(val);
+    }
+
+    /** Long division */
+    private BigInteger remainderKnuth(BigInteger val) {
         MutableBigInteger q = new MutableBigInteger(),
                           a = new MutableBigInteger(this.mag),
                           b = new MutableBigInteger(val.mag);
 
-        return a.divide(b, q).toBigInteger(this.signum);
+        return a.divideKnuth(b, q).toBigInteger(this.signum);
+    }
+
+    /**
+     * Calculates {@code this / val} using the Burnikel-Ziegler algorithm.
+     * @param  val the divisor
+     * @return {@code this / val}
+     */
+    private BigInteger divideBurnikelZiegler(BigInteger val) {
+        return divideAndRemainderBurnikelZiegler(val)[0];
+    }
+
+    /**
+     * Calculates {@code this % val} using the Burnikel-Ziegler algorithm.
+     * @param val the divisor
+     * @return {@code this % val}
+     */
+    private BigInteger remainderBurnikelZiegler(BigInteger val) {
+        return divideAndRemainderBurnikelZiegler(val)[1];
+    }
+
+    /**
+     * Computes {@code this / val} and {@code this % val} using the
+     * Burnikel-Ziegler algorithm.
+     * @param val the divisor
+     * @return an array containing the quotient and remainder
+     */
+    private BigInteger[] divideAndRemainderBurnikelZiegler(BigInteger val) {
+        MutableBigInteger q = new MutableBigInteger();
+        MutableBigInteger r = new MutableBigInteger(this).divideAndRemainderBurnikelZiegler(new MutableBigInteger(val), q);
+        BigInteger qBigInt = q.isZero() ? ZERO : q.toBigInteger(signum*val.signum);
+        BigInteger rBigInt = r.isZero() ? ZERO : r.toBigInteger(signum);
+        return new BigInteger[] {qBigInt, rBigInt};
     }
 
     /**
@@ -3399,7 +3470,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Converts the specified BigInteger to a string and appends to
-     * <code>sb</code>.  This implements the recursive Schoenhage algorithm
+     * {@code sb}.  This implements the recursive Schoenhage algorithm
      * for base conversions.
      * <p/>
      * See Knuth, Donald,  _The Art of Computer Programming_, Vol. 2,
@@ -3450,7 +3521,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * If this value doesn't already exist in the cache, it is added.
      * <p/>
      * This could be changed to a more complicated caching method using
-     * <code>Future</code>.
+     * {@code Future}.
      */
     private static BigInteger getRadixConversionCache(int radix, int exponent) {
         BigInteger[] cacheLine = powerCache[radix]; // volatile read
