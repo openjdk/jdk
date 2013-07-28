@@ -2195,7 +2195,9 @@ public class Attr extends JCTree.Visitor {
                         syms.objectType :
                         clazztype;
                 if (!inferred.isErroneous() &&
-                    types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
+                    (allowPoly && pt() == Infer.anyPoly ?
+                        types.isSameType(inferred, clazztype) :
+                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings))) {
                     String key = types.isSameType(clazztype, inferred) ?
                         "diamond.redundant.args" :
                         "diamond.redundant.args.1";
