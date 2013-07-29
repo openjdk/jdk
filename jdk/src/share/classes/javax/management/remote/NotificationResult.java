@@ -132,16 +132,17 @@ public class NotificationResult implements Serializable {
     }
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        ObjectInputStream.GetField gf = ois.readFields();
-        TargetedNotification[] tNotifs = (TargetedNotification[])gf.get("targetedNotifications", null);
-        long snStart = gf.get("earliestSequenceNumber", -1L);
-        long snNext = gf.get("nextSequenceNumber", -1L);
+        ois.defaultReadObject();
         try {
-            validate(tNotifs, snStart, snNext);
+            validate(
+                this.targetedNotifications,
+                this.earliestSequenceNumber,
+                this.nextSequenceNumber
+            );
 
-            this.targetedNotifications = tNotifs.length == 0 ? tNotifs : tNotifs.clone();
-            this.earliestSequenceNumber = snStart;
-            this.nextSequenceNumber = snNext;
+            this.targetedNotifications = this.targetedNotifications.length == 0 ?
+                                            this.targetedNotifications :
+                                            this.targetedNotifications.clone();
         } catch (IllegalArgumentException e) {
             throw new InvalidObjectException(e.getMessage());
         }
