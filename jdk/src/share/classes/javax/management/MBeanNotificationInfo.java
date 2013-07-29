@@ -210,11 +210,6 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         ObjectInputStream.GetField gf = ois.readFields();
         String[] t = (String[])gf.get("types", null);
 
-        if (t == null) {
-            throw new InvalidObjectException("Trying to deserialize an invalid " +
-                                             "instance of " + MBeanNotificationInfo.class +
-                                             "[types=null]");
-        }
-        types = t.length == 0 ? t : t.clone();
+        types = (t != null && t.length != 0) ? t.clone() : NO_TYPES;
     }
 }
