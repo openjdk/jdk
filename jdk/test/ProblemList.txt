@@ -255,31 +255,11 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
 # jdk_security
 
-# 8012971 PKCS11Test hiding exception failures
-sun/security/pkcs11/KeyStore/SecretKeysBasic.java		solaris-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.java		linux-all
-sun/security/pkcs11/ec/TestCurves.java				solaris-all
-sun/security/pkcs11/ec/TestCurves.java				linux-all
-sun/security/pkcs11/ec/TestECDH.java				solaris-all
-sun/security/pkcs11/ec/TestECDH2.java				solaris-all
-sun/security/pkcs11/ec/TestECDH2.java				linux-all
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA.java				linux-all
-sun/security/pkcs11/ec/TestECDSA2.java				solaris-all
-sun/security/pkcs11/ec/TestECDSA2.java				linux-all
-sun/security/pkcs11/ec/TestECGenSpec.java			solaris-all
-sun/security/pkcs11/ec/TestECGenSpec.java			linux-all
-sun/security/pkcs11/ec/TestKeyFactory.java			solaris-all
-sun/security/pkcs11/ec/TestKeyFactory.java			linux-all
+# 7157786
+sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# 7193793
-sun/security/pkcs11/ec/TestECDH.java				linux-all
-
-# 7198198: the test also fails on SuSE Linux
-sun/security/pkcs11/ec/ReadCertificates.java                    linux-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -289,9 +269,6 @@ sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
 sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
-
-# 8005247
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
 
 # 8009438
 sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
