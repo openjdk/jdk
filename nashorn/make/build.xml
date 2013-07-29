@@ -47,10 +47,10 @@
     <!-- check if testng.jar is avaiable -->
     <available property="testng.available" file="${file.reference.testng.jar}"/>
 
-	<!-- enable/disable make code coverage -->
-	<condition property="cc.enabled">
-		<istrue value="${make.code.coverage}" />
-	</condition>
+    <!-- enable/disable make code coverage -->
+    <condition property="cc.enabled">
+        <istrue value="${make.code.coverage}" />
+    </condition>
 
     <!-- exclude tests in exclude lists -->
     <condition property="exclude.list" value="./exclude/exclude_list_cc.txt" else="./exclude/exclude_list.txt">
@@ -60,9 +60,9 @@
 
   <target name="init" depends="init-conditions, init-cc">
 
-	<!-- extends jvm args -->
-	<property name="run.test.jvmargs" value="${run.test.jvmargs.main}  ${run.test.cc.jvmargs}"/>
-	<property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
+    <!-- extends jvm args -->
+    <property name="run.test.jvmargs" value="${run.test.jvmargs.main}  ${run.test.cc.jvmargs}"/>
+    <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
 
     <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
     <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
@@ -294,19 +294,6 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
   </target>
 
   <target name="test" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
-    <java classname="${nashorn.shell.tool}" fork="true" dir="${test.script.dir}/representations" output="${build.dir}/output1.log" error="${build.dir}/err.log">
-      <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="-Dnashorn.fields.dual=true"/>
-      <arg value="NASHORN-592a.js"/>
-    </java>
-    <java classname="${nashorn.shell.tool}" fork="true" dir="${test.script.dir}/representations" output="${build.dir}/output2.log" error="${build.dir}/err.log">
-      <jvmarg line="${ext.class.path}"/>
-      <arg value="NASHORN-592a.js"/>
-    </java>
-    <condition property="representation-ok">
-      <filesmatch file1="${build.dir}/output1.log" file2="${build.dir}/output2.log"/>
-    </condition>
-    <fail unless="representation-ok">Representation test failed - output differs!</fail>
     <fileset id="test.classes" dir="${build.test.classes.dir}">
       <include name="**/api/javaaccess/*Test.class"/>
       <include name="**/api/scripting/*Test.class"/>
