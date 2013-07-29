@@ -83,7 +83,7 @@ public final class UserAccessorProperty extends Property {
      * @param getterSlot getter slot, starting at first embed
      * @param setterSlot setter slot, starting at first embed
      */
-    public UserAccessorProperty(final String key, final int flags, final int getterSlot, final int setterSlot) {
+    UserAccessorProperty(final String key, final int flags, final int getterSlot, final int setterSlot) {
         super(key, flags, -1);
         this.getterSlot = getterSlot;
         this.setterSlot = setterSlot;
