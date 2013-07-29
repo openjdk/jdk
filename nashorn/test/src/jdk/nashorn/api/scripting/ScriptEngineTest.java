@@ -1220,4 +1220,38 @@ public class ScriptEngineTest {
         Assert.assertEquals(itf.test1(42, "a", "b"), "i == 42, strings instanceof java.lang.String[] == true, strings == [a, b]");
         Assert.assertEquals(itf.test2(44, "c", "d", "e"), "arguments[0] == 44, arguments[1] instanceof java.lang.String[] == true, arguments[1] == [c, d, e]");
     }
+
+    @Test
+    // check that print function prints arg followed by newline char
+    public void printTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final StringWriter sw = new StringWriter();
+        e.getContext().setWriter(sw);
+        try {
+            e.eval("print('hello')");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+
+        assertEquals(sw.toString(), "hello\n");
+    }
+
+    @Test
+    // check that print prints all arguments (more than one)
+    public void printManyTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final StringWriter sw = new StringWriter();
+        e.getContext().setWriter(sw);
+        try {
+            e.eval("print(34, true, 'hello')");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+
+        assertEquals(sw.toString(), "34 true hello\n");
+    }
 }
