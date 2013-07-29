@@ -58,13 +58,21 @@ public final class NativeTypeError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    NativeTypeError(final Object msg) {
-        super(Global.instance().getTypeErrorPrototype(), $nasgenmap$);
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
+
+    NativeTypeError(final Object msg, final Global global) {
+        super(global.getTypeErrorPrototype(), global.getTypeErrorMap());
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {
             delete(NativeError.MESSAGE, false);
         }
+    }
+
+    private NativeTypeError(final Object msg) {
+        this(msg, Global.instance());
     }
 
     @Override

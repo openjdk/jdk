@@ -149,12 +149,6 @@ public class XMLReaderManager {
                     // Try to carry on if we've got a parser that
                     // doesn't know about namespace prefixes.
                 }
-                try {
-                    reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
-                } catch (SAXException se) {
-                    System.err.println("Warning:  " + reader.getClass().getName() + ": "
-                                + se.getMessage());
-                }
             } catch (ParserConfigurationException ex) {
                 throw new SAXException(ex);
             } catch (FactoryConfigurationError ex1) {
@@ -169,6 +163,14 @@ public class XMLReaderManager {
                 m_readers.set(reader);
                 m_inUse.put(reader, Boolean.TRUE);
             }
+        }
+
+        try {
+            //reader is cached, but this property might have been reset
+            reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
+        } catch (SAXException se) {
+            System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                        + se.getMessage());
         }
 
         return reader;

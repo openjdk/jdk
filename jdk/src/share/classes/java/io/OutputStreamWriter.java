@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.nio.cs.StreamEncoder;
 /**
  * An OutputStreamWriter is a bridge from character streams to byte streams:
  * Characters written to it are encoded into bytes using a specified {@link
- * java.nio.charset.Charset <code>charset</code>}.  The charset that it uses
+ * java.nio.charset.Charset charset}.  The charset that it uses
  * may be specified by name or may be given explicitly, or the platform's
  * default charset may be accepted.
  *
@@ -86,7 +86,7 @@ public class OutputStreamWriter extends Writer {
      *
      * @param  charsetName
      *         The name of a supported
-     *         {@link java.nio.charset.Charset </code>charset<code>}
+     *         {@link java.nio.charset.Charset charset}
      *
      * @exception  UnsupportedEncodingException
      *             If the named encoding is not supported
@@ -115,7 +115,7 @@ public class OutputStreamWriter extends Writer {
     }
 
     /**
-     * Creates an OutputStreamWriter that uses the given charset. </p>
+     * Creates an OutputStreamWriter that uses the given charset.
      *
      * @param  out
      *         An OutputStream
@@ -134,7 +134,7 @@ public class OutputStreamWriter extends Writer {
     }
 
     /**
-     * Creates an OutputStreamWriter that uses the given charset encoder.  </p>
+     * Creates an OutputStreamWriter that uses the given charset encoder.
      *
      * @param  out
      *         An OutputStream

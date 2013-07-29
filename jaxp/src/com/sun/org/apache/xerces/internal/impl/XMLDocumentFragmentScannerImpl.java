@@ -52,6 +52,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.xml.internal.stream.Entity;
@@ -166,8 +167,9 @@ public class XMLDocumentFragmentScannerImpl
     protected static final String STANDARD_URI_CONFORMANT =
             Constants.XERCES_FEATURE_PREFIX +Constants.STANDARD_URI_CONFORMANT_FEATURE;
 
-    /** property identifier: access external dtd. */
-    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** access external dtd: file protocol
      *  For DOM/SAX, the secure feature is set to true by default
@@ -199,7 +201,7 @@ public class XMLDocumentFragmentScannerImpl
         SYMBOL_TABLE,
                 ERROR_REPORTER,
                 ENTITY_MANAGER,
-                ACCESS_EXTERNAL_DTD
+                XML_SECURITY_PROPERTY_MANAGER
     };
 
     /** Property defaults. */
@@ -612,7 +614,10 @@ public class XMLDocumentFragmentScannerImpl
         dtdGrammarUtil = null;
 
         // JAXP 1.5 features and properties
-        fAccessExternalDTD = (String) componentManager.getProperty(ACCESS_EXTERNAL_DTD, EXTERNAL_ACCESS_DEFAULT);
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)
+                componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER, null);
+        fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
+
         fStrictURI = componentManager.getFeature(STANDARD_URI_CONFORMANT, false);
 
         //fEntityManager.test();
@@ -664,9 +669,10 @@ public class XMLDocumentFragmentScannerImpl
 
         dtdGrammarUtil = null;
 
-        // Oracle jdk feature
-        fAccessExternalDTD = (String) propertyManager.getProperty(ACCESS_EXTERNAL_DTD);
-
+         // JAXP 1.5 features and properties
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)
+                propertyManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
     } // reset(XMLComponentManager)
 
     /**
@@ -764,11 +770,10 @@ public class XMLDocumentFragmentScannerImpl
         }
 
         //JAXP 1.5 properties
-        if (propertyId.startsWith(Constants.JAXPAPI_PROPERTY_PREFIX)) {
-            if (propertyId.equals(ACCESS_EXTERNAL_DTD))
-            {
-                fAccessExternalDTD = (String)value;
-            }
+        if (propertyId.equals(XML_SECURITY_PROPERTY_MANAGER))
+        {
+            XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)value;
+            fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
         }
 
     } // setProperty(String,Object)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ import sun.security.util.PendingException;
 import sun.security.util.ResourcesMgr;
 
 /**
- * <p> The <code>LoginContext</code> class describes the basic methods used
+ * <p> The {@code LoginContext} class describes the basic methods used
  * to authenticate Subjects and provides a way to develop an
  * application independent of the underlying authentication technology.
- * A <code>Configuration</code> specifies the authentication technology, or
- * <code>LoginModule</code>, to be used with a particular application.
+ * A {@code Configuration} specifies the authentication technology, or
+ * {@code LoginModule}, to be used with a particular application.
  * Different LoginModules can be plugged in under an application
  * without requiring any modifications to the application itself.
  *
@@ -57,36 +57,36 @@ import sun.security.util.ResourcesMgr;
  * LoginModule under an application.
  *
  * <p> A typical caller instantiates a LoginContext with
- * a <i>name</i> and a <code>CallbackHandler</code>.
+ * a <i>name</i> and a {@code CallbackHandler}.
  * LoginContext uses the <i>name</i> as the index into a
  * Configuration to determine which LoginModules should be used,
  * and which ones must succeed in order for the overall authentication to
- * succeed.  The <code>CallbackHandler</code> is passed to the underlying
+ * succeed.  The {@code CallbackHandler} is passed to the underlying
  * LoginModules so they may communicate and interact with users
  * (prompting for a username and password via a graphical user interface,
  * for example).
  *
  * <p> Once the caller has instantiated a LoginContext,
- * it invokes the <code>login</code> method to authenticate
- * a <code>Subject</code>.  The <code>login</code> method invokes
+ * it invokes the {@code login} method to authenticate
+ * a {@code Subject}.  The {@code login} method invokes
  * the configured modules to perform their respective types of authentication
  * (username/password, smart card pin verification, etc.).
  * Note that the LoginModules will not attempt authentication retries nor
  * introduce delays if the authentication fails.
  * Such tasks belong to the LoginContext caller.
  *
- * <p> If the <code>login</code> method returns without
+ * <p> If the {@code login} method returns without
  * throwing an exception, then the overall authentication succeeded.
  * The caller can then retrieve
  * the newly authenticated Subject by invoking the
- * <code>getSubject</code> method.  Principals and Credentials associated
+ * {@code getSubject} method.  Principals and Credentials associated
  * with the Subject may be retrieved by invoking the Subject's
- * respective <code>getPrincipals</code>, <code>getPublicCredentials</code>,
- * and <code>getPrivateCredentials</code> methods.
+ * respective {@code getPrincipals}, {@code getPublicCredentials},
+ * and {@code getPrivateCredentials} methods.
  *
  * <p> To logout the Subject, the caller calls
- * the <code>logout</code> method.  As with the <code>login</code>
- * method, this <code>logout</code> method invokes the <code>logout</code>
+ * the {@code logout} method.  As with the {@code login}
+ * method, this {@code logout} method invokes the {@code logout}
  * method for the configured modules.
  *
  * <p> A LoginContext should not be used to authenticate
@@ -96,14 +96,14 @@ import sun.security.util.ResourcesMgr;
  * <p> The following documentation applies to all LoginContext constructors:
  * <ol>
  *
- * <li> <code>Subject</code>
+ * <li> {@code Subject}
  * <ul>
  * <li> If the constructor has a Subject
  * input parameter, the LoginContext uses the caller-specified
  * Subject object.
  * <p>
- * <li> If the caller specifies a <code>null</code> Subject
- * and a <code>null</code> value is permitted,
+ * <li> If the caller specifies a {@code null} Subject
+ * and a {@code null} value is permitted,
  * the LoginContext instantiates a new Subject.
  * <p>
  * <li> If the constructor does <b>not</b> have a Subject
@@ -111,14 +111,14 @@ import sun.security.util.ResourcesMgr;
  * <p>
  * </ul>
  *
- * <li> <code>Configuration</code>
+ * <li> {@code Configuration}
  * <ul>
  * <li> If the constructor has a Configuration
  * input parameter and the caller specifies a non-null Configuration,
  * the LoginContext uses the caller-specified Configuration.
  * <p>
  * If the constructor does <b>not</b> have a Configuration
- * input parameter, or if the caller specifies a <code>null</code>
+ * input parameter, or if the caller specifies a {@code null}
  * Configuration object, the constructor uses the following call to
  * get the installed Configuration:
  * <pre>
@@ -126,42 +126,42 @@ import sun.security.util.ResourcesMgr;
  * </pre>
  * For both cases,
  * the <i>name</i> argument given to the constructor is passed to the
- * <code>Configuration.getAppConfigurationEntry</code> method.
+ * {@code Configuration.getAppConfigurationEntry} method.
  * If the Configuration has no entries for the specified <i>name</i>,
- * then the <code>LoginContext</code> calls
- * <code>getAppConfigurationEntry</code> with the name, "<i>other</i>"
+ * then the {@code LoginContext} calls
+ * {@code getAppConfigurationEntry} with the name, "<i>other</i>"
  * (the default entry name).  If there is no entry for "<i>other</i>",
- * then a <code>LoginException</code> is thrown.
+ * then a {@code LoginException} is thrown.
  * <p>
  * <li> When LoginContext uses the installed Configuration, the caller
  * requires the createLoginContext.<em>name</em> and possibly
  * createLoginContext.other AuthPermissions. Furthermore, the
  * LoginContext will invoke configured modules from within an
- * <code>AccessController.doPrivileged</code> call so that modules that
+ * {@code AccessController.doPrivileged} call so that modules that
  * perform security-sensitive tasks (such as connecting to remote hosts,
  * and updating the Subject) will require the respective permissions, but
  * the callers of the LoginContext will not require those permissions.
  * <p>
  * <li> When LoginContext uses a caller-specified Configuration, the caller
  * does not require any createLoginContext AuthPermission.  The LoginContext
- * saves the <code>AccessControlContext</code> for the caller,
+ * saves the {@code AccessControlContext} for the caller,
  * and invokes the configured modules from within an
- * <tt>AccessController.doPrivileged</tt> call constrained by that context.
+ * {@code AccessController.doPrivileged} call constrained by that context.
  * This means the caller context (stored when the LoginContext was created)
  * must have sufficient permissions to perform any security-sensitive tasks
  * that the modules may perform.
  * <p>
  * </ul>
  *
- * <li> <code>CallbackHandler</code>
+ * <li> {@code CallbackHandler}
  * <ul>
  * <li> If the constructor has a CallbackHandler
  * input parameter, the LoginContext uses the caller-specified
  * CallbackHandler object.
  * <p>
  * <li> If the constructor does <b>not</b> have a CallbackHandler
- * input parameter, or if the caller specifies a <code>null</code>
- * CallbackHandler object (and a <code>null</code> value is permitted),
+ * input parameter, or if the caller specifies a {@code null}
+ * CallbackHandler object (and a {@code null} value is permitted),
  * the LoginContext queries the
  * {@code auth.login.defaultCallbackHandler} security property for the
  * fully qualified class name of a default handler
@@ -177,10 +177,10 @@ import sun.security.util.ResourcesMgr;
  * then this LoginContext must wrap any
  * caller-specified or default CallbackHandler implementation
  * in a new CallbackHandler implementation
- * whose <code>handle</code> method implementation invokes the
- * specified CallbackHandler's <code>handle</code> method in a
- * <code>java.security.AccessController.doPrivileged</code> call
- * constrained by the caller's current <code>AccessControlContext</code>.
+ * whose {@code handle} method implementation invokes the
+ * specified CallbackHandler's {@code handle} method in a
+ * {@code java.security.AccessController.doPrivileged} call
+ * constrained by the caller's current {@code AccessControlContext}.
  * </ul>
  * </ol>
  *
@@ -317,14 +317,14 @@ public class LoginContext {
     }
 
     /**
-     * Instantiate a new <code>LoginContext</code> object with a name.
+     * Instantiate a new {@code LoginContext} object with a name.
      *
      * @param name the name used as the index into the
-     *          <code>Configuration</code>.
+     *          {@code Configuration}.
      *
-     * @exception LoginException if the caller-specified <code>name</code>
-     *          does not appear in the <code>Configuration</code>
-     *          and there is no <code>Configuration</code> entry
+     * @exception LoginException if the caller-specified {@code name}
+     *          does not appear in the {@code Configuration}
+     *          and there is no {@code Configuration} entry
      *          for "<i>other</i>", or if the
      *          <i>auth.login.defaultCallbackHandler</i>
      *          security property was set, but the implementation
@@ -343,21 +343,21 @@ public class LoginContext {
     }
 
     /**
-     * Instantiate a new <code>LoginContext</code> object with a name
-     * and a <code>Subject</code> object.
+     * Instantiate a new {@code LoginContext} object with a name
+     * and a {@code Subject} object.
      *
      * <p>
      *
      * @param name the name used as the index into the
-     *          <code>Configuration</code>. <p>
+     *          {@code Configuration}. <p>
      *
-     * @param subject the <code>Subject</code> to authenticate.
+     * @param subject the {@code Subject} to authenticate.
      *
-     * @exception LoginException if the caller-specified <code>name</code>
-     *          does not appear in the <code>Configuration</code>
-     *          and there is no <code>Configuration</code> entry
-     *          for "<i>other</i>", if the caller-specified <code>subject</code>
-     *          is <code>null</code>, or if the
+     * @exception LoginException if the caller-specified {@code name}
+     *          does not appear in the {@code Configuration}
+     *          and there is no {@code Configuration} entry
+     *          for "<i>other</i>", if the caller-specified {@code subject}
+     *          is {@code null}, or if the
      *          <i>auth.login.defaultCallbackHandler</i>
      *          security property was set, but the implementation
      *          class could not be loaded.
@@ -381,22 +381,22 @@ public class LoginContext {
     }
 
     /**
-     * Instantiate a new <code>LoginContext</code> object with a name
-     * and a <code>CallbackHandler</code> object.
+     * Instantiate a new {@code LoginContext} object with a name
+     * and a {@code CallbackHandler} object.
      *
      * <p>
      *
      * @param name the name used as the index into the
-     *          <code>Configuration</code>. <p>
+     *          {@code Configuration}. <p>
      *
-     * @param callbackHandler the <code>CallbackHandler</code> object used by
+     * @param callbackHandler the {@code CallbackHandler} object used by
      *          LoginModules to communicate with the user.
      *
-     * @exception LoginException if the caller-specified <code>name</code>
-     *          does not appear in the <code>Configuration</code>
-     *          and there is no <code>Configuration</code> entry
+     * @exception LoginException if the caller-specified {@code name}
+     *          does not appear in the {@code Configuration}
+     *          and there is no {@code Configuration} entry
      *          for "<i>other</i>", or if the caller-specified
-     *          <code>callbackHandler</code> is <code>null</code>.
+     *          {@code callbackHandler} is {@code null}.
      *          <p>
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
@@ -417,27 +417,27 @@ public class LoginContext {
     }
 
     /**
-     * Instantiate a new <code>LoginContext</code> object with a name,
-     * a <code>Subject</code> to be authenticated, and a
-     * <code>CallbackHandler</code> object.
+     * Instantiate a new {@code LoginContext} object with a name,
+     * a {@code Subject} to be authenticated, and a
+     * {@code CallbackHandler} object.
      *
      * <p>
      *
      * @param name the name used as the index into the
-     *          <code>Configuration</code>. <p>
+     *          {@code Configuration}. <p>
      *
-     * @param subject the <code>Subject</code> to authenticate. <p>
+     * @param subject the {@code Subject} to authenticate. <p>
      *
-     * @param callbackHandler the <code>CallbackHandler</code> object used by
+     * @param callbackHandler the {@code CallbackHandler} object used by
      *          LoginModules to communicate with the user.
      *
-     * @exception LoginException if the caller-specified <code>name</code>
-     *          does not appear in the <code>Configuration</code>
-     *          and there is no <code>Configuration</code> entry
+     * @exception LoginException if the caller-specified {@code name}
+     *          does not appear in the {@code Configuration}
+     *          and there is no {@code Configuration} entry
      *          for "<i>other</i>", or if the caller-specified
-     *          <code>subject</code> is <code>null</code>,
+     *          {@code subject} is {@code null},
      *          or if the caller-specified
-     *          <code>callbackHandler</code> is <code>null</code>.
+     *          {@code callbackHandler} is {@code null}.
      *          <p>
      * @exception SecurityException if a SecurityManager is set and
      *          the caller does not have
@@ -458,34 +458,34 @@ public class LoginContext {
     }
 
     /**
-     * Instantiate a new <code>LoginContext</code> object with a name,
-     * a <code>Subject</code> to be authenticated,
-     * a <code>CallbackHandler</code> object, and a login
-     * <code>Configuration</code>.
+     * Instantiate a new {@code LoginContext} object with a name,
+     * a {@code Subject} to be authenticated,
+     * a {@code CallbackHandler} object, and a login
+     * {@code Configuration}.
      *
      * <p>
      *
      * @param name the name used as the index into the caller-specified
-     *          <code>Configuration</code>. <p>
+     *          {@code Configuration}. <p>
      *
-     * @param subject the <code>Subject</code> to authenticate,
-     *          or <code>null</code>. <p>
+     * @param subject the {@code Subject} to authenticate,
+     *          or {@code null}. <p>
      *
-     * @param callbackHandler the <code>CallbackHandler</code> object used by
-     *          LoginModules to communicate with the user, or <code>null</code>.
+     * @param callbackHandler the {@code CallbackHandler} object used by
+     *          LoginModules to communicate with the user, or {@code null}.
      *          <p>
      *
-     * @param config the <code>Configuration</code> that lists the
+     * @param config the {@code Configuration} that lists the
      *          login modules to be called to perform the authentication,
-     *          or <code>null</code>.
+     *          or {@code null}.
      *
-     * @exception LoginException if the caller-specified <code>name</code>
-     *          does not appear in the <code>Configuration</code>
-     *          and there is no <code>Configuration</code> entry
+     * @exception LoginException if the caller-specified {@code name}
+     *          does not appear in the {@code Configuration}
+     *          and there is no {@code Configuration} entry
      *          for "<i>other</i>".
      *          <p>
      * @exception SecurityException if a SecurityManager is set,
-     *          <i>config</i> is <code>null</code>,
+     *          <i>config</i> is {@code null},
      *          and either the caller does not have
      *          AuthPermission("createLoginContext.<i>name</i>"),
      *          or if a configuration entry for <i>name</i> does not exist and
@@ -522,46 +522,46 @@ public class LoginContext {
     /**
      * Perform the authentication.
      *
-     * <p> This method invokes the <code>login</code> method for each
+     * <p> This method invokes the {@code login} method for each
      * LoginModule configured for the <i>name</i> specified to the
-     * <code>LoginContext</code> constructor, as determined by the login
-     * <code>Configuration</code>.  Each <code>LoginModule</code>
+     * {@code LoginContext} constructor, as determined by the login
+     * {@code Configuration}.  Each {@code LoginModule}
      * then performs its respective type of authentication
      * (username/password, smart card pin verification, etc.).
      *
      * <p> This method completes a 2-phase authentication process by
-     * calling each configured LoginModule's <code>commit</code> method
+     * calling each configured LoginModule's {@code commit} method
      * if the overall authentication succeeded (the relevant REQUIRED,
      * REQUISITE, SUFFICIENT, and OPTIONAL LoginModules succeeded),
-     * or by calling each configured LoginModule's <code>abort</code> method
+     * or by calling each configured LoginModule's {@code abort} method
      * if the overall authentication failed.  If authentication succeeded,
-     * each successful LoginModule's <code>commit</code> method associates
-     * the relevant Principals and Credentials with the <code>Subject</code>.
-     * If authentication failed, each LoginModule's <code>abort</code> method
+     * each successful LoginModule's {@code commit} method associates
+     * the relevant Principals and Credentials with the {@code Subject}.
+     * If authentication failed, each LoginModule's {@code abort} method
      * removes/destroys any previously stored state.
      *
-     * <p> If the <code>commit</code> phase of the authentication process
+     * <p> If the {@code commit} phase of the authentication process
      * fails, then the overall authentication fails and this method
-     * invokes the <code>abort</code> method for each configured
-     * <code>LoginModule</code>.
+     * invokes the {@code abort} method for each configured
+     * {@code LoginModule}.
      *
-     * <p> If the <code>abort</code> phase
+     * <p> If the {@code abort} phase
      * fails for any reason, then this method propagates the
-     * original exception thrown either during the <code>login</code> phase
-     * or the <code>commit</code> phase.  In either case, the overall
+     * original exception thrown either during the {@code login} phase
+     * or the {@code commit} phase.  In either case, the overall
      * authentication fails.
      *
      * <p> In the case where multiple LoginModules fail,
      * this method propagates the exception raised by the first
-     * <code>LoginModule</code> which failed.
+     * {@code LoginModule} which failed.
      *
-     * <p> Note that if this method enters the <code>abort</code> phase
-     * (either the <code>login</code> or <code>commit</code> phase failed),
+     * <p> Note that if this method enters the {@code abort} phase
+     * (either the {@code login} or {@code commit} phase failed),
      * this method invokes all LoginModules configured for the
-     * application regardless of their respective <code>Configuration</code>
-     * flag parameters.  Essentially this means that <code>Requisite</code>
-     * and <code>Sufficient</code> semantics are ignored during the
-     * <code>abort</code> phase.  This guarantees that proper cleanup
+     * application regardless of their respective {@code Configuration}
+     * flag parameters.  Essentially this means that {@code Requisite}
+     * and {@code Sufficient} semantics are ignored during the
+     * {@code abort} phase.  This guarantees that proper cleanup
      * and state restoration can take place.
      *
      * <p>
@@ -602,19 +602,19 @@ public class LoginContext {
     }
 
     /**
-     * Logout the <code>Subject</code>.
+     * Logout the {@code Subject}.
      *
-     * <p> This method invokes the <code>logout</code> method for each
-     * <code>LoginModule</code> configured for this <code>LoginContext</code>.
-     * Each <code>LoginModule</code> performs its respective logout procedure
+     * <p> This method invokes the {@code logout} method for each
+     * {@code LoginModule} configured for this {@code LoginContext}.
+     * Each {@code LoginModule} performs its respective logout procedure
      * which may include removing/destroying
-     * <code>Principal</code> and <code>Credential</code> information
-     * from the <code>Subject</code> and state cleanup.
+     * {@code Principal} and {@code Credential} information
+     * from the {@code Subject} and state cleanup.
      *
      * <p> Note that this method invokes all LoginModules configured for the
      * application regardless of their respective
-     * <code>Configuration</code> flag parameters.  Essentially this means
-     * that <code>Requisite</code> and <code>Sufficient</code> semantics are
+     * {@code Configuration} flag parameters.  Essentially this means
+     * that {@code Requisite} and {@code Sufficient} semantics are
      * ignored for this method.  This guarantees that proper cleanup
      * and state restoration can take place.
      *

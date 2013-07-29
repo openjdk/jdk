@@ -45,7 +45,7 @@ class ByteCodeMachine extends StackMachine {
     private int sstart;
     private int sbegin;
 
-    private final int[]code;        // byte code
+    private final int[] code;       // byte code
     private int ip;                 // instruction pointer
 
     ByteCodeMachine(Regex regex, char[] chars, int p, int end) {

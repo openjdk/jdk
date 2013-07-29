@@ -410,6 +410,51 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Safefetch stubs.
+  void generate_safefetch(const char* name, int size, address* entry,
+                          address* fault_pc, address* continuation_pc) {
+    // safefetch signatures:
+    //   int      SafeFetch32(int*      adr, int      errValue);
+    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
+    //
+    // arguments:
+    //   o0 = adr
+    //   o1 = errValue
+    //
+    // result:
+    //   o0  = *adr or errValue
+
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    // Entry point, pc or function descriptor.
+    __ align(CodeEntryAlignment);
+    *entry = __ pc();
+
+    __ mov(O0, G1);  // g1 = o0
+    __ mov(O1, O0);  // o0 = o1
+    // Load *adr into c_rarg1, may fault.
+    *fault_pc = __ pc();
+    switch (size) {
+      case 4:
+        // int32_t
+        __ ldsw(G1, 0, O0);  // o0 = [g1]
+        break;
+      case 8:
+        // int64_t
+        __ ldx(G1, 0, O0);   // o0 = [g1]
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+
+    // return errValue or *adr
+    *continuation_pc = __ pc();
+    // By convention with the trap handler we ensure there is a non-CTI
+    // instruction in the trap shadow.
+    __ nop();
+    __ retl();
+    __ delayed()->nop();
+  }
 
   //------------------------------------------------------------------------------------------------------------------------
   // Continuation point for throwing of implicit exceptions that are not handled in
@@ -3315,6 +3360,14 @@ class StubGenerator: public StubCodeGenerator {
 
     // Don't initialize the platform math functions since sparc
     // doesn't have intrinsics for these operations.
+
+    // Safefetch stubs.
+    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
+                                                       &StubRoutines::_safefetch32_fault_pc,
+                                                       &StubRoutines::_safefetch32_continuation_pc);
+    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
+                                                       &StubRoutines::_safefetchN_fault_pc,
+                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
 

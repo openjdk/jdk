@@ -42,21 +42,21 @@ import java.util.Collection;
  * methods that can produce a {@link Future} for tracking progress of
  * one or more asynchronous tasks.
  *
- * <p> An <tt>ExecutorService</tt> can be shut down, which will cause
+ * <p>An {@code ExecutorService} can be shut down, which will cause
  * it to reject new tasks.  Two different methods are provided for
- * shutting down an <tt>ExecutorService</tt>. The {@link #shutdown}
+ * shutting down an {@code ExecutorService}. The {@link #shutdown}
  * method will allow previously submitted tasks to execute before
  * terminating, while the {@link #shutdownNow} method prevents waiting
  * tasks from starting and attempts to stop currently executing tasks.
  * Upon termination, an executor has no tasks actively executing, no
  * tasks awaiting execution, and no new tasks can be submitted.  An
- * unused <tt>ExecutorService</tt> should be shut down to allow
+ * unused {@code ExecutorService} should be shut down to allow
  * reclamation of its resources.
  *
- * <p> Method <tt>submit</tt> extends base method {@link
- * Executor#execute} by creating and returning a {@link Future} that
- * can be used to cancel execution and/or wait for completion.
- * Methods <tt>invokeAny</tt> and <tt>invokeAll</tt> perform the most
+ * <p>Method {@code submit} extends base method {@link
+ * Executor#execute(Runnable)} by creating and returning a {@link Future}
+ * that can be used to cancel execution and/or wait for completion.
+ * Methods {@code invokeAny} and {@code invokeAll} perform the most
  * commonly useful forms of bulk execution, executing a collection of
  * tasks and then waiting for at least one, or all, to
  * complete. (Class {@link ExecutorCompletionService} can be used to
@@ -101,9 +101,9 @@ import java.util.Collection;
  *   }
  * }}</pre>
  *
- * The following method shuts down an <tt>ExecutorService</tt> in two phases,
- * first by calling <tt>shutdown</tt> to reject incoming tasks, and then
- * calling <tt>shutdownNow</tt>, if necessary, to cancel any lingering tasks:
+ * The following method shuts down an {@code ExecutorService} in two phases,
+ * first by calling {@code shutdown} to reject incoming tasks, and then
+ * calling {@code shutdownNow}, if necessary, to cancel any lingering tasks:
  *
  *  <pre> {@code
  * void shutdownAndAwaitTermination(ExecutorService pool) {
@@ -149,8 +149,8 @@ public interface ExecutorService extends Executor {
      *         shutting down this ExecutorService may manipulate
      *         threads that the caller is not permitted to modify
      *         because it does not hold {@link
-     *         java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method
+     *         java.lang.RuntimePermission}{@code ("modifyThread")},
+     *         or the security manager's {@code checkAccess} method
      *         denies access.
      */
     void shutdown();
@@ -174,25 +174,25 @@ public interface ExecutorService extends Executor {
      *         shutting down this ExecutorService may manipulate
      *         threads that the caller is not permitted to modify
      *         because it does not hold {@link
-     *         java.lang.RuntimePermission}<tt>("modifyThread")</tt>,
-     *         or the security manager's <tt>checkAccess</tt> method
+     *         java.lang.RuntimePermission}{@code ("modifyThread")},
+     *         or the security manager's {@code checkAccess} method
      *         denies access.
      */
     List<Runnable> shutdownNow();
 
     /**
-     * Returns <tt>true</tt> if this executor has been shut down.
+     * Returns {@code true} if this executor has been shut down.
      *
-     * @return <tt>true</tt> if this executor has been shut down
+     * @return {@code true} if this executor has been shut down
      */
     boolean isShutdown();
 
     /**
-     * Returns <tt>true</tt> if all tasks have completed following shut down.
-     * Note that <tt>isTerminated</tt> is never <tt>true</tt> unless
-     * either <tt>shutdown</tt> or <tt>shutdownNow</tt> was called first.
+     * Returns {@code true} if all tasks have completed following shut down.
+     * Note that {@code isTerminated} is never {@code true} unless
+     * either {@code shutdown} or {@code shutdownNow} was called first.
      *
-     * @return <tt>true</tt> if all tasks have completed following shut down
+     * @return {@code true} if all tasks have completed following shut down
      */
     boolean isTerminated();
 
@@ -203,8 +203,8 @@ public interface ExecutorService extends Executor {
      *
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
-     * @return <tt>true</tt> if this executor terminated and
-     *         <tt>false</tt> if the timeout elapsed before termination
+     * @return {@code true} if this executor terminated and
+     *         {@code false} if the timeout elapsed before termination
      * @throws InterruptedException if interrupted while waiting
      */
     boolean awaitTermination(long timeout, TimeUnit unit)
@@ -213,15 +213,15 @@ public interface ExecutorService extends Executor {
     /**
      * Submits a value-returning task for execution and returns a
      * Future representing the pending results of the task. The
-     * Future's <tt>get</tt> method will return the task's result upon
+     * Future's {@code get} method will return the task's result upon
      * successful completion.
      *
      * <p>
      * If you would like to immediately block waiting
      * for a task, you can use constructions of the form
-     * <tt>result = exec.submit(aCallable).get();</tt>
+     * {@code result = exec.submit(aCallable).get();}
      *
-     * <p> Note: The {@link Executors} class includes a set of methods
+     * <p>Note: The {@link Executors} class includes a set of methods
      * that can convert some other common closure-like objects,
      * for example, {@link java.security.PrivilegedAction} to
      * {@link Callable} form so they can be submitted.
@@ -236,7 +236,7 @@ public interface ExecutorService extends Executor {
 
     /**
      * Submits a Runnable task for execution and returns a Future
-     * representing that task. The Future's <tt>get</tt> method will
+     * representing that task. The Future's {@code get} method will
      * return the given result upon successful completion.
      *
      * @param task the task to submit
@@ -250,8 +250,8 @@ public interface ExecutorService extends Executor {
 
     /**
      * Submits a Runnable task for execution and returns a Future
-     * representing that task. The Future's <tt>get</tt> method will
-     * return <tt>null</tt> upon <em>successful</em> completion.
+     * representing that task. The Future's {@code get} method will
+     * return {@code null} upon <em>successful</em> completion.
      *
      * @param task the task to submit
      * @return a Future representing pending completion of the task
@@ -264,7 +264,7 @@ public interface ExecutorService extends Executor {
     /**
      * Executes the given tasks, returning a list of Futures holding
      * their status and results when all complete.
-     * {@link Future#isDone} is <tt>true</tt> for each
+     * {@link Future#isDone} is {@code true} for each
      * element of the returned list.
      * Note that a <em>completed</em> task could have
      * terminated either normally or by throwing an exception.
@@ -272,12 +272,12 @@ public interface ExecutorService extends Executor {
      * collection is modified while this operation is in progress.
      *
      * @param tasks the collection of tasks
-     * @return A list of Futures representing the tasks, in the same
+     * @return a list of Futures representing the tasks, in the same
      *         sequential order as produced by the iterator for the
-     *         given task list, each of which has completed.
+     *         given task list, each of which has completed
      * @throws InterruptedException if interrupted while waiting, in
-     *         which case unfinished tasks are cancelled.
-     * @throws NullPointerException if tasks or any of its elements are <tt>null</tt>
+     *         which case unfinished tasks are cancelled
+     * @throws NullPointerException if tasks or any of its elements are {@code null}
      * @throws RejectedExecutionException if any task cannot be
      *         scheduled for execution
      */
@@ -288,7 +288,7 @@ public interface ExecutorService extends Executor {
      * Executes the given tasks, returning a list of Futures holding
      * their status and results
      * when all complete or the timeout expires, whichever happens first.
-     * {@link Future#isDone} is <tt>true</tt> for each
+     * {@link Future#isDone} is {@code true} for each
      * element of the returned list.
      * Upon return, tasks that have not completed are cancelled.
      * Note that a <em>completed</em> task could have
@@ -307,7 +307,7 @@ public interface ExecutorService extends Executor {
      * @throws InterruptedException if interrupted while waiting, in
      *         which case unfinished tasks are cancelled
      * @throws NullPointerException if tasks, any of its elements, or
-     *         unit are <tt>null</tt>
+     *         unit are {@code null}
      * @throws RejectedExecutionException if any task cannot be scheduled
      *         for execution
      */
@@ -327,7 +327,7 @@ public interface ExecutorService extends Executor {
      * @return the result returned by one of the tasks
      * @throws InterruptedException if interrupted while waiting
      * @throws NullPointerException if tasks or any element task
-     *         subject to execution is <tt>null</tt>
+     *         subject to execution is {@code null}
      * @throws IllegalArgumentException if tasks is empty
      * @throws ExecutionException if no task successfully completes
      * @throws RejectedExecutionException if tasks cannot be scheduled
@@ -348,10 +348,10 @@ public interface ExecutorService extends Executor {
      * @param tasks the collection of tasks
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
-     * @return the result returned by one of the tasks.
+     * @return the result returned by one of the tasks
      * @throws InterruptedException if interrupted while waiting
      * @throws NullPointerException if tasks, or unit, or any element
-     *         task subject to execution is <tt>null</tt>
+     *         task subject to execution is {@code null}
      * @throws TimeoutException if the given timeout elapses before
      *         any task successfully completes
      * @throws ExecutionException if no task successfully completes

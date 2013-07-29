@@ -30,6 +30,7 @@ import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -166,8 +167,9 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     protected static final String PARSER_SETTINGS =
         Constants.XERCES_FEATURE_PREFIX + Constants.PARSER_SETTINGS;
 
-    /** property identifier: access external dtd. */
-    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** access external dtd: file protocol */
     static final String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
@@ -203,7 +205,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 VALIDATION_MANAGER,
                 BUFFER_SIZE,
                 SECURITY_MANAGER,
-                ACCESS_EXTERNAL_DTD
+                XML_SECURITY_PROPERTY_MANAGER
     };
 
     /** Property defaults. */
@@ -214,7 +216,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 null,
                 new Integer(DEFAULT_BUFFER_SIZE),
                 null,
-                EXTERNAL_ACCESS_DEFAULT
+                null
     };
 
     private static final String XMLEntity = "[xml]".intern();
@@ -1421,7 +1423,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fLoadExternalDTD = !((Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD)).booleanValue();
 
         // JAXP 1.5 feature
-        fAccessExternalDTD = (String) propertyManager.getProperty(ACCESS_EXTERNAL_DTD);
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager) propertyManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         // initialize state
         //fStandalone = false;
@@ -1485,7 +1488,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER, null);
 
         // JAXP 1.5 feature
-        fAccessExternalDTD = (String) componentManager.getProperty(ACCESS_EXTERNAL_DTD, EXTERNAL_ACCESS_DEFAULT);
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager) componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER, null);
+        if (spm == null) {
+            spm = new XMLSecurityPropertyManager();
+        }
+        fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         //reset general state
         reset();
@@ -1645,11 +1652,10 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         //JAXP 1.5 properties
-        if (propertyId.startsWith(Constants.JAXPAPI_PROPERTY_PREFIX)) {
-            if (propertyId.equals(ACCESS_EXTERNAL_DTD))
-            {
-                fAccessExternalDTD = (String)value;
-            }
+        if (propertyId.equals(XML_SECURITY_PROPERTY_MANAGER))
+        {
+            XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)value;
+            fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
         }
     }
 

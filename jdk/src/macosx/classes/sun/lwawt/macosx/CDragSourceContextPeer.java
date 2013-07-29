@@ -107,10 +107,6 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             loc = rootComponent.getLocation();
         }
 
-        //It sure will be LWComponentPeer instance as rootComponent is a Window
-        PlatformWindow platformWindow = ((LWComponentPeer)rootComponent.getPeer()).getPlatformWindow();
-        long nativeViewPtr = CPlatformWindow.getNativeViewPtr(platformWindow);
-
         // If there isn't any drag image make one of default appearance:
         if (fDragImage == null)
             this.setDefaultDragImage(component);
@@ -137,6 +133,11 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         }
 
         try {
+            //It sure will be LWComponentPeer instance as rootComponent is a Window
+            PlatformWindow platformWindow = ((LWComponentPeer)rootComponent.getPeer()).getPlatformWindow();
+            long nativeViewPtr = CPlatformWindow.getNativeViewPtr(platformWindow);
+            if (nativeViewPtr == 0L) throw new InvalidDnDOperationException("Unsupported platform window implementation");
+
             // Create native dragging source:
             final long nativeDragSource = createNativeDragSource(component, nativeViewPtr, transferable, triggerEvent,
                 (int) (dragOrigin.getX()), (int) (dragOrigin.getY()), extModifiers,

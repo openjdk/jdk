@@ -42,11 +42,6 @@
             <arg value="jdk.nashorn.internal.objects"/>
             <arg value="${basedir}/build/classes"/>
         </java>
-
-        <move todir="${basedir}/build/classes/jdk/nashorn/internal/objects">
-            <fileset dir="${basedir}/build/classes/jdk/nashorn/internal/objects"/>
-            <mapper type="glob" from="*.class" to="*.clazz"/>
-        </move>
     </target>
 
     <target name="run-nasgen-eclipse">
@@ -66,7 +61,6 @@
             <fileset dir="${basedir}/build/eclipse/.nasgentmp/jdk/nashorn/internal/objects">
                 <include name="*.class"/>
             </fileset>
-            <mapper type="glob" from="*.class" to="*.clazz"/>
         </move>
 
         <delete includeemptydirs="true"><fileset dir="${basedir}/build/eclipse/.nasgentmp" includes="**"/></delete>
@@ -75,7 +69,6 @@
             <fileset dir="${basedir}/build/eclipse/jdk/nashorn/internal/objects">
                 <include name="**/*.class"/>
             </fileset>
-            <mapper type="glob" from="*.class" to="*.clazz"/>
         </copy>
     </target>
 
