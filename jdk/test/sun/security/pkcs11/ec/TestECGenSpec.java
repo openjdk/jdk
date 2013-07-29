@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,20 @@ public class TestECGenSpec extends PKCS11Test {
             return;
         }
 
-        String[] names = { "NIST P-192", "sect163k1", "1.3.132.0.26", "X9.62 c2tnb239v1"};
-        int[] lengths = {192, 163, 233, 239};
-        for (int i = 0; i < names.length; i++) {
+        if (isNSS(p) && getNSSVersion() >= 3.11 && getNSSVersion() < 3.12) {
+            System.out.println("NSS 3.11 has a DER issue that recent " +
+                    "version do not.");
+            return;
+        }
+
+        String[] names = { "secp256r1", "NIST P-192", "sect163k1", "1.3.132.0.26",
+            "X9.62 c2tnb239v1"};
+        int curves = 1;
+        if (getNSSECC() == ECCState.Extended) {
+            curves = names.length;
+        }
+        int[] lengths = {256, 192, 163, 233, 239};
+        for (int i = 0; i < curves; i++) {
             String name = names[i];
             int len = lengths[i];
             System.out.println("Testing " + name + "...");
