@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
   signal_lock();
 
-  sigused = (MASK(sig) & jvmsigs) != 0;
+  sigused = (sig < MAXSIGNUM) && ((MASK(sig) & jvmsigs) != 0);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -116,7 +116,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
     signal_unlock();
     return oldhandler;
-  } else if (jvm_signal_installing) {
+  } else if (sig < MAXSIGNUM && jvm_signal_installing) {
     /* jvm is installing its signal handlers. Install the new
      * handlers and save the old ones. jvm uses sigaction().
      * Leave the piece here just in case. */
@@ -165,7 +165,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 
   signal_lock();
 
-  sigused = (MASK(sig) & jvmsigs) != 0;
+  sigused = (sig < MAXSIGNUM) && ((MASK(sig) & jvmsigs) != 0);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -178,7 +178,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 
     signal_unlock();
     return 0;
-  } else if (jvm_signal_installing) {
+  } else if (sig < MAXSIGNUM && jvm_signal_installing) {
     /* jvm is installing its signal handlers. Install the new
      * handlers and save the old ones. */
     res = call_os_sigaction(sig, act, &oldAct);

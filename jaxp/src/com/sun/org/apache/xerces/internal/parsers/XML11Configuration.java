@@ -46,7 +46,7 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -274,11 +274,10 @@ public class XML11Configuration extends ParserConfigurationSettings
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
-    /** Property identifier: access to external dtd */
-    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
-    /** Property identifier: access to external schema */
-    protected static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     // debugging
 
@@ -532,8 +531,7 @@ public class XML11Configuration extends ParserConfigurationSettings
                 SCHEMA_NONS_LOCATION,
                 LOCALE,
                 SCHEMA_DV_FACTORY,
-                ACCESS_EXTERNAL_DTD,
-                ACCESS_EXTERNAL_SCHEMA
+                XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -581,14 +579,7 @@ public class XML11Configuration extends ParserConfigurationSettings
 
         fVersionDetector = new XMLVersionDetector();
 
-        //FEATURE_SECURE_PROCESSING is true, see the feature above
-        String accessExternal =  SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
-        fProperties.put(ACCESS_EXTERNAL_DTD, accessExternal);
-
-        accessExternal =  SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
-        fProperties.put(ACCESS_EXTERNAL_SCHEMA, accessExternal);
+        fProperties.put(XML_SECURITY_PROPERTY_MANAGER, new XMLSecurityPropertyManager());
 
         // add message formatters
         if (fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN) == null) {

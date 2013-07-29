@@ -184,11 +184,11 @@ final class StreamValidatorHelper implements ValidatorHelper {
         }
         config.setProperty(SYMBOL_TABLE, fComponentManager.getProperty(SYMBOL_TABLE));
         config.setProperty(VALIDATION_MANAGER, fComponentManager.getProperty(VALIDATION_MANAGER));
-        config.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
-                fComponentManager.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
         config.setDocumentHandler(fSchemaValidator);
         config.setDTDHandler(null);
         config.setDTDContentModelHandler(null);
+        config.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER,
+                fComponentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER));
         fConfiguration = new SoftReference(config);
         return config;
     }

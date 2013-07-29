@@ -68,6 +68,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerHandler;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.Objects;
 
 /**
@@ -231,13 +232,9 @@ public class XIncludeHandler
     protected static final String PARSER_SETTINGS =
         Constants.XERCES_FEATURE_PREFIX + Constants.PARSER_SETTINGS;
 
-    /** property identifier: access external dtd. */
-    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
-
-    /** access external dtd: file protocol
-     *  For DOM/SAX, the secure feature is set to true by default
-     */
-    final static String EXTERNAL_ACCESS_DEFAULT = Constants.EXTERNAL_ACCESS_DEFAULT;
+    /** property identifier: XML security property manager. */
+    protected static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Recognized features. */
     private static final String[] RECOGNIZED_FEATURES =
@@ -293,12 +290,7 @@ public class XIncludeHandler
     protected XMLErrorReporter fErrorReporter;
     protected XMLEntityResolver fEntityResolver;
     protected XMLSecurityManager fSecurityManager;
-    /**
-     * comma-delimited list of protocols that are allowed for the purpose
-     * of accessing external dtd or entity references
-     */
-    protected String fAccessExternalDTD = EXTERNAL_ACCESS_DEFAULT;
-
+    protected XMLSecurityPropertyManager fSecurityPropertyMgr;
 
     // these are needed for text include processing
     protected XIncludeTextReader fXInclude10TextReader;
@@ -540,7 +532,8 @@ public class XIncludeHandler
             fSecurityManager = null;
         }
 
-        fAccessExternalDTD = (String)componentManager.getProperty(ACCESS_EXTERNAL_DTD);
+        fSecurityPropertyMgr = (XMLSecurityPropertyManager)
+                componentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER);
 
         // Get buffer size.
         try {
@@ -687,11 +680,13 @@ public class XIncludeHandler
             }
             return;
         }
-        if (propertyId.equals(ACCESS_EXTERNAL_DTD)) {
-            fAccessExternalDTD = (String)value;
+        if (propertyId.equals(XML_SECURITY_PROPERTY_MANAGER)) {
+            fSecurityPropertyMgr = (XMLSecurityPropertyManager)value;
+
             if (fChildConfig != null) {
-                fChildConfig.setProperty(propertyId, value);
+                fChildConfig.setProperty(XML_SECURITY_PROPERTY_MANAGER, value);
             }
+
             return;
         }
 
@@ -1652,7 +1647,7 @@ public class XIncludeHandler
                 if (fErrorReporter != null) fChildConfig.setProperty(ERROR_REPORTER, fErrorReporter);
                 if (fEntityResolver != null) fChildConfig.setProperty(ENTITY_RESOLVER, fEntityResolver);
                 fChildConfig.setProperty(SECURITY_MANAGER, fSecurityManager);
-                fChildConfig.setProperty(ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
+                fChildConfig.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
                 fChildConfig.setProperty(BUFFER_SIZE, new Integer(fBufferSize));
 
                 // features must be copied to child configuration

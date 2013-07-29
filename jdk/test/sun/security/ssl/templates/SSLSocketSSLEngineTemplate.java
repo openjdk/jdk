@@ -309,14 +309,25 @@ public class SSLSocketSSLEngineTemplate {
         } catch (Exception e) {
             serverException = e;
         } finally {
-            socket.close();
+            if (socket != null) {
+                socket.close();
+            }
 
             // Wait for the client to join up with us.
-            thread.join();
+            if (thread != null) {
+                thread.join();
+            }
+
             if (serverException != null) {
+                if (clientException != null) {
+                    serverException.initCause(clientException);
+                }
                 throw serverException;
             }
             if (clientException != null) {
+                if (serverException != null) {
+                    clientException.initCause(serverException);
+                }
                 throw clientException;
             }
         }

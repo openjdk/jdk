@@ -52,7 +52,6 @@ class x86 {
   static address _float_sign_flip;
   static address _double_sign_mask;
   static address _double_sign_flip;
-  static address _mxcsr_std;
 
  public:
 
@@ -104,11 +103,6 @@ class x86 {
   static address double_sign_flip()
   {
     return _double_sign_flip;
-  }
-
-  static address mxcsr_std()
-  {
-    return _mxcsr_std;
   }
 
 # include "stubRoutines_x86.hpp"

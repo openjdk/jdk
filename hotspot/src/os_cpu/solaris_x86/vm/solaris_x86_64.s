@@ -21,54 +21,34 @@
 / questions.
 /
 
-	.globl fs_load
-	.globl fs_thread
+        .globl fs_load
+        .globl fs_thread
 
         // NOTE WELL!  The _Copy functions are called directly
-	// from server-compiler-generated code via CallLeafNoFP,
-	// which means that they *must* either not use floating
-	// point or use it in the same manner as does the server
-	// compiler.
+        // from server-compiler-generated code via CallLeafNoFP,
+        // which means that they *must* either not use floating
+        // point or use it in the same manner as does the server
+        // compiler.
 
         .globl _Copy_arrayof_conjoint_bytes
         .globl _Copy_conjoint_jshorts_atomic
-	.globl _Copy_arrayof_conjoint_jshorts
+        .globl _Copy_arrayof_conjoint_jshorts
         .globl _Copy_conjoint_jints_atomic
         .globl _Copy_arrayof_conjoint_jints
-	.globl _Copy_conjoint_jlongs_atomic
+        .globl _Copy_conjoint_jlongs_atomic
         .globl _Copy_arrayof_conjoint_jlongs
 
-	.section .text,"ax"
+        .section .text,"ax"
 
         / Fast thread accessors, used by threadLS_solaris_amd64.cpp
-	.align   16
+        .align   16
 fs_load:
-	movq %fs:(%rdi),%rax
-	ret
-
-	.align   16
-fs_thread:
-	movq %fs:0x0,%rax
-	ret
-
-        .globl SafeFetch32, Fetch32PFI, Fetch32Resume
-        .align  16
-        // Prototype: int SafeFetch32 (int * Adr, int ErrValue) 
-SafeFetch32:
-        movl    %esi, %eax
-Fetch32PFI:
-        movl    (%rdi), %eax
-Fetch32Resume:
+        movq %fs:(%rdi),%rax
         ret
 
-        .globl SafeFetchN, FetchNPFI, FetchNResume
-        .align  16
-        // Prototype: intptr_t SafeFetchN (intptr_t * Adr, intptr_t ErrValue) 
-SafeFetchN:
-        movq    %rsi, %rax
-FetchNPFI:
-        movq    (%rdi), %rax
-FetchNResume:
+        .align   16
+fs_thread:
+        movq %fs:0x0,%rax
         ret
 
         .globl  SpinPause
@@ -78,7 +58,7 @@ SpinPause:
         nop
         movq    $1, %rax
         ret
-        
+
 
         / Support for void Copy::arrayof_conjoint_bytes(void* from,
         /                                               void* to,
@@ -340,7 +320,7 @@ aci_CopyLeft:
         addq     $4,%rdx
         jg       1b
         ret
-	
+
         / Support for void Copy::arrayof_conjoint_jlongs(jlong* from,
         /                                                jlong* to,
         /                                                size_t count)

@@ -44,8 +44,8 @@ import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -83,11 +83,10 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
-    /** property identifier: access external dtd. */
-    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
-    /** Property identifier: access to external schema  */
-    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     //
     // Data
@@ -111,6 +110,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
     /** The XMLSecurityManager. */
     private XMLSecurityManager fSecurityManager;
 
+    /** The Security property manager. */
+    private XMLSecurityPropertyManager fSecurityPropertyMgr;
+
     /** The container for the real grammar pool. */
     private XMLGrammarPoolWrapper fXMLGrammarPoolWrapper;
 
@@ -120,6 +122,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
      * Note the default value (false) is the safe option..
      */
     private final boolean fUseServicesMechanism;
+
+
     public XMLSchemaFactory() {
         this(true);
     }
@@ -140,13 +144,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fSecurityManager = new XMLSecurityManager();
         fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
 
-        //by default, the secure feature is set to true, otherwise the default would have been 'file'
-        String accessExternal = SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
-        fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, accessExternal);
-        accessExternal = SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
-        fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, accessExternal);
+        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER,
+                fSecurityPropertyMgr);
     }
 
     /**
@@ -282,6 +282,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
             schema = new EmptyXMLSchema();
         }
         propagateFeatures(schema);
+        propagateProperties(schema);
         return schema;
     }
 
@@ -366,8 +367,13 @@ public final class XMLSchemaFactory extends SchemaFactory {
             }
             if (value) {
                 fSecurityManager = new XMLSecurityManager();
-                fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
-                fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+
+                if (Constants.IS_JDK8_OR_ABOVE) {
+                    fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
+                            XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
+                            XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                }
             } else {
                 fSecurityManager = null;
             }
@@ -414,7 +420,13 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "property-not-supported", new Object [] {name}));
         }
         try {
-            fXMLSchemaLoader.setProperty(name, object);
+            int index = fSecurityPropertyMgr.getIndex(name);
+            if (index > -1) {
+                fSecurityPropertyMgr.setValue(index,
+                        XMLSecurityPropertyManager.State.APIPROPERTY, (String)object);
+            } else {
+                fXMLSchemaLoader.setProperty(name, object);
+            }
         }
         catch (XMLConfigurationException e) {
             String identifier = e.getIdentifier();
