@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.net;
 
 /**
  * This interface defines a factory for socket implementations. It
- * is used by the classes <code>Socket</code> and
- * <code>ServerSocket</code> to create actual socket
+ * is used by the classes {@code Socket} and
+ * {@code ServerSocket} to create actual socket
  * implementations.
  *
  * @author  Arthur van Hoff
@@ -39,9 +39,9 @@ package java.net;
 public
 interface SocketImplFactory {
     /**
-     * Creates a new <code>SocketImpl</code> instance.
+     * Creates a new {@code SocketImpl} instance.
      *
-     * @return  a new instance of <code>SocketImpl</code>.
+     * @return  a new instance of {@code SocketImpl}.
      * @see     java.net.SocketImpl
      */
     SocketImpl createSocketImpl();
