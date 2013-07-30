@@ -202,6 +202,7 @@ public final class StringJoiner {
      * @param other The {@code StringJoiner} whose contents should be merged
      *              into this one
      * @throws NullPointerException if the other {@code StringJoiner} is null
+     * @return This {@code StringJoiner}
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
