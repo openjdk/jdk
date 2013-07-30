@@ -296,9 +296,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 # 7194428
 sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
 
-# 7144048, performance issue
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java generic-all
-
 ############################################################################
 
 # jdk_sound
