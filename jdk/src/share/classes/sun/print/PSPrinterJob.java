@@ -473,9 +473,6 @@ public class PSPrinterJob extends RasterPrinterJob {
                 PrintService pServ = getPrintService();
                 if (pServ != null) {
                     mDestination = pServ.getName();
-                    if (UnixPrintServiceLookup.isMac()) {
-                        mDestination = ((IPPPrintService)pServ).getDest();
-                    }
                 }
             }
         }
@@ -774,9 +771,6 @@ public class PSPrinterJob extends RasterPrinterJob {
             PrintService pServ = getPrintService();
             if (pServ != null) {
                 mDestination = pServ.getName();
-                if (UnixPrintServiceLookup.isMac()) {
-                    mDestination = ((IPPPrintService)pServ).getDest();
-                }
             }
             PrinterSpooler spooler = new PrinterSpooler();
             java.security.AccessController.doPrivileged(spooler);
