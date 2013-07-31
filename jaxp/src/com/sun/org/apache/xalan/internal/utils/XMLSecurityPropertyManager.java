@@ -94,6 +94,23 @@ public final class XMLSecurityPropertyManager {
     }
 
     /**
+     * Set limit by property name and state
+     * @param propertyName property name
+     * @param state the state of the property
+     * @param value the value of the property
+     * @return true if the property is managed by the security property manager;
+     *         false if otherwise.
+     */
+    public boolean setValue(String propertyName, State state, Object value) {
+        int index = getIndex(propertyName);
+        if (index > -1) {
+            setValue(index, state, (String)value);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Set the value for a specific property.
      *
      * @param property the property
@@ -121,6 +138,22 @@ public final class XMLSecurityPropertyManager {
             states[index] = state;
         }
     }
+
+    /**
+     * Return the value of the specified property
+     *
+     * @param propertyName the property name
+     * @return the value of the property as a string
+     */
+    public String getValue(String propertyName) {
+        int index = getIndex(propertyName);
+        if (index > -1) {
+            return getValueByIndex(index);
+        }
+
+        return null;
+    }
+
     /**
      * Return the value of the specified property
      *

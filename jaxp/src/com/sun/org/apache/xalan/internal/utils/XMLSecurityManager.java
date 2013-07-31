@@ -1,34 +1,53 @@
 /*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+ *
  * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * The contents of this file are subject to the terms of either the GNU
+ * General Public License Version 2 only ("GPL") or the Common Development
+ * and Distribution License("CDDL") (collectively, the "License").  You
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * When distributing the software, include this License Header Notice in each
+ * file and include the License file at packager/legal/LICENSE.txt.
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
  *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
+ *
+ * Contributor(s):
+ * If you wish your version of this file to be governed by only the CDDL or
+ * only the GPL Version 2, indicate your decision by adding "[Contributor]
+ * elects to include this software in this distribution under the [CDDL or GPL
+ * Version 2] license."  If you don't indicate a single choice of license, a
+ * recipient has the option to distribute your version of this file under
+ * either the CDDL, the GPL Version 2 or to extend the choice of license to
+ * its licensees as provided above.  However, if you add GPL Version 2 code
+ * and therefore, elected the GPL Version 2 license, then the option applies
+ * only if the new code is made subject to such option by the copyright
+ * holder.
  */
+package com.sun.org.apache.xalan.internal.utils;
 
-package com.sun.org.apache.xerces.internal.utils;
+import com.sun.org.apache.xalan.internal.XalanConstants;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
 
 /**
- * This class manages standard and implementation-specific limitations.
+ * This class is not the same as that in Xerces. It is used to manage the
+ * state of corresponding Xerces properties and pass the values over to
+ * the Xerces Security Manager.
+ *
+ * @author Joe Wang Oracle Corp.
  *
  */
 public final class XMLSecurityManager {
@@ -60,12 +79,18 @@ public final class XMLSecurityManager {
      */
     public static enum Limit {
 
-        ENTITY_EXPANSION_LIMIT(Constants.JDK_ENTITY_EXPANSION_LIMIT, Constants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
-        MAX_OCCUR_NODE_LIMIT(Constants.JDK_MAX_OCCUR_LIMIT, Constants.SP_MAX_OCCUR_LIMIT, 0, 5000),
-        ELEMENT_ATTRIBUTE_LIMIT(Constants.JDK_ELEMENT_ATTRIBUTE_LIMIT, Constants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
-        TOTAL_ENTITY_SIZE_LIMIT(Constants.JDK_TOTAL_ENTITY_SIZE_LIMIT, Constants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
-        GENEAL_ENTITY_SIZE_LIMIT(Constants.JDK_GENEAL_ENTITY_SIZE_LIMIT, Constants.SP_GENEAL_ENTITY_SIZE_LIMIT, 0, 0),
-        PARAMETER_ENTITY_SIZE_LIMIT(Constants.JDK_PARAMETER_ENTITY_SIZE_LIMIT, Constants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000);
+        ENTITY_EXPANSION_LIMIT(XalanConstants.JDK_ENTITY_EXPANSION_LIMIT,
+                XalanConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
+        MAX_OCCUR_NODE_LIMIT(XalanConstants.JDK_MAX_OCCUR_LIMIT,
+                XalanConstants.SP_MAX_OCCUR_LIMIT, 0, 5000),
+        ELEMENT_ATTRIBUTE_LIMIT(XalanConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
+                XalanConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
+        TOTAL_ENTITY_SIZE_LIMIT(XalanConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
+                XalanConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
+        GENEAL_ENTITY_SIZE_LIMIT(XalanConstants.JDK_GENEAL_ENTITY_SIZE_LIMIT,
+                XalanConstants.SP_GENEAL_ENTITY_SIZE_LIMIT, 0, 0),
+        PARAMETER_ENTITY_SIZE_LIMIT(XalanConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
+                XalanConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000);
 
         final String apiProperty;
         final String systemProperty;
@@ -109,9 +134,12 @@ public final class XMLSecurityManager {
      */
     public static enum NameMap {
 
-        ENTITY_EXPANSION_LIMIT(Constants.SP_ENTITY_EXPANSION_LIMIT, Constants.ENTITY_EXPANSION_LIMIT),
-        MAX_OCCUR_NODE_LIMIT(Constants.SP_MAX_OCCUR_LIMIT, Constants.MAX_OCCUR_LIMIT),
-        ELEMENT_ATTRIBUTE_LIMIT(Constants.SP_ELEMENT_ATTRIBUTE_LIMIT, Constants.ELEMENT_ATTRIBUTE_LIMIT);
+        ENTITY_EXPANSION_LIMIT(XalanConstants.SP_ENTITY_EXPANSION_LIMIT,
+                XalanConstants.ENTITY_EXPANSION_LIMIT),
+        MAX_OCCUR_NODE_LIMIT(XalanConstants.SP_MAX_OCCUR_LIMIT,
+                XalanConstants.MAX_OCCUR_LIMIT),
+        ELEMENT_ATTRIBUTE_LIMIT(XalanConstants.SP_ELEMENT_ATTRIBUTE_LIMIT,
+                XalanConstants.ELEMENT_ATTRIBUTE_LIMIT);
         final String newName;
         final String oldName;
 
@@ -127,7 +155,6 @@ public final class XMLSecurityManager {
             return null;
         }
     }
-    private static final int NO_LIMIT = 0;
     /**
      * Values of the properties
      */
@@ -137,17 +164,11 @@ public final class XMLSecurityManager {
      */
     private State[] states;
     /**
-     * Flag indicating if secure processing is set
-     */
-    boolean secureProcessing;
-
-    /**
      * States that determine if properties are set explicitly
      */
     private boolean[] isSet;
 
 
-    private XMLLimitAnalyzer limitAnalyzer;
     /**
      * Index of the special entityCountInfo property
      */
@@ -168,14 +189,12 @@ public final class XMLSecurityManager {
      * @param secureProcessing
      */
     public XMLSecurityManager(boolean secureProcessing) {
-        limitAnalyzer = new XMLLimitAnalyzer(this);
         values = new int[Limit.values().length];
         states = new State[Limit.values().length];
         isSet = new boolean[Limit.values().length];
-        this.secureProcessing = secureProcessing;
         for (Limit limit : Limit.values()) {
             if (secureProcessing) {
-                values[limit.ordinal()] = limit.secureValue;
+                values[limit.ordinal()] = limit.secureValue();
                 states[limit.ordinal()] = State.FSP;
             } else {
                 values[limit.ordinal()] = limit.defaultValue();
@@ -190,7 +209,6 @@ public final class XMLSecurityManager {
      * Setting FEATURE_SECURE_PROCESSING explicitly
      */
     public void setSecureProcessing(boolean secure) {
-        secureProcessing = secure;
         for (Limit limit : Limit.values()) {
             if (secure) {
                 setLimit(limit.ordinal(), State.FSP, limit.secureValue());
@@ -199,15 +217,6 @@ public final class XMLSecurityManager {
             }
         }
     }
-
-    /**
-     * Return the state of secure processing
-     * @return the state of secure processing
-     */
-    public boolean isSecureProcessing() {
-        return secureProcessing;
-    }
-
 
     /**
      * Set limit by property name and state
@@ -246,6 +255,7 @@ public final class XMLSecurityManager {
      */
     public void setLimit(int index, State state, Object value) {
         if (index == indexEntityCountInfo) {
+            //if it's explicitly set, it's treated as yes no matter the value
             printEntityCountInfo = (String)value;
         } else {
             int temp = 0;
@@ -255,8 +265,7 @@ public final class XMLSecurityManager {
                     temp = 0;
                 }
             } catch (NumberFormatException e) {}
-            setLimit(index, state, temp);
-        }
+            setLimit(index, state, temp);        }
     }
 
     /**
@@ -269,7 +278,7 @@ public final class XMLSecurityManager {
     public void setLimit(int index, State state, int value) {
         if (index == indexEntityCountInfo) {
             //if it's explicitly set, it's treated as yes no matter the value
-            printEntityCountInfo = Constants.JDK_YES;
+            printEntityCountInfo = XalanConstants.JDK_YES;
         } else {
             //only update if it shall override
             if (state.compareTo(states[index]) >= 0) {
@@ -280,8 +289,9 @@ public final class XMLSecurityManager {
         }
     }
 
+
     /**
-     * Return the value of the specified property
+     * Return the value of the specified property.
      *
      * @param propertyName the property name
      * @return the value of the property as a string. If a property is managed
@@ -295,6 +305,17 @@ public final class XMLSecurityManager {
 
         return null;
     }
+
+    /**
+     * Return the value of a property by its ordinal
+     *
+     * @param limit the property
+     * @return value of a property
+     */
+    public String getLimitValueAsString(Limit limit) {
+        return Integer.toString(values[limit.ordinal()]);
+    }
+
     /**
      * Return the value of the specified property
      *
@@ -308,15 +329,14 @@ public final class XMLSecurityManager {
     /**
      * Return the value of a property by its ordinal
      *
-     * @param limit the property
+     * @param index the index of a property
      * @return value of a property
      */
-    public String getLimitValueAsString(Limit limit) {
-        return Integer.toString(values[limit.ordinal()]);
+    public int getLimitByIndex(int index) {
+        return values[index];
     }
-
     /**
-     * Return the value of a property by its ordinal
+     * Return the value of a property by its index
      *
      * @param index the index of a property
      * @return limit of a property as a string
@@ -328,7 +348,6 @@ public final class XMLSecurityManager {
 
         return Integer.toString(values[index]);
     }
-
     /**
      * Return the state of the limit property
      *
@@ -363,100 +382,10 @@ public final class XMLSecurityManager {
             }
         }
         //special property to return entity count info
-        if (propertyName.equals(Constants.JDK_ENTITY_COUNT_INFO)) {
+        if (propertyName.equals(XalanConstants.JDK_ENTITY_COUNT_INFO)) {
             return indexEntityCountInfo;
         }
         return -1;
-    }
-
-    /**
-     * Check if there's no limit defined by the Security Manager
-     * @param limit
-     * @return
-     */
-    public boolean isNoLimit(int limit) {
-        return limit==NO_LIMIT;
-    }
-    /**
-     * Check if the size (length or count) of the specified limit property is
-     * over the limit
-     *
-     * @param limit the type of the limit property
-     * @param entityName the name of the entity
-     * @param size the size (count or length) of the entity
-     * @return true if the size is over the limit, false otherwise
-     */
-    public boolean isOverLimit(Limit limit, String entityName, int size) {
-        return isOverLimit(limit.ordinal(), entityName, size);
-    }
-
-    /**
-     * Check if the value (length or count) of the specified limit property is
-     * over the limit
-     *
-     * @param index the index of the limit property
-     * @param entityName the name of the entity
-     * @param size the size (count or length) of the entity
-     * @return true if the size is over the limit, false otherwise
-     */
-    public boolean isOverLimit(int index, String entityName, int size) {
-        if (values[index] == NO_LIMIT) {
-            return false;
-        }
-        if (size > values[index]) {
-            limitAnalyzer.addValue(index, entityName, size);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check against cumulated value
-     *
-     * @param limit the type of the limit property
-     * @param size the size (count or length) of the entity
-     * @return true if the size is over the limit, false otherwise
-     */
-    public boolean isOverLimit(Limit limit) {
-        return isOverLimit(limit.ordinal());
-    }
-
-    public boolean isOverLimit(int index) {
-        if (values[index] == NO_LIMIT) {
-            return false;
-        }
-
-        if (index==Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
-                index==Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
-                index==Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()) {
-            return (limitAnalyzer.getTotalValue(index) > values[index]);
-        } else {
-            return (limitAnalyzer.getValue(index) > values[index]);
-        }
-    }
-
-    public void debugPrint() {
-        if (printEntityCountInfo.equals(Constants.JDK_YES)) {
-            limitAnalyzer.debugPrint();
-        }
-    }
-
-    /**
-     * Return the limit analyzer
-     *
-     * @return the limit analyzer
-     */
-    public XMLLimitAnalyzer getLimitAnalyzer() {
-        return limitAnalyzer;
-    }
-
-    /**
-     * Set limit analyzer
-     *
-     * @param analyzer a limit analyzer
-     */
-    public void setLimitAnalyzer(XMLLimitAnalyzer analyzer) {
-        limitAnalyzer = analyzer;
     }
 
     /**
@@ -469,9 +398,8 @@ public final class XMLSecurityManager {
     }
 
     public boolean printEntityCountInfo() {
-        return printEntityCountInfo.equals(Constants.JDK_YES);
+        return printEntityCountInfo.equals(XalanConstants.JDK_YES);
     }
-
     /**
      * Read from system properties, or those in jaxp.properties
      */

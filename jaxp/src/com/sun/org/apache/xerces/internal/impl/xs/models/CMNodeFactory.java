@@ -109,7 +109,8 @@ public class CMNodeFactory {
     }
 
     public void nodeCountCheck(){
-        if( fSecurityManager != null && nodeCount++ > maxNodeLimit){
+        if( fSecurityManager != null && !fSecurityManager.isNoLimit(maxNodeLimit) &&
+                nodeCount++ > maxNodeLimit){
             if(DEBUG){
                 System.out.println("nodeCount = " + nodeCount ) ;
                 System.out.println("nodeLimit = " + maxNodeLimit ) ;
