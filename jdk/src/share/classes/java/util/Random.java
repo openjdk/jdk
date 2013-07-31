@@ -225,9 +225,8 @@ class Random implements java.io.Serializable {
      * Returns the next pseudorandom, uniformly distributed {@code int}
      * value from this random number generator's sequence. The general
      * contract of {@code nextInt} is that one {@code int} value is
-     * pseudorandomly generated and returned. All 2<font size="-1"><sup>32
-     * </sup></font> possible {@code int} values are produced with
-     * (approximately) equal probability.
+     * pseudorandomly generated and returned. All 2<sup>32</sup> possible
+     * {@code int} values are produced with (approximately) equal probability.
      *
      * <p>The method {@code nextInt} is implemented by class {@code Random}
      * as if by:
@@ -370,11 +369,9 @@ class Random implements java.io.Serializable {
      * <p>The general contract of {@code nextFloat} is that one
      * {@code float} value, chosen (approximately) uniformly from the
      * range {@code 0.0f} (inclusive) to {@code 1.0f} (exclusive), is
-     * pseudorandomly generated and returned. All 2<font
-     * size="-1"><sup>24</sup></font> possible {@code float} values
-     * of the form <i>m&nbsp;x&nbsp;</i>2<font
-     * size="-1"><sup>-24</sup></font>, where <i>m</i> is a positive
-     * integer less than 2<font size="-1"><sup>24</sup> </font>, are
+     * pseudorandomly generated and returned. All 2<sup>24</sup> possible
+     * {@code float} values of the form <i>m&nbsp;x&nbsp;</i>2<sup>-24</sup>,
+     * where <i>m</i> is a positive integer less than 2<sup>24</sup>, are
      * produced with (approximately) equal probability.
      *
      * <p>The method {@code nextFloat} is implemented by class {@code Random}
