@@ -32,6 +32,8 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
+import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -106,6 +108,9 @@ public abstract class XMLScanner
     protected static final String ENTITY_MANAGER =
             Constants.XERCES_PROPERTY_PREFIX + Constants.ENTITY_MANAGER_PROPERTY;
 
+    /** Property identifier: Security manager. */
+    private static final String SECURITY_MANAGER = Constants.SECURITY_MANAGER;
+
     // debugging
 
     /** Debug attribute normalization. */
@@ -158,6 +163,12 @@ public abstract class XMLScanner
 
     /** xxx this should be available from EntityManager Entity storage */
     protected XMLEntityStorage fEntityStore = null ;
+
+    /** Security manager. */
+    protected XMLSecurityManager fSecurityManager = null;
+
+    /** Limit analyzer. */
+    protected XMLLimitAnalyzer fLimitAnalyzer = null;
 
     // protected data
 
@@ -256,6 +267,7 @@ public abstract class XMLScanner
         fSymbolTable = (SymbolTable)componentManager.getProperty(SYMBOL_TABLE);
         fErrorReporter = (XMLErrorReporter)componentManager.getProperty(ERROR_REPORTER);
         fEntityManager = (XMLEntityManager)componentManager.getProperty(ENTITY_MANAGER);
+        fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER);
 
         //this step is extra because we have separated the storage of entity
         fEntityStore = fEntityManager.getEntityStore() ;
@@ -292,6 +304,10 @@ public abstract class XMLScanner
             } else if (property.equals(Constants.ENTITY_MANAGER_PROPERTY)) {
                 fEntityManager = (XMLEntityManager)value;
             }
+        }
+
+        if (propertyId.equals(SECURITY_MANAGER)) {
+            fSecurityManager = (XMLSecurityManager)value;
         }
                 /*else if(propertyId.equals(Constants.STAX_PROPERTIES)){
             fStaxProperties = (HashMap)value;
@@ -352,6 +368,8 @@ public abstract class XMLScanner
         fEntityManager = (XMLEntityManager)propertyManager.getProperty(ENTITY_MANAGER);
         fEntityStore = fEntityManager.getEntityStore() ;
         fEntityScanner = (XMLEntityScanner)fEntityManager.getEntityScanner() ;
+        fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(SECURITY_MANAGER);
+
         //fEntityManager.reset();
         // DTD preparsing defaults:
         fValidation = false;
@@ -510,8 +528,9 @@ public abstract class XMLScanner
             sawSpace = fEntityScanner.skipSpaces();
         }
         // restore original literal value
-        if(currLiteral)
+        if(currLiteral) {
             currEnt.literal = true;
+        }
         // REVISIT: should we remove this error reporting?
         if (scanningTextDecl && state != STATE_DONE) {
             reportFatalError("MorePseudoAttributes", null);

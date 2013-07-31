@@ -20,6 +20,12 @@
 
 package com.sun.org.apache.xerces.internal.parsers;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import javax.xml.XMLConstants;
+
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XML11DTDScannerImpl;
 import com.sun.org.apache.xerces.internal.impl.XML11DocumentScannerImpl;
@@ -46,6 +52,7 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
@@ -63,11 +70,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import javax.xml.XMLConstants;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents.
@@ -278,6 +280,8 @@ public class XML11Configuration extends ParserConfigurationSettings
     private static final String XML_SECURITY_PROPERTY_MANAGER =
             Constants.XML_SECURITY_PROPERTY_MANAGER;
 
+    /** Property identifier: Security manager. */
+    private static final String SECURITY_MANAGER = Constants.SECURITY_MANAGER;
 
     // debugging
 
@@ -483,7 +487,6 @@ public class XML11Configuration extends ParserConfigurationSettings
                 PARSER_SETTINGS,
                 XMLConstants.FEATURE_SECURE_PROCESSING
                         };
-
         addRecognizedFeatures(recognizedFeatures);
         // set state for default features
         fFeatures.put(VALIDATION, Boolean.FALSE);
@@ -531,6 +534,7 @@ public class XML11Configuration extends ParserConfigurationSettings
                 SCHEMA_NONS_LOCATION,
                 LOCALE,
                 SCHEMA_DV_FACTORY,
+                SECURITY_MANAGER,
                 XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
@@ -580,6 +584,8 @@ public class XML11Configuration extends ParserConfigurationSettings
         fVersionDetector = new XMLVersionDetector();
 
         fProperties.put(XML_SECURITY_PROPERTY_MANAGER, new XMLSecurityPropertyManager());
+
+        fProperties.put(SECURITY_MANAGER, new XMLSecurityManager(true));
 
         // add message formatters
         if (fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN) == null) {

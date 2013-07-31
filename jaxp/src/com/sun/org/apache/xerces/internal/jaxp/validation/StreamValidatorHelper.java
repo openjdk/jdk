@@ -189,6 +189,8 @@ final class StreamValidatorHelper implements ValidatorHelper {
         config.setDTDContentModelHandler(null);
         config.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER,
                 fComponentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER));
+        config.setProperty(Constants.SECURITY_MANAGER,
+                fComponentManager.getProperty(Constants.SECURITY_MANAGER));
         fConfiguration = new SoftReference(config);
         return config;
     }

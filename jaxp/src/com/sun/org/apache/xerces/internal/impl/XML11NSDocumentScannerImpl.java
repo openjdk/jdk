@@ -108,6 +108,7 @@ import javax.xml.stream.events.XMLEvent;
  * @author Elena Litani, IBM
  * @author Michael Glavassevich, IBM
  * @author Sunitha Reddy, Sun Microsystems
+ * @version $Id: XML11NSDocumentScannerImpl.java,v 1.6 2010-11-01 04:39:40 joehw Exp $
  */
 public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
@@ -236,7 +237,8 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
             // attributes
             scanAttribute(fAttributes);
-            if (fSecurityManager != null && fAttributes.getLength() > fElementAttributeLimit){
+            if (fSecurityManager != null && (!fSecurityManager.isNoLimit(fElementAttributeLimit)) &&
+                    fAttributes.getLength() > fElementAttributeLimit){
                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                              "ElementAttributeLimit",
                                              new Object[]{rawname, new Integer(fElementAttributeLimit) },

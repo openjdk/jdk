@@ -33,6 +33,7 @@ import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
@@ -57,6 +58,7 @@ import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMStringList;
 import org.w3c.dom.ls.LSResourceResolver;
+
 
 
 /**
@@ -155,6 +157,9 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
     /** Property identifier: Schema DV Factory */
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
+
+    /** Property identifier: Security manager. */
+    private static final String SECURITY_MANAGER = Constants.SECURITY_MANAGER;
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
@@ -279,6 +284,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             JAXP_SCHEMA_LANGUAGE,
             DTD_VALIDATOR_FACTORY_PROPERTY,
             SCHEMA_DV_FACTORY,
+            SECURITY_MANAGER,
             XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
@@ -312,6 +318,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
 
         fValidationManager = createValidationManager();
         setProperty(VALIDATION_MANAGER, fValidationManager);
+
+        setProperty(SECURITY_MANAGER, new XMLSecurityManager(true));
 
         setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER,
                 new XMLSecurityPropertyManager());
