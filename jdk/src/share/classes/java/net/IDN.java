@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public final class IDN {
      * @param input     the string to be processed
      * @param flag      process flag; can be 0 or any logical OR of possible flags
      *
-     * @return          the translated <tt>String</tt>
+     * @return          the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
      */
@@ -130,13 +130,13 @@ public final class IDN {
      *
      * <p> This convenience method works as if by invoking the
      * two-argument counterpart as follows:
-     * <blockquote><tt>
+     * <blockquote>
      * {@link #toASCII(String, int) toASCII}(input,&nbsp;0);
-     * </tt></blockquote>
+     * </blockquote>
      *
      * @param input     the string to be processed
      *
-     * @return          the translated <tt>String</tt>
+     * @return          the translated {@code String}
      *
      * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
      */
@@ -161,7 +161,7 @@ public final class IDN {
      * @param input     the string to be processed
      * @param flag      process flag; can be 0 or any logical OR of possible flags
      *
-     * @return          the translated <tt>String</tt>
+     * @return          the translated {@code String}
      */
     public static String toUnicode(String input, int flag) {
         int p = 0, q = 0;
@@ -184,13 +184,13 @@ public final class IDN {
      *
      * <p> This convenience method works as if by invoking the
      * two-argument counterpart as follows:
-     * <blockquote><tt>
+     * <blockquote>
      * {@link #toUnicode(String, int) toUnicode}(input,&nbsp;0);
-     * </tt></blockquote>
+     * </blockquote>
      *
      * @param input     the string to be processed
      *
-     * @return          the translated <tt>String</tt>
+     * @return          the translated {@code String}
      */
     public static String toUnicode(String input) {
         return toUnicode(input, 0);
