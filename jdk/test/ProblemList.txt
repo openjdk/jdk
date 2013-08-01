@@ -138,6 +138,9 @@ java/lang/reflect/Method/GenericStringTest.java			generic-all
 java/lang/instrument/RedefineBigClass.sh                        linux-x64
 java/lang/instrument/RetransformBigClass.sh                     linux-x64
 
+# 8021230
+java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
+
 
 ############################################################################
 
@@ -369,6 +372,9 @@ java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 
 # 8020435
 java/util/concurrent/CompletableFuture/Basic.java                generic-all
+
+# 8020291
+java/util/Random/RandomStreamTest.java                           generic-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
