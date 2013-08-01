@@ -145,8 +145,6 @@ ifeq ($(PLATFORM), macosx)
 #
 # Files
 #
-include FILES_c_macosx.gmk
-include FILES_export_macosx.gmk
 
 FILES_objc = $(FILES_AWT_objc)
 OTHER_LDLIBS = -lmlib_image $(JVMLIB) $(LIBM) \
