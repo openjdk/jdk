@@ -1856,7 +1856,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         // If we're not valid that means we will shortly be validated and
         // painted, which means we don't have to do anything here.
         if (!isRunsDirty && index >= 0 && index < tabPane.getTabCount()) {
-            tabPane.repaint(getTabBounds(tabPane, index));
+            Rectangle rect = getTabBounds(tabPane, index);
+            if (rect != null) {
+                tabPane.repaint(rect);
+            }
         }
     }
 
