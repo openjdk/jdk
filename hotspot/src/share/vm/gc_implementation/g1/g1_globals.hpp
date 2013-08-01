@@ -96,11 +96,6 @@
           "the buffer will be enqueued for processing. A value of 0 "       \
           "specifies that mutator threads should not do such filtering.")   \
                                                                             \
-  develop(intx, G1ExtraRegionSurvRate, 33,                                  \
-          "If the young survival rate is S, and there's room left in "      \
-          "to-space, we will allow regions whose survival rate is up to "   \
-          "S + (1 - S)*X, where X is this parameter (as a fraction.)")      \
-                                                                            \
   develop(bool, G1SATBPrintStubs, false,                                    \
           "If true, print generated stubs for the SATB barrier")            \
                                                                             \
@@ -110,18 +105,12 @@
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
                                                                             \
-  develop(bool, G1RSBarrierNullFilter, true,                                \
-          "If true, generate null-pointer filtering code in RS barrier")    \
-                                                                            \
   develop(bool, G1DeferredRSUpdate, true,                                   \
           "If true, use deferred RS updates")                               \
                                                                             \
   develop(bool, G1RSLogCheckCardTable, false,                               \
           "If true, verify that no dirty cards remain after RS log "        \
           "processing.")                                                    \
-                                                                            \
-  develop(bool, G1RSCountHisto, false,                                      \
-          "If true, print a histogram of RS occupancies after each pause")  \
                                                                             \
   diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
             "Prints the liveness information for all regions in the heap "  \
@@ -168,9 +157,6 @@
                                                                             \
   product(uintx, G1ConcRSHotCardLimit, 4,                                   \
           "The threshold that defines (>=) a hot card.")                    \
-                                                                            \
-  develop(bool, G1PrintOopAppls, false,                                     \
-          "When true, print applications of closures to external locs.")    \
                                                                             \
   develop(intx, G1RSetRegionEntriesBase, 256,                               \
           "Max number of regions in a fine-grain table per MB.")            \
