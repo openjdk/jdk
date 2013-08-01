@@ -25,6 +25,7 @@
 package java.util.stream;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
@@ -294,6 +295,7 @@ class StreamSpliterators {
 
         @Override
         public boolean tryAdvance(Consumer<? super P_OUT> consumer) {
+            Objects.requireNonNull(consumer);
             boolean hasNext = doAdvance();
             if (hasNext)
                 consumer.accept(buffer.get(nextToConsume));
@@ -303,6 +305,7 @@ class StreamSpliterators {
         @Override
         public void forEachRemaining(Consumer<? super P_OUT> consumer) {
             if (buffer == null && !finished) {
+                Objects.requireNonNull(consumer);
                 init();
 
                 ph.wrapAndCopyInto((Sink<P_OUT>) consumer::accept, spliterator);
@@ -350,6 +353,7 @@ class StreamSpliterators {
 
         @Override
         public boolean tryAdvance(IntConsumer consumer) {
+            Objects.requireNonNull(consumer);
             boolean hasNext = doAdvance();
             if (hasNext)
                 consumer.accept(buffer.get(nextToConsume));
@@ -359,6 +363,7 @@ class StreamSpliterators {
         @Override
         public void forEachRemaining(IntConsumer consumer) {
             if (buffer == null && !finished) {
+                Objects.requireNonNull(consumer);
                 init();
 
                 ph.wrapAndCopyInto((Sink.OfInt) consumer::accept, spliterator);
@@ -406,6 +411,7 @@ class StreamSpliterators {
 
         @Override
         public boolean tryAdvance(LongConsumer consumer) {
+            Objects.requireNonNull(consumer);
             boolean hasNext = doAdvance();
             if (hasNext)
                 consumer.accept(buffer.get(nextToConsume));
@@ -415,6 +421,7 @@ class StreamSpliterators {
         @Override
         public void forEachRemaining(LongConsumer consumer) {
             if (buffer == null && !finished) {
+                Objects.requireNonNull(consumer);
                 init();
 
                 ph.wrapAndCopyInto((Sink.OfLong) consumer::accept, spliterator);
@@ -462,6 +469,7 @@ class StreamSpliterators {
 
         @Override
         public boolean tryAdvance(DoubleConsumer consumer) {
+            Objects.requireNonNull(consumer);
             boolean hasNext = doAdvance();
             if (hasNext)
                 consumer.accept(buffer.get(nextToConsume));
@@ -471,6 +479,7 @@ class StreamSpliterators {
         @Override
         public void forEachRemaining(DoubleConsumer consumer) {
             if (buffer == null && !finished) {
+                Objects.requireNonNull(consumer);
                 init();
 
                 ph.wrapAndCopyInto((Sink.OfDouble) consumer::accept, spliterator);
@@ -696,6 +705,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+
                 if (sliceOrigin >= fence)
                     return false;
 
@@ -713,6 +724,8 @@ class StreamSpliterators {
 
             @Override
             public void forEachRemaining(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+
                 if (sliceOrigin >= fence)
                     return;
 
@@ -754,6 +767,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(T_CONS action) {
+                Objects.requireNonNull(action);
+
                 if (sliceOrigin >= fence)
                     return false;
 
@@ -771,6 +786,8 @@ class StreamSpliterators {
 
             @Override
             public void forEachRemaining(T_CONS action) {
+                Objects.requireNonNull(action);
+
                 if (sliceOrigin >= fence)
                     return;
 
@@ -985,6 +1002,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+
                 while (permitStatus() != PermitStatus.NO_MORE) {
                     if (!s.tryAdvance(this))
                         return false;
@@ -999,6 +1018,8 @@ class StreamSpliterators {
 
             @Override
             public void forEachRemaining(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+
                 ArrayBuffer.OfRef<T> sb = null;
                 PermitStatus permitStatus;
                 while ((permitStatus = permitStatus()) != PermitStatus.NO_MORE) {
@@ -1051,6 +1072,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(T_CONS action) {
+                Objects.requireNonNull(action);
+
                 while (permitStatus() != PermitStatus.NO_MORE) {
                     if (!s.tryAdvance((T_CONS) this))
                         return false;
@@ -1066,6 +1089,8 @@ class StreamSpliterators {
 
             @Override
             public void forEachRemaining(T_CONS action) {
+                Objects.requireNonNull(action);
+
                 T_BUFF sb = null;
                 PermitStatus permitStatus;
                 while ((permitStatus = permitStatus()) != PermitStatus.NO_MORE) {
@@ -1237,6 +1262,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+
                 action.accept(s.get());
                 return true;
             }
@@ -1260,6 +1287,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(IntConsumer action) {
+                Objects.requireNonNull(action);
+
                 action.accept(s.getAsInt());
                 return true;
             }
@@ -1283,6 +1312,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(LongConsumer action) {
+                Objects.requireNonNull(action);
+
                 action.accept(s.getAsLong());
                 return true;
             }
@@ -1306,6 +1337,8 @@ class StreamSpliterators {
 
             @Override
             public boolean tryAdvance(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+
                 action.accept(s.getAsDouble());
                 return true;
             }
