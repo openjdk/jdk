@@ -46,10 +46,13 @@ final class NumberArrayData extends ArrayData {
      */
     NumberArrayData(final double array[], final int length) {
         super(length);
+        assert array.length >= length;
         this.array  = array;
-        if (array.length > length) {
-            Arrays.fill(array, length, array.length, 0.0);
-        }
+    }
+
+    @Override
+    public ArrayData copy() {
+        return new NumberArrayData(array.clone(), (int) length());
     }
 
     @Override
