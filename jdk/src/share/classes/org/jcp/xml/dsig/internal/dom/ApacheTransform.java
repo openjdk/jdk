@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: ApacheTransform.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: ApacheTransform.java 1333869 2012-05-04 10:42:44Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -30,11 +32,9 @@ import java.io.OutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.Transform;
@@ -58,7 +58,8 @@ public abstract class ApacheTransform extends TransformService {
         com.sun.org.apache.xml.internal.security.Init.init();
     }
 
-    private static Logger log = Logger.getLogger("org.jcp.xml.dsig.internal.dom");
+    private static java.util.logging.Logger log =
+        java.util.logging.Logger.getLogger("org.jcp.xml.dsig.internal.dom");
     private Transform apacheTransform;
     protected Document ownerDoc;
     protected Element transformElem;
@@ -69,10 +70,14 @@ public abstract class ApacheTransform extends TransformService {
     }
 
     public void init(XMLStructure parent, XMLCryptoContext context)
-        throws InvalidAlgorithmParameterException {
+        throws InvalidAlgorithmParameterException
+    {
         if (context != null && !(context instanceof DOMCryptoContext)) {
             throw new ClassCastException
                 ("context must be of type DOMCryptoContext");
+        }
+        if (parent == null || !(parent instanceof javax.xml.crypto.dom.DOMStructure)) {
+            throw new ClassCastException("parent must be of type DOMStructure");
         }
         transformElem = (Element)
             ((javax.xml.crypto.dom.DOMStructure) parent).getNode();
@@ -80,10 +85,14 @@ public abstract class ApacheTransform extends TransformService {
     }
 
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
-        throws MarshalException {
+        throws MarshalException
+    {
         if (context != null && !(context instanceof DOMCryptoContext)) {
             throw new ClassCastException
                 ("context must be of type DOMCryptoContext");
+        }
+        if (parent == null || !(parent instanceof javax.xml.crypto.dom.DOMStructure)) {
+            throw new ClassCastException("parent must be of type DOMStructure");
         }
         transformElem = (Element)
             ((javax.xml.crypto.dom.DOMStructure) parent).getNode();
@@ -91,15 +100,17 @@ public abstract class ApacheTransform extends TransformService {
     }
 
     public Data transform(Data data, XMLCryptoContext xc)
-        throws TransformException {
+        throws TransformException
+    {
         if (data == null) {
             throw new NullPointerException("data must not be null");
         }
-        return transformIt(data, xc, (OutputStream) null);
+        return transformIt(data, xc, (OutputStream)null);
     }
 
     public Data transform(Data data, XMLCryptoContext xc, OutputStream os)
-        throws TransformException {
+        throws TransformException
+    {
         if (data == null) {
             throw new NullPointerException("data must not be null");
         }
@@ -110,24 +121,24 @@ public abstract class ApacheTransform extends TransformService {
     }
 
     private Data transformIt(Data data, XMLCryptoContext xc, OutputStream os)
-        throws TransformException {
-
+        throws TransformException
+    {
         if (ownerDoc == null) {
             throw new TransformException("transform must be marshalled");
         }
 
         if (apacheTransform == null) {
             try {
-                apacheTransform = new Transform
-                    (ownerDoc, getAlgorithm(), transformElem.getChildNodes());
+                apacheTransform =
+                    new Transform(ownerDoc, getAlgorithm(), transformElem.getChildNodes());
                 apacheTransform.setElement(transformElem, xc.getBaseURI());
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, "Created transform for algorithm: "
-                        + getAlgorithm());
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Created transform for algorithm: " +
+                            getAlgorithm());
                 }
             } catch (Exception ex) {
-                throw new TransformException
-                    ("Couldn't find Transform for: " + getAlgorithm(), ex);
+                throw new TransformException("Couldn't find Transform for: " +
+                                             getAlgorithm(), ex);
             }
         }
 
@@ -135,36 +146,37 @@ public abstract class ApacheTransform extends TransformService {
             String algorithm = getAlgorithm();
             if (Transforms.TRANSFORM_XSLT.equals(algorithm)) {
                 throw new TransformException(
-                    "Transform " + algorithm +
-                    " is forbidden when secure validation is enabled");
+                    "Transform " + algorithm + " is forbidden when secure validation is enabled"
+                );
             }
         }
 
         XMLSignatureInput in;
         if (data instanceof ApacheData) {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "ApacheData = true");
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "ApacheData = true");
             }
-            in = ((ApacheData) data).getXMLSignatureInput();
+            in = ((ApacheData)data).getXMLSignatureInput();
         } else if (data instanceof NodeSetData) {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "isNodeSet() = true");
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "isNodeSet() = true");
             }
             if (data instanceof DOMSubTreeData) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, "DOMSubTreeData = true");
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "DOMSubTreeData = true");
                 }
-                DOMSubTreeData subTree = (DOMSubTreeData) data;
+                DOMSubTreeData subTree = (DOMSubTreeData)data;
                 in = new XMLSignatureInput(subTree.getRoot());
                 in.setExcludeComments(subTree.excludeComments());
             } else {
-                Set nodeSet =
-                    Utils.toNodeSet(((NodeSetData) data).iterator());
+                @SuppressWarnings("unchecked")
+                Set<Node> nodeSet =
+                    Utils.toNodeSet(((NodeSetData)data).iterator());
                 in = new XMLSignatureInput(nodeSet);
             }
         } else {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "isNodeSet() = false");
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "isNodeSet() = false");
             }
             try {
                 in = new XMLSignatureInput

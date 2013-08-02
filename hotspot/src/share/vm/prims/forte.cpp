@@ -31,6 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "prims/forte.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
@@ -308,10 +309,14 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
   for (loop_count = 0; loop_count < loop_max; loop_count++) {
 
-    if (candidate.is_first_frame()) {
+    if (candidate.is_entry_frame()) {
+      // jcw is NULL if the java call wrapper couldn't be found
+      JavaCallWrapper *jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
       // If initial frame is frame from StubGenerator and there is no
       // previous anchor, there are no java frames associated with a method
-      return false;
+      if (jcw == NULL || jcw->is_first_frame()) {
+        return false;
+      }
     }
 
     if (candidate.is_interpreted_frame()) {

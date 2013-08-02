@@ -84,8 +84,7 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.StringTokenizer;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkerServices;
 
 /**
@@ -116,45 +115,28 @@ abstract class DynamicMethod {
      * is a variable arguments (vararg) method, it will pack the extra arguments in an array before the invocation of
      * the underlying method if it is not already done.
      *
-     * @param callSiteType the method type at a call site
+     * @param callSiteDescriptor the descriptor of the call site
      * @param linkerServices linker services. Used for language-specific type conversions.
      * @return an invocation suitable for calling the method from the specified call site.
      */
-    abstract MethodHandle getInvocation(MethodType callSiteType, LinkerServices linkerServices);
+    abstract MethodHandle getInvocation(CallSiteDescriptor callSiteDescriptor, LinkerServices linkerServices);
 
     /**
-     * Returns a simple dynamic method representing a single underlying Java method (possibly selected among several
+     * Returns a single dynamic method representing a single underlying Java method (possibly selected among several
      * overloads) with formal parameter types exactly matching the passed signature.
      * @param paramTypes the comma-separated list of requested parameter type names. The names will match both
      * qualified and unqualified type names.
-     * @return a simple dynamic method representing a single underlying Java method, or null if none of the Java methods
+     * @return a single dynamic method representing a single underlying Java method, or null if none of the Java methods
      * behind this dynamic method exactly match the requested parameter types.
      */
-    abstract SimpleDynamicMethod getMethodForExactParamTypes(String paramTypes);
+    abstract SingleDynamicMethod getMethodForExactParamTypes(String paramTypes);
 
     /**
-     * True if this dynamic method already contains a method handle with an identical signature as the passed in method
-     * handle.
-     * @param mh the method handle to check
-     * @return true if it already contains an equivalent method handle.
+     * True if this dynamic method already contains a method with an identical signature as the passed in method.
+     * @param method the method to check
+     * @return true if it already contains an equivalent method.
      */
-    abstract boolean contains(MethodHandle mh);
-
-    static boolean typeMatchesDescription(String paramTypes, MethodType type) {
-        final StringTokenizer tok = new StringTokenizer(paramTypes, ", ");
-        for(int i = 1; i < type.parameterCount(); ++i) { // i = 1 as we ignore the receiver
-            if(!(tok.hasMoreTokens() && typeNameMatches(tok.nextToken(), type.parameterType(i)))) {
-                return false;
-            }
-        }
-        return !tok.hasMoreTokens();
-    }
-
-    private static boolean typeNameMatches(String typeName, Class<?> type) {
-        final int lastDot = typeName.lastIndexOf('.');
-        final String fullTypeName = type.getCanonicalName();
-        return lastDot != -1 && fullTypeName.endsWith(typeName.substring(lastDot)) || typeName.equals(fullTypeName);
-    }
+    abstract boolean contains(SingleDynamicMethod method);
 
     static String getClassAndMethodName(Class<?> clazz, String name) {
         final String clazzName = clazz.getCanonicalName();

@@ -2308,26 +2308,26 @@ void Matcher::validate_null_checks( ) {
 // atomic instruction acting as a store_load barrier without any
 // intervening volatile load, and thus we don't need a barrier here.
 // We retain the Node to act as a compiler ordering barrier.
-bool Matcher::post_store_load_barrier(const Node *vmb) {
-  Compile *C = Compile::current();
-  assert( vmb->is_MemBar(), "" );
-  assert( vmb->Opcode() != Op_MemBarAcquire, "" );
-  const MemBarNode *mem = (const MemBarNode*)vmb;
+bool Matcher::post_store_load_barrier(const Node* vmb) {
+  Compile* C = Compile::current();
+  assert(vmb->is_MemBar(), "");
+  assert(vmb->Opcode() != Op_MemBarAcquire, "");
+  const MemBarNode* membar = vmb->as_MemBar();
 
-  // Get the Proj node, ctrl, that can be used to iterate forward
-  Node *ctrl = NULL;
-  DUIterator_Fast imax, i = mem->fast_outs(imax);
-  while( true ) {
-    ctrl = mem->fast_out(i);            // Throw out-of-bounds if proj not found
-    assert( ctrl->is_Proj(), "only projections here" );
-    ProjNode *proj = (ProjNode*)ctrl;
-    if( proj->_con == TypeFunc::Control &&
-        !C->node_arena()->contains(ctrl) ) // Unmatched old-space only
+  // Get the Ideal Proj node, ctrl, that can be used to iterate forward
+  Node* ctrl = NULL;
+  for (DUIterator_Fast imax, i = membar->fast_outs(imax); i < imax; i++) {
+    Node* p = membar->fast_out(i);
+    assert(p->is_Proj(), "only projections here");
+    if ((p->as_Proj()->_con == TypeFunc::Control) &&
+        !C->node_arena()->contains(p)) { // Unmatched old-space only
+      ctrl = p;
       break;
-    i++;
+    }
   }
+  assert((ctrl != NULL), "missing control projection");
 
-  for( DUIterator_Fast jmax, j = ctrl->fast_outs(jmax); j < jmax; j++ ) {
+  for (DUIterator_Fast jmax, j = ctrl->fast_outs(jmax); j < jmax; j++) {
     Node *x = ctrl->fast_out(j);
     int xop = x->Opcode();
 
@@ -2339,37 +2339,36 @@ bool Matcher::post_store_load_barrier(const Node *vmb) {
     // that a monitor exit operation contains a serializing instruction.
 
     if (xop == Op_MemBarVolatile ||
-        xop == Op_FastLock ||
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||
-        xop == Op_CompareAndSwapI)
+        xop == Op_CompareAndSwapI) {
       return true;
+    }
+
+    // Op_FastLock previously appeared in the Op_* list above.
+    // With biased locking we're no longer guaranteed that a monitor
+    // enter operation contains a serializing instruction.
+    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+      return true;
+    }
 
     if (x->is_MemBar()) {
       // We must retain this membar if there is an upcoming volatile
-      // load, which will be preceded by acquire membar.
-      if (xop == Op_MemBarAcquire)
+      // load, which will be followed by acquire membar.
+      if (xop == Op_MemBarAcquire) {
         return false;
-      // For other kinds of barriers, check by pretending we
-      // are them, and seeing if we can be removed.
-      else
-        return post_store_load_barrier((const MemBarNode*)x);
+      } else {
+        // For other kinds of barriers, check by pretending we
+        // are them, and seeing if we can be removed.
+        return post_store_load_barrier(x->as_MemBar());
+      }
     }
 
-    // Delicate code to detect case of an upcoming fastlock block
-    if( x->is_If() && x->req() > 1 &&
-        !C->node_arena()->contains(x) ) { // Unmatched old-space only
-      Node *iff = x;
-      Node *bol = iff->in(1);
-      // The iff might be some random subclass of If or bol might be Con-Top
-      if (!bol->is_Bool())  return false;
-      assert( bol->req() > 1, "" );
-      return (bol->in(1)->Opcode() == Op_FastUnlock);
-    }
     // probably not necessary to check for these
-    if (x->is_Call() || x->is_SafePoint() || x->is_block_proj())
+    if (x->is_Call() || x->is_SafePoint() || x->is_block_proj()) {
       return false;
+    }
   }
   return false;
 }

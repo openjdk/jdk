@@ -39,8 +39,8 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
- * A {@link java.util.Map} providing additional atomic
- * {@code putIfAbsent}, {@code remove}, and {@code replace} methods.
+ * A {@link java.util.Map} providing thread safety and atomicity
+ * guarantees.
  *
  * <p>Memory consistency effects: As with other concurrent
  * collections, actions in a thread prior to placing an object into a
@@ -89,11 +89,11 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @param key key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
-     *         <tt>null</tt> if there was no mapping for the key.
-     *         (A <tt>null</tt> return can also indicate that the map
-     *         previously associated <tt>null</tt> with the key,
+     *         {@code null} if there was no mapping for the key.
+     *         (A {@code null} return can also indicate that the map
+     *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the <tt>put</tt> operation
+     * @throws UnsupportedOperationException if the {@code put} operation
      *         is not supported by this map
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map

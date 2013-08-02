@@ -84,9 +84,7 @@ public class JoniRegExp extends RegExp {
                 this.regex = new Regex(javaPattern, 0, javaPattern.length, option, Syntax.JAVASCRIPT);
                 this.groupsInNegativeLookahead = parsed.getGroupsInNegativeLookahead();
             }
-        } catch (final PatternSyntaxException e2) {
-            throwParserException("syntax", e2.getMessage());
-        } catch (JOniException e2) {
+        } catch (final PatternSyntaxException | JOniException e2) {
             throwParserException("syntax", e2.getMessage());
         }
     }

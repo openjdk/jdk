@@ -54,7 +54,7 @@ import java.util.Locale;
  * <li><a href="http://www.unicode.org">http://www.unicode.org</a>
  * </ul>
  *
- * <h4><a name="unicode">Unicode Character Representations</a></h4>
+ * <h3><a name="unicode">Unicode Character Representations</a></h3>
  *
  * <p>The {@code char} data type (and therefore the value that a
  * {@code Character} object encapsulates) are based on the
@@ -68,7 +68,7 @@ import java.util.Locale;
  * definition</i></a> of the U+<i>n</i> notation in the Unicode
  * Standard.)
  *
- * <p><a name="BMP">The set of characters from U+0000 to U+FFFF is
+ * <p><a name="BMP">The set of characters from U+0000 to U+FFFF</a> is
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
  * <a name="supplementary">Characters</a> whose code points are greater
  * than U+FFFF are called <em>supplementary character</em>s.  The Java
@@ -4599,6 +4599,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @since 1.8
      *
+     * @param value The {@code char} for which to return a hash code.
      * @return a hash code value for a {@code char} value.
      */
     public static int hashCode(char value) {
@@ -6637,7 +6638,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is ISO-LATIN-1 white space.
      * This method returns {@code true} for the following five
      * characters only:
-     * <table>
+     * <table summary="truechars">
      * <tr><td>{@code '\t'}</td>            <td>{@code U+0009}</td>
      *     <td>{@code HORIZONTAL TABULATION}</td></tr>
      * <tr><td>{@code '\n'}</td>            <td>{@code U+000A}</td>
@@ -7174,6 +7175,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Returns the value obtained by reversing the order of the bytes in the
      * specified <tt>char</tt> value.
      *
+     * @param ch The {@code char} of which to reverse the byte order.
      * @return the value obtained by reversing (or, equivalently, swapping)
      *     the bytes in the specified <tt>char</tt> value.
      * @since 1.5
