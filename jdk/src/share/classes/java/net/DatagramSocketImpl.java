@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
     protected void disconnect() {}
 
     /**
-     * Peek at the packet to see who it is from. Updates the specified <code>InetAddress</code>
+     * Peek at the packet to see who it is from. Updates the specified {@code InetAddress}
      * to the address which the packet came from.
      * @param i an InetAddress object
      * @return the port number which the packet came from.
@@ -114,7 +114,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
 
     /**
      * Peek at the packet to see who it is from. The data is copied into the specified
-     * <code>DatagramPacket</code>. The data is returned,
+     * {@code DatagramPacket}. The data is returned,
      * but not consumed, so that a subsequent peekData/receive operation
      * will see the same data.
      * @param p the Packet Received.
@@ -163,7 +163,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
 
     /**
      * Set the TTL (time-to-live) option.
-     * @param ttl an <tt>int</tt> specifying the time-to-live value
+     * @param ttl an {@code int} specifying the time-to-live value
      * @exception IOException if an I/O exception occurs
      * while setting the time-to-live option.
      * @see #getTimeToLive()
@@ -174,7 +174,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * Retrieve the TTL (time-to-live) option.
      * @exception IOException if an I/O exception occurs
      * while retrieving the time-to-live option
-     * @return an <tt>int</tt> representing the time-to-live value
+     * @return an {@code int} representing the time-to-live value
      * @see #setTimeToLive(int)
      */
     protected abstract int getTimeToLive() throws IOException;
@@ -227,7 +227,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
 
     /**
      * Gets the local port.
-     * @return an <tt>int</tt> representing the local port value
+     * @return an {@code int} representing the local port value
      */
     protected int getLocalPort() {
         return localPort;
@@ -235,7 +235,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
 
     /**
      * Gets the datagram socket file descriptor.
-     * @return a <tt>FileDescriptor</tt> object representing the datagram socket
+     * @return a {@code FileDescriptor} object representing the datagram socket
      * file descriptor
      */
     protected FileDescriptor getFileDescriptor() {

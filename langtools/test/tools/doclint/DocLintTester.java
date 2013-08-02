@@ -123,7 +123,7 @@ public class DocLintTester {
     private static final Pattern dirFileLine = Pattern.compile(
             "(?m)"                          // multi-line mode
             + "^(.*?)"                      // directory part of file name
-            + "([A-Za-z0-9.]+:[0-9]+:)");   // file name and line number
+            + "([-A-Za-z0-9.]+:[0-9]+:)");  // file name and line number
 
     String removeFileNames(String s) {
         Matcher m = dirFileLine.matcher(s);

@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
 
 /* @test
  * @summary unit tests for value-type conversion utilities
- * @ignore This test requires a special compilation environment to access sun.inovke.util.  Run by hand.
+ * @compile -XDignore.symbol.file ValueConversionsTest.java
  * @run junit/othervm test.sun.invoke.util.ValueConversionsTest
  * @run junit/othervm
  *          -DValueConversionsTest.MAX_ARITY=255 -DValueConversionsTest.START_ARITY=250

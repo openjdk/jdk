@@ -1948,6 +1948,8 @@ public class Attr extends JCTree.Visitor {
             clazzid1 = make.at(clazz.pos).Select(make.Type(encltype),
                                                  ((JCIdent) clazzid).name);
 
+            EndPosTable endPosTable = this.env.toplevel.endPositions;
+            endPosTable.storeEnd(clazzid1, tree.getEndPosition(endPosTable));
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;
@@ -2193,7 +2195,9 @@ public class Attr extends JCTree.Visitor {
                         syms.objectType :
                         clazztype;
                 if (!inferred.isErroneous() &&
-                    types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings)) {
+                    (allowPoly && pt() == Infer.anyPoly ?
+                        types.isSameType(inferred, clazztype) :
+                        types.isAssignable(inferred, pt().hasTag(NONE) ? polyPt : pt(), types.noWarnings))) {
                     String key = types.isSameType(clazztype, inferred) ?
                         "diamond.redundant.args" :
                         "diamond.redundant.args.1";
@@ -2968,7 +2972,9 @@ public class Attr extends JCTree.Visitor {
                 //check that functional interface class is well-formed
                 ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
                         names.empty, List.of(fExpr.targets.head), ABSTRACT);
-                chk.checkImplementations(env.tree, csym, csym);
+                if (csym != null) {
+                    chk.checkImplementations(env.tree, csym, csym);
+                }
             }
         }
     }

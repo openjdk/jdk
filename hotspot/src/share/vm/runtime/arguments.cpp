@@ -1891,6 +1891,10 @@ void Arguments::check_deprecated_gc_flags() {
     warning("Using MaxGCMinorPauseMillis as minor pause goal is deprecated"
             "and will likely be removed in future release");
   }
+  if (FLAG_IS_CMDLINE(DefaultMaxRAMFraction)) {
+    warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
+        "Use MaxRAMFraction instead.");
+  }
 }
 
 // Check stack pages settings

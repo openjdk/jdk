@@ -30,9 +30,8 @@
  * @run
  */
 
-// Ensure these are CallerSensitiveDynamicMethods
+// Ensure this is CallerSensitiveDynamicMethod
 print(java.security.AccessController["doPrivileged(PrivilegedAction)"])
-print(java.lang.Class["forName(String)"])
 
 // Ensure this is not
 print(java.lang.String["valueOf(char)"])
