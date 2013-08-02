@@ -21,7 +21,6 @@
  * questions.
  */
 
-#define _GNU_SOURCE // for the definition of REG_RIP in ucontext.h
 #include <stdio.h>
 #include <jni.h>
 #include <signal.h>
@@ -32,11 +31,8 @@ extern "C" {
 #endif
 
 void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
-    int thrNum;
 
     printf( " HANDLER (1) " );
-    // Move forward RIP to skip failing instruction
-    context->uc_mcontext.gregs[REG_RIP] += 6;
 }
 
 JNIEXPORT void JNICALL Java_TestJNI_doSomething(JNIEnv *env, jclass klass, jint val) {
