@@ -397,31 +397,6 @@ JNF_COCOA_EXIT(env);
 }
 
 /*
- * Class:     sun_lwawt_macosx_CWrapper$NSWindow
- * Method:    screen
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_lwawt_macosx_CWrapper_00024NSWindow_screen
-(JNIEnv *env, jclass cls, jlong windowPtr)
-{
-    __block jlong screenPtr = 0L;
-
-JNF_COCOA_ENTER(env);
-
-    AWTWindow *window = (AWTWindow *)jlong_to_ptr(windowPtr);
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        const NSScreen *screen = [window screen];
-        CFRetain(screen); // GC
-        screenPtr = ptr_to_jlong(screen);
-    }];
-
-JNF_COCOA_EXIT(env);
-
-    return screenPtr;
-}
-
-/*
  * Method:    miniaturize
  * Signature: (J)V
  */
@@ -688,92 +663,6 @@ JNF_COCOA_ENTER(env);
     }];
 
 JNF_COCOA_EXIT(env);
-}
-
-
-/*
- * Class:     sun_lwawt_macosx_CWrapper$NSScreen
- * Method:    frame
- * Signature: (J)Ljava/awt/Rectangle;
- */
-JNIEXPORT jobject JNICALL
-Java_sun_lwawt_macosx_CWrapper_00024NSScreen_frame
-(JNIEnv *env, jclass cls, jlong screenPtr)
-{
-    jobject jRect = NULL;
-
-JNF_COCOA_ENTER(env);
-
-    __block NSRect rect = NSZeroRect;
-
-    NSScreen *screen = (NSScreen *)jlong_to_ptr(screenPtr);
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        rect = [screen frame];
-    }];
-
-    jRect = NSToJavaRect(env, rect);
-
-JNF_COCOA_EXIT(env);
-
-    return jRect;
-}
-
-/*
- * Class:     sun_lwawt_macosx_CWrapper_NSScreen
- * Method:    visibleFrame
- * Signature: (J)Ljava/awt/geom/Rectangle2D;
- */
-JNIEXPORT jobject JNICALL
-Java_sun_lwawt_macosx_CWrapper_00024NSScreen_visibleFrame
-(JNIEnv *env, jclass cls, jlong screenPtr)
-{
-    jobject jRect = NULL;
-
-JNF_COCOA_ENTER(env);
-
-    __block NSRect rect = NSZeroRect;
-
-    NSScreen *screen = (NSScreen *)jlong_to_ptr(screenPtr);
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        rect = [screen visibleFrame];
-    }];
-
-    jRect = NSToJavaRect(env, rect);
-
-JNF_COCOA_EXIT(env);
-
-    return jRect;
-}
-
-/*
- * Class:     sun_lwawt_macosx_CWrapper_NSScreen
- * Method:    screenByDisplayId
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_lwawt_macosx_CWrapper_00024NSScreen_screenByDisplayId
-(JNIEnv *env, jclass cls, jint displayID)
-{
-    __block jlong screenPtr = 0L;
-
-JNF_COCOA_ENTER(env); 
-
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        NSArray *screens = [NSScreen screens];
-        for (NSScreen *screen in screens) {
-            NSDictionary *screenInfo = [screen deviceDescription];
-            NSNumber *screenID = [screenInfo objectForKey:@"NSScreenNumber"];
-            if ([screenID intValue] == displayID){
-                CFRetain(screen); // GC
-                screenPtr = ptr_to_jlong(screen);
-                break;
-            }
-        }
-    }];
-
-JNF_COCOA_EXIT(env);
-
-    return screenPtr;
 }
 
 /*

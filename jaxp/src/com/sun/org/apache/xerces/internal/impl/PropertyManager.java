@@ -25,10 +25,9 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
@@ -51,14 +50,13 @@ public class PropertyManager {
 
     private static final String STRING_INTERNING = "http://xml.org/sax/features/string-interning";
 
-
-    /** Property identifier: access to external dtd */
-    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
-
-    /** Property identifier: access to external schema  */
-    protected static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     HashMap supportedProps = new HashMap();
+
+    private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
     public static final int CONTEXT_READER = 1;
     public static final int CONTEXT_WRITER = 2;
@@ -84,6 +82,7 @@ public class PropertyManager {
 
         HashMap properties = propertyManager.getProperties();
         supportedProps.putAll(properties);
+        fSecurityPropertyMgr = (XMLSecurityPropertyManager)getProperty(XML_SECURITY_PROPERTY_MANAGER);
     }
 
     private HashMap getProperties(){
@@ -125,14 +124,8 @@ public class PropertyManager {
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, new Boolean(false));
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, new Boolean(false));
 
-        //For DOM/SAX, the secure feature is set to true by default
-        String accessExternal =  SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
-        supportedProps.put(ACCESS_EXTERNAL_DTD, accessExternal);
-
-        accessExternal =  SecuritySupport.getDefaultAccessProperty(
-                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
-        supportedProps.put(ACCESS_EXTERNAL_SCHEMA, accessExternal);
+        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        supportedProps.put(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
     }
 
     private void initWriterProps(){
@@ -148,7 +141,8 @@ public class PropertyManager {
      * }
      */
     public boolean containsProperty(String property){
-        return supportedProps.containsKey(property) ;
+        return supportedProps.containsKey(property) ||
+                (fSecurityPropertyMgr!=null && fSecurityPropertyMgr.getIndex(property) > -1) ;
     }
 
     public Object getProperty(String property){
@@ -174,7 +168,15 @@ public class PropertyManager {
             //add internal stax property
             supportedProps.put( Constants.XERCES_PROPERTY_PREFIX + Constants.STAX_ENTITY_RESOLVER_PROPERTY , new StaxEntityResolverWrapper((XMLResolver)value)) ;
         }
-        supportedProps.put(property, value ) ;
+
+        int index = (fSecurityPropertyMgr != null) ? fSecurityPropertyMgr.getIndex(property) : -1;
+        if (index > -1) {
+            fSecurityPropertyMgr.setValue(index,
+                    XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
+        } else {
+            supportedProps.put(property, value);
+        }
+
         if(equivalentProperty != null){
             supportedProps.put(equivalentProperty, value ) ;
         }

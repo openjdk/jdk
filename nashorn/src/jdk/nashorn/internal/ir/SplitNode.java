@@ -33,7 +33,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Node indicating code is split across classes.
  */
 @Immutable
-public class SplitNode extends LexicalContextNode {
+public class SplitNode extends LexicalContextStatement {
     /** Split node method name. */
     private final String name;
 
@@ -46,13 +46,12 @@ public class SplitNode extends LexicalContextNode {
     /**
      * Constructor
      *
-     * @param lineNumber  lineNumber
      * @param name        name of split node
      * @param body        body of split code
      * @param compileUnit compile unit to use for the body
      */
-    public SplitNode(final int lineNumber, final String name, final Node body, final CompileUnit compileUnit) {
-        super(lineNumber, body.getToken(), body.getFinish());
+    public SplitNode(final String name, final Node body, final CompileUnit compileUnit) {
+        super(-1, body.getToken(), body.getFinish());
         this.name        = name;
         this.body        = body;
         this.compileUnit = compileUnit;

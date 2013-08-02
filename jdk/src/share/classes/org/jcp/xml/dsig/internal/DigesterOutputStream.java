@@ -2,36 +2,37 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 1999-2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DigesterOutputStream.java,v 1.2 2008/07/24 15:20:31 mullan Exp $
+ * $Id: DigesterOutputStream.java,v 1.5 2005/12/20 20:02:39 mullan Exp $
  */
 package org.jcp.xml.dsig.internal;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 import com.sun.org.apache.xml.internal.security.utils.UnsyncByteArrayOutputStream;
 
@@ -45,10 +46,12 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncByteArrayOutputStrea
  * @author Sean Mullan
  */
 public class DigesterOutputStream extends OutputStream {
-    private boolean buffer = false;
+    private static java.util.logging.Logger log =
+        java.util.logging.Logger.getLogger("org.jcp.xml.dsig.internal");
+
+    private final boolean buffer;
     private UnsyncByteArrayOutputStream bos;
     private final MessageDigest md;
-    private static Logger log = Logger.getLogger("org.jcp.xml.dsig.internal");
 
     /**
      * Creates a DigesterOutputStream.
@@ -73,12 +76,6 @@ public class DigesterOutputStream extends OutputStream {
         }
     }
 
-    /** @inheritDoc */
-    public void write(byte[] input) {
-        write(input, 0, input.length);
-    }
-
-    /** @inheritDoc */
     public void write(int input) {
         if (buffer) {
             bos.write(input);
@@ -86,18 +83,18 @@ public class DigesterOutputStream extends OutputStream {
         md.update((byte)input);
     }
 
-    /** @inheritDoc */
+    @Override
     public void write(byte[] input, int offset, int len) {
         if (buffer) {
             bos.write(input, offset, len);
         }
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "Pre-digested input:");
-            StringBuffer sb = new StringBuffer(len);
-            for (int i=offset; i<(offset+len); i++) {
-                sb.append((char) input[i]);
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Pre-digested input:");
+            StringBuilder sb = new StringBuilder(len);
+            for (int i = offset; i < (offset + len); i++) {
+                sb.append((char)input[i]);
             }
-            log.log(Level.FINER, sb.toString());
+            log.log(java.util.logging.Level.FINE, sb.toString());
         }
         md.update(input, offset, len);
     }
@@ -118,6 +115,13 @@ public class DigesterOutputStream extends OutputStream {
             return new ByteArrayInputStream(bos.toByteArray());
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (buffer) {
+            bos.close();
         }
     }
 }

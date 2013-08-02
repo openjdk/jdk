@@ -53,11 +53,6 @@ import java.util.function.Supplier;
  * operation, the stream is considered to be consumed, and no more intermediate
  * or terminal operations are permitted on this stream instance.
  *
- * <p>{@code AbstractPipeline} implements a number of methods that are
- * specified in {@link BaseStream}, though it does not implement
- * {@code BaseStream} directly.  Subclasses of {@code AbstractPipeline}
- * will generally implement {@code BaseStream}.
- *
  * @implNote
  * <p>For sequential streams, and parallel streams without
  * <a href="package-summary.html#StreamOps">stateful intermediate
@@ -75,7 +70,7 @@ import java.util.function.Supplier;
  * @since 1.8
  */
 abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
-        extends PipelineHelper<E_OUT> {
+        extends PipelineHelper<E_OUT> implements BaseStream<E_OUT, S> {
     /**
      * Backlink to the head of the pipeline chain (self if this is the source
      * stage).
@@ -286,26 +281,20 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     // BaseStream
 
-    /**
-     * Implements {@link BaseStream#sequential()}
-     */
+    @Override
     public final S sequential() {
         sourceStage.parallel = false;
         return (S) this;
     }
 
-    /**
-     * Implements {@link BaseStream#parallel()}
-     */
+    @Override
     public final S parallel() {
         sourceStage.parallel = true;
         return (S) this;
     }
 
     // Primitive specialization use co-variant overrides, hence is not final
-    /**
-     * Implements {@link BaseStream#spliterator()}
-     */
+    @Override
     public Spliterator<E_OUT> spliterator() {
         if (linkedOrConsumed)
             throw new IllegalStateException("stream has already been operated upon");
@@ -331,9 +320,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         }
     }
 
-    /**
-     * Implements {@link BaseStream#isParallel()}
-     */
+    @Override
     public final boolean isParallel() {
         return sourceStage.parallel;
     }

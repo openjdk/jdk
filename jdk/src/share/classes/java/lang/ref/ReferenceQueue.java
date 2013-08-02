@@ -55,25 +55,29 @@ public class ReferenceQueue<T> {
     private long queueLength = 0;
 
     boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
-        synchronized (r) {
-            if (r.queue == ENQUEUED) return false;
-            synchronized (lock) {
-                r.queue = ENQUEUED;
-                r.next = (head == null) ? r : head;
-                head = r;
-                queueLength++;
-                if (r instanceof FinalReference) {
-                    sun.misc.VM.addFinalRefCount(1);
-                }
-                lock.notifyAll();
-                return true;
+        synchronized (lock) {
+            // Check that since getting the lock this reference hasn't already been
+            // enqueued (and even then removed)
+            ReferenceQueue queue = r.queue;
+            if ((queue == NULL) || (queue == ENQUEUED)) {
+                return false;
             }
+            assert queue == this;
+            r.queue = ENQUEUED;
+            r.next = (head == null) ? r : head;
+            head = r;
+            queueLength++;
+            if (r instanceof FinalReference) {
+                sun.misc.VM.addFinalRefCount(1);
+            }
+            lock.notifyAll();
+            return true;
         }
     }
 
     private Reference<? extends T> reallyPoll() {       /* Must hold lock */
-        if (head != null) {
-            Reference<? extends T> r = head;
+        Reference<? extends T> r = head;
+        if (r != null) {
             head = (r.next == r) ? null : r.next;
             r.queue = NULL;
             r.next = r;

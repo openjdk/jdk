@@ -73,6 +73,10 @@ public class WithParameters {
                 }
                 for(int i = 0; i < parameters.length; i++) {
                     Parameter p = parameters[i];
+                    if(!p.isNamePresent()) {
+                        System.err.println(p + ".isNamePresent == false");
+                        error++;
+                    }
                     if(!parameters[i].getName().equals(qux_names[i])) {
                         System.err.println("Wrong parameter name for " + parameters[i]);
                         error++;
