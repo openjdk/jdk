@@ -29,6 +29,8 @@ package java.lang.invoke;
  * LambdaConversionException
  */
 public class LambdaConversionException extends Exception {
+    private static final long serialVersionUID = 292L + 8L;
+
     /**
      * Constructs a {@code LambdaConversionException}.
      */

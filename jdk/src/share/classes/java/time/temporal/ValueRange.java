@@ -331,7 +331,7 @@ public final class ValueRange implements Serializable {
 
     private String genInvalidFieldMessage(TemporalField field, long value) {
         if (field != null) {
-            return "Invalid value for " + field.getName() + " (valid values " + this + "): " + value;
+            return "Invalid value for " + field + " (valid values " + this + "): " + value;
         } else {
             return "Invalid value (valid values " + this + "): " + value;
         }

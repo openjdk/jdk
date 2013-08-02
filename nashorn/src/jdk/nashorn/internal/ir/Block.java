@@ -33,9 +33,13 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import jdk.nashorn.internal.codegen.Label;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 
 /**
  * IR representation for a list of statements.
@@ -89,13 +93,13 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
         this.symbols    = new LinkedHashMap<>();
         this.entryLabel = new Label("block_entry");
         this.breakLabel = new Label("block_break");
-        this.flags     =  0;
+        final int len = statements.length;
+        this.flags = (len > 0 && statements[len - 1].hasTerminalFlags()) ? IS_TERMINAL : 0;
     }
 
     /**
      * Constructor
      *
-     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param statements statements
@@ -211,6 +215,19 @@ public class Block extends Node implements BreakableNode, Flags<Block> {
      */
     public Block setIsTerminal(final LexicalContext lc, final boolean isTerminal) {
         return isTerminal ? setFlag(lc, IS_TERMINAL) : clearFlag(lc, IS_TERMINAL);
+    }
+
+    /**
+     * Set the type of the return symbol in this block if present.
+     * @param returnType the new type
+     * @return this block
+     */
+    public Block setReturnType(final Type returnType) {
+        final Symbol symbol = getExistingSymbol(RETURN.symbolName());
+        if (symbol != null) {
+            symbol.setTypeOverride(returnType);
+        }
+        return this;
     }
 
     @Override
