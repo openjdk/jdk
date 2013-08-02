@@ -80,6 +80,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   void set_returned(ArgumentMap vars);
   bool is_argument(ArgumentMap vars);
   bool is_arg_stack(ArgumentMap vars);
+  bool returns_all(ArgumentMap vars);
   void clear_bits(ArgumentMap vars, VectorSet &bs);
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars, bool merge = false);
