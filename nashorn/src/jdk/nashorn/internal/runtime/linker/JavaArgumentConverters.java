@@ -42,7 +42,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Utility class shared by {@code NashornLinker} and {@code NashornPrimitiveLinker} for converting JS values to Java
  * types.
  */
-public class JavaArgumentConverters {
+final class JavaArgumentConverters {
 
     private static final MethodHandle TO_BOOLEAN        = findOwnMH("toBoolean", Boolean.class, Object.class);
     private static final MethodHandle TO_STRING         = findOwnMH("toString", String.class, Object.class);

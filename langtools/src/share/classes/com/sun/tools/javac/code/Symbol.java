@@ -596,7 +596,7 @@ public abstract class Symbol implements Element {
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
     public <A extends java.lang.annotation.Annotation> A[] getAnnotationsByType(Class<A> annoType) {
-        return JavacAnnoConstructs.getAnnotations(this, annoType);
+        return JavacAnnoConstructs.getAnnotationsByType(this, annoType);
     }
 
     // TODO: getEnclosedElements should return a javac List, fix in FilteredMemberList
