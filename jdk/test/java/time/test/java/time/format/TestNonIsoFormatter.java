@@ -126,7 +126,7 @@ public class TestNonIsoFormatter {
 
     @Test(dataProvider="format_data")
     public void test_formatLocalizedDate(Chronology chrono, Locale formatLocale, Locale numberingLocale,
-                                         ChronoLocalDate<?> date, String expected) {
+                                         ChronoLocalDate date, String expected) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(chrono).withLocale(formatLocale)
             .withDecimalStyle(DecimalStyle.of(numberingLocale));
@@ -136,12 +136,12 @@ public class TestNonIsoFormatter {
 
     @Test(dataProvider="format_data")
     public void test_parseLocalizedText(Chronology chrono, Locale formatLocale, Locale numberingLocale,
-                                        ChronoLocalDate<?> expected, String text) {
+                                        ChronoLocalDate expected, String text) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(chrono).withLocale(formatLocale)
             .withDecimalStyle(DecimalStyle.of(numberingLocale));
         TemporalAccessor temporal = dtf.parse(text);
-        ChronoLocalDate<?> date = chrono.date(temporal);
+        ChronoLocalDate date = chrono.date(temporal);
         assertEquals(date, expected);
     }
 

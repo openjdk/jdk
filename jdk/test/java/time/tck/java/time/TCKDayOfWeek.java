@@ -159,6 +159,44 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // isSupported(TemporalField)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalField() {
+        assertEquals(DayOfWeek.THURSDAY.isSupported((TemporalField) null), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.NANO_OF_SECOND), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.NANO_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MICRO_OF_SECOND), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MICRO_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MILLI_OF_SECOND), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MILLI_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.SECOND_OF_MINUTE), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.SECOND_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MINUTE_OF_HOUR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MINUTE_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.HOUR_OF_AMPM), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.HOUR_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.AMPM_OF_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.DAY_OF_WEEK), true);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.DAY_OF_MONTH), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.DAY_OF_YEAR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.EPOCH_DAY), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.MONTH_OF_YEAR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.PROLEPTIC_MONTH), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.YEAR), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.YEAR_OF_ERA), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.ERA), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.INSTANT_SECONDS), false);
+        assertEquals(DayOfWeek.THURSDAY.isSupported(ChronoField.OFFSET_SECONDS), false);
+    }
+
+    //-----------------------------------------------------------------------
     // get(TemporalField)
     //-----------------------------------------------------------------------
     @Test

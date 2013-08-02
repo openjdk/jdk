@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package java.awt;
 
 
 /**
- * Signals that an Absract Window Toolkit exception has occurred.
+ * Signals that an Abstract Window Toolkit exception has occurred.
  *
  * @author      Arthur van Hoff
  */
