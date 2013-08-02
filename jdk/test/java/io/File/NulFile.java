@@ -612,8 +612,13 @@ public class NulFile {
             try {
                 File.createTempFile(prefix, suffix, directory);
             } catch (IOException ex) {
-                if (ExceptionMsg.equals(ex.getMessage()))
+                String err = "Unable to create temporary file";
+                if (err.equals(ex.getMessage()))
                     exceptionThrown = true;
+                else {
+                    throw new RuntimeException("Get IOException with message, "
+                            + ex.getMessage() + ", expect message, "+ err);
+                }
             }
         }
         if (!exceptionThrown) {

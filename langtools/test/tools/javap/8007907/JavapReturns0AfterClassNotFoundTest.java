@@ -35,7 +35,7 @@ import java.io.StringWriter;
 public class JavapReturns0AfterClassNotFoundTest {
 
     static final String fileNotFoundErrorMsg =
-            "Error:  class not found: Unexisting.class";
+            "Error: class not found: Unexisting.class";
     static final String exitCodeClassNotFoundAssertionMsg =
             "Javap's exit code for class not found should be 1";
     static final String classNotFoundMsgAssertionMsg =

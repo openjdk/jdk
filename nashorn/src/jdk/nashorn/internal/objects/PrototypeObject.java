@@ -30,12 +30,12 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * Instances of this class serve as "prototype" object for script functions.
@@ -52,13 +52,22 @@ public class PrototypeObject extends ScriptObject {
     private static final MethodHandle SET_CONSTRUCTOR = findOwnMH("setConstructor", void.class, Object.class, Object.class);
 
     static {
-        PropertyMap map = PropertyMap.newMap(PrototypeObject.class);
-        map = Lookup.newProperty(map, "constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR);
-        map$ = map;
+        final ArrayList<Property> properties = new ArrayList<>(1);
+        properties.add(AccessorProperty.create("constructor", Property.NOT_ENUMERABLE, GET_CONSTRUCTOR, SET_CONSTRUCTOR));
+        map$ = PropertyMap.newMap(properties).setIsShared();
+    }
+
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
+    private PrototypeObject(final Global global, final PropertyMap map) {
+        super(map != map$? map.addAll(global.getPrototypeObjectMap()) : global.getPrototypeObjectMap());
+        setProto(global.getObjectPrototype());
     }
 
     PrototypeObject() {
-        this(map$);
+        this(Global.instance(), map$);
     }
 
     /**
@@ -67,12 +76,11 @@ public class PrototypeObject extends ScriptObject {
      * @param map property map
      */
     public PrototypeObject(final PropertyMap map) {
-        super(map != map$ ? map.addAll(map$) : map$);
-        setProto(Global.objectPrototype());
+        this(Global.instance(), map);
     }
 
     PrototypeObject(final ScriptFunction func) {
-        this(map$);
+        this(Global.instance(), map$);
         this.constructor = func;
     }
 
@@ -107,10 +115,6 @@ public class PrototypeObject extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MethodHandles.lookup().findStatic(PrototypeObject.class, name, MH.type(rtype, types));
-        } catch (final NoSuchMethodException | IllegalAccessException e) {
-            throw new MethodHandleFactory.LookupException(e);
-        }
+        return MH.findStatic(MethodHandles.lookup(), PrototypeObject.class, name, MH.type(rtype, types));
     }
 }

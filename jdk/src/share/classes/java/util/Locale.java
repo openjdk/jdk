@@ -84,7 +84,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * described below.
  *
  * <dl>
- *   <dt><a name="def_language"/><b>language</b></dt>
+ *   <dt><a name="def_language"><b>language</b></a></dt>
  *
  *   <dd>ISO 639 alpha-2 or alpha-3 language code, or registered
  *   language subtags up to 8 alpha letters (for future enhancements).
@@ -92,51 +92,51 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *   alpha-2 code must be used.  You can find a full list of valid
  *   language codes in the IANA Language Subtag Registry (search for
  *   "Type: language").  The language field is case insensitive, but
- *   <code>Locale</code> always canonicalizes to lower case.</dd><br>
+ *   <code>Locale</code> always canonicalizes to lower case.</dd>
  *
  *   <dd>Well-formed language values have the form
  *   <code>[a-zA-Z]{2,8}</code>.  Note that this is not the the full
  *   BCP47 language production, since it excludes extlang.  They are
  *   not needed since modern three-letter language codes replace
- *   them.</dd><br>
+ *   them.</dd>
  *
- *   <dd>Example: "en" (English), "ja" (Japanese), "kok" (Konkani)</dd><br>
+ *   <dd>Example: "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
- *   <dt><a name="def_script"/><b>script</b></dt>
+ *   <dt><a name="def_script"><b>script</b></a></dt>
  *
  *   <dd>ISO 15924 alpha-4 script code.  You can find a full list of
  *   valid script codes in the IANA Language Subtag Registry (search
  *   for "Type: script").  The script field is case insensitive, but
  *   <code>Locale</code> always canonicalizes to title case (the first
  *   letter is upper case and the rest of the letters are lower
- *   case).</dd><br>
+ *   case).</dd>
  *
  *   <dd>Well-formed script values have the form
- *   <code>[a-zA-Z]{4}</code></dd><br>
+ *   <code>[a-zA-Z]{4}</code></dd>
  *
- *   <dd>Example: "Latn" (Latin), "Cyrl" (Cyrillic)</dd><br>
+ *   <dd>Example: "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
  *
- *   <dt><a name="def_region"/><b>country (region)</b></dt>
+ *   <dt><a name="def_region"><b>country (region)</b></a></dt>
  *
  *   <dd>ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code.
  *   You can find a full list of valid country and region codes in the
  *   IANA Language Subtag Registry (search for "Type: region").  The
  *   country (region) field is case insensitive, but
- *   <code>Locale</code> always canonicalizes to upper case.</dd><br>
+ *   <code>Locale</code> always canonicalizes to upper case.</dd>
  *
  *   <dd>Well-formed country/region values have
- *   the form <code>[a-zA-Z]{2} | [0-9]{3}</code></dd><br>
+ *   the form <code>[a-zA-Z]{2} | [0-9]{3}</code></dd>
  *
  *   <dd>Example: "US" (United States), "FR" (France), "029"
- *   (Caribbean)</dd><br>
+ *   (Caribbean)</dd>
  *
- *   <dt><a name="def_variant"/><b>variant</b></dt>
+ *   <dt><a name="def_variant"><b>variant</b></a></dt>
  *
  *   <dd>Any arbitrary value used to indicate a variation of a
  *   <code>Locale</code>.  Where there are two or more variant values
  *   each indicating its own semantics, these values should be ordered
  *   by importance, with most important first, separated by
- *   underscore('_').  The variant field is case sensitive.</dd><br>
+ *   underscore('_').  The variant field is case sensitive.</dd>
  *
  *   <dd>Note: IETF BCP 47 places syntactic restrictions on variant
  *   subtags.  Also BCP 47 subtags are strictly used to indicate
@@ -152,16 +152,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *   cultural behaviors such as calendar type or number script.  In
  *   BCP 47 this kind of information, which does not identify the
  *   language, is supported by extension subtags or private use
- *   subtags.</dd><br>
+ *   subtags.</dd>
  *
  *   <dd>Well-formed variant values have the form <code>SUBTAG
  *   (('_'|'-') SUBTAG)*</code> where <code>SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}</code>. (Note: BCP 47 only
- *   uses hyphen ('-') as a delimiter, this is more lenient).</dd><br>
+ *   uses hyphen ('-') as a delimiter, this is more lenient).</dd>
  *
- *   <dd>Example: "polyton" (Polytonic Greek), "POSIX"</dd><br>
+ *   <dd>Example: "polyton" (Polytonic Greek), "POSIX"</dd>
  *
- *   <dt><a name="def_extensions"/><b>extensions</b></dt>
+ *   <dt><a name="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd>A map from single character keys to string values, indicating
  *   extensions apart from language identification.  The extensions in
@@ -169,14 +169,14 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *   extension subtags and private use subtags. The extensions are
  *   case insensitive, but <code>Locale</code> canonicalizes all
  *   extension keys and values to lower case. Note that extensions
- *   cannot have empty values.</dd><br>
+ *   cannot have empty values.</dd>
  *
  *   <dd>Well-formed keys are single characters from the set
  *   <code>[0-9a-zA-Z]</code>.  Well-formed values have the form
  *   <code>SUBTAG ('-' SUBTAG)*</code> where for the key 'x'
  *   <code>SUBTAG = [0-9a-zA-Z]{1,8}</code> and for other keys
  *   <code>SUBTAG = [0-9a-zA-Z]{2,8}</code> (that is, 'x' allows
- *   single-character subtags).</dd><br>
+ *   single-character subtags).</dd>
  *
  *   <dd>Example: key="u"/value="ca-japanese" (Japanese Calendar),
  *   key="x"/value="java-1-7"</dd>
@@ -189,7 +189,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * requirement (is well-formed), but does not validate the value
  * itself.  See {@link Builder} for details.
  *
- * <h4><a name="def_locale_extension">Unicode locale/language extension</h4>
+ * <h3><a name="def_locale_extension">Unicode locale/language extension</a></h3>
  *
  * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
  * attributes and keywords to override or refine the default behavior
@@ -409,7 +409,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * Clients desiring a string representation of the complete locale can
  * then always rely on <code>toLanguageTag</code> for this purpose.
  *
- * <h5><a name="special_cases_constructor"/>Special cases</h5>
+ * <h5><a name="special_cases_constructor">Special cases</a></h5>
  *
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
@@ -1007,6 +1007,8 @@ public final class Locale implements Cloneable, Serializable {
      * country (region), such as 3-letter numeric UN M.49 area codes.
      * Therefore, the list returned by this method does not contain ALL valid
      * codes that can be used to create Locales.
+     *
+     * @return An array of ISO 3166 two-letter country codes.
      */
     public static String[] getISOCountries() {
         if (isoCountries == null) {
@@ -1030,6 +1032,8 @@ public final class Locale implements Cloneable, Serializable {
      * 8 characters in length.  Therefore, the list returned by this method does
      * not contain ALL valid codes that can be used to create Locales.
      * </ul>
+     *
+     * @return Am array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
         if (isoLanguages == null) {
@@ -1268,15 +1272,15 @@ public final class Locale implements Cloneable, Serializable {
      * fields only.  To represent a Locale as a String for interchange purposes, use
      * {@link #toLanguageTag}.
      *
-     * <p>Examples: <ul><tt>
-     * <li>en
-     * <li>de_DE
-     * <li>_GB
-     * <li>en_US_WIN
-     * <li>de__POSIX
-     * <li>zh_CN_#Hans
-     * <li>zh_TW_#Hant-x-java
-     * <li>th_TH_TH_#u-nu-thai</tt></ul>
+     * <p>Examples: <ul>
+     * <li><tt>en</tt></li>
+     * <li><tt>de_DE</tt></li>
+     * <li><tt>_GB</tt></li>
+     * <li><tt>en_US_WIN</tt></li>
+     * <li><tt>de__POSIX</tt></li>
+     * <li><tt>zh_CN_#Hans</tt></li>
+     * <li><tt>zh_TW_#Hant-x-java</tt></li>
+     * <li><tt>th_TH_TH_#u-nu-thai</tt></li></ul>
      *
      * @return A string representation of the Locale, for debugging.
      * @see #getDisplayName
@@ -1506,7 +1510,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>Grandfathered tags with canonical replacements are as follows:
      *
-     * <table>
+     * <table summary="Grandfathered tags with canonical replacements">
      * <tbody align="center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>modern replacement</th></tr>
      * <tr><td>art-lojban</td><td>&nbsp;</td><td>jbo</td></tr>
@@ -1535,7 +1539,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Grandfathered tags with no modern replacement will be
      * converted as follows:
      *
-     * <table>
+     * <table summary="Grandfathered tags with no modern replacement">
      * <tbody align="center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>converts to</th></tr>
      * <tr><td>cel-gaulish</td><td>&nbsp;</td><td>xtg-x-cel-gaulish</td></tr>
@@ -1659,6 +1663,8 @@ public final class Locale implements Cloneable, Serializable {
      * (say, we don't have a Japanese name for Croatian),
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a language, this function returns the empty string.
+     *
+     * @return The name of the display language.
      */
     public final String getDisplayLanguage() {
         return getDisplayLanguage(getDefault(Category.DISPLAY));
@@ -1677,6 +1683,8 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a language,
      * this function returns the empty string.
      *
+     * @param inLocale The locale for which to retrieve the display language.
+     * @return The name of the display language appropriate to the given locale.
      * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayLanguage(Locale inLocale) {
@@ -1703,6 +1711,7 @@ public final class Locale implements Cloneable, Serializable {
      * localized for the given locale. Returns the empty string if
      * this locale doesn't specify a script code.
      *
+     * @param inLocale The locale for which to retrieve the display script.
      * @return the display name of the script code for the current default
      * {@link Locale.Category#DISPLAY DISPLAY} locale
      * @throws NullPointerException if <code>inLocale</code> is <code>null</code>
@@ -1727,6 +1736,8 @@ public final class Locale implements Cloneable, Serializable {
      * (say, we don't have a Japanese name for Croatia),
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a country, this function returns the empty string.
+     *
+     * @return The name of the country appropriate to the locale.
      */
     public final String getDisplayCountry() {
         return getDisplayCountry(getDefault(Category.DISPLAY));
@@ -1745,6 +1756,8 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a country,
      * this function returns the empty string.
      *
+     * @param inLocale The locale for which to retrieve the display country.
+     * @return The name of the country appropriate to the given locale.
      * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayCountry(Locale inLocale) {
@@ -1778,6 +1791,8 @@ public final class Locale implements Cloneable, Serializable {
      * user.  If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
+     *
+     * @return The name of the display variant code appropriate to the locale.
      */
     public final String getDisplayVariant() {
         return getDisplayVariant(getDefault(Category.DISPLAY));
@@ -1788,6 +1803,8 @@ public final class Locale implements Cloneable, Serializable {
      * user.  If possible, the name will be localized for inLocale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
+     * @param inLocale The locale for which to retrieve the display variant code.
+     * @return The name of the display variant code appropriate to the given locale.
      * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayVariant(Locale inLocale) {
@@ -1821,6 +1838,8 @@ public final class Locale implements Cloneable, Serializable {
      * depending on which fields are specified in the locale.  If the
      * language, sacript, country, and variant fields are all empty,
      * this function returns the empty string.
+     *
+     * @return The name of the locale appropriate to display.
      */
     public final String getDisplayName() {
         return getDisplayName(getDefault(Category.DISPLAY));
@@ -1844,6 +1863,8 @@ public final class Locale implements Cloneable, Serializable {
      * language, script, country, and variant fields are all empty,
      * this function returns the empty string.
      *
+     * @param inLocale The locale for which to retrieve the display name.
+     * @return The name of the locale appropriate to display.
      * @throws NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayName(Locale inLocale) {
@@ -2672,7 +2693,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * The filtering method will behave as follows:
      *
-     * <table cellpadding=2>
+     * <table cellpadding=2 summary="Filtering method behavior">
      * <tr>
      * <th>Filtering Mode</th>
      * <th>Language Priority List: {@code "de-DE"}</th>

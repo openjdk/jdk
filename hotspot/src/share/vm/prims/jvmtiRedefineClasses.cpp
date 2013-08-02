@@ -3342,9 +3342,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // should get cleared in the_class too.
   if (the_class->get_cached_class_file_bytes() == 0) {
     // the_class doesn't have a cache yet so copy it
-    the_class->set_cached_class_file(
-      scratch_class->get_cached_class_file_bytes(),
-      scratch_class->get_cached_class_file_len());
+    the_class->set_cached_class_file(scratch_class->get_cached_class_file());
   }
 #ifndef PRODUCT
   else {
@@ -3357,7 +3355,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // NULL out in scratch class to not delete twice.  The class to be redefined
   // always owns these bytes.
-  scratch_class->set_cached_class_file(NULL, 0);
+  scratch_class->set_cached_class_file(NULL);
 
   // Replace inner_classes
   Array<u2>* old_inner_classes = the_class->inner_classes();

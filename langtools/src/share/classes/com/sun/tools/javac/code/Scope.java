@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,7 @@ public class Scope {
     public Entry lookup(Name name) {
         return lookup(name, noFilter);
     }
+
     public Entry lookup(Name name, Filter<Symbol> sf) {
         Entry e = table[getIndex(name)];
         if (e == null || e == sentinel)
@@ -359,6 +360,10 @@ public class Scope {
                 return i;
             i = (i + x) & hashMask;
         }
+    }
+
+    public boolean anyMatch(Filter<Symbol> sf) {
+        return getElements(sf).iterator().hasNext();
     }
 
     public Iterable<Symbol> getElements() {

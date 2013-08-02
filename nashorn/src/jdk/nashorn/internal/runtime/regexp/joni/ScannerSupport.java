@@ -155,24 +155,4 @@ abstract class ScannerSupport extends IntHolder implements ErrorMessages {
         return p < stop;
     }
 
-    protected void newSyntaxException(String message) {
-        throw new SyntaxException(message);
-    }
-
-    protected void newValueException(String message) {
-        throw new ValueException(message);
-    }
-
-    protected void newValueException(String message, String str) {
-        throw new ValueException(message, str);
-    }
-
-    protected void newValueException(String message, int p, int end) {
-        throw new ValueException(message, new String(chars, p, end - p));
-    }
-
-    protected void newInternalException(String message) {
-        throw new InternalException(message);
-    }
-
 }
