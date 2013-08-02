@@ -2649,6 +2649,13 @@ public class Resolve {
                                   InferenceContext inferenceContext) {
         MethodResolutionPhase maxPhase = boxingAllowed ? VARARITY : BASIC;
 
+        if (site.hasTag(TYPEVAR)) {
+            return resolveMemberReference(pos, env, referenceTree, site.getUpperBound(),
+                    name, argtypes, typeargtypes, boxingAllowed, methodCheck, inferenceContext);
+        }
+
+        site = types.capture(site);
+
         ReferenceLookupHelper boundLookupHelper;
         if (!name.equals(names.init)) {
             //method reference
@@ -2675,22 +2682,50 @@ public class Resolve {
 
         //merge results
         Pair<Symbol, ReferenceLookupHelper> res;
-        if (!lookupSuccess(unboundSym)) {
-            res = new Pair<Symbol, ReferenceLookupHelper>(boundSym, boundLookupHelper);
-            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
-        } else if (lookupSuccess(boundSym)) {
-            res = new Pair<Symbol, ReferenceLookupHelper>(ambiguityError(boundSym, unboundSym), boundLookupHelper);
-            env.info.pendingResolutionPhase = boundEnv.info.pendingResolutionPhase;
-        } else {
-            res = new Pair<Symbol, ReferenceLookupHelper>(unboundSym, unboundLookupHelper);
-            env.info.pendingResolutionPhase = unboundEnv.info.pendingResolutionPhase;
-        }
+        Symbol bestSym = choose(boundSym, unboundSym);
+        res = new Pair<Symbol, ReferenceLookupHelper>(bestSym,
+                bestSym == unboundSym ? unboundLookupHelper : boundLookupHelper);
+        env.info.pendingResolutionPhase = bestSym == unboundSym ?
+                unboundEnv.info.pendingResolutionPhase :
+                boundEnv.info.pendingResolutionPhase;
 
         return res;
     }
-    //private
-        boolean lookupSuccess(Symbol s) {
+    //where
+        private Symbol choose(Symbol s1, Symbol s2) {
+            if (lookupSuccess(s1) && lookupSuccess(s2)) {
+                return ambiguityError(s1, s2);
+            } else if (lookupSuccess(s1) ||
+                    (canIgnore(s2) && !canIgnore(s1))) {
+                return s1;
+            } else if (lookupSuccess(s2) ||
+                    (canIgnore(s1) && !canIgnore(s2))) {
+                return s2;
+            } else {
+                return s1;
+            }
+        }
+
+        private boolean lookupSuccess(Symbol s) {
             return s.kind == MTH || s.kind == AMBIGUOUS;
+        }
+
+        private boolean canIgnore(Symbol s) {
+            switch (s.kind) {
+                case ABSENT_MTH:
+                    return true;
+                case WRONG_MTH:
+                    InapplicableSymbolError errSym =
+                            (InapplicableSymbolError)s;
+                    return new Template(MethodCheckDiag.ARITY_MISMATCH.regex())
+                            .matches(errSym.errCandidate().snd);
+                case WRONG_MTHS:
+                    InapplicableSymbolsError errSyms =
+                            (InapplicableSymbolsError)s;
+                    return errSyms.filterCandidates(errSyms.mapCandidates()).isEmpty();
+                default:
+                    return false;
+            }
         }
 
     /**
@@ -3504,7 +3539,9 @@ public class Resolve {
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
             Map<Symbol, JCDiagnostic> candidatesMap = mapCandidates();
-            Map<Symbol, JCDiagnostic> filteredCandidates = filterCandidates(candidatesMap);
+            Map<Symbol, JCDiagnostic> filteredCandidates = compactMethodDiags ?
+                    filterCandidates(candidatesMap) :
+                    mapCandidates();
             if (filteredCandidates.isEmpty()) {
                 filteredCandidates = candidatesMap;
             }
@@ -3556,8 +3593,7 @@ public class Resolve {
                 Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<Symbol, JCDiagnostic>();
                 for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
                     JCDiagnostic d = _entry.getValue();
-                    if (!compactMethodDiags ||
-                            !new Template(MethodCheckDiag.ARITY_MISMATCH.regex()).matches(d)) {
+                    if (!new Template(MethodCheckDiag.ARITY_MISMATCH.regex()).matches(d)) {
                         candidates.put(_entry.getKey(), d);
                     }
                 }

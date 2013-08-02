@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,17 @@ import java.util.Locale;
  *    &lt;reset&gt; &lt;text-argument&gt;
  * </pre>
  * The definitions of the rule elements is as follows:
- * <UL Type=disc>
+ * <UL>
  *    <LI><strong>Text-Argument</strong>: A text-argument is any sequence of
  *        characters, excluding special characters (that is, common
  *        whitespace characters [0009-000D, 0020] and rule syntax characters
  *        [0021-002F, 003A-0040, 005B-0060, 007B-007E]). If those
  *        characters are desired, you can put them in single quotes
- *        (e.g. ampersand => '&'). Note that unquoted white space characters
+ *        (e.g. ampersand =&gt; '&amp;'). Note that unquoted white space characters
  *        are ignored; e.g. <code>b c</code> is treated as <code>bc</code>.
  *    <LI><strong>Modifier</strong>: There are currently two modifiers that
  *        turn on special collation rules.
- *        <UL Type=square>
+ *        <UL>
  *            <LI>'@' : Turns on backwards sorting of accents (secondary
  *                      differences), as in French.
  *            <LI>'!' : Turns on Thai/Lao vowel-consonant swapping.  If this
@@ -91,7 +91,7 @@ import java.util.Locale;
  *        </UL>
  *        <p>'@' : Indicates that accents are sorted backwards, as in French.
  *    <LI><strong>Relation</strong>: The relations are the following:
- *        <UL Type=square>
+ *        <UL>
  *            <LI>'&lt;' : Greater, as a letter difference (primary)
  *            <LI>';' : Greater, as an accent difference (secondary)
  *            <LI>',' : Greater, as a case difference (tertiary)
@@ -100,7 +100,7 @@ import java.util.Locale;
  *    <LI><strong>Reset</strong>: There is a single reset
  *        which is used primarily for contractions and expansions, but which
  *        can also be used to add a modification at the end of a set of rules.
- *        <p>'&' : Indicates that the next rule follows the position to where
+ *        <p>'&amp;' : Indicates that the next rule follows the position to where
  *            the reset text-argument would be sorted.
  * </UL>
  *
@@ -166,7 +166,7 @@ import java.util.Locale;
  * <p><strong>Errors</strong>
  * <p>
  * The following are errors:
- * <UL Type=disc>
+ * <UL>
  *     <LI>A text-argument contains unquoted punctuation symbols
  *        (e.g. "a &lt; b-c &lt; d").
  *     <LI>A relation or reset character not followed by a text-argument
@@ -206,8 +206,8 @@ import java.util.Locale;
  * String Norwegian = "&lt; a, A &lt; b, B &lt; c, C &lt; d, D &lt; e, E &lt; f, F &lt; g, G &lt; h, H &lt; i, I" +
  *                    "&lt; j, J &lt; k, K &lt; l, L &lt; m, M &lt; n, N &lt; o, O &lt; p, P &lt; q, Q &lt; r, R" +
  *                    "&lt; s, S &lt; t, T &lt; u, U &lt; v, V &lt; w, W &lt; x, X &lt; y, Y &lt; z, Z" +
- *                    "&lt; &#92;u00E6, &#92;u00C6" +     // Latin letter ae & AE
- *                    "&lt; &#92;u00F8, &#92;u00D8" +     // Latin letter o & O with stroke
+ *                    "&lt; &#92;u00E6, &#92;u00C6" +     // Latin letter ae &amp; AE
+ *                    "&lt; &#92;u00F8, &#92;u00D8" +     // Latin letter o &amp; O with stroke
  *                    "&lt; &#92;u00E5 = a&#92;u030A," +  // Latin letter a with ring above
  *                    "  &#92;u00C5 = A&#92;u030A;" +  // Latin letter A with ring above
  *                    "  aa, AA";
@@ -232,9 +232,9 @@ import java.util.Locale;
  *                 + ";&#92;u030B;&#92;u030C;&#92;u030D;&#92;u030E"    // main accents
  *                 + ";&#92;u030F;&#92;u0310;&#92;u0311;&#92;u0312"    // main accents
  *                 + "&lt; a , A ; ae, AE ; &#92;u00e6 , &#92;u00c6"
- *                 + "&lt; b , B &lt; c, C &lt; e, E & C &lt; d, D";
+ *                 + "&lt; b , B &lt; c, C &lt; e, E &amp; C &lt; d, D";
  * // change the order of accent characters
- * String addOn = "& &#92;u0300 ; &#92;u0308 ; &#92;u0302";
+ * String addOn = "&amp; &#92;u0300 ; &#92;u0308 ; &#92;u0302";
  * RuleBasedCollator myCollator = new RuleBasedCollator(oldRules + addOn);
  * </pre>
  * </blockquote>
@@ -274,7 +274,7 @@ public class RuleBasedCollator extends Collator{
      * @param rules the collation rules to build the collation table from.
      * @exception ParseException A format exception
      * will be thrown if the build process of the rules fails. For
-     * example, build rule "a < ? < d" will cause the constructor to
+     * example, build rule "a &lt; ? &lt; d" will cause the constructor to
      * throw the ParseException because the '?' is not quoted.
      */
     public RuleBasedCollator(String rules) throws ParseException {
@@ -320,7 +320,10 @@ public class RuleBasedCollator extends Collator{
     }
 
     /**
-     * Return a CollationElementIterator for the given String.
+     * Returns a CollationElementIterator for the given String.
+     *
+     * @param source the string to be collated
+     * @return a {@code CollationElementIterator} object
      * @see java.text.CollationElementIterator
      */
     public CollationElementIterator getCollationElementIterator(String source) {
@@ -328,7 +331,10 @@ public class RuleBasedCollator extends Collator{
     }
 
     /**
-     * Return a CollationElementIterator for the given String.
+     * Returns a CollationElementIterator for the given CharacterIterator.
+     *
+     * @param source the character iterator to be collated
+     * @return a {@code CollationElementIterator} object
      * @see java.text.CollationElementIterator
      * @since 1.2
      */

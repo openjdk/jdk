@@ -25,10 +25,15 @@
 package java.util.function;
 
 /**
- * A supplier of objects. The result objects are either created during the
- * invocation of {@link #get} or by some prior action.
+ * Represents a supplier of results.
  *
- * @param <T> The type of objects returned by {@code get}
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #get()}.
+ *
+ * @param <T> the type of results supplied by this supplier
  *
  * @since 1.8
  */
@@ -36,9 +41,9 @@ package java.util.function;
 public interface Supplier<T> {
 
     /**
-     * Returns an object.
+     * Gets a result.
      *
-     * @return an object
+     * @return a result
      */
     T get();
 }

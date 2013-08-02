@@ -69,7 +69,6 @@ import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types.TypeRelation;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -358,7 +357,7 @@ public class JavacTrees extends DocTrees {
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
         try {
-            final ClassSymbol tsym;
+            final TypeSymbol tsym;
             final Name memberName;
             if (ref.qualifierExpression == null) {
                 tsym = env.enclClass.sym;
@@ -387,7 +386,7 @@ public class JavacTrees extends DocTrees {
                         return null;
                     }
                 } else {
-                    tsym = (ClassSymbol) t.tsym;
+                    tsym = t.tsym;
                     memberName = ref.memberName;
                 }
             }
@@ -408,15 +407,17 @@ public class JavacTrees extends DocTrees {
                 paramTypes = lb.toList();
             }
 
-            Symbol msym = (memberName == tsym.name)
-                    ? findConstructor(tsym, paramTypes)
-                    : findMethod(tsym, memberName, paramTypes);
+            ClassSymbol sym = (ClassSymbol) types.upperBound(tsym.type).tsym;
+
+            Symbol msym = (memberName == sym.name)
+                    ? findConstructor(sym, paramTypes)
+                    : findMethod(sym, memberName, paramTypes);
             if (paramTypes != null) {
                 // explicit (possibly empty) arg list given, so cannot be a field
                 return msym;
             }
 
-            VarSymbol vsym = (ref.paramTypes != null) ? null : findField(tsym, memberName);
+            VarSymbol vsym = (ref.paramTypes != null) ? null : findField(sym, memberName);
             // prefer a field over a method with no parameters
             if (vsym != null &&
                     (msym == null ||
@@ -789,6 +790,7 @@ public class JavacTrees extends DocTrees {
                 case METHOD:
 //                    System.err.println("METHOD: " + ((JCMethodDecl)tree).sym.getSimpleName());
                     method = (JCMethodDecl)tree;
+                    env = memberEnter.getMethodEnv(method, env);
                     break;
                 case VARIABLE:
 //                    System.err.println("FIELD: " + ((JCVariableDecl)tree).sym.getSimpleName());
@@ -800,7 +802,6 @@ public class JavacTrees extends DocTrees {
                         try {
                             Assert.check(method.body == tree);
                             method.body = copier.copy((JCBlock)tree, (JCTree) path.getLeaf());
-                            env = memberEnter.getMethodEnv(method, env);
                             env = attribStatToTree(method.body, env, copier.leafCopy);
                         } finally {
                             method.body = (JCBlock) tree;

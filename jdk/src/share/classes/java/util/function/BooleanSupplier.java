@@ -26,8 +26,14 @@ package java.util.function;
 
 
 /**
- * A supplier of {@code boolean} values. This is the {@code boolean}-providing
- * primitive specialization of {@link Supplier}.
+ * Represents a supplier of {@code boolean}-valued results.  This is the
+ * {@code boolean}-producing primitive specialization of {@link Supplier}.
+ *
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #getAsBoolean()}.
  *
  * @see Supplier
  * @since 1.8
@@ -36,9 +42,9 @@ package java.util.function;
 public interface BooleanSupplier {
 
     /**
-     * Returns a {@code boolean} value.
+     * Gets a result.
      *
-     * @return a {@code boolean} value
+     * @return a result
      */
     boolean getAsBoolean();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,10 +193,15 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         List<PKIXCertPathChecker> checkers = params.certPathCheckers();
         for (PKIXCertPathChecker checker : checkers) {
             if (checker instanceof PKIXRevocationChecker) {
+                if (revCheckerAdded) {
+                    throw new CertPathValidatorException(
+                        "Only one PKIXRevocationChecker can be specified");
+                }
                 revCheckerAdded = true;
                 // if it's our own, initialize it
-                if (checker instanceof RevocationChecker)
+                if (checker instanceof RevocationChecker) {
                     ((RevocationChecker)checker).init(anchor, params);
+                }
             }
         }
         // only add a RevocationChecker if revocation is enabled and

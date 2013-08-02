@@ -649,8 +649,8 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     /**
-     * A symbol (and {@link Property}) can be tagged as "may be primitive". This is
-     * used a hint for dual fields that it is even worth it to try representing this
+     * A symbol (and {@link jdk.nashorn.internal.runtime.Property}) can be tagged as "may be primitive".
+     * This is used a hint for dual fields that it is even worth it to try representing this
      * field as something other than java.lang.Object.
      *
      * @param node node in which to tag symbols as primitive
@@ -856,7 +856,7 @@ final class FinalizeTypes extends NodeOperatorVisitor<LexicalContext> {
      * if the expression type changes.
      *
      * Assignments use their lhs as node symbol, and in this case we can't modify
-     * it. Then {@link CodeGenerator#Store} needs to do an explicit conversion.
+     * it. Then {@link CodeGenerator.Store} needs to do an explicit conversion.
      * This is happens very rarely.
      *
      * @param node

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,14 @@ public class ReferenceQueue<T> {
      */
     public ReferenceQueue() { }
 
-    private static class Null extends ReferenceQueue {
-        boolean enqueue(Reference r) {
+    private static class Null<S> extends ReferenceQueue<S> {
+        boolean enqueue(Reference<? extends S> r) {
             return false;
         }
     }
 
-    static ReferenceQueue NULL = new Null();
-    static ReferenceQueue ENQUEUED = new Null();
+    static ReferenceQueue<Object> NULL = new Null<>();
+    static ReferenceQueue<Object> ENQUEUED = new Null<>();
 
     static private class Lock { };
     private Lock lock = new Lock();
@@ -58,7 +58,7 @@ public class ReferenceQueue<T> {
         synchronized (lock) {
             // Check that since getting the lock this reference hasn't already been
             // enqueued (and even then removed)
-            ReferenceQueue queue = r.queue;
+            ReferenceQueue<?> queue = r.queue;
             if ((queue == NULL) || (queue == ENQUEUED)) {
                 return false;
             }
@@ -75,10 +75,13 @@ public class ReferenceQueue<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Reference<? extends T> reallyPoll() {       /* Must hold lock */
         Reference<? extends T> r = head;
         if (r != null) {
-            head = (r.next == r) ? null : r.next;
+            head = (r.next == r) ?
+                null :
+                r.next; // Unchecked due to the next field having a raw type in Reference
             r.queue = NULL;
             r.next = r;
             queueLength--;
