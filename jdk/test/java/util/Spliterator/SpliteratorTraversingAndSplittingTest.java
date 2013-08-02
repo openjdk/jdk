@@ -25,6 +25,7 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @run testng SpliteratorTraversingAndSplittingTest
+ * @bug 8020016
  */
 
 import org.testng.annotations.DataProvider;
@@ -321,6 +322,21 @@ public class SpliteratorTraversingAndSplittingTest {
             db.addCollection(
                     c -> new AbstractSortedSetImpl(c));
 
+            class IterableWrapper implements Iterable<Integer> {
+                final Iterable<Integer> it;
+
+                IterableWrapper(Iterable<Integer> it) {
+                    this.it = it;
+                }
+
+                @Override
+                public Iterator<Integer> iterator() {
+                    return it.iterator();
+                }
+            }
+            db.add("new Iterable.spliterator()",
+                   () -> new IterableWrapper(exp).spliterator());
+
             //
 
             db.add("Arrays.asList().spliterator()",
@@ -371,9 +387,21 @@ public class SpliteratorTraversingAndSplittingTest {
 
             db.addCollection(CopyOnWriteArraySet::new);
 
-            if (size == 1) {
+            if (size == 0) {
+                db.addCollection(c -> Collections.<Integer>emptySet());
+                db.addList(c -> Collections.<Integer>emptyList());
+            }
+            else if (size == 1) {
                 db.addCollection(c -> Collections.singleton(exp.get(0)));
                 db.addCollection(c -> Collections.singletonList(exp.get(0)));
+            }
+
+            {
+                Integer[] ai = new Integer[size];
+                Arrays.fill(ai, 1);
+                db.add(String.format("Collections.nCopies(%d, 1)", exp.size()),
+                       Arrays.asList(ai),
+                       () -> Collections.nCopies(exp.size(), 1).spliterator());
             }
 
             // Collections.synchronized/unmodifiable/checked wrappers
@@ -439,6 +467,13 @@ public class SpliteratorTraversingAndSplittingTest {
             db.addMap(ConcurrentHashMap::new);
 
             db.addMap(ConcurrentSkipListMap::new);
+
+            if (size == 0) {
+                db.addMap(m -> Collections.<Integer, Integer>emptyMap());
+            }
+            else if (size == 1) {
+                db.addMap(m -> Collections.singletonMap(exp.get(0), exp.get(0)));
+            }
         }
 
         return spliteratorDataProvider = data.toArray(new Object[0][]);

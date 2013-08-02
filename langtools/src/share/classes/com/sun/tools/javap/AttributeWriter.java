@@ -114,6 +114,9 @@ public class AttributeWriter extends BasicWriter
     }
 
     public Void visitDefault(DefaultAttribute attr, Void ignore) {
+        if (attr.reason != null) {
+            report(attr.reason);
+        }
         byte[] data = attr.info;
         int i = 0;
         int j = 0;
@@ -365,8 +368,7 @@ public class AttributeWriter extends BasicWriter
         indent(+1);
         println("Start  Length  Slot  Name   Signature");
         for (LocalVariableTable_attribute.Entry entry : attr.local_variable_table) {
-            Formatter formatter = new Formatter();
-            println(formatter.format("%8d %7d %5d %5s   %s",
+            println(String.format("%5d %7d %5d %5s   %s",
                     entry.start_pc, entry.length, entry.index,
                     constantWriter.stringValue(entry.name_index),
                     constantWriter.stringValue(entry.descriptor_index)));
@@ -511,7 +513,12 @@ public class AttributeWriter extends BasicWriter
     }
 
     public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr, Void ignore) {
-        println("SourceDebugExtension: " + attr.getValue());
+        println("SourceDebugExtension:");
+        indent(+1);
+        for (String s: attr.getValue().split("[\r\n]+")) {
+            println(s);
+        }
+        indent(-1);
         return null;
     }
 
@@ -609,7 +616,8 @@ public class AttributeWriter extends BasicWriter
         public Void visit_append_frame(StackMapTable_attribute.append_frame frame, Void p) {
             printHeader(frame);
             println(" /* append */");
-            println("     offset_delta = " + frame.offset_delta);
+            indent(+1);
+            println("offset_delta = " + frame.offset_delta);
             printMap("locals", frame.locals);
             return null;
         }

@@ -50,6 +50,7 @@ import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -82,6 +83,12 @@ public final class NativeArray extends ScriptObject {
 
     private static final InvokeByName TO_LOCALE_STRING = new InvokeByName("toLocaleString", ScriptObject.class, String.class);
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
+    static PropertyMap getInitialMap() {
+        return $nasgenmap$;
+    }
 
     /*
      * Constructors.
@@ -126,8 +133,12 @@ public final class NativeArray extends ScriptObject {
         this.setArray(arrayData);
     }
 
-    private NativeArray(final ArrayData arrayData) {
-        setProto(Global.instance().getArrayPrototype());
+    NativeArray(final ArrayData arrayData) {
+        this(arrayData, Global.instance());
+    }
+
+    NativeArray(final ArrayData arrayData, final Global global) {
+        super(global.getArrayPrototype(), global.getArrayMap());
         this.setArray(arrayData);
         this.setIsArray();
     }
@@ -541,35 +552,40 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object concat(final Object self, final Object... args) {
         final ArrayList<Object> list = new ArrayList<>();
-        final Object selfToObject = Global.toObject(self);
-
-        if (isArray(selfToObject)) {
-            final Iterator<Object> iter = arrayLikeIterator(selfToObject, true);
-            while (iter.hasNext()) {
-                list.add(iter.next());
-            }
-        } else {
-            // single element, add it
-            list.add(selfToObject);
-        }
+        concatToList(list, Global.toObject(self));
 
         for (final Object obj : args) {
-            if (isArray(obj) || obj instanceof Iterable || (obj != null && obj.getClass().isArray())) {
-                final Iterator<Object> iter = arrayLikeIterator(obj, true);
-                if (iter.hasNext()) {
-                    while (iter.hasNext()) {
-                        list.add(iter.next());
-                    }
-                } else if (!isArray(obj)) {
-                    list.add(obj); // add empty object, but not an empty array
-                }
-            } else {
-                // single element, add it
-                list.add(obj);
-            }
+            concatToList(list, obj);
         }
 
         return new NativeArray(list.toArray());
+    }
+
+    private static void concatToList(final ArrayList<Object> list, final Object obj) {
+        final boolean isScriptArray = isArray(obj);
+        final boolean isScriptObject = isScriptArray || obj instanceof ScriptObject;
+        if (isScriptArray || obj instanceof Iterable || (obj != null && obj.getClass().isArray())) {
+            final Iterator<Object> iter = arrayLikeIterator(obj, true);
+            if (iter.hasNext()) {
+                for(int i = 0; iter.hasNext(); ++i) {
+                    final Object value = iter.next();
+                    if(value == ScriptRuntime.UNDEFINED && isScriptObject && !((ScriptObject)obj).has(i)) {
+                        // TODO: eventually rewrite arrayLikeIterator to use a three-state enum for handling
+                        // UNDEFINED instead of an "includeUndefined" boolean with states SKIP, INCLUDE,
+                        // RETURN_EMPTY. Until then, this is how we'll make sure that empty elements don't make it
+                        // into the concatenated array.
+                        list.add(ScriptRuntime.EMPTY);
+                    } else {
+                        list.add(value);
+                    }
+                }
+            } else if (!isScriptArray) {
+                list.add(obj); // add empty object, but not an empty array
+            }
+        } else {
+            // single element, add it
+            list.add(obj);
+        }
     }
 
     /**
@@ -856,8 +872,12 @@ public final class NativeArray extends ScriptObject {
                 }
 
                 // delete missing elements - which are at the end of sorted array
-                sobj.setArray(array.delete(sorted.length, len - 1));
-            }
+                if (sorted.length != len) {
+                    array = array.delete(sorted.length, len - 1);
+                }
+
+                sobj.setArray(array);
+           }
 
             return sobj;
         } catch (final ClassCastException | NullPointerException e) {

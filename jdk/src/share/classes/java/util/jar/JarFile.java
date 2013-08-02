@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,7 @@ class JarFile extends ZipFile {
      *
      * @throws IllegalStateException
      *         may be thrown if the jar file has been closed
+     * @throws IOException  if an I/O error has occurred
      */
     public Manifest getManifest() throws IOException {
         return getManifestFromReference();
@@ -272,7 +273,7 @@ class JarFile extends ZipFile {
         return StreamSupport.stream(Spliterators.spliterator(
                 new JarEntryIterator(), size(),
                 Spliterator.ORDERED | Spliterator.DISTINCT |
-                        Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                        Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     private class JarFileEntry extends JarEntry {

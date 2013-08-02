@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime.linker;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -39,10 +40,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.nashorn.internal.objects.NativeJava;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -99,6 +100,13 @@ public final class JavaAdapterFactory {
      */
     public static StaticClass getAdapterClassFor(final Class<?>[] types, ScriptObject classOverrides) {
         assert types != null && types.length > 0;
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            for (Class<?> type : types) {
+                // check for restricted package access
+                Context.checkPackageAccess(type.getName());
+            }
+        }
         return getAdapterInfo(types).getAdapterClassFor(classOverrides);
     }
 
@@ -119,9 +127,12 @@ public final class JavaAdapterFactory {
         return AccessController.doPrivileged(new PrivilegedExceptionAction<MethodHandle>() {
             @Override
             public MethodHandle run() throws Exception {
-                return  MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(NashornCallSiteDescriptor.get(
-                    "dyn:new", MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
-                    adapterClass, null)).getInvocation(), adapterClass);
+                // NOTE: we use publicLookup(), but none of our adapter constructors are caller sensitive, so this is
+                // okay, we won't artificially limit access.
+                return  MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(
+                        NashornCallSiteDescriptor.get(MethodHandles.publicLookup(),  "dyn:new",
+                                MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
+                                adapterClass, null)).getInvocation(), adapterClass);
             }
         });
     }

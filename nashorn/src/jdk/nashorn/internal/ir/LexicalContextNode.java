@@ -26,31 +26,12 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
+
 /**
- * Superclass for nodes that can be part of the lexical context
+ * Interface for nodes that can be part of the lexical context.
  * @see LexicalContext
  */
-public abstract class LexicalContextNode extends Statement {
-    /**
-     * Constructor
-     *
-     * @param lineNumber line number
-     * @param token      token
-     * @param finish     finish
-     */
-    protected LexicalContextNode(final int lineNumber, final long token, final int finish) {
-        super(lineNumber, token, finish);
-    }
-
-    /**
-     * Copy constructor
-     *
-     * @param node source node
-     */
-    protected LexicalContextNode(final LexicalContextNode node) {
-        super(node);
-    }
-
+public interface LexicalContextNode {
     /**
      * Accept function for the node given a lexical context. It must be prepared
      * to replace itself if present in the lexical context
@@ -60,25 +41,15 @@ public abstract class LexicalContextNode extends Statement {
      *
      * @return new node or same node depending on state change
      */
-    protected abstract Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor);
+    Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor);
 
-    @Override
-    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
-        final LexicalContext lc = visitor.getLexicalContext();
-        lc.push(this);
-        final LexicalContextNode newNode = (LexicalContextNode)accept(lc, visitor);
-        return lc.pop(newNode);
+    // Would be a default method on Java 8
+    static class Acceptor {
+        static Node accept(LexicalContextNode node, final NodeVisitor<? extends LexicalContext> visitor) {
+            final LexicalContext lc = visitor.getLexicalContext();
+            lc.push(node);
+            final LexicalContextNode newNode = (LexicalContextNode)node.accept(lc, visitor);
+            return (Node)lc.pop(newNode);
+        }
     }
-
-    /**
-     * Set the symbol and replace in lexical context if applicable
-     * @param lc     lexical context
-     * @param symbol symbol
-     * @return new node if symbol changed
-     */
-    @Override
-    public Node setSymbol(final LexicalContext lc, final Symbol symbol) {
-        return Node.replaceInLexicalContext(lc, this, (LexicalContextNode)super.setSymbol(null, symbol));
-    }
-
 }

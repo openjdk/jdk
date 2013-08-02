@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @bug 7038914
+ * @bug 7038914 8016341
  * @summary Verify that the reference handler does not die after an OOME allocating the InterruptedException object
- * @run main/othervm -Xmx16M -XX:-UseTLAB OOMEInReferenceHandler
+ * @run main/othervm -Xmx24M -XX:-UseTLAB OOMEInReferenceHandler
  * @author peter.levart@gmail.com
  */
 
@@ -107,6 +107,6 @@ public class OOMEInReferenceHandler {
          }
 
          // no sure answer after 10 seconds
-         throw new IllegalStateException("Reference Handler thread stuck.");
+         throw new IllegalStateException("Reference Handler thread stuck. weakRef.get(): " + weakRef.get());
      }
 }
