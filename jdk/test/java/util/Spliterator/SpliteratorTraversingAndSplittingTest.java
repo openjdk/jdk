@@ -25,6 +25,7 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @run testng SpliteratorTraversingAndSplittingTest
+ * @bug 8020016
  */
 
 import org.testng.annotations.DataProvider;
@@ -81,10 +82,6 @@ import java.util.function.UnaryOperator;
 import static org.testng.Assert.*;
 import static org.testng.Assert.assertEquals;
 
-/**
- * @test
- * @bug 8020016
- */
 @Test
 public class SpliteratorTraversingAndSplittingTest {
 
