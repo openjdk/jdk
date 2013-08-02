@@ -306,7 +306,7 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
     private TestData.OfLong proxiedLongRange(long l, long u) {
         return TestData.Factory.ofLongSupplier(
                 String.format("[%d, %d)", l, u),
-                () -> StreamSupport.longStream(proxyNotSubsized(LongStream.range(l, u).spliterator())));
+                () -> StreamSupport.longStream(proxyNotSubsized(LongStream.range(l, u).spliterator()), false));
     }
 
     @Test(dataProvider = "Stream.limit")

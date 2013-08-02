@@ -190,7 +190,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> The optional <i>flags</i> is a set of characters that modify the output
  * format.  The set of valid flags depends on the conversion.
  *
- * <p> The optional <i>width</i> is a non-negative decimal integer indicating
+ * <p> The optional <i>width</i> is a positive decimal integer indicating
  * the minimum number of characters to be written to the output.
  *
  * <p> The optional <i>precision</i> is a non-negative decimal integer usually
@@ -841,7 +841,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <p> Numeric types will be formatted according to the following algorithm:
  *
- * <p><b><a name="l10n algorithm"> Number Localization Algorithm</a></b>
+ * <p><b><a name="L10nAlgorithm"> Number Localization Algorithm</a></b>
  *
  * <p> After digits are obtained for the integer part, fractional part, and
  * exponent (as appropriate for the data type), the following transformation
@@ -860,7 +860,7 @@ import sun.misc.FormattedFloatingDecimal;
  * substituted.
  *
  * <li> If the {@code ','} (<tt>'&#92;u002c'</tt>)
- * <a name="l10n group">flag</a> is given, then the locale-specific {@linkplain
+ * <a name="L10nGroup">flag</a> is given, then the locale-specific {@linkplain
  * java.text.DecimalFormatSymbols#getGroupingSeparator grouping separator} is
  * inserted by scanning the integer part of the string from least significant
  * to most significant digits and inserting a separator at intervals defined by
@@ -902,7 +902,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'd'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
  *     <td> Formats the argument as a decimal integer. The <a
- *     href="#l10n algorithm">localization algorithm</a> is applied.
+ *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> If the {@code '0'} flag is given and the value is negative, then
  *     the zero padding will occur after the sign.
@@ -1011,7 +1011,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td valign="top"> <tt>'&#92;u002c'</tt>
  *     <td> Requires the output to include the locale-specific {@linkplain
  *     java.text.DecimalFormatSymbols#getGroupingSeparator group separators} as
- *     described in the <a href="#l10n group">"group" section</a> of the
+ *     described in the <a href="#L10nGroup">"group" section</a> of the
  *     localization algorithm.
  *
  * <tr><td valign="top"> {@code '('}
@@ -1060,7 +1060,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'd'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
  *     <td> Requires the output to be formatted as a decimal integer. The <a
- *     href="#l10n algorithm">localization algorithm</a> is applied.
+ *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> If the {@code '#'} flag is given {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
@@ -1155,7 +1155,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td valign="top"> <tt>'&#92;u0065'</tt>
  *     <td> Requires the output to be formatted using <a
  *     name="scientific">computerized scientific notation</a>.  The <a
- *     href="#l10n algorithm">localization algorithm</a> is applied.
+ *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
  *
@@ -1168,7 +1168,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> Otherwise, the result is a string that represents the sign and
  *     magnitude (absolute value) of the argument.  The formatting of the sign
- *     is described in the <a href="#l10n algorithm">localization
+ *     is described in the <a href="#L10nAlgorithm">localization
  *     algorithm</a>. The formatting of the magnitude <i>m</i> depends upon its
  *     value.
  *
@@ -1207,7 +1207,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'g'}
  *     <td valign="top"> <tt>'&#92;u0067'</tt>
  *     <td> Requires the output to be formatted in general scientific notation
- *     as described below. The <a href="#l10n algorithm">localization
+ *     as described below. The <a href="#L10nAlgorithm">localization
  *     algorithm</a> is applied.
  *
  *     <p> After rounding for the precision, the formatting of the resulting
@@ -1236,12 +1236,12 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <tt>'&#92;u0066'</tt>
  *     <td> Requires the output to be formatted using <a name="decimal">decimal
- *     format</a>.  The <a href="#l10n algorithm">localization algorithm</a> is
+ *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
  *     <p> The result is a string that represents the sign and magnitude
  *     (absolute value) of the argument.  The formatting of the sign is
- *     described in the <a href="#l10n algorithm">localization
+ *     described in the <a href="#L10nAlgorithm">localization
  *     algorithm</a>. The formatting of the magnitude <i>m</i> depends upon its
  *     value.
  *
@@ -1382,7 +1382,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td valign="top"> <tt>'&#92;u0065'</tt>
  *     <td> Requires the output to be formatted using <a
  *     name="bscientific">computerized scientific notation</a>.  The <a
- *     href="#l10n algorithm">localization algorithm</a> is applied.
+ *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
  *
@@ -1391,7 +1391,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> Otherwise, the result is a string that represents the sign and
  *     magnitude (absolute value) of the argument.  The formatting of the sign
- *     is described in the <a href="#l10n algorithm">localization
+ *     is described in the <a href="#L10nAlgorithm">localization
  *     algorithm</a>. The formatting of the magnitude <i>m</i> depends upon its
  *     value.
  *
@@ -1428,7 +1428,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'g'}
  *     <td valign="top"> <tt>'&#92;u0067'</tt>
  *     <td> Requires the output to be formatted in general scientific notation
- *     as described below. The <a href="#l10n algorithm">localization
+ *     as described below. The <a href="#L10nAlgorithm">localization
  *     algorithm</a> is applied.
  *
  *     <p> After rounding for the precision, the formatting of the resulting
@@ -1457,12 +1457,12 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <tt>'&#92;u0066'</tt>
  *     <td> Requires the output to be formatted using <a name="bdecimal">decimal
- *     format</a>.  The <a href="#l10n algorithm">localization algorithm</a> is
+ *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
  *     <p> The result is a string that represents the sign and magnitude
  *     (absolute value) of the argument.  The formatting of the sign is
- *     described in the <a href="#l10n algorithm">localization
+ *     described in the <a href="#L10nAlgorithm">localization
  *     algorithm</a>. The formatting of the magnitude <i>m</i> depends upon its
  *     value.
  *
@@ -1721,7 +1721,7 @@ import sun.misc.FormattedFloatingDecimal;
  * conversions</a> applies.  If the {@code '#'} flag is given, then a {@link
  * FormatFlagsConversionMismatchException} will be thrown.
  *
- * <p> The <a name="dtWidth">width</a> is the minimum number of characters to
+ * <p> The width is the minimum number of characters to
  * be written to the output.  If the length of the converted value is less than
  * the {@code width} then the output will be padded by spaces
  * (<tt>'&#92;u0020'</tt>) until the total number of characters equals width.
@@ -1741,7 +1741,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top">{@code '%'}
  *     <td> The result is a literal {@code '%'} (<tt>'&#92;u0025'</tt>)
  *
- * <p> The <a name="dtWidth">width</a> is the minimum number of characters to
+ * <p> The width is the minimum number of characters to
  * be written to the output including the {@code '%'}.  If the length of the
  * converted value is less than the {@code width} then the output will be
  * padded by spaces (<tt>'&#92;u0020'</tt>) until the total number of
@@ -2590,7 +2590,20 @@ public final class Formatter implements Closeable, Flushable {
         public String toString() { return s; }
     }
 
-    public enum BigDecimalLayoutForm { SCIENTIFIC, DECIMAL_FLOAT };
+    /**
+     * Enum for {@code BigDecimal} formatting.
+     */
+    public enum BigDecimalLayoutForm {
+        /**
+         * Format the {@code BigDecimal} in computerized scientific notation.
+         */
+        SCIENTIFIC,
+
+        /**
+         * Format the {@code BigDecimal} as a decimal number.
+         */
+        DECIMAL_FLOAT
+    };
 
     private class FormatSpecifier implements FormatString {
         private int index = -1;

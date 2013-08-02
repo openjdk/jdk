@@ -29,6 +29,7 @@ import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -73,6 +74,10 @@ public class DOMParser
 
     protected static final String REPORT_WHITESPACE =
             Constants.SUN_SCHEMA_FEATURE_PREFIX + Constants.SUN_REPORT_IGNORED_ELEMENT_CONTENT_WHITESPACE;
+
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     // recognized features:
     private static final String[] RECOGNIZED_FEATURES = {
@@ -579,6 +584,13 @@ public class DOMParser
        }
 
         try {
+            XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)
+                    fConfiguration.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+            int index = spm.getIndex(propertyId);
+            if (index > -1) {
+                return spm.getValueByIndex(index);
+            }
+
             return fConfiguration.getProperty(propertyId);
         }
         catch (XMLConfigurationException e) {

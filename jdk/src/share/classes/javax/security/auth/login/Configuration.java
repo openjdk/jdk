@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ import sun.security.jca.GetInstance;
  *
  * <p> A login configuration contains the following information.
  * Note that this example only represents the default syntax for the
- * <code>Configuration</code>.  Subclass implementations of this class
+ * {@code Configuration}.  Subclass implementations of this class
  * may implement alternative syntaxes and may retrieve the
- * <code>Configuration</code> from any source such as files, databases,
+ * {@code Configuration} from any source such as files, databases,
  * or servers.
  *
  * <pre>
@@ -70,9 +70,9 @@ import sun.security.jca.GetInstance;
  *      };
  * </pre>
  *
- * <p> Each entry in the <code>Configuration</code> is indexed via an
+ * <p> Each entry in the {@code Configuration} is indexed via an
  * application name, <i>Name</i>, and contains a list of
- * LoginModules configured for that application.  Each <code>LoginModule</code>
+ * LoginModules configured for that application.  Each {@code LoginModule}
  * is specified via its fully qualified class name.
  * Authentication proceeds down the module list in the exact order specified.
  * If an application does not have specific entry,
@@ -83,55 +83,55 @@ import sun.security.jca.GetInstance;
  * valid values for <i>Flag</i> and their respective semantics:
  *
  * <pre>
- *      1) Required     - The <code>LoginModule</code> is required to succeed.
+ *      1) Required     - The {@code LoginModule} is required to succeed.
  *                      If it succeeds or fails, authentication still continues
- *                      to proceed down the <code>LoginModule</code> list.
+ *                      to proceed down the {@code LoginModule} list.
  *
- *      2) Requisite    - The <code>LoginModule</code> is required to succeed.
+ *      2) Requisite    - The {@code LoginModule} is required to succeed.
  *                      If it succeeds, authentication continues down the
- *                      <code>LoginModule</code> list.  If it fails,
+ *                      {@code LoginModule} list.  If it fails,
  *                      control immediately returns to the application
  *                      (authentication does not proceed down the
- *                      <code>LoginModule</code> list).
+ *                      {@code LoginModule} list).
  *
- *      3) Sufficient   - The <code>LoginModule</code> is not required to
+ *      3) Sufficient   - The {@code LoginModule} is not required to
  *                      succeed.  If it does succeed, control immediately
  *                      returns to the application (authentication does not
- *                      proceed down the <code>LoginModule</code> list).
+ *                      proceed down the {@code LoginModule} list).
  *                      If it fails, authentication continues down the
- *                      <code>LoginModule</code> list.
+ *                      {@code LoginModule} list.
  *
- *      4) Optional     - The <code>LoginModule</code> is not required to
+ *      4) Optional     - The {@code LoginModule} is not required to
  *                      succeed.  If it succeeds or fails,
  *                      authentication still continues to proceed down the
- *                      <code>LoginModule</code> list.
+ *                      {@code LoginModule} list.
  * </pre>
  *
  * <p> The overall authentication succeeds only if all <i>Required</i> and
  * <i>Requisite</i> LoginModules succeed.  If a <i>Sufficient</i>
- * <code>LoginModule</code> is configured and succeeds,
+ * {@code LoginModule} is configured and succeeds,
  * then only the <i>Required</i> and <i>Requisite</i> LoginModules prior to
- * that <i>Sufficient</i> <code>LoginModule</code> need to have succeeded for
+ * that <i>Sufficient</i> {@code LoginModule} need to have succeeded for
  * the overall authentication to succeed. If no <i>Required</i> or
  * <i>Requisite</i> LoginModules are configured for an application,
  * then at least one <i>Sufficient</i> or <i>Optional</i>
- * <code>LoginModule</code> must succeed.
+ * {@code LoginModule} must succeed.
  *
  * <p> <i>ModuleOptions</i> is a space separated list of
- * <code>LoginModule</code>-specific values which are passed directly to
+ * {@code LoginModule}-specific values which are passed directly to
  * the underlying LoginModules.  Options are defined by the
- * <code>LoginModule</code> itself, and control the behavior within it.
- * For example, a <code>LoginModule</code> may define options to support
+ * {@code LoginModule} itself, and control the behavior within it.
+ * For example, a {@code LoginModule} may define options to support
  * debugging/testing capabilities.  The correct way to specify options in the
- * <code>Configuration</code> is by using the following key-value pairing:
+ * {@code Configuration} is by using the following key-value pairing:
  * <i>debug="true"</i>.  The key and value should be separated by an
  * 'equals' symbol, and the value should be surrounded by double quotes.
  * If a String in the form, ${system.property}, occurs in the value,
  * it will be expanded to the value of the system property.
  * Note that there is no limit to the number of
- * options a <code>LoginModule</code> may define.
+ * options a {@code LoginModule} may define.
  *
- * <p> The following represents an example <code>Configuration</code> entry
+ * <p> The following represents an example {@code Configuration} entry
  * based on the syntax above:
  *
  * <pre>
@@ -143,7 +143,7 @@ import sun.security.jca.GetInstance;
  * };
  * </pre>
  *
- * <p> This <code>Configuration</code> specifies that an application named,
+ * <p> This {@code Configuration} specifies that an application named,
  * "Login", requires users to first authenticate to the
  * <i>com.sun.security.auth.module.UnixLoginModule</i>, which is
  * required to succeed.  Even if the <i>UnixLoginModule</i>
@@ -165,11 +165,11 @@ import sun.security.jca.GetInstance;
  *
  * <p> There is only one Configuration object installed in the runtime at any
  * given time.  A Configuration object can be installed by calling the
- * <code>setConfiguration</code> method.  The installed Configuration object
- * can be obtained by calling the <code>getConfiguration</code> method.
+ * {@code setConfiguration} method.  The installed Configuration object
+ * can be obtained by calling the {@code getConfiguration} method.
  *
  * <p> If no Configuration object has been installed in the runtime, a call to
- * <code>getConfiguration</code> installs an instance of the default
+ * {@code getConfiguration} installs an instance of the default
  * Configuration implementation (a default subclass implementation of this
  * abstract class).
  * The default Configuration implementation can be changed by setting the value
@@ -178,7 +178,7 @@ import sun.security.jca.GetInstance;
  *
  * <p> Application code can directly subclass Configuration to provide a custom
  * implementation.  In addition, an instance of a Configuration object can be
- * constructed by invoking one of the <code>getInstance</code> factory methods
+ * constructed by invoking one of the {@code getInstance} factory methods
  * with a standard type.  The default policy type is "JavaLoginConfig".
  * See the Configuration section in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">
@@ -222,7 +222,7 @@ public abstract class Configuration {
      * <p>
      *
      * @return the login Configuration.  If a Configuration object was set
-     *          via the <code>Configuration.setConfiguration</code> method,
+     *          via the {@code Configuration.setConfiguration} method,
      *          then that object is returned.  Otherwise, a default
      *          Configuration object is returned.
      *
@@ -286,14 +286,14 @@ public abstract class Configuration {
     }
 
     /**
-     * Set the login <code>Configuration</code>.
+     * Set the login {@code Configuration}.
      *
      * <p>
      *
-     * @param configuration the new <code>Configuration</code>
+     * @param configuration the new {@code Configuration}
      *
      * @exception SecurityException if the current thread does not have
-     *                  Permission to set the <code>Configuration</code>.
+     *                  Permission to set the {@code Configuration}.
      *
      * @see #getConfiguration
      */
@@ -505,7 +505,7 @@ public abstract class Configuration {
      * Return the Provider of this Configuration.
      *
      * <p> This Configuration instance will only have a Provider if it
-     * was obtained via a call to <code>Configuration.getInstance</code>.
+     * was obtained via a call to {@code Configuration.getInstance}.
      * Otherwise this method returns null.
      *
      * @return the Provider of this Configuration, or null.
@@ -520,7 +520,7 @@ public abstract class Configuration {
      * Return the type of this Configuration.
      *
      * <p> This Configuration instance will only have a type if it
-     * was obtained via a call to <code>Configuration.getInstance</code>.
+     * was obtained via a call to {@code Configuration.getInstance}.
      * Otherwise this method returns null.
      *
      * @return the type of this Configuration, or null.
@@ -535,7 +535,7 @@ public abstract class Configuration {
      * Return Configuration parameters.
      *
      * <p> This Configuration instance will only have parameters if it
-     * was obtained via a call to <code>Configuration.getInstance</code>.
+     * was obtained via a call to {@code Configuration.getInstance}.
      * Otherwise this method returns null.
      *
      * @return Configuration parameters, or null.
@@ -567,7 +567,7 @@ public abstract class Configuration {
      * <p> This method causes this Configuration object to refresh/reload its
      * contents in an implementation-dependent manner.
      * For example, if this Configuration object stores its entries in a file,
-     * calling <code>refresh</code> may cause the file to be re-read.
+     * calling {@code refresh} may cause the file to be re-read.
      *
      * <p> The default implementation of this method does nothing.
      * This method should be overridden if a refresh operation is supported

@@ -592,29 +592,14 @@ public final class ScriptRuntime {
                 throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
+            } else if (obj instanceof ScriptObjectMirror) {
+                obj = ((ScriptObjectMirror)obj).getMember(property.toString());
             } else {
                 obj = UNDEFINED;
             }
         }
 
         return JSType.of(obj).typeName();
-    }
-
-    /**
-     * ECMA 11.4.2 - void operator
-     *
-     * @param object object to evaluate
-     *
-     * @return Undefined as the object type
-     */
-    public static Object VOID(final Object object) {
-        if (object instanceof Number) {
-            if (Double.isNaN(((Number)object).doubleValue())) {
-                return Double.NaN;
-            }
-        }
-
-        return UNDEFINED;
     }
 
     /**
