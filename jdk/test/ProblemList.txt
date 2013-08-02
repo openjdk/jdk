@@ -131,11 +131,16 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 7196801
 java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
-# 8008200
-java/lang/Class/asSubclass/BasicUnit.java                       generic-all
-
 # 8015780
 java/lang/reflect/Method/GenericStringTest.java			generic-all
+
+# 8019845 due to memleak not related to the tested fix
+java/lang/instrument/RedefineBigClass.sh                        linux-x64
+java/lang/instrument/RetransformBigClass.sh                     linux-x64
+
+# 8021230
+java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
+
 
 ############################################################################
 
@@ -164,6 +169,9 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
 # 7027502
 demo/jvmti/hprof/MonitorTest.java                               generic-all
+
+# 8021186
+jdk/lambda/vm/DefaultMethodsTest.java                           generic-all 
 
 ############################################################################
 
@@ -250,14 +258,11 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
 # jdk_security
 
+# 7157786
+sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
+
 # 7164518: no PortUnreachableException on Mac
 sun/security/krb5/auto/Unreachable.java                         macosx-all
-
-# 7193793
-sun/security/pkcs11/ec/TestECDH.java				linux-all
-
-# 7198198: the test also fails on SuSE Linux
-sun/security/pkcs11/ec/ReadCertificates.java                    linux-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -267,9 +272,6 @@ sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
 sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
-
-# 8005247
-sun/security/pkcs11/ec/TestECDSA.java				solaris-all
 
 # 8009438
 sun/security/pkcs11/Secmod/AddPrivateKey.java			linux-all
@@ -296,9 +298,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # 7194428
 sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
-
-# 7144048, performance issue
-sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java generic-all
 
 ############################################################################
 
@@ -370,6 +369,12 @@ java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
+
+# 8020435
+java/util/concurrent/CompletableFuture/Basic.java                generic-all
+
+# 8020291
+java/util/Random/RandomStreamTest.java                           generic-all
 
 # 7041639, Solaris DSA keypair generation bug
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all

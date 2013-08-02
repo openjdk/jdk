@@ -38,14 +38,7 @@ import java.security.Security;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.Extension;
 import java.security.cert.*;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 import static sun.security.provider.certpath.OCSP.*;
@@ -70,13 +63,16 @@ class RevocationChecker extends PKIXRevocationChecker {
     private Map<X509Certificate, byte[]> ocspResponses;
     private List<Extension> ocspExtensions;
     private boolean legacy;
+    private LinkedList<CertPathValidatorException> softFailExceptions =
+        new LinkedList<>();
 
     // state variables
     private X509Certificate issuerCert;
     private PublicKey prevPubKey;
     private boolean crlSignFlag;
+    private int certIndex;
 
-    private enum Mode { PREFER_OCSP, PREFER_CRLS, ONLY_CRLS };
+    private enum Mode { PREFER_OCSP, PREFER_CRLS, ONLY_CRLS, ONLY_OCSP };
     private Mode mode = Mode.PREFER_OCSP;
 
     private static class RevocationProperties {
@@ -104,9 +100,9 @@ class RevocationChecker extends PKIXRevocationChecker {
         throws CertPathValidatorException
     {
         RevocationProperties rp = getRevocationProperties();
-        URI uri = getOCSPResponder();
+        URI uri = getOcspResponder();
         responderURI = (uri == null) ? toURI(rp.ocspUrl) : uri;
-        X509Certificate cert = getOCSPResponderCert();
+        X509Certificate cert = getOcspResponderCert();
         responderCert = (cert == null)
                         ? getResponderCert(rp, params.trustAnchors(),
                                            params.certStores())
@@ -117,31 +113,38 @@ class RevocationChecker extends PKIXRevocationChecker {
             case ONLY_END_ENTITY:
             case PREFER_CRLS:
             case SOFT_FAIL:
+            case NO_FALLBACK:
                 break;
             default:
                 throw new CertPathValidatorException(
                     "Unrecognized revocation parameter option: " + option);
             }
         }
+        softFail = options.contains(Option.SOFT_FAIL);
 
         // set mode, only end entity flag
         if (legacy) {
             mode = (rp.ocspEnabled) ? Mode.PREFER_OCSP : Mode.ONLY_CRLS;
             onlyEE = rp.onlyEE;
         } else {
-            if (options.contains(Option.PREFER_CRLS)) {
+            if (options.contains(Option.NO_FALLBACK)) {
+                if (options.contains(Option.PREFER_CRLS)) {
+                    mode = Mode.ONLY_CRLS;
+                } else {
+                    mode = Mode.ONLY_OCSP;
+                }
+            } else if (options.contains(Option.PREFER_CRLS)) {
                 mode = Mode.PREFER_CRLS;
             }
             onlyEE = options.contains(Option.ONLY_END_ENTITY);
         }
-        softFail = options.contains(Option.SOFT_FAIL);
         if (legacy) {
             crlDP = rp.crlDPEnabled;
         } else {
             crlDP = true;
         }
-        ocspResponses = getOCSPResponses();
-        ocspExtensions = getOCSPExtensions();
+        ocspResponses = getOcspResponses();
+        ocspExtensions = getOcspExtensions();
 
         this.anchor = anchor;
         this.params = params;
@@ -297,14 +300,19 @@ class RevocationChecker extends PKIXRevocationChecker {
         if (forward) {
             throw new
                 CertPathValidatorException("forward checking not supported");
-        } else {
-            if (anchor != null) {
-                issuerCert = anchor.getTrustedCert();
-                prevPubKey = (issuerCert != null) ? issuerCert.getPublicKey()
-                                                  : anchor.getCAPublicKey();
-            }
-            crlSignFlag = true;
         }
+        if (anchor != null) {
+            issuerCert = anchor.getTrustedCert();
+            prevPubKey = (issuerCert != null) ? issuerCert.getPublicKey()
+                                              : anchor.getCAPublicKey();
+        }
+        crlSignFlag = true;
+        if (params.certPath() != null) {
+            certIndex = params.certPath().getCertificates().size() - 1;
+        } else {
+            certIndex = -1;
+        }
+        softFailExceptions.clear();
     }
 
     @Override
@@ -318,27 +326,34 @@ class RevocationChecker extends PKIXRevocationChecker {
     }
 
     @Override
+    public List<CertPathValidatorException> getSoftFailExceptions() {
+        return Collections.unmodifiableList(softFailExceptions);
+    }
+
+    @Override
     public void check(Certificate cert, Collection<String> unresolvedCritExts)
         throws CertPathValidatorException
     {
-        X509Certificate xcert = (X509Certificate)cert;
-        if (onlyEE && xcert.getBasicConstraints() != -1) {
-            if (debug != null) {
-                debug.println("Skipping revocation check, not end entity cert");
-            }
-        } else {
-            check(xcert, unresolvedCritExts, prevPubKey, crlSignFlag);
-        }
-        updateState(xcert);
+        check((X509Certificate)cert, unresolvedCritExts,
+              prevPubKey, crlSignFlag);
     }
 
-    void check(X509Certificate xcert, Collection<String> unresolvedCritExts,
-               PublicKey pubKey, boolean crlSignFlag)
+    private void check(X509Certificate xcert,
+                       Collection<String> unresolvedCritExts,
+                       PublicKey pubKey, boolean crlSignFlag)
         throws CertPathValidatorException
     {
         try {
+            if (onlyEE && xcert.getBasicConstraints() != -1) {
+                if (debug != null) {
+                    debug.println("Skipping revocation check, not end " +
+                                  "entity cert");
+                }
+                return;
+            }
             switch (mode) {
                 case PREFER_OCSP:
+                case ONLY_OCSP:
                     checkOCSP(xcert, unresolvedCritExts);
                     break;
                 case PREFER_CRLS:
@@ -351,14 +366,17 @@ class RevocationChecker extends PKIXRevocationChecker {
             if (e.getReason() == BasicReason.REVOKED) {
                 throw e;
             }
+            boolean eSoftFail = isSoftFailException(e);
+            if (eSoftFail) {
+                if (mode == Mode.ONLY_OCSP || mode == Mode.ONLY_CRLS) {
+                    return;
+                }
+            } else {
+                if (mode == Mode.ONLY_OCSP || mode == Mode.ONLY_CRLS) {
+                    throw e;
+                }
+            }
             CertPathValidatorException cause = e;
-            if (softFail && e instanceof NetworkFailureException) {
-                if (mode == Mode.ONLY_CRLS) return;
-            }
-            // Rethrow the exception if ONLY_CRLS
-            if (mode == Mode.ONLY_CRLS) {
-                throw e;
-            }
             // Otherwise, failover
             if (debug != null) {
                 debug.println("RevocationChecker.check() " + e.getMessage());
@@ -382,20 +400,33 @@ class RevocationChecker extends PKIXRevocationChecker {
                 if (x.getReason() == BasicReason.REVOKED) {
                     throw x;
                 }
-                if (cause != null) {
-                    if (softFail && cause instanceof NetworkFailureException) {
-                        return;
-                    } else {
-                        cause.addSuppressed(x);
+                if (!isSoftFailException(x)) {
+                    cause.addSuppressed(x);
+                    throw cause;
+                } else {
+                    // only pass if both exceptions were soft failures
+                    if (!eSoftFail) {
                         throw cause;
                     }
                 }
-                if (softFail && x instanceof NetworkFailureException) {
-                    return;
-                }
-                throw x;
             }
+        } finally {
+            updateState(xcert);
         }
+    }
+
+    private boolean isSoftFailException(CertPathValidatorException e) {
+        if (softFail &&
+            e.getReason() == BasicReason.UNDETERMINED_REVOCATION_STATUS)
+        {
+            // recreate exception with correct index
+            CertPathValidatorException e2 = new CertPathValidatorException(
+                e.getMessage(), e.getCause(), params.certPath(), certIndex,
+                e.getReason());
+            softFailExceptions.addFirst(e2);
+            return true;
+        }
+        return false;
     }
 
     private void updateState(X509Certificate cert)
@@ -411,6 +442,9 @@ class RevocationChecker extends PKIXRevocationChecker {
         }
         prevPubKey = pubKey;
         crlSignFlag = certCanSignCrl(cert);
+        if (certIndex > 0) {
+            certIndex--;
+        }
     }
 
     // Maximum clock skew in milliseconds (15 minutes) allowed when checking
@@ -446,8 +480,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                               " circular dependency");
             }
             throw new CertPathValidatorException
-                ("Could not determine revocation status", null, null, -1,
-                 BasicReason.UNDETERMINED_REVOCATION_STATUS);
+                 ("Could not determine revocation status", null, null, -1,
+                  BasicReason.UNDETERMINED_REVOCATION_STATUS);
         }
 
         Set<X509CRL> possibleCRLs = new HashSet<>();
@@ -457,7 +491,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         CertPathHelper.setDateAndTime(sel, params.date(), MAX_CLOCK_SKEW);
 
         // First, check user-specified CertStores
-        NetworkFailureException nfe = null;
+        CertPathValidatorException networkFailureException = null;
         for (CertStore store : certStores) {
             try {
                 for (CRL crl : store.getCRLs(sel)) {
@@ -468,10 +502,13 @@ class RevocationChecker extends PKIXRevocationChecker {
                     debug.println("RevocationChecker.checkCRLs() " +
                                   "CertStoreException: " + e.getMessage());
                 }
-                if (softFail && nfe == null &&
+                if (networkFailureException == null &&
                     CertStoreHelper.isCausedByNetworkIssue(store.getType(),e)) {
                     // save this exception, we may need to throw it later
-                    nfe = new NetworkFailureException(e);
+                    networkFailureException = new CertPathValidatorException(
+                        "Unable to determine revocation status due to " +
+                        "network error", e, null, -1,
+                        BasicReason.UNDETERMINED_REVOCATION_STATUS);
                 }
             }
         }
@@ -508,14 +545,17 @@ class RevocationChecker extends PKIXRevocationChecker {
                     approvedCRLs.addAll(DistributionPointFetcher.getCRLs(
                                         sel, signFlag, prevKey,
                                         params.sigProvider(), certStores,
-                                        reasonsMask, anchors, params.date()));
+                                        reasonsMask, anchors, null));
                 }
             } catch (CertStoreException e) {
-                if (softFail && e instanceof CertStoreTypeException) {
+                if (e instanceof CertStoreTypeException) {
                     CertStoreTypeException cste = (CertStoreTypeException)e;
                     if (CertStoreHelper.isCausedByNetworkIssue(cste.getType(),
                                                                e)) {
-                        throw new NetworkFailureException(e);
+                        throw new CertPathValidatorException(
+                            "Unable to determine revocation status due to " +
+                            "network error", e, null, -1,
+                            BasicReason.UNDETERMINED_REVOCATION_STATUS);
                     }
                 }
                 throw new CertPathValidatorException(e);
@@ -531,26 +571,26 @@ class RevocationChecker extends PKIXRevocationChecker {
                                                      stackedCerts);
                         return;
                     } catch (CertPathValidatorException cpve) {
-                        if (nfe != null) {
+                        if (networkFailureException != null) {
                             // if a network issue previously prevented us from
                             // retrieving a CRL from one of the user-specified
-                            // CertStores and SOFT_FAIL is enabled, throw it now
-                            // so it can be handled appropriately
-                            throw nfe;
+                            // CertStores, throw it now so it can be handled
+                            // appropriately
+                            throw networkFailureException;
                         }
                         throw cpve;
                     }
                 } else {
-                    if (nfe != null) {
+                    if (networkFailureException != null) {
                         // if a network issue previously prevented us from
                         // retrieving a CRL from one of the user-specified
-                        // CertStores and SOFT_FAIL is enabled, throw it now
-                        // so it can be handled appropriately
-                        throw nfe;
+                        // CertStores, throw it now so it can be handled
+                        // appropriately
+                        throw networkFailureException;
                     }
-                    throw new CertPathValidatorException
-                    ("Could not determine revocation status", null, null, -1,
-                     BasicReason.UNDETERMINED_REVOCATION_STATUS);
+                    throw new CertPathValidatorException(
+                        "Could not determine revocation status", null, null, -1,
+                        BasicReason.UNDETERMINED_REVOCATION_STATUS);
                 }
             }
         }
@@ -595,14 +635,9 @@ class RevocationChecker extends PKIXRevocationChecker {
                     unresCritExts.remove(ReasonCode_Id.toString());
                     unresCritExts.remove(CertificateIssuer_Id.toString());
                     if (!unresCritExts.isEmpty()) {
-                        if (debug != null) {
-                            debug.println("Unrecognized "
-                            + "critical extension(s) in revoked CRL entry: "
-                            + unresCritExts);
-                        }
-                        throw new CertPathValidatorException
-                        ("Could not determine revocation status", null, null,
-                         -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
+                        throw new CertPathValidatorException(
+                            "Unrecognized critical extension(s) in revoked " +
+                            "CRL entry");
                     }
                 }
 
@@ -610,11 +645,14 @@ class RevocationChecker extends PKIXRevocationChecker {
                 if (reasonCode == null) {
                     reasonCode = CRLReason.UNSPECIFIED;
                 }
-                Throwable t = new CertificateRevokedException
-                    (entry.getRevocationDate(), reasonCode,
-                     crl.getIssuerX500Principal(), entry.getExtensions());
-                throw new CertPathValidatorException(t.getMessage(), t,
-                    null, -1, BasicReason.REVOKED);
+                Date revocationDate = entry.getRevocationDate();
+                if (revocationDate.before(params.date())) {
+                    Throwable t = new CertificateRevokedException(
+                        revocationDate, reasonCode,
+                        crl.getIssuerX500Principal(), entry.getExtensions());
+                    throw new CertPathValidatorException(
+                        t.getMessage(), t, null, -1, BasicReason.REVOKED);
+                }
             }
         }
     }
@@ -629,9 +667,6 @@ class RevocationChecker extends PKIXRevocationChecker {
         } catch (CertificateException ce) {
             throw new CertPathValidatorException(ce);
         }
-
-        URI responderURI = (this.responderURI != null)
-                           ? this.responderURI : getOCSPServerURI(currCert);
 
         X509Certificate respCert = (responderCert == null) ? issuerCert
                                                            : responderCert;
@@ -671,27 +706,38 @@ class RevocationChecker extends PKIXRevocationChecker {
                                 params.date(), nonce);
 
             } else {
+                URI responderURI = (this.responderURI != null)
+                                   ? this.responderURI
+                                   : OCSP.getResponderURI(currCert);
+                if (responderURI == null) {
+                    throw new CertPathValidatorException(
+                        "Certificate does not specify OCSP responder", null,
+                        null, -1);
+                }
+
                 response = OCSP.check(Collections.singletonList(certId),
-                                      responderURI, respCert, params.date(),
+                                      responderURI, respCert, null,
                                       ocspExtensions);
             }
-        } catch (Exception e) {
-            if (e instanceof CertPathValidatorException) {
-                throw (CertPathValidatorException) e;
-            } else {
-                throw new CertPathValidatorException(e);
-            }
+        } catch (IOException e) {
+            throw new CertPathValidatorException(
+                "Unable to determine revocation status due to network error",
+                e, null, -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
         }
 
         RevocationStatus rs =
             (RevocationStatus)response.getSingleResponse(certId);
         RevocationStatus.CertStatus certStatus = rs.getCertStatus();
         if (certStatus == RevocationStatus.CertStatus.REVOKED) {
-            Throwable t = new CertificateRevokedException(
-                rs.getRevocationTime(), rs.getRevocationReason(),
-                respCert.getSubjectX500Principal(), rs.getSingleExtensions());
-            throw new CertPathValidatorException(t.getMessage(), t, null,
-                                                 -1, BasicReason.REVOKED);
+            Date revocationTime = rs.getRevocationTime();
+            if (revocationTime.before(params.date())) {
+                Throwable t = new CertificateRevokedException(
+                    revocationTime, rs.getRevocationReason(),
+                    respCert.getSubjectX500Principal(),
+                    rs.getSingleExtensions());
+                throw new CertPathValidatorException(t.getMessage(), t, null,
+                                                     -1, BasicReason.REVOKED);
+            }
         } else if (certStatus == RevocationStatus.CertStatus.UNKNOWN) {
             throw new CertPathValidatorException(
                 "Certificate's revocation status is unknown", null,
@@ -713,34 +759,6 @@ class RevocationChecker extends PKIXRevocationChecker {
             }
         }
         return hexNumber.toString();
-    }
-
-    private static URI getOCSPServerURI(X509CertImpl cert)
-        throws CertPathValidatorException
-    {
-        // Examine the certificate's AuthorityInfoAccess extension
-        AuthorityInfoAccessExtension aia =
-            cert.getAuthorityInfoAccessExtension();
-        if (aia == null) {
-            throw new CertPathValidatorException(
-                "Must specify the location of an OCSP Responder");
-        }
-
-        List<AccessDescription> descriptions = aia.getAccessDescriptions();
-        for (AccessDescription description : descriptions) {
-            if (description.getAccessMethod().equals((Object)
-                AccessDescription.Ad_OCSP_Id)) {
-
-                GeneralName generalName = description.getAccessLocation();
-                if (generalName.getType() == GeneralNameInterface.NAME_URI) {
-                    URIName uri = (URIName)generalName.getName();
-                    return uri.getURI();
-                }
-            }
-        }
-
-        throw new CertPathValidatorException(
-            "Cannot find the location of the OCSP Responder");
     }
 
     /**
@@ -874,8 +892,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                     " circular dependency");
             }
             throw new CertPathValidatorException
-                ("Could not determine revocation status", null, null,
-                 -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
+                ("Could not determine revocation status", null, null, -1,
+                 BasicReason.UNDETERMINED_REVOCATION_STATUS);
         }
 
         // Try to find another key that might be able to sign
@@ -1069,6 +1087,15 @@ class RevocationChecker extends PKIXRevocationChecker {
                      -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
             }
         }
+    }
+
+    @Override
+    public RevocationChecker clone() {
+        RevocationChecker copy = (RevocationChecker)super.clone();
+        // we don't deep-copy the exceptions, but that is ok because they
+        // are never modified after they are instantiated
+        copy.softFailExceptions = new LinkedList<>(softFailExceptions);
+        return copy;
     }
 
     /*

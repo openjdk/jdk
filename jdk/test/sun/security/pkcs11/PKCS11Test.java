@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,16 @@ public abstract class PKCS11Test {
 
     static String NSPR_PREFIX = "";
 
+    // NSS version info
+    public static enum ECCState { None, Basic, Extended };
+    static double nss_version = -1;
+    static ECCState nss_ecc_status = ECCState.Extended;
+
+    // The NSS library we need to search for in getNSSLibDir()
+    // Default is "libsoftokn3.so", listed as "softokn3"
+    // The other is "libnss3.so", listed as "nss3".
+    static String nss_library = "softokn3";
+
     static Provider getSunPKCS11(String config) throws Exception {
         Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
         Constructor cons = clazz.getConstructor(new Class[] {String.class});
@@ -79,24 +89,28 @@ public abstract class PKCS11Test {
             testNSS(test);
             testDeimos(test);
         } finally {
+            // NOTE: Do not place a 'return' in any finally block
+            // as it will suppress exceptions and hide test failures.
             Provider[] newProviders = Security.getProviders();
+            boolean found = true;
             // Do not restore providers if nothing changed. This is especailly
             // useful for ./Provider/Login.sh, where a SecurityManager exists.
             if (oldProviders.length == newProviders.length) {
-                boolean found = false;
+                found = false;
                 for (int i = 0; i<oldProviders.length; i++) {
                     if (oldProviders[i] != newProviders[i]) {
                         found = true;
                         break;
                     }
                 }
-                if (!found) return;
             }
-            for (Provider p: newProviders) {
-                Security.removeProvider(p.getName());
-            }
-            for (Provider p: oldProviders) {
-                Security.addProvider(p);
+            if (found) {
+                for (Provider p: newProviders) {
+                    Security.removeProvider(p.getName());
+                }
+                for (Provider p: oldProviders) {
+                    Security.addProvider(p);
+                }
             }
         }
     }
@@ -178,7 +192,8 @@ public abstract class PKCS11Test {
         }
         String nssLibDir = null;
         for (String dir : nssLibDirs) {
-            if (new File(dir).exists()) {
+            if (new File(dir).exists() &&
+                new File(dir + System.mapLibraryName(nss_library)).exists()) {
                 nssLibDir = dir;
                 System.setProperty("pkcs11test.nss.libdir", nssLibDir);
                 break;
@@ -207,6 +222,109 @@ public abstract class PKCS11Test {
         return true;
     }
 
+    // Check the provider being used is NSS
+    public static boolean isNSS(Provider p) {
+        return p.getName().toUpperCase().equals("SUNPKCS11-NSS");
+    }
+
+    static double getNSSVersion() {
+        if (nss_version == -1)
+            getNSSInfo();
+        return nss_version;
+    }
+
+    static ECCState getNSSECC() {
+        if (nss_version == -1)
+            getNSSInfo();
+        return nss_ecc_status;
+    }
+
+    /* Read the library to find out the verison */
+    static void getNSSInfo() {
+        String nssHeader = "$Header: NSS";
+        boolean found = false;
+        String s = null;
+        int i = 0;
+        String libfile = "";
+
+        try {
+            libfile = getNSSLibDir() + System.mapLibraryName(nss_library);
+            FileInputStream is = new FileInputStream(libfile);
+            byte[] data = new byte[1000];
+            int read = 0;
+
+            while (is.available() > 0) {
+                if (read == 0) {
+                    read = is.read(data, 0, 1000);
+                } else {
+                    // Prepend last 100 bytes in case the header was split
+                    // between the reads.
+                    System.arraycopy(data, 900, data, 0, 100);
+                    read = 100 + is.read(data, 100, 900);
+                }
+
+                s = new String(data, 0, read);
+                if ((i = s.indexOf(nssHeader)) > 0) {
+                    found = true;
+                    // If the nssHeader is before 920 we can break, otherwise
+                    // we may not have the whole header so do another read.  If
+                    // no bytes are in the stream, that is ok, found is true.
+                    if (i < 920) {
+                        break;
+                    }
+                }
+            }
+
+            is.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!found) {
+            System.out.println("NSS version not found, set to 0.0: "+libfile);
+            nss_version = 0.0;
+            return;
+        }
+
+        // the index after whitespace after nssHeader
+        int afterheader = s.indexOf("NSS", i) + 4;
+        String version = s.substring(afterheader, s.indexOf(' ', afterheader));
+
+        // If a "dot dot" release, strip the extra dots for double parsing
+        String[] dot = version.split("\\.");
+        if (dot.length > 2) {
+            version = dot[0]+"."+dot[1];
+            for (int j = 2; dot.length > j; j++) {
+                version += dot[j];
+            }
+        }
+
+        // Convert to double for easier version value checking
+        try {
+            nss_version = Double.parseDouble(version);
+        } catch (NumberFormatException e) {
+            System.out.println("Failed to parse NSS version. Set to 0.0");
+            e.printStackTrace();
+        }
+
+        System.out.print("NSS version = "+version+".  ");
+
+        // Check for ECC
+        if (s.indexOf("Basic") > 0) {
+            nss_ecc_status = ECCState.Basic;
+            System.out.println("ECC Basic.");
+        } else if (s.indexOf("Extended") > 0) {
+            nss_ecc_status = ECCState.Extended;
+            System.out.println("ECC Extended.");
+        }
+    }
+
+    // Used to set the nss_library file to search for libsoftokn3.so
+    public static void useNSS() {
+        nss_library = "nss3";
+    }
+
     public static void testNSS(PKCS11Test test) throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
@@ -218,7 +336,7 @@ public abstract class PKCS11Test {
             return;
         }
 
-        String libfile = libdir + System.mapLibraryName("softokn3");
+        String libfile = libdir + System.mapLibraryName(nss_library);
 
         String customDBdir = System.getProperty("CUSTOM_DB_DIR");
         String dbdir = (customDBdir != null) ?
@@ -252,7 +370,8 @@ public abstract class PKCS11Test {
         osMap.put("Linux-i386-32", new String[]{
             "/usr/lib/i386-linux-gnu/", "/usr/lib/"});
         osMap.put("Linux-amd64-64", new String[]{
-            "/usr/lib/x86_64-linux-gnu/", "/usr/lib64/"});
+            "/usr/lib/x86_64-linux-gnu/", "/usr/lib/x86_64-linux-gnu/nss/",
+            "/usr/lib64/"});
         osMap.put("Windows-x86-32", new String[]{
             PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP)});
         osMap.put("Windows-amd64-64", new String[]{

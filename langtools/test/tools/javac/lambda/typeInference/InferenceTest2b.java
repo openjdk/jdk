@@ -64,7 +64,7 @@ public class InferenceTest2b {
 
     void m2(SAM6<? super Integer> s) {
         System.out.println("m2()");
-        assertTrue(s.m6(1, 2) == 1);
+        assertTrue(s.m6(1, 2).equals(Integer.valueOf(1)));
     }
 
     void m3(SAM6<? super Calendar> s) {

@@ -237,7 +237,7 @@ public class SliceOpTest extends OpTestCase {
         List<Integer> list = IntStream.range(0, 100).boxed().collect(Collectors.toList());
         TestData.OfRef<Integer> data = TestData.Factory.ofSupplier(
                 "Non splitting, not SUBSIZED, ORDERED, stream",
-                () -> StreamSupport.stream(new NonSplittingNotSubsizedOrderedSpliterator<>(list.spliterator())));
+                () -> StreamSupport.stream(new NonSplittingNotSubsizedOrderedSpliterator<>(list.spliterator()), false));
 
         testSkipLimitOps("testSkipLimitOpsWithNonSplittingSpliterator", data);
     }

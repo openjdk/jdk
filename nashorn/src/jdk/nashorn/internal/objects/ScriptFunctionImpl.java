@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -36,6 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the
@@ -51,10 +53,31 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // property map for bound functions
     private static final PropertyMap boundfunctionmap$;
     // property map for non-strict, non-bound functions.
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
+
+    static PropertyMap getInitialMap() {
+        return map$;
+    }
+
+    static PropertyMap getInitialAnonymousMap() {
+        return AnonymousFunction.getInitialMap();
+    }
+
+    static PropertyMap getInitialStrictMap() {
+        return strictmodemap$;
+    }
+
+    static PropertyMap getInitialBoundMap() {
+        return boundfunctionmap$;
+    }
 
     // Marker object for lazily initialized prototype object
     private static final Object LAZY_PROTOTYPE = new Object();
+
+    private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs, final Global global) {
+        super(name, invokeHandle, global.getFunctionMap(), null, specs, false, true, true);
+        init(global);
+    }
 
     /**
      * Constructor called by Nasgen generated code, no membercount, use the default map.
@@ -65,8 +88,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final MethodHandle[] specs) {
-        super(name, invokeHandle, nasgenmap$, null, specs, false, true, true);
-        init();
+        this(name, invokeHandle, specs, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs, final Global global) {
+        super(name, invokeHandle, map.addAll(global.getFunctionMap()), null, specs, false, true, true);
+        init(global);
     }
 
     /**
@@ -79,8 +106,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param specs specialized versions of this method, if available, null otherwise
      */
     ScriptFunctionImpl(final String name, final MethodHandle invokeHandle, final PropertyMap map, final MethodHandle[] specs) {
-        super(name, invokeHandle, map.addAll(nasgenmap$), null, specs, false, true, true);
-        init();
+        this(name, invokeHandle, map, specs, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor, final Global global) {
+        super(name, methodHandle, getMap(global, isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
+        init(global);
     }
 
     /**
@@ -95,8 +126,12 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param isConstructor can the function be used as a constructor (most can; some built-ins are restricted).
      */
     ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
-        super(name, methodHandle, getMap(isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
-        init();
+        this(name, methodHandle, scope, specs, isStrict, isBuiltin, isConstructor, Global.instance());
+    }
+
+    private ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope, final Global global) {
+        super(data, getMap(global, data.isStrict()), scope);
+        init(global);
     }
 
     /**
@@ -106,27 +141,32 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param scope scope object
      */
     public ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope) {
-        super(data, getMap(data.isStrict()), scope);
-        init();
+        this(data, scope, Global.instance());
     }
 
     /**
      * Only invoked internally from {@link BoundScriptFunctionImpl} constructor.
      * @param data the script function data for the bound function.
+     * @param global the global object
      */
-    ScriptFunctionImpl(final ScriptFunctionData data) {
-        super(data, boundfunctionmap$, null);
-        init();
+    ScriptFunctionImpl(final ScriptFunctionData data, final Global global) {
+        super(data, global.getBoundFunctionMap(), null);
+        init(global);
     }
 
     static {
-        PropertyMap map = PropertyMap.newMap(ScriptFunctionImpl.class);
-        map = Lookup.newProperty(map, "prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE);
-        map = Lookup.newProperty(map, "length",    Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null);
-        map = Lookup.newProperty(map, "name",      Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null);
-        nasgenmap$ = map;
-        strictmodemap$ = createStrictModeMap(nasgenmap$);
+        final ArrayList<Property> properties = new ArrayList<>(3);
+        properties.add(AccessorProperty.create("prototype", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, G$PROTOTYPE, S$PROTOTYPE));
+        properties.add(AccessorProperty.create("length",  Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$LENGTH, null));
+        properties.add(AccessorProperty.create("name", Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE | Property.NOT_WRITABLE, G$NAME, null));
+        map$ = PropertyMap.newMap(properties);
+        strictmodemap$ = createStrictModeMap(map$);
         boundfunctionmap$ = createBoundFunctionMap(strictmodemap$);
+        // There are order dependencies between normal map, struct map and bound map
+        // We can make these 'shared' only after initialization of all three.
+        map$.setIsShared();
+        strictmodemap$.setIsShared();
+        boundfunctionmap$.setIsShared();
     }
 
     // function object representing TypeErrorThrower
@@ -149,19 +189,18 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return typeErrorThrower;
     }
 
-    // add a new property that throws TypeError on get as well as set
-    static synchronized PropertyMap newThrowerProperty(final PropertyMap map, final String name) {
-        return map.newProperty(name, Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE, -1,
-                Lookup.TYPE_ERROR_THROWER_GETTER, Lookup.TYPE_ERROR_THROWER_SETTER);
-    }
-
-    private static PropertyMap createStrictModeMap(final PropertyMap functionMap) {
-        return newThrowerProperty(newThrowerProperty(functionMap, "arguments"), "caller");
+    private static PropertyMap createStrictModeMap(final PropertyMap map) {
+        final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
+        PropertyMap newMap = map;
+        // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
+        newMap = newMap.addProperty(map.newUserAccessors("arguments", flags));
+        newMap = newMap.addProperty(map.newUserAccessors("caller", flags));
+        return newMap;
     }
 
     // Choose the map based on strict mode!
-    private static PropertyMap getMap(final boolean strict) {
-        return strict ? strictmodemap$ : nasgenmap$;
+    private static PropertyMap getMap(final Global global, final boolean strict) {
+        return strict ? global.getStrictFunctionMap() : global.getFunctionMap();
     }
 
     private static PropertyMap createBoundFunctionMap(final PropertyMap strictModeMap) {
@@ -173,15 +212,19 @@ public class ScriptFunctionImpl extends ScriptFunction {
     // Instance of this class is used as global anonymous function which
     // serves as Function.prototype object.
     private static class AnonymousFunction extends ScriptFunctionImpl {
-        private static final PropertyMap nasgenmap$$ = PropertyMap.newMap(AnonymousFunction.class);
+        private static final PropertyMap anonmap$ = PropertyMap.newMap().setIsShared();
 
-        AnonymousFunction() {
-            super("", GlobalFunctions.ANONYMOUS, nasgenmap$$, null);
+        static PropertyMap getInitialMap() {
+            return anonmap$;
+        }
+
+        AnonymousFunction(final Global global) {
+            super("", GlobalFunctions.ANONYMOUS, global.getAnonymousFunctionMap(), null);
         }
     }
 
-    static ScriptFunctionImpl newAnonymousFunction() {
-        return new AnonymousFunction();
+    static ScriptFunctionImpl newAnonymousFunction(final Global global) {
+        return new AnonymousFunction(global);
     }
 
     /**
@@ -256,16 +299,19 @@ public class ScriptFunctionImpl extends ScriptFunction {
     }
 
     // Internals below..
-    private void init() {
-        this.setProto(Global.instance().getFunctionPrototype());
+    private void init(final Global global) {
+        this.setProto(global.getFunctionPrototype());
         this.prototype = LAZY_PROTOTYPE;
 
-        if (isStrict()) {
-            final ScriptFunction func = getTypeErrorThrower();
-            // We have to fill user accessor functions late as these are stored
-            // in this object rather than in the PropertyMap of this object.
-            setUserAccessors("arguments", func, func);
-            setUserAccessors("caller", func, func);
+        // We have to fill user accessor functions late as these are stored
+        // in this object rather than in the PropertyMap of this object.
+
+        if (findProperty("arguments", true) != null) {
+            setUserAccessors("arguments", getTypeErrorThrower(), getTypeErrorThrower());
+        }
+
+        if (findProperty("caller", true) != null) {
+            setUserAccessors("caller", getTypeErrorThrower(), getTypeErrorThrower());
         }
     }
 }

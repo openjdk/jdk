@@ -61,6 +61,7 @@
  */
 package java.time.chrono;
 
+import static java.time.chrono.JapaneseDate.MEIJI_6_ISODATE;
 import static java.time.temporal.ChronoField.ERA;
 
 import java.io.DataInput;
@@ -84,12 +85,9 @@ import sun.util.calendar.CalendarDate;
  * An era in the Japanese Imperial calendar system.
  * <p>
  * This class defines the valid eras for the Japanese chronology.
- * Only Meiji (1868-09-08 - 1912-07-29) and later eras are supported.
- * Japan introduced the Gregorian calendar since Meiji 6. The dates
- * between Meiji 1 - 5 are not historically correct.
- * The older eras are recognized as Seireki (Western calendar) era,
- * and the year of era of Seireki is proleptic Gregorian year.
- * (The Julian to Gregorian transition is not supported.)
+ * Japan introduced the Gregorian calendar starting with Meiji 6.
+ * Only Meiji and later eras are supported;
+ * dates before Meiji 6, January 1 are not supported.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -100,16 +98,11 @@ public final class JapaneseEra
         implements Era, Serializable {
 
     // The offset value to 0-based index from the era value.
-    // i.e., getValue() + ERA_OFFSET == 0-based index; except that -999 is mapped to zero
+    // i.e., getValue() + ERA_OFFSET == 0-based index
     static final int ERA_OFFSET = 2;
 
     static final sun.util.calendar.Era[] ERA_CONFIG;
 
-    /**
-     * The singleton instance for the before Meiji era ( - 1868-09-07)
-     * which has the value -999.
-     */
-    public static final JapaneseEra SEIREKI = new JapaneseEra(-999, LocalDate.MIN);
     /**
      * The singleton instance for the 'Meiji' era (1868-09-08 - 1912-07-29)
      * which has the value -1.
@@ -144,17 +137,13 @@ public final class JapaneseEra
     private static final JapaneseEra[] KNOWN_ERAS;
 
     static {
-        sun.util.calendar.Era[] sunEras = JapaneseChronology.JCAL.getEras();
-        ERA_CONFIG = new sun.util.calendar.Era[sunEras.length + 1];
-        for (int i = 1; i < ERA_CONFIG.length; i++) {
-            ERA_CONFIG[i] = sunEras[i - 1];
-        }
+        ERA_CONFIG = JapaneseChronology.JCAL.getEras();
+
         KNOWN_ERAS = new JapaneseEra[ERA_CONFIG.length];
-        KNOWN_ERAS[0] = SEIREKI;
-        KNOWN_ERAS[1] = MEIJI;
-        KNOWN_ERAS[2] = TAISHO;
-        KNOWN_ERAS[3] = SHOWA;
-        KNOWN_ERAS[4] = HEISEI;
+        KNOWN_ERAS[0] = MEIJI;
+        KNOWN_ERAS[1] = TAISHO;
+        KNOWN_ERAS[2] = SHOWA;
+        KNOWN_ERAS[3] = HEISEI;
         for (int i = N_ERA_CONSTANTS; i < ERA_CONFIG.length; i++) {
             CalendarDate date = ERA_CONFIG[i].getSinceDate();
             LocalDate isoDate = LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth());
@@ -203,10 +192,8 @@ public final class JapaneseEra
     //-----------------------------------------------------------------------
     /**
      * Returns the Sun private Era instance corresponding to this {@code JapaneseEra}.
-     * SEIREKI doesn't have its corresponding one.
      *
-     * @return the Sun private Era instance for this {@code JapaneseEra},
-     *         or null for SEIREKI.
+     * @return the Sun private Era instance for this {@code JapaneseEra}.
      */
     sun.util.calendar.Era getPrivateEra() {
         return ERA_CONFIG[ordinal(eraValue)];
@@ -218,16 +205,14 @@ public final class JapaneseEra
      * <p>
      * The {@link #SHOWA} era that contains 1970-01-01 (ISO calendar system) has the value 1
      * Later era is numbered 2 ({@link #HEISEI}). Earlier eras are numbered 0 ({@link #TAISHO}),
-     * -1 ({@link #MEIJI}), only Meiji and later eras are supported. The prior to Meiji,
-     * {@link #SEIREKI} is used.
+     * -1 ({@link #MEIJI}), only Meiji and later eras are supported.
      *
      * @param japaneseEra  the era to represent
      * @return the {@code JapaneseEra} singleton, not null
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        if (japaneseEra != SEIREKI.eraValue &&
-            (japaneseEra < MEIJI.eraValue || japaneseEra > HEISEI.eraValue)) {
+        if (japaneseEra < MEIJI.eraValue || japaneseEra > HEISEI.eraValue) {
             throw new DateTimeException("Invalid era: " + japaneseEra);
         }
         return KNOWN_ERAS[ordinal(japaneseEra)];
@@ -276,22 +261,25 @@ public final class JapaneseEra
      * @return the Era singleton, never null
      */
     static JapaneseEra from(LocalDate date) {
+        if (date.isBefore(MEIJI_6_ISODATE)) {
+            throw new DateTimeException("JapaneseDate before Meiji 6 are not supported");
+        }
         for (int i = KNOWN_ERAS.length - 1; i > 0; i--) {
             JapaneseEra era = KNOWN_ERAS[i];
             if (date.compareTo(era.since) >= 0) {
                 return era;
             }
         }
-        return SEIREKI;
+        return null;
     }
 
     static JapaneseEra toJapaneseEra(sun.util.calendar.Era privateEra) {
-        for (int i = ERA_CONFIG.length - 1; i > 0; i--) {
+        for (int i = ERA_CONFIG.length - 1; i >= 0; i--) {
             if (ERA_CONFIG[i].equals(privateEra)) {
                 return KNOWN_ERAS[i];
             }
         }
-        return SEIREKI;
+        return null;
     }
 
     static sun.util.calendar.Era privateEraFrom(LocalDate isoDate) {
@@ -306,13 +294,13 @@ public final class JapaneseEra
 
     /**
      * Returns the index into the arrays from the Era value.
-     * the eraValue is a valid Era number, -999, -1..2.
+     * the eraValue is a valid Era number, -1..2.
      *
      * @param eraValue  the era value to convert to the index
      * @return the index of the current Era
      */
     private static int ordinal(int eraValue) {
-        return (eraValue == SEIREKI.eraValue) ? 0 : eraValue + ERA_OFFSET;
+        return eraValue + ERA_OFFSET - 1;
     }
 
     //-----------------------------------------------------------------------
@@ -321,7 +309,7 @@ public final class JapaneseEra
      * <p>
      * The {@link #SHOWA} era that contains 1970-01-01 (ISO calendar system) has the value 1.
      * Later eras are numbered from 2 ({@link #HEISEI}).
-     * Earlier eras are numbered 0 ({@link #TAISHO}), -1 ({@link #MEIJI}), and -999 ({@link #SEIREKI}).
+     * Earlier eras are numbered 0 ({@link #TAISHO}), -1 ({@link #MEIJI})).
      *
      * @return the era value
      */
@@ -374,11 +362,7 @@ public final class JapaneseEra
     }
 
     String getName() {
-        int index = ordinal(getValue());
-        if (index == 0) {
-            return "Seireki";
-        }
-        return ERA_CONFIG[index].getName();
+        return ERA_CONFIG[ordinal(getValue())].getName();
     }
 
     @Override

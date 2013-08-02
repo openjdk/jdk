@@ -46,11 +46,11 @@
 
 /*
  * Expected types of arguments of the macro.
- * (JNIEnv*)
+ * (JNIEnv*, jboolean)
  */
-#define RESTORE_XERROR_HANDLER(env) do {                                                          \
+#define RESTORE_XERROR_HANDLER(env, doXSync) do {                                                 \
     JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil",                        \
-        "RESTORE_XERROR_HANDLER", "()V");                                                         \
+        "RESTORE_XERROR_HANDLER", "(Z)V", doXSync);                                               \
 } while (0)
 
 /*
@@ -64,8 +64,18 @@
     do {                                                                                          \
         code;                                                                                     \
     } while (0);                                                                                  \
-    RESTORE_XERROR_HANDLER(env);                                                                  \
+    RESTORE_XERROR_HANDLER(env, JNI_TRUE);                                                        \
     if (handlerHasFlag == JNI_TRUE) {                                                             \
+        GET_HANDLER_ERROR_OCCURRED_FLAG(env, handlerRef, errorOccurredFlag);                      \
+    }                                                                                             \
+} while (0)
+
+/*
+ * Expected types of arguments of the macro.
+ * (JNIEnv*, jobject, jboolean)
+ */
+#define GET_HANDLER_ERROR_OCCURRED_FLAG(env, handlerRef, errorOccurredFlag) do {                  \
+    if (handlerRef != NULL) {                                                                     \
         errorOccurredFlag = JNU_CallMethodByName(env, NULL, handlerRef, "getErrorOccurredFlag",   \
             "()Z").z;                                                                             \
     }                                                                                             \

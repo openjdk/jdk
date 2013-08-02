@@ -96,7 +96,7 @@ import java.util.Objects;
  */
 public final class ThaiBuddhistDate
         extends ChronoDateImpl<ThaiBuddhistDate>
-        implements ChronoLocalDate<ThaiBuddhistDate>, Serializable {
+        implements ChronoLocalDate, Serializable {
 
     /**
      * Serialization version.
@@ -152,7 +152,7 @@ public final class ThaiBuddhistDate
      * @throws DateTimeException if the current date cannot be obtained
      */
     public static ThaiBuddhistDate now(Clock clock) {
-        return ThaiBuddhistChronology.INSTANCE.date(LocalDate.now(clock));
+        return new ThaiBuddhistDate(LocalDate.now(clock));
     }
 
     /**
@@ -264,7 +264,7 @@ public final class ThaiBuddhistDate
                 }
                 return getChronology().range(f);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
@@ -325,7 +325,7 @@ public final class ThaiBuddhistDate
             }
             return with(isoDate.with(field, newValue));
         }
-        return ChronoLocalDate.super.with(field, newValue);
+        return super.with(field, newValue);
     }
 
     /**
@@ -414,13 +414,14 @@ public final class ThaiBuddhistDate
     }
 
     @Override        // for javadoc and covariant return type
+    @SuppressWarnings("unchecked")
     public final ChronoLocalDateTime<ThaiBuddhistDate> atTime(LocalTime localTime) {
-        return super.atTime(localTime);
+        return (ChronoLocalDateTime<ThaiBuddhistDate>) super.atTime(localTime);
     }
 
     @Override
-    public Period periodUntil(ChronoLocalDate<?> endDate) {
-        return isoDate.periodUntil(endDate);
+    public Period until(ChronoLocalDate endDate) {
+        return isoDate.until(endDate);
     }
 
     @Override  // override for performance

@@ -26,9 +26,9 @@
 package com.sun.tools.classfile;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.sun.tools.classfile.AccessFlags.*;
@@ -44,26 +44,24 @@ import static com.sun.tools.classfile.AccessFlags.*;
 public class ClassFile {
     public static ClassFile read(File file)
             throws IOException, ConstantPoolException {
-        return read(file, new Attribute.Factory());
+        return read(file.toPath(), new Attribute.Factory());
     }
 
-    public static ClassFile read(Path path)
+    public static ClassFile read(Path input)
             throws IOException, ConstantPoolException {
-        return read(path.toFile(), new Attribute.Factory());
+        return read(input, new Attribute.Factory());
+    }
+
+    public static ClassFile read(Path input, Attribute.Factory attributeFactory)
+            throws IOException, ConstantPoolException {
+        try (InputStream in = Files.newInputStream(input)) {
+            return new ClassFile(in, attributeFactory);
+        }
     }
 
     public static ClassFile read(File file, Attribute.Factory attributeFactory)
             throws IOException, ConstantPoolException {
-        FileInputStream in = new FileInputStream(file);
-        try {
-            return new ClassFile(in, attributeFactory);
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
+        return read(file.toPath(), attributeFactory);
     }
 
     public static ClassFile read(InputStream in)

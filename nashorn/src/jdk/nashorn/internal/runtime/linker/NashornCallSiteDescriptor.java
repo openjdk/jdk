@@ -25,9 +25,11 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.lang.ref.WeakReference;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
@@ -70,9 +72,15 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
      * set. */
     public static final int CALLSITE_TRACE_SCOPE      = 0x200;
 
-    private static final WeakHashMap<NashornCallSiteDescriptor, WeakReference<NashornCallSiteDescriptor>> canonicals =
-            new WeakHashMap<>();
+    private static final ClassValue<ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor>> canonicals =
+            new ClassValue<ConcurrentMap<NashornCallSiteDescriptor,NashornCallSiteDescriptor>>() {
+        @Override
+        protected ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> computeValue(Class<?> type) {
+            return new ConcurrentHashMap<>();
+        }
+    };
 
+    private final MethodHandles.Lookup lookup;
     private final String operator;
     private final String operand;
     private final MethodType methodType;
@@ -81,39 +89,35 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     /**
      * Retrieves a Nashorn call site descriptor with the specified values. Since call site descriptors are immutable
      * this method is at liberty to retrieve canonicalized instances (although it is not guaranteed it will do so).
+     * @param lookup the lookup describing the script
      * @param name the name at the call site, e.g. {@code "dyn:getProp|getElem|getMethod:color"}.
      * @param methodType the method type at the call site
      * @param flags Nashorn-specific call site flags
      * @return a call site descriptor with the specified values.
      */
-    public static NashornCallSiteDescriptor get(final String name, final MethodType methodType, final int flags) {
+    public static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name,
+            final MethodType methodType, final int flags) {
         final String[] tokenizedName = CallSiteDescriptorFactory.tokenizeName(name);
         assert tokenizedName.length == 2 || tokenizedName.length == 3;
         assert "dyn".equals(tokenizedName[0]);
         assert tokenizedName[1] != null;
         // TODO: see if we can move mangling/unmangling into Dynalink
-        return get(tokenizedName[1], tokenizedName.length == 3 ? tokenizedName[2].intern() : null,
+        return get(lookup, tokenizedName[1], tokenizedName.length == 3 ? tokenizedName[2].intern() : null,
                 methodType, flags);
     }
 
-    private static NashornCallSiteDescriptor get(final String operator, final String operand, final MethodType methodType, final int flags) {
-        final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(operator, operand, methodType, flags);
+    private static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String operator, final String operand, final MethodType methodType, final int flags) {
+        final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(lookup, operator, operand, methodType, flags);
         // Many of these call site descriptors are identical (e.g. every getter for a property color will be
-        // "dyn:getProp:color(Object)Object", so it makes sense canonicalizing them in a weak map
-        synchronized(canonicals) {
-            final WeakReference<NashornCallSiteDescriptor> ref = canonicals.get(csd);
-            if(ref != null) {
-                final NashornCallSiteDescriptor canonical = ref.get();
-                if(canonical != null) {
-                    return canonical;
-                }
-            }
-            canonicals.put(csd, new WeakReference<>(csd));
-        }
-        return csd;
+        // "dyn:getProp:color(Object)Object", so it makes sense canonicalizing them.
+        final ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> classCanonicals = canonicals.get(lookup.lookupClass());
+        final NashornCallSiteDescriptor canonical = classCanonicals.putIfAbsent(csd, csd);
+        return canonical != null ? canonical : csd;
     }
 
-    private NashornCallSiteDescriptor(final String operator, final String operand, final MethodType methodType, final int flags) {
+    private NashornCallSiteDescriptor(final MethodHandles.Lookup lookup, final String operator, final String operand,
+            final MethodType methodType, final int flags) {
+        this.lookup = lookup;
         this.operator = operator;
         this.operand = operand;
         this.methodType = methodType;
@@ -139,6 +143,11 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
             break;
         }
         throw new IndexOutOfBoundsException(String.valueOf(i));
+    }
+
+    @Override
+    public Lookup getLookup() {
+        return lookup;
     }
 
     @Override
@@ -279,6 +288,6 @@ public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
 
     @Override
     public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return get(operator, operand, newMethodType, flags);
+        return get(getLookup(), operator, operand, newMethodType, flags);
     }
 }

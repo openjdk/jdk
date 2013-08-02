@@ -176,7 +176,7 @@ public final class MockSimplePeriod
 
     @Override
     public String toString() {
-        return amount + " " + unit.getName();
+        return amount + " " + unit;
     }
 
 }

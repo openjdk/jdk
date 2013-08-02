@@ -117,6 +117,7 @@ public interface ScheduledExecutorService extends ExecutorService {
      * @param callable the function to execute
      * @param delay the time from now to delay execution
      * @param unit the time unit of the delay parameter
+     * @param <V> the type of the callable's result
      * @return a ScheduledFuture that can be used to extract result or cancel
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution

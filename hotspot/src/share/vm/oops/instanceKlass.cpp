@@ -48,6 +48,7 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
@@ -291,7 +292,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_initial_method_idnum(0);
   _dependencies = NULL;
   set_jvmti_cached_class_field_map(NULL);
-  set_cached_class_file(NULL, 0);
+  set_cached_class_file(NULL);
   set_initial_method_idnum(0);
   set_minor_version(0);
   set_major_version(0);
@@ -1319,12 +1320,6 @@ void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
 void InstanceKlass::array_klasses_do(void f(Klass* k)) {
   if (array_klasses() != NULL)
     ArrayKlass::cast(array_klasses())->array_klasses_do(f);
-}
-
-
-void InstanceKlass::with_array_klasses_do(void f(Klass* k)) {
-  f(this);
-  array_klasses_do(f);
 }
 
 #ifdef ASSERT
@@ -2363,10 +2358,9 @@ void InstanceKlass::release_C_heap_structures() {
   }
 
   // deallocate the cached class file
-  if (_cached_class_file_bytes != NULL) {
-    os::free(_cached_class_file_bytes, mtClass);
-    _cached_class_file_bytes = NULL;
-    _cached_class_file_len = 0;
+  if (_cached_class_file != NULL) {
+    os::free(_cached_class_file, mtClass);
+    _cached_class_file = NULL;
   }
 
   // Decrement symbol reference counts associated with the unloaded class.
@@ -3534,6 +3528,14 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
     }
   }
   return m;
+}
+
+jint InstanceKlass::get_cached_class_file_len() {
+  return VM_RedefineClasses::get_cached_class_file_len(_cached_class_file);
+}
+
+unsigned char * InstanceKlass::get_cached_class_file_bytes() {
+  return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
 
 

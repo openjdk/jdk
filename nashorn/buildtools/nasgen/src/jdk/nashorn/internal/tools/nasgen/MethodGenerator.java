@@ -57,6 +57,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -347,6 +348,10 @@ public class MethodGenerator extends MethodVisitor {
     }
 
     // invokes, field get/sets
+    void invokeInterface(final String owner, final String method, final String desc) {
+        super.visitMethodInsn(INVOKEINTERFACE, owner, method, desc);
+    }
+
     void invokeVirtual(final String owner, final String method, final String desc) {
         super.visitMethodInsn(INVOKEVIRTUAL, owner, method, desc);
     }

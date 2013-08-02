@@ -190,7 +190,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> The optional <i>flags</i> is a set of characters that modify the output
  * format.  The set of valid flags depends on the conversion.
  *
- * <p> The optional <i>width</i> is a non-negative decimal integer indicating
+ * <p> The optional <i>width</i> is a positive decimal integer indicating
  * the minimum number of characters to be written to the output.
  *
  * <p> The optional <i>precision</i> is a non-negative decimal integer usually

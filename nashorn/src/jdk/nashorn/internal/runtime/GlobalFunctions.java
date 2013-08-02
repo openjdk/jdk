@@ -34,9 +34,6 @@ import java.util.Locale;
 
 /**
  * Utilities used by Global class.
- *
- * These are actual implementation methods for functions exposed by global
- * scope. The code lives here to share the code across the contexts.
  */
 public final class GlobalFunctions {
 

@@ -71,6 +71,8 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private static final MethodHandle IS_NONSTRICT_FUNCTION = findOwnMH("isNonStrictFunction", boolean.class, Object.class, Object.class, ScriptFunctionData.class);
 
+    private static final MethodHandle ADD_ZEROTH_ELEMENT = findOwnMH("addZerothElement", Object[].class, Object[].class, Object.class);
+
     /** The parent scope. */
     private final ScriptObject scope;
 
@@ -200,6 +202,16 @@ public abstract class ScriptFunction extends ScriptObject {
             invokes++;
         }
         return data.invoke(this, self, arguments);
+    }
+
+    /**
+     * Execute this script function as a constructor.
+     * @param arguments  Call arguments.
+     * @return Newly constructed result.
+     * @throws Throwable if there is an exception/error with the invocation or thrown from it
+     */
+    Object construct(final Object... arguments) throws Throwable {
+        return data.construct(this, arguments);
     }
 
     /**
@@ -536,7 +548,21 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {
-        return bindName == null ? methodHandle : MH.insertArguments(methodHandle, 1, bindName);
+        if (bindName == null) {
+            return methodHandle;
+        } else {
+            // if it is vararg method, we need to extend argument array with
+            // a new zeroth element that is set to bindName value.
+            final MethodType methodType = methodHandle.type();
+            final int parameterCount = methodType.parameterCount();
+            final boolean isVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
+
+            if (isVarArg) {
+                return MH.filterArguments(methodHandle, 1, MH.insertArguments(ADD_ZEROTH_ELEMENT, 1, bindName));
+            } else {
+                return MH.insertArguments(methodHandle, 1, bindName);
+            }
+        }
     }
 
     /**
@@ -574,6 +600,16 @@ public abstract class ScriptFunction extends ScriptObject {
     @SuppressWarnings("unused")
     private static boolean isNonStrictFunction(final Object self, final Object arg, final ScriptFunctionData data) {
         return self instanceof ScriptFunction && ((ScriptFunction)self).data == data && arg instanceof ScriptObject;
+    }
+
+    @SuppressWarnings("unused")
+    private static Object[] addZerothElement(final Object[] args, final Object value) {
+        // extends input array with by adding new zeroth element
+        final Object[] src = (args == null)? ScriptRuntime.EMPTY_ARRAY : args;
+        final Object[] result = new Object[src.length + 1];
+        System.arraycopy(src, 0, result, 1, src.length);
+        result[0] = value;
+        return result;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

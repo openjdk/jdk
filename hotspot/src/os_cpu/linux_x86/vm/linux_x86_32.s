@@ -42,24 +42,6 @@
 
 	.text
 
-        .globl  SafeFetch32, Fetch32PFI, Fetch32Resume
-        .globl  SafeFetchN
-        ## TODO: avoid exposing Fetch32PFI and Fetch32Resume.
-        ## Instead, the signal handler would call a new SafeFetchTriage(FaultingEIP)
-        ## routine to vet the address.  If the address is the faulting LD then
-        ## SafeFetchTriage() would return the resume-at EIP, otherwise null.
-	.type    SafeFetch32,@function
-        .p2align 4,,15
-SafeFetch32:
-SafeFetchN:
-         movl    0x8(%esp), %eax
-         movl    0x4(%esp), %ecx
-Fetch32PFI:
-         movl    (%ecx), %eax
-Fetch32Resume:
-         ret
-
-
         .globl  SpinPause
 	.type   SpinPause,@function
         .p2align 4,,15

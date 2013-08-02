@@ -25,6 +25,8 @@
 package java.util;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -52,7 +54,7 @@ public final class Optional<T> {
     private final T value;
 
     /**
-     * Construct an empty instance.
+     * Constructs an empty instance.
      *
      * @implNote Generally only one empty instance, {@link Optional#EMPTY},
      * should exist per VM.
@@ -80,7 +82,7 @@ public final class Optional<T> {
     }
 
     /**
-     * Construct an instance with the value present.
+     * Constructs an instance with the value present.
      *
      * @param value the non-null value to be present
      */
@@ -89,13 +91,27 @@ public final class Optional<T> {
     }
 
     /**
-     * Return an {@code Optional} with the specified present value.
+     * Returns an {@code Optional} with the specified present non-null value.
      *
+     * @param <T> the class of the value
      * @param value the value to be present, which must be non-null
      * @return an {@code Optional} with the value present
      */
     public static <T> Optional<T> of(T value) {
         return new Optional<>(value);
+    }
+
+    /**
+     * Returns an {@code Optional} describing the specified value, if non-null,
+     * otherwise returns an empty {@code Optional}.
+     *
+     * @param <T> the class of the value
+     * @param value the possibly-null value to describe
+     * @return an {@code Optional} with a present value if the specified value
+     * is non-null, otherwise an empty {@code Optional}
+     */
+    public static <T> Optional<T> ofNullable(T value) {
+        return value == null ? empty() : of(value);
     }
 
     /**
@@ -124,7 +140,7 @@ public final class Optional<T> {
     }
 
     /**
-     * Have the specified consumer accept the value if a value is present,
+     * If a value is present, invoke the specified consumer with the value,
      * otherwise do nothing.
      *
      * @param consumer block to be executed if a value is present
@@ -134,6 +150,89 @@ public final class Optional<T> {
     public void ifPresent(Consumer<? super T> consumer) {
         if (value != null)
             consumer.accept(value);
+    }
+
+    /**
+     * If a value is present, and the value matches the given predicate,
+     * return an {@code Optional} describing the value, otherwise return an
+     * empty {@code Optional}.
+     *
+     * @param predicate a predicate to apply to the value, if present
+     * @return an {@code Optional} describing the value of this {@code Optional}
+     * if a value is present and the value matches the given predicate,
+     * otherwise an empty {@code Optional}
+     * @throws NullPointerException if the predicate is null
+     */
+    public Optional<T> filter(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate);
+        if (!isPresent())
+            return this;
+        else
+            return predicate.test(value) ? this : empty();
+    }
+
+    /**
+     * If a value is present, apply the provided mapping function to it,
+     * and if the result is non-null, return an {@code Optional} describing the
+     * result.  Otherwise return an empty {@code Optional}.
+     *
+     * @apiNote This method supports post-processing on optional values, without
+     * the need to explicitly check for a return status.  For example, the
+     * following code traverses a stream of file names, selects one that has
+     * not yet been processed, and then opens that file, returning an
+     * {@code Optional<FileInputStream>}:
+     *
+     * <pre>{@code
+     *     Optional<FileInputStream> fis =
+     *         names.stream().filter(name -> !isProcessedYet(name))
+     *                       .findFirst()
+     *                       .map(name -> new FileInputStream(name));
+     * }</pre>
+     *
+     * Here, {@code findFirst} returns an {@code Optional<String>}, and then
+     * {@code map} returns an {@code Optional<FileInputStream>} for the desired
+     * file if one exists.
+     *
+     * @param <U> The type of the result of the mapping function
+     * @param mapper a mapping function to apply to the value, if present
+     * @return an {@code Optional} describing the result of applying a mapping
+     * function to the value of this {@code Optional}, if a value is present,
+     * otherwise an empty {@code Optional}
+     * @throws NullPointerException if the mapping function is null
+     */
+    public<U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent())
+            return empty();
+        else {
+            return Optional.ofNullable(mapper.apply(value));
+        }
+    }
+
+    /**
+     * If a value is present, apply the provided {@code Optional}-bearing
+     * mapping function to it, return that result, otherwise return an empty
+     * {@code Optional}.  This method is similar to {@link #map(Function)},
+     * but the provided mapper is one whose result is already an {@code Optional},
+     * and if invoked, {@code flatMap} does not wrap it with an additional
+     * {@code Optional}.
+     *
+     * @param <U> The type parameter to the {@code Optional} returned by
+     * @param mapper a mapping function to apply to the value, if present
+     *           the mapping function
+     * @return the result of applying an {@code Optional}-bearing mapping
+     * function to the value of this {@code Optional}, if a value is present,
+     * otherwise an empty {@code Optional}
+     * @throws NullPointerException if the mapping function is null or returns
+     * a null result
+     */
+    public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent())
+            return empty();
+        else {
+            return Objects.requireNonNull(mapper.apply(value));
+        }
     }
 
     /**

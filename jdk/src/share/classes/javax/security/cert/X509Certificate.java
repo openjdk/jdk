@@ -70,7 +70,7 @@ import java.util.Date;
  * CA certificates are either signed by themselves, or by some other
  * CA such as a "root" CA.
  * <p>
- * The ASN.1 definition of <code>tbsCertificate</code> is:
+ * The ASN.1 definition of {@code tbsCertificate} is:
  * <pre>
  * TBSCertificate  ::=  SEQUENCE  {
  *     version         [0]  EXPLICIT Version DEFAULT v1,
@@ -113,11 +113,11 @@ import java.util.Date;
  * initialization time and will fallback on a default implementation if
  * the Security property is not accessible.
  *
- * <p><em>Note: The classes in the package <code>javax.security.cert</code>
+ * <p><em>Note: The classes in the package {@code javax.security.cert}
  * exist for compatibility with earlier versions of the
  * Java Secure Sockets Extension (JSSE). New applications should instead
  * use the standard Java SE certificate classes located in
- * <code>java.security.cert</code>.</em></p>
+ * {@code java.security.cert}.</em></p>
  *
  * @author Hemma Prafullchandra
  * @since 1.4
@@ -150,7 +150,7 @@ public abstract class X509Certificate extends Certificate {
 
     /**
      * Instantiates an X509Certificate object, and initializes it with
-     * the data read from the input stream <code>inStream</code>.
+     * the data read from the input stream {@code inStream}.
      * The implementation (X509Certificate is an abstract class) is
      * provided by the class specified as the value of the
      * {@code cert.provider.x509v1} security property.
@@ -191,7 +191,7 @@ public abstract class X509Certificate extends Certificate {
      * @param certData a byte array containing the DER-encoded
      *        certificate.
      * @return an X509Certificate object initialized with the data
-     *         from <code>certData</code>.
+     *         from {@code certData}.
      * @exception CertificateException if a class initialization
      *            or certificate parsing error occurs.
      */
@@ -281,16 +281,16 @@ public abstract class X509Certificate extends Certificate {
      * @param date the Date to check against to see if this certificate
      *        is valid at that date/time.
      * @exception CertificateExpiredException if the certificate has expired
-     *            with respect to the <code>date</code> supplied.
+     *            with respect to the {@code date} supplied.
      * @exception CertificateNotYetValidException if the certificate is not
-     *            yet valid with respect to the <code>date</code> supplied.
+     *            yet valid with respect to the {@code date} supplied.
      * @see #checkValidity()
      */
     public abstract void checkValidity(Date date)
         throws CertificateExpiredException, CertificateNotYetValidException;
 
     /**
-     * Gets the <code>version</code> (version number) value from the
+     * Gets the {@code version} (version number) value from the
      * certificate. The ASN.1 definition for this is:
      * <pre>
      * version         [0]  EXPLICIT Version DEFAULT v1
@@ -303,7 +303,7 @@ public abstract class X509Certificate extends Certificate {
     public abstract int getVersion();
 
     /**
-     * Gets the <code>serialNumber</code> value from the certificate.
+     * Gets the {@code serialNumber} value from the certificate.
      * The serial number is an integer assigned by the certification
      * authority to each certificate. It must be unique for each
      * certificate issued by a given CA (i.e., the issuer name and
@@ -320,7 +320,7 @@ public abstract class X509Certificate extends Certificate {
     public abstract BigInteger getSerialNumber();
 
     /**
-     * Gets the <code>issuer</code> (issuer distinguished name) value from
+     * Gets the {@code issuer} (issuer distinguished name) value from
      * the certificate. The issuer name identifies the entity that signed (and
      * issued) the certificate.
      *
@@ -341,27 +341,27 @@ public abstract class X509Certificate extends Certificate {
      * AttributeType ::= OBJECT IDENTIFIER
      * AttributeValue ::= ANY
      * </pre>
-     * The <code>Name</code> describes a hierarchical name composed of
+     * The {@code Name} describes a hierarchical name composed of
      * attributes, such as country name, and corresponding values, such as US.
-     * The type of the <code>AttributeValue</code> component is determined by
-     * the <code>AttributeType</code>; in general it will be a
-     * <code>directoryString</code>. A <code>directoryString</code> is usually
-     * one of <code>PrintableString</code>,
-     * <code>TeletexString</code> or <code>UniversalString</code>.
+     * The type of the {@code AttributeValue} component is determined by
+     * the {@code AttributeType}; in general it will be a
+     * {@code directoryString}. A {@code directoryString} is usually
+     * one of {@code PrintableString},
+     * {@code TeletexString} or {@code UniversalString}.
      *
      * @return a Principal whose name is the issuer distinguished name.
      */
     public abstract Principal getIssuerDN();
 
     /**
-     * Gets the <code>subject</code> (subject distinguished name) value
+     * Gets the {@code subject} (subject distinguished name) value
      * from the certificate.
      * The ASN.1 definition for this is:
      * <pre>
      * subject    Name
      * </pre>
      *
-     * <p>See {@link #getIssuerDN() getIssuerDN} for <code>Name</code>
+     * <p>See {@link #getIssuerDN() getIssuerDN} for {@code Name}
      * and other relevant definitions.
      *
      * @return a Principal whose name is the subject name.
@@ -370,7 +370,7 @@ public abstract class X509Certificate extends Certificate {
     public abstract Principal getSubjectDN();
 
     /**
-     * Gets the <code>notBefore</code> date from the validity period of
+     * Gets the {@code notBefore} date from the validity period of
      * the certificate.
      * The relevant ASN.1 definitions are:
      * <pre>
@@ -391,7 +391,7 @@ public abstract class X509Certificate extends Certificate {
     public abstract Date getNotBefore();
 
     /**
-     * Gets the <code>notAfter</code> date from the validity period of
+     * Gets the {@code notAfter} date from the validity period of
      * the certificate. See {@link #getNotBefore() getNotBefore}
      * for relevant ASN.1 definitions.
      *
@@ -415,7 +415,7 @@ public abstract class X509Certificate extends Certificate {
      *                             -- algorithm object identifier value
      * </pre>
      *
-     * <p>The algorithm name is determined from the <code>algorithm</code>
+     * <p>The algorithm name is determined from the {@code algorithm}
      * OID string.
      *
      * @return the signature algorithm name.

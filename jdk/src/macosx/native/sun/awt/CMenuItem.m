@@ -82,8 +82,13 @@ JNF_COCOA_ENTER(env);
         // keys, so we need to do the same translation here that we do
         // for the regular key down events
         if ([eventKey length] == 1) {
-            unichar ch =  NsCharToJavaChar([eventKey characterAtIndex:0], 0);
-            eventKey = [NSString stringWithCharacters: &ch length: 1];
+            unichar origChar = [eventKey characterAtIndex:0];
+            unichar newChar =  NsCharToJavaChar(origChar, 0);
+            if (newChar == java_awt_event_KeyEvent_CHAR_UNDEFINED) {
+                newChar = origChar;
+            }
+
+            eventKey = [NSString stringWithCharacters: &newChar length: 1];
         }
 
         if ([menuKey isEqualToString:eventKey]) {
