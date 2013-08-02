@@ -25,25 +25,18 @@
  * @test
  * @bug     7150256
  * @summary Basic Test for the DiagnosticCommandMBean
- * @author  Frederic Parain
+ * @author  Frederic Parain, Shanliang JIANG
  *
- * @run main/othervm -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=8127 DcmdMBeanTest
+ * @run main/othervm DcmdMBeanTest
  */
 
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.management.Descriptor;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.*;
 import javax.management.remote.*;
 
@@ -52,34 +45,42 @@ public class DcmdMBeanTest {
     private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
 
-    public static void main(String[] args) {
-        MBeanServerConnection mbs = null;
+    public static void main(String[] args) throws Exception {
+        System.out.println("--->JRCMD MBean Test: invocation on \"operation info\"...");
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXConnectorServer cs = null;
+        JMXConnector cc = null;
         try {
-            JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8127/jmxrmi");
-            JMXConnector connector = JMXConnectorFactory.connect(url);
-            mbs = connector.getMBeanServerConnection();
-        } catch(Throwable t) {
-            t.printStackTrace();
-        }
-        ObjectName name;
-        try {
-            name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
-            MBeanInfo info = mbs.getMBeanInfo(name);
+            cs = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            cs.start();
+            JMXServiceURL addr = cs.getAddress();
+            cc = JMXConnectorFactory.connect(addr);
+            MBeanServerConnection mbsc = cc.getMBeanServerConnection();
+            ObjectName name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
+            MBeanInfo info = mbsc.getMBeanInfo(name);
+
             // the test should check that the MBean doesn't have any
             // Attribute, notification or constructor. Current version only
             // check operations
-            System.out.println("Class Name:"+info.getClassName());
-            System.out.println("Description:"+info.getDescription());
+            System.out.println("Class Name:" + info.getClassName());
+            System.out.println("Description:" + info.getDescription());
             MBeanOperationInfo[] opInfo = info.getOperations();
             System.out.println("Operations:");
-            for(int i=0; i<opInfo.length; i++) {
+            for (int i = 0; i < opInfo.length; i++) {
                 printOperation(opInfo[i]);
                 System.out.println("\n@@@@@@\n");
             }
-        } catch (InstanceNotFoundException|IntrospectionException|ReflectionException
-                 |MalformedObjectNameException|IOException ex) {
-            Logger.getLogger(DcmdMBeanTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                cc.close();
+                cs.stop();
+            } catch (Exception e) {
+            }
         }
+
+        System.out.println("Test passed");
     }
 
     static void printOperation(MBeanOperationInfo info) {
@@ -110,4 +111,3 @@ public class DcmdMBeanTest {
         }
     }
 }
-

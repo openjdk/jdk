@@ -263,6 +263,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseStringCache",                JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },
@@ -1889,6 +1890,10 @@ void Arguments::check_deprecated_gc_flags() {
   if (FLAG_IS_CMDLINE(MaxGCMinorPauseMillis)) {
     warning("Using MaxGCMinorPauseMillis as minor pause goal is deprecated"
             "and will likely be removed in future release");
+  }
+  if (FLAG_IS_CMDLINE(DefaultMaxRAMFraction)) {
+    warning("DefaultMaxRAMFraction is deprecated and will likely be removed in a future release. "
+        "Use MaxRAMFraction instead.");
   }
 }
 

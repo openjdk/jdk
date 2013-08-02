@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,12 @@ import sun.text.normalizer.NormalizerImpl;
  *
  * <p><pre>
  *      U+00C1    LATIN CAPITAL LETTER A WITH ACUTE</pre>
- * </p>
  *
  * or as two separate characters (the "decomposed" form):
  *
  * <p><pre>
  *      U+0041    LATIN CAPITAL LETTER A
  *      U+0301    COMBINING ACUTE ACCENT</pre>
- * </p>
  *
  * To a user of your program, however, both of these sequences should be
  * treated as the same "user-level" character "A with acute accent".  When you
@@ -78,13 +76,11 @@ import sun.text.normalizer.NormalizerImpl;
  *      U+0066    LATIN SMALL LETTER F
  *      U+0066    LATIN SMALL LETTER F
  *      U+0069    LATIN SMALL LETTER I</pre>
- * </p>
  *
  * or as the single character
  *
  * <p><pre>
  *      U+FB03    LATIN SMALL LIGATURE FFI</pre>
- * </p>
  *
  * The ffi ligature is not a distinct semantic character, and strictly speaking
  * it shouldn't be in Unicode at all, but it was included for compatibility

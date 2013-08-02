@@ -28,7 +28,7 @@
  * @run
  */
 
-var boolArr = java.lang.reflect.Array.newInstance(java.lang.Boolean.TYPE, 2);
+var boolArr = new (Java.type("boolean[]"))(2);
 boolArr[0] = true;
 boolArr[1] = false;
 

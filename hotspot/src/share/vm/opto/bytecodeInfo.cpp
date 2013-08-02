@@ -297,15 +297,6 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     }
   }
 
-  if (UseStringCache) {
-    // Do not inline StringCache::profile() method used only at the beginning.
-    if (callee_method->name() == ciSymbol::profile_name() &&
-        callee_method->holder()->name() == ciSymbol::java_lang_StringCache()) {
-      set_msg("profiling method");
-      return true;
-    }
-  }
-
   // use frequency-based objections only for non-trivial methods
   if (callee_method->code_size() <= MaxTrivialSize) {
     return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@ public interface AttributedCharacterIterator extends CharacterIterator {
 
         /**
          * Constructs an {@code Attribute} with the given name.
+         *
+         * @param name the name of {@code Attribute}
          */
         protected Attribute(String name) {
             this.name = name;
@@ -111,7 +113,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
 
         /**
          * Compares two objects for equality. This version only returns true
-         * for <code>x.equals(y)</code> if <code>x</code> and <code>y</code> refer
+         * for {@code x.equals(y)} if {@code x} and {@code y} refer
          * to the same object, and guarantees this for all subclasses.
          */
         public final boolean equals(Object obj) {
@@ -137,6 +139,8 @@ public interface AttributedCharacterIterator extends CharacterIterator {
 
         /**
          * Returns the name of the attribute.
+         *
+         * @return the name of {@code Attribute}
          */
         protected String getName() {
             return name;
@@ -144,6 +148,10 @@ public interface AttributedCharacterIterator extends CharacterIterator {
 
         /**
          * Resolves instances being deserialized to the predefined constants.
+         *
+         * @return the resolved {@code Attribute} object
+         * @throws InvalidObjectException if the object to resolve is not
+         *                                an instance of {@code Attribute}
          */
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != Attribute.class) {
@@ -171,6 +179,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
          * it is often necessary to store the reading (pronunciation) along with the
          * written form.
          * <p>Values are instances of {@link Annotation} holding instances of {@link String}.
+         *
          * @see Annotation
          * @see java.lang.String
          */
@@ -196,18 +205,26 @@ public interface AttributedCharacterIterator extends CharacterIterator {
      * <p>Any contiguous text segments having the same attributes (the
      * same set of attribute/value pairs) are treated as separate runs
      * if the attributes have been given to those text segments separately.
+     *
+     * @return the index of the first character of the run
      */
     public int getRunStart();
 
     /**
      * Returns the index of the first character of the run
      * with respect to the given {@code attribute} containing the current character.
+     *
+     * @param attribute the desired attribute.
+     * @return the index of the first character of the run
      */
     public int getRunStart(Attribute attribute);
 
     /**
      * Returns the index of the first character of the run
      * with respect to the given {@code attributes} containing the current character.
+     *
+     * @param attributes a set of the desired attributes.
+     * @return the index of the first character of the run
      */
     public int getRunStart(Set<? extends Attribute> attributes);
 
@@ -218,30 +235,43 @@ public interface AttributedCharacterIterator extends CharacterIterator {
      * <p>Any contiguous text segments having the same attributes (the
      * same set of attribute/value pairs) are treated as separate runs
      * if the attributes have been given to those text segments separately.
+     *
+     * @return the index of the first character following the run
      */
     public int getRunLimit();
 
     /**
      * Returns the index of the first character following the run
      * with respect to the given {@code attribute} containing the current character.
+     *
+     * @param attribute the desired attribute
+     * @return the index of the first character following the run
      */
     public int getRunLimit(Attribute attribute);
 
     /**
      * Returns the index of the first character following the run
      * with respect to the given {@code attributes} containing the current character.
+     *
+     * @param attributes a set of the desired attributes
+     * @return the index of the first character following the run
      */
     public int getRunLimit(Set<? extends Attribute> attributes);
 
     /**
      * Returns a map with the attributes defined on the current
      * character.
+     *
+     * @return a map with the attributes defined on the current character
      */
     public Map<Attribute,Object> getAttributes();
 
     /**
      * Returns the value of the named {@code attribute} for the current character.
      * Returns {@code null} if the {@code attribute} is not defined.
+     *
+     * @param attribute the desired attribute
+     * @return the value of the named {@code attribute} or {@code null}
      */
     public Object getAttribute(Attribute attribute);
 
@@ -249,6 +279,8 @@ public interface AttributedCharacterIterator extends CharacterIterator {
      * Returns the keys of all attributes defined on the
      * iterator's text range. The set is empty if no
      * attributes are defined.
+     *
+     * @return the keys of all attributes
      */
     public Set<Attribute> getAllAttributeKeys();
 };
