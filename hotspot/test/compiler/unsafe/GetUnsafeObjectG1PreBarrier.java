@@ -25,7 +25,7 @@
  * @test
  * @bug 8016474
  * @summary The bug only happens with C1 and G1 using a different ObjectAlignmentInBytes than KlassAlignmentInBytes (which is 8)
- * @run main/othervm -Xbatch -XX:ObjectAlignmentInBytes=32 GetUnsafeObjectG1PreBarrier
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32 GetUnsafeObjectG1PreBarrier
  */
 
 import java.lang.reflect.Field;
