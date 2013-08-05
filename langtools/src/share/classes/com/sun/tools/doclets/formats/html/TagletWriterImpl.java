@@ -71,7 +71,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     protected Content codeTagOutput(Tag tag) {
-        Content result = HtmlTree.CODE(new StringContent(tag.text()));
+        Content result = HtmlTree.CODE(new StringContent(Util.normalizeNewlines(tag.text())));
         return result;
     }
 
@@ -135,7 +135,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     protected Content literalTagOutput(Tag tag) {
-        Content result = new StringContent(tag.text());
+        Content result = new StringContent(Util.normalizeNewlines(tag.text()));
         return result;
     }
 

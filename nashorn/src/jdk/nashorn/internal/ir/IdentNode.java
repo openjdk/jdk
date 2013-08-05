@@ -153,14 +153,27 @@ public final class IdentNode extends Expression implements PropertyKey, TypeOver
     }
 
     /**
-     * We can only override type if the symbol lives in the scope, otherwise
-     * it is strongly determined by the local variable already allocated
+     * We can only override type if the symbol lives in the scope, as otherwise
+     * it is strongly determined by the local variable already allocated.
+     *
+     * <p>We also return true if the symbol represents the return value of a function with a
+     * non-generic return type as in this case we need to propagate the type instead of
+     * converting to object, for example if the symbol is used as the left hand side of an
+     * assignment such as in the code below.</p>
+     *
+     * <pre>{@code
+     *   try {
+     *     return 2;
+     *   } finally {
+     *     return 3;
+     *   }
+     * }</pre>
      *
      * @return true if can have callsite type
      */
     @Override
     public boolean canHaveCallSiteType() {
-        return getSymbol() != null && getSymbol().isScope();
+        return getSymbol() != null && (getSymbol().isScope() || getSymbol().isNonGenericReturn());
     }
 
     /**

@@ -128,7 +128,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * meanings are:
      *
      * <table summary="Access mode permitted values and meanings">
-     * <tr><th><p align="left">Value</p></th><th><p align="left">Meaning</p></th></tr>
+     * <tr><th align="left">Value</th><th align="left">Meaning</th></tr>
      * <tr><td valign="top"><tt>"r"</tt></td>
      *     <td> Open for reading only.  Invoking any of the <tt>write</tt>
      *     methods of the resulting object will cause an {@link

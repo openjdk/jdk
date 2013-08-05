@@ -43,7 +43,7 @@ public abstract class CMenuComponent implements MenuComponentPeer {
         return target;
     }
 
-    long getModel() {
+    public long getModel() {
         return modelPtr;
     }
 

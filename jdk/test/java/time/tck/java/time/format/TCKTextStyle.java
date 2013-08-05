@@ -91,4 +91,14 @@ public class TCKTextStyle {
         assertTrue(!TextStyle.NARROW.isStandalone());
     }
 
+    //-----------------------------------------------------------------------
+    // valueOf()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_valueOf() {
+        for (TextStyle style : TextStyle.values()) {
+            assertEquals(TextStyle.valueOf(style.name()), style);
+        }
+    }
+
 }

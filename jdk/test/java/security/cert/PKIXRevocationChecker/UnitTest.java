@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6854712 7171570
+ * @bug 6854712 7171570 8010748
  * @summary Basic unit test for PKIXRevocationChecker
  */
 
@@ -32,19 +32,9 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathChecker;
-import java.security.cert.CertPathValidator;
-import java.security.cert.Extension;
-import java.security.cert.PKIXRevocationChecker;
+import java.security.cert.*;
 import java.security.cert.PKIXRevocationChecker.Option;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class UnitTest {
 
@@ -56,22 +46,23 @@ public class UnitTest {
 
         System.out.println("Testing that get methods return null or " +
                            "empty lists/sets/maps");
-        requireNull(prc.getOCSPResponder(), "getOCSPResponder()");
-        requireNull(prc.getOCSPResponderCert(), "getOCSPResponderCert()");
-        requireEmpty(prc.getOCSPExtensions(), "getOCSPExtensions()");
-        requireEmpty(prc.getOCSPResponses(), "getOCSPResponses()");
+        requireNull(prc.getOcspResponder(), "getOcspResponder()");
+        requireNull(prc.getOcspResponderCert(), "getOcspResponderCert()");
+        requireEmpty(prc.getOcspExtensions(), "getOcspExtensions()");
+        requireEmpty(prc.getOcspResponses(), "getOcspResponses()");
         requireEmpty(prc.getOptions(), "getOptions()");
+        requireEmpty(prc.getSoftFailExceptions(), "getSoftFailExceptions()");
 
         System.out.println("Testing that get methods return same parameters " +
                            "that are passed to set methods");
         URI uri = new URI("http://localhost");
-        prc.setOCSPResponder(uri);
-        requireEquals(uri, prc.getOCSPResponder(), "getOCSPResponder()");
+        prc.setOcspResponder(uri);
+        requireEquals(uri, prc.getOcspResponder(), "getOcspResponder()");
 
         X509Certificate cert = getCert();
-        prc.setOCSPResponderCert(cert);
-        requireEquals(cert, prc.getOCSPResponderCert(),
-                      "getOCSPResponderCert()");
+        prc.setOcspResponderCert(cert);
+        requireEquals(cert, prc.getOcspResponderCert(),
+                      "getOcspResponderCert()");
 
         List<Extension> exts = new ArrayList<>();
         for (String oid : cert.getNonCriticalExtensionOIDs()) {
@@ -79,8 +70,8 @@ public class UnitTest {
             exts.add(new ExtensionImpl(oid,
                                        cert.getExtensionValue(oid), false));
         }
-        prc.setOCSPExtensions(exts);
-        requireEquals(exts, prc.getOCSPExtensions(), "getOCSPExtensions()");
+        prc.setOcspExtensions(exts);
+        requireEquals(exts, prc.getOcspExtensions(), "getOcspExtensions()");
 
         Set<Option> options = EnumSet.of(Option.ONLY_END_ENTITY);
         prc.setOptions(options);
@@ -88,14 +79,14 @@ public class UnitTest {
 
         System.out.println("Testing that parameters are re-initialized to " +
                            "default values if null is passed to set methods");
-        prc.setOCSPResponder(null);
-        requireNull(prc.getOCSPResponder(), "getOCSPResponder()");
-        prc.setOCSPResponderCert(null);
-        requireNull(prc.getOCSPResponderCert(), "getOCSPResponderCert()");
-        prc.setOCSPExtensions(null);
-        requireEmpty(prc.getOCSPExtensions(), "getOCSPExtensions()");
-        prc.setOCSPResponses(null);
-        requireEmpty(prc.getOCSPResponses(), "getOCSPResponses()");
+        prc.setOcspResponder(null);
+        requireNull(prc.getOcspResponder(), "getOcspResponder()");
+        prc.setOcspResponderCert(null);
+        requireNull(prc.getOcspResponderCert(), "getOcspResponderCert()");
+        prc.setOcspExtensions(null);
+        requireEmpty(prc.getOcspExtensions(), "getOcspExtensions()");
+        prc.setOcspResponses(null);
+        requireEmpty(prc.getOcspResponses(), "getOcspResponses()");
         prc.setOptions(null);
         requireEmpty(prc.getOptions(), "getOptions()");
 

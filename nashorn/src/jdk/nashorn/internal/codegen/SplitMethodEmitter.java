@@ -77,15 +77,15 @@ public class SplitMethodEmitter extends MethodEmitter {
         }
 
         if (lc.isExternalTarget(splitNode, label)) {
-             externalTargets.add(label);
-             return externalTargets.size() - 1;
-         }
-         return -1;
+            externalTargets.add(label);
+            return externalTargets.size() - 1;
+        }
+        return -1;
     }
 
     @Override
     MethodEmitter registerReturn() {
-        super.registerReturn();
+        setHasReturn();
         loadCompilerConstant(SCOPE);
         checkcast(Scope.class);
         load(0);
