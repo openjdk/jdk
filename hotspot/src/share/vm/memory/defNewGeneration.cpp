@@ -1033,6 +1033,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
+    if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+      _next_gen->sample_eden_chunk();
+    }
     return result;
   }
   do {
@@ -1063,13 +1066,19 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
   // circular dependency at compile time.
   if (result == NULL) {
     result = allocate_from_space(word_size);
+  } else if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+    _next_gen->sample_eden_chunk();
   }
   return result;
 }
 
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
-  return eden()->par_allocate(word_size);
+  HeapWord* res = eden()->par_allocate(word_size);
+  if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+    _next_gen->sample_eden_chunk();
+  }
+  return res;
 }
 
 void DefNewGeneration::gc_prologue(bool full) {

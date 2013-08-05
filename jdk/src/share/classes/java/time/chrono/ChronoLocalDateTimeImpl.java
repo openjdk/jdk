@@ -98,7 +98,7 @@ import java.util.Objects;
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
-final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
+final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
         implements  ChronoLocalDateTime<D>, Temporal, TemporalAdjuster, Serializable {
 
     /**
@@ -171,9 +171,27 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
      * @param time  the local time, not null
      * @return the local date-time, not null
      */
-    @SuppressWarnings("rawtypes")
-    static ChronoLocalDateTimeImpl<?> of(ChronoLocalDate<?> date, LocalTime time) {
-        return new ChronoLocalDateTimeImpl(date, time);
+    static <R extends ChronoLocalDate> ChronoLocalDateTimeImpl<R> of(R date, LocalTime time) {
+        return new ChronoLocalDateTimeImpl<>(date, time);
+    }
+
+    /**
+     * Casts the {@code Temporal} to {@code ChronoLocalDateTime} ensuring it bas the specified chronology.
+     *
+     * @param chrono  the chronology to check for, not null
+     * @param temporal   a date-time to cast, not null
+     * @return the date-time checked and cast to {@code ChronoLocalDateTime}, not null
+     * @throws ClassCastException if the date-time cannot be cast to ChronoLocalDateTimeImpl
+     *  or the chronology is not equal this Chronology
+     */
+    static <R extends ChronoLocalDate> ChronoLocalDateTimeImpl<R> ensureValid(Chronology chrono, Temporal temporal) {
+        @SuppressWarnings("unchecked")
+        ChronoLocalDateTimeImpl<R> other = (ChronoLocalDateTimeImpl<R>) temporal;
+        if (chrono.equals(other.toLocalDate().getChronology()) == false) {
+            throw new ClassCastException("Chronology mismatch, required: " + chrono.getId()
+                    + ", actual: " + other.toLocalDate().getChronology().getId());
+        }
+        return other;
     }
 
     /**
@@ -202,7 +220,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
             return this;
         }
         // Validate that the new Temporal is a ChronoLocalDate (and not something else)
-        D cd = (D) date.getChronology().ensureChronoLocalDate(newDate);
+        D cd = ChronoDateImpl.ensureValid(date.getChronology(), newDate);
         return new ChronoLocalDateTimeImpl<>(cd, newTime);
     }
 
@@ -260,13 +278,13 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     public ChronoLocalDateTimeImpl<D> with(TemporalAdjuster adjuster) {
         if (adjuster instanceof ChronoLocalDate) {
             // The Chronology is checked in with(date,time)
-            return with((ChronoLocalDate<D>) adjuster, time);
+            return with((ChronoLocalDate) adjuster, time);
         } else if (adjuster instanceof LocalTime) {
             return with(date, (LocalTime) adjuster);
         } else if (adjuster instanceof ChronoLocalDateTimeImpl) {
-            return (ChronoLocalDateTimeImpl<D>)(date.getChronology().ensureChronoLocalDateTime((ChronoLocalDateTimeImpl<?>) adjuster));
+            return ChronoLocalDateTimeImpl.ensureValid(date.getChronology(), (ChronoLocalDateTimeImpl<?>) adjuster);
         }
-        return (ChronoLocalDateTimeImpl<D>)(date.getChronology().ensureChronoLocalDateTime((ChronoLocalDateTimeImpl<?>) adjuster.adjustInto(this)));
+        return ChronoLocalDateTimeImpl.ensureValid(date.getChronology(), (ChronoLocalDateTimeImpl<?>) adjuster.adjustInto(this));
     }
 
     @Override
@@ -279,7 +297,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
                 return with(date.with(field, newValue), time);
             }
         }
-        return (ChronoLocalDateTimeImpl<D>)(date.getChronology().ensureChronoLocalDateTime(field.adjustInto(this, newValue)));
+        return ChronoLocalDateTimeImpl.ensureValid(date.getChronology(), field.adjustInto(this, newValue));
     }
 
     //-----------------------------------------------------------------------
@@ -298,7 +316,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
             }
             return with(date.plus(amountToAdd, unit), time);
         }
-        return (ChronoLocalDateTimeImpl<D>)(date.getChronology().ensureChronoLocalDateTime(unit.addTo(this, amountToAdd)));
+        return ChronoLocalDateTimeImpl.ensureValid(date.getChronology(), unit.addTo(this, amountToAdd));
     }
 
     private ChronoLocalDateTimeImpl<D> plusDays(long days) {
@@ -322,7 +340,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     }
 
     //-----------------------------------------------------------------------
-    private ChronoLocalDateTimeImpl<D> plusWithOverflow(ChronoLocalDate<?> newDate, long hours, long minutes, long seconds, long nanos) {
+    private ChronoLocalDateTimeImpl<D> plusWithOverflow(D newDate, long hours, long minutes, long seconds, long nanos) {
         // 9223372036854775808 long, 2147483648 int
         if ((hours | minutes | seconds | nanos) == 0) {
             return with(newDate, time);
@@ -351,7 +369,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
 
     //-----------------------------------------------------------------------
     @Override
-    public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+    public long until(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof ChronoLocalDateTime == false) {
             throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
@@ -361,10 +379,9 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
             throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
         }
         if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            if (f.isTimeUnit()) {
+            if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
-                switch (f) {
+                switch ((ChronoUnit) unit) {
                     case NANOS: amount = Math.multiplyExact(amount, NANOS_PER_DAY); break;
                     case MICROS: amount = Math.multiplyExact(amount, MICROS_PER_DAY); break;
                     case MILLIS: amount = Math.multiplyExact(amount, MILLIS_PER_DAY); break;
@@ -373,13 +390,13 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
                     case HOURS: amount = Math.multiplyExact(amount, HOURS_PER_DAY); break;
                     case HALF_DAYS: amount = Math.multiplyExact(amount, 2); break;
                 }
-                return Math.addExact(amount, time.periodUntil(end.toLocalTime(), unit));
+                return Math.addExact(amount, time.until(end.toLocalTime(), unit));
             }
-            D endDate = end.toLocalDate();
+            ChronoLocalDate endDate = end.toLocalDate();
             if (end.toLocalTime().isBefore(time)) {
                 endDate = endDate.minus(1, ChronoUnit.DAYS);
             }
-            return date.periodUntil(endDate, unit);
+            return date.until(endDate, unit);
         }
         return unit.between(this, endDateTime);
     }
@@ -404,7 +421,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate<D>>
     }
 
     static ChronoLocalDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ChronoLocalDate<?> date = (ChronoLocalDate<?>) in.readObject();
+        ChronoLocalDate date = (ChronoLocalDate) in.readObject();
         LocalTime time = (LocalTime) in.readObject();
         return date.atTime(time);
     }

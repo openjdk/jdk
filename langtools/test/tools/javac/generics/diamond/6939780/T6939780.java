@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 6939780 7020044 8009459
+ * @bug 6939780 7020044 8009459 8021338
  *
  * @summary  add a warning to detect diamond sites
  * @author mcimadamore
@@ -36,4 +36,15 @@ class T6939780 {
 
     void gw(Foo<?> fw) { }
     void gn(Foo<Number> fn) { }
+
+    static class Foo2<X> {
+        X copy(X t) {
+            return t;
+        }
+    }
+
+    void testReciever() {
+        Number s = new Foo2<Number>().copy(0);
+    }
+
 }

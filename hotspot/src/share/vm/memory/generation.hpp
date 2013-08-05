@@ -455,6 +455,7 @@ class Generation: public CHeapObj<mtGC> {
   // expected to be GC worker thread-local, with the worker index
   // indicated by "thr_num".
   virtual void* get_data_recorder(int thr_num) { return NULL; }
+  virtual void sample_eden_chunk() {}
 
   // Some generations may require some cleanup actions before allowing
   // a verification.

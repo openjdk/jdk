@@ -1046,6 +1046,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Checks if this object belongs to the given context
+     * @param ctx context to check against
+     * @return true if this object belongs to the given context
+     */
+    public final boolean isOfContext(final Context ctx) {
+        return context == ctx;
+    }
+
+    /**
      * Return the current context from the object's map.
      * @return Current context.
      */
@@ -3192,9 +3201,15 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return true;
     }
 
-    /*
+    /**
      * Make a new UserAccessorProperty property. getter and setter functions are stored in
      * this ScriptObject and slot values are used in property object.
+     *
+     * @param key the property name
+     * @param propertyFlags attribute flags of the property
+     * @param getter getter function for the property
+     * @param setter setter function for the property
+     * @return the newly created UserAccessorProperty
      */
     protected final UserAccessorProperty newUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
         final UserAccessorProperty property = getMap().newUserAccessors(key, propertyFlags);
