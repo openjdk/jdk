@@ -827,6 +827,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      */
     @SafeVarargs
+    @SuppressWarnings("varargs") // Creating a stream from an array is safe
     public static<T> Stream<T> of(T... values) {
         return Arrays.stream(values);
     }
