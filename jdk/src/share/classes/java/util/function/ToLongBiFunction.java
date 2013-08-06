@@ -25,13 +25,15 @@
 package java.util.function;
 
 /**
- * Apply a function to the input arguments, yielding an appropriate result.
- * This is the {@code long}-bearing specialization for {@link BiFunction}.
+ * Represents a function that accepts two arguments and produces a long-valued
+ * result.  This is the {@code long}-producing primitive specialization for
+ * {@link BiFunction}.
  *
- * @param <T> the type of the first argument to the {@code applyAsLong}
- * operation.
- * @param <U> the type of the second argument to the {@code applyAsLong}
- * operation.
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #applyAsLong(Object, Object)}.
+ *
+ * @param <T> the type of the first argument to the function
+ * @param <U> the type of the second argument to the function
  *
  * @see BiFunction
  * @since 1.8
@@ -40,11 +42,11 @@ package java.util.function;
 public interface ToLongBiFunction<T, U> {
 
     /**
-     * Compute the result of applying the function to the input arguments.
+     * Applies this function to the given arguments.
      *
-     * @param t an input object
-     * @param u an input object
-     * @return the function result value
+     * @param t the first function argument
+     * @param u the second function argument
+     * @return the function result
      */
     long applyAsLong(T t, U u);
 }

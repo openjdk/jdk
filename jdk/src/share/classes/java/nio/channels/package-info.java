@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * <a name="channels"></a>
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists channels and their descriptions">
- * <tr><th><p align="left">Channels</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th align="left">Channels</th><th align="left">Description</th></tr>
  * <tr><td valign=top><tt><i>{@link java.nio.channels.Channel}</i></tt></td>
  *     <td>A nexus for I/O operations</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.ReadableByteChannel}</i></tt></td>
@@ -110,7 +110,7 @@
  * write them to a given writable byte channel.
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists file channels and their descriptions">
- * <tr><th><p align="left">File channels</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th align="left">File channels</th><th align="left">Description</th></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.FileChannel}</tt></td>
  *     <td>Reads, writes, maps, and manipulates files</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.FileLock}</tt></td>
@@ -138,7 +138,7 @@
  *
  * <a name="multiplex"></a>
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists multiplexed, non-blocking channels and their descriptions">
- * <tr><th><p align="left">Multiplexed, non-blocking I/O</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th align="left">Multiplexed, non-blocking I/O</th><th align="left"><p>Description</th></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.SelectableChannel}</tt></td>
  *     <td>A channel that can be multiplexed</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;{@link java.nio.channels.DatagramChannel}</tt></td>
@@ -225,7 +225,7 @@
  * <a name="async"></a>
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists asynchronous channels and their descriptions">
- * <tr><th><p align="left">Asynchronous I/O</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th align="left">Asynchronous I/O</th><th align="left">Description</th></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousFileChannel}</tt></td>
  *     <td>An asynchronous channel for reading, writing, and manipulating a file</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousSocketChannel}</tt></td>

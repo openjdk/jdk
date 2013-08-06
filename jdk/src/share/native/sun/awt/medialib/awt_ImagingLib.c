@@ -2606,38 +2606,37 @@ storeDstArray(JNIEnv *env,  BufImageS_t *srcP, BufImageS_t *dstP,
 
 #define ERR_BAD_IMAGE_LAYOUT (-2)
 
-#define CHECK_DST_ARRAY(start_offset, elements_per_pixel)             \
-    do {                                                              \
-        int offset = (start_offset);                                  \
-        int lastScanOffset;                                           \
-                                                                      \
-        if (!SAFE_TO_MULT(rasterP->scanlineStride,                    \
-                          (rasterP->height - 1)))                     \
-        {                                                             \
-            return ERR_BAD_IMAGE_LAYOUT;                              \
-        }                                                             \
-        lastScanOffset = rasterP->scanlineStride *                    \
-            (rasterP->height - 1);                                    \
-                                                                      \
-        if (!SAFE_TO_ADD(offset, lastScanOffset)) {                   \
-            return ERR_BAD_IMAGE_LAYOUT;                              \
-        }                                                             \
-        lastScanOffset += offset;                                     \
-                                                                      \
-        if (!SAFE_TO_MULT((elements_per_pixel), rasterP->width)) {    \
-            return ERR_BAD_IMAGE_LAYOUT;                              \
-        }                                                             \
-        offset = (elements_per_pixel) * rasterP->width;               \
-                                                                      \
-        if (!SAFE_TO_ADD(offset, lastScanOffset)) {                   \
-            return ERR_BAD_IMAGE_LAYOUT;                              \
-        }                                                             \
-        lastScanOffset += offset;                                     \
-                                                                      \
-        if (dataArrayLength < lastScanOffset) {                       \
-            return ERR_BAD_IMAGE_LAYOUT;                              \
-        }                                                             \
-    } while(0);                                                       \
+#define CHECK_DST_ARRAY(start_offset, elements_per_scan, elements_per_pixel) \
+    do {                                                                     \
+        int offset = (start_offset);                                         \
+        int lastScanOffset;                                                  \
+                                                                             \
+        if (!SAFE_TO_MULT((elements_per_scan),                               \
+                          (rasterP->height - 1)))                            \
+        {                                                                    \
+            return ERR_BAD_IMAGE_LAYOUT;                                     \
+        }                                                                    \
+        lastScanOffset = (elements_per_scan) * (rasterP->height - 1);        \
+                                                                             \
+        if (!SAFE_TO_ADD(offset, lastScanOffset)) {                          \
+            return ERR_BAD_IMAGE_LAYOUT;                                     \
+        }                                                                    \
+        lastScanOffset += offset;                                            \
+                                                                             \
+        if (!SAFE_TO_MULT((elements_per_pixel), rasterP->width)) {           \
+            return ERR_BAD_IMAGE_LAYOUT;                                     \
+        }                                                                    \
+        offset = (elements_per_pixel) * rasterP->width;                      \
+                                                                             \
+        if (!SAFE_TO_ADD(offset, lastScanOffset)) {                          \
+            return ERR_BAD_IMAGE_LAYOUT;                                     \
+        }                                                                    \
+        lastScanOffset += offset;                                            \
+                                                                             \
+        if (dataArrayLength < lastScanOffset) {                              \
+            return ERR_BAD_IMAGE_LAYOUT;                                     \
+        }                                                                    \
+    } while(0);                                                              \
 
 static int
 storeImageArray(JNIEnv *env, BufImageS_t *srcP, BufImageS_t *dstP,
@@ -2665,37 +2664,31 @@ storeImageArray(JNIEnv *env, BufImageS_t *srcP, BufImageS_t *dstP,
 
     if (hintP->packing == BYTE_INTERLEAVED) {
         /* Write it back to the destination */
-        CHECK_DST_ARRAY(hintP->channelOffset, hintP->numChans);
+        if (rasterP->dataType != BYTE_DATA_TYPE) {
+            /* We are working with a raster which was marked
+               as a byte interleaved due to performance reasons.
+               So, we have to convert the length of the data
+               array to bytes as well.
+            */
+            if (!SAFE_TO_MULT(rasterP->dataSize, dataArrayLength)) {
+                return ERR_BAD_IMAGE_LAYOUT;
+            }
+            dataArrayLength *= rasterP->dataSize;
+        }
+
+        CHECK_DST_ARRAY(hintP->dataOffset, hintP->sStride, hintP->numChans);
         cmDataP = (unsigned char *) mlib_ImageGetData(mlibImP);
         mStride = mlib_ImageGetStride(mlibImP);
         dataP = (unsigned char *)(*env)->GetPrimitiveArrayCritical(env,
                                                       rasterP->jdata, NULL);
         if (dataP == NULL) return 0;
-        cDataP = dataP + hintP->channelOffset;
+        cDataP = dataP + hintP->dataOffset;
         for (y=0; y < rasterP->height;
-             y++, cmDataP += mStride, cDataP += rasterP->scanlineStride)
+             y++, cmDataP += mStride, cDataP += hintP->sStride)
         {
             memcpy(cDataP, cmDataP, rasterP->width*hintP->numChans);
         }
         (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, dataP,
-                                              JNI_ABORT);
-    }
-    else if (hintP->packing == SHORT_INTERLEAVED) {
-        /* Write it back to the destination */
-        unsigned short *sdataP, *sDataP;
-        unsigned short *smDataP = (unsigned short *)mlib_ImageGetData(mlibImP);
-        CHECK_DST_ARRAY(hintP->channelOffset, hintP->numChans);
-        mStride = mlib_ImageGetStride(mlibImP);
-        sdataP = (unsigned short *)(*env)->GetPrimitiveArrayCritical(env,
-                                                      rasterP->jdata, NULL);
-        if (sdataP == NULL) return -1;
-        sDataP = sdataP + hintP->channelOffset;
-        for (y=0; y < rasterP->height;
-            y++, smDataP += mStride, sDataP += rasterP->scanlineStride)
-        {
-            memcpy(sDataP, smDataP, rasterP->width*hintP->numChans);
-        }
-        (*env)->ReleasePrimitiveArrayCritical(env, rasterP->jdata, sdataP,
                                               JNI_ABORT);
     }
     else if (dstP->cmodel.cmType == DIRECT_CM_TYPE) {
@@ -3499,7 +3492,7 @@ static int setPackedBCR(JNIEnv *env, RasterS_t *rasterP, int component,
     }
 
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {
@@ -3575,7 +3568,7 @@ static int setPackedSCR(JNIEnv *env, RasterS_t *rasterP, int component,
     }
 
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {
@@ -3651,7 +3644,7 @@ static int setPackedICR(JNIEnv *env, RasterS_t *rasterP, int component,
     }
 
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {
@@ -3730,7 +3723,7 @@ static int setPackedBCRdefault(JNIEnv *env, RasterS_t *rasterP,
     }
 
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {
@@ -3827,7 +3820,7 @@ static int setPackedSCRdefault(JNIEnv *env, RasterS_t *rasterP,
         return -1;
     }
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {
@@ -3925,7 +3918,7 @@ static int setPackedICRdefault(JNIEnv *env, RasterS_t *rasterP,
     }
 
     dataArrayLength = (*env)->GetArrayLength(env, jOutDataP);
-    CHECK_DST_ARRAY(rasterP->chanOffsets[0], 1);
+    CHECK_DST_ARRAY(rasterP->chanOffsets[0], rasterP->scanlineStride, 1);
 
     outDataP = (*env)->GetPrimitiveArrayCritical(env, jOutDataP, 0);
     if (outDataP == NULL) {

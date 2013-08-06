@@ -112,7 +112,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
     /** Initial EntityResolver */
     private final EntityResolver fInitEntityResolver;
 
-    private XMLSecurityPropertyManager fSecurityPropertyMgr;
+    private final XMLSecurityPropertyManager fSecurityPropertyMgr;
 
     /**
      * Create a SAX parser with the associated features
@@ -130,8 +130,10 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
     SAXParserImpl(SAXParserFactoryImpl spf, Hashtable features, boolean secureProcessing)
         throws SAXException
     {
+        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+
         // Instantiate a SAXParser directly and not through SAX so that we use the right ClassLoader
-        xmlReader = new JAXPSAXParser(this);
+        xmlReader = new JAXPSAXParser(this, fSecurityPropertyMgr);
 
         // JAXP "namespaceAware" == SAX Namespaces feature
         // Note: there is a compatibility problem here with default values:
@@ -150,7 +152,6 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
             xmlReader.setFeature0(XINCLUDE_FEATURE, true);
         }
 
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         xmlReader.setProperty0(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         // If the secure processing feature is on set a security manager.
@@ -397,14 +398,30 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
         private final HashMap fInitFeatures = new HashMap();
         private final HashMap fInitProperties = new HashMap();
         private final SAXParserImpl fSAXParser;
+        private XMLSecurityPropertyManager fSecurityPropertyMgr;
+
 
         public JAXPSAXParser() {
-            this(null);
+            this(null, null);
         }
 
-        JAXPSAXParser(SAXParserImpl saxParser) {
+        JAXPSAXParser(SAXParserImpl saxParser, XMLSecurityPropertyManager spm) {
             super();
             fSAXParser = saxParser;
+            fSecurityPropertyMgr = spm;
+
+            /**
+             * This class may be used directly. So initialize the security manager if
+             * it is null.
+             */
+            if (fSecurityPropertyMgr == null) {
+                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                try {
+                    super.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+                } catch (Exception ex) {
+                    //shall not happen
+                }
+            }
         }
 
         /**
@@ -542,9 +559,9 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 setSchemaValidatorProperty(name, value);
             }
             /** Check to see if the property is managed by the property manager **/
-            int index = fSAXParser.fSecurityPropertyMgr.getIndex(name);
+            int index = (fSecurityPropertyMgr != null) ? fSecurityPropertyMgr.getIndex(name) : -1;
             if (index > -1) {
-                fSAXParser.fSecurityPropertyMgr.setValue(index,
+                fSecurityPropertyMgr.setValue(index,
                         XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
             } else {
                 if (!fInitProperties.containsKey(name)) {
@@ -564,9 +581,9 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 // JAXP 1.2 support
                 return fSAXParser.schemaLanguage;
             }
-            int index = fSAXParser.fSecurityPropertyMgr.getIndex(name);
+            int index = (fSecurityPropertyMgr != null) ? fSecurityPropertyMgr.getIndex(name) : -1;
             if (index > -1) {
-                return fSAXParser.fSecurityPropertyMgr.getValueByIndex(index);
+                return fSecurityPropertyMgr.getValueByIndex(index);
             }
 
             return super.getProperty(name);

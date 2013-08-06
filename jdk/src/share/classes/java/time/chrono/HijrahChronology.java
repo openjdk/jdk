@@ -71,8 +71,10 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -115,7 +117,7 @@ import sun.util.logging.PlatformLogger;
  * <tr class="altColor">
  * <td>Hijrah-umalqura</td>
  * <td>islamic-umalqura</td>
- * <td>ca-islamic-cv-umalqura</td>
+ * <td>ca-islamic-umalqura</td>
  * <td>Islamic - Umm Al-Qura calendar of Saudi Arabia</td>
  * </tr>
  * </tbody>
@@ -126,10 +128,10 @@ import sun.util.logging.PlatformLogger;
  * <p>
  * Selecting the chronology from the locale uses {@link Chronology#ofLocale}
  * to find the Chronology based on Locale supported BCP 47 extension mechanism
- * to request a specific calendar ("ca") and variant ("cv"). For example,
+ * to request a specific calendar ("ca"). For example,
  * </p>
  * <pre>
- *      Locale locale = Locale.forLanguageTag("en-US-u-ca-islamic-cv-umalqura");
+ *      Locale locale = Locale.forLanguageTag("en-US-u-ca-islamic-umalqura");
  *      Chronology chrono = Chronology.ofLocale(locale);
  * </pre>
  *
@@ -472,11 +474,16 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * @param prolepticYear  the proleptic-year
      * @param dayOfYear  the day-of-year
      * @return the Hijrah local date, not null
-     * @throws DateTimeException if unable to create the date
+     * @throws DateTimeException if the value of the year is out of range,
+     *  or if the day-of-year is invalid for the year
      */
     @Override
     public HijrahDate dateYearDay(int prolepticYear, int dayOfYear) {
-        return HijrahDate.of(this, prolepticYear, 1, 1).plusDays(dayOfYear - 1);  // TODO better
+        HijrahDate date = HijrahDate.of(this, prolepticYear, 1, 1);
+        if (dayOfYear > date.lengthOfYear()) {
+            throw new DateTimeException("Invalid dayOfYear: " + dayOfYear);
+        }
+        return date.plusDays(dayOfYear - 1);
     }
 
     /**
@@ -515,16 +522,19 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoLocalDateTime<HijrahDate> localDateTime(TemporalAccessor temporal) {
         return (ChronoLocalDateTime<HijrahDate>) super.localDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<HijrahDate> zonedDateTime(TemporalAccessor temporal) {
         return (ChronoZonedDateTime<HijrahDate>) super.zonedDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<HijrahDate> zonedDateTime(Instant instant, ZoneId zone) {
         return (ChronoZonedDateTime<HijrahDate>) super.zonedDateTime(instant, zone);
     }
@@ -550,7 +560,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     @Override
-    public Era eraOf(int eraValue) {
+    public HijrahEra eraOf(int eraValue) {
         switch (eraValue) {
             case 1:
                 return HijrahEra.AH;
@@ -580,6 +590,8 @@ public final class HijrahChronology extends Chronology implements Serializable {
                 case YEAR:
                 case YEAR_OF_ERA:
                     return ValueRange.of(getMinimumYear(), getMaximumYear());
+                case ERA:
+                    return ValueRange.of(1, 1);
                 default:
                     return field.range();
             }
@@ -587,6 +599,13 @@ public final class HijrahChronology extends Chronology implements Serializable {
         return field.range();
     }
 
+    //-----------------------------------------------------------------------
+    @Override  // override for return type
+    public HijrahDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        return (HijrahDate) super.resolveDate(fieldValues, resolverStyle);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Check the validity of a year.
      *
