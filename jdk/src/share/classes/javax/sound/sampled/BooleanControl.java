@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,7 @@ public abstract class BooleanControl extends Control {
 
     /**
      * Obtains the label for the specified state.
+     * @param state the state whose label will be returned
      * @return the label for the specified state, such as "true" or "on"
      * for <code>true</code>, or "false" or "off" for <code>false</code>.
      */
