@@ -499,7 +499,8 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
         public void setItem(Object item) {
             super.setItem(item);
-            if (editor.hasFocus()) {
+            Object focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+            if ((focus == editor) || (focus == editor.getParent())) {
                 editor.selectAll();
             }
         }

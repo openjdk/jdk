@@ -403,6 +403,12 @@ public enum ChronoField implements TemporalField {
      * Non-ISO calendar systems should implement this field using the most recognized
      * day-of-year values for users of the calendar system.
      * Normally, this is a count of days from 1 to the length of the year.
+     * <p>
+     * Note that a non-ISO calendar system may have year numbering system that changes
+     * at a different point to the natural reset in the month numbering. An example
+     * of this is the Japanese calendar system where a change of era, which resets
+     * the year number to 1, can happen on any date. The era and year reset also cause
+     * the day-of-year to be reset to 1, but not the month-of-year or day-of-month.
      */
     DAY_OF_YEAR("DayOfYear", DAYS, YEARS, ValueRange.of(1, 365, 366)),
     /**
@@ -559,12 +565,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This represents the concept of the sequential count of seconds where
      * 1970-01-01T00:00Z (ISO) is zero.
-     * This field may be used with {@link #NANO_OF_DAY} to represent the fraction of the day.
+     * This field may be used with {@link #NANO_OF_SECOND} to represent the fraction of the second.
      * <p>
      * An {@link Instant} represents an instantaneous point on the time-line.
-     * On their own they have no elements which allow a local date-time to be obtained.
-     * Only when paired with an offset or time-zone can the local date or time be found.
-     * This field allows the seconds part of the instant to be queried.
+     * On their own, an instant has insufficient information to allow a local date-time to be obtained.
+     * Only when paired with an offset or time-zone can the local date or time be calculated.
      * <p>
      * This field is strictly defined to have the same meaning in all calendar systems.
      * This is necessary to ensure interoperation between calendars.
@@ -608,24 +613,18 @@ public enum ChronoField implements TemporalField {
         this.displayNameKey = displayNameKey;
     }
 
-    //-----------------------------------------------------------------------
-    @Override
-    public String getName() {
-        return name;
-    }
-
     @Override
     public String getDisplayName(Locale locale) {
         Objects.requireNonNull(locale, "locale");
         if (displayNameKey == null) {
-            return getName();
+            return name;
         }
 
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
                                     .getLocaleResources(locale);
         ResourceBundle rb = lr.getJavaTimeFormatData();
         String key = "field." + displayNameKey;
-        return rb.containsKey(key) ? rb.getString(key) : getName();
+        return rb.containsKey(key) ? rb.getString(key) : name;
     }
 
     @Override
@@ -748,7 +747,7 @@ public enum ChronoField implements TemporalField {
     //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return getName();
+        return name;
     }
 
 }

@@ -75,6 +75,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.OffsetDateTime;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -83,6 +84,7 @@ import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 import java.time.zone.ZoneRules;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -918,6 +920,65 @@ public class TCKZoneRules {
         assertEquals(test.nextTransition(last.getInstant()), null);
     }
 
+    //-----------------------------------------------------------------------
+    // Apia
+    //-----------------------------------------------------------------------
+    private ZoneRules pacificApia() {
+        return ZoneId.of("Pacific/Apia").getRules();
+    }
+
+    public void test_Apia_nextTransition_historic() {
+        ZoneRules test = pacificApia();
+        List<ZoneOffsetTransition> trans = test.getTransitions();
+
+        ZoneOffsetTransition first = trans.get(0);
+        assertEquals(test.nextTransition(first.getInstant().minusNanos(1)), first);
+
+        for (int i = 0; i < trans.size() - 1; i++) {
+            ZoneOffsetTransition cur = trans.get(i);
+            ZoneOffsetTransition next = trans.get(i + 1);
+
+            assertEquals(test.nextTransition(cur.getInstant()), next);
+            assertEquals(test.nextTransition(next.getInstant().minusNanos(1)), next);
+        }
+    }
+
+    public void test_Apia_jumpOverInternationalDateLine_M10_to_P14() {
+        // transition occurred at 2011-12-30T00:00-10:00
+        ZoneRules test = pacificApia();
+        Instant instantBefore = LocalDate.of(2011, 12, 27).atStartOfDay(ZoneOffset.UTC).toInstant();
+        ZoneOffsetTransition trans = test.nextTransition(instantBefore);
+        assertEquals(trans.getDateTimeBefore(), LocalDateTime.of(2011, 12, 30, 0, 0));
+        assertEquals(trans.getDateTimeAfter(), LocalDateTime.of(2011, 12, 31, 0, 0));
+        assertEquals(trans.isGap(), true);
+        assertEquals(trans.isOverlap(), false);
+        assertEquals(trans.isValidOffset(ZoneOffset.ofHours(-10)), false);
+        assertEquals(trans.isValidOffset(ZoneOffset.ofHours(+14)), false);
+        assertEquals(trans.getDuration(), Duration.ofHours(24));
+        assertEquals(trans.getInstant(), LocalDateTime.of(2011, 12, 31, 0, 0).toInstant(ZoneOffset.ofHours(+14)));
+
+        ZonedDateTime zdt = ZonedDateTime.of(2011, 12, 29, 23, 0, 0, 0, ZoneId.of("Pacific/Apia"));
+        assertEquals(zdt.plusHours(2).toLocalDateTime(), LocalDateTime.of(2011, 12, 31, 1, 0));
+    }
+
+    public void test_Apia_jumpForwardOverInternationalDateLine_P12_to_M12() {
+        // transition occurred at 1879-07-04T00:00+12:33:04
+        ZoneRules test = pacificApia();
+        Instant instantBefore = LocalDate.of(1879, 7, 2).atStartOfDay(ZoneOffset.UTC).toInstant();
+        ZoneOffsetTransition trans = test.nextTransition(instantBefore);
+        assertEquals(trans.getDateTimeBefore(), LocalDateTime.of(1879, 7, 5, 0, 0));
+        assertEquals(trans.getDateTimeAfter(), LocalDateTime.of(1879, 7, 4, 0, 0));
+        assertEquals(trans.isGap(), false);
+        assertEquals(trans.isOverlap(), true);
+        assertEquals(trans.isValidOffset(ZoneOffset.ofHoursMinutesSeconds(+12, 33, 4)), true);
+        assertEquals(trans.isValidOffset(ZoneOffset.ofHoursMinutesSeconds(-11, -26, -56)), true);
+        assertEquals(trans.getDuration(), Duration.ofHours(-24));
+        assertEquals(trans.getInstant(), LocalDateTime.of(1879, 7, 4, 0, 0).toInstant(ZoneOffset.ofHoursMinutesSeconds(-11, -26, -56)));
+
+        ZonedDateTime zdt = ZonedDateTime.of(1879, 7, 4, 23, 0, 0, 0, ZoneId.of("Pacific/Apia"));
+        assertEquals(zdt.plusHours(2).toLocalDateTime(), LocalDateTime.of(1879, 7, 4, 1, 0, 0));
+    }
+
     //-------------------------------------------------------------------------
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void test_getTransitions_immutable() {
@@ -929,6 +990,81 @@ public class TCKZoneRules {
     public void test_getTransitionRules_immutable() {
         ZoneRules test = europeParis();
         test.getTransitionRules().clear();
+    }
+
+    //-----------------------------------------------------------------------
+    // of()
+    //-----------------------------------------------------------------------
+    public void test_of(){
+        //used for standard offset
+        ZoneOffset stdOffset1 = ZoneOffset.UTC;
+        ZoneOffset stdOffset2 = ZoneOffset.ofHours(1);
+        LocalDateTime time_of_stdOffsetTransition1 = LocalDateTime.of(2013, 1, 5, 1, 0);
+        ZoneOffsetTransition  stdOffsetTransition1 = ZoneOffsetTransition.of(time_of_stdOffsetTransition1, stdOffset1, stdOffset2);
+        List<ZoneOffsetTransition> stdOffsetTransition_list = new ArrayList<ZoneOffsetTransition>();
+        stdOffsetTransition_list.add(stdOffsetTransition1);
+
+        //used for wall offset
+        ZoneOffset wallOffset1 = ZoneOffset.ofHours(2);
+        ZoneOffset wallOffset2 = ZoneOffset.ofHours(4);
+        ZoneOffset wallOffset3 = ZoneOffset.ofHours(7);
+
+        LocalDateTime time_of_wallOffsetTransition1 = LocalDateTime.of(2013, 2, 5, 1, 0);
+        LocalDateTime time_of_wallOffsetTransition2 = LocalDateTime.of(2013, 3, 5, 1, 0);
+        LocalDateTime time_of_wallOffsetTransition3 = LocalDateTime.of(2013, 10, 5, 1, 0);
+
+        ZoneOffsetTransition  wallOffsetTransition1 = ZoneOffsetTransition.of(time_of_wallOffsetTransition1, wallOffset1, wallOffset2);
+        ZoneOffsetTransition  wallOffsetTransition2 = ZoneOffsetTransition.of(time_of_wallOffsetTransition2, wallOffset2, wallOffset3);
+        ZoneOffsetTransition  wallOffsetTransition3 = ZoneOffsetTransition.of(time_of_wallOffsetTransition3, wallOffset3, wallOffset1);
+
+        List<ZoneOffsetTransition> wallOffsetTransition_list = new ArrayList<ZoneOffsetTransition>();
+        wallOffsetTransition_list.add(wallOffsetTransition1);
+        wallOffsetTransition_list.add(wallOffsetTransition2);
+        wallOffsetTransition_list.add(wallOffsetTransition3);
+
+        //used for ZoneOffsetTransitionRule
+        ZoneOffset ruleOffset = ZoneOffset.ofHours(3);
+        ZoneOffsetTransitionRule.TimeDefinition timeDefinition = ZoneOffsetTransitionRule.TimeDefinition.valueOf("WALL");
+        ZoneOffsetTransitionRule rule1 = ZoneOffsetTransitionRule.of(Month.FEBRUARY,
+                                                                     2,
+                                                                     DayOfWeek.MONDAY,
+                                                                     LocalTime.of(1, 0),
+                                                                     false,
+                                                                     timeDefinition,
+                                                                     ZoneOffset.UTC,
+                                                                     ZoneOffset.UTC,
+                                                                     ruleOffset
+                                                                     );
+         List<ZoneOffsetTransitionRule> rule_list = new ArrayList<ZoneOffsetTransitionRule>();
+         rule_list.add(rule1);
+
+         //Begin verification
+         ZoneRules zoneRule = ZoneRules.of(stdOffset1,
+                                           wallOffset1,
+                                           stdOffsetTransition_list,
+                                           wallOffsetTransition_list,
+                                           rule_list
+                                           );
+
+         OffsetDateTime before_time_of_stdOffsetTransition1 = OffsetDateTime.of(time_of_stdOffsetTransition1, stdOffset1).minusSeconds(1);
+         OffsetDateTime after_time_of_stdOffsetTransition1 = OffsetDateTime.of(time_of_stdOffsetTransition1, stdOffset1).plusSeconds(1);;
+         assertEquals(zoneRule.getStandardOffset(before_time_of_stdOffsetTransition1.toInstant()), stdOffset1);
+         assertEquals(zoneRule.getStandardOffset(after_time_of_stdOffsetTransition1.toInstant()), stdOffset2);
+
+         OffsetDateTime  before_time_of_wallOffsetTransition1 = OffsetDateTime.of(time_of_wallOffsetTransition1, wallOffset1).minusSeconds(1);
+         OffsetDateTime  after_time_of_wallOffsetTransition1 = OffsetDateTime.of(time_of_wallOffsetTransition1, wallOffset1).plusSeconds(1);
+         assertEquals(zoneRule.nextTransition(before_time_of_wallOffsetTransition1.toInstant()), wallOffsetTransition1);
+         assertEquals(zoneRule.nextTransition(after_time_of_wallOffsetTransition1.toInstant()), wallOffsetTransition2);
+
+         OffsetDateTime  before_time_of_wallOffsetTransition2 = OffsetDateTime.of(time_of_wallOffsetTransition2, wallOffset2).minusSeconds(1);
+         OffsetDateTime  after_time_of_wallOffsetTransition2 = OffsetDateTime.of(time_of_wallOffsetTransition2, wallOffset2).plusSeconds(1);
+         assertEquals(zoneRule.nextTransition(before_time_of_wallOffsetTransition2.toInstant()), wallOffsetTransition2);
+         assertEquals(zoneRule.nextTransition(after_time_of_wallOffsetTransition2.toInstant()), wallOffsetTransition3);
+
+         OffsetDateTime  before_time_of_wallOffsetTransition3 = OffsetDateTime.of(time_of_wallOffsetTransition3, wallOffset3).minusSeconds(1);
+         OffsetDateTime  after_time_of_wallOffsetTransition3 = OffsetDateTime.of(time_of_wallOffsetTransition3, wallOffset3).plusSeconds(1);
+         assertEquals(zoneRule.nextTransition(before_time_of_wallOffsetTransition3.toInstant()), wallOffsetTransition3);
+         assertEquals(zoneRule.nextTransition(after_time_of_wallOffsetTransition3.toInstant()), rule1.createTransition(2014));
     }
 
     //-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ public final class HttpCookie implements Cloneable {
      * protocol.
      *
      * @return  {@code false} if the cookie can be sent over any standard
-     *          protocol; otherwise, <code>true</code>
+     *          protocol; otherwise, {@code true}
      *
      * @see  #setSecure
      */

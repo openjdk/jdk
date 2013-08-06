@@ -132,7 +132,9 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
                 return new SimpleDynamicMethod(StaticClassIntrospector.editConstructorMethodHandle(
                         boundArrayCtor.asType(boundArrayCtor.type().changeReturnType(clazz))), clazz, "<init>");
             }
-
+            if(CheckRestrictedPackage.isRestrictedClass(clazz)) {
+                return null;
+            }
             return createDynamicMethod(Arrays.asList(clazz.getConstructors()), clazz, "<init>");
         }
 
