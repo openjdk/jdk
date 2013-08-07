@@ -547,7 +547,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         classInfoTree.addContent(hr);
         Tag[] deprs = classDoc.tags("deprecated");
         if (Util.isDeprecated(classDoc)) {
-            Content strong = HtmlTree.STRONG(deprecatedPhrase);
+            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
             Content div = HtmlTree.DIV(HtmlStyle.block, strong);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();

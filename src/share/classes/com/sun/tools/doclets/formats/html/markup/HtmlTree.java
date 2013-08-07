@@ -416,17 +416,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a I tag with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the I tag
-     */
-    public static HtmlTree I(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.I, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
      * Generates a LI tag with some content.
      *
      * @param body content for the tag
@@ -555,17 +544,6 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree SMALL(Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.SMALL, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
-     * Generates a STRONG tag with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the STRONG tag
-     */
-    public static HtmlTree STRONG(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.STRONG, nullCheck(body));
         return htmltree;
     }
 
