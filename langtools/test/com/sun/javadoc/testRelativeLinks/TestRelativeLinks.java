@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @bug      4460354
+ * @bug      4460354 8014636
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
- *           NOTE: these tests have \\n instead of NL because they are user
- *           generated new lines, not Java generated.
  * @author   jamieh
  * @library  ../lib/
  * @build    JavadocTester
@@ -38,7 +36,7 @@
 public class TestRelativeLinks extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4460354";
+    private static final String BUG_ID = "4460354-8014636";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
@@ -58,7 +56,7 @@ public class TestRelativeLinks extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "package-summary.html",
             "<a href=\"relative-package-link.html\">relative package link</a>"},
         {BUG_ID + FS + "pkg" + FS + "C.html",
-            " <a\n" +
+            " <a" + NL +
             " href=\"relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
         //These relative paths should be redirected because they are in different
@@ -74,7 +72,7 @@ public class TestRelativeLinks extends JavadocTester {
         {BUG_ID + FS + "index-all.html",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>"},
         {BUG_ID + FS + "index-all.html",
-            " <a\n" +
+            " <a" + NL +
             " href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
 
@@ -92,7 +90,7 @@ public class TestRelativeLinks extends JavadocTester {
         {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
             "<a href=\"../../pkg/relative-package-link.html\">relative package link</a>"},
         {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "C.html",
-            " <a\n" +
+            " <a" + NL +
             " href=\"../../pkg/relative-multi-line-link.html\">relative-multi-line-link</a>."},
 
         //PACKAGE OVERVIEW
