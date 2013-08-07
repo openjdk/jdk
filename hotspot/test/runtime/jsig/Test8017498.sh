@@ -27,6 +27,7 @@
 ## @test Test8017498.sh
 ## @bug 8017498
 ## @bug 8020791
+## @bug 8021296
 ## @summary sigaction(sig) results in process hang/timed-out if sig is much greater than SIGRTMAX
 ## @run shell/timeout=30 Test8017498.sh
 ##
@@ -45,6 +46,11 @@ OS=`uname -s`
 case "$OS" in
   Linux)
     echo "Testing on Linux"
+    gcc_cmd=`which gcc`
+    if [ "x$gcc_cmd" == "x" ]; then
+        echo "WARNING: gcc not found. Cannot execute test." 2>&1
+        exit 0;
+    fi
     if [ "$VM_BITS" = "64" ]
     then
         MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}amd64${FS}libjsig.so
@@ -64,15 +70,11 @@ THIS_DIR=.
 cp ${TESTSRC}${FS}*.java ${THIS_DIR}
 ${TESTJAVA}${FS}bin${FS}javac *.java
 
-gcc -DLINUX -fPIC -shared \
+$gcc_cmd -DLINUX -fPIC -shared \
     -o ${TESTSRC}${FS}libTestJNI.so \
     -I${TESTJAVA}${FS}include \
     -I${TESTJAVA}${FS}include${FS}linux \
     ${TESTSRC}${FS}TestJNI.c
-if [ $? != 0 ]
-then
-    echo "WARNING: the gcc command failed." 2>&1
-fi
 
 # run the java test in the background
 cmd="LD_PRELOAD=$MY_LD_PRELOAD \
