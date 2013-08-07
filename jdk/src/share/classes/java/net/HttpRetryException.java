@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class HttpRetryException extends IOException {
     private String location;
 
     /**
-     * Constructs a new <code>HttpRetryException</code> from the
+     * Constructs a new {@code HttpRetryException} from the
      * specified response code and exception detail message
      *
      * @param   detail   the detail message.
@@ -55,7 +55,7 @@ class HttpRetryException extends IOException {
     }
 
     /**
-     * Constructs a new <code>HttpRetryException</code> with detail message
+     * Constructs a new {@code HttpRetryException} with detail message
      * responseCode and the contents of the Location response header field.
      *
      * @param   detail   the detail message.

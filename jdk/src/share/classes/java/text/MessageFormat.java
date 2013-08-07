@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import java.util.Locale;
  * behavior is defined by the pattern that you provide as well as the
  * subformats used for inserted arguments.
  *
- * <h4><a name="patterns">Patterns and Their Interpretation</a></h4>
+ * <h3><a name="patterns">Patterns and Their Interpretation</a></h3>
  *
  * <code>MessageFormat</code> uses patterns of the following form:
  * <blockquote><pre>
@@ -287,10 +287,10 @@ import java.util.Locale;
  * You can create the <code>ChoiceFormat</code> programmatically, as in the
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
- * <blockquote><pre>
+ * <blockquote><pre>{@code
  * form.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1&lt;are {0,number,integer} files}.");
- * </pre></blockquote>
+ *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
+ * }</pre></blockquote>
  *
  * <p>
  * <strong>Note:</strong> As we see above, the string produced
@@ -778,7 +778,7 @@ public class MessageFormat extends Format {
      *    <tr>
      *       <td><code>instanceof ChoiceFormat</code>
      *       <td><i>any</i>
-     *       <td><code>subformat.format(argument).indexOf('{') >= 0 ?<br>
+     *       <td><code>subformat.format(argument).indexOf('{') &gt;= 0 ?<br>
      *           (new MessageFormat(subformat.format(argument), getLocale())).format(argument) :
      *           subformat.format(argument)</code>
      *    <tr>
@@ -811,6 +811,8 @@ public class MessageFormat extends Format {
      * @param result where text is appended.
      * @param pos On input: an alignment field, if desired.
      *            On output: the offsets of the alignment field.
+     * @return the string buffer passed in as {@code result}, with formatted
+     * text appended
      * @exception IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
@@ -828,6 +830,9 @@ public class MessageFormat extends Format {
      *     <code>(new {@link #MessageFormat(String) MessageFormat}(pattern)).{@link #format(java.lang.Object[], java.lang.StringBuffer, java.text.FieldPosition) format}(arguments, new StringBuffer(), null).toString()</code>
      * </blockquote>
      *
+     * @param pattern   the pattern string
+     * @param arguments object(s) to format
+     * @return the formatted string
      * @exception IllegalArgumentException if the pattern is invalid,
      *            or if an argument in the <code>arguments</code> array
      *            is not of the type expected by the format element(s)
@@ -940,6 +945,10 @@ public class MessageFormat extends Format {
      * is comparing against the pattern "AAD {0} BBB", the error index is
      * 0. When an error occurs, the call to this method will return null.
      * If the source is null, return an empty array.
+     *
+     * @param source the string to parse
+     * @param pos    the parse position
+     * @return an array of parsed objects
      */
     public Object[] parse(String source, ParsePosition pos) {
         if (source == null) {
