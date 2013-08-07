@@ -40,20 +40,70 @@
  */
 #define PIPE_SIZE (4096+24)
 
+/* We have THREE locales in action:
+ * 1. Thread default locale - dictates UNICODE-to-8bit conversion
+ * 2. System locale that defines the message localization
+ * 3. The file name locale
+ * Each locale could be an extended locale, that means that text cannot be
+ * mapped to 8bit sequence without multibyte encoding.
+ * VM is ready for that, if text is UTF-8.
+ * Here we make the work right from the beginning.
+ */
+size_t os_error_message(int errnum, WCHAR* utf16_OSErrorMsg, size_t maxMsgLength) {
+    size_t n = (size_t)FormatMessageW(
+            FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            (DWORD)errnum,
+            0,
+            utf16_OSErrorMsg,
+            (DWORD)maxMsgLength,
+            NULL);
+    if (n > 3) {
+        // Drop final '.', CR, LF
+        if (utf16_OSErrorMsg[n - 1] == L'\n') --n;
+        if (utf16_OSErrorMsg[n - 1] == L'\r') --n;
+        if (utf16_OSErrorMsg[n - 1] == L'.') --n;
+        utf16_OSErrorMsg[n] = L'\0';
+    }
+    return n;
+}
+
+#define MESSAGE_LENGTH (256 + 100)
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(*x))
+
 static void
-win32Error(JNIEnv *env, const char *functionName)
+win32Error(JNIEnv *env, const WCHAR *functionName)
 {
-    static const char * const format = "%s error=%d, %s";
-    static const char * const fallbackFormat = "%s failed, error=%d";
-    char buf[256];
-    char errmsg[sizeof(buf) + 100];
-    const int errnum = GetLastError();
-    const int n = JVM_GetLastErrorString(buf, sizeof(buf));
-    if (n > 0)
-        sprintf(errmsg, format, functionName, errnum, buf);
-    else
-        sprintf(errmsg, fallbackFormat, functionName, errnum);
-    JNU_ThrowIOException(env, errmsg);
+    WCHAR utf16_OSErrorMsg[MESSAGE_LENGTH - 100];
+    WCHAR utf16_javaMessage[MESSAGE_LENGTH];
+    /*Good suggestion about 2-bytes-per-symbol in localized error reports*/
+    char  utf8_javaMessage[MESSAGE_LENGTH*2];
+    const int errnum = (int)GetLastError();
+    int n = os_error_message(errnum, utf16_OSErrorMsg, ARRAY_SIZE(utf16_OSErrorMsg));
+    n = (n > 0)
+        ? swprintf(utf16_javaMessage, MESSAGE_LENGTH, L"%s error=%d, %s", functionName, errnum, utf16_OSErrorMsg)
+        : swprintf(utf16_javaMessage, MESSAGE_LENGTH, L"%s failed, error=%d", functionName, errnum);
+
+    if (n > 0) /*terminate '\0' is not a part of conversion procedure*/
+        n = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            utf16_javaMessage,
+            n, /*by creation n <= MESSAGE_LENGTH*/
+            utf8_javaMessage,
+            MESSAGE_LENGTH*2,
+            NULL,
+            NULL);
+
+    /*no way to die*/
+    {
+        const char *errorMessage = "Secondary error while OS message extraction";
+        if (n > 0) {
+            utf8_javaMessage[min(MESSAGE_LENGTH*2 - 1, n)] = '\0';
+            errorMessage = utf8_javaMessage;
+        }
+        JNU_ThrowIOException(env, errorMessage);
+    }
 }
 
 static void
@@ -116,7 +166,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         handles[0] = (jlong) -1;
     } else {
         if (! CreatePipe(&inRead,  &inWrite,  &sa, PIPE_SIZE)) {
-            win32Error(env, "CreatePipe");
+            win32Error(env, L"CreatePipe");
             goto Catch;
         }
         si.hStdInput = inRead;
@@ -132,7 +182,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         handles[1] = (jlong) -1;
     } else {
         if (! CreatePipe(&outRead, &outWrite, &sa, PIPE_SIZE)) {
-            win32Error(env, "CreatePipe");
+            win32Error(env, L"CreatePipe");
             goto Catch;
         }
         si.hStdOutput = outWrite;
@@ -151,7 +201,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         handles[2] = (jlong) -1;
     } else {
         if (! CreatePipe(&errRead, &errWrite, &sa, PIPE_SIZE)) {
-            win32Error(env, "CreatePipe");
+            win32Error(env, L"CreatePipe");
             goto Catch;
         }
         si.hStdError = errWrite;
@@ -174,7 +224,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
                          &si,              /* (in)  startup information */
                          &pi);             /* (out) process information */
     if (!ret) {
-        win32Error(env, "CreateProcess");
+        win32Error(env, L"CreateProcess");
         goto Catch;
     }
 
@@ -210,7 +260,7 @@ Java_java_lang_ProcessImpl_getExitCodeProcess(JNIEnv *env, jclass ignored, jlong
 {
     DWORD exit_code;
     if (GetExitCodeProcess((HANDLE) handle, &exit_code) == 0)
-        win32Error(env, "GetExitCodeProcess");
+        win32Error(env, L"GetExitCodeProcess");
     return exit_code;
 }
 
@@ -231,7 +281,7 @@ Java_java_lang_ProcessImpl_waitForInterruptibly(JNIEnv *env, jclass ignored, jlo
                                FALSE,    /* Wait for ANY event */
                                INFINITE)  /* Wait forever */
         == WAIT_FAILED)
-        win32Error(env, "WaitForMultipleObjects");
+        win32Error(env, L"WaitForMultipleObjects");
 }
 
 JNIEXPORT void JNICALL
@@ -250,7 +300,7 @@ Java_java_lang_ProcessImpl_waitForTimeoutInterruptibly(JNIEnv *env,
                                     dwTimeout);  /* Wait for dwTimeout */
 
     if (result == WAIT_FAILED)
-        win32Error(env, "WaitForMultipleObjects");
+        win32Error(env, L"WaitForMultipleObjects");
 }
 
 JNIEXPORT void JNICALL
@@ -263,7 +313,7 @@ JNIEXPORT jboolean JNICALL
 Java_java_lang_ProcessImpl_isProcessAlive(JNIEnv *env, jclass ignored, jlong handle)
 {
     DWORD dwExitStatus;
-    GetExitCodeProcess(handle, &dwExitStatus);
+    GetExitCodeProcess((HANDLE) handle, &dwExitStatus);
     return dwExitStatus == STILL_ACTIVE;
 }
 
