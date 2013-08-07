@@ -30,7 +30,7 @@
 
 (function() {
     var nargs = arguments.length;
-    var args = java.lang.reflect.Array.newInstance(java.lang.Object.class, nargs);
+    var args = new (Java.type("java.lang.Object[]"))(nargs);
     print(args.length);
     for (var i = 0; i < nargs; i++) {
         var arg = arguments[i];
@@ -41,7 +41,7 @@
 
 var z; // undefined
 
-var intArray = java.lang.reflect.Array.newInstance(java.lang.Integer.TYPE, 1);
+var intArray = new (Java.type("int[]"))(1);
 intArray[0] = 10;
 print(intArray[0]);
 print(intArray.length);
@@ -50,19 +50,19 @@ print(intArray[0]);
 intArray[0] = 10.1;
 print(intArray[0]);
 
-var boolArray = java.lang.reflect.Array.newInstance(java.lang.Boolean.TYPE, 2);
+var boolArray = new (Java.type("boolean[]"))(2);
 boolArray[0] = true;
 print(boolArray[0]);
 print(boolArray[1]);
 print(boolArray.length);
 
-var charArray = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 1);
+var charArray = new (Java.type("char[]"))(1);
 charArray[0] = 'j';
 print(charArray[0]);
 print(charArray.length);
 
 
-var doubleArray = java.lang.reflect.Array.newInstance(java.lang.Double.TYPE, 1)
+var doubleArray = new (Java.type("double[]"))(1)
 doubleArray[0]=z
 print(doubleArray[0])
 doubleArray[0]=1

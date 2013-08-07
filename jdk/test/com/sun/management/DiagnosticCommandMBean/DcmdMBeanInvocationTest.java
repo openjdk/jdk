@@ -25,25 +25,15 @@
  * @test
  * @bug     7150256
  * @summary Basic Test for the DiagnosticCommandMBean
- * @author  Frederic Parain
+ * @author  Frederic Parain, Shanliang JIANG
  *
- * @run main/othervm -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=8129 DcmdMBeanInvocationTest
+ * @run main/othervm DcmdMBeanInvocationTest
  */
 
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.management.Descriptor;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.*;
 import javax.management.remote.*;
 
@@ -52,30 +42,35 @@ public class DcmdMBeanInvocationTest {
     private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
 
-    public static void main(String[] args) {
-        MBeanServerConnection mbs = null;
+    public static void main(String[] args) throws Exception {
+        System.out.println("--->JRCMD MBean Test: invocation on \"help -all\" ...");
+
+        ObjectName name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
+        String[] helpArgs = {"-all"};
+        Object[] dcmdArgs = {helpArgs};
+        String[] signature = {String[].class.getName()};
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXConnectorServer cs = null;
+        JMXConnector cc = null;
         try {
-            JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8129/jmxrmi");
-            JMXConnector connector = JMXConnectorFactory.connect(url);
-            mbs = connector.getMBeanServerConnection();
-        } catch(Throwable t) {
-            t.printStackTrace();
-        }
-        ObjectName name;
-        try {
-            name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
-            MBeanInfo info = mbs.getMBeanInfo(name);
-            String[] helpArgs = {"-all"};
-            Object[] dcmdArgs = {helpArgs};
-            String[] signature = {String[].class.getName()};
-            String result = (String) mbs.invoke(name, "help", dcmdArgs, signature);
+            cs = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            cs.start();
+            JMXServiceURL addr = cs.getAddress();
+            cc = JMXConnectorFactory.connect(addr);
+            MBeanServerConnection mbsc = cc.getMBeanServerConnection();
+
+            String result = (String) mbsc.invoke(name, "help", dcmdArgs, signature);
             System.out.println(result);
-        } catch (InstanceNotFoundException | IntrospectionException
-                | ReflectionException | MalformedObjectNameException
-                | MBeanException|IOException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("TEST FAILED");
+        } finally {
+            try {
+                cc.close();
+                cs.stop();
+            } catch (Exception e) {
+            }
         }
+
         System.out.println("Test passed");
     }
 }

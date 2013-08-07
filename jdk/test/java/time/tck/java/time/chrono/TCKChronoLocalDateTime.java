@@ -411,11 +411,6 @@ public class TCKChronoLocalDateTime {
         }
 
         @Override
-        public String getName() {
-            return "FixedTemporalUnit";
-        }
-
-        @Override
         public Duration getDuration() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -423,6 +418,16 @@ public class TCKChronoLocalDateTime {
         @Override
         public boolean isDurationEstimated() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
@@ -440,6 +445,11 @@ public class TCKChronoLocalDateTime {
         public long between(Temporal temporal1, Temporal temporal2) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public String toString() {
+            return "FixedTemporalUnit";
+        }
     }
 
     /**
@@ -450,11 +460,6 @@ public class TCKChronoLocalDateTime {
         private Temporal temporal;
         FixedTemporalField(Temporal temporal) {
             this.temporal = temporal;
-        }
-
-        @Override
-        public String getName() {
-            return "FixedTemporalField";
         }
 
         @Override
@@ -470,6 +475,16 @@ public class TCKChronoLocalDateTime {
         @Override
         public ValueRange range() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
@@ -491,6 +506,11 @@ public class TCKChronoLocalDateTime {
         @Override
         public <R extends Temporal> R adjustInto(R temporal, long newValue) {
             return (R) this.temporal;
+        }
+
+        @Override
+        public String toString() {
+            return "FixedTemporalField";
         }
     }
 }

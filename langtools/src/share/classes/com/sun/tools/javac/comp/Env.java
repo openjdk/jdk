@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,16 @@ public class Env<A> implements Iterable<Env<A>> {
 
     @Override
     public String toString() {
-        return "Env[" + info + (outer == null ? "" : ",outer=" + outer) + "]";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Env[").append(info);
+//        if (enclMethod != null)
+//            sb.append(",enclMethod=").append(Pretty.toSimpleString(enclMethod));
+//        if (enclClass != null)
+//            sb.append(",enclClass=").append(Pretty.toSimpleString(enclClass));
+        if (outer != null)
+            sb.append(",outer=").append(outer);
+        sb.append("]");
+        return sb.toString();
     }
 
     public Iterator<Env<A>> iterator() {

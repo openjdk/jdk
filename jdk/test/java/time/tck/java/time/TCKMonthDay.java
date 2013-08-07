@@ -388,6 +388,44 @@ public class TCKMonthDay extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // isSupported(TemporalField)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalField() {
+        assertEquals(TEST_07_15.isSupported((TemporalField) null), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.NANO_OF_SECOND), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.NANO_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MICRO_OF_SECOND), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MICRO_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MILLI_OF_SECOND), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MILLI_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.SECOND_OF_MINUTE), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.SECOND_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MINUTE_OF_HOUR), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MINUTE_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.HOUR_OF_AMPM), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.HOUR_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.AMPM_OF_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.DAY_OF_WEEK), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.DAY_OF_MONTH), true);
+        assertEquals(TEST_07_15.isSupported(ChronoField.DAY_OF_YEAR), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.EPOCH_DAY), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.MONTH_OF_YEAR), true);
+        assertEquals(TEST_07_15.isSupported(ChronoField.PROLEPTIC_MONTH), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.YEAR), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.YEAR_OF_ERA), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.ERA), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.INSTANT_SECONDS), false);
+        assertEquals(TEST_07_15.isSupported(ChronoField.OFFSET_SECONDS), false);
+    }
+
+    //-----------------------------------------------------------------------
     // get(TemporalField)
     //-----------------------------------------------------------------------
     @Test

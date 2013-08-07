@@ -570,16 +570,20 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     TemporalUnit NINETY_MINS = new TemporalUnit() {
         @Override
-        public String getName() {
-            return "NinetyMins";
-        }
-        @Override
         public Duration getDuration() {
             return Duration.ofMinutes(90);
         }
         @Override
         public boolean isDurationEstimated() {
             return false;
+        }
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+        @Override
+        public boolean isTimeBased() {
+            return true;
         }
         @Override
         public boolean isSupportedBy(Temporal temporal) {
@@ -593,13 +597,13 @@ public class TCKInstant extends AbstractDateTimeTest {
         public long between(Temporal temporal1, Temporal temporal2) {
             throw new UnsupportedOperationException();
         }
+        @Override
+        public String toString() {
+            return "NinetyMins";
+        }
     };
 
     TemporalUnit NINETY_FIVE_MINS = new TemporalUnit() {
-        @Override
-        public String getName() {
-            return "NinetyFiveMins";
-        }
         @Override
         public Duration getDuration() {
             return Duration.ofMinutes(95);
@@ -609,6 +613,14 @@ public class TCKInstant extends AbstractDateTimeTest {
             return false;
         }
         @Override
+        public boolean isDateBased() {
+            return false;
+        }
+        @Override
+        public boolean isTimeBased() {
+            return false;
+        }
+        @Override
         public boolean isSupportedBy(Temporal temporal) {
             return false;
         }
@@ -619,6 +631,10 @@ public class TCKInstant extends AbstractDateTimeTest {
         @Override
         public long between(Temporal temporal1, Temporal temporal2) {
             throw new UnsupportedOperationException();
+        }
+        @Override
+        public String toString() {
+            return "NinetyFiveMins";
         }
     };
 
@@ -1709,7 +1725,7 @@ public class TCKInstant extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // periodUntil(Temporal, TemporalUnit)
+    // until(Temporal, TemporalUnit)
     //-----------------------------------------------------------------------
     @DataProvider(name="periodUntilUnit")
     Object[][] data_periodUntilUnit() {
@@ -1805,7 +1821,7 @@ public class TCKInstant extends AbstractDateTimeTest {
     public void test_periodUntil_TemporalUnit(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
         Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
         Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
-        long amount = i1.periodUntil(i2, unit);
+        long amount = i1.until(i2, unit);
         assertEquals(amount, expected);
     }
 
@@ -1813,23 +1829,23 @@ public class TCKInstant extends AbstractDateTimeTest {
     public void test_periodUntil_TemporalUnit_negated(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
         Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
         Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
-        long amount = i2.periodUntil(i1, unit);
+        long amount = i2.until(i1, unit);
         assertEquals(amount, -expected);
     }
 
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
     public void test_periodUntil_TemporalUnit_unsupportedUnit() {
-        TEST_12345_123456789.periodUntil(TEST_12345_123456789, MONTHS);
+        TEST_12345_123456789.until(TEST_12345_123456789, MONTHS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_periodUntil_TemporalUnit_nullEnd() {
-        TEST_12345_123456789.periodUntil(null, HOURS);
+        TEST_12345_123456789.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_periodUntil_TemporalUnit_nullUnit() {
-        TEST_12345_123456789.periodUntil(TEST_12345_123456789, null);
+        TEST_12345_123456789.until(TEST_12345_123456789, null);
     }
 
     //-----------------------------------------------------------------------
