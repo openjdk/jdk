@@ -58,6 +58,7 @@ package tck.java.time.chrono;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -83,12 +84,19 @@ import java.time.chrono.JapaneseDate;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoDate;
 import java.time.chrono.MinguoEra;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.MinguoDate;
 import java.time.chrono.ThaiBuddhistChronology;
 import java.time.chrono.ThaiBuddhistDate;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalField;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -162,6 +170,18 @@ public class TCKMinguoChronology {
     @Test(dataProvider="samples")
     public void test_fromCalendrical(MinguoDate minguo, LocalDate iso) {
         assertEquals(MinguoChronology.INSTANCE.date(iso), minguo);
+        assertEquals(MinguoDate.from(iso), minguo);
+    }
+
+    @Test(dataProvider="samples")
+    public void test_isEqual(MinguoDate minguo, LocalDate iso) {
+        assertTrue(minguo.isEqual(iso));
+    }
+
+    @Test(dataProvider="samples")
+    public void test_date_equals(MinguoDate minguo, LocalDate iso) {
+        assertFalse(minguo.equals(iso));
+        assertNotEquals(minguo.hashCode(), iso.hashCode());
     }
 
     @Test
@@ -276,12 +296,24 @@ public class TCKMinguoChronology {
 
     @Test(dataProvider="prolepticYear")
     public void test_prolepticYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
-        Era eraObj = MinguoChronology.INSTANCE.eraOf(eraValue) ;
+        Era eraObj = MinguoChronology.INSTANCE.eraOf(eraValue);
         assertTrue(MinguoChronology.INSTANCE.eras().contains(eraObj));
         assertEquals(eraObj, era);
         assertEquals(MinguoChronology.INSTANCE.prolepticYear(era, yearOfEra), expectedProlepticYear);
-        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), isLeapYear) ;
-        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), Year.of(expectedProlepticYear + YDIFF).isLeap()) ;
+    }
+
+    @Test(dataProvider="prolepticYear")
+    public void test_isLeapYear(int eraValue, Era  era, int yearOfEra, int expectedProlepticYear, boolean isLeapYear) {
+        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), isLeapYear);
+        assertEquals(MinguoChronology.INSTANCE.isLeapYear(expectedProlepticYear), Year.of(expectedProlepticYear + YDIFF).isLeap());
+
+        MinguoDate minguo = MinguoDate.now();
+        minguo = minguo.with(ChronoField.YEAR, expectedProlepticYear).with(ChronoField.MONTH_OF_YEAR, 2);
+        if (isLeapYear) {
+            assertEquals(minguo.lengthOfMonth(), 29);
+        } else {
+            assertEquals(minguo.lengthOfMonth(), 28);
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -467,7 +499,7 @@ public class TCKMinguoChronology {
     public void test_periodUntilDate() {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
-        Period period = mdate1.periodUntil(mdate2);
+        Period period = mdate1.until(mdate2);
         assertEquals(period, Period.of(1, 1, 1));
     }
 
@@ -475,7 +507,7 @@ public class TCKMinguoChronology {
     public void test_periodUntilUnit() {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
-        long months = mdate1.periodUntil(mdate2, ChronoUnit.MONTHS);
+        long months = mdate1.until(mdate2, ChronoUnit.MONTHS);
         assertEquals(months, 13);
     }
 
@@ -484,7 +516,7 @@ public class TCKMinguoChronology {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
         ThaiBuddhistDate ldate2 = ThaiBuddhistChronology.INSTANCE.date(mdate2);
-        Period period = mdate1.periodUntil(ldate2);
+        Period period = mdate1.until(ldate2);
         assertEquals(period, Period.of(1, 1, 1));
     }
 
@@ -518,6 +550,411 @@ public class TCKMinguoChronology {
     @Test
     public void test_equals_false() {
         assertFalse(MinguoChronology.INSTANCE.equals(IsoChronology.INSTANCE));
+    }
+
+    //-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "resolve_yearOfEra")
+    Object[][] data_resolve_yearOfEra() {
+        return new Object[][] {
+                // era only
+                {ResolverStyle.STRICT, -1, null, null, null, null},
+                {ResolverStyle.SMART, -1, null, null, null, null},
+                {ResolverStyle.LENIENT, -1, null, null, null, null},
+
+                {ResolverStyle.STRICT, 0, null, null, ChronoField.ERA, 0},
+                {ResolverStyle.SMART, 0, null, null, ChronoField.ERA, 0},
+                {ResolverStyle.LENIENT, 0, null, null, ChronoField.ERA, 0},
+
+                {ResolverStyle.STRICT, 1, null, null, ChronoField.ERA, 1},
+                {ResolverStyle.SMART, 1, null, null, ChronoField.ERA, 1},
+                {ResolverStyle.LENIENT, 1, null, null, ChronoField.ERA, 1},
+
+                {ResolverStyle.STRICT, 2, null, null, null, null},
+                {ResolverStyle.SMART, 2, null, null, null, null},
+                {ResolverStyle.LENIENT, 2, null, null, null, null},
+
+                // era and year-of-era
+                {ResolverStyle.STRICT, -1, 2012, null, null, null},
+                {ResolverStyle.SMART, -1, 2012, null, null, null},
+                {ResolverStyle.LENIENT, -1, 2012, null, null, null},
+
+                {ResolverStyle.STRICT, 0, 2012, null, ChronoField.YEAR, -2011},
+                {ResolverStyle.SMART, 0, 2012, null, ChronoField.YEAR, -2011},
+                {ResolverStyle.LENIENT, 0, 2012, null, ChronoField.YEAR, -2011},
+
+                {ResolverStyle.STRICT, 1, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.SMART, 1, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, 1, 2012, null, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, 2, 2012, null, null, null},
+                {ResolverStyle.SMART, 2, 2012, null, null, null},
+                {ResolverStyle.LENIENT, 2, 2012, null, null, null},
+
+                // year-of-era only
+                {ResolverStyle.STRICT, null, 2012, null, ChronoField.YEAR_OF_ERA, 2012},
+                {ResolverStyle.SMART, null, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, null, 2012, null, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, null, Integer.MAX_VALUE, null, null, null},
+                {ResolverStyle.SMART, null, Integer.MAX_VALUE, null, null, null},
+                {ResolverStyle.LENIENT, null, Integer.MAX_VALUE, null, ChronoField.YEAR, Integer.MAX_VALUE},
+
+                // year-of-era and year
+                {ResolverStyle.STRICT, null, 2012, 2012, ChronoField.YEAR, 2012},
+                {ResolverStyle.SMART, null, 2012, 2012, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, null, 2012, 2012, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, null, 2012, -2011, ChronoField.YEAR, -2011},
+                {ResolverStyle.SMART, null, 2012, -2011, ChronoField.YEAR, -2011},
+                {ResolverStyle.LENIENT, null, 2012, -2011, ChronoField.YEAR, -2011},
+
+                {ResolverStyle.STRICT, null, 2012, 2013, null, null},
+                {ResolverStyle.SMART, null, 2012, 2013, null, null},
+                {ResolverStyle.LENIENT, null, 2012, 2013, null, null},
+
+                {ResolverStyle.STRICT, null, 2012, -2013, null, null},
+                {ResolverStyle.SMART, null, 2012, -2013, null, null},
+                {ResolverStyle.LENIENT, null, 2012, -2013, null, null},
+        };
+    }
+
+    @Test(dataProvider = "resolve_yearOfEra")
+    public void test_resolve_yearOfEra(ResolverStyle style, Integer e, Integer yoe, Integer y, ChronoField field, Integer expected) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        if (e != null) {
+            fieldValues.put(ChronoField.ERA, (long) e);
+        }
+        if (yoe != null) {
+            fieldValues.put(ChronoField.YEAR_OF_ERA, (long) yoe);
+        }
+        if (y != null) {
+            fieldValues.put(ChronoField.YEAR, (long) y);
+        }
+        if (field != null) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, style);
+            assertEquals(date, null);
+            assertEquals(fieldValues.get(field), (Long) expected.longValue());
+            assertEquals(fieldValues.size(), 1);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, style);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "resolve_ymd")
+    Object[][] data_resolve_ymd() {
+        return new Object[][] {
+                {2012 - YDIFF, 1, -365, date(2010 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, -364, date(2011 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 1, -31, date(2011 - YDIFF, 11, 30), false, false},
+                {2012 - YDIFF, 1, -30, date(2011 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 1, -12, date(2011 - YDIFF, 12, 19), false, false},
+                {2012 - YDIFF, 1, 1, date(2012 - YDIFF, 1, 1), true, true},
+                {2012 - YDIFF, 1, 27, date(2012 - YDIFF, 1, 27), true, true},
+                {2012 - YDIFF, 1, 28, date(2012 - YDIFF, 1, 28), true, true},
+                {2012 - YDIFF, 1, 29, date(2012 - YDIFF, 1, 29), true, true},
+                {2012 - YDIFF, 1, 30, date(2012 - YDIFF, 1, 30), true, true},
+                {2012 - YDIFF, 1, 31, date(2012 - YDIFF, 1, 31), true, true},
+                {2012 - YDIFF, 1, 59, date(2012 - YDIFF, 2, 28), false, false},
+                {2012 - YDIFF, 1, 60, date(2012 - YDIFF, 2, 29), false, false},
+                {2012 - YDIFF, 1, 61, date(2012 - YDIFF, 3, 1), false, false},
+                {2012 - YDIFF, 1, 365, date(2012 - YDIFF, 12, 30), false, false},
+                {2012 - YDIFF, 1, 366, date(2012 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, 367, date(2013 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 1, 367 + 364, date(2013 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, 367 + 365, date(2014 - YDIFF, 1, 1), false, false},
+
+                {2012 - YDIFF, 2, 1, date(2012 - YDIFF, 2, 1), true, true},
+                {2012 - YDIFF, 2, 28, date(2012 - YDIFF, 2, 28), true, true},
+                {2012 - YDIFF, 2, 29, date(2012 - YDIFF, 2, 29), true, true},
+                {2012 - YDIFF, 2, 30, date(2012 - YDIFF, 3, 1), date(2012 - YDIFF, 2, 29), false},
+                {2012 - YDIFF, 2, 31, date(2012 - YDIFF, 3, 2), date(2012 - YDIFF, 2, 29), false},
+                {2012 - YDIFF, 2, 32, date(2012 - YDIFF, 3, 3), false, false},
+
+                {2012 - YDIFF, -12, 1, date(2010 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, -11, 1, date(2011 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, -1, 1, date(2011 - YDIFF, 11, 1), false, false},
+                {2012 - YDIFF, 0, 1, date(2011 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 1, 1, date(2012 - YDIFF, 1, 1), true, true},
+                {2012 - YDIFF, 12, 1, date(2012 - YDIFF, 12, 1), true, true},
+                {2012 - YDIFF, 13, 1, date(2013 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 24, 1, date(2013 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 25, 1, date(2014 - YDIFF, 1, 1), false, false},
+
+                {2012 - YDIFF, 6, -31, date(2012 - YDIFF, 4, 30), false, false},
+                {2012 - YDIFF, 6, -30, date(2012 - YDIFF, 5, 1), false, false},
+                {2012 - YDIFF, 6, -1, date(2012 - YDIFF, 5, 30), false, false},
+                {2012 - YDIFF, 6, 0, date(2012 - YDIFF, 5, 31), false, false},
+                {2012 - YDIFF, 6, 1, date(2012 - YDIFF, 6, 1), true, true},
+                {2012 - YDIFF, 6, 30, date(2012 - YDIFF, 6, 30), true, true},
+                {2012 - YDIFF, 6, 31, date(2012 - YDIFF, 7, 1), date(2012 - YDIFF, 6, 30), false},
+                {2012 - YDIFF, 6, 61, date(2012 - YDIFF, 7, 31), false, false},
+                {2012 - YDIFF, 6, 62, date(2012 - YDIFF, 8, 1), false, false},
+
+                {2011 - YDIFF, 2, 1, date(2011 - YDIFF, 2, 1), true, true},
+                {2011 - YDIFF, 2, 28, date(2011 - YDIFF, 2, 28), true, true},
+                {2011 - YDIFF, 2, 29, date(2011 - YDIFF, 3, 1), date(2011 - YDIFF, 2, 28), false},
+                {2011 - YDIFF, 2, 30, date(2011 - YDIFF, 3, 2), date(2011 - YDIFF, 2, 28), false},
+                {2011 - YDIFF, 2, 31, date(2011 - YDIFF, 3, 3), date(2011 - YDIFF, 2, 28), false},
+                {2011 - YDIFF, 2, 32, date(2011 - YDIFF, 3, 4), false, false},
+        };
+    }
+
+    @Test(dataProvider = "resolve_ymd")
+    public void test_resolve_ymd_lenient(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
+        MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
+        assertEquals(date, expected);
+        assertEquals(fieldValues.size(), 0);
+    }
+
+    @Test(dataProvider = "resolve_ymd")
+    public void test_resolve_ymd_smart(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
+        if (Boolean.TRUE.equals(smart)) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else if (smart instanceof MinguoDate) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+            assertEquals(date, smart);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    @Test(dataProvider = "resolve_ymd")
+    public void test_resolve_ymd_strict(int y, int m, int d, MinguoDate expected, Object smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.DAY_OF_MONTH, (long) d);
+        if (strict) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "resolve_yd")
+    Object[][] data_resolve_yd() {
+        return new Object[][] {
+                {2012 - YDIFF, -365, date(2010 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, -364, date(2011 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, -31, date(2011 - YDIFF, 11, 30), false, false},
+                {2012 - YDIFF, -30, date(2011 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, -12, date(2011 - YDIFF, 12, 19), false, false},
+                {2012 - YDIFF, -1, date(2011 - YDIFF, 12, 30), false, false},
+                {2012 - YDIFF, 0, date(2011 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, date(2012 - YDIFF, 1, 1), true, true},
+                {2012 - YDIFF, 2, date(2012 - YDIFF, 1, 2), true, true},
+                {2012 - YDIFF, 31, date(2012 - YDIFF, 1, 31), true, true},
+                {2012 - YDIFF, 32, date(2012 - YDIFF, 2, 1), true, true},
+                {2012 - YDIFF, 59, date(2012 - YDIFF, 2, 28), true, true},
+                {2012 - YDIFF, 60, date(2012 - YDIFF, 2, 29), true, true},
+                {2012 - YDIFF, 61, date(2012 - YDIFF, 3, 1), true, true},
+                {2012 - YDIFF, 365, date(2012 - YDIFF, 12, 30), true, true},
+                {2012 - YDIFF, 366, date(2012 - YDIFF, 12, 31), true, true},
+                {2012 - YDIFF, 367, date(2013 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 367 + 364, date(2013 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 367 + 365, date(2014 - YDIFF, 1, 1), false, false},
+
+                {2011 - YDIFF, 59, date(2011 - YDIFF, 2, 28), true, true},
+                {2011 - YDIFF, 60, date(2011 - YDIFF, 3, 1), true, true},
+        };
+    }
+
+    @Test(dataProvider = "resolve_yd")
+    public void test_resolve_yd_lenient(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
+        MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
+        assertEquals(date, expected);
+        assertEquals(fieldValues.size(), 0);
+    }
+
+    @Test(dataProvider = "resolve_yd")
+    public void test_resolve_yd_smart(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
+        if (smart) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    @Test(dataProvider = "resolve_yd")
+    public void test_resolve_yd_strict(int y, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.DAY_OF_YEAR, (long) d);
+        if (strict) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "resolve_ymaa")
+    Object[][] data_resolve_ymaa() {
+        return new Object[][] {
+                {2012 - YDIFF, 1, 1, -365, date(2010 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, 1, -364, date(2011 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 1, 1, -31, date(2011 - YDIFF, 11, 30), false, false},
+                {2012 - YDIFF, 1, 1, -30, date(2011 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 1, 1, -12, date(2011 - YDIFF, 12, 19), false, false},
+                {2012 - YDIFF, 1, 1, 1, date(2012 - YDIFF, 1, 1), true, true},
+                {2012 - YDIFF, 1, 1, 59, date(2012 - YDIFF, 2, 28), false, false},
+                {2012 - YDIFF, 1, 1, 60, date(2012 - YDIFF, 2, 29), false, false},
+                {2012 - YDIFF, 1, 1, 61, date(2012 - YDIFF, 3, 1), false, false},
+                {2012 - YDIFF, 1, 1, 365, date(2012 - YDIFF, 12, 30), false, false},
+                {2012 - YDIFF, 1, 1, 366, date(2012 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, 1, 367, date(2013 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 1, 1, 367 + 364, date(2013 - YDIFF, 12, 31), false, false},
+                {2012 - YDIFF, 1, 1, 367 + 365, date(2014 - YDIFF, 1, 1), false, false},
+
+                {2012 - YDIFF, 2, 0, 1, date(2012 - YDIFF, 1, 25), false, false},
+                {2012 - YDIFF, 2, 0, 7, date(2012 - YDIFF, 1, 31), false, false},
+                {2012 - YDIFF, 2, 1, 1, date(2012 - YDIFF, 2, 1), true, true},
+                {2012 - YDIFF, 2, 1, 7, date(2012 - YDIFF, 2, 7), true, true},
+                {2012 - YDIFF, 2, 2, 1, date(2012 - YDIFF, 2, 8), true, true},
+                {2012 - YDIFF, 2, 2, 7, date(2012 - YDIFF, 2, 14), true, true},
+                {2012 - YDIFF, 2, 3, 1, date(2012 - YDIFF, 2, 15), true, true},
+                {2012 - YDIFF, 2, 3, 7, date(2012 - YDIFF, 2, 21), true, true},
+                {2012 - YDIFF, 2, 4, 1, date(2012 - YDIFF, 2, 22), true, true},
+                {2012 - YDIFF, 2, 4, 7, date(2012 - YDIFF, 2, 28), true, true},
+                {2012 - YDIFF, 2, 5, 1, date(2012 - YDIFF, 2, 29), true, true},
+                {2012 - YDIFF, 2, 5, 2, date(2012 - YDIFF, 3, 1), true, false},
+                {2012 - YDIFF, 2, 5, 7, date(2012 - YDIFF, 3, 6), true, false},
+                {2012 - YDIFF, 2, 6, 1, date(2012 - YDIFF, 3, 7), false, false},
+                {2012 - YDIFF, 2, 6, 7, date(2012 - YDIFF, 3, 13), false, false},
+
+                {2012 - YDIFF, 12, 1, 1, date(2012 - YDIFF, 12, 1), true, true},
+                {2012 - YDIFF, 12, 5, 1, date(2012 - YDIFF, 12, 29), true, true},
+                {2012 - YDIFF, 12, 5, 2, date(2012 - YDIFF, 12, 30), true, true},
+                {2012 - YDIFF, 12, 5, 3, date(2012 - YDIFF, 12, 31), true, true},
+                {2012 - YDIFF, 12, 5, 4, date(2013 - YDIFF, 1, 1), true, false},
+                {2012 - YDIFF, 12, 5, 7, date(2013 - YDIFF, 1, 4), true, false},
+
+                {2012 - YDIFF, -12, 1, 1, date(2010 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, -11, 1, 1, date(2011 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, -1, 1, 1, date(2011 - YDIFF, 11, 1), false, false},
+                {2012 - YDIFF, 0, 1, 1, date(2011 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 1, 1, 1, date(2012 - YDIFF, 1, 1), true, true},
+                {2012 - YDIFF, 12, 1, 1, date(2012 - YDIFF, 12, 1), true, true},
+                {2012 - YDIFF, 13, 1, 1, date(2013 - YDIFF, 1, 1), false, false},
+                {2012 - YDIFF, 24, 1, 1, date(2013 - YDIFF, 12, 1), false, false},
+                {2012 - YDIFF, 25, 1, 1, date(2014 - YDIFF, 1, 1), false, false},
+
+                {2011 - YDIFF, 2, 1, 1, date(2011 - YDIFF, 2, 1), true, true},
+                {2011 - YDIFF, 2, 4, 7, date(2011 - YDIFF, 2, 28), true, true},
+                {2011 - YDIFF, 2, 5, 1, date(2011 - YDIFF, 3, 1), true, false},
+        };
+    }
+
+    @Test(dataProvider = "resolve_ymaa")
+    public void test_resolve_ymaa_lenient(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
+        fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
+        MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
+        assertEquals(date, expected);
+        assertEquals(fieldValues.size(), 0);
+    }
+
+    @Test(dataProvider = "resolve_ymaa")
+    public void test_resolve_ymaa_smart(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
+        fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
+        if (smart) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    @Test(dataProvider = "resolve_ymaa")
+    public void test_resolve_ymaa_strict(int y, int m, int w, int d, MinguoDate expected, boolean smart, boolean strict) {
+        Map<TemporalField, Long> fieldValues = new HashMap<>();
+        fieldValues.put(ChronoField.YEAR, (long) y);
+        fieldValues.put(ChronoField.MONTH_OF_YEAR, (long) m);
+        fieldValues.put(ChronoField.ALIGNED_WEEK_OF_MONTH, (long) w);
+        fieldValues.put(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH, (long) d);
+        if (strict) {
+            MinguoDate date = MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+            assertEquals(date, expected);
+            assertEquals(fieldValues.size(), 0);
+        } else {
+            try {
+                MinguoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+                fail("Should have failed");
+            } catch (DateTimeException ex) {
+                // expected
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    private static MinguoDate date(int y, int m, int d) {
+        return MinguoDate.of(y, m, d);
     }
 
 }
