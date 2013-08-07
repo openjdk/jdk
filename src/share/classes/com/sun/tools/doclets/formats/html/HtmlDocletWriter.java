@@ -467,8 +467,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
         }
         Content rawContent = new RawHtml(content);
-        Content em = HtmlTree.EM(rawContent);
-        return em;
+        return rawContent;
     }
 
     /**
