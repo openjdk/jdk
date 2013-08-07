@@ -145,11 +145,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         } catch (SecurityException exception) {
             // ignore secured class loaders
         }
-        if (fallback != null) {
-            return Class.forName(className, true, fallback);
-        } else {
-            throw new ClassNotFoundException(className);
-        }
+        return Class.forName(className, true, fallback);
     }
 
     /*
