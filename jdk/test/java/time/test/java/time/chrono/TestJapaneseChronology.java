@@ -47,9 +47,6 @@ public class TestJapaneseChronology {
     Object[][] transitionData() {
         return new Object[][] {
             // Japanese era, yearOfEra, month, dayOfMonth, gregorianYear
-            { JapaneseEra.SEIREKI, Year.MIN_VALUE, 1, 1, Year.MIN_VALUE },
-            { JapaneseEra.SEIREKI, 1867, 12, 31, 1867 },
-            { JapaneseEra.MEIJI,      1,  1, 25, 1868 }, // Note: the dates of Meiji 1 to 5 are incorrect
             { JapaneseEra.MEIJI,      6,  1,  1, 1873 },
             // Meiji-Taisho transition isn't accurate. 1912-07-30 is the last day of Meiji
             // and the first day of Taisho.
@@ -84,9 +81,10 @@ public class TestJapaneseChronology {
     Object[][] rangeData() {
         return new Object[][] {
             // field, minSmallest, minLargest, maxSmallest, maxLargest
-            { ChronoField.ERA,         -999, -999, 2, 2},
-            { ChronoField.YEAR_OF_ERA, -999999999, 1, 15, 999999999-1989 }, // depends on the current era
+            { ChronoField.ERA,         -1, -1, 2, 2},
+            { ChronoField.YEAR_OF_ERA, 1, 1, 15, 999999999-1989 }, // depends on the current era
             { ChronoField.DAY_OF_YEAR, 1, 1, 7, 366},
+            { ChronoField.YEAR, 1873, 1873, 999999999, 999999999},
         };
     }
 
@@ -94,9 +92,6 @@ public class TestJapaneseChronology {
     Object[][] invalidDatesData() {
         return new Object[][] {
             // Japanese era, yearOfEra, month, dayOfMonth
-            { JapaneseEra.SEIREKI, Year.MIN_VALUE - 1, 1, 1 },
-            { JapaneseEra.SEIREKI, 1855,  2, 29 },
-            { JapaneseEra.SEIREKI, 1868,  1, 25 },
             { JapaneseEra.MEIJI,      6,  2, 29 },
             { JapaneseEra.MEIJI,     45,  7, 30 },
             { JapaneseEra.MEIJI,     46,  1,  1 },
@@ -118,8 +113,6 @@ public class TestJapaneseChronology {
     Object[][] invalidEraYearData() {
         return new Object[][] {
             // Japanese era, yearOfEra
-            { JapaneseEra.SEIREKI, Year.MIN_VALUE - 1 },
-            { JapaneseEra.SEIREKI, 2012 },
             { JapaneseEra.MEIJI,     -1 },
             { JapaneseEra.MEIJI,      0 },
             { JapaneseEra.MEIJI,     46 },

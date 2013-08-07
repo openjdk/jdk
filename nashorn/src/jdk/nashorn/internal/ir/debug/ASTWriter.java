@@ -102,7 +102,7 @@ public final class ASTWriter {
             preorder.add(node);
         }
 
-        final boolean isReference = field != null && field.getAnnotation(Reference.class) != null;
+        final boolean isReference = field != null && field.isAnnotationPresent(Reference.class);
 
         Class<?> clazz = node.getClass();
         String   type  = clazz.getName();
@@ -183,7 +183,7 @@ public final class ASTWriter {
                 append('\n');
 
             for (final Field child : children) {
-                if (child.getAnnotation(Ignore.class) != null) {
+                if (child.isAnnotationPresent(Ignore.class)) {
                     continue;
                 }
 

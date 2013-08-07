@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,8 @@ public class PKCS9Attribute implements DerEncoder {
     private static final Byte[][] PKCS9_VALUE_TAGS = {
         null,
         {new Byte(DerValue.tag_IA5String)},   // EMailAddress
-        {new Byte(DerValue.tag_IA5String)},   // UnstructuredName
+        {new Byte(DerValue.tag_IA5String),   // UnstructuredName
+         new Byte(DerValue.tag_PrintableString)},
         {new Byte(DerValue.tag_ObjectId)},    // ContentType
         {new Byte(DerValue.tag_OctetString)}, // MessageDigest
         {new Byte(DerValue.tag_UtcTime)},     // SigningTime
