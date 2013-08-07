@@ -316,7 +316,7 @@ public class HelpWriter extends HtmlDocletWriter {
         liConst.addContent(constPara);
         ul.addContent(liConst);
         Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
-        Content line30 = HtmlTree.EM(getResource("doclet.Help_line_30"));
+        Content line30 = HtmlTree.SPAN(HtmlStyle.italic, getResource("doclet.Help_line_30"));
         divContent.addContent(line30);
         contentTree.addContent(divContent);
     }

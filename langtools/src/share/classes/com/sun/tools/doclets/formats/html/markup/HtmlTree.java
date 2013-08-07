@@ -282,17 +282,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a EM tag with some content.
-     *
-     * @param body content to be added to the tag
-     * @return an HtmlTree object for the EM tag
-     */
-    public static HtmlTree EM(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.EM, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
      * Generates a FRAME tag.
      *
      * @param src the url of the document to be shown in the frame
