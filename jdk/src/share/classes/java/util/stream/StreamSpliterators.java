@@ -912,7 +912,8 @@ class StreamSpliterators {
             this.permits = new AtomicLong(limit >= 0 ? skip + limit : skip);
         }
 
-        UnorderedSliceSpliterator(T_SPLITR s, UnorderedSliceSpliterator parent) {
+        UnorderedSliceSpliterator(T_SPLITR s,
+                                  UnorderedSliceSpliterator<T, T_SPLITR> parent) {
             this.s = s;
             this.unlimited = parent.unlimited;
             this.permits = parent.permits;
@@ -991,7 +992,7 @@ class StreamSpliterators {
                 super(s, skip, limit);
             }
 
-            OfRef(Spliterator<T> s, OfRef parent) {
+            OfRef(Spliterator<T> s, OfRef<T> parent) {
                 super(s, parent);
             }
 

@@ -60,6 +60,7 @@ final class Nodes {
      */
     static final long MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
+    @SuppressWarnings("raw")
     private static final Node EMPTY_NODE = new EmptyNode.OfRef();
     private static final Node.OfInt EMPTY_INT_NODE = new EmptyNode.OfInt();
     private static final Node.OfLong EMPTY_LONG_NODE = new EmptyNode.OfLong();
@@ -2150,7 +2151,7 @@ final class Nodes {
         }
 
         @Override
-        public void onCompletion(CountedCompleter caller) {
+        public void onCompletion(CountedCompleter<?> caller) {
             if (!isLeaf())
                 setLocalResult(concFactory.apply(leftChild.getLocalResult(), rightChild.getLocalResult()));
             super.onCompletion(caller);

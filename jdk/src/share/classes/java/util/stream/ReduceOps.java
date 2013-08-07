@@ -748,7 +748,7 @@ final class ReduceOps {
         }
 
         @Override
-        public void onCompletion(CountedCompleter caller) {
+        public void onCompletion(CountedCompleter<?> caller) {
             if (!isLeaf()) {
                 S leftResult = leftChild.getLocalResult();
                 leftResult.combine(rightChild.getLocalResult());

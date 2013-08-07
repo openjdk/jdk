@@ -220,7 +220,8 @@ abstract class AbstractShortCircuitTask<P_IN, P_OUT, R,
      */
     protected void cancelLaterNodes() {
         // Go up the tree, cancel right siblings of this node and all parents
-        for (K parent = getParent(), node = (K) this; parent != null;
+        for (@SuppressWarnings("unchecked") K parent = getParent(), node = (K) this;
+             parent != null;
              node = parent, parent = parent.getParent()) {
             // If node is a left child of parent, then has a right sibling
             if (parent.leftChild == node) {
