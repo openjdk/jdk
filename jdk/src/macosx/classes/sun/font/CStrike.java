@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.*;
 
 import sun.awt.SunHints;
 
-public class CStrike extends FontStrike {
+public final class CStrike extends FontStrike {
 
     // Creates the native strike
     private static native long createNativeStrikePtr(long nativeFontPtr,
@@ -68,10 +68,10 @@ public class CStrike extends FontStrike {
                                                          Rectangle2D.Float result,
                                                          double x, double y);
 
-    private CFont nativeFont;
+    private final CFont nativeFont;
     private AffineTransform invDevTx;
-    private GlyphInfoCache glyphInfoCache;
-    private GlyphAdvanceCache glyphAdvanceCache;
+    private final GlyphInfoCache glyphInfoCache;
+    private final GlyphAdvanceCache glyphAdvanceCache;
     private long nativeStrikePtr;
 
     CStrike(final CFont font, final FontStrikeDesc inDesc) {
@@ -84,11 +84,11 @@ public class CStrike extends FontStrike {
         // Normally the device transform should be the identity transform
         // for screen operations.  The device transform only becomes
         // interesting when we are outputting between different dpi surfaces,
-        // like when we are printing to postscript.
+        // like when we are printing to postscript or use retina.
         if (inDesc.devTx != null && !inDesc.devTx.isIdentity()) {
             try {
                 invDevTx = inDesc.devTx.createInverse();
-            } catch (NoninvertibleTransformException e) {
+            } catch (NoninvertibleTransformException ignored) {
                 // ignored, since device transforms should not be that
                 // complicated, and if they are - there is nothing we can do,
                 // so we won't worry about it.
@@ -134,15 +134,13 @@ public class CStrike extends FontStrike {
         nativeStrikePtr = 0;
     }
 
-    // the fractional metrics default on our platform is OFF
-    private boolean useFractionalMetrics() {
-        return desc.fmHint == SunHints.INTVAL_FRACTIONALMETRICS_ON;
-    }
 
+    @Override
     public int getNumGlyphs() {
         return nativeFont.getNumGlyphs();
     }
 
+    @Override
     StrikeMetrics getFontMetrics() {
         if (strikeMetrics == null) {
             StrikeMetrics metrics = getFontMetrics(getNativeStrikePtr());
@@ -155,74 +153,24 @@ public class CStrike extends FontStrike {
         return strikeMetrics;
     }
 
-    float getGlyphAdvance(int glyphCode) {
-        return getScaledAdvanceForAdvance(getCachedNativeGlyphAdvance(glyphCode));
+    @Override
+    float getGlyphAdvance(final int glyphCode) {
+        return getCachedNativeGlyphAdvance(glyphCode);
     }
 
-    float getCodePointAdvance(int cp) {
-        float advance = getCachedNativeGlyphAdvance(nativeFont.getMapper().charToGlyph(cp));
-
-        double glyphScaleX = desc.glyphTx.getScaleX();
-        double devScaleX = desc.devTx.getScaleX();
-
-        if (devScaleX == 0) {
-            glyphScaleX = Math.sqrt(desc.glyphTx.getDeterminant());
-            devScaleX = Math.sqrt(desc.devTx.getDeterminant());
-        }
-
-        if (devScaleX == 0) {
-            devScaleX = Double.NaN; // this an undefined graphics state
-        }
-        advance = (float) (advance * glyphScaleX / devScaleX);
-        return useFractionalMetrics() ? advance : Math.round(advance);
+    @Override
+    float getCodePointAdvance(final int cp) {
+        return getGlyphAdvance(nativeFont.getMapper().charToGlyph(cp));
     }
 
-    // calculate an advance, and round if not using fractional metrics
-    private float getScaledAdvanceForAdvance(float advance) {
-        if (invDevTx != null) {
-            advance *= invDevTx.getScaleX();
-        }
-        advance *= desc.glyphTx.getScaleX();
-        return useFractionalMetrics() ? advance : Math.round(advance);
+    @Override
+    Point2D.Float getCharMetrics(final char ch) {
+        return getGlyphMetrics(nativeFont.getMapper().charToGlyph(ch));
     }
 
-    Point2D.Float getCharMetrics(char ch) {
-        return getScaledPointForAdvance(getCachedNativeGlyphAdvance(nativeFont.getMapper().charToGlyph(ch)));
-    }
-
-    Point2D.Float getGlyphMetrics(int glyphCode) {
-        return getScaledPointForAdvance(getCachedNativeGlyphAdvance(glyphCode));
-    }
-
-    // calculate an advance point, and round if not using fractional metrics
-    private Point2D.Float getScaledPointForAdvance(float advance) {
-        Point2D.Float pt = new Point2D.Float(advance, 0);
-
-        if (!desc.glyphTx.isIdentity()) {
-            return scalePoint(pt);
-        }
-
-        if (!useFractionalMetrics()) {
-            pt.x = Math.round(pt.x);
-        }
-        return pt;
-    }
-
-    private Point2D.Float scalePoint(Point2D.Float pt) {
-        if (invDevTx != null) {
-            // transform the point out of the device space first
-            invDevTx.transform(pt, pt);
-        }
-        desc.glyphTx.transform(pt, pt);
-        pt.x -= desc.glyphTx.getTranslateX();
-        pt.y -= desc.glyphTx.getTranslateY();
-
-        if (!useFractionalMetrics()) {
-            pt.x = Math.round(pt.x);
-            pt.y = Math.round(pt.y);
-        }
-
-        return pt;
+    @Override
+    Point2D.Float getGlyphMetrics(final int glyphCode) {
+        return new Point2D.Float(getGlyphAdvance(glyphCode), 0.0f);
     }
 
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
@@ -414,9 +362,7 @@ public class CStrike extends FontStrike {
         private SparseBitShiftingTwoLayerArray secondLayerCache;
         private HashMap<Integer, Long> generalCache;
 
-        public GlyphInfoCache(final Font2D nativeFont,
-                              final FontStrikeDesc desc)
-        {
+        GlyphInfoCache(final Font2D nativeFont, final FontStrikeDesc desc) {
             super(nativeFont, desc);
             firstLayerCache = new long[FIRST_LAYER_SIZE];
         }
@@ -527,7 +473,7 @@ public class CStrike extends FontStrike {
             final int shift;
             final int secondLayerLength;
 
-            public SparseBitShiftingTwoLayerArray(final int size, final int shift) {
+            SparseBitShiftingTwoLayerArray(final int size, final int shift) {
                 this.shift = shift;
                 this.cache = new long[1 << shift][];
                 this.secondLayerLength = size >> shift;
@@ -558,6 +504,12 @@ public class CStrike extends FontStrike {
         private final float[] firstLayerCache = new float[FIRST_LAYER_SIZE];
         private SparseBitShiftingTwoLayerArray secondLayerCache;
         private HashMap<Integer, Float> generalCache;
+
+        // Empty non private constructor was added because access to this
+        // class shouldn't be emulated by a synthetic accessor method.
+        GlyphAdvanceCache() {
+            super();
+        }
 
         public synchronized float get(final int index) {
             if (index < 0) {
@@ -609,9 +561,7 @@ public class CStrike extends FontStrike {
             final int shift;
             final int secondLayerLength;
 
-            public SparseBitShiftingTwoLayerArray(final int size,
-                                                  final int shift)
-            {
+            SparseBitShiftingTwoLayerArray(final int size, final int shift) {
                 this.shift = shift;
                 this.cache = new float[1 << shift][];
                 this.secondLayerLength = size >> shift;

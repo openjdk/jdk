@@ -1621,6 +1621,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     text = removeNonInlineHtmlTags(text);
                 }
                 text = Util.replaceTabs(configuration, text);
+                text = Util.normalizeNewlines(text);
                 result.addContent(new RawHtml(text));
             }
         }

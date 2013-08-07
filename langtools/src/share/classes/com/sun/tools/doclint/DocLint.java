@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.lang.model.element.Name;
 import javax.tools.StandardLocation;
@@ -166,8 +165,8 @@ public class DocLint implements Plugin {
     }
 
     void processArgs(String... args) throws BadArgs {
-        javacOpts = new ArrayList<String>();
-        javacFiles = new ArrayList<File>();
+        javacOpts = new ArrayList<>();
+        javacFiles = new ArrayList<>();
 
         if (args.length == 0)
             needHelp = true;
@@ -214,7 +213,7 @@ public class DocLint implements Plugin {
     }
 
     List<File> splitPath(String path) {
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         for (String f: path.split(File.pathSeparator)) {
             if (f.length() > 0)
                 files.add(new File(f));
@@ -279,7 +278,6 @@ public class DocLint implements Plugin {
             TaskListener tl = new TaskListener() {
                 @Override
                 public void started(TaskEvent e) {
-                    return;
                 }
 
                 @Override
