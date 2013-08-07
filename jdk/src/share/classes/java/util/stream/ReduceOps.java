@@ -43,7 +43,7 @@ import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
 
 /**
- * Factory for the creating instances of {@code TerminalOp) that implement
+ * Factory for creating instances of {@code TerminalOp} that implement
  * reductions.
  *
  * @since 1.8
@@ -718,6 +718,7 @@ final class ReduceOps {
     /**
      * A {@code ForkJoinTask} for performing a parallel reduce operation.
      */
+    @SuppressWarnings("serial")
     private static final class ReduceTask<P_IN, P_OUT, R,
                                           S extends AccumulatingSink<P_OUT, R, S>>
             extends AbstractTask<P_IN, P_OUT, S, ReduceTask<P_IN, P_OUT, R, S>> {
