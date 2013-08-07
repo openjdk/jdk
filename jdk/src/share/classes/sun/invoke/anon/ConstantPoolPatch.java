@@ -418,7 +418,7 @@ public class ConstantPoolPatch {
 
     private static final Map<Class<?>, Byte> CONSTANT_VALUE_CLASS_TAG
         = new IdentityHashMap<Class<?>, Byte>();
-    private static final Class[] CONSTANT_VALUE_CLASS = new Class[16];
+    private static final Class<?>[] CONSTANT_VALUE_CLASS = new Class<?>[16];
     static {
         Object[][] values = {
             {Integer.class, CONSTANT_Integer},
