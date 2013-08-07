@@ -170,9 +170,10 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         if (predicate.test(u))
-                            downstream.accept(u);
+                            downstream.accept((Object) u);
                     }
                 };
             }
@@ -180,6 +181,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
@@ -262,6 +264,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
                         Stream<? extends R> result = mapper.apply(u);
@@ -363,6 +366,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT>(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         tee.accept(u);
                         downstream.accept(u);
@@ -439,6 +443,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // The runtime type of U is never checked for equality with the component type of the runtime type of A[].
         // Runtime checking will be performed when an element is stored in A[], thus if A is not a
         // super type of U an ArrayStoreException will be thrown.
+        @SuppressWarnings("rawtypes")
         IntFunction rawGenerator = (IntFunction) generator;
         return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator)
                               .asArray(rawGenerator);
