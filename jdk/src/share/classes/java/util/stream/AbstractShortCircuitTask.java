@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @param <K> type of child and sibling tasks
  * @since 1.8
  */
+@SuppressWarnings("serial")
 abstract class AbstractShortCircuitTask<P_IN, P_OUT, R,
                                         K extends AbstractShortCircuitTask<P_IN, P_OUT, R, K>>
         extends AbstractTask<P_IN, P_OUT, R, K> {
