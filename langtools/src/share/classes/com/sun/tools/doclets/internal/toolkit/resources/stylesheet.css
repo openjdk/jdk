@@ -519,3 +519,6 @@ h1.hidden {
 .strong {
     font-weight:bold;
 }
+.italic {
+    font-style:italic;
+}
