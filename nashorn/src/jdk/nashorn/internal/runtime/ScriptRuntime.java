@@ -335,9 +335,7 @@ public final class ScriptRuntime {
      */
     public static Object checkAndApply(final ScriptFunction target, final Object self, final Object... args) {
         final ScriptObject global = Context.getGlobalTrusted();
-        if (! (global instanceof GlobalObject)) {
-            throw new IllegalStateException("No current global set");
-        }
+        assert (global instanceof GlobalObject): "No current global set";
 
         if (target.getContext() != global.getContext()) {
             throw new IllegalArgumentException("'target' function is not from current Context");
@@ -383,9 +381,7 @@ public final class ScriptRuntime {
      */
     public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
         final ScriptObject global = Context.getGlobalTrusted();
-        if (! (global instanceof GlobalObject)) {
-            throw new IllegalStateException("No current global set");
-        }
+        assert (global instanceof GlobalObject): "No current global set";
 
         if (target.getContext() != global.getContext()) {
             throw new IllegalArgumentException("'target' function is not from current Context");
@@ -395,7 +391,7 @@ public final class ScriptRuntime {
         return construct(target, args);
     }
 
-    /*
+    /**
      * Call a script function as a constructor with given args.
      *
      * @param target ScriptFunction object.

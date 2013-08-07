@@ -32,7 +32,7 @@ import jdk.nashorn.internal.runtime.ECMAException;
  * A result of generating an adapter for a class. A tuple of an outcome and - in case of an error outcome - a list of
  * classes that caused the error.
  */
-class AdaptationResult {
+final class AdaptationResult {
     /**
      * Contains various outcomes for attempting to generate an adapter class. These are stored in AdapterInfo instances.
      * We have a successful outcome (adapter class was generated) and four possible error outcomes: superclass is final,

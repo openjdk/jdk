@@ -67,6 +67,8 @@ import java.time.DateTimeException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -96,12 +98,12 @@ import java.util.Objects;
  *        // Enumerate the list of available calendars and print today for each
  *        Set&lt;Chronology&gt; chronos = Chronology.getAvailableChronologies();
  *        for (Chronology chrono : chronos) {
- *            ChronoLocalDate&lt;?&gt; date = chrono.dateNow();
+ *            ChronoLocalDate date = chrono.dateNow();
  *            System.out.printf("   %20s: %s%n", chrono.getID(), date.toString());
  *        }
  *
  *        // Print the Hijrah date and calendar
- *        ChronoLocalDate&lt;?&gt; date = Chronology.of("Hijrah").dateNow();
+ *        ChronoLocalDate date = Chronology.of("Hijrah").dateNow();
  *        int day = date.get(ChronoField.DAY_OF_MONTH);
  *        int dow = date.get(ChronoField.DAY_OF_WEEK);
  *        int month = date.get(ChronoField.MONTH_OF_YEAR);
@@ -110,10 +112,10 @@ import java.util.Objects;
  *                dow, day, month, year);
 
  *        // Print today's date and the last day of the year
- *        ChronoLocalDate&lt;?&gt; now1 = Chronology.of("Hijrah").dateNow();
- *        ChronoLocalDate&lt;?&gt; first = now1.with(ChronoField.DAY_OF_MONTH, 1)
+ *        ChronoLocalDate now1 = Chronology.of("Hijrah").dateNow();
+ *        ChronoLocalDate first = now1.with(ChronoField.DAY_OF_MONTH, 1)
  *                .with(ChronoField.MONTH_OF_YEAR, 1);
- *        ChronoLocalDate&lt;?&gt; last = first.plus(1, ChronoUnit.YEARS)
+ *        ChronoLocalDate last = first.plus(1, ChronoUnit.YEARS)
  *                .minus(1, ChronoUnit.DAYS);
  *        System.out.printf("  Today is %s: start: %s; end: %s%n", last.getChronology().getID(),
  *                first, last);
@@ -138,8 +140,8 @@ import java.util.Objects;
  * @param <D> the ChronoLocalDate of this date-time
  * @since 1.8
  */
-abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
-        implements ChronoLocalDate<D>, Temporal, TemporalAdjuster, Serializable {
+abstract class ChronoDateImpl<D extends ChronoLocalDate>
+        implements ChronoLocalDate, Temporal, TemporalAdjuster, Serializable {
 
     /**
      * Serialization version.
@@ -147,13 +149,52 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
     private static final long serialVersionUID = 6282433883239719096L;
 
     /**
+     * Casts the {@code Temporal} to {@code ChronoLocalDate} ensuring it bas the specified chronology.
+     *
+     * @param chrono  the chronology to check for, not null
+     * @param temporal  a date-time to cast, not null
+     * @return the date-time checked and cast to {@code ChronoLocalDate}, not null
+     * @throws ClassCastException if the date-time cannot be cast to ChronoLocalDate
+     *  or the chronology is not equal this Chronology
+     */
+    static <D extends ChronoLocalDate> D ensureValid(Chronology chrono, Temporal temporal) {
+        @SuppressWarnings("unchecked")
+        D other = (D) temporal;
+        if (chrono.equals(other.getChronology()) == false) {
+            throw new ClassCastException("Chronology mismatch, expected: " + chrono.getId() + ", actual: " + other.getChronology().getId());
+        }
+        return other;
+    }
+
+    //-----------------------------------------------------------------------
+    /**
      * Creates an instance.
      */
     ChronoDateImpl() {
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public D with(TemporalAdjuster adjuster) {
+        return (D) ChronoLocalDate.super.with(adjuster);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public D with(TemporalField field, long value) {
+        return (D) ChronoLocalDate.super.with(field, value);
+    }
+
     //-----------------------------------------------------------------------
     @Override
+    @SuppressWarnings("unchecked")
+    public D plus(TemporalAmount amount) {
+        return (D) ChronoLocalDate.super.plus(amount);
+    }
+
+    //-----------------------------------------------------------------------
+    @Override
+    @SuppressWarnings("unchecked")
     public D plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit) {
             ChronoUnit f = (ChronoUnit) unit;
@@ -167,9 +208,21 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
                 case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
                 case ERAS: return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
             }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return ChronoLocalDate.super.plus(amountToAdd, unit);
+        return (D) ChronoLocalDate.super.plus(amountToAdd, unit);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public D minus(TemporalAmount amount) {
+        return (D) ChronoLocalDate.super.minus(amount);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public D minus(long amountToSubtract, TemporalUnit unit) {
+        return (D) ChronoLocalDate.super.minus(amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -254,6 +307,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      * @return a date based on this one with the years subtracted, not null
      * @throws DateTimeException if the result exceeds the supported date range
      */
+    @SuppressWarnings("unchecked")
     D minusYears(long yearsToSubtract) {
         return (yearsToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusYears(Long.MAX_VALUE)).plusYears(1) : plusYears(-yearsToSubtract));
     }
@@ -274,6 +328,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      * @return a date based on this one with the months subtracted, not null
      * @throws DateTimeException if the result exceeds the supported date range
      */
+    @SuppressWarnings("unchecked")
     D minusMonths(long monthsToSubtract) {
         return (monthsToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusMonths(Long.MAX_VALUE)).plusMonths(1) : plusMonths(-monthsToSubtract));
     }
@@ -293,6 +348,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      * @return a date based on this one with the weeks subtracted, not null
      * @throws DateTimeException if the result exceeds the supported date range
      */
+    @SuppressWarnings("unchecked")
     D minusWeeks(long weeksToSubtract) {
         return (weeksToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusWeeks(Long.MAX_VALUE)).plusWeeks(1) : plusWeeks(-weeksToSubtract));
     }
@@ -310,6 +366,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      * @return a date based on this one with the days subtracted, not null
      * @throws DateTimeException if the result exceeds the supported date range
      */
+    @SuppressWarnings("unchecked")
     D minusDays(long daysToSubtract) {
         return (daysToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusDays(Long.MAX_VALUE)).plusDays(1) : plusDays(-daysToSubtract));
     }
@@ -321,13 +378,13 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
-    public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+    public long until(Temporal endDateTime, TemporalUnit unit) {
         Objects.requireNonNull(endDateTime, "endDateTime");
         Objects.requireNonNull(unit, "unit");
         if (endDateTime instanceof ChronoLocalDate == false) {
             throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
-        ChronoLocalDate<?> end = (ChronoLocalDate<?>) endDateTime;
+        ChronoLocalDate end = (ChronoLocalDate) endDateTime;
         if (getChronology().equals(end.getChronology()) == false) {
             throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
         }
@@ -342,16 +399,16 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
                 case MILLENNIA: return monthsUntil(end) / 12000;
                 case ERAS: return end.getLong(ERA) - getLong(ERA);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.between(this, endDateTime);
     }
 
-    private long daysUntil(ChronoLocalDate<?> end) {
+    private long daysUntil(ChronoLocalDate end) {
         return end.toEpochDay() - toEpochDay();  // no overflow
     }
 
-    private long monthsUntil(ChronoLocalDate<?> end) {
+    private long monthsUntil(ChronoLocalDate end) {
         ValueRange range = getChronology().range(MONTH_OF_YEAR);
         if (range.getMaximum() != 12) {
             throw new IllegalStateException("ChronoDateImpl only supports Chronologies with 12 months per year");
@@ -367,7 +424,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate<D>>
             return true;
         }
         if (obj instanceof ChronoLocalDate) {
-            return compareTo((ChronoLocalDate<?>) obj) == 0;
+            return compareTo((ChronoLocalDate) obj) == 0;
         }
         return false;
     }

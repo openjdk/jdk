@@ -35,9 +35,8 @@ function check(e) {
     }
 }
 
-var cl = java.lang.Class.class;
 try {
-    cl.getDeclaredMethods();
+    var cl = java.lang.Class.class;
 } catch(e) {
     check(e); 
 }

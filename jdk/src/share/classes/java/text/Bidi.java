@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,8 +176,10 @@ public final class Bidi {
      * Create a Bidi object representing the bidi information on a line of text within
      * the paragraph represented by the current Bidi.  This call is not required if the
      * entire paragraph fits on one line.
+     *
      * @param lineStart the offset from the start of the paragraph to the start of the line.
      * @param lineLimit the offset from the start of the paragraph to the limit of the line.
+     * @return a {@code Bidi} object
      */
     public Bidi createLineBidi(int lineStart, int lineLimit) {
         AttributedString astr = new AttributedString("");
@@ -189,6 +191,7 @@ public final class Bidi {
     /**
      * Return true if the line is not left-to-right or right-to-left.  This means it either has mixed runs of left-to-right
      * and right-to-left text, or the base direction differs from the direction of the only run of text.
+     *
      * @return true if the line is not left-to-right or right-to-left.
      */
     public boolean isMixed() {
@@ -197,6 +200,7 @@ public final class Bidi {
 
     /**
      * Return true if the line is all left-to-right text and the base direction is left-to-right.
+     *
      * @return true if the line is all left-to-right text and the base direction is left-to-right
      */
     public boolean isLeftToRight() {
@@ -236,8 +240,10 @@ public final class Bidi {
     }
 
     /**
-     * Return the resolved level of the character at offset.  If offset is <0 or >=
-     * the length of the line, return the base direction level.
+     * Return the resolved level of the character at offset.  If offset is
+     * {@literal <} 0 or &ge; the length of the line, return the base direction
+     * level.
+     *
      * @param offset the index of the character for which to return the level
      * @return the resolved level of the character at offset
      */
