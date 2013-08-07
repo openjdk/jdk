@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,6 +455,7 @@ CGGI_ClearCanvas(CGGI_GlyphCanvas *canvas, GlyphInfo *info)
 #define CGGI_GLYPH_BBOX_PADDING 2.0f
 static inline GlyphInfo *
 CGGI_CreateNewGlyphInfoFrom(CGSize advance, CGRect bbox,
+                            const AWTStrike *strike,
                             const CGGI_RenderingMode *mode)
 {
     size_t pixelSize = mode->glyphDescriptor->pixelSize;
@@ -477,6 +478,12 @@ CGGI_CreateNewGlyphInfoFrom(CGSize advance, CGRect bbox,
         width = 1;
         height = 1;
     }
+    advance = CGSizeApplyAffineTransform(advance, strike->fFontTx);
+    if (!JRSFontStyleUsesFractionalMetrics(strike->fStyle)) {
+        advance.width = round(advance.width);
+        advance.height = round(advance.height);
+    }
+    advance = CGSizeApplyAffineTransform(advance, strike->fDevTx);
 
 #ifdef USE_IMAGE_ALIGNED_MEMORY
     // create separate memory
@@ -564,10 +571,10 @@ CGGI_CreateImageForUnicode
     JRSFontGetBoundingBoxesForGlyphsAndStyle(fallback, &tx, style, &glyph, 1, &bbox);
 
     CGSize advance;
-    JRSFontGetAdvancesForGlyphsAndStyle(fallback, &tx, strike->fStyle, &glyph, 1, &advance);
+    CTFontGetAdvancesForGlyphs(fallback, kCTFontDefaultOrientation, &glyph, &advance, 1);
 
     // create the Sun2D GlyphInfo we are going to strike into
-    GlyphInfo *info = CGGI_CreateNewGlyphInfoFrom(advance, bbox, mode);
+    GlyphInfo *info = CGGI_CreateNewGlyphInfoFrom(advance, bbox, strike, mode);
 
     // fix the context size, just in case the substituted character is unexpectedly large
     CGGI_SizeCanvas(canvas, info->width, info->height, mode->cgFontMode);
@@ -715,7 +722,7 @@ CGGI_CreateGlyphInfos(jlong *glyphInfos, const AWTStrike *strike,
     JRSFontRenderingStyle bboxCGMode = JRSFontAlignStyleForFractionalMeasurement(strike->fStyle);
 
     JRSFontGetBoundingBoxesForGlyphsAndStyle((CTFontRef)font->fFont, &tx, bboxCGMode, glyphs, len, bboxes);
-    JRSFontGetAdvancesForGlyphsAndStyle((CTFontRef)font->fFont, &tx, strike->fStyle, glyphs, len, advances);
+    CTFontGetAdvancesForGlyphs((CTFontRef)font->fFont, kCTFontDefaultOrientation, glyphs, advances, len);
 
     size_t maxWidth = 1;
     size_t maxHeight = 1;
@@ -732,7 +739,7 @@ CGGI_CreateGlyphInfos(jlong *glyphInfos, const AWTStrike *strike,
         CGSize advance = advances[i];
         CGRect bbox = bboxes[i];
 
-        GlyphInfo *glyphInfo = CGGI_CreateNewGlyphInfoFrom(advance, bbox, mode);
+        GlyphInfo *glyphInfo = CGGI_CreateNewGlyphInfoFrom(advance, bbox, strike, mode);
 
         if (maxWidth < glyphInfo->width)   maxWidth = glyphInfo->width;
         if (maxHeight < glyphInfo->height) maxHeight = glyphInfo->height;
