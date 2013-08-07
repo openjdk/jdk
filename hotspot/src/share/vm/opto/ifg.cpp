@@ -565,7 +565,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
               lrgs(r)._def = 0;
             }
             n->disconnect_inputs(NULL, C);
-            _cfg._bbs.map(n->_idx,NULL);
+            _cfg.unmap_node_from_block(n);
             n->replace_by(C->top());
             // Since yanking a Node from block, high pressure moves up one
             hrp_index[0]--;
@@ -607,7 +607,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if( n->is_SpillCopy()
               && lrgs(r).is_singledef()        // MultiDef live range can still split
               && n->outcnt() == 1              // and use must be in this block
-              && _cfg._bbs[n->unique_out()->_idx] == b ) {
+              && _cfg.get_block_for_node(n->unique_out()) == b ) {
             // All single-use MachSpillCopy(s) that immediately precede their
             // use must color early.  If a longer live range steals their
             // color, the spill copy will split and may push another spill copy

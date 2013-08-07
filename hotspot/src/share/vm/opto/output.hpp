@@ -96,9 +96,6 @@ private:
   // List of nodes currently available for choosing for scheduling
   Node_List _available;
 
-  // Mapping from node (index) to basic block
-  Block_Array& _bbs;
-
   // For each instruction beginning a bundle, the number of following
   // nodes to be bundled with it.
   Bundle *_node_bundling_base;
