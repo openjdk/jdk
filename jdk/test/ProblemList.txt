@@ -335,8 +335,6 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 # Tests take too long, on sparcs see 7143279
 tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
 tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
-# 8015666 
-tools/pack200/TimeStamp.java                                    generic-all
 
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
