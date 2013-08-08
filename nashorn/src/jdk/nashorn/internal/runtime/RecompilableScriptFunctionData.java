@@ -52,13 +52,19 @@ import jdk.nashorn.internal.parser.TokenType;
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     /** FunctionNode with the code for this ScriptFunction */
-    private FunctionNode functionNode;
+    private volatile FunctionNode functionNode;
+
+    /** Source from which FunctionNode was parsed. */
+    private final Source source;
+
+    /** Token of this function within the source. */
+    private final long token;
 
     /** Allocator map from makeMap() */
     private final PropertyMap allocatorMap;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
-    private final CodeInstaller<ScriptEnvironment> installer;
+    private volatile CodeInstaller<ScriptEnvironment> installer;
 
     /** Name of class where allocator function resides */
     private final String allocatorClassName;
@@ -103,6 +109,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
               true);
 
         this.functionNode       = functionNode;
+        this.source             = functionNode.getSource();
+        this.token              = tokenFor(functionNode);
         this.installer          = installer;
         this.allocatorClassName = allocatorClassName;
         this.allocatorMap       = allocatorMap;
@@ -110,9 +118,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     @Override
     String toSource() {
-        final Source source = functionNode.getSource();
-        final long   token  = tokenFor(functionNode);
-
         if (source != null && token != 0) {
             return source.getString(Token.descPosition(token), Token.descLength(token));
         }
@@ -123,8 +128,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        final Source source = functionNode.getSource();
-        final long   token  = tokenFor(functionNode);
 
         if (source != null) {
             sb.append(source.getName())
@@ -190,6 +193,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
          // code exists - look it up and add it into the automatically sorted invoker list
          addCode(functionNode);
+
+         if (! functionNode.canSpecialize()) {
+             // allow GC to claim IR stuff that is not needed anymore
+             functionNode = null;
+             installer = null;
+         }
     }
 
     private MethodHandle addCode(final FunctionNode fn) {
@@ -325,7 +334,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
          * footprint too large to store a parse snapshot, or if it is meaningless
          * to do so, such as e.g. for runScript
          */
-        if (!functionNode.canSpecialize()) {
+        if (functionNode == null || !functionNode.canSpecialize()) {
             return mh;
         }
 

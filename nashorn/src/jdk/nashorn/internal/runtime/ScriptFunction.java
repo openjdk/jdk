@@ -496,32 +496,24 @@ public abstract class ScriptFunction extends ScriptObject {
         MethodHandle boundHandle;
         MethodHandle guard = null;
 
+        final boolean scopeCall = NashornCallSiteDescriptor.isScope(desc);
+
         if (data.needsCallee()) {
             final MethodHandle callHandle = getBestInvoker(type, request.getArguments());
-            if (NashornCallSiteDescriptor.isScope(desc)) {
+            if (scopeCall) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
                 // (callee, this, args...) => (callee, args...)
                 boundHandle = MH.insertArguments(callHandle, 1, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
                 // (callee, args...) => (callee, [this], args...)
                 boundHandle = MH.dropArguments(boundHandle, 1, Object.class);
+
             } else {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
-
-                // For non-strict functions, check whether this-object is primitive type.
-                // If so add a to-object-wrapper argument filter.
-                // Else install a guard that will trigger a relink when the argument becomes primitive.
-                if (needsWrappedThis()) {
-                    if (ScriptFunctionData.isPrimitiveThis(request.getArguments()[1])) {
-                        boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
-                    } else {
-                        guard = getNonStrictFunctionGuard(this);
-                    }
-                }
             }
         } else {
             final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1), request.getArguments());
-            if (NashornCallSiteDescriptor.isScope(desc)) {
+            if (scopeCall) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
                 // (this, args...) => (args...)
                 boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);
@@ -530,6 +522,17 @@ public abstract class ScriptFunction extends ScriptObject {
             } else {
                 // (this, args...) => ([callee], this, args...)
                 boundHandle = MH.dropArguments(callHandle, 0, Object.class);
+            }
+        }
+
+        // For non-strict functions, check whether this-object is primitive type.
+        // If so add a to-object-wrapper argument filter.
+        // Else install a guard that will trigger a relink when the argument becomes primitive.
+        if (!scopeCall && needsWrappedThis()) {
+            if (ScriptFunctionData.isPrimitiveThis(request.getArguments()[1])) {
+                boundHandle = MH.filterArguments(boundHandle, 1, WRAPFILTER);
+            } else {
+                guard = getNonStrictFunctionGuard(this);
             }
         }
 
