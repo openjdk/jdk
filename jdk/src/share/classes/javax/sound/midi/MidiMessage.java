@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ package javax.sound.midi;
  * processing MIDI data that originated outside Java Sound and now
  * is encoded as signed bytes, the bytes can
  * can be converted to integers using this conversion:
- * <center><code>int i = (int)(byte & 0xFF)</code></center>
+ * <center>{@code int i = (int)(byte & 0xFF)}</center>
  * <p>
  * If you simply need to pass a known MIDI byte value as a method parameter,
  * it can be expressed directly as an integer, using (for example) decimal or
@@ -118,6 +118,10 @@ public abstract class MidiMessage implements Cloneable {
      * method is called by concrete subclasses, which should
      * ensure that the data array specifies a complete, valid MIDI
      * message.
+     *
+     * @param data the data bytes in the MIDI message
+     * @param length the number of bytes in the data byte array
+     * @throws InvalidMidiDataException if the parameter values do not specify a valid MIDI meta message
      */
     protected void setMessage(byte[] data, int length) throws InvalidMidiDataException {
         if (length < 0 || (length > 0 && length > data.length)) {
