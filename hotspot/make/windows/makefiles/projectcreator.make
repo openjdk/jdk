@@ -44,10 +44,11 @@ ProjectCreatorSources=\
 
 # This is only used internally
 ProjectCreatorIncludesPRIVATE=\
-        -relativeInclude src\closed\share\vm \
-        -relativeInclude src\closed\os\windows\vm \
-        -relativeInclude src\closed\os_cpu\windows_$(Platform_arch)\vm \
-        -relativeInclude src\closed\cpu\$(Platform_arch)\vm \
+        -relativeAltSrcInclude src\closed \
+        -altRelativeInclude share\vm \
+        -altRelativeInclude os\windows\vm \
+        -altRelativeInclude os_cpu\windows_$(Platform_arch)\vm \
+        -altRelativeInclude cpu\$(Platform_arch)\vm \
         -relativeInclude src\share\vm \
         -relativeInclude src\share\vm\precompiled \
         -relativeInclude src\share\vm\prims\wbtestmethods \
@@ -91,7 +92,7 @@ ProjectCreatorIDEOptions = \
         -disablePch        getThread_windows_$(Platform_arch).cpp \
         -disablePch_compiler2     opcodes.cpp
 
-# Common options for the IDE builds for core, c1, and c2
+# Common options for the IDE builds for c1, and c2
 ProjectCreatorIDEOptions=\
         $(ProjectCreatorIDEOptions) \
         -sourceBase $(HOTSPOTWORKSPACE) \
@@ -158,18 +159,10 @@ ProjectCreatorIDEOptionsIgnoreCompiler2=\
  -ignoreFile_TARGET $(Platform_arch_model).ad
 
 ##################################################
-# Without compiler(core) specific options
-##################################################
-ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
-$(ProjectCreatorIDEOptionsIgnoreCompiler1:TARGET=core) \
-$(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=core)
-
-##################################################
 # Client(C1) compiler specific options
 ##################################################
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler1 COMPILER1 \
- -ignorePath_compiler1 core \
 $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 
 ##################################################
@@ -178,7 +171,6 @@ $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 #NOTE! This list must be kept in sync with GENERATED_NAMES in adlc.make.
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler2 COMPILER2 \
- -ignorePath_compiler2 core \
  -additionalFile_compiler2 $(Platform_arch_model).ad \
  -additionalFile_compiler2 ad_$(Platform_arch_model).cpp \
  -additionalFile_compiler2 ad_$(Platform_arch_model).hpp \
