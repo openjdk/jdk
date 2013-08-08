@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -68,20 +69,88 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  */
 @ScriptClass("Array")
 public final class NativeArray extends ScriptObject {
-    private static final InvokeByName JOIN = new InvokeByName("join", ScriptObject.class);
+    private static final Object JOIN                     = new Object();
+    private static final Object EVERY_CALLBACK_INVOKER   = new Object();
+    private static final Object SOME_CALLBACK_INVOKER    = new Object();
+    private static final Object FOREACH_CALLBACK_INVOKER = new Object();
+    private static final Object MAP_CALLBACK_INVOKER     = new Object();
+    private static final Object FILTER_CALLBACK_INVOKER  = new Object();
+    private static final Object REDUCE_CALLBACK_INVOKER  = new Object();
+    private static final Object CALL_CMP                 = new Object();
+    private static final Object TO_LOCALE_STRING         = new Object();
 
-    private static final MethodHandle EVERY_CALLBACK_INVOKER   = createIteratorCallbackInvoker(boolean.class);
-    private static final MethodHandle SOME_CALLBACK_INVOKER    = createIteratorCallbackInvoker(boolean.class);
-    private static final MethodHandle FOREACH_CALLBACK_INVOKER = createIteratorCallbackInvoker(void.class);
-    private static final MethodHandle MAP_CALLBACK_INVOKER     = createIteratorCallbackInvoker(Object.class);
-    private static final MethodHandle FILTER_CALLBACK_INVOKER  = createIteratorCallbackInvoker(boolean.class);
+    private static InvokeByName getJOIN() {
+        return Global.instance().getInvokeByName(JOIN,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("join", ScriptObject.class);
+                    }
+                });
+    }
 
-    private static final MethodHandle REDUCE_CALLBACK_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-            Object.class, Undefined.class, Object.class, Object.class, long.class, Object.class);
-    private static final MethodHandle CALL_CMP                = Bootstrap.createDynamicInvoker("dyn:call", double.class,
-            ScriptFunction.class, Object.class, Object.class, Object.class);
+    private static MethodHandle createIteratorCallbackInvoker(final Object key, final Class<?> rtype) {
+        return Global.instance().getDynamicInvoker(key,
+            new Callable<MethodHandle>() {
+                @Override
+                public MethodHandle call() {
+                    return Bootstrap.createDynamicInvoker("dyn:call", rtype, Object.class, Object.class, Object.class,
+                        long.class, Object.class);
+                }
+            });
+    }
 
-    private static final InvokeByName TO_LOCALE_STRING = new InvokeByName("toLocaleString", ScriptObject.class, String.class);
+    private static MethodHandle getEVERY_CALLBACK_INVOKER() {
+        return createIteratorCallbackInvoker(EVERY_CALLBACK_INVOKER, boolean.class);
+    }
+
+    private static MethodHandle getSOME_CALLBACK_INVOKER() {
+        return createIteratorCallbackInvoker(SOME_CALLBACK_INVOKER, boolean.class);
+    }
+
+    private static MethodHandle getFOREACH_CALLBACK_INVOKER() {
+        return createIteratorCallbackInvoker(FOREACH_CALLBACK_INVOKER, void.class);
+    }
+
+    private static MethodHandle getMAP_CALLBACK_INVOKER() {
+        return createIteratorCallbackInvoker(MAP_CALLBACK_INVOKER, Object.class);
+    }
+
+    private static MethodHandle getFILTER_CALLBACK_INVOKER() {
+        return createIteratorCallbackInvoker(FILTER_CALLBACK_INVOKER, boolean.class);
+    }
+
+    private static MethodHandle getREDUCE_CALLBACK_INVOKER() {
+        return Global.instance().getDynamicInvoker(REDUCE_CALLBACK_INVOKER,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class, Object.class,
+                             Undefined.class, Object.class, Object.class, long.class, Object.class);
+                    }
+                });
+    }
+
+    private static MethodHandle getCALL_CMP() {
+        return Global.instance().getDynamicInvoker(CALL_CMP,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicInvoker("dyn:call", double.class,
+                            ScriptFunction.class, Object.class, Object.class, Object.class);
+                    }
+                });
+    }
+
+    private static InvokeByName getTO_LOCALE_STRING() {
+        return Global.instance().getInvokeByName(TO_LOCALE_STRING,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("toLocaleString", ScriptObject.class, String.class);
+                    }
+                });
+    }
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -357,11 +426,12 @@ public final class NativeArray extends ScriptObject {
     public static Object toString(final Object self) {
         final Object obj = Global.toObject(self);
         if (obj instanceof ScriptObject) {
+            final InvokeByName joinInvoker = getJOIN();
             final ScriptObject sobj = (ScriptObject)obj;
             try {
-                final Object join = JOIN.getGetter().invokeExact(sobj);
+                final Object join = joinInvoker.getGetter().invokeExact(sobj);
                 if (Bootstrap.isCallable(join)) {
-                    return JOIN.getInvoker().invokeExact(join, sobj);
+                    return joinInvoker.getInvoker().invokeExact(join, sobj);
                 }
             } catch (final RuntimeException | Error e) {
                 throw e;
@@ -393,11 +463,12 @@ public final class NativeArray extends ScriptObject {
 
                 try {
                     if (val instanceof ScriptObject) {
+                        final InvokeByName localeInvoker = getTO_LOCALE_STRING();
                         final ScriptObject sobj           = (ScriptObject)val;
-                        final Object       toLocaleString = TO_LOCALE_STRING.getGetter().invokeExact(sobj);
+                        final Object       toLocaleString = localeInvoker.getGetter().invokeExact(sobj);
 
                         if (Bootstrap.isCallable(toLocaleString)) {
-                            sb.append((String)TO_LOCALE_STRING.getInvoker().invokeExact(toLocaleString, sobj));
+                            sb.append((String)localeInvoker.getInvoker().invokeExact(toLocaleString, sobj));
                         } else {
                             throw typeError("not.a.function", "toLocaleString");
                         }
@@ -814,6 +885,7 @@ public final class NativeArray extends ScriptObject {
         final Object cmpThis = cmp == null || cmp.isStrict() ? ScriptRuntime.UNDEFINED : Global.instance();
 
         Collections.sort(list, new Comparator<Object>() {
+            private final MethodHandle call_cmp = getCALL_CMP();
             @Override
             public int compare(final Object x, final Object y) {
                 if (x == ScriptRuntime.UNDEFINED && y == ScriptRuntime.UNDEFINED) {
@@ -826,7 +898,7 @@ public final class NativeArray extends ScriptObject {
 
                 if (cmp != null) {
                     try {
-                        return (int)Math.signum((double)CALL_CMP.invokeExact(cmp, cmpThis, x, y));
+                        return (int)Math.signum((double)call_cmp.invokeExact(cmp, cmpThis, x, y));
                     } catch (final RuntimeException | Error e) {
                         throw e;
                     } catch (final Throwable t) {
@@ -1103,9 +1175,11 @@ public final class NativeArray extends ScriptObject {
 
     private static boolean applyEvery(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<Boolean>(Global.toObject(self), callbackfn, thisArg, true) {
+            private final MethodHandle everyInvoker = getEVERY_CALLBACK_INVOKER();
+
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                return (result = (boolean)EVERY_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self));
+                return (result = (boolean)everyInvoker.invokeExact(callbackfn, thisArg, val, i, self));
             }
         }.apply();
     }
@@ -1121,9 +1195,11 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object some(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<Boolean>(Global.toObject(self), callbackfn, thisArg, false) {
+            private final MethodHandle someInvoker = getSOME_CALLBACK_INVOKER();
+
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                return !(result = (boolean)SOME_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self));
+                return !(result = (boolean)someInvoker.invokeExact(callbackfn, thisArg, val, i, self));
             }
         }.apply();
     }
@@ -1139,9 +1215,11 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object forEach(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<Object>(Global.toObject(self), callbackfn, thisArg, ScriptRuntime.UNDEFINED) {
+            private final MethodHandle forEachInvoker = getFOREACH_CALLBACK_INVOKER();
+
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                FOREACH_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self);
+                forEachInvoker.invokeExact(callbackfn, thisArg, val, i, self);
                 return true;
             }
         }.apply();
@@ -1158,9 +1236,11 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
     public static Object map(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<NativeArray>(Global.toObject(self), callbackfn, thisArg, null) {
+            private final MethodHandle mapInvoker = getMAP_CALLBACK_INVOKER();
+
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                final Object r = MAP_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self);
+                final Object r = mapInvoker.invokeExact(callbackfn, thisArg, val, i, self);
                 result.defineOwnProperty(ArrayIndex.getArrayIndex(index), r);
                 return true;
             }
@@ -1186,10 +1266,11 @@ public final class NativeArray extends ScriptObject {
     public static Object filter(final Object self, final Object callbackfn, final Object thisArg) {
         return new IteratorAction<NativeArray>(Global.toObject(self), callbackfn, thisArg, new NativeArray()) {
             private long to = 0;
+            private final MethodHandle filterInvoker = getFILTER_CALLBACK_INVOKER();
 
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
-                if ((boolean)FILTER_CALLBACK_INVOKER.invokeExact(callbackfn, thisArg, val, i, self)) {
+                if ((boolean)filterInvoker.invokeExact(callbackfn, thisArg, val, i, self)) {
                     result.defineOwnProperty(ArrayIndex.getArrayIndex(to++), val);
                 }
                 return true;
@@ -1217,10 +1298,12 @@ public final class NativeArray extends ScriptObject {
 
         //if initial value is ScriptRuntime.UNDEFINED - step forward once.
         return new IteratorAction<Object>(Global.toObject(self), callbackfn, ScriptRuntime.UNDEFINED, initialValue, iter) {
+            private final MethodHandle reduceInvoker = getREDUCE_CALLBACK_INVOKER();
+
             @Override
             protected boolean forEach(final Object val, final long i) throws Throwable {
                 // TODO: why can't I declare the second arg as Undefined.class?
-                result = REDUCE_CALLBACK_INVOKER.invokeExact(callbackfn, ScriptRuntime.UNDEFINED, result, val, i, self);
+                result = reduceInvoker.invokeExact(callbackfn, ScriptRuntime.UNDEFINED, result, val, i, self);
                 return true;
             }
         }.apply();
@@ -1272,11 +1355,5 @@ public final class NativeArray extends ScriptObject {
         }
 
         return false;
-    }
-
-    private static MethodHandle createIteratorCallbackInvoker(final Class<?> rtype) {
-        return Bootstrap.createDynamicInvoker("dyn:call", rtype, Object.class, Object.class, Object.class,
-                long.class, Object.class);
-
     }
 }
