@@ -48,11 +48,18 @@ final class JavaAdapterClassLoader {
     private static final ProtectionDomain GENERATED_PROTECTION_DOMAIN = createGeneratedProtectionDomain();
 
     private final String className;
-    private final byte[] classBytes;
+    private volatile byte[] classBytes;
 
     JavaAdapterClassLoader(String className, byte[] classBytes) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
+    }
+
+    /**
+     * clear classBytes after loading class.
+     */
+    void clearClassBytes() {
+       this.classBytes = null;
     }
 
     /**
@@ -103,6 +110,7 @@ final class JavaAdapterClassLoader {
             @Override
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
+                    assert classBytes != null : "what? already cleared .class bytes!!";
                     return defineClass(name, classBytes, 0, classBytes.length, GENERATED_PROTECTION_DOMAIN);
                 } else {
                     throw new ClassNotFoundException(name);
