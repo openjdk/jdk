@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -70,7 +71,18 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  */
 @ScriptClass("Object")
 public final class NativeObject {
-    private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
+    private static final Object TO_STRING = new Object();
+
+    private static InvokeByName getTO_STRING() {
+        return Global.instance().getInvokeByName(TO_STRING,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("toString", ScriptObject.class);
+                    }
+                });
+    }
+
     private static final MethodType MIRROR_GETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class);
     private static final MethodType MIRROR_SETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class, Object.class);
 
@@ -402,12 +414,13 @@ public final class NativeObject {
     public static Object toLocaleString(final Object self) {
         final Object obj = JSType.toScriptObject(self);
         if (obj instanceof ScriptObject) {
+            final InvokeByName toStringInvoker = getTO_STRING();
             final ScriptObject sobj = (ScriptObject)self;
             try {
-                final Object toString = TO_STRING.getGetter().invokeExact(sobj);
+                final Object toString = toStringInvoker.getGetter().invokeExact(sobj);
 
                 if (Bootstrap.isCallable(toString)) {
-                    return TO_STRING.getInvoker().invokeExact(toString, sobj);
+                    return toStringInvoker.getInvoker().invokeExact(toString, sobj);
                 }
             } catch (final RuntimeException | Error e) {
                 throw e;

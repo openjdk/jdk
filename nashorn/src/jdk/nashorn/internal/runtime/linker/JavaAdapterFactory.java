@@ -224,7 +224,10 @@ public final class JavaAdapterFactory {
             this.commonLoader = findCommonLoader(definingLoader);
             final JavaAdapterBytecodeGenerator gen = new JavaAdapterBytecodeGenerator(superClass, interfaces, commonLoader, false);
             this.autoConvertibleFromFunction = gen.isAutoConvertibleFromFunction();
-            this.instanceAdapterClass = gen.createAdapterClassLoader().generateClass(commonLoader);
+            final JavaAdapterClassLoader jacl = gen.createAdapterClassLoader();
+            this.instanceAdapterClass = jacl.generateClass(commonLoader);
+            // loaded Class - no need to keep class bytes around
+            jacl.clearClassBytes();
             this.adapterGenerator = new JavaAdapterBytecodeGenerator(superClass, interfaces, commonLoader, true).createAdapterClassLoader();
             this.adaptationResult = AdaptationResult.SUCCESSFUL_RESULT;
         }
