@@ -230,8 +230,8 @@ public abstract class ImageReader {
      * increased as each image (or thumbnail, or image metadata) is
      * read.  If <code>seekForwardOnly</code> is true, then a call to
      * <code>read(index)</code> will throw an
-     * <code>IndexOutOfBoundsException</code> if <code>index &lt
-     * this.minIndex</code>; otherwise, the value of
+     * <code>IndexOutOfBoundsException</code> if {@code index < this.minIndex};
+     * otherwise, the value of
      * <code>minIndex</code> will be set to <code>index</code>.  If
      * <code>seekForwardOnly</code> is <code>false</code>, the value of
      * <code>minIndex</code> will remain 0 regardless of any read
@@ -328,8 +328,8 @@ public abstract class ImageReader {
      * increased as each image (or thumbnail, or image metadata) is
      * read.  If <code>seekForwardOnly</code> is true, then a call to
      * <code>read(index)</code> will throw an
-     * <code>IndexOutOfBoundsException</code> if <code>index &lt
-     * this.minIndex</code>; otherwise, the value of
+     * <code>IndexOutOfBoundsException</code> if {@code index < this.minIndex};
+     * otherwise, the value of
      * <code>minIndex</code> will be set to <code>index</code>.  If
      * <code>seekForwardOnly</code> is <code>false</code>, the value of
      * <code>minIndex</code> will remain 0 regardless of any read
@@ -600,8 +600,7 @@ public abstract class ImageReader {
      * <p> Note that formats that return <code>false</code> from
      * this method may nonetheless allow tiling (<i>e.g.</i> Restart
      * Markers in JPEG), and random access will likely be reasonably
-     * efficient on tiles.  See {@link #isImageTiled
-     * <code>isImageTiled</code>}.
+     * efficient on tiles.  See {@link #isImageTiled isImageTiled}.
      *
      * <p> A reader for which all images are guaranteed to support
      * easy random access, or are guaranteed not to support easy
@@ -1212,11 +1211,10 @@ public abstract class ImageReader {
 
     /**
      * Returns <code>true</code> if this plug-in supports reading
-     * just a {@link java.awt.image.Raster <code>Raster</code>} of pixel data.
+     * just a {@link java.awt.image.Raster Raster} of pixel data.
      * If this method returns <code>false</code>, calls to
-     * {@link #readRaster <code>readRaster</code>} or {@link #readTileRaster
-     * <code>readTileRaster</code>} will throw an
-     * <code>UnsupportedOperationException</code>.
+     * {@link #readRaster readRaster} or {@link #readTileRaster readTileRaster}
+     * will throw an <code>UnsupportedOperationException</code>.
      *
      * <p> The default implementation returns <code>false</code>.
      *
@@ -1236,7 +1234,7 @@ public abstract class ImageReader {
      * application must determine how to interpret the pixel data by other
      * means.  Any destination or image-type parameters in the supplied
      * <code>ImageReadParam</code> object are ignored, but all other
-     * parameters are used exactly as in the {@link #read <code>read</code>}
+     * parameters are used exactly as in the {@link #read read}
      * method, except that any destination offset is used as a logical rather
      * than a physical offset.  The size of the returned <code>Raster</code>
      * will always be that of the source region clipped to the actual image.
@@ -1249,10 +1247,9 @@ public abstract class ImageReader {
      *
      * <p> Any registered <code>readUpdateListener</code>s are ignored, as
      * there is no <code>BufferedImage</code>, but all other listeners are
-     * called exactly as they are for the {@link #read <code>read</code>}
-     * method.
+     * called exactly as they are for the {@link #read read} method.
      *
-     * <p> If {@link #canReadRaster <code>canReadRaster()</code>} returns
+     * <p> If {@link #canReadRaster canReadRaster()} returns
      * <code>false</code>, this method throws an
      * <code>UnsupportedOperationException</code>.
      *
@@ -1481,13 +1478,13 @@ public abstract class ImageReader {
      * The application must determine how to interpret the pixel data by other
      * means.
      *
-     * <p> If {@link #canReadRaster <code>canReadRaster()</code>} returns
+     * <p> If {@link #canReadRaster canReadRaster()} returns
      * <code>false</code>, this method throws an
      * <code>UnsupportedOperationException</code>.
      *
      * <p> The default implementation checks if reading
      * <code>Raster</code>s is supported, and if so calls {@link
-     * #readRaster <code>readRaster(imageIndex, null)</code>} if
+     * #readRaster readRaster(imageIndex, null)} if
      * <code>tileX</code> and <code>tileY</code> are 0, or throws an
      * <code>IllegalArgumentException</code> otherwise.
      *
@@ -1548,8 +1545,8 @@ public abstract class ImageReader {
      * source render size or any format-specific settings), they will
      * be ignored.
      *
-     * <p> The default implementation just calls {@link #read
-     * <code>read(imageIndex, param)</code>}.
+     * <p> The default implementation just calls
+     * {@link #read read(imageIndex, param)}.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param param an <code>ImageReadParam</code> used to control
@@ -2544,9 +2541,8 @@ public abstract class ImageReader {
      * the supplied <code>ImageReadParam</code>.  The actual
      * subsampling factors, destination size, and destination offset
      * are <em>not</em> taken into consideration, thus further
-     * clipping must take place.  The {@link #computeRegions
-     * <code>computeRegions</code>} method performs all necessary
-     * clipping.
+     * clipping must take place.  The {@link #computeRegions computeRegions}
+     * method performs all necessary clipping.
      *
      * @param param the <code>ImageReadParam</code> being used, or
      * <code>null</code>.
@@ -2601,7 +2597,7 @@ public abstract class ImageReader {
      * width or height of 0, an <code>IllegalArgumentException</code>
      * is thrown.
      *
-     * <p> The {@link #getSourceRegion <code>getSourceRegion</code>}
+     * <p> The {@link #getSourceRegion getSourceRegion>}
      * method may be used if only source clipping is desired.
      *
      * @param param an <code>ImageReadParam</code>, or <code>null</code>.

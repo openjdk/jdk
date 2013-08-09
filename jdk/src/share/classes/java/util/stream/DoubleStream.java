@@ -527,7 +527,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
     long count();
 
     /**
-     * Returns an {@code OptionalDouble} describing the average of elements of
+     * Returns an {@code OptionalDouble} describing the arithmetic mean of elements of
      * this stream, or an empty optional if this stream is empty.  The average
      * returned can vary depending upon the order in which elements are
      * encountered. This is due to accumulated rounding error in addition of
