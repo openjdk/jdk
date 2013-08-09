@@ -23,21 +23,41 @@
 
 /*
  * @test
- * @bug 8015635
- * @summary Test ensures that the ReservedCodeCacheSize is at most MAXINT
+ * @bug 8000968
+ * @key regression
+ * @summary NPG: UseCompressedKlassPointers asserts with ObjectAlignmentInBytes=32
  * @library /testlibrary
- *
  */
+
 import com.oracle.java.testlibrary.*;
 
-public class CheckUpperLimit {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb;
-    OutputAnalyzer out;
+public class CompressedKlassPointerAndOops {
 
-    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldContain("Invalid ReservedCodeCacheSize=");
-    out.shouldHaveExitValue(1);
-  }
+    public static void main(String[] args) throws Exception {
+
+        if (!Platform.is64bit()) {
+            // Can't test this on 32 bit, just pass
+            System.out.println("Skipping test on 32bit");
+            return;
+        }
+
+        runWithAlignment(16);
+        runWithAlignment(32);
+        runWithAlignment(64);
+        runWithAlignment(128);
+    }
+
+    private static void runWithAlignment(int alignment) throws Exception {
+        ProcessBuilder pb;
+        OutputAnalyzer output;
+
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UseCompressedKlassPointers",
+            "-XX:+UseCompressedOops",
+            "-XX:ObjectAlignmentInBytes=" + alignment,
+            "-version");
+
+        output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+    }
 }
