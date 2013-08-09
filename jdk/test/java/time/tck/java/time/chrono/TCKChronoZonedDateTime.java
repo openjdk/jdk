@@ -256,7 +256,7 @@ public class TCKChronoZonedDateTime {
     }
 
     //-----------------------------------------------------------------------
-    // isBefore, isAfter, isEqual, INSTANT_COMPARATOR  test a Chronology against the other Chronos
+    // isBefore, isAfter, isEqual, timeLineOrder()  test a Chronology against the other Chronos
     //-----------------------------------------------------------------------
     @Test(dataProvider="calendars")
     public void test_zonedDateTime_comparisons(Chronology chrono) {
@@ -413,11 +413,6 @@ public class TCKChronoZonedDateTime {
         }
 
         @Override
-        public String getName() {
-            return "FixedTemporalUnit";
-        }
-
-        @Override
         public Duration getDuration() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -425,6 +420,16 @@ public class TCKChronoZonedDateTime {
         @Override
         public boolean isDurationEstimated() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
@@ -442,6 +447,12 @@ public class TCKChronoZonedDateTime {
         public long between(Temporal temporal1, Temporal temporal2) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public String toString() {
+            return "FixedTemporalUnit";
+        }
+
     }
 
     /**
@@ -452,11 +463,6 @@ public class TCKChronoZonedDateTime {
         private Temporal temporal;
         FixedTemporalField(Temporal temporal) {
             this.temporal = temporal;
-        }
-
-        @Override
-        public String getName() {
-            return "FixedTemporalField";
         }
 
         @Override
@@ -472,6 +478,16 @@ public class TCKChronoZonedDateTime {
         @Override
         public ValueRange range() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean isDateBased() {
+            return false;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
@@ -493,6 +509,11 @@ public class TCKChronoZonedDateTime {
         @Override
         public <R extends Temporal> R adjustInto(R temporal, long newValue) {
             return (R) this.temporal;
+        }
+
+        @Override
+        public String toString() {
+            return "FixedTemporalField";
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2198,8 +2198,15 @@ public final class Main {
                     printExtensions(rb.getString("Extension.Request."), exts, out);
                 }
             } else {
-                out.println(attr.getAttributeId());
-                out.println(attr.getAttributeValue());
+                out.println("Attribute: " + attr.getAttributeId());
+                PKCS9Attribute pkcs9Attr =
+                        new PKCS9Attribute(attr.getAttributeId(),
+                                           attr.getAttributeValue());
+                out.print(pkcs9Attr.getName() + ": ");
+                Object attrVal = attr.getAttributeValue();
+                out.println(attrVal instanceof String[] ?
+                            Arrays.toString((String[]) attrVal) :
+                            attrVal);
             }
         }
         if (debug) {

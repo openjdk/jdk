@@ -1339,7 +1339,7 @@ public class Flow {
 
         /** A mapping from addresses to variable symbols.
          */
-        VarSymbol[] vars;
+        JCVariableDecl[] vardecls;
 
         /** The current class being defined.
          */
@@ -1417,13 +1417,14 @@ public class Flow {
          *  to the next available sequence number and entering it under that
          *  index into the vars array.
          */
-        void newVar(VarSymbol sym) {
-            vars = ArrayUtils.ensureCapacity(vars, nextadr);
+        void newVar(JCVariableDecl varDecl) {
+            VarSymbol sym = varDecl.sym;
+            vardecls = ArrayUtils.ensureCapacity(vardecls, nextadr);
             if ((sym.flags() & FINAL) == 0) {
                 sym.flags_field |= EFFECTIVELY_FINAL;
             }
             sym.adr = nextadr;
-            vars[nextadr] = sym;
+            vardecls[nextadr] = varDecl;
             inits.excl(nextadr);
             uninits.incl(nextadr);
             nextadr++;
@@ -1493,11 +1494,13 @@ public class Flow {
         /** Check that trackable variable is initialized.
          */
         void checkInit(DiagnosticPosition pos, VarSymbol sym) {
+            checkInit(pos, sym, "var.might.not.have.been.initialized");
+        }
+        void checkInit(DiagnosticPosition pos, VarSymbol sym, String errkey) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
                 !inits.isMember(sym.adr)) {
-                log.error(pos, "var.might.not.have.been.initialized",
-                          sym);
+                log.error(pos, errkey, sym);
                 inits.incl(sym.adr);
             }
         }
@@ -1599,7 +1602,7 @@ public class Flow {
                         if ((def.mods.flags & STATIC) != 0) {
                             VarSymbol sym = def.sym;
                             if (trackable(sym))
-                                newVar(sym);
+                                newVar(def);
                         }
                     }
                 }
@@ -1619,7 +1622,7 @@ public class Flow {
                         if ((def.mods.flags & STATIC) == 0) {
                             VarSymbol sym = def.sym;
                             if (trackable(sym))
-                                newVar(sym);
+                                newVar(def);
                         }
                     }
                 }
@@ -1678,9 +1681,22 @@ public class Flow {
                 scan(tree.body);
 
                 if (isInitialConstructor) {
-                    for (int i = firstadr; i < nextadr; i++)
-                        if (vars[i].owner == classDef.sym)
-                            checkInit(TreeInfo.diagEndPos(tree.body), vars[i]);
+                    boolean isSynthesized = (tree.sym.flags() &
+                                             GENERATEDCONSTR) != 0;
+                    for (int i = firstadr; i < nextadr; i++) {
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
+                        if (var.owner == classDef.sym) {
+                            // choose the diagnostic position based on whether
+                            // the ctor is default(synthesized) or not
+                            if (isSynthesized) {
+                                checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
+                                    var, "var.not.initialized.in.default.constructor");
+                            } else {
+                                checkInit(TreeInfo.diagEndPos(tree.body), var);
+                            }
+                        }
+                    }
                 }
                 List<AssignPendingExit> exits = pendingExits.toList();
                 pendingExits = new ListBuffer<AssignPendingExit>();
@@ -1691,7 +1707,7 @@ public class Flow {
                     if (isInitialConstructor) {
                         inits.assign(exit.exit_inits);
                         for (int i = firstadr; i < nextadr; i++)
-                            checkInit(exit.tree.pos(), vars[i]);
+                            checkInit(exit.tree.pos(), vardecls[i].sym);
                     }
                 }
             } finally {
@@ -1706,7 +1722,7 @@ public class Flow {
 
         public void visitVarDef(JCVariableDecl tree) {
             boolean track = trackable(tree.sym);
-            if (track && tree.sym.owner.kind == MTH) newVar(tree.sym);
+            if (track && tree.sym.owner.kind == MTH) newVar(tree);
             if (tree.init != null) {
                 Lint lintPrev = lint;
                 lint = lint.augment(tree.sym);
@@ -2239,11 +2255,11 @@ public class Flow {
                 Flow.this.make = make;
                 startPos = tree.pos().getStartPosition();
 
-                if (vars == null)
-                    vars = new VarSymbol[32];
+                if (vardecls == null)
+                    vardecls = new JCVariableDecl[32];
                 else
-                    for (int i=0; i<vars.length; i++)
-                        vars[i] = null;
+                    for (int i=0; i<vardecls.length; i++)
+                        vardecls[i] = null;
                 firstadr = 0;
                 nextadr = 0;
                 pendingExits = new ListBuffer<AssignPendingExit>();
@@ -2255,8 +2271,8 @@ public class Flow {
                 startPos = -1;
                 resetBits(inits, uninits, uninitsTry, initsWhenTrue,
                         initsWhenFalse, uninitsWhenTrue, uninitsWhenFalse);
-                if (vars != null) for (int i=0; i<vars.length; i++)
-                    vars[i] = null;
+                if (vardecls != null) for (int i=0; i<vardecls.length; i++)
+                    vardecls[i] = null;
                 firstadr = 0;
                 nextadr = 0;
                 pendingExits = null;
