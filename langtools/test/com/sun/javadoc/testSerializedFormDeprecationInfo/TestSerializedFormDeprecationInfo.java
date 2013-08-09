@@ -47,9 +47,9 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
-                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
                  " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">This field indicates whether the C1 " +
                  "is undecorated.</div>" + NL + "&nbsp;" + NL +
                  "<dl>" + NL + "<dt><span class=\"strong\">Since:</span></dt>" + NL +
@@ -57,9 +57,9 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                  "</dt>" + NL + "<dd><a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
                  "<code>C1.setUndecorated(boolean)</code></a></dd>" + NL + "</dl>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">Deprecated.</span>" +
-                 "&nbsp;<i>As of JDK version 1.5, replaced by" + NL +
+                 "&nbsp;<span class=\"italic\">As of JDK version 1.5, replaced by" + NL +
                  " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL +
+                 "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL +
                  "<div class=\"block\">Reads the object stream.</div>" + NL +
                  "<dl>" + NL + "<dt><span class=\"strong\">Throws:</span></dt>" + NL + "<dd><code><code>" +
                  "IOException</code></code></dd>" + NL +
@@ -73,15 +73,15 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     // information if any.
     private static final String[][] TEST_NOCMNT = {
         {BUG_ID + FS + "serialized-form.html", "<pre>boolean undecorated</pre>" + NL +
-                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;<i>" +
+                 "<div class=\"block\"><span class=\"strong\">Deprecated.</span>&nbsp;<span class=\"italic\">" +
                  "As of JDK version 1.5, replaced by" + NL +
                  " <a href=\"pkg1/C1.html#setUndecorated(boolean)\"><code>" +
-                 "setUndecorated(boolean)</code></a>.</i></div>" + NL + "</li>"},
+                 "setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"},
         {BUG_ID + FS + "serialized-form.html", "<span class=\"strong\">" +
-                 "Deprecated.</span>&nbsp;<i>As of JDK version" +
+                 "Deprecated.</span>&nbsp;<span class=\"italic\">As of JDK version" +
                  " 1.5, replaced by" + NL +
                  " <a href=\"pkg1/C1.html#setUndecorated(boolean)\">" +
-                 "<code>setUndecorated(boolean)</code></a>.</i></div>" + NL + "</li>"}};
+                 "<code>setUndecorated(boolean)</code></a>.</span></div>" + NL + "</li>"}};
 
     // Test with -nodeprecated option. The serialized-form.html should
     // ignore the -nodeprecated tag and display the deprecation info. This
