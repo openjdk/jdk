@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,10 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
             DerOutputStream out = new DerOutputStream();
             out.putInteger(n);
             out.putInteger(e);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
-            key = val.toByteArray();
+            byte[] keyArray =
+                new DerValue(DerValue.tag_Sequence,
+                             out.toByteArray()).toByteArray();
+            setKey(new BitArray(keyArray.length*8, keyArray));
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);
@@ -104,7 +105,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
      */
     protected void parseKeyBits() throws InvalidKeyException {
         try {
-            DerInputStream in = new DerInputStream(key);
+            DerInputStream in = new DerInputStream(getKey().toByteArray());
             DerValue derValue = in.getDerValue();
             if (derValue.tag != DerValue.tag_Sequence) {
                 throw new IOException("Not a SEQUENCE");
