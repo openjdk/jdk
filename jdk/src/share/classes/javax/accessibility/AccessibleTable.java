@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ public interface AccessibleTable {
      * Returns the number of rows occupied by the Accessible at
      * a specified row and column in the table.
      *
+     * @param r zero-based row of the table
+     * @param c zero-based column of the table
      * @return the number of rows occupied by the Accessible at a
      * given specified (row, column)
      */
@@ -99,6 +101,8 @@ public interface AccessibleTable {
      * Returns the number of columns occupied by the Accessible at
      * a specified row and column in the table.
      *
+     * @param r zero-based row of the table
+     * @param c zero-based column of the table
      * @return the number of columns occupied by the Accessible at a
      * given specified row and column
      */
