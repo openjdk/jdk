@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,23 +47,23 @@ public class InterfaceAddress {
     }
 
     /**
-     * Returns an <code>InetAddress</code> for this address.
+     * Returns an {@code InetAddress} for this address.
      *
-     * @return the <code>InetAddress</code> for this address.
+     * @return the {@code InetAddress} for this address.
      */
     public InetAddress getAddress() {
         return address;
     }
 
     /**
-     * Returns an <code>InetAddress</code> for the brodcast address
+     * Returns an {@code InetAddress} for the brodcast address
      * for this InterfaceAddress.
      * <p>
      * Only IPv4 networks have broadcast address therefore, in the case
-     * of an IPv6 network, <code>null</code> will be returned.
+     * of an IPv6 network, {@code null} will be returned.
      *
-     * @return the <code>InetAddress</code> representing the broadcast
-     *         address or <code>null</code> if there is no broadcast address.
+     * @return the {@code InetAddress} representing the broadcast
+     *         address or {@code null} if there is no broadcast address.
      */
     public InetAddress getBroadcast() {
         return broadcast;
@@ -76,7 +76,7 @@ public class InterfaceAddress {
      * or 24 (255.255.255.0). <p>
      * Typical IPv6 values would be 128 (::1/128) or 10 (fe80::203:baff:fe27:1243/10)
      *
-     * @return a <code>short</code> representing the prefix length for the
+     * @return a {@code short} representing the prefix length for the
      *         subnet of that address.
      */
      public short getNetworkPrefixLength() {
@@ -85,17 +85,17 @@ public class InterfaceAddress {
 
     /**
      * Compares this object against the specified object.
-     * The result is <code>true</code> if and only if the argument is
-     * not <code>null</code> and it represents the same interface address as
+     * The result is {@code true} if and only if the argument is
+     * not {@code null} and it represents the same interface address as
      * this object.
      * <p>
-     * Two instances of <code>InterfaceAddress</code> represent the same
+     * Two instances of {@code InterfaceAddress} represent the same
      * address if the InetAddress, the prefix length and the broadcast are
      * the same for both.
      *
      * @param   obj   the object to compare against.
-     * @return  <code>true</code> if the objects are the same;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the objects are the same;
+     *          {@code false} otherwise.
      * @see     java.net.InterfaceAddress#hashCode()
      */
     public boolean equals(Object obj) {
@@ -122,7 +122,7 @@ public class InterfaceAddress {
     }
 
     /**
-     * Converts this Interface address to a <code>String</code>. The
+     * Converts this Interface address to a {@code String}. The
      * string returned is of the form: InetAddress / prefix length [ broadcast address ].
      *
      * @return  a string representation of this Interface address.

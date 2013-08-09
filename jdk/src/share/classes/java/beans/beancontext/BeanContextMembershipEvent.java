@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
      * Is the child specified affected by the event?
      * @return <code>true</code> if affected, <code>false</code>
      * if not
+     * @param child the object to check for being affected
      */
     public boolean contains(Object child) {
         return children.contains(child);

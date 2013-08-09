@@ -403,6 +403,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
         private XMLSecurityManager fSecurityManager;
         private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
+
         public JAXPSAXParser() {
             this(null, null, null);
         }

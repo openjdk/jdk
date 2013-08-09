@@ -25,6 +25,7 @@
 
 package java.util;
 
+import java.io.Serializable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -2865,7 +2866,7 @@ public class TreeMap<K,V>
         }
 
         public int characteristics() {
-            return (side == 0 ? Spliterator.SIZED : 0);
+            return (side == 0 ? Spliterator.SIZED : 0) | Spliterator.ORDERED;
         }
     }
 
@@ -2942,9 +2943,23 @@ public class TreeMap<K,V>
         }
 
         @Override
-        public Comparator<? super Map.Entry<K, V>> getComparator() {
-            return tree.comparator != null ?
-                    Map.Entry.comparingByKey(tree.comparator) : null;
+        public Comparator<Map.Entry<K, V>> getComparator() {
+            // Since SORTED is reported and Map.Entry elements are not comparable
+            // then a non-null comparator needs to be returned
+            if (tree.comparator != null) {
+                // Adapt the existing non-null comparator to compare entries
+                // by key
+                return Map.Entry.comparingByKey(tree.comparator);
+            }
+            else {
+                // Return a comparator of entries by key, with K assumed to be
+                // of Comparable
+                return (Comparator<Map.Entry<K, V>> & Serializable) (e1, e2) -> {
+                    @SuppressWarnings("unchecked")
+                    Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();
+                    return k1.compareTo(e2.getKey());
+                };
+            }
         }
     }
 }

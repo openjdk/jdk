@@ -40,7 +40,7 @@ import javax.print.event.PrintServiceAttributeListener;
  * a printer's supported attributes.
  * <P>
  * Example:
- *   <PRE>
+ *   <PRE>{@code
  *   DocFlavor flavor = DocFlavor.INPUT_STREAM.POSTSCRIPT;
  *   PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
  *   aset.add(MediaSizeName.ISO_A4);
@@ -56,7 +56,7 @@ import javax.print.event.PrintServiceAttributeListener;
  *        } catch (PrintException e) {
  *        }
  *   }
- *   </PRE>
+ *   }</PRE>
  */
 public interface PrintService {
 

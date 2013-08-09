@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @compile JavaxSSLContextImpl.java ComSSLContextImpl.java
  *      JavaxTrustManagerFactoryImpl.java ComTrustManagerFactoryImpl.java
  *      JavaxKeyManagerFactoryImpl.java ComKeyManagerFactoryImpl.java
- * @run main ProviderTest
+ * @run main/othervm ProviderTest
  * @summary brokenness in the com.sun.net.ssl.SSLSecurity wrappers
  */
 

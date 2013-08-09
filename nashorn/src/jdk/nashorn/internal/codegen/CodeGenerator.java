@@ -45,6 +45,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticField;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
+import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_TEMP;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
@@ -131,6 +132,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.Undefined;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -1143,22 +1145,23 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Type elementType = arrayType.getElementType();
 
         if (units != null) {
-            final MethodEmitter savedMethod = method;
+            final MethodEmitter savedMethod     = method;
+            final FunctionNode  currentFunction = lc.getCurrentFunction();
 
             for (final ArrayUnit arrayUnit : units) {
                 unit = lc.pushCompileUnit(arrayUnit.getCompileUnit());
 
                 final String className = unit.getUnitClassName();
-                final String name      = lc.getCurrentFunction().uniqueName(SPLIT_PREFIX.symbolName());
-                final String signature = methodDescriptor(type, Object.class, ScriptFunction.class, ScriptObject.class, type);
+                final String name      = currentFunction.uniqueName(SPLIT_PREFIX.symbolName());
+                final String signature = methodDescriptor(type, ScriptFunction.class, Object.class, ScriptObject.class, type);
 
                 final MethodEmitter me = unit.getClassEmitter().method(EnumSet.of(Flag.PUBLIC, Flag.STATIC), name, signature);
                 method = lc.pushMethodEmitter(me);
 
-                method.setFunctionNode(lc.getCurrentFunction());
+                method.setFunctionNode(currentFunction);
                 method.begin();
 
-                fixScopeSlot();
+                fixScopeSlot(currentFunction);
 
                 method.load(arrayType, SPLIT_ARRAY_ARG.slot());
 
@@ -1171,9 +1174,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 method = lc.popMethodEmitter(me);
 
                 assert method == savedMethod;
-                method.loadCompilerConstant(THIS);
-                method.swap();
                 method.loadCompilerConstant(CALLEE);
+                method.swap();
+                method.loadCompilerConstant(THIS);
                 method.swap();
                 method.loadCompilerConstant(SCOPE);
                 method.swap();
@@ -1261,7 +1264,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             classEmitter.needGetConstantMethod(cls);
         } else {
             method.loadConstants().load(index).arrayload();
-            if (cls != Object.class) {
+            if (object instanceof ArrayData) {
+                // avoid cast to non-public ArrayData subclass
+                method.checkcast(ArrayData.class);
+                method.invoke(virtualCallNoLookup(ArrayData.class, "copy", ArrayData.class));
+            } else if (cls != Object.class) {
                 method.checkcast(cls);
             }
         }
@@ -1680,11 +1687,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method = lc.pushMethodEmitter(splitEmitter);
         method.setFunctionNode(fn);
 
-        if (fn.needsCallee()) {
-            caller.loadCompilerConstant(CALLEE);
-        } else {
-            caller.loadNull();
-        }
+        assert fn.needsCallee() : "split function should require callee";
+        caller.loadCompilerConstant(CALLEE);
         caller.loadCompilerConstant(THIS);
         caller.loadCompilerConstant(SCOPE);
         if (needsArguments) {
@@ -1694,18 +1698,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         caller.storeCompilerConstant(RETURN);
 
         method.begin();
+        // Copy scope to its target slot as first thing because the original slot could be used by return symbol.
+        fixScopeSlot(fn);
 
         method.loadUndefined(fn.getReturnType());
         method.storeCompilerConstant(RETURN);
 
-        fixScopeSlot();
-
         return true;
     }
 
-    private void fixScopeSlot() {
-        if (lc.getCurrentFunction().compilerConstant(SCOPE).getSlot() != SCOPE.slot()) {
-            // TODO hack to move the scope to the expected slot (that's needed because split methods reuse the same slots as the root method)
+    private void fixScopeSlot(final FunctionNode functionNode) {
+        // TODO hack to move the scope to the expected slot (needed because split methods reuse the same slots as the root method)
+        if (functionNode.compilerConstant(SCOPE).getSlot() != SCOPE.slot()) {
             method.load(Type.typeFor(ScriptObject.class), SCOPE.slot());
             method.storeCompilerConstant(SCOPE);
         }
@@ -1756,7 +1760,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             caller.ifne(breakLabel);
             //has to be zero
             caller.label(new Label("split_return"));
-            method.loadCompilerConstant(RETURN);
+            caller.loadCompilerConstant(RETURN);
             caller._return(lc.getCurrentFunction().getReturnType());
             caller.label(breakLabel);
         } else {
@@ -1785,6 +1789,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
             }
             caller.label(breakLabel);
+        }
+
+        // If split has a return and caller is itself a split method it needs to propagate the return.
+        if (hasReturn) {
+            caller.setHasReturn();
         }
 
         return splitNode;

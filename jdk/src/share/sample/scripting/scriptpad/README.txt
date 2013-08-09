@@ -108,7 +108,7 @@ under the ./src/scripts directory.
       java -Dcom.sun.management.jmxremote.port=1090          \
            -Dcom.sun.management.jmxremote.ssl=false          \
            -Dcom.sun.management.jmxremote.authenticate=false \
-           -jar $JDK_HOME/demo/jfc/Java2D/Java2Demo.jar
+           -jar $JDK_HOME/demo/jfc/Font2DTest/Font2DTest.jar
 
 (2) Start scriptpad and click on "Tools->JMX Connect" menu.
     In the prompt, enter "localhost:1090" to connect to the above

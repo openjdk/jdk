@@ -1,0 +1,4 @@
+AnchorTest2.java:15: error: anchor already defined: AnchorTest2
+    /** <a name="AnchorTest2"> </a> */
+           ^
+1 error

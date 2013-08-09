@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,17 +103,17 @@ class Authenticator {
      * Sets the authenticator that will be used by the networking code
      * when a proxy or an HTTP server asks for authentication.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with a
-     * <code>NetPermission("setDefaultAuthenticator")</code> permission.
+     * {@code NetPermission("setDefaultAuthenticator")} permission.
      * This may result in a java.lang.SecurityException.
      *
-     * @param   a       The authenticator to be set. If a is <code>null</code> then
+     * @param   a       The authenticator to be set. If a is {@code null} then
      *                  any previously set authenticator is removed.
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        setting the default authenticator.
      *
      * @see SecurityManager#checkPermission
@@ -134,9 +134,9 @@ class Authenticator {
      * Ask the authenticator that has been registered with the system
      * for a password.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with a
-     * <code>NetPermission("requestPasswordAuthentication")</code> permission.
+     * {@code NetPermission("requestPasswordAuthentication")} permission.
      * This may result in a java.lang.SecurityException.
      *
      * @param addr The InetAddress of the site requesting authorization,
@@ -151,7 +151,7 @@ class Authenticator {
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        the password authentication request.
      *
      * @see SecurityManager#checkPermission
@@ -193,9 +193,9 @@ class Authenticator {
      * because the hostname can be provided in cases where the InetAddress
      * is not available.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with a
-     * <code>NetPermission("requestPasswordAuthentication")</code> permission.
+     * {@code NetPermission("requestPasswordAuthentication")} permission.
      * This may result in a java.lang.SecurityException.
      *
      * @param host The hostname of the site requesting authentication.
@@ -211,7 +211,7 @@ class Authenticator {
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        the password authentication request.
      *
      * @see SecurityManager#checkPermission
@@ -254,9 +254,9 @@ class Authenticator {
      * Ask the authenticator that has been registered with the system
      * for a password.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with a
-     * <code>NetPermission("requestPasswordAuthentication")</code> permission.
+     * {@code NetPermission("requestPasswordAuthentication")} permission.
      * This may result in a java.lang.SecurityException.
      *
      * @param host The hostname of the site requesting authentication.
@@ -275,7 +275,7 @@ class Authenticator {
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        the password authentication request.
      *
      * @see SecurityManager#checkPermission
@@ -320,8 +320,8 @@ class Authenticator {
     }
 
     /**
-     * Gets the <code>hostname</code> of the
-     * site or proxy requesting authentication, or <code>null</code>
+     * Gets the {@code hostname} of the
+     * site or proxy requesting authentication, or {@code null}
      * if not available.
      *
      * @return the hostname of the connection requiring authentication, or null
@@ -333,8 +333,8 @@ class Authenticator {
     }
 
     /**
-     * Gets the <code>InetAddress</code> of the
-     * site requesting authorization, or <code>null</code>
+     * Gets the {@code InetAddress} of the
+     * site requesting authorization, or {@code null}
      * if not available.
      *
      * @return the InetAddress of the site requesting authorization, or null
@@ -346,7 +346,7 @@ class Authenticator {
 
     /**
      * Gets the port number for the requested connection.
-     * @return an <code>int</code> indicating the
+     * @return an {@code int} indicating the
      * port for the requested connection.
      */
     protected final int getRequestingPort() {

@@ -45,9 +45,9 @@ import java.util.function.UnaryOperator;
  * capacity of a vector before inserting a large number of
  * components; this reduces the amount of incremental reallocation.
  *
- * <p><a name="fail-fast"/>
+ * <p><a name="fail-fast">
  * The iterators returned by this class's {@link #iterator() iterator} and
- * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em>:
+ * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em></a>:
  * if the vector is structurally modified at any time after the iterator is
  * created, in any way except through the iterator's own
  * {@link ListIterator#remove() remove} or
@@ -1164,12 +1164,13 @@ public class Vector<E>
                 if (i >= size) {
                     return;
                 }
-                final Object[] elementData = Vector.this.elementData;
+        @SuppressWarnings("unchecked")
+                final E[] elementData = (E[]) Vector.this.elementData;
                 if (i >= elementData.length) {
                     throw new ConcurrentModificationException();
                 }
                 while (i != size && modCount == expectedModCount) {
-                    action.accept((E) elementData[i++]);
+                    action.accept(elementData[i++]);
                 }
                 // update once at end of iteration to reduce heap write traffic
                 cursor = i;
@@ -1311,8 +1312,8 @@ public class Vector<E>
         modCount++;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
+    @Override
     public synchronized void sort(Comparator<? super E> c) {
         final int expectedModCount = modCount;
         Arrays.sort((E[]) elementData, 0, elementCount, c);

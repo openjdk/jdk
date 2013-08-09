@@ -51,6 +51,8 @@ import sun.net.www.HeaderParser;
 
 public abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
 
+    static final long serialVersionUID = -2588378268010453259L;
+
     // Constants saying what kind of authroization this is.  This determines
     // the namespace in the hash table lookup.
     public static final char SERVER_AUTHENTICATION = 's';
