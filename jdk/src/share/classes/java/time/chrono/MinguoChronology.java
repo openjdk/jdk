@@ -65,12 +65,15 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * The Minguo calendar system.
@@ -253,16 +256,19 @@ public final class MinguoChronology extends Chronology implements Serializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoLocalDateTime<MinguoDate> localDateTime(TemporalAccessor temporal) {
         return (ChronoLocalDateTime<MinguoDate>)super.localDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<MinguoDate> zonedDateTime(TemporalAccessor temporal) {
         return (ChronoZonedDateTime<MinguoDate>)super.zonedDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<MinguoDate> zonedDateTime(Instant instant, ZoneId zone) {
         return (ChronoZonedDateTime<MinguoDate>)super.zonedDateTime(instant, zone);
     }
@@ -292,7 +298,7 @@ public final class MinguoChronology extends Chronology implements Serializable {
     }
 
     @Override
-    public Era eraOf(int eraValue) {
+    public MinguoEra eraOf(int eraValue) {
         return MinguoEra.of(eraValue);
     }
 
@@ -319,6 +325,12 @@ public final class MinguoChronology extends Chronology implements Serializable {
             }
         }
         return field.range();
+    }
+
+    //-----------------------------------------------------------------------
+    @Override  // override for return type
+    public MinguoDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        return (MinguoDate) super.resolveDate(fieldValues, resolverStyle);
     }
 
 }

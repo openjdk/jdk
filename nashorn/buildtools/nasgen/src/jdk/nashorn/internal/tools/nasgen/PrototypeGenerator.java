@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.tools.nasgen;
 
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
@@ -60,7 +61,7 @@ public class PrototypeGenerator extends ClassGenerator {
 
     byte[] getClassBytes() {
         // new class extensing from ScriptObject
-        cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, className, null, PROTOTYPEOBJECT_TYPE, null);
+        cw.visit(V1_7, ACC_FINAL | ACC_SUPER, className, null, PROTOTYPEOBJECT_TYPE, null);
         if (memberCount > 0) {
             // add fields
             emitFields();
