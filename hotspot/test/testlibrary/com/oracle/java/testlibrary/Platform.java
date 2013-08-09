@@ -27,6 +27,7 @@ public class Platform {
   private static final String osName = System.getProperty("os.name");
   private static final String dataModel = System.getProperty("sun.arch.data.model");
   private static final String vmVersion = System.getProperty("java.vm.version");
+  private static final String osArch = System.getProperty("os.arch");
 
   public static boolean is64bit() {
     return dataModel.equals("64");
@@ -59,4 +60,14 @@ public class Platform {
   public static String getVMVersion() {
     return vmVersion;
   }
+
+  // Returns true for sparc and sparcv9.
+  public static boolean isSparc() {
+    return osArch.toLowerCase().startsWith("sparc");
+  }
+
+  public static String getOsArch() {
+    return osArch;
+  }
+
 }
