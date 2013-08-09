@@ -108,20 +108,38 @@ public class JavacAnnoConstructs {
     }
 
     // Helper to getAnnotation[s]
-    private static <A extends Annotation> Attribute.Compound getAttributeOnClass(ClassSymbol annotated,
-                                                                Class<A> annoType) {
+    private static <A extends Annotation> Attribute.Compound getAttributeOnClass(
+            ClassSymbol annotated,
+            final Class<A> annoType)
+    {
         boolean inherited = annoType.isAnnotationPresent(Inherited.class);
         Attribute.Compound result = null;
-        while (annotated.name != annotated.name.table.names.java_lang_Object) {
+
+        result = getAttribute(annotated, annoType);
+        if (result != null || !inherited)
+            return result;
+
+        while ((annotated = nextSupertypeToSearch(annotated)) != null) {
             result = getAttribute(annotated, annoType);
-            if (result != null || !inherited)
-                break;
-            Type sup = annotated.getSuperclass();
-            if (!sup.hasTag(CLASS) || sup.isErroneous())
-                break;
-            annotated = (ClassSymbol) sup.tsym;
+            if (result != null)
+                return result;
         }
-        return result;
+        return null; // no more supertypes to search
+    }
+
+    /**
+     * Returns the next type to search for inherited annotations or {@code null}
+     * if the next type can't be found.
+     */
+    private static ClassSymbol nextSupertypeToSearch(ClassSymbol annotated) {
+        if (annotated.name == annotated.name.table.names.java_lang_Object)
+            return null;
+
+        Type sup = annotated.getSuperclass();
+        if (!sup.hasTag(CLASS) || sup.isErroneous())
+            return null;
+
+        return (ClassSymbol) sup.tsym;
     }
 
     /**
@@ -129,8 +147,9 @@ public class JavacAnnoConstructs {
      * annotations. This is the implementation of
      * Element.getAnnotations(Class).
      */
-    public static <A extends Annotation> A[] getAnnotations(Symbol annotated,
-                                                            Class<A> annoType) {
+    public static <A extends Annotation> A[] getAnnotationsByType(Symbol annotated,
+            Class<A> annoType)
+    {
         if (!annoType.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type: "
                                                + annoType);
@@ -153,62 +172,48 @@ public class JavacAnnoConstructs {
         }
 
         // So we have a containing type
-        String name = annoType.getName();
         String annoTypeName = annoType.getSimpleName();
         String containerTypeName = containerType.getSimpleName();
         int directIndex = -1, containerIndex = -1;
         Attribute.Compound direct = null, container = null;
-        Attribute.Compound[] rawAttributes = annotated.getRawAttributes().toArray(new Attribute.Compound[0]);
-
-        // Find directly present annotations
-        for (int i = 0; i < rawAttributes.length; i++) {
-            if (annoTypeName.equals(rawAttributes[i].type.tsym.flatName().toString())) {
-                directIndex = i;
-                direct = rawAttributes[i];
+        // Find directly (explicit or implicit) present annotations
+        int index = -1;
+        for (List<Attribute.Compound> list = annotated.getAnnotationMirrors();
+                !list.isEmpty();
+                list = list.tail) {
+            Attribute.Compound attribute = list.head;
+            index++;
+            if (attribute.type.tsym.flatName().contentEquals(annoTypeName)) {
+                directIndex = index;
+                direct = attribute;
             } else if(containerTypeName != null &&
-                      containerTypeName.equals(rawAttributes[i].type.tsym.flatName().toString())) {
-                containerIndex = i;
-                container = rawAttributes[i];
+                      attribute.type.tsym.flatName().contentEquals(containerTypeName)) {
+                containerIndex = index;
+                container = attribute;
             }
         }
 
         // Deal with inherited annotations
-        if (annotated.kind == Kinds.TYP &&
-                (annotated instanceof ClassSymbol)) {
-            ClassSymbol s = (ClassSymbol)annotated;
-            if (direct == null && container == null) {
-                direct = getAttributeOnClass(s, annoType);
-                container = getAttributeOnClass(s, containerType);
-
-                // both are inherited and found, put container last
-                if (direct != null && container != null) {
-                    directIndex = 0;
-                    containerIndex = 1;
-                } else if (direct != null) {
-                    directIndex = 0;
-                } else {
-                    containerIndex = 0;
-                }
-            } else if (direct == null) {
-                direct = getAttributeOnClass(s, annoType);
-                if (direct != null)
-                    directIndex = containerIndex + 1;
-            } else if (container == null) {
-                container = getAttributeOnClass(s, containerType);
-                if (container != null)
-                    containerIndex = directIndex + 1;
+        if (direct == null && container == null) {
+            if (annotated.kind == Kinds.TYP &&
+                    (annotated instanceof ClassSymbol)) {
+                ClassSymbol s = nextSupertypeToSearch((ClassSymbol)annotated);
+                if (s != null)
+                    return getAnnotationsByType(s, annoType);
             }
         }
 
         // Pack them in an array
-        Attribute[] contained0 = new Attribute[0];
+        Attribute[] contained0 = null;
         if (container != null)
             contained0 = unpackAttributes(container);
         ListBuffer<Attribute.Compound> compounds = ListBuffer.lb();
-        for (Attribute a : contained0)
-            if (a instanceof Attribute.Compound)
-                compounds = compounds.append((Attribute.Compound)a);
-        Attribute.Compound[] contained = compounds.toArray(new Attribute.Compound[0]);
+        if (contained0 != null) {
+            for (Attribute a : contained0)
+                if (a instanceof Attribute.Compound)
+                    compounds = compounds.append((Attribute.Compound)a);
+        }
+        Attribute.Compound[] contained = compounds.toArray(new Attribute.Compound[compounds.size()]);
 
         int size = (direct == null ? 0 : 1) + contained.length;
         @SuppressWarnings("unchecked") // annoType is the Class for A
@@ -298,35 +303,38 @@ public class JavacAnnoConstructs {
         }
 
         // So we have a containing type
-        String name = annoType.getName();
         String annoTypeName = annoType.getSimpleName();
         String containerTypeName = containerType.getSimpleName();
         int directIndex = -1, containerIndex = -1;
         Attribute.Compound direct = null, container = null;
-        Attribute.Compound[] rawAttributes = annotated.getAnnotationMirrors().toArray(new Attribute.Compound[0]);
-
-        // Find directly present annotations
-        for (int i = 0; i < rawAttributes.length; i++) {
-            if (annoTypeName.equals(rawAttributes[i].type.tsym.flatName().toString())) {
-                directIndex = i;
-                direct = rawAttributes[i];
+        // Find directly (explicit or implicit) present annotations
+        int index = -1;
+        for (List<? extends Attribute.Compound> list = annotated.getAnnotationMirrors();
+                !list.isEmpty();
+                list = list.tail) {
+            Attribute.Compound attribute = list.head;
+            index++;
+            if (attribute.type.tsym.flatName().contentEquals(annoTypeName)) {
+                directIndex = index;
+                direct = attribute;
             } else if(containerTypeName != null &&
-                      containerTypeName.equals(rawAttributes[i].type.tsym.flatName().toString())) {
-                containerIndex = i;
-                container = rawAttributes[i];
+                      attribute.type.tsym.flatName().contentEquals(containerTypeName)) {
+                containerIndex = index;
+                container = attribute;
             }
         }
 
         // Pack them in an array
-        Attribute[] contained0 = new Attribute[0];
+        Attribute[] contained0 = null;
         if (container != null)
             contained0 = unpackAttributes(container);
         ListBuffer<Attribute.Compound> compounds = ListBuffer.lb();
-        for (Attribute a : contained0) {
-            if (a instanceof Attribute.Compound)
-                compounds = compounds.append((Attribute.Compound)a);
+        if (contained0 != null) {
+            for (Attribute a : contained0)
+                if (a instanceof Attribute.Compound)
+                    compounds = compounds.append((Attribute.Compound)a);
         }
-        Attribute.Compound[] contained = compounds.toArray(new Attribute.Compound[0]);
+        Attribute.Compound[] contained = compounds.toArray(new Attribute.Compound[compounds.size()]);
 
         int size = (direct == null ? 0 : 1) + contained.length;
         @SuppressWarnings("unchecked") // annoType is the Class for A

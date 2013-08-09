@@ -157,7 +157,7 @@ final class DateTimePrintContext {
             }
         }
         final ZoneId effectiveZone = (overrideZone != null ? overrideZone : temporalZone);
-        final ChronoLocalDate<?> effectiveDate;
+        final ChronoLocalDate effectiveDate;
         if (overrideChrono != null) {
             if (temporal.isSupported(EPOCH_DAY)) {
                 effectiveDate = effectiveChrono.date(temporal);
