@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,27 @@ public class MalformedInputException
 
     private int inputLength;
 
+    /**
+     * Constructs an {@code MalformedInputException} with the given
+     * length.
+     * @param inputLength the length of the input
+     */
     public MalformedInputException(int inputLength) {
         this.inputLength = inputLength;
     }
 
+    /**
+     * Returns the length of the input.
+     * @return the length of the input
+     */
     public int getInputLength() {
         return inputLength;
     }
 
+    /**
+     * Returns the message.
+     * @return the message
+     */
     public String getMessage() {
         return "Input length = " + inputLength;
     }

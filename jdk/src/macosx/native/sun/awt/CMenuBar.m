@@ -63,7 +63,7 @@ static BOOL sSetupHelpMenu = NO;
         if (excludingAppleMenu && ![currMenu isJavaMenu]) {
             continue;
         }
-
+        [currItem setSubmenu:nil];
         [theMainMenu removeItemAtIndex:index];
     }
 
@@ -154,7 +154,10 @@ static BOOL sSetupHelpMenu = NO;
     // Clean up extra items
     NSUInteger removedIndex, removedCount = [removedMenuArray count];
     for (removedIndex=removedCount; removedIndex > 0; removedIndex--) {
-        [theMainMenu removeItemAtIndex:[[removedMenuArray objectAtIndex:(removedIndex-1)] integerValue]];
+        NSUInteger index = [[removedMenuArray objectAtIndex:(removedIndex-1)] integerValue];
+        NSMenuItem *currItem = [theMainMenu itemAtIndex:index];
+        [currItem setSubmenu:nil];
+        [theMainMenu removeItemAtIndex:index];
     }
 
     i = cmenuIndex;
