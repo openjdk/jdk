@@ -2944,16 +2944,11 @@ public class TreeMap<K,V>
 
         @Override
         public Comparator<Map.Entry<K, V>> getComparator() {
-            // Since SORTED is reported and Map.Entry elements are not comparable
-            // then a non-null comparator needs to be returned
+            // Adapt or create a key-based comparator
             if (tree.comparator != null) {
-                // Adapt the existing non-null comparator to compare entries
-                // by key
                 return Map.Entry.comparingByKey(tree.comparator);
             }
             else {
-                // Return a comparator of entries by key, with K assumed to be
-                // of Comparable
                 return (Comparator<Map.Entry<K, V>> & Serializable) (e1, e2) -> {
                     @SuppressWarnings("unchecked")
                     Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();

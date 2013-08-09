@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -44,11 +45,15 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.Spliterator;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
@@ -108,9 +113,7 @@ import java.util.function.Function;
  * @since 1.6
  */
 public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
-    implements ConcurrentNavigableMap<K,V>,
-               Cloneable,
-               java.io.Serializable {
+    implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
     /*
      * This class implements a tree-like two-dimensionally linked skip
      * list in which the index levels are represented in separate
@@ -1412,6 +1415,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     /**
      * Saves this map to a stream (that is, serializes it).
      *
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      * @serialData The key (Object) and value (Object) for each
      * key-value mapping represented by the map, followed by
      * {@code null}. The key-value mappings are emitted in key-order
@@ -1436,6 +1441,10 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Reconstitutes this map from a stream (that is, deserializes it).
+     * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
     @SuppressWarnings("unchecked")
     private void readObject(final java.io.ObjectInputStream s)
@@ -2548,8 +2557,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @serial include
      */
     static final class SubMap<K,V> extends AbstractMap<K,V>
-        implements ConcurrentNavigableMap<K,V>, Cloneable,
-                   java.io.Serializable {
+        implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
         private static final long serialVersionUID = -7647078645895051609L;
 
         /** Underlying map */
@@ -3180,6 +3188,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             public long estimateSize() {
                 return Long.MAX_VALUE;
             }
+
         }
 
         final class SubMapValueIterator extends SubMapIter<V> {
@@ -3434,7 +3443,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         public int characteristics() {
-            return Spliterator.CONCURRENT | Spliterator.NONNULL;
+            return Spliterator.CONCURRENT | Spliterator.ORDERED |
+                Spliterator.NONNULL;
         }
     }
 
@@ -3528,8 +3538,17 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         public final Comparator<Map.Entry<K,V>> getComparator() {
-            return comparator == null ? null :
-                Map.Entry.comparingByKey(comparator);
+            // Adapt or create a key-based comparator
+            if (comparator != null) {
+                return Map.Entry.comparingByKey(comparator);
+            }
+            else {
+                return (Comparator<Map.Entry<K,V>> & Serializable) (e1, e2) -> {
+                    @SuppressWarnings("unchecked")
+                    Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();
+                    return k1.compareTo(e2.getKey());
+                };
+            }
         }
     }
 
