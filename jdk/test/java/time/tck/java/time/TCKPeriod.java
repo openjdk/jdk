@@ -121,10 +121,23 @@ public class TCKPeriod extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    // ofWeeks(int)
+    //-----------------------------------------------------------------------
+    @Test
+    public void factory_ofWeeks_int() {
+        assertPeriod(Period.ofWeeks(0), 0, 0, 0);
+        assertPeriod(Period.ofWeeks(1), 0, 0, 7);
+        assertPeriod(Period.ofWeeks(234), 0, 0, 234 * 7);
+        assertPeriod(Period.ofWeeks(-100), 0, 0, -100 * 7);
+        assertPeriod(Period.ofWeeks(Integer.MAX_VALUE / 7), 0, 0, (Integer.MAX_VALUE / 7) * 7);
+        assertPeriod(Period.ofWeeks(Integer.MIN_VALUE / 7), 0, 0, (Integer.MIN_VALUE / 7) * 7);
+    }
+
+    //-----------------------------------------------------------------------
     // ofDays(int)
     //-----------------------------------------------------------------------
     @Test
-    public void factory_ofDay_int() {
+    public void factory_ofDays_int() {
         assertPeriod(Period.ofDays(0), 0, 0, 0);
         assertPeriod(Period.ofDays(1), 0, 0, 1);
         assertPeriod(Period.ofDays(234), 0, 0, 234);
@@ -251,6 +264,18 @@ public class TCKPeriod extends AbstractTCKTest {
                 {"P" + Integer.MAX_VALUE + "M", Period.ofMonths(Integer.MAX_VALUE)},
                 {"P" + Integer.MIN_VALUE + "M", Period.ofMonths(Integer.MIN_VALUE)},
 
+                {"P1W", Period.ofDays(1 * 7)},
+                {"P12W", Period.ofDays(12 * 7)},
+                {"P7654321W", Period.ofDays(7654321 * 7)},
+                {"P+1W", Period.ofDays(1 * 7)},
+                {"P+12W", Period.ofDays(12 * 7)},
+                {"P+7654321W", Period.ofDays(7654321 * 7)},
+                {"P+0W", Period.ofDays(0)},
+                {"P0W", Period.ofDays(0)},
+                {"P-0W", Period.ofDays(0)},
+                {"P-25W", Period.ofDays(-25 * 7)},
+                {"P-7654321W", Period.ofDays(-7654321 * 7)},
+
                 {"P1D", Period.ofDays(1)},
                 {"P12D", Period.ofDays(12)},
                 {"P987654321D", Period.ofDays(987654321)},
@@ -274,6 +299,10 @@ public class TCKPeriod extends AbstractTCKTest {
                 {"P2Y-3M25D", Period.of(2, -3, 25)},
                 {"P2Y3M-25D", Period.of(2, 3, -25)},
                 {"P-2Y-3M-25D", Period.of(-2, -3, -25)},
+
+                {"P0Y0M0W0D", Period.of(0, 0, 0)},
+                {"P2Y3M4W25D", Period.of(2, 3, 4 * 7 + 25)},
+                {"P-2Y-3M-4W-25D", Period.of(-2, -3, -4 * 7 - 25)},
         };
     }
 
@@ -333,6 +362,13 @@ public class TCKPeriod extends AbstractTCKTest {
                 {"P1YMD"},
                 {"P1Y2Y"},
                 {"PT1M+3S"},
+
+                {"P1M2Y"},
+                {"P1W2Y"},
+                {"P1D2Y"},
+                {"P1W2M"},
+                {"P1D2M"},
+                {"P1D2W"},
 
                 {"PT1S1"},
                 {"PT1S."},

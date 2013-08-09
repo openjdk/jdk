@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug     4892507
+ * @bug     4892507 8020875 8021335
  * @summary Basic Test for the following reset methods:
  *          - ThreadMXBean.resetPeakThreadCount()
  * @author  Mandy Chung
+ * @author  Jaroslav Bachorik
  *
  * @build ResetPeakThreadCount
  * @build ThreadDump
@@ -53,15 +54,17 @@ public class ResetPeakThreadCount {
 
     private static final int TERMINATE_2 = 8;
 
+    private static final int TERMINATE_3 = 2;
+
     private static final int ALL_THREADS = DAEMON_THREADS_1 +
         DAEMON_THREADS_2 + DAEMON_THREADS_3;
     // barrier for threads communication
-    private static Barrier barrier = new Barrier(DAEMON_THREADS_1);
+    private static final Barrier barrier = new Barrier(DAEMON_THREADS_1);
 
-    private static Thread allThreads[] = new Thread[ALL_THREADS];
-    private static volatile boolean live[] = new boolean[ALL_THREADS];
+    private static final Thread allThreads[] = new Thread[ALL_THREADS];
+    private static final boolean live[] = new boolean[ALL_THREADS];
     private static final ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
-    private static boolean testFailed = false;
+    private static volatile boolean testFailed = false;
 
     public static void main(String[] argv) throws Exception {
         // This test does not expect any threads to be created
@@ -69,7 +72,10 @@ public class ResetPeakThreadCount {
         // The checkThreadCount() method is to produce more
         // diagnostic information in case any unexpected test failure occur.
         long previous = mbean.getThreadCount();
-        long current;
+        long current = previous;
+
+        // reset the peak to start from a scratch
+        resetPeak(current);
 
         // start DAEMON_THREADS_1 number of threads
         current = startThreads(0, DAEMON_THREADS_1, EXPECTED_PEAK_DELTA_1);
@@ -106,6 +112,14 @@ public class ResetPeakThreadCount {
         current = terminateThreads(TERMINATE_1, TERMINATE_2);
 
         checkThreadCount(previous, current, TERMINATE_2 * -1);
+        previous = current;
+
+        resetPeak(current);
+
+        // terminate TERMINATE_3 number of threads and reset peak
+        current = terminateThreads(TERMINATE_1 + TERMINATE_2, TERMINATE_3);
+
+        checkThreadCount(previous, current, TERMINATE_3 * -1);
         resetPeak(current);
 
         if (testFailed)
@@ -114,7 +128,7 @@ public class ResetPeakThreadCount {
         System.out.println("Test passed");
     }
 
-    private static long startThreads(int from, int count, int delta) {
+    private static long startThreads(int from, int count, int delta) throws InterruptedException {
         // get current peak thread count
         long peak1 = mbean.getPeakThreadCount();
         long current = mbean.getThreadCount();
@@ -122,11 +136,13 @@ public class ResetPeakThreadCount {
         // Start threads and wait to be sure they all are alive
         System.out.println("Starting " + count + " threads....");
         barrier.set(count);
-        for (int i = from; i < (from + count); i++) {
-            live[i] = true;
-            allThreads[i] = new MyThread(i);
-            allThreads[i].setDaemon(true);
-            allThreads[i].start();
+        synchronized(live) {
+            for (int i = from; i < (from + count); i++) {
+                live[i] = true;
+                allThreads[i] = new MyThread(i);
+                allThreads[i].setDaemon(true);
+                allThreads[i].start();
+            }
         }
         // wait until all threads have started.
         barrier.await();
@@ -144,29 +160,25 @@ public class ResetPeakThreadCount {
         }
         // wait until the current thread count gets incremented
         while (mbean.getThreadCount() < (current + count)) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                System.out.println("Unexpected exception.");
-                testFailed = true;
-            }
+            Thread.sleep(100);
         }
         current = mbean.getThreadCount();
         System.out.println("   Live thread count before returns " + current);
         return current;
     }
 
-    private static long terminateThreads(int from, int count) {
+    private static long terminateThreads(int from, int count) throws InterruptedException {
         // get current peak thread count
         long peak1 = mbean.getPeakThreadCount();
-        long current = mbean.getThreadCount();
 
         // Stop daemon threads and wait to be sure they all are dead
         System.out.println("Terminating " + count + " threads....");
         barrier.set(count);
-        for (int i = from; i < (from+count); i++) {
-            live[i] = false;
+        synchronized(live) {
+            for (int i = from; i < (from+count); i++) {
+                live[i] = false;
+            }
+            live.notifyAll();
         }
         // wait until daemon threads terminated.
         barrier.await();
@@ -179,18 +191,17 @@ public class ResetPeakThreadCount {
                 " Expected to be = previous peak = " + peak1);
         }
 
-        // wait until the current thread count gets decremented
-        while (mbean.getThreadCount() > (current - count)) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                System.out.println("Unexpected exception.");
-                testFailed = true;
-            }
+        for (int i = from; i < (from+count); i++) {
+            allThreads[i].join();
         }
 
-        current = mbean.getThreadCount();
+        // there is a race in the counter update logic somewhere causing
+        // the thread counters go ff
+        // we need to give the terminated threads some extra time to really die
+        // JDK-8021335
+        Thread.sleep(500);
+
+        long current = mbean.getThreadCount();
         System.out.println("   Live thread count before returns " + current);
         return current;
     }
@@ -223,11 +234,11 @@ public class ResetPeakThreadCount {
 
     private static void checkThreadCount(long previous, long current, int expectedDelta) {
         if (current != previous + expectedDelta) {
-            System.out.println("***** Unexpected thread count:" +
+            ThreadDump.threadDump();
+            throw new RuntimeException("***** Unexpected thread count:" +
                                " previous = " + previous +
                                " current = " + current +
                                " delta = " + expectedDelta + "*****");
-            ThreadDump.threadDump();
         }
     }
 
@@ -242,13 +253,15 @@ public class ResetPeakThreadCount {
         public void run() {
             // signal started
             barrier.signal();
-            while (live[id]) {
-                try {
-                    sleep(100);
-                } catch (InterruptedException e) {
-                    System.out.println("Unexpected exception is thrown.");
-                    e.printStackTrace(System.out);
-                    testFailed = true;
+            synchronized(live) {
+                while (live[id]) {
+                    try {
+                        live.wait(100);
+                    } catch (InterruptedException e) {
+                        System.out.println("Unexpected exception is thrown.");
+                        e.printStackTrace(System.out);
+                        testFailed = true;
+                    }
                 }
             }
             // signal about to exit

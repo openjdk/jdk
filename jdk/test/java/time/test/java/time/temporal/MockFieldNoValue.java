@@ -77,11 +77,6 @@ public enum MockFieldNoValue implements TemporalField {
     INSTANCE;
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
     public TemporalUnit getBaseUnit() {
         return WEEKS;
     }
@@ -94,6 +89,16 @@ public enum MockFieldNoValue implements TemporalField {
     @Override
     public ValueRange range() {
         return ValueRange.of(1, 20);
+    }
+
+    @Override
+    public boolean isDateBased() {
+        return false;
+    }
+
+    @Override
+    public boolean isTimeBased() {
+        return false;
     }
 
     //-----------------------------------------------------------------------
@@ -115,6 +120,11 @@ public enum MockFieldNoValue implements TemporalField {
     @Override
     public <R extends Temporal> R adjustInto(R temporal, long newValue) {
         throw new DateTimeException("Mock");
+    }
+
+    @Override
+    public String toString() {
+        return null;
     }
 
 }

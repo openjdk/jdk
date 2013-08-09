@@ -352,11 +352,15 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
         return newMap;
     }
 
-    /*
+    /**
      * Make a new UserAccessorProperty property. getter and setter functions are stored in
      * this ScriptObject and slot values are used in property object. Note that slots
      * are assigned speculatively and should be added to map before adding other
      * properties.
+     *
+     * @param key the property name
+     * @param propertyFlags attribute flags of the property
+     * @return the newly created UserAccessorProperty
      */
     public UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
         int oldSpillLength = spillLength;

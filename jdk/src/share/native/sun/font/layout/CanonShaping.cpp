@@ -66,6 +66,16 @@ void CanonShaping::reorderMarks(const LEUnicode *inChars, le_int32 charCount, le
     le_int32 *indices = LE_NEW_ARRAY(le_int32, charCount);
     le_int32 i;
 
+    if (combiningClasses == NULL || indices == NULL) {
+        if (combiningClasses != NULL) {
+            LE_DELETE_ARRAY(combiningClasses);
+        }
+        if (indices != NULL) {
+            LE_DELETE_ARRAY(indices);
+        }
+        return;
+    }
+
     for (i = 0; i < charCount; i += 1) {
       combiningClasses[i] = classTable->getGlyphClass(classTable, (LEGlyphID) inChars[i], success);
         indices[i] = i;

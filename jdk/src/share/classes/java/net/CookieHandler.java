@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public abstract class CookieHandler {
      *        there is no system-wide cookie handler currently set.
      * @throws SecurityException
      *       If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("getCookieHandler")</tt>
+     * {@link NetPermission}{@code ("getCookieHandler")}
      * @see #setDefault(CookieHandler)
      */
     public synchronized static CookieHandler getDefault() {
@@ -83,10 +83,10 @@ public abstract class CookieHandler {
      * Note: non-standard http protocol handlers may ignore this setting.
      *
      * @param cHandler The HTTP cookie handler, or
-     *       <code>null</code> to unset.
+     *       {@code null} to unset.
      * @throws SecurityException
      *       If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("setCookieHandler")</tt>
+     * {@link NetPermission}{@code ("setCookieHandler")}
      * @see #getDefault()
      */
     public synchronized static void setDefault(CookieHandler cHandler) {
@@ -114,7 +114,7 @@ public abstract class CookieHandler {
      * called after all request headers related to choosing cookies
      * are added, and before the request is sent.</P>
      *
-     * @param uri a <code>URI</code> representing the intended use for the
+     * @param uri a {@code URI} representing the intended use for the
      *            cookies
      * @param requestHeaders - a Map from request header
      *            field names to lists of field values representing
@@ -136,7 +136,7 @@ public abstract class CookieHandler {
      * fields that are named Set-Cookie2, present in the response
      * headers into a cookie cache.
      *
-     * @param uri a <code>URI</code> where the cookies come from
+     * @param uri a {@code URI} where the cookies come from
      * @param responseHeaders an immutable map from field names to
      *            lists of field values representing the response
      *            header fields returned
