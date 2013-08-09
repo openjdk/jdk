@@ -50,7 +50,7 @@ import java.util.Arrays;
  *   address. This is the full form.  For example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>1080:0:0:0:8:800:200C:417A</tt><td></tr>
+ *   <tr><td>{@code 1080:0:0:0:8:800:200C:417A}<td></tr>
  *   </table></blockquote>
  *
  *   <p> Note that it is not necessary to write the leading zeros in
@@ -67,7 +67,7 @@ import java.util.Arrays;
  *   zeros in an address. For example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>1080::8:800:200C:417A</tt><td></tr>
+ *   <tr><td>{@code 1080::8:800:200C:417A}<td></tr>
  *   </table></blockquote>
  *
  *   <li><p> An alternative form that is sometimes more convenient
@@ -78,8 +78,8 @@ import java.util.Arrays;
  *   standard IPv4 representation address, for example,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:129.144.52.38</tt><td></tr>
- *   <tr><td><tt>::129.144.52.38</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:129.144.52.38}<td></tr>
+ *   <tr><td>{@code ::129.144.52.38}<td></tr>
  *   </table></blockquote>
  *
  *   <p> where "::FFFF:d.d.d.d" and "::d.d.d.d" are, respectively, the
@@ -88,23 +88,23 @@ import java.util.Arrays;
  *   in the "d.d.d.d" form. The following forms are invalid:
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:d.d.d</tt><td></tr>
- *   <tr><td><tt>::FFFF:d.d</tt><td></tr>
- *   <tr><td><tt>::d.d.d</tt><td></tr>
- *   <tr><td><tt>::d.d</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:d.d.d}<td></tr>
+ *   <tr><td>{@code ::FFFF:d.d}<td></tr>
+ *   <tr><td>{@code ::d.d.d}<td></tr>
+ *   <tr><td>{@code ::d.d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> The following form:
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::FFFF:d</tt><td></tr>
+ *   <tr><td>{@code ::FFFF:d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> is valid, however it is an unconventional representation of
  *   the IPv4-compatible IPv6 address,
  *
  *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td><tt>::255.255.0.d</tt><td></tr>
+ *   <tr><td>{@code ::255.255.0.d}<td></tr>
  *   </table></blockquote>
  *
  *   <p> while "::d" corresponds to the general IPv6 address
@@ -412,7 +412,7 @@ class Inet6Address extends InetAddress {
      * Create an Inet6Address in the exact manner of {@link
      * InetAddress#getByAddress(String,byte[])} except that the IPv6 scope_id is
      * set to the value corresponding to the given interface for the address
-     * type specified in <code>addr</code>. The call will fail with an
+     * type specified in {@code addr}. The call will fail with an
      * UnknownHostException if the given interface does not have a numeric
      * scope_id assigned for the given address type (eg. link-local or site-local).
      * See <a href="Inet6Address.html#scoped">here</a> for a description of IPv6

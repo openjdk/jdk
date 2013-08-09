@@ -118,6 +118,10 @@ abstract class NashornLoader extends SecureClassLoader {
         return permCollection;
     }
 
+    static boolean isStructureClass(final String fullName) {
+        return fullName.startsWith(SCRIPTS_PKG);
+    }
+
     /**
      * Create a secure URL class loader for the given classpath
      * @param classPath classpath for the loader to search from

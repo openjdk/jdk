@@ -132,6 +132,36 @@ public class DOMUtils {
     }
 
     /**
+     * Returns the first child element of the specified node and checks that
+     * the local name is equal to {@code localName}.
+     *
+     * @param node the node
+     * @return the first child element of the specified node
+     * @throws NullPointerException if {@code node == null}
+     * @throws MarshalException if no such element or the local name is not
+     *    equal to {@code localName}
+     */
+    public static Element getFirstChildElement(Node node, String localName)
+        throws MarshalException
+    {
+        return verifyElement(getFirstChildElement(node), localName);
+    }
+
+    private static Element verifyElement(Element elem, String localName)
+        throws MarshalException
+    {
+        if (elem == null) {
+            throw new MarshalException("Missing " + localName + " element");
+        }
+        String name = elem.getLocalName();
+        if (!name.equals(localName)) {
+            throw new MarshalException("Invalid element name: " +
+                                       name + ", expected " + localName);
+        }
+        return elem;
+    }
+
+    /**
      * Returns the last child element of the specified node, or null if there
      * is no such element.
      *
@@ -163,6 +193,22 @@ public class DOMUtils {
             sibling = sibling.getNextSibling();
         }
         return (Element)sibling;
+    }
+
+    /**
+     * Returns the next sibling element of the specified node and checks that
+     * the local name is equal to {@code localName}.
+     *
+     * @param node the node
+     * @return the next sibling element of the specified node
+     * @throws NullPointerException if {@code node == null}
+     * @throws MarshalException if no such element or the local name is not
+     *    equal to {@code localName}
+     */
+    public static Element getNextSiblingElement(Node node, String localName)
+        throws MarshalException
+    {
+        return verifyElement(getNextSiblingElement(node), localName);
     }
 
     /**
