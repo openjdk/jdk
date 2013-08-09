@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002387
+ * @bug      8002387 8014636
  * @summary  Improve rendered HTML formatting for {@code}
  * @library  ../lib/
  * @build    JavadocTester TestLiteralCodeInPre
@@ -33,7 +33,7 @@
 public class TestLiteralCodeInPre extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8002387";
+    private static final String BUG_ID = "8002387-8014636";
     private static final String OUTPUT_DIR = BUG_ID;
 
     //Javadoc arguments.

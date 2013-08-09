@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public interface FileNameMap {
     /**
      * Gets the MIME type for the specified file name.
      * @param fileName the specified file name
-     * @return a <code>String</code> indicating the MIME
+     * @return a {@code String} indicating the MIME
      * type for the specified file name.
      */
     public String getContentTypeFor(String fileName);

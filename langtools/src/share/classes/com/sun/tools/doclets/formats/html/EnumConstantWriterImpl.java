@@ -222,7 +222,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(
+        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
                 writer.getDocLink(context, (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);

@@ -273,7 +273,7 @@ public class Annotate {
                 continue;
             }
             JCIdent left = (JCIdent)assign.lhs;
-            Symbol method = rs.resolveQualifiedMethod(left.pos(),
+            Symbol method = rs.resolveQualifiedMethod(assign.rhs.pos(),
                                                           env,
                                                           a.type,
                                                           left.name,
