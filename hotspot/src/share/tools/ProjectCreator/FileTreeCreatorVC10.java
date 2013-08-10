@@ -103,7 +103,7 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
             }
          }
 
-         String tagName = wg.getFileTagFromSuffix(fileName);
+         String tagName = wg10.getFileTagFromSuffix(fileName);
 
          if (!useIgnore && !disablePch && !usePch && !isReplacedByAltSrc) {
             wg.tag(tagName, new String[] { "Include", fileLoc});
@@ -133,7 +133,7 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
          }
 
          String filter = startDir.relativize(file.getParent().toAbsolutePath()).toString();
-         wg.addFilterDependency(fileLoc, filter);
+         wg10.addFilterDependency(fileLoc, filter);
 
          return CONTINUE;
       }
@@ -162,7 +162,7 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
          if (!hide) {
             String name = startDir.relativize(path.toAbsolutePath()).toString();
             if (!"".equals(name)) {
-               wg.addFilter(name);
+               wg10.addFilter(name);
             }
 
             attributes.push(newAttr);
