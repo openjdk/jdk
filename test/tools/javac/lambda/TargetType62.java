@@ -38,8 +38,8 @@ class TargetType61 {
         return g(classifier, TreeMap::new, m(HashSet::new));
     }
 
-    <R> Collector<Integer, R> m(Supplier<R> s) { return null; }
+    <R> Collector<Integer, String, R> m(Supplier<R> s) { return null; }
 
     <T, K, D, M extends Map<K, D>>
-            Collector<T, M> g(Function<T, K> classifier, Supplier<M> mapFactory, Collector<T, D> downstream) { return null; }
+            Collector<T, String, M> g(Function<T, K> classifier, Supplier<M> mapFactory, Collector<T, String, D> downstream) { return null; }
 }
