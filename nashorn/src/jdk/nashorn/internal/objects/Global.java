@@ -35,8 +35,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -420,7 +418,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // security check first
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
+            sm.checkPermission(new RuntimePermission(Context.NASHORN_CREATE_GLOBAL));
         }
 
         // null check on context
@@ -1780,19 +1778,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                for (Field f : scriptEnv.getClass().getFields()) {
-                    try {
-                        options.set(f.getName(), f.get(scriptEnv), false);
-                    } catch (final IllegalArgumentException | IllegalAccessException exp) {
-                        throw new RuntimeException(exp);
-                    }
-                }
-                return null;
+        for (Field f : scriptEnv.getClass().getFields()) {
+            try {
+                options.set(f.getName(), f.get(scriptEnv), false);
+            } catch (final IllegalArgumentException | IllegalAccessException exp) {
+                throw new RuntimeException(exp);
             }
-        });
+        }
     }
 
     private void initTypedArray() {

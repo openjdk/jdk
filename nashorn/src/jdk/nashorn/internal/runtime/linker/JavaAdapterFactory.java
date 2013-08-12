@@ -31,9 +31,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,6 +70,11 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 
 @SuppressWarnings("javadoc")
 public final class JavaAdapterFactory {
+    // context with permissions needs for AdapterInfo creation
+    private static final AccessControlContext CREATE_ADAPTER_INFO_ACC_CTXT =
+        ClassAndLoader.createPermAccCtxt("createClassLoader", "getClassLoader",
+            "accessDeclaredMembers", "accessClassInPackage.jdk.nashorn.internal.runtime");
+
     /**
      * A mapping from an original Class object to AdapterInfo representing the adapter for the class it represents.
      */
@@ -124,17 +129,10 @@ public final class JavaAdapterFactory {
      */
     public static MethodHandle getConstructor(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType }, null);
-        return AccessController.doPrivileged(new PrivilegedExceptionAction<MethodHandle>() {
-            @Override
-            public MethodHandle run() throws Exception {
-                // NOTE: we use publicLookup(), but none of our adapter constructors are caller sensitive, so this is
-                // okay, we won't artificially limit access.
-                return  MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(
-                        NashornCallSiteDescriptor.get(MethodHandles.publicLookup(),  "dyn:new",
-                                MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
-                                adapterClass, null)).getInvocation(), adapterClass);
-            }
-        });
+        return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(
+                NashornCallSiteDescriptor.get(MethodHandles.publicLookup(),  "dyn:new",
+                        MethodType.methodType(targetType, StaticClass.class, sourceType), 0), false,
+                        adapterClass, null)).getInvocation(), adapterClass);
     }
 
     /**
@@ -171,7 +169,7 @@ public final class JavaAdapterFactory {
         return (List)Collections.singletonList(clazz);
     }
 
-    /**
+   /**
      * For a given class, create its adapter class and associated info.
      * @param type the class for which the adapter is created
      * @return the adapter info for the class.
@@ -190,12 +188,19 @@ public final class JavaAdapterFactory {
                 }
                 superClass = t;
             } else {
+                if (interfaces.size() > 65535) {
+                    throw new IllegalArgumentException("interface limit exceeded");
+                }
+
                 interfaces.add(t);
             }
+
             if(!Modifier.isPublic(mod)) {
                 return new AdapterInfo(AdaptationResult.Outcome.ERROR_NON_PUBLIC_CLASS, t.getCanonicalName());
             }
         }
+
+
         final Class<?> effectiveSuperClass = superClass == null ? Object.class : superClass;
         return AccessController.doPrivileged(new PrivilegedAction<AdapterInfo>() {
             @Override
@@ -206,7 +211,7 @@ public final class JavaAdapterFactory {
                     return new AdapterInfo(e.getAdaptationResult());
                 }
             }
-        });
+        }, CREATE_ADAPTER_INFO_ACC_CTXT);
     }
 
     private static class AdapterInfo {

@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.AllPermission;
 import java.security.CodeSigner;
@@ -46,6 +47,7 @@ import jdk.internal.dynalink.beans.StaticClass;
 @SuppressWarnings("javadoc")
 final class JavaAdapterClassLoader {
     private static final ProtectionDomain GENERATED_PROTECTION_DOMAIN = createGeneratedProtectionDomain();
+    private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
 
     private final String className;
     private volatile byte[] classBytes;
@@ -77,7 +79,7 @@ final class JavaAdapterClassLoader {
                     throw new AssertionError(e); // cannot happen
                 }
             }
-        });
+        }, CREATE_LOADER_ACC_CTXT);
     }
 
     // Note that the adapter class is created in the protection domain of the class/interface being
