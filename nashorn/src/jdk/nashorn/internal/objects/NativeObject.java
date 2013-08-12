@@ -113,6 +113,13 @@ public final class NativeObject {
         } else if (obj instanceof ScriptObjectMirror) {
             return ((ScriptObjectMirror)obj).getProto();
         } else {
+            final JSType type = JSType.of(obj);
+            if (type == JSType.OBJECT) {
+                // host (Java) objects have null __proto__
+                return null;
+            }
+
+            // must be some JS primitive
             throw notAnObject(obj);
         }
     }

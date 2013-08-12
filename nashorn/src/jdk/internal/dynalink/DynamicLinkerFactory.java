@@ -99,6 +99,7 @@ import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.AutoDiscovery;
 import jdk.internal.dynalink.support.BottomGuardingDynamicLinker;
+import jdk.internal.dynalink.support.ClassLoaderGetterContextProvider;
 import jdk.internal.dynalink.support.CompositeGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.LinkerServicesImpl;
@@ -315,7 +316,7 @@ public class DynamicLinkerFactory {
             public ClassLoader run() {
                 return Thread.currentThread().getContextClassLoader();
             }
-        });
+        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
     }
 
     private static void addClasses(Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses,

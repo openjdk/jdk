@@ -36,10 +36,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -71,6 +74,14 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 public final class NashornScriptEngine extends AbstractScriptEngine implements Compilable, Invocable {
+    private static AccessControlContext createPermAccCtxt(final String permName) {
+        final Permissions perms = new Permissions();
+        perms.add(new RuntimePermission(permName));
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
+    private static final AccessControlContext CREATE_CONTEXT_ACC_CTXT = createPermAccCtxt(Context.NASHORN_CREATE_CONTEXT);
+    private static final AccessControlContext CREATE_GLOBAL_ACC_CTXT  = createPermAccCtxt(Context.NASHORN_CREATE_GLOBAL);
 
     private final ScriptEngineFactory factory;
     private final Context             nashornContext;
@@ -84,16 +95,9 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private static final String MESSAGES_RESOURCE = "jdk.nashorn.api.scripting.resources.Messages";
 
-    // Without do privileged, under security manager messages can not be loaded.
     private static final ResourceBundle MESSAGES_BUNDLE;
     static {
-        MESSAGES_BUNDLE = AccessController.doPrivileged(
-        new PrivilegedAction<ResourceBundle>() {
-            @Override
-            public ResourceBundle run() {
-                return ResourceBundle.getBundle(MESSAGES_RESOURCE, Locale.getDefault());
-            }
-        });
+        MESSAGES_BUNDLE = ResourceBundle.getBundle(MESSAGES_RESOURCE, Locale.getDefault());
     }
 
     private static String getMessage(final String msgId, final String... args) {
@@ -128,7 +132,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                     throw e;
                 }
             }
-        });
+        }, CREATE_CONTEXT_ACC_CTXT);
 
         // create new global object
         this.global = createNashornGlobal();
@@ -340,7 +344,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                     throw e;
                 }
             }
-        });
+        }, CREATE_GLOBAL_ACC_CTXT);
 
         nashornContext.initGlobal(newGlobal);
 
@@ -362,10 +366,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private void evalEngineScript() throws ScriptException {
-        evalSupportScript("resources/engine.js", NashornException.ENGINE_SCRIPT_SOURCE_NAME);
-    }
-
-    private void evalSupportScript(final String script, final String name) throws ScriptException {
+        final String script = "resources/engine.js";
+        final String name   = NashornException.ENGINE_SCRIPT_SOURCE_NAME;
         try {
             final InputStream is = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<InputStream>() {
@@ -380,6 +382,9 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 eval(isr);
             }
         } catch (final PrivilegedActionException | IOException e) {
+            if (Context.DEBUG) {
+                e.printStackTrace();
+            }
             throw new ScriptException(e);
         } finally {
             put(ScriptEngine.FILENAME, null);
