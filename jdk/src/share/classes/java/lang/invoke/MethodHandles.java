@@ -1289,6 +1289,10 @@ return mh1;
                         : resolveOrFail(refKind, defc, name, (Class<?>) type);
                 return getDirectField(refKind, defc, field);
             } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
+                if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
+                    MethodHandle mh = findVirtualForMH(name, (MethodType) type);
+                    if (mh != null)  return mh;
+                }
                 MemberName method = (resolved != null) ? resolved
                         : resolveOrFail(refKind, defc, name, (MethodType) type);
                 return getDirectMethod(refKind, defc, method, lookupClass);
