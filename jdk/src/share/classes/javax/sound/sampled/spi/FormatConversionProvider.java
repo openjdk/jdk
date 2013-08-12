@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public abstract class FormatConversionProvider {
      * given a particular source format.
      * If no target format encodings are supported for this source format,
      * an array of length 0 is returned.
+     * @param sourceFormat format of the incoming data
      * @return array of supported target format encodings.
      */
     public abstract AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat);
@@ -146,6 +147,8 @@ public abstract class FormatConversionProvider {
      * supported by the format converter
      * If no target formats with the specified encoding are supported
      * for this source format, an array of length 0 is returned.
+     * @param targetEncoding desired encoding of the stream after processing
+     * @param sourceFormat format of the incoming data
      * @return array of supported target formats.
      */
     public abstract AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat);

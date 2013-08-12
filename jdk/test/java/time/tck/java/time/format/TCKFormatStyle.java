@@ -64,6 +64,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.temporal.Temporal;
+import java.util.Locale;
 
 import static org.testng.Assert.assertEquals;
 
@@ -108,6 +109,7 @@ public class TCKFormatStyle {
     public void test_formatStyle(Temporal temporal, FormatStyle style, String formattedStr) {
         DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
         DateTimeFormatter formatter = builder.appendLocalized(style, style).appendLiteral(" ").appendZoneOrOffsetId().toFormatter();
+        formatter = formatter.withLocale(Locale.US);
         assertEquals(formatter.format(temporal), formattedStr);
     }
 }
