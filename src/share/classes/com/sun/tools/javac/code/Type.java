@@ -1525,7 +1525,7 @@ public abstract class Type implements TypeMirror {
         }
 
         protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
-            Type bound2 = toTypeVarMap.apply(bound);
+            Type bound2 = toTypeVarMap.apply(bound).baseType();
             List<Type> prevBounds = bounds.get(ib);
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
