@@ -76,36 +76,21 @@ public final class NativeArguments extends ScriptObject {
 
     private Object length;
     private Object callee;
-    private ArrayData namedArgs;
-    // This is lazily initialized - only when delete is invoked at all
+    private final int numMapped;
+    private final int numParams;
+
+    // These are lazily initialized when delete is invoked on a mapped arg or an unmapped argument is set.
+    private ArrayData unmappedArgs;
     private BitSet deleted;
 
     NativeArguments(final Object[] arguments, final Object callee, final int numParams, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         setIsArguments();
-
         setArray(ArrayData.allocate(arguments));
         this.length = arguments.length;
         this.callee = callee;
-
-        /**
-         * Declared number of parameters may be more or less than the actual passed
-         * runtime arguments count. We need to truncate or extend with undefined values.
-         *
-         * Example:
-         *
-         * // less declared params
-         * (function (x) { print(arguments); })(20, 44);
-         *
-         * // more declared params
-         * (function (x, y) { print(arguments); })(3);
-         */
-        final Object[] newValues = new Object[numParams];
-        if (numParams > arguments.length) {
-            Arrays.fill(newValues, UNDEFINED);
-        }
-        System.arraycopy(arguments, 0, newValues, 0, Math.min(newValues.length, arguments.length));
-        this.namedArgs = ArrayData.allocate(newValues);
+        this.numMapped = Math.min(numParams, arguments.length);
+        this.numParams = numParams;
     }
 
     @Override
@@ -118,7 +103,8 @@ public final class NativeArguments extends ScriptObject {
      */
     @Override
     public Object getArgument(final int key) {
-        return namedArgs.has(key) ? namedArgs.getObject(key) : UNDEFINED;
+        assert key >= 0 && key < numParams : "invalid argument index";
+        return isMapped(key) ? getArray().getObject(key) : getUnmappedArg(key);
     }
 
     /**
@@ -126,353 +112,36 @@ public final class NativeArguments extends ScriptObject {
      */
     @Override
     public void setArgument(final int key, final Object value) {
-        if (namedArgs.has(key)) {
-            namedArgs = namedArgs.set(key, value, false);
-        }
-    }
-
-    @Override
-    public int getInt(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getInt(index) : super.getInt(key);
-    }
-
-    @Override
-    public int getInt(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getInt(index) : super.getInt(key);
-    }
-
-    @Override
-    public int getInt(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getInt(index) : super.getInt(key);
-    }
-
-    @Override
-    public int getInt(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getInt(index) : super.getInt(key);
-    }
-
-    @Override
-    public long getLong(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getLong(index) : super.getLong(key);
-    }
-
-    @Override
-    public long getLong(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getLong(index) : super.getLong(key);
-    }
-
-    @Override
-    public long getLong(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getLong(index) : super.getLong(key);
-    }
-
-    @Override
-    public long getLong(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getLong(index) : super.getLong(key);
-    }
-
-    @Override
-    public double getDouble(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getDouble(index) : super.getDouble(key);
-    }
-
-    @Override
-    public double getDouble(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getDouble(index) : super.getDouble(key);
-    }
-
-    @Override
-    public double getDouble(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getDouble(index) : super.getDouble(key);
-    }
-
-    @Override
-    public double getDouble(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getDouble(index) : super.getDouble(key);
-    }
-
-    @Override
-    public Object get(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getObject(index) : super.get(key);
-    }
-
-    @Override
-    public Object get(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getObject(index) : super.get(key);
-    }
-
-    @Override
-    public Object get(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getObject(index) : super.get(key);
-    }
-
-    @Override
-    public Object get(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) ? namedArgs.getObject(index) : super.get(key);
-    }
-
-    @Override
-    public void set(final Object key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
+        assert key >= 0 && key < numParams : "invalid argument index";
+        if (isMapped(key)) {
+            setArray(getArray().set(key, value, false));
         } else {
-            super.set(key, value, strict);
+            setUnmappedArg(key, value);
         }
-    }
-
-    @Override
-    public void set(final Object key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final Object key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final Object key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final double key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final double key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final double key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final double key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final long key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final long key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final long key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final long key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final int key, final int value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final int key, final long value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final int key, final double value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public void set(final int key, final Object value, final boolean strict) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        if (isMapped(index)) {
-            namedArgs = namedArgs.set(index, value, strict);
-        } else {
-            super.set(key, value, strict);
-        }
-    }
-
-    @Override
-    public boolean has(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.has(key);
-    }
-
-    @Override
-    public boolean has(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.has(key);
-    }
-
-    @Override
-    public boolean has(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.has(key);
-    }
-
-    @Override
-    public boolean has(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.has(key);
-    }
-
-    @Override
-    public boolean hasOwnProperty(final Object key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.hasOwnProperty(key);
-    }
-
-    @Override
-    public boolean hasOwnProperty(final int key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.hasOwnProperty(key);
-    }
-
-    @Override
-    public boolean hasOwnProperty(final long key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.hasOwnProperty(key);
-    }
-
-    @Override
-    public boolean hasOwnProperty(final double key) {
-        final int index = ArrayIndex.getArrayIndex(key);
-        return isMapped(index) || super.hasOwnProperty(key);
     }
 
     @Override
     public boolean delete(final int key, final boolean strict) {
         final int index = ArrayIndex.getArrayIndex(key);
-        final boolean success = super.delete(key, strict);
-        if (success && namedArgs.has(index)) {
-            setDeleted(index);
-        }
-        return success;
+        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
     }
 
     @Override
     public boolean delete(final long key, final boolean strict) {
         final int index = ArrayIndex.getArrayIndex(key);
-        final boolean success = super.delete(key, strict);
-        if (success && namedArgs.has(index)) {
-            setDeleted(index);
-        }
-        return success;
+        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
     }
 
     @Override
     public boolean delete(final double key, final boolean strict) {
         final int index = ArrayIndex.getArrayIndex(key);
-        final boolean success = super.delete(key, strict);
-        if (success && namedArgs.has(index)) {
-            setDeleted(index);
-        }
-        return success;
+        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
     }
 
     @Override
     public boolean delete(final Object key, final boolean strict) {
         final int index = ArrayIndex.getArrayIndex(key);
-        final boolean success = super.delete(key, strict);
-        if (success && namedArgs.has(index)) {
-            setDeleted(index);
-        }
-        return success;
+        return isMapped(index) ? deleteMapped(index, strict) : super.delete(key, strict);
     }
 
     /**
@@ -483,29 +152,27 @@ public final class NativeArguments extends ScriptObject {
     public boolean defineOwnProperty(final String key, final Object propertyDesc, final boolean reject) {
         final int index = ArrayIndex.getArrayIndex(key);
         if (index >= 0) {
-            final boolean allowed = super.defineOwnProperty(key, propertyDesc, false);
-            if (!allowed) {
+            final boolean isMapped = isMapped(index);
+            final Object oldValue = isMapped ? getArray().getObject(index) : null;
+
+            if (!super.defineOwnProperty(key, propertyDesc, false)) {
                 if (reject) {
                     throw typeError("cant.redefine.property",  key, ScriptRuntime.safeToString(this));
                 }
                 return false;
             }
 
-            if (isMapped(index)) {
+            if (isMapped) {
                 // When mapped argument is redefined, if new descriptor is accessor property
                 // or data-non-writable property, we have to "unmap" (unlink).
                 final PropertyDescriptor desc = toPropertyDescriptor(Global.instance(), propertyDesc);
                 if (desc.type() == PropertyDescriptor.ACCESSOR) {
-                    setDeleted(index);
-                } else {
-                    // set "value" from new descriptor to named args
-                    if (desc.has(PropertyDescriptor.VALUE)) {
-                        namedArgs = namedArgs.set(index, desc.getValue(), false);
-                    }
-
-                    if (desc.has(PropertyDescriptor.WRITABLE) && !desc.isWritable()) {
-                        setDeleted(index);
-                    }
+                    setDeleted(index, oldValue);
+                } else if (desc.has(PropertyDescriptor.WRITABLE) && !desc.isWritable()) {
+                    // delete and set value from new descriptor if it has one, otherwise use old value
+                    setDeleted(index, desc.has(PropertyDescriptor.VALUE) ? desc.getValue() : oldValue);
+                } else if (desc.has(PropertyDescriptor.VALUE)) {
+                    setArray(getArray().set(index, desc.getValue(), false));
                 }
             }
 
@@ -519,31 +186,72 @@ public final class NativeArguments extends ScriptObject {
 
     // We track deletions using a bit set (delete arguments[index])
     private boolean isDeleted(final int index) {
-        return (deleted != null) ? deleted.get(index) : false;
+        return deleted != null && deleted.get(index);
     }
 
-    private void setDeleted(final int index) {
+    private void setDeleted(final int index, final Object unmappedValue) {
         if (deleted == null) {
-            deleted = new BitSet((int)namedArgs.length());
+            deleted = new BitSet(numMapped);
         }
         deleted.set(index, true);
+        setUnmappedArg(index, unmappedValue);
+    }
+
+    private boolean deleteMapped(final int index, final boolean strict) {
+        final Object value = getArray().getObject(index);
+        final boolean success = super.delete(index, strict);
+        if (success) {
+            setDeleted(index, value);
+        }
+        return success;
+    }
+
+    private Object getUnmappedArg(final int key) {
+        assert key >= 0 && key < numParams;
+        return unmappedArgs == null ? UNDEFINED : unmappedArgs.getObject(key);
+    }
+
+    private void setUnmappedArg(final int key, final Object value) {
+        assert key >= 0 && key < numParams;
+        if (unmappedArgs == null) {
+            /*
+             * Declared number of parameters may be more or less than the actual passed
+             * runtime arguments count. We need to truncate or extend with undefined values.
+             *
+             * Example:
+             *
+             * // less declared params
+             * (function (x) { print(arguments); })(20, 44);
+             *
+             * // more declared params
+             * (function (x, y) { print(arguments); })(3);
+             */
+            final Object[] newValues = new Object[numParams];
+            System.arraycopy(getArray().asObjectArray(), 0, newValues, 0, numMapped);
+            if (numMapped < numParams) {
+                Arrays.fill(newValues, numMapped, numParams, UNDEFINED);
+            }
+            this.unmappedArgs = ArrayData.allocate(newValues);
+        }
+        // Set value of argument
+        unmappedArgs = unmappedArgs.set(key, value, false);
     }
 
     /**
      * Are arguments[index] and corresponding named parameter linked?
      *
-     * In non-strict mode, arguments[index] and corresponding named param
-     * are "linked" or "mapped". Modifications are tacked b/w each other - till
-     * (delete arguments[index]) is used. Once deleted, the corresponding arg
-     * is no longer 'mapped'. Please note that delete can happen only through
-     * the arguments array - named param can not be deleted. (delete is one-way).
+     * In non-strict mode, arguments[index] and corresponding named param are "linked" or "mapped"
+     * if the argument is provided by the caller. Modifications are tacked b/w each other - until
+     * (delete arguments[index]) is used. Once deleted, the corresponding arg is no longer 'mapped'.
+     * Please note that delete can happen only through the arguments array - named param can not
+     * be deleted. (delete is one-way).
      */
     private boolean isMapped(final int index) {
-        // in named args and not marked as "deleted"
-        return namedArgs.has(index) && !isDeleted(index);
+        // in mapped named args and not marked as "deleted"
+        return index >= 0 && index < numMapped && !isDeleted(index);
     }
 
-        /**
+    /**
      * Factory to create correct Arguments object based on strict mode.
      *
      * @param arguments the actual arguments array passed
