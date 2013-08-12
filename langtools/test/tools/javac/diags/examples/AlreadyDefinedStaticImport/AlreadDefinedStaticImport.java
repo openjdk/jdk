@@ -23,5 +23,5 @@
 
 // key: compiler.err.already.defined.static.single.import
 
-import static p.E1.A;
+import p.E1.A;
 import static p.E2.A;

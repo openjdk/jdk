@@ -3329,14 +3329,15 @@ public class Check {
             boolean isClassDecl = e.scope == s;
             if ((isClassDecl || sym != e.sym) &&
                 sym.kind == e.sym.kind &&
-                sym.name != names.error) {
+                sym.name != names.error &&
+                (!staticImport || !e.isStaticallyImported())) {
                 if (!e.sym.type.isErroneous()) {
                     String what = e.sym.toString();
                     if (!isClassDecl) {
                         if (staticImport)
                             log.error(pos, "already.defined.static.single.import", what);
                         else
-                            log.error(pos, "already.defined.single.import", what);
+                        log.error(pos, "already.defined.single.import", what);
                     }
                     else if (sym != e.sym)
                         log.error(pos, "already.defined.this.unit", what);
