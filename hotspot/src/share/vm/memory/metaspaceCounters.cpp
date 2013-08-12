@@ -109,7 +109,7 @@ size_t CompressedClassSpaceCounters::calculate_capacity() {
 }
 
 void CompressedClassSpaceCounters::update_performance_counters() {
-  if (UsePerfData && UseCompressedKlassPointers) {
+  if (UsePerfData && UseCompressedClassPointers) {
     assert(_perf_counters != NULL, "Should be initialized");
 
     size_t capacity = calculate_capacity();
@@ -125,7 +125,7 @@ void CompressedClassSpaceCounters::initialize_performance_counters() {
     assert(_perf_counters == NULL, "Should only be initialized once");
     const char* ns = "compressedclassspace";
 
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       size_t min_capacity = MetaspaceAux::min_chunk_size();
       size_t capacity = calculate_capacity();
       size_t max_capacity = MetaspaceAux::reserved_in_bytes(_class_type);

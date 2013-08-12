@@ -280,7 +280,7 @@ size_t MetaspacePool::calculate_max_size() const {
 }
 
 CompressedKlassSpacePool::CompressedKlassSpacePool() :
-  MemoryPool("Compressed Class Space", NonHeap, capacity_in_bytes(), ClassMetaspaceSize, true, false) { }
+  MemoryPool("Compressed Class Space", NonHeap, capacity_in_bytes(), CompressedClassSpaceSize, true, false) { }
 
 size_t CompressedKlassSpacePool::used_in_bytes() {
   return MetaspaceAux::allocated_used_bytes(Metaspace::ClassType);

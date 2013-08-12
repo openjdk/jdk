@@ -1028,7 +1028,7 @@ bool universe_post_init() {
 
     msg = java_lang_String::create_from_str("Metadata space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
-    msg = java_lang_String::create_from_str("Class Metadata space", CHECK_false);
+    msg = java_lang_String::create_from_str("Compressed class space", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
     msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);

@@ -1391,7 +1391,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
     st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
     st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
@@ -1408,7 +1408,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
   uint insts_size = cbuf.insts_size();
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     masm.load_klass(rscratch1, j_rarg0);
     masm.cmpptr(rax, rscratch1);
   } else {
@@ -1557,7 +1557,7 @@ bool Matcher::narrow_oop_use_complex_address() {
 }
 
 bool Matcher::narrow_klass_use_complex_address() {
-  assert(UseCompressedKlassPointers, "only for compressed klass code");
+  assert(UseCompressedClassPointers, "only for compressed klass code");
   return (LogKlassAlignmentInBytes <= 3);
 }
 

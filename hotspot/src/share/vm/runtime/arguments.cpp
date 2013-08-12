@@ -1439,7 +1439,7 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
     }
   }
 #endif // _LP64
@@ -1452,22 +1452,22 @@ void Arguments::set_use_compressed_oops() {
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifndef ZERO
 #ifdef _LP64
-  // UseCompressedOops must be on for UseCompressedKlassPointers to be on.
+  // UseCompressedOops must be on for UseCompressedClassPointers to be on.
   if (!UseCompressedOops) {
-    if (UseCompressedKlassPointers) {
-      warning("UseCompressedKlassPointers requires UseCompressedOops");
+    if (UseCompressedClassPointers) {
+      warning("UseCompressedClassPointers requires UseCompressedOops");
     }
-    FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
   } else {
-    // Turn on UseCompressedKlassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
-      FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
+    // Turn on UseCompressedClassPointers too
+    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
+      FLAG_SET_ERGO(bool, UseCompressedClassPointers, true);
     }
-    // Check the ClassMetaspaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedKlassPointers) {
-      if (ClassMetaspaceSize > KlassEncodingMetaspaceMax) {
-        warning("Class metaspace size is too large for UseCompressedKlassPointers");
-        FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
+    if (UseCompressedClassPointers) {
+      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
+        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
       }
     }
   }
@@ -2148,8 +2148,8 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_object_alignment();
 
-  status = status && verify_interval(ClassMetaspaceSize, 1*M, 3*G,
-                                      "ClassMetaspaceSize");
+  status = status && verify_interval(CompressedClassSpaceSize, 1*M, 3*G,
+                                      "CompressedClassSpaceSize");
 
   status = status && verify_interval(MarkStackSizeMax,
                                   1, (max_jint - 1), "MarkStackSizeMax");
@@ -3274,13 +3274,13 @@ void Arguments::set_shared_spaces_flags() {
     }
     UseSharedSpaces = false;
 #ifdef _LP64
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       vm_exit_during_initialization(
-        "Cannot dump shared archive when UseCompressedOops or UseCompressedKlassPointers is off.", NULL);
+        "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off.", NULL);
     }
   } else {
-    // UseCompressedOops and UseCompressedKlassPointers must be on for UseSharedSpaces.
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    // UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       no_shared_spaces();
     }
 #endif
@@ -3581,7 +3581,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedKlassPointers, false));
+  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
 #endif // CC_INTERP
 
 #ifdef COMPILER2
@@ -3608,6 +3608,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
     warning("PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output");
     DebugNonSafepoints = true;
+  }
+
+  if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
+    warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
   }
 
 #ifndef PRODUCT
