@@ -74,10 +74,10 @@ public class BigIntegerTest {
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
-    // #bits for testing Karatsuba and Burnikel-Ziegler
+    // #bits for testing Karatsuba
     static final int ORDER_KARATSUBA = 1800;
-    // #bits for testing Toom-Cook
-    static final int ORDER_TOOM_COOK = 3000;
+    // #bits for testing Toom-Cook and Burnikel-Ziegler
+    static final int ORDER_TOOM_COOK = 4000;
     // #bits for testing Karatsuba squaring
     static final int ORDER_KARATSUBA_SQUARE = 3200;
     // #bits for testing Toom-Cook squaring
@@ -964,12 +964,12 @@ public class BigIntegerTest {
         nextProbablePrime();
 
         arithmetic(order1);   // small numbers
-        arithmetic(order3);   // Karatsuba / Burnikel-Ziegler range
-        arithmetic(order4);   // Toom-Cook range
+        arithmetic(order3);   // Karatsuba range
+        arithmetic(order4);   // Toom-Cook / Burnikel-Ziegler range
 
         divideAndRemainder(order1);   // small numbers
-        divideAndRemainder(order3);   // Karatsuba / Burnikel-Ziegler range
-        divideAndRemainder(order4);   // Toom-Cook range
+        divideAndRemainder(order3);   // Karatsuba range
+        divideAndRemainder(order4);   // Toom-Cook / Burnikel-Ziegler range
 
         pow(order1);
         pow(order3);
@@ -989,8 +989,8 @@ public class BigIntegerTest {
         byteArrayConv(order1);
 
         modInv(order1);   // small numbers
-        modInv(order3);   // Karatsuba / Burnikel-Ziegler range
-        modInv(order4);   // Toom-Cook range
+        modInv(order3);   // Karatsuba range
+        modInv(order4);   // Toom-Cook / Burnikel-Ziegler range
 
         modExp(order1, order2);
         modExp2(order1);
