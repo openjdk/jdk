@@ -36,7 +36,10 @@ import sun.awt.SunToolkit;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.macosx.*;
 
-class ScreenMenu extends Menu implements ContainerListener, ComponentListener, ScreenMenuPropertyHandler {
+final class ScreenMenu extends Menu
+        implements ContainerListener, ComponentListener,
+                   ScreenMenuPropertyHandler {
+
     static {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -48,20 +51,22 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
     }
 
     // screen menu stuff
-    public static native long addMenuListeners(ScreenMenu listener, long nativeMenu);
-    public static native void removeMenuListeners(long modelPtr);
+    private static native long addMenuListeners(ScreenMenu listener, long nativeMenu);
+    private static native void removeMenuListeners(long modelPtr);
 
-    long fModelPtr = 0;
+    private transient long fModelPtr;
 
-    Hashtable<Component, MenuItem> fItems;
-    JMenu fInvoker;
+    private final Hashtable<Component, MenuItem> fItems;
+    private final JMenu fInvoker;
 
-    Component fLastMouseEventTarget;
-    Rectangle fLastTargetRect;
+    private Component fLastMouseEventTarget;
+    private Rectangle fLastTargetRect;
     private volatile Rectangle[] fItemBounds;
 
+    private ScreenMenuPropertyListener fPropertyListener;
+
     // Array of child hashes used to see if we need to recreate the Menu.
-    int childHashArray[];
+    private int childHashArray[];
 
     ScreenMenu(final JMenu invoker) {
         super(invoker.getText());
@@ -74,25 +79,12 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
         updateItems();
     }
 
-    // I'm always 'visible', but never on screen
-    static class ScreenMenuComponent extends Container {
-        public boolean isVisible() { return true; }
-        public boolean isShowing() { return true; }
-        public void setVisible(final boolean b) {}
-        public void show() {}
-    }
-
-    ScreenMenuComponent makeScreenMenuComponent() {
-        return new ScreenMenuComponent();
-    }
-
-
     /**
      * Determine if we need to tear down the Menu and re-create it, since the contents may have changed in the Menu opened listener and
      * we do not get notified of it, because EDT is busy in our code. We only need to update if the menu contents have changed in some
      * way, such as the number of menu items, the text of the menuitems, icon, shortcut etc.
      */
-    static boolean needsUpdate(final Component items[], final int childHashArray[]) {
+    private static boolean needsUpdate(final Component items[], final int childHashArray[]) {
       if (items == null || childHashArray == null) {
         return true;
       }
@@ -112,7 +104,7 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
      * Used to recreate the AWT based Menu structure that implements the Screen Menu.
      * Also computes hashcode and stores them so that we can compare them later in needsUpdate.
      */
-    void updateItems() {
+    private void updateItems() {
         final int count = fInvoker.getMenuComponentCount();
         final Component[] items = fInvoker.getMenuComponents();
         if (needsUpdate(items, childHashArray)) {
@@ -163,16 +155,14 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
             LWCToolkit.invokeAndWait(new Runnable() {
                 public void run() {
                     invoker.setSelected(false);
-
-            // Null out the tracking rectangles and the array.
+                    // Null out the tracking rectangles and the array.
                     if (fItemBounds != null) {
-            for (int i = 0; i < fItemBounds.length; i++) {
-                fItemBounds[i] = null;
-            }
+                        for (int i = 0; i < fItemBounds.length; i++) {
+                            fItemBounds[i] = null;
+                        }
                     }
-
-            fItemBounds = null;
-    }
+                    fItemBounds = null;
+                }
             }, invoker);
         } catch (final Exception e) {
             e.printStackTrace();
@@ -237,49 +227,56 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
         });
     }
 
-    ScreenMenuPropertyListener fPropertyListener;
+    @Override
     public void addNotify() {
-        super.addNotify();
-        if (fModelPtr == 0) {
-        fInvoker.addContainerListener(this);
-        fInvoker.addComponentListener(this);
-        fPropertyListener = new ScreenMenuPropertyListener(this);
-        fInvoker.addPropertyChangeListener(fPropertyListener);
+        synchronized (getTreeLock()) {
+            super.addNotify();
+            if (fModelPtr == 0) {
+                fInvoker.addContainerListener(this);
+                fInvoker.addComponentListener(this);
+                fPropertyListener = new ScreenMenuPropertyListener(this);
+                fInvoker.addPropertyChangeListener(fPropertyListener);
 
-        final Icon icon = fInvoker.getIcon();
-        if (icon != null) {
-            this.setIcon(icon);
-        }
+                final Icon icon = fInvoker.getIcon();
+                if (icon != null) {
+                    setIcon(icon);
+                }
 
-        final String tooltipText = fInvoker.getToolTipText();
-        if (tooltipText != null) {
-            this.setToolTipText(tooltipText);
-        }
-        final MenuComponentPeer peer = getPeer();
-        if (peer instanceof CMenu) {
-            final CMenu menu = (CMenu)peer;
-            final long nativeMenu = menu.getNativeMenu();
-            fModelPtr = addMenuListeners(this, nativeMenu);
+                final String tooltipText = fInvoker.getToolTipText();
+                if (tooltipText != null) {
+                    setToolTipText(tooltipText);
+                }
+                final MenuComponentPeer peer = getPeer();
+                if (peer instanceof CMenu) {
+                    final CMenu menu = (CMenu) peer;
+                    final long nativeMenu = menu.getNativeMenu();
+                    fModelPtr = addMenuListeners(this, nativeMenu);
+                }
             }
         }
     }
 
+    @Override
     public void removeNotify() {
-        // Call super so that the NSMenu has been removed, before we release the delegate in removeMenuListeners
-        super.removeNotify();
-        fItems.clear();
-        if (fModelPtr != 0) {
-            removeMenuListeners(fModelPtr);
-            fModelPtr = 0;
-            fInvoker.removeContainerListener(this);
-            fInvoker.removeComponentListener(this);
-            fInvoker.removePropertyChangeListener(fPropertyListener);
+        synchronized (getTreeLock()) {
+            // Call super so that the NSMenu has been removed, before we release
+            // the delegate in removeMenuListeners
+            super.removeNotify();
+            fItems.clear();
+            if (fModelPtr != 0) {
+                removeMenuListeners(fModelPtr);
+                fModelPtr = 0;
+                fInvoker.removeContainerListener(this);
+                fInvoker.removeComponentListener(this);
+                fInvoker.removePropertyChangeListener(fPropertyListener);
+            }
         }
     }
 
     /**
      * Invoked when a component has been added to the container.
      */
+    @Override
     public void componentAdded(final ContainerEvent e) {
         addItem(e.getChild());
     }
@@ -287,23 +284,26 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
     /**
      * Invoked when a component has been removed from the container.
      */
+    @Override
     public void componentRemoved(final ContainerEvent e) {
         final Component child = e.getChild();
         final MenuItem sm = fItems.get(child);
         if (sm == null) return;
 
-            remove(sm);
-            fItems.remove(sm);
-        }
+        remove(sm);
+        fItems.remove(sm);
+    }
 
     /**
      * Invoked when the component's size changes.
      */
+    @Override
     public void componentResized(final ComponentEvent e) {}
 
     /**
      * Invoked when the component's position changes.
      */
+    @Override
     public void componentMoved(final ComponentEvent e) {}
 
     /**
@@ -311,6 +311,7 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
      * See componentHidden - we should still have a MenuItem
      * it just isn't inserted
      */
+    @Override
     public void componentShown(final ComponentEvent e) {
         setVisible(true);
     }
@@ -321,11 +322,12 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
      * so we remove the ScreenMenuItem from the ScreenMenu
      * but leave it in fItems
      */
+    @Override
     public void componentHidden(final ComponentEvent e) {
         setVisible(false);
     }
 
-    public void setVisible(final boolean b) {
+    private void setVisible(final boolean b) {
         // Tell our parent to add/remove us
         final MenuContainer parent = getParent();
 
@@ -333,20 +335,24 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
             if (parent instanceof ScreenMenu) {
                 final ScreenMenu sm = (ScreenMenu)parent;
                 sm.setChildVisible(fInvoker, b);
-    }
+            }
         }
     }
 
+    @Override
     public void setChildVisible(final JMenuItem child, final boolean b) {
         fItems.remove(child);
         updateItems();
     }
 
+    @Override
     public void setAccelerator(final KeyStroke ks) {}
 
     // only check and radio items can be indeterminate
+    @Override
     public void setIndeterminate(boolean indeterminate) { }
 
+    @Override
     public void setToolTipText(final String text) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -355,6 +361,7 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
         cmi.setToolTipText(text);
     }
 
+    @Override
     public void setIcon(final Icon i) {
         final MenuComponentPeer peer = getPeer();
         if (!(peer instanceof CMenuItem)) return;
@@ -374,9 +381,8 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
     /**
      * Gets a hashCode for a JMenu or JMenuItem or subclass so that we can compare for
      * changes in the Menu.
-     *
      */
-    static int getHashCode(final Component m) {
+    private static int getHashCode(final Component m) {
         int hashCode = m.hashCode();
 
         if (m instanceof JMenuItem) {
@@ -408,7 +414,7 @@ class ScreenMenu extends Menu implements ContainerListener, ComponentListener, S
         return hashCode;
     }
 
-    void addItem(final Component m) {
+    private void addItem(final Component m) {
         if (!m.isVisible()) return;
         MenuItem sm = fItems.get(m);
 
