@@ -1820,7 +1820,6 @@ public class Gen extends JCTree.Visitor {
                 msym.externalType(types).getParameterTypes());
         if (!msym.isDynamic()) {
             code.statBegin(tree.pos);
-            code.markStatBegin();
         }
         result = m.invoke();
     }

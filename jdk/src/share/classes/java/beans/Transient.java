@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * A {@code true} value for the "transient" attribute
  * indicates to encoders derived from {@link Encoder}
  * that this feature should be ignored.
- * <p/>
+ * <p>
  * The {@code Transient} annotation may be be used
  * in any of the methods that are involved
  * in a {@link FeatureDescriptor} subclass
@@ -49,7 +49,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * to put the annotation and it is this declaration
  * that takes precedence in the case of multiple annotations
  * being defined for the same feature.
- * <p/>
+ * <p>
  * To declare a feature non-transient in a class
  * whose superclass declares it transient,
  * use {@code @Transient(false)}.
@@ -64,5 +64,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({METHOD})
 @Retention(RUNTIME)
 public @interface Transient {
+    /**
+     * Returns whether or not the {@code Introspector} should
+     * construct artifacts for the annotated method.
+     * @return whether or not the {@code Introspector} should
+     * construct artifacts for the annotated method
+     */
     boolean value() default true;
 }

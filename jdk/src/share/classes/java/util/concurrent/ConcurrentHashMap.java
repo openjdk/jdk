@@ -4716,6 +4716,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Base class for bulk tasks. Repeats some fields and code from
      * class Traverser, because we need to subclass CountedCompleter.
      */
+    @SuppressWarnings("serial")
     abstract static class BulkTask<K,V,R> extends CountedCompleter<R> {
         Node<K,V>[] tab;        // same as Traverser
         Node<K,V> next;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ import sun.security.action.GetBooleanAction;
  * NOTE: There is a JDK-internal dependency on the existence of this
  * class's getLiveRef method (as it is inherited by UnicastRef2) in
  * the implementation of javax.management.remote.rmi.RMIConnector.
- **/
+ */
+@SuppressWarnings("deprecation")
 public class UnicastRef implements RemoteRef {
 
     /**
