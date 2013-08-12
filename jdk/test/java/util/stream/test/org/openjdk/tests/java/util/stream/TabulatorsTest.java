@@ -25,6 +25,7 @@ package org.openjdk.tests.java.util.stream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,6 +53,7 @@ import java.util.stream.TestData;
 
 import org.testng.annotations.Test;
 
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.partitioningBy;
@@ -603,4 +605,17 @@ public class TabulatorsTest extends OpTestCase {
                               new PartitionAssertion<>(classifier,
                                                        new ReduceAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
     }
+
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    public void testComposeFinisher(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+        List<Integer> asList = exerciseTerminalOps(data, s -> s.collect(toList()));
+        List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::unmodifiableList)));
+        assertEquals(asList, asImmutableList);
+        try {
+            asImmutableList.add(0);
+            fail("Expecting immutable result");
+        }
+        catch (UnsupportedOperationException ignored) { }
+    }
+
 }
