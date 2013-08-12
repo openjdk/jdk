@@ -151,7 +151,7 @@ public class TypeConverterFactory {
             public ClassLoader run() {
                 return clazz.getClassLoader();
             }
-        });
+        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
     }
 
     /**
