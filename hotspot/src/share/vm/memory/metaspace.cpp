@@ -423,7 +423,7 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   // Can this virtual list allocate >1 spaces?  Also, used to determine
   // whether to allocate unlimited small chunks in this virtual space
   bool _is_class;
-  bool can_grow() const { return !is_class() || !UseCompressedKlassPointers; }
+  bool can_grow() const { return !is_class() || !UseCompressedClassPointers; }
 
   // Sum of space in all virtual spaces and number of virtual spaces
   size_t _virtual_space_total;
@@ -2836,7 +2836,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
 // to work with compressed klass pointers.
 bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base) {
   assert(cds_base != 0 && UseSharedSpaces, "Only use with CDS");
-  assert(UseCompressedKlassPointers, "Only use with CompressedKlassPtrs");
+  assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   address lower_base = MIN2((address)metaspace_base, cds_base);
   address higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
                                 (address)(metaspace_base + class_metaspace_size()));
@@ -2846,7 +2846,7 @@ bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cd
 // Try to allocate the metaspace at the requested addr.
 void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base) {
   assert(using_class_space(), "called improperly");
-  assert(UseCompressedKlassPointers, "Only use with CompressedKlassPtrs");
+  assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   assert(class_metaspace_size() < KlassEncodingMetaspaceMax,
          "Metaspace size is too big");
 
@@ -2869,9 +2869,9 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
     // If no successful allocation then try to allocate the space anywhere.  If
     // that fails then OOM doom.  At this point we cannot try allocating the
-    // metaspace as if UseCompressedKlassPointers is off because too much
-    // initialization has happened that depends on UseCompressedKlassPointers.
-    // So, UseCompressedKlassPointers cannot be turned off at this point.
+    // metaspace as if UseCompressedClassPointers is off because too much
+    // initialization has happened that depends on UseCompressedClassPointers.
+    // So, UseCompressedClassPointers cannot be turned off at this point.
     if (!metaspace_rs.is_reserved()) {
       metaspace_rs = ReservedSpace(class_metaspace_size(),
                                    os::vm_allocation_granularity(), false);
@@ -2904,12 +2904,12 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   }
 }
 
-// For UseCompressedKlassPointers the class space is reserved above the top of
+// For UseCompressedClassPointers the class space is reserved above the top of
 // the Java heap.  The argument passed in is at the base of the compressed space.
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   // The reserved space size may be bigger because of alignment, esp with UseLargePages
-  assert(rs.size() >= ClassMetaspaceSize,
-         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), ClassMetaspaceSize));
+  assert(rs.size() >= CompressedClassSpaceSize,
+         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), CompressedClassSpaceSize));
   assert(using_class_space(), "Must be using class space");
   _class_space_list = new VirtualSpaceList(rs);
 }
@@ -2921,7 +2921,7 @@ void Metaspace::global_initialize() {
   int max_alignment = os::vm_page_size();
   size_t cds_total = 0;
 
-  set_class_metaspace_size(align_size_up(ClassMetaspaceSize,
+  set_class_metaspace_size(align_size_up(CompressedClassSpaceSize,
                                          os::vm_allocation_granularity()));
 
   MetaspaceShared::set_max_alignment(max_alignment);
@@ -2941,8 +2941,8 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
     // Set the compressed klass pointer base so that decoding of these pointers works
     // properly when creating the shared archive.
-    assert(UseCompressedOops && UseCompressedKlassPointers,
-      "UseCompressedOops and UseCompressedKlassPointers must be set");
+    assert(UseCompressedOops && UseCompressedClassPointers,
+      "UseCompressedOops and UseCompressedClassPointers must be set");
     Universe::set_narrow_klass_base((address)_space_list->current_virtual_space()->bottom());
     if (TraceMetavirtualspaceAllocation && Verbose) {
       gclog_or_tty->print_cr("Setting_narrow_klass_base to Address: " PTR_FORMAT,
@@ -2979,7 +2979,7 @@ void Metaspace::global_initialize() {
     }
 
 #ifdef _LP64
-    // If UseCompressedKlassPointers is set then allocate the metaspace area
+    // If UseCompressedClassPointers is set then allocate the metaspace area
     // above the heap and above the CDS area (if it exists).
     if (using_class_space()) {
       if (UseSharedSpaces) {
@@ -2997,7 +2997,7 @@ void Metaspace::global_initialize() {
     // on the medium chunk list.   The next chunk will be small and progress
     // from there.  This size calculated by -version.
     _first_class_chunk_word_size = MIN2((size_t)MediumChunk*6,
-                                       (ClassMetaspaceSize/BytesPerWord)*2);
+                                       (CompressedClassSpaceSize/BytesPerWord)*2);
     _first_class_chunk_word_size = align_word_size_up(_first_class_chunk_word_size);
     // Arbitrarily set the initial virtual space to a multiple
     // of the boot class loader size.
@@ -3064,7 +3064,7 @@ size_t Metaspace::align_word_size_up(size_t word_size) {
 
 MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
   // DumpSharedSpaces doesn't use class metadata area (yet)
-  // Also, don't use class_vsm() unless UseCompressedKlassPointers is true.
+  // Also, don't use class_vsm() unless UseCompressedClassPointers is true.
   if (mdtype == ClassType && using_class_space()) {
     return  class_vsm()->allocate(word_size);
   } else {
@@ -3213,7 +3213,7 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
         MetaspaceAux::dump(gclog_or_tty);
       }
       // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-      const char* space_string = (mdtype == ClassType) ? "Class Metadata space" :
+      const char* space_string = (mdtype == ClassType) ? "Compressed class space" :
                                                          "Metadata space";
       report_java_out_of_memory(space_string);
 

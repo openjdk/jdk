@@ -213,9 +213,9 @@ class Metaspace : public CHeapObj<mtClass> {
 
   void iterate(AllocRecordClosure *closure);
 
-  // Return TRUE only if UseCompressedKlassPointers is True and DumpSharedSpaces is False.
+  // Return TRUE only if UseCompressedClassPointers is True and DumpSharedSpaces is False.
   static bool using_class_space() {
-    return NOT_LP64(false) LP64_ONLY(UseCompressedKlassPointers && !DumpSharedSpaces);
+    return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers && !DumpSharedSpaces);
   }
 
 };

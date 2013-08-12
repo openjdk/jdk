@@ -21,43 +21,29 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8000968
- * @key regression
- * @summary NPG: UseCompressedClassPointers asserts with ObjectAlignmentInBytes=32
- * @library /testlibrary
- */
-
 import com.oracle.java.testlibrary.*;
 
-public class CompressedKlassPointerAndOops {
-
+/*
+ * @test
+ * @bug 8015107
+ * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
+ *          is used together with -XX:-UseCompressedClassPointers
+ * @library /testlibrary
+ */
+public class TestCompressedClassFlags {
     public static void main(String[] args) throws Exception {
-
-        if (!Platform.is64bit()) {
-            // Can't test this on 32 bit, just pass
-            System.out.println("Skipping test on 32bit");
-            return;
+        if (Platform.is64bit()) {
+            OutputAnalyzer output = runJava("-XX:CompressedClassSpaceSize=1g",
+                                            "-XX:-UseCompressedClassPointers",
+                                            "-version");
+            output.shouldContain("warning");
+            output.shouldNotContain("error");
+            output.shouldHaveExitValue(0);
         }
-
-        runWithAlignment(16);
-        runWithAlignment(32);
-        runWithAlignment(64);
-        runWithAlignment(128);
     }
 
-    private static void runWithAlignment(int alignment) throws Exception {
-        ProcessBuilder pb;
-        OutputAnalyzer output;
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UseCompressedClassPointers",
-            "-XX:+UseCompressedOops",
-            "-XX:ObjectAlignmentInBytes=" + alignment,
-            "-version");
-
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
+    private static OutputAnalyzer runJava(String ... args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        return new OutputAnalyzer(pb.start());
     }
 }
