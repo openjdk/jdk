@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Iterator;
@@ -100,7 +101,7 @@ public final class ScriptRuntime {
       * call sites that are known to be megamorphic. Using an invoke dynamic here would
       * lead to the JVM deoptimizing itself to death
       */
-    public static final Call APPLY = staticCall(ScriptRuntime.class, "apply", Object.class, ScriptFunction.class, Object.class, Object[].class);
+    public static final Call APPLY = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "apply", Object.class, ScriptFunction.class, Object.class, Object[].class);
 
     /**
      * Converts a switch tag value to a simple integer. deflt value if it can't.

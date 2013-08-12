@@ -138,10 +138,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private static final MethodHandle KNOWNFUNCPROPGUARD = findOwnMH("knownFunctionPropertyGuard", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
     /** Method handle for getting a function argument at a given index. Used from MapCreator */
-    public static final Call GET_ARGUMENT       = virtualCall(ScriptObject.class, "getArgument", Object.class, int.class);
+    public static final Call GET_ARGUMENT       = virtualCall(MethodHandles.lookup(), ScriptObject.class, "getArgument", Object.class, int.class);
 
     /** Method handle for setting a function argument at a given index. Used from MapCreator */
-    public static final Call SET_ARGUMENT       = virtualCall(ScriptObject.class, "setArgument", void.class, int.class, Object.class);
+    public static final Call SET_ARGUMENT       = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setArgument", void.class, int.class, Object.class);
 
     /** Method handle for getting the proto of a ScriptObject */
     public static final Call GET_PROTO          = virtualCallNoLookup(ScriptObject.class, "getProto", ScriptObject.class);
@@ -150,7 +150,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
 
     /** Method handle for setting the user accessors of a ScriptObject */
-    public static final Call SET_USER_ACCESSORS = virtualCall(ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
+    public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
 
     /**
      * Constructor
