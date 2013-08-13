@@ -87,6 +87,7 @@ FILES_java += 	java/lang/UNIXProcess.java \
                 java/util/prefs/FileSystemPreferencesFactory.java \
 
 FILES_c    +=   UNIXProcess_md.c \
+		childproc.c \
 		UnixFileSystem_md.c \
 		canonicalize_md.c \
 		TimeZone.c \
@@ -468,3 +469,36 @@ $(GENSRCDIR)/sun/util/CoreResourceBundleControl.java: \
 clean::
 	$(RM) $(GENSRCDIR)/sun/util/CoreResourceBundleControl.java
 
+
+HELPER_EXE = $(LIBDIR)/$(LIBARCH)/jspawnhelper
+BUILDHELPER =
+ifeq ($(PLATFORM), solaris)
+    BUILDHELPER = 1
+endif
+ifeq ($(PLATFORM), macosx)
+    HELPER_EXE = $(LIBDIR)/jspawnhelper
+    BUILDHELPER = 1
+endif
+
+ARCHFLAG = 
+ifeq ($(ARCH_DATA_MODEL), 64)
+ARCHFLAG = -m64
+endif
+
+ifdef BUILDHELPER
+
+HELPER_EXE_FILES_c = jspawnhelper.c
+HELPER_EXE_FILES_o = $(OBJDIR)/jspawnhelper.o \
+		$(OBJDIR)/childproc.o
+
+$(HELPER_EXE): $(HELPER_EXE_FILES_o)
+	$(CC) $(ARCHFLAG) $(HELPER_EXE_FILES_o) \
+		-o $(TEMPDIR)/jspawnhelper
+	$(CP) $(TEMPDIR)/jspawnhelper $(HELPER_EXE)
+
+build: $(HELPER_EXE)
+
+clean clobber:: 
+ 	$(RM) $(HELPER_EXE_FILES_o) $(HELPER_EXE)
+
+endif #BUILDHELPER

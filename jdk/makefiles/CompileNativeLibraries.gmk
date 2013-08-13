@@ -205,7 +205,7 @@ ifneq (,$(JDK_UPDATE_VERSION))
 	LIBJAVA_CFLAGS += -DJDK_UPDATE_VERSION='"$(JDK_UPDATE_VERSION)"'
 endif
 
-LIBJAVA_EXCLUDE_FILES:=check_code.c check_format.c
+LIBJAVA_EXCLUDE_FILES:=check_code.c check_format.c jspawnhelper.c
 
 ifneq ($(OPENJDK_TARGET_OS),macosx)
 	LIBJAVA_EXCLUDE_FILES += java_props_macosx.c

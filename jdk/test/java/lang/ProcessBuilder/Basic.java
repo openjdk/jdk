@@ -26,9 +26,10 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220 7018606 7034570 4244896
+ *      4947220 7018606 7034570 4244896 5049299
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
+ * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
