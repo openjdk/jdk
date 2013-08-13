@@ -239,7 +239,7 @@ class ZipEntry implements ZipConstants, Cloneable {
      *
      * @return The last access time of the entry, null if not specified
 
-     * @see #setLastAccessTime(long)
+     * @see #setLastAccessTime(FileTime)
      * @since 1.8
      */
     public FileTime getLastAccessTime() {
