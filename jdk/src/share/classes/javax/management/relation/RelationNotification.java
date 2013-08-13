@@ -260,7 +260,7 @@ public class RelationNotification extends Notification {
 
         super(notifType, sourceObj, sequence, timeStamp, message);
 
-        if (!isValidBasic(notifType,sourceObj,id,typeName) || !isValidCreate(notifType)) {
+        if (!isValidBasicStrict(notifType,sourceObj,id,typeName) || !isValidCreate(notifType)) {
             throw new IllegalArgumentException("Invalid parameter.");
         }
 
@@ -310,7 +310,7 @@ public class RelationNotification extends Notification {
 
         super(notifType, sourceObj, sequence, timeStamp, message);
 
-        if (!isValidBasic(notifType,sourceObj,id,typeName) || !isValidUpdate(notifType,name,newValue,oldValue)) {
+        if (!isValidBasicStrict(notifType,sourceObj,id,typeName) || !isValidUpdate(notifType,name,newValue,oldValue)) {
             throw new IllegalArgumentException("Invalid parameter.");
         }
 
@@ -457,14 +457,26 @@ public class RelationNotification extends Notification {
     //  - no role old value (for role update)
     //  - no role new value (for role update)
 
+    // Despite the fact, that validation in constructor of RelationNotification prohibit
+    // creation of the class instance with null sourceObj its possible to set it to null later
+    // by public setSource() method.
+    // So we should relax validation rules to preserve serialization behavior compatibility.
+
+    private boolean isValidBasicStrict(String notifType, Object sourceObj, String id, String typeName){
+        if (sourceObj == null) {
+            return false;
+        }
+        return isValidBasic(notifType,sourceObj,id,typeName);
+    }
+
     private boolean isValidBasic(String notifType, Object sourceObj, String id, String typeName){
-        if (notifType == null || sourceObj == null ||
-            id == null || typeName == null) {
+        if (notifType == null || id == null || typeName == null) {
             return false;
         }
 
-        if (!(sourceObj instanceof RelationService) &&
-            !(sourceObj instanceof ObjectName)) {
+        if (sourceObj != null && (
+            !(sourceObj instanceof RelationService) &&
+            !(sourceObj instanceof ObjectName))) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ public class ShortMessage extends MidiMessage {
     /**
      * Sets the parameters for a MIDI message that takes no data bytes.
      * @param status    the MIDI status byte
-     * @throws  <code>InvalidMidiDataException</code> if <code>status</code> does not
+     * @throws  InvalidMidiDataException if <code>status</code> does not
      * specify a valid MIDI status byte for a message that requires no data bytes.
      * @see #setMessage(int, int, int)
      * @see #setMessage(int, int, int, int)
@@ -307,7 +307,7 @@ public class ShortMessage extends MidiMessage {
      * @param status    the MIDI status byte
      * @param data1             the first data byte
      * @param data2             the second data byte
-     * @throws  <code>InvalidMidiDataException</code> if the
+     * @throws  InvalidMidiDataException if the
      * the status byte, or all data bytes belonging to the message, do
      * not specify a valid MIDI message.
      * @see #setMessage(int, int, int, int)
@@ -357,7 +357,7 @@ public class ShortMessage extends MidiMessage {
      * @param channel   the channel associated with the message
      * @param data1             the first data byte
      * @param data2             the second data byte
-     * @throws          <code>InvalidMidiDataException</code> if the
+     * @throws          InvalidMidiDataException if the
      * status byte or all data bytes belonging to the message, do
      * not specify a valid MIDI message
      *
@@ -397,6 +397,7 @@ public class ShortMessage extends MidiMessage {
      * Obtains the MIDI command associated with this event.  This method
      * assumes that the event is a MIDI channel message; if not, the return
      * value will not be meaningful.
+     * @return the MIDI command associated with this event
      * @see #setMessage(int, int, int, int)
      */
     public int getCommand() {
@@ -450,7 +451,7 @@ public class ShortMessage extends MidiMessage {
      * status byte value.
      * @param status status byte value, which must represent a short MIDI message
      * @return data length in bytes (0, 1, or 2)
-     * @throws <code>InvalidMidiDataException</code> if the
+     * @throws InvalidMidiDataException if the
      * <code>status</code> argument does not represent the status byte for any
      * short message
      */

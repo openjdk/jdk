@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import static java.lang.annotation.RetentionPolicy.*;
    the {@code getY()} method.  Since parameter names are not in
    general available at runtime, without the annotation there would be
    no way to know whether the parameters correspond to {@code getX()}
-   and {@code getY()} or the other way around.</p>
+   and {@code getY()} or the other way around.
 
    @since 1.6
 */

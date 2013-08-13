@@ -172,8 +172,8 @@ public class JavacAnnoConstructs {
         }
 
         // So we have a containing type
-        String annoTypeName = annoType.getSimpleName();
-        String containerTypeName = containerType.getSimpleName();
+        String annoTypeName = annoType.getName();
+        String containerTypeName = containerType.getName();
         int directIndex = -1, containerIndex = -1;
         Attribute.Compound direct = null, container = null;
         // Find directly (explicit or implicit) present annotations
@@ -303,8 +303,8 @@ public class JavacAnnoConstructs {
         }
 
         // So we have a containing type
-        String annoTypeName = annoType.getSimpleName();
-        String containerTypeName = containerType.getSimpleName();
+        String annoTypeName = annoType.getName();
+        String containerTypeName = containerType.getName();
         int directIndex = -1, containerIndex = -1;
         Attribute.Compound direct = null, container = null;
         // Find directly (explicit or implicit) present annotations

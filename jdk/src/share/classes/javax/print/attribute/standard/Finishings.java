@@ -46,13 +46,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD WIDTH=27%>
- * {@link #NONE <CODE>NONE</CODE>}
+ * {@link #NONE NONE}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE <CODE>STAPLE</CODE>}
+ * {@link #STAPLE STAPLE}
  * </TD>
  * <TD WIDTH=36%>
- * {@link #EDGE_STITCH <CODE>EDGE_STITCH</CODE>}
+ * {@link #EDGE_STITCH EDGE_STITCH}
  * </TD>
  * </TR>
  * <TR>
@@ -60,13 +60,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD>
- * {@link #BIND <CODE>BIND</CODE>}
+ * {@link #BIND BIND}
  * </TD>
  * <TD>
- * {@link #SADDLE_STITCH <CODE>SADDLE_STITCH</CODE>}
+ * {@link #SADDLE_STITCH SADDLE_STITCH}
  * </TD>
  * <TD>
- * {@link #COVER <CODE>COVER</CODE>}
+ * {@link #COVER COVER}
  * </TD>
  * <TD>
  * &nbsp;
@@ -82,13 +82,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_TOP_LEFT <CODE>STAPLE_TOP_LEFT</CODE>}
+ * {@link #STAPLE_TOP_LEFT STAPLE_TOP_LEFT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #EDGE_STITCH_LEFT <CODE>EDGE_STITCH_LEFT</CODE>}
+ * {@link #EDGE_STITCH_LEFT EDGE_STITCH_LEFT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_DUAL_LEFT <CODE>STAPLE_DUAL_LEFT</CODE>}
+ * {@link #STAPLE_DUAL_LEFT STAPLE_DUAL_LEFT}
  * </TD>
  * <TD WIDTH=9%>
  * &nbsp;
@@ -99,13 +99,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_BOTTOM_LEFT <CODE>STAPLE_BOTTOM_LEFT</CODE>}
+ * {@link #STAPLE_BOTTOM_LEFT STAPLE_BOTTOM_LEFT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #EDGE_STITCH_TOP <CODE>EDGE_STITCH_TOP</CODE>}
+ * {@link #EDGE_STITCH_TOP EDGE_STITCH_TOP}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_DUAL_TOP <CODE>STAPLE_DUAL_TOP</CODE>}
+ * {@link #STAPLE_DUAL_TOP STAPLE_DUAL_TOP}
  * </TD>
  * <TD WIDTH=9%>
  * &nbsp;
@@ -116,13 +116,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_TOP_RIGHT <CODE>STAPLE_TOP_RIGHT</CODE>}
+ * {@link #STAPLE_TOP_RIGHT STAPLE_TOP_RIGHT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #EDGE_STITCH_RIGHT <CODE>EDGE_STITCH_RIGHT</CODE>}
+ * {@link #EDGE_STITCH_RIGHT EDGE_STITCH_RIGHT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_DUAL_RIGHT <CODE>STAPLE_DUAL_RIGHT</CODE>}
+ * {@link #STAPLE_DUAL_RIGHT STAPLE_DUAL_RIGHT}
  * </TD>
  * <TD WIDTH=9%>
  * &nbsp;
@@ -133,13 +133,13 @@ import javax.print.attribute.PrintJobAttribute;
  * &nbsp;
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_BOTTOM_RIGHT <CODE>STAPLE_BOTTOM_RIGHT</CODE>}
+ * {@link #STAPLE_BOTTOM_RIGHT STAPLE_BOTTOM_RIGHT}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #EDGE_STITCH_BOTTOM <CODE>EDGE_STITCH_BOTTOM</CODE>}
+ * {@link #EDGE_STITCH_BOTTOM EDGE_STITCH_BOTTOM}
  * </TD>
  * <TD WIDTH=27%>
- * {@link #STAPLE_DUAL_BOTTOM <CODE>STAPLE_DUAL_BOTTOM</CODE>}
+ * {@link #STAPLE_DUAL_BOTTOM STAPLE_DUAL_BOTTOM}
  * </TD>
  * <TD WIDTH=9%>
  * &nbsp;
@@ -147,16 +147,16 @@ import javax.print.attribute.PrintJobAttribute;
  * </TR>
  * </TABLE>
  * <P>
- * The <CODE>STAPLE_<I>XXX</I></CODE> values are specified with respect to the
+ * The STAPLE_<I>XXX</I> values are specified with respect to the
  * document as if the document were a portrait document. If the document is
  * actually a landscape or a reverse-landscape document, the client supplies the
  * appropriate transformed value. For example, to position a staple in the upper
  * left hand corner of a landscape document when held for reading, the client
- * supplies the <CODE>STAPLE_BOTTOM_LEFT</CODE> value (since landscape is
+ * supplies the STAPLE_BOTTOM_LEFT value (since landscape is
  * defined as a +90 degree rotation from portrait, i.e., anti-clockwise). On the
  * other hand, to position a staple in the upper left hand corner of a
  * reverse-landscape document when held for reading, the client supplies the
- * <CODE>STAPLE_TOP_RIGHT</CODE> value (since reverse-landscape is defined as a
+ * STAPLE_TOP_RIGHT value (since reverse-landscape is defined as a
  * -90 degree rotation from portrait, i.e., clockwise).
  * <P>
  * The angle (vertical, horizontal, angled) of each staple with respect to the

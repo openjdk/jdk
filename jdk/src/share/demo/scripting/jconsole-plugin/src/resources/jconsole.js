@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -77,12 +77,37 @@
 function jcontext() {
     return plugin.getContext();
 }
-jcontext.docString = "returns JConsoleContext for the current jconsole plugin" 
+jcontext.docString = "returns JConsoleContext for the current jconsole plugin";
 
 function mbeanConnection() {
     return jcontext().getMBeanServerConnection();
 }
-mbeanConnection.docString = "returns current MBeanServer connection"
+mbeanConnection.docString = "returns current MBeanServer connection";
+
+// check if there is a build in sync function, define one if missing
+if (typeof sync === "undefined") {
+    var sync = function(func, obj) {
+        if (arguments.length < 1 || arguments.length > 2 ) {
+            throw "sync(function [,object]) parameter count mismatch";
+        }
+
+        var syncobj = (arguments.length == 2 ? obj : this);
+
+        if (!syncobj._syncLock) {
+            syncobj._syncLock = new Lock();
+        }
+
+        return function() {
+            syncobj._syncLock.lock();
+            try {
+                func.apply(null, arguments);
+            } finally {
+                syncobj._syncLock.unlock();
+            }
+        };
+    };
+    sync.docString = "synchronize a function, optionally on an object";
+}
 
 /**
  * Prints one liner help message for each function exposed here
@@ -188,22 +213,12 @@ queryMBeans.docString = "return MBeans using given ObjectName and optional query
 
 // wraps a script array as java.lang.Object[]
 function objectArray(array) {
-    var len = array.length;
-    var res = java.lang.reflect.Array.newInstance(java.lang.Object, len);
-    for (var i = 0; i < array.length; i++) {
-        res[i] = array[i];
-    }
-    return res;
+    return Java.to(array, "java.lang.Object[]");
 }
 
 // wraps a script (string) array as java.lang.String[]
 function stringArray(array) {
-    var len = array.length;
-    var res = java.lang.reflect.Array.newInstance(java.lang.String, len);
-    for (var i = 0; i < array.length; i++) {
-        res[i] = String(array[i]);
-    }
-    return res;
+    return Java.to(array, "java.lang.String[]");
 }
 
 // script array to Java List
@@ -286,16 +301,18 @@ invokeMBean.docString = "invokes MBean operation on given ObjectName";
  * will be of type FutureTask. When you need value, call 'get' on it.
  */
 function mbean(objName, async) {
+    var index;
+
     objName = objectName(objName);
     var info = mbeanInfo(objName);
     var attrs = info.attributes;
     var attrMap = new Object;
-    for (var index in attrs) {
+    for (index in attrs) {
         attrMap[attrs[index].name] = attrs[index];
     }
     var opers = info.operations;
     var operMap = new Object;
-    for (var index in opers) {
+    for (index in opers) {
         operMap[opers[index].name] = opers[index];
     }
 
@@ -318,21 +335,30 @@ function mbean(objName, async) {
                 } else {
                     return getMBeanAttribute(objName, name); 
                 }
-            } else if (isOperation(name)) {
+            } else {
+                return undefined;
+            }
+        },
+        __call__: function(name) {
+            if (isOperation(name)) {
                 var oper = operMap[name];
-                return function() {
-                    var params = objectArray(arguments);
-                    var sigs = oper.signature;
-                    var sigNames = new Array(sigs.length);
-                    for (var index in sigs) {
-                        sigNames[index] = sigs[index].getType();
-                    }
-                    if (async) {
-                        return invokeMBean.future(objName, name, 
-                                                  params, sigNames);
-                    } else {
-                        return invokeMBean(objName, name, params, sigNames);
-                    }
+
+                var params = [];
+                for (var j = 1; j < arguments.length; j++) {
+                    params[j-1]= arguments[j];
+                }
+
+                var sigs = oper.signature;
+
+                var sigNames = new Array(sigs.length);
+                for (var index in sigs) {
+                    sigNames[index] = sigs[index].getType();
+                }
+
+                if (async) {
+                    return invokeMBean.future(objName, name, params, sigNames);
+                } else {
+                    return invokeMBean(objName, name, params, sigNames);
                 }
             } else {
                 return undefined;
@@ -520,7 +546,7 @@ Function.prototype.sync = function (lock) {
     } finally {
         lock.unlock();
     }
-}
+};
 
 /**
  * Causes current thread to sleep for specified
@@ -534,8 +560,7 @@ function sleep(interval) {
 sleep.docString = "wrapper for java.lang.Thread.sleep method";
 
 /**
- * Schedules a task to be executed once in
- * every N milliseconds specified. 
+ * Schedules a task to be executed once in N milliseconds specified.
  *
  * @param callback function or expression to evaluate
  * @param interval in milliseconds to sleep
@@ -549,15 +574,15 @@ function setTimeout(callback, interval) {
     // start a new thread that sleeps given time
     // and calls callback in an infinite loop
     return (function() {
-         while (true) {
+         try {
              sleep(interval);
-             callback();
-         }
+         } catch (x) { }
+         callback();
     }).daemon();
 }
-setTimeout.docString = "calls given callback once after specified interval"
+setTimeout.docString = "calls given callback once after specified interval";
 
-/** 
+/**
  * Cancels a timeout set earlier.
  * @param tid timeout ID returned from setTimeout
  */
@@ -565,6 +590,45 @@ function clearTimeout(tid) {
     // we just interrupt the timer thread
     tid.interrupt();
 }
+clearTimeout.docString = "interrupt a setTimeout timer";
+
+/**
+ * Schedules a task to be executed once in
+ * every N milliseconds specified.
+ *
+ * @param callback function or expression to evaluate
+ * @param interval in milliseconds to sleep
+ * @return timeout ID (which is nothing but Thread instance)
+ */
+function setInterval(callback, interval) {
+    if (! (callback instanceof Function)) {
+        callback = new Function(callback);
+    }
+
+    // start a new thread that sleeps given time
+    // and calls callback in an infinite loop
+    return (function() {
+         while (true) {
+             try {
+                 sleep(interval);
+             } catch (x) {
+                 break;
+             }
+             callback();
+         }
+    }).daemon();
+}
+setInterval.docString = "calls given callback every specified interval";
+
+/**
+ * Cancels a timeout set earlier.
+ * @param tid timeout ID returned from setTimeout
+ */
+function clearInterval(tid) {
+    // we just interrupt the timer thread
+    tid.interrupt();
+}
+clearInterval.docString = "interrupt a setInterval timer";
 
 /**
  * Simple access to thread local storage. 
@@ -680,7 +744,7 @@ function msgBox(msg, title, msgType) {
         if (msg === undefined) msg = "undefined";
         if (msg === null) msg = "null";
         if (title == undefined) title = msg;
-        if (msgType == undefined) type = JOptionPane.INFORMATION_MESSAGE;
+        if (msgType == undefined) msgType = JOptionPane.INFORMATION_MESSAGE;
         JOptionPane.showMessageDialog(window, msg, title, msgType);
     }
     if (isEventThread()) {
@@ -800,7 +864,7 @@ echo.docString = "echoes arguments to interactive console screen";
  * Clear the screen
  */
 function clear() {
-    (function() { window.clear(false) }).invokeLater();
+    (function() { window.clear(false); }).invokeLater();
 }
 clear.docString = "clears interactive console screen";
 
