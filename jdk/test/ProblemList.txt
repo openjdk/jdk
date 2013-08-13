@@ -131,10 +131,6 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 # 7196801
 java/lang/management/MemoryMXBean/LowMemoryTest2.sh		generic-all
 
-# 8019845 due to memleak not related to the tested fix
-java/lang/instrument/RedefineBigClass.sh                        linux-x64
-java/lang/instrument/RetransformBigClass.sh                     linux-x64
-
 # 8021230
 java/lang/ThreadLocal/ThreadLocalSupplierTest.java              generic-all
 
@@ -314,9 +310,6 @@ com/sun/crypto/provider/Cipher/RSA/TestOAEPPadding.java         generic-all
 ############################################################################
 
 # jdk_time
-
-# 8016623
-java/time/test/java/time/format/TestDateTimeTextProvider.java   generic-all
 
 ############################################################################
 
