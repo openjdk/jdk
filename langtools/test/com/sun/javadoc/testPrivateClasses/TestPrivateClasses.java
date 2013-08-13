@@ -112,12 +112,12 @@ public class TestPrivateClasses extends JavadocTester {
     private static final String[][] NEGATED_TEST1 = {
        // Should not document that a method overrides method from private class.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<strong>Overrides:</strong>"},
+        "<span class=\"strong\">Overrides:</span>"},
       // Should not document that a method specified by private interface.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
-        "<strong>Specified by:</strong>"},
+        "<span class=\"strong\">Specified by:</span>"},
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicInterface.html",
-        "<strong>Specified by:</strong>"},
+        "<span class=\"strong\">Specified by:</span>"},
       // Should not mention that any documentation was copied.
       {BUG_ID + "-1" + FS + "pkg" + FS + "PublicChild.html",
         "Description copied from"},
@@ -139,7 +139,7 @@ public class TestPrivateClasses extends JavadocTester {
         //Do not inherit private interface method with generic parameters.
         //This method has been implemented.
         {BUG_ID + "-1" + FS + "pkg2" + FS + "C.html",
-            "<strong><a href=\"../pkg2/I.html#hello(T)\">hello</a></strong>"},
+            "<span class=\"strong\"><a href=\"../pkg2/I.html#hello(T)\">hello</a></span>"},
     };
 
     // Test output when -private flag is used.
@@ -176,14 +176,14 @@ public class TestPrivateClasses extends JavadocTester {
         },
         // Should document that a method overrides method from private class.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><strong>Overrides:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/PrivateParent.html#methodOverridenFromParent(char[], int, T, V, java.util.List)\">" +
             "methodOverridenFromParent</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"../pkg/PrivateParent.html\" title=\"class in pkg\">" +
             "PrivateParent</a></code></dd>"},
        // Should document that a method is specified by private interface.
        {BUG_ID + "-2" + FS + "pkg" + FS + "PublicChild.html",
-            "<dt><strong>Specified by:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/PrivateInterface.html#methodInterface(int)\">" +
             "methodInterface</a></code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/PrivateInterface.html\" title=\"interface in pkg\">" +
@@ -227,11 +227,11 @@ public class TestPrivateClasses extends JavadocTester {
       //Since private flag is used, we can document that private interface method
       //with generic parameters has been implemented.
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<strong>Description copied from interface:&nbsp;<code>" +
-            "<a href=\"../pkg2/I.html#hello(T)\">I</a></code></strong>"},
+            "<span class=\"strong\">Description copied from interface:&nbsp;<code>" +
+            "<a href=\"../pkg2/I.html#hello(T)\">I</a></code></span>"},
 
       {BUG_ID + "-2" + FS + "pkg2" + FS + "C.html",
-            "<dt><strong>Specified by:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg2/I.html#hello(T)\">hello</a></code>" +
             "&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg2/I.html\" title=\"interface in pkg2\">I</a>" +

@@ -651,12 +651,13 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * }</pre>
      *
      * @param <R> the type of the result
+     * @param <A> the intermediate accumulation type of the {@code Collector}
      * @param collector the {@code Collector} describing the reduction
      * @return the result of the reduction
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      */
-    <R> R collect(Collector<? super T, R> collector);
+    <R, A> R collect(Collector<? super T, A, ? extends R> collector);
 
     /**
      * Returns the minimum element of this stream according to the provided
@@ -827,6 +828,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      */
     @SafeVarargs
+    @SuppressWarnings("varargs") // Creating a stream from an array is safe
     public static<T> Stream<T> of(T... values) {
         return Arrays.stream(values);
     }

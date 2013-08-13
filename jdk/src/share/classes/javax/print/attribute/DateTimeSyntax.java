@@ -36,9 +36,9 @@ import java.util.Date;
  * <P>
  * Under the hood, a date-time attribute is stored as a value of class <code>
  * java.util.Date</code>. You can get a date-time attribute's Date value by
- * calling {@link #getValue() <CODE>getValue()</CODE>}. A date-time attribute's
+ * calling {@link #getValue() getValue()}. A date-time attribute's
  * Date value is established when it is constructed (see {@link
- * #DateTimeSyntax(Date) <CODE>DateTimeSyntax(Date)</CODE>}). Once
+ * #DateTimeSyntax(Date) DateTimeSyntax(Date)}). Once
  * constructed, a date-time attribute's value is immutable.
  * <P>
  * To construct a date-time attribute from separate values of the year, month,

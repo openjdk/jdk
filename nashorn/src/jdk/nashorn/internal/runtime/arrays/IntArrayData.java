@@ -33,7 +33,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an int has been
  * written to the array. This is the default data for new arrays
  */
-public final class IntArrayData extends ArrayData {
+final class IntArrayData extends ArrayData {
     /**
      * The wrapped array
      */
@@ -55,10 +55,13 @@ public final class IntArrayData extends ArrayData {
      */
     IntArrayData(final int array[], final int length) {
         super(length);
+        assert array.length >= length;
         this.array = array;
-        if (array.length > length) {
-            Arrays.fill(array, length, array.length, 0);
-        }
+    }
+
+    @Override
+    public ArrayData copy() {
+        return new IntArrayData(array.clone(), (int) length());
     }
 
     @Override

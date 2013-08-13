@@ -1478,74 +1478,82 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.endPos(body));
             genFinalizer(env);
             code.statBegin(TreeInfo.endPos(env.tree));
-            Chain exitChain = code.branch(goto_);
-            endFinalizerGap(env);
-            if (startpc != endpc) for (List<JCCatch> l = catchers; l.nonEmpty(); l = l.tail) {
-                // start off with exception on stack
-                code.entryPoint(stateTry, l.head.param.sym.type);
-                genCatch(l.head, env, startpc, endpc, gaps);
-                genFinalizer(env);
-                if (hasFinalizer || l.tail.nonEmpty()) {
-                    code.statBegin(TreeInfo.endPos(env.tree));
-                    exitChain = Code.mergeChains(exitChain,
-                                                 code.branch(goto_));
-                }
-                endFinalizerGap(env);
+            Chain exitChain;
+            if (startpc != endpc) {
+                exitChain = code.branch(goto_);
+            } else {
+                exitChain = code.branch(dontgoto);
             }
-            if (hasFinalizer) {
-                // Create a new register segement to avoid allocating
-                // the same variables in finalizers and other statements.
-                code.newRegSegment();
-
-                // Add a catch-all clause.
-
-                // start off with exception on stack
-                int catchallpc = code.entryPoint(stateTry, syms.throwableType);
-
-                // Register all exception ranges for catch all clause.
-                // The range of the catch all clause is from the beginning
-                // of the try or synchronized block until the present
-                // code pointer excluding all gaps in the current
-                // environment's GenContext.
-                int startseg = startpc;
-                while (env.info.gaps.nonEmpty()) {
-                    int endseg = env.info.gaps.next().intValue();
-                    registerCatch(body.pos(), startseg, endseg,
-                                  catchallpc, 0);
-                    startseg = env.info.gaps.next().intValue();
+            endFinalizerGap(env);
+            if (startpc != endpc) {
+                for (List<JCCatch> l = catchers; l.nonEmpty(); l = l.tail) {
+                    // start off with exception on stack
+                    code.entryPoint(stateTry, l.head.param.sym.type);
+                    genCatch(l.head, env, startpc, endpc, gaps);
+                    genFinalizer(env);
+                    if (hasFinalizer || l.tail.nonEmpty()) {
+                        code.statBegin(TreeInfo.endPos(env.tree));
+                        exitChain = Code.mergeChains(exitChain,
+                                                     code.branch(goto_));
+                    }
+                    endFinalizerGap(env);
                 }
-                code.statBegin(TreeInfo.finalizerPos(env.tree));
-                code.markStatBegin();
 
-                Item excVar = makeTemp(syms.throwableType);
-                excVar.store();
-                genFinalizer(env);
-                excVar.load();
-                registerCatch(body.pos(), startseg,
-                              env.info.gaps.next().intValue(),
-                              catchallpc, 0);
-                code.emitop0(athrow);
-                code.markDead();
+                if (hasFinalizer) {
+                    // Create a new register segement to avoid allocating
+                    // the same variables in finalizers and other statements.
+                    code.newRegSegment();
 
-                // If there are jsr's to this finalizer, ...
-                if (env.info.cont != null) {
-                    // Resolve all jsr's.
-                    code.resolve(env.info.cont);
+                    // Add a catch-all clause.
 
-                    // Mark statement line number
+                    // start off with exception on stack
+                    int catchallpc = code.entryPoint(stateTry, syms.throwableType);
+
+                    // Register all exception ranges for catch all clause.
+                    // The range of the catch all clause is from the beginning
+                    // of the try or synchronized block until the present
+                    // code pointer excluding all gaps in the current
+                    // environment's GenContext.
+                    int startseg = startpc;
+                    while (env.info.gaps.nonEmpty()) {
+                        int endseg = env.info.gaps.next().intValue();
+                        registerCatch(body.pos(), startseg, endseg,
+                                      catchallpc, 0);
+                        startseg = env.info.gaps.next().intValue();
+                    }
                     code.statBegin(TreeInfo.finalizerPos(env.tree));
                     code.markStatBegin();
 
-                    // Save return address.
-                    LocalItem retVar = makeTemp(syms.throwableType);
-                    retVar.store();
-
-                    // Generate finalizer code.
-                    env.info.finalize.genLast();
-
-                    // Return.
-                    code.emitop1w(ret, retVar.reg);
+                    Item excVar = makeTemp(syms.throwableType);
+                    excVar.store();
+                    genFinalizer(env);
+                    excVar.load();
+                    registerCatch(body.pos(), startseg,
+                                  env.info.gaps.next().intValue(),
+                                  catchallpc, 0);
+                    code.emitop0(athrow);
                     code.markDead();
+
+                    // If there are jsr's to this finalizer, ...
+                    if (env.info.cont != null) {
+                        // Resolve all jsr's.
+                        code.resolve(env.info.cont);
+
+                        // Mark statement line number
+                        code.statBegin(TreeInfo.finalizerPos(env.tree));
+                        code.markStatBegin();
+
+                        // Save return address.
+                        LocalItem retVar = makeTemp(syms.throwableType);
+                        retVar.store();
+
+                        // Generate finalizer code.
+                        env.info.finalize.genLast();
+
+                        // Return.
+                        code.emitop1w(ret, retVar.reg);
+                        code.markDead();
+                    }
                 }
             }
             // Resolve all breaks.

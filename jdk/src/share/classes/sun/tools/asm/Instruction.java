@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,9 +274,9 @@ class Instruction implements Constants {
           case opc_lookupswitch: {
             SwitchData sw = (SwitchData)value;
             sw.defaultLabel = sw.defaultLabel.getDestination();
-            for (Enumeration e = sw.tab.keys() ; e.hasMoreElements() ; ) {
-                Integer k = (Integer)e.nextElement();
-                Label lbl = (Label)sw.tab.get(k);
+            for (Enumeration<Integer> e = sw.tab.keys() ; e.hasMoreElements() ; ) {
+                Integer k = e.nextElement();
+                Label lbl = sw.tab.get(k);
                 sw.tab.put(k, lbl.getDestination());
             }
 
@@ -389,8 +389,8 @@ class Instruction implements Constants {
             return;
 
           case opc_try:
-            for (Enumeration e = ((TryData)value).catches.elements() ; e.hasMoreElements() ;) {
-                CatchData cd = (CatchData)e.nextElement();
+            for (Enumeration<CatchData> e = ((TryData)value).catches.elements() ; e.hasMoreElements() ;) {
+                CatchData cd = e.nextElement();
                 if (cd.getType() != null) {
                     tab.put(cd.getType());
                 }
@@ -641,6 +641,7 @@ class Instruction implements Constants {
     /**
      * Generate code
      */
+    @SuppressWarnings("fallthrough")
     void write(DataOutputStream out, ConstantPool tab) throws IOException {
         switch (opc) {
           case opc_try:         case opc_label:         case opc_dead:
@@ -770,8 +771,8 @@ class Instruction implements Constants {
             }
             out.writeInt(sw.defaultLabel.pc - pc);
             out.writeInt(sw.tab.size());
-            for (Enumeration e = sw.sortedKeys(); e.hasMoreElements() ; ) {
-                Integer v = (Integer)e.nextElement();
+            for (Enumeration<Integer> e = sw.sortedKeys(); e.hasMoreElements() ; ) {
+                Integer v = e.nextElement();
                 out.writeInt(v.intValue());
                 out.writeInt(sw.get(v).pc - pc);
             }
