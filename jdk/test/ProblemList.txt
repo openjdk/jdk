@@ -296,6 +296,9 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 # 7194428
 sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
 
+# 8022896 
+com/sun/crypto/provider/Cipher/RSA/TestOAEPPadding.java         generic-all
+
 ############################################################################
 
 # jdk_sound
