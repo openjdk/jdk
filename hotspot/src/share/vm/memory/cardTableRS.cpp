@@ -321,35 +321,25 @@ void CardTableRS::clear_into_younger(Generation* gen) {
   // below to avoid missing cards at the fringes. If clear() or
   // invalidate() are changed in the future, this code should
   // be revisited. 20040107.ysr
-  Generation* g = gen;
-  for(Generation* prev_gen = gch->prev_gen(g);
-      prev_gen != NULL;
-      g = prev_gen, prev_gen = gch->prev_gen(g)) {
-    MemRegion to_be_cleared_mr = g->prev_used_region();
-    clear(to_be_cleared_mr);
-  }
+  Generation* old_gen = gen;
+  clear(old_gen->prev_used_region());
+  Generation* young_gen = gch->prev_gen(old_gen);
+  clear(young_gen->prev_used_region());
 }
 
-void CardTableRS::invalidate_or_clear(Generation* gen, bool younger) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  // For each generation gen (and younger)
-  // invalidate the cards for the currently occupied part
-  // of that generation and clear the cards for the
+void CardTableRS::invalidate_or_clear(Generation* gen) {
+  // For generation gen invalidate the cards for the currently
+  // occupied part of that generation and clear the cards for the
   // unoccupied part of the generation (if any, making use
   // of that generation's prev_used_region to determine that
   // region). No need to do anything for the youngest
   // generation. Also see note#20040107.ysr above.
-  Generation* g = gen;
-  for(Generation* prev_gen = gch->prev_gen(g); prev_gen != NULL;
-      g = prev_gen, prev_gen = gch->prev_gen(g))  {
-    MemRegion used_mr = g->used_region();
-    MemRegion to_be_cleared_mr = g->prev_used_region().minus(used_mr);
-    if (!to_be_cleared_mr.is_empty()) {
-      clear(to_be_cleared_mr);
-    }
-    invalidate(used_mr);
-    if (!younger) break;
+  MemRegion used_mr = gen->used_region();
+  MemRegion to_be_cleared_mr = gen->prev_used_region().minus(used_mr);
+  if (!to_be_cleared_mr.is_empty()) {
+    clear(to_be_cleared_mr);
   }
+  invalidate(used_mr);
 }
 
 
