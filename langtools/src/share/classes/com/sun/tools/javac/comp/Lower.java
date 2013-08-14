@@ -3436,7 +3436,7 @@ public class Lower extends TreeTranslator {
                                            eType,
                                            List.<Type>nil());
             VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
-                                            types.erasure(iterator.type.getReturnType()),
+                                            types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
 
              JCStatement init = make.
