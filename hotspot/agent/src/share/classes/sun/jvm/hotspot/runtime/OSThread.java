@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.*;
 // to the sys_thread_t structure of the classic JVM implementation.
 public class OSThread extends VMObject {
     private static JIntField interruptedField;
-    private static JIntField threadIdField;
+    private static Field threadIdField;
     static {
         VM.registerVMInitializedObserver(new Observer() {
             public void update(Observable o, Object data) {
@@ -44,7 +44,7 @@ public class OSThread extends VMObject {
     private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("OSThread");
         interruptedField = type.getJIntField("_interrupted");
-        threadIdField = type.getJIntField("_thread_id");
+        threadIdField = type.getField("_thread_id");
     }
 
     public OSThread(Address addr) {
@@ -56,7 +56,7 @@ public class OSThread extends VMObject {
     }
 
     public int threadId() {
-        return (int)threadIdField.getValue(addr);
+        return threadIdField.getJInt(addr);
     }
 
 }

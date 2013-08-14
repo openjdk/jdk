@@ -228,7 +228,7 @@ public final class ImageIO {
      * be used when creating <code>ImageInputStream</code>s and
      * <code>ImageOutputStream</code>s.
      *
-     * <p> When reading from a standard <code>InputStream</code>>, it
+     * <p> When reading from a standard <code>InputStream</code>, it
      * may be necessary to save previously read information in a cache
      * since the underlying stream does not allow data to be re-read.
      * Similarly, when writing to a standard

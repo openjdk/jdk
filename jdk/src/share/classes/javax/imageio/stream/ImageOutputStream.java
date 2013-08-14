@@ -59,9 +59,9 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * remainder of the current byte is padded with 0s
      * and written out first.  The bit offset will be 0 after the
      * write.  Implementers can use the
-     * {@link ImageOutputStreamImpl#flushBits <code>flushBits</code>}
-     * method of {@link ImageOutputStreamImpl
-     * <code>ImageOutputStreamImpl</code>} to guarantee this.
+     * {@link ImageOutputStreamImpl#flushBits flushBits}
+     * method of {@link ImageOutputStreamImpl ImageOutputStreamImpl}
+     * to guarantee this.
      *
      * @param b an <code>int</code> whose lower 8 bits are to be
      * written.
@@ -99,9 +99,9 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * remainder of the current byte is padded with 0s
      * and written out first.  The bit offset will be 0 after the
      * write.  Implementers can use the
-     * {@link ImageOutputStreamImpl#flushBits <code>flushBits</code>}
-     * method of {@link ImageOutputStreamImpl
-     * <code>ImageOutputStreamImpl</code>} to guarantee this.
+     * {@link ImageOutputStreamImpl#flushBits flushBits}
+     * method of {@link ImageOutputStreamImpl ImageOutputStreamImpl}
+     * to guarantee this.
      *
      * @param b an array of <code>byte</code>s to be written.
      * @param off the start offset in the data.
@@ -182,8 +182,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
     void writeShort(int v) throws IOException;
 
     /**
-     * This method is a synonym for
-     * {@link #writeShort <code>writeShort</code>}.
+     * This method is a synonym for {@link #writeShort writeShort}.
      *
      * @param v an <code>int</code> containing the char (unsigned
      * short) value to be written.
@@ -430,7 +429,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @exception NullPointerException if <code>s</code> is
      * <code>null</code>.
-     * @exception UTFDataFormatException if the modified UTF-8
+     * @exception java.io.UTFDataFormatException if the modified UTF-8
      * representation of <code>s</code> requires more than 65536 bytes.
      * @exception IOException if an I/O error occurs.
      */

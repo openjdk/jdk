@@ -80,7 +80,7 @@ import java.awt.image.BufferedImage;
  *
  * <p> The resulting region is then subsampled according to the
  * factors given in {@link IIOParam#setSourceSubsampling
- * <code>IIOParam.setSourceSubsampling</code>}.  The first pixel,
+ * IIOParam.setSourceSubsampling}.  The first pixel,
  * the number of pixels per row, and the number of rows all depend
  * on the subsampling settings.
  * Call the minimum X and Y coordinates of the resulting rectangle

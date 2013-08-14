@@ -286,7 +286,7 @@ import java.io.Serializable;
  * "autosensing" works is implementation dependent. In general, preformatted
  * autosense print data is provided in a byte oriented representation class
  * (byte array, InputStream, URL).
- *
+ * </UL>
  * <P>
  * <HR>
  * <H3>Service Formatted Print Data</H3>
@@ -545,7 +545,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * the match.
      * @return String representing a mime parameter, or
      * null if that parameter is not in the mime type string.
-     * @exception throws NullPointerException if paramName is null.
+     * @exception NullPointerException if paramName is null.
      */
     public String getParameter(String paramName) {
         return

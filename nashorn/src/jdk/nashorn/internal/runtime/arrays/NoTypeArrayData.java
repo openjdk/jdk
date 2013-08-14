@@ -47,6 +47,11 @@ final class NoTypeArrayData extends ArrayData {
     }
 
     @Override
+    public ArrayData copy() {
+        return new NoTypeArrayData();
+    }
+
+    @Override
     public Object asArrayOfType(final Class<?> componentType) {
         return Array.newInstance(componentType, 0);
     }
