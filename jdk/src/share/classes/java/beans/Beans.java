@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class Beans {
      * <p>
      * Instantiate a JavaBean.
      * </p>
-     *
+     * @return a JavaBean
      * @param     cls         the class-loader from which we should create
      *                        the bean.  If this is null, then the system
      *                        class-loader is used.
@@ -82,6 +82,7 @@ public class Beans {
      * <p>
      * Instantiate a JavaBean.
      * </p>
+     * @return a JavaBean
      *
      * @param     cls         the class-loader from which we should create
      *                        the bean.  If this is null, then the system
@@ -137,6 +138,7 @@ public class Beans {
      * the JDK appletviewer (for a reference browser environment) and the
      * BDK BeanBox (for a reference bean container).
      *
+     * @return a JavaBean
      * @param     cls         the class-loader from which we should create
      *                        the bean.  If this is null, then the system
      *                        class-loader is used.
@@ -361,6 +363,8 @@ public class Beans {
      * This method is provided in Beans 1.0 as a hook to allow the
      * addition of more flexible bean behaviour in the future.
      *
+     * @return an object representing a specified type view of the
+     * source object
      * @param bean        Object from which we want to obtain a view.
      * @param targetType  The type of view we'd like to get.
      *
@@ -383,7 +387,6 @@ public class Beans {
     public static boolean isInstanceOf(Object bean, Class<?> targetType) {
         return Introspector.isSubclass(bean.getClass(), targetType);
     }
-
 
     /**
      * Test if we are in design-mode.

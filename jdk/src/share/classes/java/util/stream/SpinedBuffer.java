@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -317,6 +318,8 @@ class SpinedBuffer<E>
 
             @Override
             public boolean tryAdvance(Consumer<? super E> consumer) {
+                Objects.requireNonNull(consumer);
+
                 if (splSpineIndex < lastSpineIndex
                     || (splSpineIndex == lastSpineIndex && splElementIndex < lastSpineElementFence)) {
                     consumer.accept(splChunk[splElementIndex++]);
@@ -334,6 +337,8 @@ class SpinedBuffer<E>
 
             @Override
             public void forEachRemaining(Consumer<? super E> consumer) {
+                Objects.requireNonNull(consumer);
+
                 if (splSpineIndex < lastSpineIndex
                     || (splSpineIndex == lastSpineIndex && splElementIndex < lastSpineElementFence)) {
                     int i = splElementIndex;
@@ -634,6 +639,8 @@ class SpinedBuffer<E>
 
             @Override
             public boolean tryAdvance(T_CONS consumer) {
+                Objects.requireNonNull(consumer);
+
                 if (splSpineIndex < lastSpineIndex
                     || (splSpineIndex == lastSpineIndex && splElementIndex < lastSpineElementFence)) {
                     arrayForOne(splChunk, splElementIndex++, consumer);
@@ -651,6 +658,8 @@ class SpinedBuffer<E>
 
             @Override
             public void forEachRemaining(T_CONS consumer) {
+                Objects.requireNonNull(consumer);
+
                 if (splSpineIndex < lastSpineIndex
                     || (splSpineIndex == lastSpineIndex && splElementIndex < lastSpineElementFence)) {
                     int i = splElementIndex;
