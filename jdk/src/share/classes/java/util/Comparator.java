@@ -352,6 +352,7 @@ public interface Comparator<T> {
      * @see Comparable
      * @since 1.8
      */
+    @SuppressWarnings("unchecked")
     public static <T extends Comparable<? super T>> Comparator<T> naturalOrder() {
         return (Comparator<T>) Comparators.NaturalOrderComparator.INSTANCE;
     }
@@ -374,7 +375,7 @@ public interface Comparator<T> {
      * @since 1.8
      */
     public static <T> Comparator<T> nullsFirst(Comparator<? super T> comparator) {
-        return new Comparators.NullComparator(true, comparator);
+        return new Comparators.NullComparator<>(true, comparator);
     }
 
     /**
@@ -395,7 +396,7 @@ public interface Comparator<T> {
      * @since 1.8
      */
     public static <T> Comparator<T> nullsLast(Comparator<? super T> comparator) {
-        return new Comparators.NullComparator(false, comparator);
+        return new Comparators.NullComparator<>(false, comparator);
     }
 
     /**
