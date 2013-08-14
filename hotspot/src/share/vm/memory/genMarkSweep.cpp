@@ -52,8 +52,8 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 
-void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
-  bool clear_all_softrefs) {
+void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool clear_all_softrefs) {
+  guarantee(level == 1, "We always collect both old and young.");
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
@@ -83,11 +83,6 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   // Capture heap size before collection for printing.
   size_t gch_prev_used = gch->used();
-
-  // Some of the card table updates below assume that the perm gen is
-  // also being collected.
-  assert(level == gch->n_gens() - 1,
-         "All generations are being collected, ergo perm gen too.");
 
   // Capture used regions for each generation that will be
   // subject to collection, so that card table adjustments can
@@ -134,9 +129,9 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   } else {
     // Invalidate the cards corresponding to the currently used
     // region and clear those corresponding to the evacuated region
-    // of all generations just collected (i.e. level and younger).
-    rs->invalidate_or_clear(gch->get_gen(level),
-                            true /* younger */);
+    // of all generations just collected.
+    rs->invalidate_or_clear(gch->get_gen(1));
+    rs->invalidate_or_clear(gch->get_gen(0));
   }
 
   Threads::gc_epilogue();

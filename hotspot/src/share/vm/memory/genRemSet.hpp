@@ -146,11 +146,8 @@ public:
 
   // Informs the RS that refs in this generation
   // may have changed arbitrarily, and therefore may contain
-  // old-to-young pointers in arbitrary locations. The parameter
-  // younger indicates if the same should be done for younger generations
-  // as well. The parameter perm indicates if the same should be done for
-  // perm gen as well.
-  virtual void invalidate_or_clear(Generation* gen, bool younger) = 0;
+  // old-to-young pointers in arbitrary locations.
+  virtual void invalidate_or_clear(Generation* gen) = 0;
 };
 
 #endif // SHARE_VM_MEMORY_GENREMSET_HPP
