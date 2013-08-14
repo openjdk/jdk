@@ -25,31 +25,64 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
- * Reverse iterator over a map
+ * Iterator over a NativeArray
  */
-final class ReverseMapIterator extends MapIterator {
+class ScriptArrayIterator extends ArrayLikeIterator<Object> {
 
-    ReverseMapIterator(final ScriptObject obj, final boolean includeUndefined) {
-        super(obj, includeUndefined);
-        this.index = JSType.toUint32(obj.getLength()) - 1;
+    /** Array {@link ScriptObject} to iterate over */
+    protected final ScriptObject array;
+
+    /** length of array */
+    protected final long length;
+
+    /**
+     * Constructor
+     * @param array array to iterate over
+     * @param includeUndefined should undefined elements be included in iteration
+     */
+    protected ScriptArrayIterator(final ScriptObject array, final boolean includeUndefined) {
+        super(includeUndefined);
+        this.array = array;
+        this.length = array.getArray().length();
     }
 
-    @Override
-    public boolean isReverse() {
-        return true;
-    }
-
-    @Override
+    /**
+     * Is the current index still inside the array
+     * @return true if inside the array
+     */
     protected boolean indexInArray() {
-        return index >= 0;
+        return index < length;
     }
 
     @Override
-    protected long bumpIndex() {
-        return index--;
+    public Object next() {
+        return array.get(bumpIndex());
+    }
+
+    @Override
+    public long getLength() {
+        return length;
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (!includeUndefined) {
+            while (indexInArray()) {
+                if (array.has(index)) {
+                    break;
+                }
+                bumpIndex();
+            }
+        }
+
+        return indexInArray();
+    }
+
+    @Override
+    public void remove() {
+        array.delete(index, false);
     }
 }
