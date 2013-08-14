@@ -1831,13 +1831,13 @@ class ThreadTimesClosure: public ThreadClosure {
  private:
   objArrayHandle _names_strings;
   char **_names_chars;
-  typeArrayOop _times;
+  typeArrayHandle _times;
   int _names_len;
   int _times_len;
   int _count;
 
  public:
-  ThreadTimesClosure(objArrayHandle names, typeArrayOop times);
+  ThreadTimesClosure(objArrayHandle names, typeArrayHandle times);
   ~ThreadTimesClosure();
   virtual void do_thread(Thread* thread);
   void do_unlocked();
@@ -1845,9 +1845,9 @@ class ThreadTimesClosure: public ThreadClosure {
 };
 
 ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
-                                       typeArrayOop times) {
+                                       typeArrayHandle times) {
   assert(names() != NULL, "names was NULL");
-  assert(times != NULL, "times was NULL");
+  assert(times() != NULL, "times was NULL");
   _names_strings = names;
   _names_len = names->length();
   _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtInternal);
@@ -1925,7 +1925,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
   typeArrayOop ta = typeArrayOop(JNIHandles::resolve_non_null(times));
   typeArrayHandle times_ah(THREAD, ta);
 
-  ThreadTimesClosure ttc(names_ah, times_ah());
+  ThreadTimesClosure ttc(names_ah, times_ah);
   {
     MutexLockerEx ml(Threads_lock);
     Threads::threads_do(&ttc);

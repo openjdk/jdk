@@ -164,7 +164,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(
+        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
                 writer.getLink(new LinkInfoImpl(configuration, context, (ClassDoc)member)));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);
