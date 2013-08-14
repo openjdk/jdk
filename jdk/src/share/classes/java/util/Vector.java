@@ -1164,12 +1164,13 @@ public class Vector<E>
                 if (i >= size) {
                     return;
                 }
-                final Object[] elementData = Vector.this.elementData;
+        @SuppressWarnings("unchecked")
+                final E[] elementData = (E[]) Vector.this.elementData;
                 if (i >= elementData.length) {
                     throw new ConcurrentModificationException();
                 }
                 while (i != size && modCount == expectedModCount) {
-                    action.accept((E) elementData[i++]);
+                    action.accept(elementData[i++]);
                 }
                 // update once at end of iteration to reduce heap write traffic
                 cursor = i;
@@ -1311,8 +1312,8 @@ public class Vector<E>
         modCount++;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
+    @Override
     public synchronized void sort(Comparator<? super E> c) {
         final int expectedModCount = modCount;
         Arrays.sort((E[]) elementData, 0, elementCount, c);

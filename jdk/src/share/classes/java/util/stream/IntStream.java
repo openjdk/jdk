@@ -517,7 +517,7 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
     long count();
 
     /**
-     * Returns an {@code OptionalDouble} describing the average of elements of
+     * Returns an {@code OptionalDouble} describing the arithmetic mean of elements of
      * this stream, or an empty optional if this stream is empty.  This is a
      * special case of a
      * <a href="package-summary.html#MutableReduction">reduction</a>.

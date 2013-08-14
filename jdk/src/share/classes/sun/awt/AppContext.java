@@ -310,11 +310,13 @@ public final class AppContext {
                     // and excludes applets because by the time applet starts
                     // a number of contexts have already been created by the plugin.
                     if (numAppContexts.get() == 0) {
-                        // This check is not necessary, its purpose is to help
-                        // Plugin devs to catch all the cases of main AC creation.
                         if (System.getProperty("javaplugin.version") == null &&
                                 System.getProperty("javawebstart.version") == null) {
                             initMainAppContext();
+                        } else if (System.getProperty("javafx.version") != null &&
+                                threadGroup.getParent() != null) {
+                            // Swing inside JavaFX case
+                            SunToolkit.createNewAppContext();
                         }
                     }
 

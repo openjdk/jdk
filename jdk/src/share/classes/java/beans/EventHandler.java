@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,6 +515,7 @@ public class EventHandler implements InvocationHandler {
      *</pre>
      *</blockquote>
      *
+     * @param <T> the type to create
      * @param listenerInterface the listener interface to create a proxy for
      * @param target the object that will perform the action
      * @param action the name of a (possibly qualified) property or method on
@@ -570,6 +571,7 @@ public class EventHandler implements InvocationHandler {
      *</pre>
      *</blockquote>
      *
+     * @param <T> the type to create
      * @param listenerInterface the listener interface to create a proxy for
      * @param target the object that will perform the action
      * @param action the name of a (possibly qualified) property or method on
@@ -659,6 +661,7 @@ public class EventHandler implements InvocationHandler {
      * </pre>
      *</blockquote>
      *
+     * @param <T> the type to create
      * @param listenerInterface the listener interface to create a proxy for
      * @param target the object that will perform the action
      * @param action the name of a (possibly qualified) property or method on

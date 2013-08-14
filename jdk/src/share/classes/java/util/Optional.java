@@ -307,7 +307,7 @@ public final class Optional<T> {
             return false;
         }
 
-        Optional other = (Optional) obj;
+        Optional<?> other = (Optional<?>) obj;
         return Objects.equals(value, other.value);
     }
 
