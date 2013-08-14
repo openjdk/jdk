@@ -39,7 +39,7 @@ import java.awt.image.ColorModel;
  * The only method which needs to be defined to create a useable image
  * filter is the filterRGB method.  Here is an example of a definition
  * of a filter which swaps the red and blue components of an image:
- * <pre>
+ * <pre>{@code
  *
  *      class RedBlueSwapFilter extends RGBImageFilter {
  *          public RedBlueSwapFilter() {
@@ -56,7 +56,7 @@ import java.awt.image.ColorModel;
  *          }
  *      }
  *
- * </pre>
+ * }</pre>
  *
  * @see FilteredImageSource
  * @see ImageFilter

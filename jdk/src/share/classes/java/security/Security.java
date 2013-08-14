@@ -326,17 +326,13 @@ public final class Security {
      *
      * <p>A provider cannot be added if it is already installed.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess}
-     * method is called with the string
-     * {@code "insertProvider."+provider.getName()}
-     * to see if it's ok to add a new provider.
-     * If the default implementation of {@code checkSecurityAccess}
-     * is used (i.e., that method is not overriden), then this will result in
-     * a call to the security manager's {@code checkPermission} method
-     * with a
-     * {@code SecurityPermission("insertProvider."+provider.getName())}
-     * permission.
+     * <p>If there is a security manager, the
+     * {@link java.lang.SecurityManager#checkSecurityAccess} method is called
+     * with the {@code "insertProvider"} permission target name to see if
+     * it's ok to add a new provider. If this permission check is denied,
+     * {@code checkSecurityAccess} is called again with the
+     * {@code "insertProvider."+provider.getName()} permission target name. If
+     * both checks are denied, a {@code SecurityException} is thrown.
      *
      * @param provider the provider to be added.
      *
@@ -360,7 +356,7 @@ public final class Security {
     public static synchronized int insertProviderAt(Provider provider,
             int position) {
         String providerName = provider.getName();
-        check("insertProvider." + providerName);
+        checkInsertProvider(providerName);
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.insertAt(list, provider, position - 1);
         if (list == newList) {
@@ -373,17 +369,13 @@ public final class Security {
     /**
      * Adds a provider to the next position available.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess}
-     * method is called with the string
-     * {@code "insertProvider."+provider.getName()}
-     * to see if it's ok to add a new provider.
-     * If the default implementation of {@code checkSecurityAccess}
-     * is used (i.e., that method is not overriden), then this will result in
-     * a call to the security manager's {@code checkPermission} method
-     * with a
-     * {@code SecurityPermission("insertProvider."+provider.getName())}
-     * permission.
+     * <p>If there is a security manager, the
+     * {@link java.lang.SecurityManager#checkSecurityAccess} method is called
+     * with the {@code "insertProvider"} permission target name to see if
+     * it's ok to add a new provider. If this permission check is denied,
+     * {@code checkSecurityAccess} is called again with the
+     * {@code "insertProvider."+provider.getName()} permission target name. If
+     * both checks are denied, a {@code SecurityException} is thrown.
      *
      * @param provider the provider to be added.
      *
@@ -860,6 +852,23 @@ public final class Security {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSecurityAccess(directive);
+        }
+    }
+
+    private static void checkInsertProvider(String name) {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            try {
+                security.checkSecurityAccess("insertProvider");
+            } catch (SecurityException se1) {
+                try {
+                    security.checkSecurityAccess("insertProvider." + name);
+                } catch (SecurityException se2) {
+                    // throw first exception, but add second to suppressed
+                    se1.addSuppressed(se2);
+                    throw se1;
+                }
+            }
         }
     }
 
