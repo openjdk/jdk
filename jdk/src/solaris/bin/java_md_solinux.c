@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -958,9 +958,27 @@ static void* hSplashLib = NULL;
 
 void* SplashProcAddress(const char* name) {
     if (!hSplashLib) {
-        const char * splashLibPath;
-        splashLibPath = SPLASHSCREEN_SO;
-        hSplashLib = dlopen(splashLibPath, RTLD_LAZY | RTLD_GLOBAL);
+        int ret;
+        char jrePath[MAXPATHLEN];
+        char splashPath[MAXPATHLEN];
+
+        if (!GetJREPath(jrePath, sizeof(jrePath), GetArch(), JNI_FALSE)) {
+            JLI_ReportErrorMessage(JRE_ERROR1);
+            return NULL;
+        }
+        ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s/%s",
+                     jrePath, GetArch(), SPLASHSCREEN_SO);
+
+        if (ret >= (int) sizeof(splashPath)) {
+            JLI_ReportErrorMessage(JRE_ERROR11);
+            return NULL;
+        }
+        if (ret < 0) {
+            JLI_ReportErrorMessage(JRE_ERROR13);
+            return NULL;
+        }
+        hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
+        JLI_TraceLauncher("Info: loaded %s\n", splashPath);
     }
     if (hSplashLib) {
         void* sym = dlsym(hSplashLib, name);
