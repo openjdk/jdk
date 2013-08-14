@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8020081
+ * @bug 8020081 8022669
  * @summary encryption/decryption test for using OAEPPadding with
  * OAEPParameterSpec specified and not specified during a Cipher.init().
  * @author Anthony Scarpino
@@ -62,20 +62,74 @@ public class TestOAEPPadding {
         publicKey = (RSAPublicKey)kp.getPublic();
 
         // Test using a spec with each digest algorithm case
+        // MD5
         test(new OAEPParameterSpec("MD5", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("MD5", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("MD5", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("MD5", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("MD5", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+        // SHA1
         test(new OAEPParameterSpec("SHA1", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA1", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA1", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA1", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA1", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
         // For default OAEPParameterSpec case (SHA1)
         test(null);
+        // SHA-224
         test(new OAEPParameterSpec("SHA-224", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-224", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-224", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-224", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-224", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+        // SHA-256
         test(new OAEPParameterSpec("SHA-256", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-256", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-256", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-256", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-256", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+        // SHA-384
         test(new OAEPParameterSpec("SHA-384", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-384", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-384", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-384", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-384", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+        // SHA-512
         test(new OAEPParameterSpec("SHA-512", "MGF1",
                 MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512", "MGF1",
+                MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
         if (failed) {
             throw new Exception("Test failed");
         }
@@ -149,9 +203,16 @@ public class TestOAEPPadding {
 
     private static void testEncryptDecrypt(OAEPParameterSpec spec,
             int dataLength) throws Exception {
-        System.out.println("Testing OAEP with hash " +
-                ((spec != null) ? spec.getDigestAlgorithm() : "Default") +
-                ", " + dataLength + " bytes");
+
+        System.out.print("Testing OAEP with hash ");
+        if (spec != null) {
+            System.out.print(spec.getDigestAlgorithm() + " and MGF " +
+                ((MGF1ParameterSpec)spec.getMGFParameters()).
+                    getDigestAlgorithm());
+        } else {
+            System.out.print("Default");
+        }
+        System.out.println(", " + dataLength + " bytes");
 
         Cipher c = Cipher.getInstance("RSA/ECB/OAEPPadding", cp);
         if (spec != null) {
