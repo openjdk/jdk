@@ -692,7 +692,7 @@ public abstract class ImageWriter implements ImageTranscoder {
      * output prior to the current seek position may be flushed, and
      * need not be readable or writable, unless the plug-in needs to
      * be able to patch up the header information when
-     * <code>endWriteSequence</code> is called (<italic>e.g.</italic> TIFF).
+     * <code>endWriteSequence</code> is called (<i>e.g.</i> TIFF).
      *
      * <p> If <code>canWriteSequence</code> returns <code>false</code>,
      * this method will throw an

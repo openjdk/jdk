@@ -80,7 +80,7 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * <code>ImageOutputStream.class</code>, to be returned from
      * <code>getOutputTypes</code>.
      * @deprecated Instead of using this field, directly create
-     * the equivalent array <code>{ ImageOutputStream.class }<code>.
+     * the equivalent array <code>{ ImageOutputStream.class }</code>.
      */
     @Deprecated
     public static final Class[] STANDARD_OUTPUT_TYPE =

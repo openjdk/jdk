@@ -47,7 +47,7 @@ public class XMLFormatter extends Formatter {
     private LogManager manager = LogManager.getLogManager();
 
     // Append a two digit number.
-    private void a2(StringBuffer sb, int x) {
+    private void a2(StringBuilder sb, int x) {
         if (x < 10) {
             sb.append('0');
         }
@@ -55,25 +55,26 @@ public class XMLFormatter extends Formatter {
     }
 
     // Append the time and date in ISO 8601 format
-    private void appendISO8601(StringBuffer sb, long millis) {
-        Date date = new Date(millis);
-        sb.append(date.getYear() + 1900);
+    private void appendISO8601(StringBuilder sb, long millis) {
+        GregorianCalendar cal = new GregorianCalendar();
+        cal.setTimeInMillis(millis);
+        sb.append(cal.get(Calendar.YEAR) + 1900);
         sb.append('-');
-        a2(sb, date.getMonth() + 1);
+        a2(sb, cal.get(Calendar.MONTH) + 1);
         sb.append('-');
-        a2(sb, date.getDate());
+        a2(sb, cal.get(Calendar.DAY_OF_MONTH));
         sb.append('T');
-        a2(sb, date.getHours());
+        a2(sb, cal.get(Calendar.HOUR_OF_DAY));
         sb.append(':');
-        a2(sb, date.getMinutes());
+        a2(sb, cal.get(Calendar.MINUTE));
         sb.append(':');
-        a2(sb, date.getSeconds());
+        a2(sb, cal.get(Calendar.SECOND));
     }
 
-    // Append to the given StringBuffer an escaped version of the
+    // Append to the given StringBuilder an escaped version of the
     // given text string where XML special characters have been escaped.
     // For a null string we append "<null>"
-    private void escape(StringBuffer sb, String text) {
+    private void escape(StringBuilder sb, String text) {
         if (text == null) {
             text = "<null>";
         }
@@ -102,7 +103,7 @@ public class XMLFormatter extends Formatter {
      * @return a formatted log record
      */
     public String format(LogRecord record) {
-        StringBuffer sb = new StringBuffer(500);
+        StringBuilder sb = new StringBuilder(500);
         sb.append("<record>\n");
 
         sb.append("  <date>");
@@ -224,7 +225,7 @@ public class XMLFormatter extends Formatter {
      * @return  a valid XML string
      */
     public String getHead(Handler h) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String encoding;
         sb.append("<?xml version=\"1.0\"");
 

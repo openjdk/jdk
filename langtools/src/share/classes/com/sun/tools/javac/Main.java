@@ -26,8 +26,6 @@
 package com.sun.tools.javac;
 
 import java.io.PrintWriter;
-import java.lang.reflect.*;
-
 
 /**
  * The programmatic interface for the Java Programming Language
@@ -44,23 +42,12 @@ import java.lang.reflect.*;
 @jdk.Supported
 public class Main {
 
-    /** Unsupported command line interface.
-     * @param args   The command line parameters.
+    /** Main entry point for the launcher.
+     *  Note: This method calls System.exit.
+     *  @param args command line arguments
      */
     public static void main(String[] args) throws Exception {
-      if (args.length > 0 && args[0].equals("-Xjdb")) {
-        String[] newargs = new String[args.length + 2];
-        Class<?> c = Class.forName("com.sun.tools.example.debug.tty.TTY");
-        Method method = c.getDeclaredMethod ("main", new Class<?>[] {args.getClass()});
-        method.setAccessible(true);
-        System.arraycopy(args, 1, newargs, 3, args.length - 1);
-        newargs[0] = "-connect";
-        newargs[1] = "com.sun.jdi.CommandLineLaunch:options=-esa -ea:com.sun.tools...";
-        newargs[2] = "com.sun.tools.javac.Main";
-        method.invoke(null, new Object[] { newargs });
-      } else {
         System.exit(compile(args));
-      }
     }
 
     /** Programmatic interface to the Java Programming Language
