@@ -282,17 +282,6 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Generates a EM tag with some content.
-     *
-     * @param body content to be added to the tag
-     * @return an HtmlTree object for the EM tag
-     */
-    public static HtmlTree EM(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.EM, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
      * Generates a FRAME tag.
      *
      * @param src the url of the document to be shown in the frame
@@ -412,17 +401,6 @@ public class HtmlTree extends Content {
     public static HtmlTree HTML(String lang, Content head, Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.HTML, nullCheck(head), nullCheck(body));
         htmltree.addAttr(HtmlAttr.LANG, nullCheck(lang));
-        return htmltree;
-    }
-
-    /**
-     * Generates a I tag with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the I tag
-     */
-    public static HtmlTree I(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.I, nullCheck(body));
         return htmltree;
     }
 
@@ -555,17 +533,6 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree SMALL(Content body) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.SMALL, nullCheck(body));
-        return htmltree;
-    }
-
-    /**
-     * Generates a STRONG tag with some content.
-     *
-     * @param body content for the tag
-     * @return an HtmlTree object for the STRONG tag
-     */
-    public static HtmlTree STRONG(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.STRONG, nullCheck(body));
         return htmltree;
     }
 

@@ -33,9 +33,9 @@ import java.io.Serializable;
  * <P>
  * Under the hood, an integer attribute is just an integer. You can get an
  * integer attribute's integer value by calling {@link #getValue()
- * <CODE>getValue()</CODE>}. An integer attribute's integer value is
+ * getValue()}. An integer attribute's integer value is
  * established when it is constructed (see {@link #IntegerSyntax(int)
- * <CODE>IntegerSyntax(int)</CODE>}). Once constructed, an integer attribute's
+ * IntegerSyntax(int)}). Once constructed, an integer attribute's
  * value is immutable.
  * <P>
  *
