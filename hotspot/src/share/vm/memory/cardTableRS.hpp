@@ -147,7 +147,7 @@ public:
   void invalidate(MemRegion mr, bool whole_heap = false) {
     _ct_bs->invalidate(mr, whole_heap);
   }
-  void invalidate_or_clear(Generation* gen, bool younger);
+  void invalidate_or_clear(Generation* gen);
 
   static uintx ct_max_alignment_constraint() {
     return CardTableModRefBS::ct_max_alignment_constraint();
