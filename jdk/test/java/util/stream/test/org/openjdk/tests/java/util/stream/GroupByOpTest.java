@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamOpFlagTestHelper;
 import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
@@ -59,13 +58,14 @@ import static java.util.stream.LambdaTestHelpers.pTrue;
 public class GroupByOpTest extends OpTestCase {
 
     public void testBypassCollect() {
-        Collector<Integer, Map<Boolean, List<Integer>>> collector
-                = Collectors.groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false));
+        @SuppressWarnings("unchecked")
+        Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> collector
+                = (Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>>) Collectors.groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false));
 
-        Map<Boolean, List<Integer>> m = collector.resultSupplier().get();
+        Map<Boolean, List<Integer>> m = collector.supplier().get();
         int[] ints = countTo(10).stream().mapToInt(e -> (int) e).toArray();
         for (int i : ints)
-            m = collector.accumulator().apply(m, i);
+            collector.accumulator().accept(m, i);
 
         assertEquals(2, m.keySet().size());
         for(Collection<Integer> group : m.values()) {
@@ -130,7 +130,7 @@ public class GroupByOpTest extends OpTestCase {
         //     - Total number of values equals size of data
 
         for (MapperData<Integer, ?> md : getMapperData(data)) {
-            Collector<Integer, Map<Object, List<Integer>>> tab = Collectors.groupingBy(md.m);
+            Collector<Integer, ?, Map<Object, List<Integer>>> tab = Collectors.groupingBy(md.m);
             Map<Object, List<Integer>> result =
                     withData(data)
                     .terminal(s -> s, s -> s.collect(tab))

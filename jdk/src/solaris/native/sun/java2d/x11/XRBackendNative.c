@@ -269,6 +269,13 @@ Java_sun_awt_X11GraphicsEnvironment_initXRender
     static jboolean firstTime = JNI_TRUE;
 
     if (firstTime) {
+#ifdef DISABLE_XRENDER_BY_DEFAULT
+        if (verbose == JNI_FALSE) {
+            xrenderAvailable = JNI_FALSE;
+            firstTime = JNI_FALSE;
+            return xrenderAvailable;
+        }
+#endif
         AWT_LOCK();
         xrenderAvailable = IsXRenderAvailable(verbose);
         AWT_UNLOCK();

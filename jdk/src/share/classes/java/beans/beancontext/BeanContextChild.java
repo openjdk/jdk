@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public interface BeanContextChild {
      * </p>
      * @param bc The <code>BeanContext</code> with which
      * to associate this <code>BeanContextChild</code>.
-     * @throws <code>PropertyVetoException</code> if the
+     * @throws PropertyVetoException if the
      * addition of the specified <code>BeanContext</code> is refused.
      */
     void setBeanContext(BeanContext bc) throws PropertyVetoException;

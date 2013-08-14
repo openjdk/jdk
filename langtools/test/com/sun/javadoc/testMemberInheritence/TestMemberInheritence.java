@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class TestMemberInheritence extends JavadocTester {
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<dl>" + NL + "<dt><strong>Specified by:</strong></dt>" + NL +
+         "<dl>" + NL + "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
                           "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">" +
                           "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>" +
                           "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">" +

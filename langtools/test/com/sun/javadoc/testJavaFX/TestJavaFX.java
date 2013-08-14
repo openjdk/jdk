@@ -49,7 +49,7 @@ public class TestJavaFX extends JavadocTester {
                 "<div class=\"block\">Gets the value of the property rate.</div>" + NL +
                 "<dl>" + NL + "<dt><span class=\"strong\">Property description:</span></dt>" },
             {"./" + BUG_ID + "/C.html",
-                "<td class=\"colLast\"><code><strong><a href=\"C.html#rateProperty\">rate</a></strong></code>" + NL +
+                "<td class=\"colLast\"><code><span class=\"strong\"><a href=\"C.html#rateProperty\">rate</a></span></code>" + NL +
                 "<div class=\"block\">Defines the direction/speed at which the <code>Timeline</code> is expected to"},
 
             {"./" + BUG_ID + "/C.html",
@@ -63,7 +63,7 @@ public class TestJavaFX extends JavadocTester {
             {"./" + BUG_ID + "/C.html",
                 "<span class=\"strong\">Property description:</span>"},
             {"./" + BUG_ID + "/C.html",
-                "<td class=\"colLast\"><code><strong><a href=\"C.html#setTestMethodProperty()\">setTestMethodProperty</a></strong>()</code>&nbsp;</td>" },
+                "<td class=\"colLast\"><code><span class=\"strong\"><a href=\"C.html#setTestMethodProperty()\">setTestMethodProperty</a></span>()</code>&nbsp;</td>" },
             {"./" + BUG_ID + "/C.html",
                 "<h4>isPaused</h4>" + NL +
                 "<pre>public final&nbsp;double&nbsp;isPaused()</pre>" + NL +

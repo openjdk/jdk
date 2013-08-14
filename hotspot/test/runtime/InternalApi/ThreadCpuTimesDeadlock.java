@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 /*
  * @test
  * @bug 7196045
+ * @bug 8014294
  * @summary Possible JVM deadlock in ThreadTimesClosure when using HotspotInternal non-public API.
- * @run main/othervm -XX:+UsePerfData Test7196045
+ * @run main/othervm -XX:+UsePerfData -Xmx32m ThreadCpuTimesDeadlock
  */
 
 import java.lang.management.ManagementFactory;
@@ -35,9 +36,10 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-public class Test7196045 {
+public class ThreadCpuTimesDeadlock {
 
-    public static long duration = 1000 * 60 * 2;
+    public static byte[] dummy;
+    public static long duration = 10 * 1000;
     private static final String HOTSPOT_INTERNAL = "sun.management:type=HotspotInternal";
 
     public static void main(String[] args) {
@@ -56,6 +58,18 @@ public class Test7196045 {
         } catch (MalformedObjectNameException e1) {
             throw new RuntimeException("Bad object name" + e1);
         }
+
+        // Thread that allocs memory to generate GC's
+        Thread allocThread = new Thread() {
+          public void run() {
+            while (true) {
+              dummy = new byte[4096];
+            }
+          }
+        };
+
+        allocThread.setDaemon(true);
+        allocThread.start();
 
         long endTime = System.currentTimeMillis() + duration;
         long i = 0;
