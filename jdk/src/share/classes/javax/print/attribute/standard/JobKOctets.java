@@ -67,7 +67,7 @@ import javax.print.attribute.PrintJobAttribute;
  * shown in the table below.
  * <P>
  * <TABLE BORDER=1 CELLPADDING=2 CELLSPACING=1 SUMMARY="Table showing computation of doc sizes">
- * <TR BGCOLOR="#E5E5E5">
+ * <TR>
  * <TH>Representation Class</TH>
  * <TH>Document Size</TH>
  * </TR>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,20 @@ import java.io.DataOutputStream;
  */
 public final
 class ConstantPool implements RuntimeConstants {
-    Hashtable hash = new Hashtable(101);
+    Hashtable<Object,ConstantPoolData> hash = new Hashtable<>(101);
 
     /**
      * Find an entry, may return 0
      */
     public int index(Object obj) {
-        return ((ConstantPoolData)hash.get(obj)).index;
+        return hash.get(obj).index;
     }
 
     /**
      * Add an entry
      */
     public void put(Object obj) {
-        ConstantPoolData data = (ConstantPoolData)hash.get(obj);
+        ConstantPoolData data = hash.get(obj);
         if (data == null) {
             if (obj instanceof String) {
                 data = new StringConstantData(this, (String)obj);
@@ -87,8 +87,8 @@ class ConstantPool implements RuntimeConstants {
         // Make a list of all the constant pool items
         for (int n = 0 ; n < 5 ; n++) {
             int first = count;
-            for (Enumeration e = hash.elements() ; e.hasMoreElements() ;) {
-                ConstantPoolData data = (ConstantPoolData)e.nextElement();
+            for (Enumeration<ConstantPoolData> e = hash.elements() ; e.hasMoreElements() ;) {
+                ConstantPoolData data = e.nextElement();
                 if (data.order() == n) {
                     keys[count] = sortKey(data);
                     list[count++] = data;
