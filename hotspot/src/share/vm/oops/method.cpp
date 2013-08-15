@@ -981,7 +981,6 @@ bool Method::should_not_be_cached() const {
 bool Method::is_ignored_by_security_stack_walk() const {
   const bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
 
-  assert(intrinsic_id() != vmIntrinsics::_invoke || Universe::reflect_invoke_cache()->is_same_method((Method*)this), "sanity");
   if (intrinsic_id() == vmIntrinsics::_invoke) {
     // This is Method.invoke() -- ignore it
     return true;
