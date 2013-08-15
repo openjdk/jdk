@@ -130,14 +130,17 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>insertProvider.{provider name}</td>
- *   <td>Addition of a new provider, with the specified name</td>
+ *   <td>insertProvider</td>
+ *   <td>Addition of a new provider</td>
  *   <td>This would allow somebody to introduce a possibly
  * malicious provider (e.g., one that discloses the private keys passed
  * to it) as the highest-priority provider. This would be possible
  * because the Security object (which manages the installed providers)
  * currently does not check the integrity or authenticity of a provider
- * before attaching it.</td>
+ * before attaching it. The "insertProvider" permission subsumes the
+ * "insertProvider.{provider name}" permission (see the section below for
+ * more information).
+ * </td>
  * </tr>
  *
  * <tr>
@@ -186,9 +189,10 @@ import java.util.StringTokenizer;
  * </table>
  *
  * <P>
- * The following permissions are associated with classes that have been
- * deprecated: {@link Identity}, {@link IdentityScope}, {@link Signer}. Use of
- * them is discouraged. See the applicable classes for more information.
+ * The following permissions have been superseded by newer permissions or are
+ * associated with classes that have been deprecated: {@link Identity},
+ * {@link IdentityScope}, {@link Signer}. Use of them is discouraged. See the
+ * applicable classes for more information.
  * <P>
  *
  * <table border=1 cellpadding=5 summary="target name,what the permission allows, and associated risks">
@@ -196,6 +200,23 @@ import java.util.StringTokenizer;
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>
  * <th>Risks of Allowing this Permission</th>
+ * </tr>
+ *
+ * <tr>
+ *   <td>insertProvider.{provider name}</td>
+ *   <td>Addition of a new provider, with the specified name</td>
+ *   <td>Use of this permission is discouraged from further use because it is
+ * possible to circumvent the name restrictions by overriding the
+ * {@link java.security.Provider#getName} method. Also, there is an equivalent
+ * level of risk associated with granting code permission to insert a provider
+ * with a specific name, or any name it chooses. Users should use the
+ * "insertProvider" permission instead.
+ * <p>This would allow somebody to introduce a possibly
+ * malicious provider (e.g., one that discloses the private keys passed
+ * to it) as the highest-priority provider. This would be possible
+ * because the Security object (which manages the installed providers)
+ * currently does not check the integrity or authenticity of a provider
+ * before attaching it.</td>
  * </tr>
  *
  * <tr>
@@ -306,7 +327,6 @@ public final class SecurityPermission extends BasicPermission {
      * @throws NullPointerException if {@code name} is {@code null}.
      * @throws IllegalArgumentException if {@code name} is empty.
      */
-
     public SecurityPermission(String name)
     {
         super(name);
@@ -323,7 +343,6 @@ public final class SecurityPermission extends BasicPermission {
      * @throws NullPointerException if {@code name} is {@code null}.
      * @throws IllegalArgumentException if {@code name} is empty.
      */
-
     public SecurityPermission(String name, String actions)
     {
         super(name, actions);

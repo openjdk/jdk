@@ -410,16 +410,6 @@ extern "C" {
   int SpinPause() {
   }
 
-  int SafeFetch32(int *adr, int errValue) {
-    int value = errValue;
-    value = *adr;
-    return value;
-  }
-  intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
-    intptr_t value = errValue;
-    value = *adr;
-    return value;
-  }
 
   void _Copy_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
     if (from > to) {

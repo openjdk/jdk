@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,12 +603,16 @@ public class      BeanContextServicesSupport extends BeanContextSupport
                 serviceProvider = bcsp;
             }
 
+            /**
+             * Returns the service provider.
+             * @return the service provider
+             */
             protected BeanContextServiceProvider getServiceProvider() {
                 return serviceProvider;
             }
 
-            /*
-             * fields
+            /**
+             * The service provider.
              */
 
             protected BeanContextServiceProvider serviceProvider;
@@ -618,6 +622,9 @@ public class      BeanContextServicesSupport extends BeanContextSupport
          * subclasses can override this method to create new subclasses of
          * BCSSServiceProvider without having to overrride addService() in
          * order to instantiate.
+         * @param sc the class
+         * @param bcsp the service provider
+         * @return a service provider without overriding addService()
          */
 
         protected BCSSServiceProvider createBCSSServiceProvider(Class sc, BeanContextServiceProvider bcsp) {
@@ -629,7 +636,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     /**
      * add a BeanContextServicesListener
      *
-     * @throws NullPointerException
+     * @throws NullPointerException if the argument is null
      */
 
     public void addBeanContextServicesListener(BeanContextServicesListener bcsl) {
@@ -660,6 +667,8 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /**
      * add a service
+     * @param serviceClass the service class
+     * @param bcsp the service provider
      */
 
     public boolean addService(Class serviceClass, BeanContextServiceProvider bcsp) {
@@ -668,6 +677,10 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /**
      * add a service
+     * @param serviceClass the service class
+     * @param bcsp the service provider
+     * @param fireEvent whether or not an event should be fired
+     * @return true if the service was successfully added
      */
 
     protected boolean addService(Class serviceClass, BeanContextServiceProvider bcsp, boolean fireEvent) {
@@ -709,6 +722,9 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /**
      * remove a service
+     * @param serviceClass the service class
+     * @param bcsp the service provider
+     * @param revokeCurrentServicesNow whether or not to revoke the service
      */
 
     public void revokeService(Class serviceClass, BeanContextServiceProvider bcsp, boolean revokeCurrentServicesNow) {
@@ -1067,6 +1083,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /**
      * Fires a <tt>BeanContextServiceEvent</tt> notifying of a new service.
+     * @param serviceClass the service class
      */
     protected final void fireServiceAdded(Class serviceClass) {
         BeanContextServiceAvailableEvent bcssae = new BeanContextServiceAvailableEvent(getBeanContextServicesPeer(), serviceClass);
@@ -1109,6 +1126,8 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * Fires a <tt>BeanContextServiceRevokedEvent</tt>
      * indicating that a particular service is
      * no longer available.
+     * @param serviceClass the service class
+     * @param revokeNow whether or not the event should be revoked now
      */
     protected final void fireServiceRevoked(Class serviceClass, boolean revokeNow) {
         Object[]                       copy;
