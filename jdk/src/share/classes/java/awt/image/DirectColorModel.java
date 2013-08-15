@@ -642,12 +642,12 @@ public class DirectColorModel extends PackedColorModel {
      * @param inData the specified pixel
      * @return the alpha component of the specified pixel, scaled from
      *         0 to 255.
-     * @exception <code>ClassCastException</code> if <code>inData</code>
+     * @exception ClassCastException if <code>inData</code>
      *  is not a primitive array of type <code>transferType</code>
-     * @exception <code>ArrayIndexOutOfBoundsException</code> if
+     * @exception ArrayIndexOutOfBoundsException if
      *  <code>inData</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code>
-     * @exception <code>UnsupportedOperationException</code> if this
+     * @exception UnsupportedOperationException if this
      *  <code>tranferType</code> is not supported by this
      *  <code>ColorModel</code>
      */
@@ -1055,7 +1055,7 @@ public class DirectColorModel extends PackedColorModel {
      * begin retrieving the color and alpha components
      * @return an <code>int</code> pixel value in this
      * <code>ColorModel</code> corresponding to the specified components.
-     * @exception <code>ArrayIndexOutOfBoundsException</code> if
+     * @exception ArrayIndexOutOfBoundsException if
      *  the <code>components</code> array is not large enough to
      *  hold all of the color and alpha components starting at
      *  <code>offset</code>
@@ -1097,9 +1097,9 @@ public class DirectColorModel extends PackedColorModel {
      * and alpha components
      * @return an <code>Object</code> representing an array of color and
      * alpha components.
-     * @exception <code>ClassCastException</code> if <code>obj</code>
+     * @exception ClassCastException if <code>obj</code>
      *  is not a primitive array of type <code>transferType</code>
-     * @exception <code>ArrayIndexOutOfBoundsException</code> if
+     * @exception ArrayIndexOutOfBoundsException if
      *  <code>obj</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code> or the <code>components</code>
      *  array is not large enough to hold all of the color and alpha

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,15 @@ public class ProjectCreator {
             + "jvm.dll; no trailing slash>");
       System.err.println("  If any of the above are specified, "
             + "they must all be.");
+      System.err.println("  Note: if '-altRelativeInclude' option below is "
+            + "used, then the '-relativeAltSrcInclude' option must be used "
+            + "to specify the alternate source dir, e.g., 'src\\closed'");
       System.err.println("  Additional, optional arguments, which can be "
             + "specified multiple times:");
       System.err.println("    -absoluteInclude <string containing absolute "
             + "path to include directory>");
+      System.err.println("    -altRelativeInclude <string containing "
+            + "alternate include directory relative to -envVar>");
       System.err.println("    -relativeInclude <string containing include "
             + "directory relative to -envVar>");
       System.err.println("    -define <preprocessor flag to be #defined "
