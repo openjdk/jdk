@@ -150,6 +150,7 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     final Spliterator.OfInt lazySpliterator(Supplier<? extends Spliterator<Integer>> supplier) {
         return new StreamSpliterators.DelegatingSpliterator.OfInt((Supplier<Spliterator.OfInt>) supplier);
     }
@@ -190,6 +191,7 @@ abstract class IntPipeline<E_IN>
             Sink<Integer> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedInt(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(int t) {
                         downstream.accept((long) t);
                     }
@@ -206,6 +208,7 @@ abstract class IntPipeline<E_IN>
             Sink<Integer> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedInt(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(int t) {
                         downstream.accept((double) t);
                     }
@@ -245,6 +248,7 @@ abstract class IntPipeline<E_IN>
             Sink<Integer> opWrapSink(int flags, Sink<U> sink) {
                 return new Sink.ChainedInt(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(int t) {
                         downstream.accept(mapper.apply(t));
                     }

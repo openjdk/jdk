@@ -781,7 +781,7 @@ public class TreeMaker implements JCTree.Factory {
     class AnnotationBuilder implements Attribute.Visitor {
         JCExpression result = null;
         public void visitConstant(Attribute.Constant v) {
-            result = Literal(v.value);
+            result = Literal(v.type.getTag(), v.value);
         }
         public void visitClass(Attribute.Class clazz) {
             result = ClassLiteral(clazz.classType).setType(syms.classType);

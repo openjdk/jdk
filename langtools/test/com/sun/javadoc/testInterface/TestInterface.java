@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class TestInterface extends JavadocTester {
         },
         //Make sure "Specified By" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<dt><strong>Specified by:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/Interface.html#method()\">method</a>" +
             "</code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
@@ -92,7 +92,7 @@ public class TestInterface extends JavadocTester {
          },
         //Make sure "Overrides" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<dt><strong>Overrides:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
             "<dd><code><a href=\"../pkg/Parent.html#method()\">method</a>" +
             "</code>&nbsp;in class&nbsp;<code><a href=\"../pkg/Parent.html\" " +
             "title=\"class in pkg\">Parent</a>&lt;<a href=\"../pkg/Child.html\" " +

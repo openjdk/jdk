@@ -50,6 +50,11 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     }
 
     @Override
+    public ArrayData copy() {
+        return new DeletedRangeArrayFilter(underlying.copy(), lo, hi);
+    }
+
+    @Override
     public Object[] asObjectArray() {
         final Object[] value = super.asObjectArray();
 
@@ -191,11 +196,7 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
 
     private ArrayData getDeletedArrayFilter() {
         final ArrayData deleteFilter = new DeletedArrayFilter(getUnderlying());
-
-        for (long i = lo; i <= hi; i++) {
-            deleteFilter.delete((int) i);
-        }
-
+        deleteFilter.delete(lo, hi);
         return deleteFilter;
     }
 

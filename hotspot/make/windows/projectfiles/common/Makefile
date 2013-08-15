@@ -112,6 +112,7 @@ ReleaseOptions = -define HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) -def
 ProjectCreatorIDEOptions = $(ProjectCreatorIDEOptions) $(ReleaseOptions)
 
 $(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
+	@if "$(MSC_VER)"=="1500" echo Make sure you have VS2008 SP1 or later, or you may see 'expanded command line too long'
 	@$(RUN_JAVA) -Djava.class.path="$(HOTSPOTBUILDSPACE)/classes" ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:

@@ -413,9 +413,9 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     print_prop("debug_idx", node->_debug_idx);
 #endif
 
-    if(C->cfg() != NULL) {
-      Block *block = C->cfg()->_bbs[node->_idx];
-      if(block == NULL) {
+    if (C->cfg() != NULL) {
+      Block* block = C->cfg()->get_block_for_node(node);
+      if (block == NULL) {
         print_prop("block", C->cfg()->_blocks[0]->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
