@@ -12,11 +12,15 @@ public class FileTreeCreator extends SimpleFileVisitor<Path>
    final int startDirLength;
    Stack<DirAttributes> attributes = new Stack<DirAttributes>();
    Vector<BuildConfig> allConfigs;
-   WinGammaPlatformVC10 wg;
+   WinGammaPlatform wg;
+   WinGammaPlatformVC10 wg10;
 
-   public FileTreeCreator(Path startDir, Vector<BuildConfig> allConfigs, WinGammaPlatformVC10 wg) {
+   public FileTreeCreator(Path startDir, Vector<BuildConfig> allConfigs, WinGammaPlatform wg) {
       super();
       this.wg = wg;
+      if (wg instanceof WinGammaPlatformVC10) {
+          wg10 = (WinGammaPlatformVC10)wg;
+      }
       this.allConfigs = allConfigs;
       this.startDir = startDir;
       startDirLength = startDir.toAbsolutePath().toString().length();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,9 +211,9 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
     NotificationMark nm(request);
     Handle objGcInfo = createGcInfo(request->gcManager, request->gcStatInfo, THREAD);
 
-    Handle objName = java_lang_String::create_from_platform_dependent_str(request->gcManager->name(), CHECK);
-    Handle objAction = java_lang_String::create_from_platform_dependent_str(request->gcAction, CHECK);
-    Handle objCause = java_lang_String::create_from_platform_dependent_str(request->gcCause, CHECK);
+    Handle objName = java_lang_String::create_from_str(request->gcManager->name(), CHECK);
+    Handle objAction = java_lang_String::create_from_str(request->gcAction, CHECK);
+    Handle objCause = java_lang_String::create_from_str(request->gcCause, CHECK);
 
     Klass* k = Management::sun_management_GarbageCollectorImpl_klass(CHECK);
     instanceKlassHandle gc_mbean_klass(THREAD, k);

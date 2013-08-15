@@ -794,6 +794,16 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
 	LIBAWT_XAWT_CFLAGS += -DFUNCPROTO=15
 endif
 
+ifeq ($(OPENJDK_TARGET_OS),linux)
+ifndef OPENJDK
+include $(JDK_TOPDIR)/make/closed/xawt.gmk
+endif
+
+ifeq ($(DISABLE_XRENDER),true)
+	LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
+endif
+endif
+
 ifeq ($(MILESTONE),internal)
 	LIBAWT_XAWT_CFLAGS += -DINTERNAL_BUILD
 endif

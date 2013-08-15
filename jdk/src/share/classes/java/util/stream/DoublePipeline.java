@@ -147,6 +147,7 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     final Spliterator.OfDouble lazySpliterator(Supplier<? extends Spliterator<Double>> supplier) {
         return new StreamSpliterators.DelegatingSpliterator.OfDouble((Supplier<Spliterator.OfDouble>) supplier);
     }
@@ -209,6 +210,7 @@ abstract class DoublePipeline<E_IN>
             Sink<Double> opWrapSink(int flags, Sink<U> sink) {
                 return new Sink.ChainedDouble(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(double t) {
                         downstream.accept(mapper.apply(t));
                     }

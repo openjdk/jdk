@@ -139,7 +139,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                             false);
                 Content codeLink = HtmlTree.CODE(link);
-                Content strong = HtmlTree.STRONG(holder.isClass()?
+                Content strong = HtmlTree.SPAN(HtmlStyle.strong, holder.isClass()?
                    writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
                 strong.addContent(writer.getSpace());
                 strong.addContent(codeLink);
@@ -256,7 +256,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
      */
     protected void addSummaryLink(LinkInfoImpl.Kind context, ClassDoc cd, ProgramElementDoc member,
             Content tdSummary) {
-        Content strong = HtmlTree.STRONG(
+        Content strong = HtmlTree.SPAN(HtmlStyle.strong,
                 writer.getDocLink(context, cd , (MemberDoc) member, member.name(), false));
         Content code = HtmlTree.CODE(strong);
         tdSummary.addContent(code);

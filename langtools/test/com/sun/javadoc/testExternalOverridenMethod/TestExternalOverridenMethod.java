@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ public class TestExternalOverridenMethod extends JavadocTester {
     private static final String BUG_ID = "4857717";
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "XReader.html",
-            "<dt><strong>Overrides:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Overrides:</span></dt>" + NL +
             "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true#read()\" " +
             "title=\"class or interface in java.io\">read</a></code>&nbsp;in class&nbsp;<code>" +
             "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true\" " +
             "title=\"class or interface in java.io\">FilterReader</a></code></dd>"},
         {BUG_ID + FS + "pkg" + FS + "XReader.html",
-            "<dt><strong>Specified by:</strong></dt>" + NL +
+            "<dt><span class=\"strong\">Specified by:</span></dt>" + NL +
             "<dd><code><a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true#readInt()\" " +
             "title=\"class or interface in java.io\">readInt</a></code>&nbsp;in interface&nbsp;<code>" +
             "<a href=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true\" " +
