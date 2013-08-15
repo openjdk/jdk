@@ -388,7 +388,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
     /**
      * Adds all of the elements in the specified set to this attribute.
      * The outcome is the same as if the
-     * {@link #add(Attribute) <CODE>add(Attribute)</CODE>}
+     * {@link #add(Attribute) add(Attribute)}
      * operation had been applied to this attribute set successively with
      * each element from the specified set.
      * The behavior of the <CODE>addAll(AttributeSet)</CODE>
@@ -512,7 +512,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * This ensures that <tt>t1.equals(t2)</tt> implies that
      * <tt>t1.hashCode()==t2.hashCode()</tt> for any two attribute sets
      * <tt>t1</tt> and <tt>t2</tt>, as required by the general contract of
-     * {@link java.lang.Object#hashCode() <CODE>Object.hashCode()</CODE>}.
+     * {@link java.lang.Object#hashCode() Object.hashCode()}.
      *
      * @return  The hash code value for this attribute set.
      */

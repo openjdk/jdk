@@ -175,7 +175,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         Tag[] deprs = member.tags("deprecated");
         Content div;
         if (Util.isDeprecated((ProgramElementDoc) member)) {
-            Content strong = HtmlTree.STRONG(deprecatedPhrase);
+            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
             div = HtmlTree.DIV(HtmlStyle.block, strong);
             div.addContent(getSpace());
             if (deprs.length > 0) {
@@ -186,7 +186,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             ClassDoc cd = ((ProgramElementDoc)member).containingClass();
             if (cd != null && Util.isDeprecated(cd)) {
-                Content strong = HtmlTree.STRONG(deprecatedPhrase);
+                Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
                 div = HtmlTree.DIV(HtmlStyle.block, strong);
                 div.addContent(getSpace());
                 tdSummary.addContent(div);

@@ -66,8 +66,8 @@ import com.sun.imageio.plugins.jpeg.JPEG;
  * when an abbreviated stream must be written without writing any tables
  * to a stream first.  In order to use this class, the metadata object
  * passed into the writer must contain no tables, and no stream metadata
- * must be provided.  See {@link JPEGQTable <code>JPEGQTable</code>} and
- * {@link JPEGHuffmanTable <code>JPEGHuffmanTable</code>} for more
+ * must be provided.  See {@link JPEGQTable JPEGQTable} and
+ * {@link JPEGHuffmanTable JPEGHuffmanTable} for more
  * information on the default tables.
  *
  * <p> The default <code>JPEGImageWriteParam</code> returned by the
@@ -80,7 +80,7 @@ import com.sun.imageio.plugins.jpeg.JPEG;
  * set of tables has been written, only tables in the metadata can
  * override them for subsequent writes, whether to the same stream or
  * a different one.  In order to specify new tables using this class,
- * the {@link javax.imageio.ImageWriter#reset <code>reset</code>}
+ * the {@link javax.imageio.ImageWriter#reset reset}
  * method of the writer must be called.
  *
  * <p>

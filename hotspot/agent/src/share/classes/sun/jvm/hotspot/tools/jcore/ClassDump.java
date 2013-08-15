@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,23 +74,24 @@ public class ClassDump extends Tool {
     public void run() {
         // Ready to go with the database...
         try {
-            // The name of the filter always comes from a System property.
-            // If we have a pkgList, pass it, otherwise let the filter read
-            // its own System property for the list of classes.
-            String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter",
-                                                        "sun.jvm.hotspot.tools.jcore.PackageNameFilter");
-            try {
-                Class filterClass = Class.forName(filterClassName);
-                if (pkgList == null) {
-                    classFilter = (ClassFilter) filterClass.newInstance();
-                } else {
-                    Constructor con = filterClass.getConstructor(String.class);
-                    classFilter = (ClassFilter) con.newInstance(pkgList);
+            if (classFilter == null) {
+                // If not already set, the name of the filter comes from a System property.
+                // If we have a pkgList, pass it, otherwise let the filter read
+                // its own System property for the list of classes.
+                String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter",
+                                                            "sun.jvm.hotspot.tools.jcore.PackageNameFilter");
+                try {
+                    Class filterClass = Class.forName(filterClassName);
+                    if (pkgList == null) {
+                        classFilter = (ClassFilter) filterClass.newInstance();
+                    } else {
+                        Constructor con = filterClass.getConstructor(String.class);
+                        classFilter = (ClassFilter) con.newInstance(pkgList);
+                    }
+                } catch(Exception exp) {
+                    System.err.println("Warning: Can not create class filter!");
                 }
-            } catch(Exception exp) {
-                System.err.println("Warning: Can not create class filter!");
             }
-
             String outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir", ".");
             setOutputDirectory(outputDirectory);
 
