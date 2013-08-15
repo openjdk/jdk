@@ -116,6 +116,11 @@ abstract class ArrayBufferView extends ScriptObject {
         }
 
         @Override
+        public ArrayData copy() {
+            throw new UnsupportedOperationException();   // Not used for ArrayBuffers
+        }
+
+        @Override
         public Object[] asObjectArray() {
             final Object[] array = new Object[elementLength];
             for (int i = 0; i < elementLength; i++) {

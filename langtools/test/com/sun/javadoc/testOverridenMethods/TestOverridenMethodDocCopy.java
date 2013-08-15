@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
     //Input for string search tests.
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-            "<strong>Description copied from class:&nbsp;<code>" +
+            "<span class=\"strong\">Description copied from class:&nbsp;<code>" +
             "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy()\">" +
-            "BaseClass</a></code></strong>"
+            "BaseClass</a></code></span>"
         }
     };
     private static final String[][] NEGATED_TEST = NO_TEST;

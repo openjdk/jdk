@@ -52,14 +52,14 @@ package java.awt.image;
  * <code>x,&nbsp;y</code> from <code>DataBuffer</code> <code>data</code>
  * and storing the pixel data in data elements of type
  * <code>dataType</code>:
- * <pre>
+ * <pre>{@code
  *      int dataElementSize = DataBuffer.getDataTypeSize(dataType);
  *      int bitnum = dataBitOffset + x*pixelBitStride;
  *      int element = data.getElem(y*scanlineStride + bitnum/dataElementSize);
  *      int shift = dataElementSize - (bitnum & (dataElementSize-1))
  *                  - pixelBitStride;
  *      int pixel = (element >> shift) & ((1 << pixelBitStride) - 1);
- * </pre>
+ * }</pre>
  */
 
 public class MultiPixelPackedSampleModel extends SampleModel
