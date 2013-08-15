@@ -159,7 +159,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                             holder.typeName() : holder.qualifiedTypeName(),
                             false);
                 Content codelLink = HtmlTree.CODE(link);
-                Content strong = HtmlTree.STRONG(holder.asClassDoc().isClass()?
+                Content strong = HtmlTree.SPAN(HtmlStyle.strong, holder.asClassDoc().isClass()?
                     writer.descfrmClassLabel : writer.descfrmInterfaceLabel);
                 strong.addContent(writer.getSpace());
                 strong.addContent(codelLink);
@@ -309,7 +309,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 label = writer.specifiedByLabel;
                 context = LinkInfoImpl.Kind.METHOD_SPECIFIED_BY;
             }
-            Content dt = HtmlTree.DT(HtmlTree.STRONG(label));
+            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, label));
             dl.addContent(dt);
             Content overriddenTypeLink =
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
@@ -364,7 +364,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content intfaclink = writer.getLink(new LinkInfoImpl(
                     writer.configuration, LinkInfoImpl.Kind.METHOD_SPECIFIED_BY, intfac));
             Content codeIntfacLink = HtmlTree.CODE(intfaclink);
-            Content dt = HtmlTree.DT(HtmlTree.STRONG(writer.specifiedByLabel));
+            Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.strong, writer.specifiedByLabel));
             dl.addContent(dt);
             Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,

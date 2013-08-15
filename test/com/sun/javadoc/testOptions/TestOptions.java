@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,32 @@
 
 /*
  * @test
- * @bug      4368820
- * @summary  Inherited comment should link directly to member, not just
- *           class
- * @author   jamieh
+ * @bug      4749567
+ * @summary  Test the output for -header and -footer options.
+ * @author   Bhavesh Patel
  * @library  ../lib/
- * @build    JavadocTester
- * @build    TestOverridenMethodDocCopy
- * @run main TestOverridenMethodDocCopy
+ * @build    JavadocTester TestOptions
+ * @run main TestOptions
  */
 
-public class TestOverridenMethodDocCopy extends JavadocTester {
+public class TestOptions extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4368820";
+    private static final String BUG_ID = "4749567";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg1", "pkg2"
+        "-d", BUG_ID, "-header", "Test header", "-footer", "Test footer",
+        "-sourcepath", SRC_DIR, "pkg"
     };
 
-    //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-            "<span class=\"strong\">Description copied from class:&nbsp;<code>" +
-            "<a href=\"../pkg1/BaseClass.html#overridenMethodWithDocsToCopy()\">" +
-            "BaseClass</a></code></span>"
-        }
+        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+            "<div class=\"aboutLanguage\">Test header</div>"},
+        {BUG_ID + FS + "pkg" + FS + "package-summary.html",
+            "<div class=\"aboutLanguage\">Test footer</div>"}
     };
+
     private static final String[][] NEGATED_TEST = NO_TEST;
 
     /**
@@ -58,7 +56,7 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
-        TestOverridenMethodDocCopy tester = new TestOverridenMethodDocCopy();
+        TestOptions tester = new TestOptions();
         run(tester, ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }
@@ -77,3 +75,4 @@ public class TestOverridenMethodDocCopy extends JavadocTester {
         return getClass().getName();
     }
 }
+
