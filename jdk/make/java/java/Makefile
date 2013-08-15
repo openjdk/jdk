@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -499,6 +499,6 @@ $(HELPER_EXE): $(HELPER_EXE_FILES_o)
 build: $(HELPER_EXE)
 
 clean clobber:: 
- 	$(RM) $(HELPER_EXE_FILES_o) $(HELPER_EXE)
+	$(RM) $(HELPER_EXE_FILES_o) $(HELPER_EXE)
 
 endif #BUILDHELPER
