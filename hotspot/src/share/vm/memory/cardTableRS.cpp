@@ -310,32 +310,27 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
   _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this);
 }
 
-void CardTableRS::clear_into_younger(Generation* gen) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  // Generations younger than gen have been evacuated. We can clear
-  // card table entries for gen (we know that it has no pointers
-  // to younger gens) and for those below. The card tables for
-  // the youngest gen need never be cleared.
+void CardTableRS::clear_into_younger(Generation* old_gen) {
+  assert(old_gen->level() == 1, "Should only be called for the old generation");
+  // The card tables for the youngest gen need never be cleared.
   // There's a bit of subtlety in the clear() and invalidate()
   // methods that we exploit here and in invalidate_or_clear()
   // below to avoid missing cards at the fringes. If clear() or
   // invalidate() are changed in the future, this code should
   // be revisited. 20040107.ysr
-  Generation* old_gen = gen;
   clear(old_gen->prev_used_region());
-  Generation* young_gen = gch->prev_gen(old_gen);
-  clear(young_gen->prev_used_region());
 }
 
-void CardTableRS::invalidate_or_clear(Generation* gen) {
-  // For generation gen invalidate the cards for the currently
-  // occupied part of that generation and clear the cards for the
+void CardTableRS::invalidate_or_clear(Generation* old_gen) {
+  assert(old_gen->level() == 1, "Should only be called for the old generation");
+  // Invalidate the cards for the currently occupied part of
+  // the old generation and clear the cards for the
   // unoccupied part of the generation (if any, making use
   // of that generation's prev_used_region to determine that
   // region). No need to do anything for the youngest
   // generation. Also see note#20040107.ysr above.
-  MemRegion used_mr = gen->used_region();
-  MemRegion to_be_cleared_mr = gen->prev_used_region().minus(used_mr);
+  MemRegion used_mr = old_gen->used_region();
+  MemRegion to_be_cleared_mr = old_gen->prev_used_region().minus(used_mr);
   if (!to_be_cleared_mr.is_empty()) {
     clear(to_be_cleared_mr);
   }

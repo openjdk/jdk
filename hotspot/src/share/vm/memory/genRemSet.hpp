@@ -135,7 +135,7 @@ public:
   // younger than gen from generations gen and older.
   // The parameter clear_perm indicates if the perm_gen's
   // remembered set should also be processed/cleared.
-  virtual void clear_into_younger(Generation* gen) = 0;
+  virtual void clear_into_younger(Generation* old_gen) = 0;
 
   // Informs the RS that refs in the given "mr" may have changed
   // arbitrarily, and therefore may contain old-to-young pointers.
@@ -147,7 +147,7 @@ public:
   // Informs the RS that refs in this generation
   // may have changed arbitrarily, and therefore may contain
   // old-to-young pointers in arbitrary locations.
-  virtual void invalidate_or_clear(Generation* gen) = 0;
+  virtual void invalidate_or_clear(Generation* old_gen) = 0;
 };
 
 #endif // SHARE_VM_MEMORY_GENREMSET_HPP

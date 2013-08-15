@@ -121,17 +121,15 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
     all_empty = all_empty && gch->get_gen(i)->used() == 0;
   }
   GenRemSet* rs = gch->rem_set();
+  Generation* old_gen = gch->get_gen(level);
   // Clear/invalidate below make use of the "prev_used_regions" saved earlier.
   if (all_empty) {
     // We've evacuated all generations below us.
-    Generation* g = gch->get_gen(level);
-    rs->clear_into_younger(g);
+    rs->clear_into_younger(old_gen);
   } else {
     // Invalidate the cards corresponding to the currently used
-    // region and clear those corresponding to the evacuated region
-    // of all generations just collected.
-    rs->invalidate_or_clear(gch->get_gen(1));
-    rs->invalidate_or_clear(gch->get_gen(0));
+    // region and clear those corresponding to the evacuated region.
+    rs->invalidate_or_clear(old_gen);
   }
 
   Threads::gc_epilogue();
