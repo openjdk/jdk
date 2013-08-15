@@ -1161,7 +1161,7 @@ public abstract class Type implements TypeMirror {
         }
 
         public boolean contains(Type elem) {
-            return elem == this || contains(argtypes, elem) || restype.contains(elem);
+            return elem == this || contains(argtypes, elem) || restype.contains(elem) || contains(thrown, elem);
         }
 
         public MethodType asMethodType() { return this; }
