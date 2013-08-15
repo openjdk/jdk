@@ -2785,7 +2785,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         return;
                     }
                 }
-                else if ((s | WAITER) == 0) {
+                else if ((s & WAITER) == 0) {
                     if (U.compareAndSwapInt(this, LOCKSTATE, s, s | WAITER)) {
                         waiting = true;
                         waiter = Thread.currentThread();
