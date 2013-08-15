@@ -26,7 +26,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build ClearMethodStateTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ClearMethodStateTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* ClearMethodStateTest
  * @summary testing of WB::clearMethodState()
  * @author igor.ignatyev@oracle.com
  */
