@@ -21,6 +21,11 @@
  * questions.
  */
 
+/*
+ * @test
+ * @summary Tests sjavac basic functionality
+ */
+
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -82,11 +87,13 @@ class SJavac {
         compileWithOverrideSource();
         compileWithInvisibleSources();
         compileCircularSources();
+        compileExcludingDependency();
 
         delete(gensrc);
         delete(gensrc2);
         delete(gensrc3);
         delete(bin);
+        delete(headers);
     }
 
     void initialCompile() throws Exception {
@@ -381,6 +388,33 @@ class SJavac {
         delete(bin);
     }
 
+    /**
+     * Tests compiling class A that depends on class B without compiling class B
+     * @throws Exception If test fails
+     */
+    void compileExcludingDependency() throws Exception {
+        System.out.println("\nVerify that excluding classes from compilation but not from linking works.");
+        System.out.println("---------------------------------------------------------------------------");
+
+        delete(gensrc);
+        delete(bin);
+        previous_bin_state = collectState(bin);
+
+        populate(gensrc,
+                 "alfa/A.java",
+                 "package alfa; public class A { beta.B b; }",
+                 "beta/B.java",
+                 "package beta; public class B { }");
+
+        compile("-x", "beta", "-src", "gensrc", "-x", "alfa", "-sourcepath", "gensrc",
+                "-d", "bin", "--server:portfile=testserver,background=false");
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                                     "bin/alfa/A.class",
+                                     "bin/javac_state");
+    }
+
     void removeFrom(Path dir, String... args) throws IOException {
         for (String filename : args) {
             Path p = dir.resolve(filename);
@@ -405,7 +439,7 @@ class SJavac {
         }
     }
 
-    void delete(Path root) throws IOException {
+    void delete(final Path root) throws IOException {
         if (!Files.exists(root)) return;
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
                  @Override
