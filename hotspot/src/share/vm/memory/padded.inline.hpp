@@ -22,36 +22,28 @@
  *
  */
 
-
-#include "precompiled.hpp"
-#include "gc_implementation/shared/objectCountEventSender.hpp"
-#include "memory/heapInspection.hpp"
-#include "trace/tracing.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/padded.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if INCLUDE_SERVICES
+// Creates an aligned padded array.
+// The memory can't be deleted since the raw memory chunk is not returned.
+template <class T, MEMFLAGS flags, size_t alignment>
+PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
+  // Check that the PaddedEnd class works as intended.
+  STATIC_ASSERT(is_size_aligned_(sizeof(PaddedEnd<T>), alignment));
 
-void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, jlong timestamp) {
-#if INCLUDE_TRACE
-  assert(Tracing::is_event_enabled(EventObjectCountAfterGC::eventId),
-         "Only call this method if the event is enabled");
+  // Allocate a chunk of memory large enough to allow for some alignment.
+  void* chunk = AllocateHeap(length * sizeof(PaddedEnd<T, alignment>) + alignment, flags);
 
-  EventObjectCountAfterGC event(UNTIMED);
-  event.set_gcId(gc_id);
-  event.set_class(entry->klass());
-  event.set_count(entry->count());
-  event.set_totalSize(entry->words() * BytesPerWord);
-  event.set_endtime(timestamp);
-  event.commit();
-#endif // INCLUDE_TRACE
+  // Make the initial alignment.
+  PaddedEnd<T>* aligned_padded_array = (PaddedEnd<T>*)align_pointer_up(chunk, alignment);
+
+  // Call the default constructor for each element.
+  for (uint i = 0; i < length; i++) {
+    ::new (&aligned_padded_array[i]) T();
+  }
+
+  return aligned_padded_array;
 }
-
-bool ObjectCountEventSender::should_send_event() {
-#if INCLUDE_TRACE
-  return Tracing::is_event_enabled(EventObjectCountAfterGC::eventId);
-#else
-  return false;
-#endif // INCLUDE_TRACE
-}
-
-#endif // INCLUDE_SERVICES

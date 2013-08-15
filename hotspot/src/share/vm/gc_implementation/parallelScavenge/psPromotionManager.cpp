@@ -29,14 +29,16 @@
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.psgc.inline.hpp"
 
-PSPromotionManager**         PSPromotionManager::_manager_array = NULL;
-OopStarTaskQueueSet*         PSPromotionManager::_stack_array_depth = NULL;
-PSOldGen*                    PSPromotionManager::_old_gen = NULL;
-MutableSpace*                PSPromotionManager::_young_space = NULL;
+PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
+OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
+PSOldGen*                      PSPromotionManager::_old_gen = NULL;
+MutableSpace*                  PSPromotionManager::_young_space = NULL;
 
 void PSPromotionManager::initialize() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -45,8 +47,10 @@ void PSPromotionManager::initialize() {
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
 
+  // To prevent false sharing, we pad the PSPromotionManagers
+  // and make sure that the first instance starts at a cache line.
   assert(_manager_array == NULL, "Attempt to initialize twice");
-  _manager_array = NEW_C_HEAP_ARRAY(PSPromotionManager*, ParallelGCThreads+1, mtGC);
+  _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(ParallelGCThreads + 1);
   guarantee(_manager_array != NULL, "Could not initialize promotion manager");
 
   _stack_array_depth = new OopStarTaskQueueSet(ParallelGCThreads);
@@ -54,26 +58,21 @@ void PSPromotionManager::initialize() {
 
   // Create and register the PSPromotionManager(s) for the worker threads.
   for(uint i=0; i<ParallelGCThreads; i++) {
-    _manager_array[i] = new PSPromotionManager();
-    guarantee(_manager_array[i] != NULL, "Could not create PSPromotionManager");
-    stack_array_depth()->register_queue(i, _manager_array[i]->claimed_stack_depth());
+    stack_array_depth()->register_queue(i, _manager_array[i].claimed_stack_depth());
   }
-
   // The VMThread gets its own PSPromotionManager, which is not available
   // for work stealing.
-  _manager_array[ParallelGCThreads] = new PSPromotionManager();
-  guarantee(_manager_array[ParallelGCThreads] != NULL, "Could not create PSPromotionManager");
 }
 
 PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(int index) {
   assert(index >= 0 && index < (int)ParallelGCThreads, "index out of range");
   assert(_manager_array != NULL, "Sanity");
-  return _manager_array[index];
+  return &_manager_array[index];
 }
 
 PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
   assert(_manager_array != NULL, "Sanity");
-  return _manager_array[ParallelGCThreads];
+  return &_manager_array[ParallelGCThreads];
 }
 
 void PSPromotionManager::pre_scavenge() {
