@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,17 @@ import com.oracle.java.testlibrary.*;
 /*
  * Test to redefine java/lang/Object and verify that it doesn't crash on vtable
  * call on basic array type.
+ * Test to redefine java/lang/ClassLoader and java/lang/reflect/Method to make
+ * sure cached versions used afterward are the current version.
  *
  * @test
  * @bug 8005056
+ * @bug 8009728
  * @library /testlibrary
  * @build Agent
  * @run main ClassFileInstaller Agent
  * @run main TestRedefineObject
- * @run main/othervm -javaagent:agent.jar Agent
+ * @run main/othervm -javaagent:agent.jar -XX:TraceRedefineClasses=5 Agent
  */
 public class TestRedefineObject {
     public static void main(String[] args) throws Exception  {

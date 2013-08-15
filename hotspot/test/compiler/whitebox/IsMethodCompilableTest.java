@@ -27,7 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build IsMethodCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI IsMethodCompilableTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* IsMethodCompilableTest
  * @summary testing of WB::isMethodCompilable()
  * @author igor.ignatyev@oracle.com
  */
