@@ -1747,7 +1747,7 @@ public class Check {
         if (!sup.hasTag(CLASS)) return;
 
         for (Type t1 = sup;
-             t1.tsym.type.isParameterized();
+             t1.hasTag(CLASS) && t1.tsym.type.isParameterized();
              t1 = types.supertype(t1)) {
             for (Scope.Entry e1 = t1.tsym.members().elems;
                  e1 != null;
