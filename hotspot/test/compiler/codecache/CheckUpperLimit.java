@@ -35,10 +35,6 @@ public class CheckUpperLimit {
     ProcessBuilder pb;
     OutputAnalyzer out;
 
-    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2048m", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldHaveExitValue(0);
-
     pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
     out = new OutputAnalyzer(pb.start());
     out.shouldContain("Invalid ReservedCodeCacheSize=");
