@@ -319,7 +319,10 @@
                                                                             \
   diagnostic(bool, G1VerifyRSetsDuringFullGC, false,                        \
              "If true, perform verification of each heap region's "         \
-             "remembered set when verifying the heap during a full GC.")
+             "remembered set when verifying the heap during a full GC.")    \
+                                                                            \
+  diagnostic(bool, G1VerifyHeapRegionCodeRoots, false,                      \
+             "Verify the code root lists attached to each heap region.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 
