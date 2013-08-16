@@ -703,6 +703,16 @@ class Klass : public Metadata {
 
   virtual void oop_verify_on(oop obj, outputStream* st);
 
+  static bool is_null(narrowKlass obj);
+  static bool is_null(Klass* obj);
+
+  // klass encoding for klass pointer in objects.
+  static narrowKlass encode_klass_not_null(Klass* v);
+  static narrowKlass encode_klass(Klass* v);
+
+  static Klass* decode_klass_not_null(narrowKlass v);
+  static Klass* decode_klass(narrowKlass v);
+
  private:
   // barriers used by klass_oop_store
   void klass_update_barrier_set(oop v);
