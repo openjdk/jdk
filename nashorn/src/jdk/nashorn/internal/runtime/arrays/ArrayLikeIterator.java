@@ -132,7 +132,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
         }
 
         if (obj instanceof List) {
-            return new JavaListIterator((List)obj, includeUndefined);
+            return new JavaListIterator((List<?>)obj, includeUndefined);
         }
 
         if (obj != null && obj.getClass().isArray()) {
@@ -165,7 +165,7 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
         }
 
         if (obj instanceof List) {
-            return new ReverseJavaListIterator((List)obj, includeUndefined);
+            return new ReverseJavaListIterator((List<?>)obj, includeUndefined);
         }
 
         if (obj != null && obj.getClass().isArray()) {

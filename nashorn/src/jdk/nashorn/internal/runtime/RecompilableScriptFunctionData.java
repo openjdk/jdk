@@ -47,7 +47,7 @@ import jdk.nashorn.internal.parser.TokenType;
  * This is a subclass that represents a script function that may be regenerated,
  * for example with specialization based on call site types, or lazily generated.
  * The common denominator is that it can get new invokers during its lifespan,
- * unlike {@link FinalScriptFunctionData}
+ * unlike {@code FinalScriptFunctionData}
  */
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
