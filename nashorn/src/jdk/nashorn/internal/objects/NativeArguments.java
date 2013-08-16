@@ -266,9 +266,8 @@ public final class NativeArguments extends ScriptObject {
         final ScriptObject proto = global.getObjectPrototype();
         if (isStrict) {
             return new NativeStrictArguments(arguments, numParams, proto, global.getStrictArgumentsMap());
-        } else {
-            return new NativeArguments(arguments, callee, numParams, proto, global.getArgumentsMap());
         }
+        return new NativeArguments(arguments, callee, numParams, proto, global.getArgumentsMap());
     }
 
     /**

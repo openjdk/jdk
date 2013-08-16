@@ -553,19 +553,18 @@ public abstract class ScriptFunction extends ScriptObject {
     private static MethodHandle bindToNameIfNeeded(final MethodHandle methodHandle, final String bindName) {
         if (bindName == null) {
             return methodHandle;
-        } else {
-            // if it is vararg method, we need to extend argument array with
-            // a new zeroth element that is set to bindName value.
-            final MethodType methodType = methodHandle.type();
-            final int parameterCount = methodType.parameterCount();
-            final boolean isVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
-
-            if (isVarArg) {
-                return MH.filterArguments(methodHandle, 1, MH.insertArguments(ADD_ZEROTH_ELEMENT, 1, bindName));
-            } else {
-                return MH.insertArguments(methodHandle, 1, bindName);
-            }
         }
+
+        // if it is vararg method, we need to extend argument array with
+        // a new zeroth element that is set to bindName value.
+        final MethodType methodType = methodHandle.type();
+        final int parameterCount = methodType.parameterCount();
+        final boolean isVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
+
+        if (isVarArg) {
+            return MH.filterArguments(methodHandle, 1, MH.insertArguments(ADD_ZEROTH_ELEMENT, 1, bindName));
+        }
+        return MH.insertArguments(methodHandle, 1, bindName);
     }
 
     /**

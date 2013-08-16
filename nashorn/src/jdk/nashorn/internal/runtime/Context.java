@@ -48,6 +48,7 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Map;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -888,6 +889,7 @@ public final class Context {
         return script;
     }
 
+    @SuppressWarnings("static-method")
     private ScriptLoader createNewLoader() {
         return AccessController.doPrivileged(
              new PrivilegedAction<ScriptLoader>() {

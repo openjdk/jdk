@@ -317,7 +317,8 @@ public final class ObjectClassGenerator {
         final String       className    = getClassName(fieldCount);
         final String       superName    = className(ScriptObject.class);
         final ClassEmitter classEmitter = newClassEmitter(className, superName);
-        final List<String> initFields   = addFields(classEmitter, fieldCount);
+
+        addFields(classEmitter, fieldCount);
 
         final MethodEmitter init = newInitMethod(classEmitter);
         init.returnVoid();
