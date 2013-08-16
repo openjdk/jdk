@@ -30,6 +30,7 @@
 #import "sun_lwawt_macosx_CPlatformWindow.h"
 #import "com_apple_eawt_event_GestureHandler.h"
 #import "com_apple_eawt_FullScreenHandler.h"
+#import "ApplicationDelegate.h"
 
 #import "AWTWindow.h"
 #import "AWTView.h"
@@ -55,7 +56,7 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 // doesn't provide information about "opposite" window, so we
 // have to do a bit of tracking. This variable points to a window
 // which had been the key window just before a new key window
-// was set. It would be nil if the new key window isn't an AWT 
+// was set. It would be nil if the new key window isn't an AWT
 // window or the app currently has no key window.
 static AWTWindow* lastKeyWindow = nil;
 
@@ -120,6 +121,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 @synthesize javaMaxSize;
 @synthesize styleBits;
 @synthesize isEnabled;
+@synthesize ownerWindow;
 
 - (void) updateMinMaxSize:(BOOL)resizable {
     if (resizable) {
@@ -201,6 +203,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 }
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)platformWindow
+                  ownerWindow:owner
                     styleBits:(jint)bits
                     frameRect:(NSRect)rect
                   contentView:(NSView *)view
@@ -245,6 +248,7 @@ AWT_ASSERT_APPKIT_THREAD;
     self.isEnabled = YES;
     self.javaPlatformWindow = platformWindow;
     self.styleBits = bits;
+    self.ownerWindow = owner;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
 
     return self;
@@ -350,7 +354,7 @@ AWT_ASSERT_APPKIT_THREAD;
     [self.javaPlatformWindow setJObject:nil withEnv:env];
 
     self.nsWindow = nil;
-
+    self.ownerWindow = nil;
     [super dealloc];
 }
 
@@ -539,11 +543,27 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
-    if (!IS(self.styleBits, IS_DIALOG)) {
-        [CMenuBar activate:self.javaMenuBar modallyDisabled:NO];
-    } else if ((opposite != NULL) && IS(self.styleBits, IS_MODAL)) {
-        [CMenuBar activate:opposite->javaMenuBar modallyDisabled:YES];        
+
+    // Finds appropriate menubar in our hierarchy,
+    AWTWindow *awtWindow = self;
+    while (awtWindow.ownerWindow != nil) {
+        awtWindow = awtWindow.ownerWindow;
     }
+
+    CMenuBar *menuBar = nil;
+    BOOL isDisabled = NO;
+    if ([awtWindow.nsWindow isVisible]){
+        menuBar = awtWindow.javaMenuBar;
+        isDisabled = !awtWindow.isEnabled;
+    }
+
+    if (menuBar == nil) {
+        menuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+        isDisabled = NO;
+    }
+
+    [CMenuBar activate:menuBar modallyDisabled:isDisabled];
+
     [AWTWindow setLastKeyWindow:nil];
 
     [self _deliverWindowFocusEvent:YES oppositeWindow: opposite];
@@ -554,6 +574,14 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
     [self.javaMenuBar deactivate];
+
+    // In theory, this might cause flickering if the window gaining focus
+    // has its own menu. However, I couldn't reproduce it on practice, so
+    // perhaps this is a non issue.
+    CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+    if (defaultMenu != nil) {
+        [CMenuBar activate:defaultMenu modallyDisabled:NO];
+    }
 
     // the new key window
     NSWindow *keyWindow = [NSApp keyWindow];
@@ -741,7 +769,7 @@ AWT_ASSERT_APPKIT_THREAD;
  * Signature: (JJIIII)J
  */
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeCreateNSWindow
-(JNIEnv *env, jobject obj, jlong contentViewPtr, jlong styleBits, jdouble x, jdouble y, jdouble w, jdouble h)
+(JNIEnv *env, jobject obj, jlong contentViewPtr, jlong ownerPtr, jlong styleBits, jdouble x, jdouble y, jdouble w, jdouble h)
 {
     __block AWTWindow *window = nil;
 
@@ -750,13 +778,14 @@ JNF_COCOA_ENTER(env);
     JNFWeakJObjectWrapper *platformWindow = [JNFWeakJObjectWrapper wrapperWithJObject:obj withEnv:env];
     NSView *contentView = OBJC(contentViewPtr);
     NSRect frameRect = NSMakeRect(x, y, w, h);
-
+    AWTWindow *owner = [OBJC(ownerPtr) delegate];
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
         window = [[AWTWindow alloc] initWithPlatformWindow:platformWindow
-                                                  styleBits:styleBits
-                                                  frameRect:frameRect
-                                                contentView:contentView];
+                                               ownerWindow:owner
+                                                 styleBits:styleBits
+                                                 frameRect:frameRect
+                                               contentView:contentView];
         // the window is released is CPlatformWindow.nativeDispose()
 
         if (window) CFRetain(window.nsWindow);
@@ -818,11 +847,19 @@ JNF_COCOA_ENTER(env);
 
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
-        if ([nsWindow isKeyWindow]) [window.javaMenuBar deactivate];
+        if ([nsWindow isKeyWindow]) {
+            [window.javaMenuBar deactivate];
+        }
+
         window.javaMenuBar = menuBar;
 
+        CMenuBar* actualMenuBar = menuBar;
+        if (actualMenuBar == nil) {
+            actualMenuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+        }
+
         if ([nsWindow isKeyWindow]) {
-            [CMenuBar activate:window.javaMenuBar modallyDisabled:NO];
+            [CMenuBar activate:actualMenuBar modallyDisabled:NO];
         }
     }];
 

@@ -141,11 +141,13 @@ public final class DOMXMLSignature extends DOMStructure
         id = DOMUtils.getAttributeValue(localSigElem, "Id");
 
         // unmarshal SignedInfo
-        Element siElem = DOMUtils.getFirstChildElement(localSigElem);
+        Element siElem = DOMUtils.getFirstChildElement(localSigElem,
+                                                       "SignedInfo");
         si = new DOMSignedInfo(siElem, context, provider);
 
         // unmarshal SignatureValue
-        Element sigValElem = DOMUtils.getNextSiblingElement(siElem);
+        Element sigValElem = DOMUtils.getNextSiblingElement(siElem,
+                                                            "SignatureValue");
         sv = new DOMSignatureValue(sigValElem, context);
 
         // unmarshal KeyInfo, if specified
@@ -161,6 +163,11 @@ public final class DOMXMLSignature extends DOMStructure
         } else {
             List<XMLObject> tempObjects = new ArrayList<XMLObject>();
             while (nextSibling != null) {
+                String name = nextSibling.getLocalName();
+                if (!name.equals("Object")) {
+                    throw new MarshalException("Invalid element name: " + name +
+                                               ", expected KeyInfo or Object");
+                }
                 tempObjects.add(new DOMXMLObject(nextSibling,
                                                  context, provider));
                 nextSibling = DOMUtils.getNextSiblingElement(nextSibling);

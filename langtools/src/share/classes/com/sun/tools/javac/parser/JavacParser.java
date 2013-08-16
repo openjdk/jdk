@@ -4053,7 +4053,7 @@ public class JavacParser implements Parser {
             endPosMap = new HashMap<JCTree, Integer>();
         }
 
-        protected void storeEnd(JCTree tree, int endpos) {
+        public void storeEnd(JCTree tree, int endpos) {
             endPosMap.put(tree, errorEndPos > endpos ? errorEndPos : endpos);
         }
 
@@ -4091,7 +4091,7 @@ public class JavacParser implements Parser {
             super(parser);
         }
 
-        protected void storeEnd(JCTree tree, int endpos) { /* empty */ }
+        public void storeEnd(JCTree tree, int endpos) { /* empty */ }
 
         protected <T extends JCTree> T to(T t) {
             return t;
@@ -4125,14 +4125,6 @@ public class JavacParser implements Parser {
         public AbstractEndPosTable(JavacParser parser) {
             this.parser = parser;
         }
-
-        /**
-         * Store ending position for a tree, the value of which is the greater
-         * of last error position and the given ending position.
-         * @param tree   The tree.
-         * @param endpos The ending position to associate with the tree.
-         */
-        protected abstract void storeEnd(JCTree tree, int endpos);
 
         /**
          * Store current token's ending position for a tree, the value of which
