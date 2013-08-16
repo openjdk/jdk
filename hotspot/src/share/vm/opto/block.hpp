@@ -348,20 +348,77 @@ class Block : public CFGElement {
 class PhaseCFG : public Phase {
   friend class VMStructs;
  private:
+
+  // Root of whole program
+  RootNode* _root;
+
+  // The block containing the root node
+  Block* _root_block;
+
+  // List of basic blocks that are created during CFG creation
+  Block_List _blocks;
+
+  // Count of basic blocks
+  uint _number_of_blocks;
+
   // Arena for the blocks to be stored in
   Arena* _block_arena;
+
+  // The matcher for this compilation
+  Matcher& _matcher;
 
   // Map nodes to owning basic block
   Block_Array _node_to_block_mapping;
 
+  // Loop from the root
+  CFGLoop* _root_loop;
+
+  // Outmost loop frequency
+  float _outer_loop_frequency;
+
+  // Per node latency estimation, valid only during GCM
+  GrowableArray<uint>* _node_latency;
+
   // Build a proper looking cfg.  Return count of basic blocks
   uint build_cfg();
 
-  // Perform DFS search.
+  // Build the dominator tree so that we know where we can move instructions
+  void build_dominator_tree();
+
+  // Estimate block frequencies based on IfNode probabilities, so that we know where we want to move instructions
+  void estimate_block_frequency();
+
+  // Global Code Motion.  See Click's PLDI95 paper.  Place Nodes in specific
+  // basic blocks; i.e. _node_to_block_mapping now maps _idx for all Nodes to some Block.
+  // Move nodes to ensure correctness from GVN and also try to move nodes out of loops.
+  void global_code_motion();
+
+  // Schedule Nodes early in their basic blocks.
+  bool schedule_early(VectorSet &visited, Node_List &roots);
+
+  // For each node, find the latest block it can be scheduled into
+  // and then select the cheapest block between the latest and earliest
+  // block to place the node.
+  void schedule_late(VectorSet &visited, Node_List &stack);
+
+  // Compute the (backwards) latency of a node from a single use
+  int latency_from_use(Node *n, const Node *def, Node *use);
+
+  // Compute the (backwards) latency of a node from the uses of this instruction
+  void partial_latency_of_defs(Node *n);
+
+  // Compute the instruction global latency with a backwards walk
+  void compute_latencies_backwards(VectorSet &visited, Node_List &stack);
+
+  // Pick a block between early and late that is a cheaper alternative
+  // to late. Helper for schedule_late.
+  Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
+
+  // Perform a Depth First Search (DFS).
   // Setup 'vertex' as DFS to vertex mapping.
   // Setup 'semi' as vertex to DFS mapping.
   // Set 'parent' to DFS parent.
-  uint DFS( Tarjan *tarjan );
+  uint do_DFS(Tarjan* tarjan, uint rpo_counter);
 
   // Helper function to insert a node into a block
   void schedule_node_into_block( Node *n, Block *b );
@@ -372,7 +429,8 @@ class PhaseCFG : public Phase {
   void schedule_pinned_nodes( VectorSet &visited );
 
   // I'll need a few machine-specific GotoNodes.  Clone from this one.
-  MachNode *_goto;
+  // Used when building the CFG and creating end nodes for blocks.
+  MachNode* _goto;
 
   Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) {
@@ -380,17 +438,77 @@ class PhaseCFG : public Phase {
     insert_anti_dependences(LCA, load, true);
   }
 
+  bool move_to_next(Block* bx, uint b_index);
+  void move_to_end(Block* bx, uint b_index);
+
+  void insert_goto_at(uint block_no, uint succ_no);
+
+  // Check for NeverBranch at block end.  This needs to become a GOTO to the
+  // true target.  NeverBranch are treated as a conditional branch that always
+  // goes the same direction for most of the optimizer and are used to give a
+  // fake exit path to infinite loops.  At this late stage they need to turn
+  // into Goto's so that when you enter the infinite loop you indeed hang.
+  void convert_NeverBranch_to_Goto(Block *b);
+
+  CFGLoop* create_loop_tree();
+
+  #ifndef PRODUCT
+  bool _trace_opto_pipelining;  // tracing flag
+  #endif
+
  public:
   PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher);
 
-  uint _num_blocks;             // Count of basic blocks
-  Block_List _blocks;           // List of basic blocks
-  RootNode *_root;              // Root of whole program
-  Block *_broot;                // Basic block of root
-  uint _rpo_ctr;
-  CFGLoop* _root_loop;
-  float _outer_loop_freq;       // Outmost loop frequency
+  void set_latency_for_node(Node* node, int latency) {
+    _node_latency->at_put_grow(node->_idx, latency);
+  }
 
+  uint get_latency_for_node(Node* node) {
+    return _node_latency->at_grow(node->_idx);
+  }
+
+  // Get the outer most frequency
+  float get_outer_loop_frequency() const {
+    return _outer_loop_frequency;
+  }
+
+  // Get the root node of the CFG
+  RootNode* get_root_node() const {
+    return _root;
+  }
+
+  // Get the block of the root node
+  Block* get_root_block() const {
+    return _root_block;
+  }
+
+  // Add a block at a position and moves the later ones one step
+  void add_block_at(uint pos, Block* block) {
+    _blocks.insert(pos, block);
+    _number_of_blocks++;
+  }
+
+  // Adds a block to the top of the block list
+  void add_block(Block* block) {
+    _blocks.push(block);
+    _number_of_blocks++;
+  }
+
+  // Clear the list of blocks
+  void clear_blocks() {
+    _blocks.reset();
+    _number_of_blocks = 0;
+  }
+
+  // Get the block at position pos in _blocks
+  Block* get_block(uint pos) const {
+    return _blocks[pos];
+  }
+
+  // Number of blocks
+  uint number_of_blocks() const {
+    return _number_of_blocks;
+  }
 
   // set which block this node should reside in
   void map_node_to_block(const Node* node, Block* block) {
@@ -412,72 +530,26 @@ class PhaseCFG : public Phase {
     return (_node_to_block_mapping.lookup(node->_idx) != NULL);
   }
 
-  // Per node latency estimation, valid only during GCM
-  GrowableArray<uint> *_node_latency;
-
-#ifndef PRODUCT
-  bool _trace_opto_pipelining;  // tracing flag
-#endif
-
 #ifdef ASSERT
   Unique_Node_List _raw_oops;
 #endif
 
-  // Build dominators
-  void Dominators();
-
-  // Estimate block frequencies based on IfNode probabilities
-  void Estimate_Block_Frequency();
-
-  // Global Code Motion.  See Click's PLDI95 paper.  Place Nodes in specific
-  // basic blocks; i.e. _node_to_block_mapping now maps _idx for all Nodes to some Block.
-  void GlobalCodeMotion( Matcher &m, uint unique, Node_List &proj_list );
+  // Do global code motion by first building dominator tree and estimate block frequency
+  // Returns true on success
+  bool do_global_code_motion();
 
   // Compute the (backwards) latency of a node from the uses
   void latency_from_uses(Node *n);
-
-  // Compute the (backwards) latency of a node from a single use
-  int latency_from_use(Node *n, const Node *def, Node *use);
-
-  // Compute the (backwards) latency of a node from the uses of this instruction
-  void partial_latency_of_defs(Node *n);
-
-  // Schedule Nodes early in their basic blocks.
-  bool schedule_early(VectorSet &visited, Node_List &roots);
-
-  // For each node, find the latest block it can be scheduled into
-  // and then select the cheapest block between the latest and earliest
-  // block to place the node.
-  void schedule_late(VectorSet &visited, Node_List &stack);
-
-  // Pick a block between early and late that is a cheaper alternative
-  // to late. Helper for schedule_late.
-  Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
-
-  // Compute the instruction global latency with a backwards walk
-  void ComputeLatenciesBackwards(VectorSet &visited, Node_List &stack);
 
   // Set loop alignment
   void set_loop_alignment();
 
   // Remove empty basic blocks
-  void remove_empty();
+  void remove_empty_blocks();
   void fixup_flow();
-  bool move_to_next(Block* bx, uint b_index);
-  void move_to_end(Block* bx, uint b_index);
-  void insert_goto_at(uint block_no, uint succ_no);
 
-  // Check for NeverBranch at block end.  This needs to become a GOTO to the
-  // true target.  NeverBranch are treated as a conditional branch that always
-  // goes the same direction for most of the optimizer and are used to give a
-  // fake exit path to infinite loops.  At this late stage they need to turn
-  // into Goto's so that when you enter the infinite loop you indeed hang.
-  void convert_NeverBranch_to_Goto(Block *b);
-
-  CFGLoop* create_loop_tree();
-
-  // Insert a node into a block, and update the _bbs
-  void insert( Block *b, uint idx, Node *n ) {
+  // Insert a node into a block at index and map the node to the block
+  void insert(Block *b, uint idx, Node *n) {
     b->_nodes.insert( idx, n );
     map_node_to_block(n, b);
   }

@@ -34,8 +34,6 @@
 #include "opto/matcher.hpp"
 #include "opto/regmask.hpp"
 
-//=============================================================================
-//------------------------------Dump-------------------------------------------
 #ifndef PRODUCT
 void PhaseCoalesce::dump(Node *n) const {
   // Being a const function means I cannot use 'Find'
@@ -43,12 +41,11 @@ void PhaseCoalesce::dump(Node *n) const {
   tty->print("L%d/N%d ",r,n->_idx);
 }
 
-//------------------------------dump-------------------------------------------
 void PhaseCoalesce::dump() const {
   // I know I have a block layout now, so I can print blocks in a loop
-  for( uint i=0; i<_phc._cfg._num_blocks; i++ ) {
+  for( uint i=0; i<_phc._cfg.number_of_blocks(); i++ ) {
     uint j;
-    Block *b = _phc._cfg._blocks[i];
+    Block* b = _phc._cfg.get_block(i);
     // Print a nice block header
     tty->print("B%d: ",b->_pre_order);
     for( j=1; j<b->num_preds(); j++ )
@@ -85,7 +82,6 @@ void PhaseCoalesce::dump() const {
 }
 #endif
 
-//------------------------------combine_these_two------------------------------
 // Combine the live ranges def'd by these 2 Nodes.  N2 is an input to N1.
 void PhaseCoalesce::combine_these_two(Node *n1, Node *n2) {
   uint lr1 = _phc._lrg_map.find(n1);
@@ -127,18 +123,15 @@ void PhaseCoalesce::combine_these_two(Node *n1, Node *n2) {
   }
 }
 
-//------------------------------coalesce_driver--------------------------------
 // Copy coalescing
-void PhaseCoalesce::coalesce_driver( ) {
-
+void PhaseCoalesce::coalesce_driver() {
   verify();
   // Coalesce from high frequency to low
-  for( uint i=0; i<_phc._cfg._num_blocks; i++ )
-    coalesce( _phc._blks[i] );
-
+  for (uint i = 0; i < _phc._cfg.number_of_blocks(); i++) {
+    coalesce(_phc._blks[i]);
+  }
 }
 
-//------------------------------insert_copy_with_overlap-----------------------
 // I am inserting copies to come out of SSA form.  In the general case, I am
 // doing a parallel renaming.  I'm in the Named world now, so I can't do a
 // general parallel renaming.  All the copies now use  "names" (live-ranges)
@@ -216,7 +209,6 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
   b->_nodes.insert(last_use_idx+1,copy);
 }
 
-//------------------------------insert_copies----------------------------------
 void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   // We do LRGs compressing and fix a liveout data only here since the other
   // place in Split() is guarded by the assert which we never hit.
@@ -225,8 +217,8 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   for (uint lrg = 1; lrg < _phc._lrg_map.max_lrg_id(); lrg++) {
     uint compressed_lrg = _phc._lrg_map.find(lrg);
     if (lrg != compressed_lrg) {
-      for (uint bidx = 0; bidx < _phc._cfg._num_blocks; bidx++) {
-        IndexSet *liveout = _phc._live->live(_phc._cfg._blocks[bidx]);
+      for (uint bidx = 0; bidx < _phc._cfg.number_of_blocks(); bidx++) {
+        IndexSet *liveout = _phc._live->live(_phc._cfg.get_block(bidx));
         if (liveout->member(lrg)) {
           liveout->remove(lrg);
           liveout->insert(compressed_lrg);
@@ -239,10 +231,10 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   // Nodes with index less than '_unique' are original, non-virtual Nodes.
   _unique = C->unique();
 
-  for( uint i=0; i<_phc._cfg._num_blocks; i++ ) {
+  for (uint i = 0; i < _phc._cfg.number_of_blocks(); i++) {
     C->check_node_count(NodeLimitFudgeFactor, "out of nodes in coalesce");
     if (C->failing()) return;
-    Block *b = _phc._cfg._blocks[i];
+    Block *b = _phc._cfg.get_block(i);
     uint cnt = b->num_preds();  // Number of inputs to the Phi
 
     for( uint l = 1; l<b->_nodes.size(); l++ ) {
@@ -403,8 +395,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   } // End of for all blocks
 }
 
-//=============================================================================
-//------------------------------coalesce---------------------------------------
+
 // Aggressive (but pessimistic) copy coalescing of a single block
 
 // The following coalesce pass represents a single round of aggressive
@@ -464,20 +455,16 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
   } // End of for all instructions in block
 }
 
-//=============================================================================
-//------------------------------PhaseConservativeCoalesce----------------------
 PhaseConservativeCoalesce::PhaseConservativeCoalesce(PhaseChaitin &chaitin) : PhaseCoalesce(chaitin) {
   _ulr.initialize(_phc._lrg_map.max_lrg_id());
 }
 
-//------------------------------verify-----------------------------------------
 void PhaseConservativeCoalesce::verify() {
 #ifdef ASSERT
   _phc.set_was_low();
 #endif
 }
 
-//------------------------------union_helper-----------------------------------
 void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, uint lr1, uint lr2, Node *src_def, Node *dst_copy, Node *src_copy, Block *b, uint bindex ) {
   // Join live ranges.  Merge larger into smaller.  Union lr2 into lr1 in the
   // union-find tree
@@ -520,7 +507,6 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   }
 }
 
-//------------------------------compute_separating_interferences---------------
 // Factored code from copy_copy that computes extra interferences from
 // lengthening a live range by double-coalescing.
 uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy, Node *src_copy, Block *b, uint bindex, RegMask &rm, uint reg_degree, uint rm_size, uint lr1, uint lr2 ) {
@@ -586,7 +572,6 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
   return reg_degree;
 }
 
-//------------------------------update_ifg-------------------------------------
 void PhaseConservativeCoalesce::update_ifg(uint lr1, uint lr2, IndexSet *n_lr1, IndexSet *n_lr2) {
   // Some original neighbors of lr1 might have gone away
   // because the constrained register mask prevented them.
@@ -616,7 +601,6 @@ void PhaseConservativeCoalesce::update_ifg(uint lr1, uint lr2, IndexSet *n_lr1, 
       lrgs(neighbor).inc_degree( lrg1.compute_degree(lrgs(neighbor)) );
 }
 
-//------------------------------record_bias------------------------------------
 static void record_bias( const PhaseIFG *ifg, int lr1, int lr2 ) {
   // Tag copy bias here
   if( !ifg->lrgs(lr1)._copy_bias )
@@ -625,7 +609,6 @@ static void record_bias( const PhaseIFG *ifg, int lr1, int lr2 ) {
     ifg->lrgs(lr2)._copy_bias = lr1;
 }
 
-//------------------------------copy_copy--------------------------------------
 // See if I can coalesce a series of multiple copies together.  I need the
 // final dest copy and the original src copy.  They can be the same Node.
 // Compute the compatible register masks.
@@ -785,7 +768,6 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   return true;
 }
 
-//------------------------------coalesce---------------------------------------
 // Conservative (but pessimistic) copy coalescing of a single block
 void PhaseConservativeCoalesce::coalesce( Block *b ) {
   // Bail out on infrequent blocks
