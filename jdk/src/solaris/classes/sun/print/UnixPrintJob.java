@@ -65,6 +65,7 @@ import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DocumentName;
@@ -76,6 +77,7 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.PrinterName;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.Sides;
@@ -120,6 +122,9 @@ public class UnixPrintJob implements CancelablePrintJob {
     UnixPrintJob(PrintService service) {
         this.service = service;
         mDestination = service.getName();
+        if (UnixPrintServiceLookup.isMac()) {
+            mDestination = ((IPPPrintService)service).getDest();
+        }
         mDestType = UnixPrintJob.DESTPRINTER;
     }
 
@@ -327,6 +332,10 @@ public class UnixPrintJob implements CancelablePrintJob {
         } catch (IOException e) {
             notifyEvent(PrintJobEvent.JOB_FAILED);
             throw new PrintException("can't get print data: " + e.toString());
+        }
+
+        if (data == null) {
+            throw new PrintException("Null print data.");
         }
 
         if (flavor == null || (!service.isDocFlavorSupported(flavor))) {

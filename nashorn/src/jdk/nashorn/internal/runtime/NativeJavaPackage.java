@@ -84,8 +84,8 @@ public final class NativeJavaPackage extends ScriptObject {
      * @param proto proto
      */
     public NativeJavaPackage(final String name, final ScriptObject proto) {
+        super(proto, null);
         this.name = name;
-        this.setProto(proto);
     }
 
     @Override

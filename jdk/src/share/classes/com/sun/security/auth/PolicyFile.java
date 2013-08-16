@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ import javax.security.auth.Subject;
 import javax.security.auth.PrivateCredentialPermission;
 
 import sun.security.util.PropertyExpander;
+
+import sun.security.provider.PolicyParser.PrincipalEntry;
+import sun.security.provider.PolicyParser.GrantEntry;
+import sun.security.provider.PolicyParser.PermissionEntry;
 
 /**
  * This class represents a default implementation for
@@ -469,7 +473,8 @@ public class PolicyFile extends javax.security.auth.Policy {
      * @param policyFile the policy Reader object.
      */
     private void init(URL policy) {
-        PolicyParser pp = new PolicyParser(expandProperties);
+        sun.security.provider.PolicyParser pp =
+                new sun.security.provider.PolicyParser(expandProperties);
         try {
             InputStreamReader isr
                 = new InputStreamReader(getInputStream(policy));
@@ -477,12 +482,12 @@ public class PolicyFile extends javax.security.auth.Policy {
             isr.close();
             KeyStore keyStore = initKeyStore(policy, pp.getKeyStoreUrl(),
                                              pp.getKeyStoreType());
-            Enumeration<PolicyParser.GrantEntry> enum_ = pp.grantElements();
+            Enumeration<GrantEntry> enum_ = pp.grantElements();
             while (enum_.hasMoreElements()) {
-                PolicyParser.GrantEntry ge = enum_.nextElement();
+                GrantEntry ge = enum_.nextElement();
                 addGrantEntry(ge, keyStore);
             }
-        } catch (PolicyParser.ParsingException pe) {
+        } catch (sun.security.provider.PolicyParser.ParsingException pe) {
             System.err.println(AUTH_POLICY +
                                 rb.getString(".error.parsing.") + policy);
             System.err.println(AUTH_POLICY +
@@ -521,8 +526,8 @@ public class PolicyFile extends javax.security.auth.Policy {
      *
      * @return null if signedBy alias is not recognized
      */
-    CodeSource getCodeSource(PolicyParser.GrantEntry ge, KeyStore keyStore)
-        throws java.net.MalformedURLException
+    CodeSource getCodeSource(GrantEntry ge, KeyStore keyStore)
+            throws java.net.MalformedURLException
     {
         Certificate[] certs = null;
         if (ge.signedBy != null) {
@@ -559,20 +564,18 @@ public class PolicyFile extends javax.security.auth.Policy {
     /**
      * Add one policy entry to the vector.
      */
-    private void addGrantEntry(PolicyParser.GrantEntry ge,
-                               KeyStore keyStore) {
+    private void addGrantEntry(GrantEntry ge, KeyStore keyStore) {
 
         if (debug != null) {
             debug.println("Adding policy entry: ");
             debug.println("  signedBy " + ge.signedBy);
             debug.println("  codeBase " + ge.codeBase);
             if (ge.principals != null && ge.principals.size() > 0) {
-                ListIterator<PolicyParser.PrincipalEntry> li =
-                                                ge.principals.listIterator();
+                ListIterator<PrincipalEntry> li = ge.principals.listIterator();
                 while (li.hasNext()) {
-                    PolicyParser.PrincipalEntry pppe = li.next();
-                    debug.println("  " + pppe.principalClass +
-                                        " " + pppe.principalName);
+                    PrincipalEntry pppe = li.next();
+                    debug.println("  " + pppe.getPrincipalClass() +
+                                        " " + pppe.getPrincipalName());
                 }
             }
             debug.println();
@@ -584,10 +587,9 @@ public class PolicyFile extends javax.security.auth.Policy {
             if (codesource == null) return;
 
             PolicyEntry entry = new PolicyEntry(codesource);
-            Enumeration<PolicyParser.PermissionEntry> enum_ =
-                                                ge.permissionElements();
+            Enumeration<PermissionEntry> enum_ = ge.permissionElements();
             while (enum_.hasMoreElements()) {
-                PolicyParser.PermissionEntry pe = enum_.nextElement();
+                PermissionEntry pe = enum_.nextElement();
                 try {
                     // XXX special case PrivateCredentialPermission-SELF
                     Permission perm;
@@ -998,11 +1000,11 @@ public class PolicyFile extends javax.security.auth.Policy {
                 return true;
             }
 
-            ListIterator<PolicyParser.PrincipalEntry> pli =
-                                        scs.getPrincipals().listIterator();
+            ListIterator<PrincipalEntry> pli =
+                    scs.getPrincipals().listIterator();
             while (pli.hasNext()) {
 
-                PolicyParser.PrincipalEntry principal = pli.next();
+                PrincipalEntry principal = pli.next();
 
                 // XXX
                 //      if the Policy entry's Principal does not contain a
@@ -1050,30 +1052,29 @@ public class PolicyFile extends javax.security.auth.Policy {
      *                  if (y == 1), it's the principal name.
      */
     private String[][] getPrincipalInfo
-                (PolicyParser.PrincipalEntry principal,
-                final CodeSource accCs) {
+                (PrincipalEntry principal, final CodeSource accCs) {
 
         // there are 3 possibilities:
         // 1) the entry's Principal class and name are not wildcarded
         // 2) the entry's Principal name is wildcarded only
         // 3) the entry's Principal class and name are wildcarded
 
-        if (!principal.principalClass.equals
-                (PolicyParser.PrincipalEntry.WILDCARD_CLASS) &&
-            !principal.principalName.equals
-                (PolicyParser.PrincipalEntry.WILDCARD_NAME)) {
+        if (!principal.getPrincipalClass().equals
+                (PrincipalEntry.WILDCARD_CLASS) &&
+            !principal.getPrincipalName().equals
+                (PrincipalEntry.WILDCARD_NAME)) {
 
             // build a PrivateCredentialPermission for the principal
             // from the Policy entry
             String[][] info = new String[1][2];
-            info[0][0] = principal.principalClass;
-            info[0][1] = principal.principalName;
+            info[0][0] = principal.getPrincipalClass();
+            info[0][1] = principal.getPrincipalName();
             return info;
 
-        } else if (!principal.principalClass.equals
-                (PolicyParser.PrincipalEntry.WILDCARD_CLASS) &&
-            principal.principalName.equals
-                (PolicyParser.PrincipalEntry.WILDCARD_NAME)) {
+        } else if (!principal.getPrincipalClass().equals
+                (PrincipalEntry.WILDCARD_CLASS) &&
+            principal.getPrincipalName().equals
+                (PrincipalEntry.WILDCARD_NAME)) {
 
             // build a PrivateCredentialPermission for all
             // the Subject's principals that are instances of principalClass
@@ -1088,7 +1089,7 @@ public class PolicyFile extends javax.security.auth.Policy {
                 // If it doesn't, we should stop here with a ClassCastException.
                 @SuppressWarnings("unchecked")
                 Class<? extends Principal> pClass = (Class<? extends Principal>)
-                        Class.forName(principal.principalClass, false,
+                        Class.forName(principal.getPrincipalClass(), false,
                                       ClassLoader.getSystemClassLoader());
                 principalSet = scs.getSubject().getPrincipals(pClass);
             } catch (Exception e) {
@@ -1387,6 +1388,7 @@ public class PolicyFile extends javax.security.auth.Policy {
     }
 }
 
+@SuppressWarnings("deprecation")
 class PolicyPermissions extends PermissionCollection {
 
     private static final long serialVersionUID = -1954188373270545523L;

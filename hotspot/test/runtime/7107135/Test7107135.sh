@@ -27,6 +27,7 @@
 ##
 ## @test Test7107135.sh
 ## @bug 7107135
+## @bug 8021296
 ## @summary Stack guard pages lost after loading library with executable stack.
 ## @run shell Test7107135.sh
 ##
@@ -45,11 +46,13 @@ OS=`uname -s`
 case "$OS" in
   Linux)
     echo "Testing on Linux"
+    gcc_cmd=`which gcc`
+    if [ "x$gcc_cmd" == "x" ]; then
+        echo "WARNING: gcc not found. Cannot execute test." 2>&1
+        exit 0;
+    fi
     ;;
   *)
-    NULL=NUL
-    PS=";"
-    FS="\\"
     echo "Test passed; only valid for Linux"
     exit 0;
     ;;
@@ -62,7 +65,10 @@ THIS_DIR=.
 cp ${TESTSRC}${FS}*.java ${THIS_DIR}
 ${TESTJAVA}${FS}bin${FS}javac *.java
 
-gcc -fPIC -shared -c -o test.o -I${TESTJAVA}${FS}include -I${TESTJAVA}${FS}include${FS}linux ${TESTSRC}${FS}test.c
+$gcc_cmd -fPIC -shared -c -o test.o \
+    -I${TESTJAVA}${FS}include -I${TESTJAVA}${FS}include${FS}linux \
+    ${TESTSRC}${FS}test.c
+
 ld -shared -z   execstack -o libtest-rwx.so test.o
 ld -shared -z noexecstack -o libtest-rw.so  test.o
 
@@ -78,14 +84,16 @@ ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rw
 
 echo
 echo Test changing of stack protection:
-echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rw
+echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rwx
 ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rwx
+JAVA_RETVAL=$?
 
-if [ "$?" == "0" ]
+if [ "$JAVA_RETVAL" == "0" ]
 then
   echo
   echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} TestMT test-rwx
   ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} TestMT test-rwx
+  JAVA_RETVAL=$?
 fi
 
-exit $?
+exit $JAVA_RETVAL

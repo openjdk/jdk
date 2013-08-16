@@ -1240,7 +1240,8 @@ public class Infer {
         CAPTURED(InferenceBound.UPPER) {
             @Override
             public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
-                return !inferenceContext.free(t.getBounds(InferenceBound.UPPER, InferenceBound.LOWER));
+                return t.isCaptured() &&
+                        !inferenceContext.free(t.getBounds(InferenceBound.UPPER, InferenceBound.LOWER));
             }
 
             @Override

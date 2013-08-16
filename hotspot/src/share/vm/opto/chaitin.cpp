@@ -295,7 +295,7 @@ void PhaseChaitin::new_lrg(const Node *x, uint lrg) {
 
 
 bool PhaseChaitin::clone_projs_shared(Block *b, uint idx, Node *con, Node *copy, uint max_lrg_id) {
-  Block *bcon = _cfg._bbs[con->_idx];
+  Block* bcon = _cfg.get_block_for_node(con);
   uint cindex = bcon->find_node(con);
   Node *con_next = bcon->_nodes[cindex+1];
   if (con_next->in(0) != con || !con_next->is_MachProj()) {
@@ -306,7 +306,7 @@ bool PhaseChaitin::clone_projs_shared(Block *b, uint idx, Node *con, Node *copy,
   Node *kills = con_next->clone();
   kills->set_req(0, copy);
   b->_nodes.insert(idx, kills);
-  _cfg._bbs.map(kills->_idx, b);
+  _cfg.map_node_to_block(kills, b);
   new_lrg(kills, max_lrg_id);
   return true;
 }
@@ -962,8 +962,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // AggressiveCoalesce.  This effectively pre-virtual-splits
         // around uncommon uses of common defs.
         const RegMask &rm = n->in_RegMask(k);
-        if( !after_aggressive &&
-          _cfg._bbs[n->in(k)->_idx]->_freq > 1000*b->_freq ) {
+        if (!after_aggressive && _cfg.get_block_for_node(n->in(k))->_freq > 1000 * b->_freq) {
           // Since we are BEFORE aggressive coalesce, leave the register
           // mask untrimmed by the call.  This encourages more coalescing.
           // Later, AFTER aggressive, this live range will have to spill
@@ -1709,16 +1708,15 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
       // set control to _root and place it into Start block
       // (where top() node is placed).
       base->init_req(0, _cfg._root);
-      Block *startb = _cfg._bbs[C->top()->_idx];
+      Block *startb = _cfg.get_block_for_node(C->top());
       startb->_nodes.insert(startb->find_node(C->top()), base );
-      _cfg._bbs.map( base->_idx, startb );
+      _cfg.map_node_to_block(base, startb);
       assert(_lrg_map.live_range_id(base) == 0, "should not have LRG yet");
     }
     if (_lrg_map.live_range_id(base) == 0) {
       new_lrg(base, maxlrg++);
     }
-    assert(base->in(0) == _cfg._root &&
-           _cfg._bbs[base->_idx] == _cfg._bbs[C->top()->_idx], "base NULL should be shared");
+    assert(base->in(0) == _cfg._root && _cfg.get_block_for_node(base) == _cfg.get_block_for_node(C->top()), "base NULL should be shared");
     derived_base_map[derived->_idx] = base;
     return base;
   }
@@ -1754,12 +1752,12 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
   base->as_Phi()->set_type(t);
 
   // Search the current block for an existing base-Phi
-  Block *b = _cfg._bbs[derived->_idx];
+  Block *b = _cfg.get_block_for_node(derived);
   for( i = 1; i <= b->end_idx(); i++ ) {// Search for matching Phi
     Node *phi = b->_nodes[i];
     if( !phi->is_Phi() ) {      // Found end of Phis with no match?
       b->_nodes.insert( i, base ); // Must insert created Phi here as base
-      _cfg._bbs.map( base->_idx, b );
+      _cfg.map_node_to_block(base, b);
       new_lrg(base,maxlrg++);
       break;
     }
@@ -1815,8 +1813,8 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
       if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CmpI ) {
         Node *phi = n->in(1);
         if( phi->is_Phi() && phi->as_Phi()->region()->is_Loop() ) {
-          Block *phi_block = _cfg._bbs[phi->_idx];
-          if( _cfg._bbs[phi_block->pred(2)->_idx] == b ) {
+          Block *phi_block = _cfg.get_block_for_node(phi);
+          if (_cfg.get_block_for_node(phi_block->pred(2)) == b) {
             const RegMask *mask = C->matcher()->idealreg2spillmask[Op_RegI];
             Node *spill = new (C) MachSpillCopyNode( phi, *mask, *mask );
             insert_proj( phi_block, 1, spill, maxlrg++ );
@@ -1870,7 +1868,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
             if ((_lrg_map.live_range_id(base) >= _lrg_map.max_lrg_id() || // (Brand new base (hence not live) or
                  !liveout.member(_lrg_map.live_range_id(base))) && // not live) AND
                  (_lrg_map.live_range_id(base) > 0) && // not a constant
-                 _cfg._bbs[base->_idx] != b) { // base not def'd in blk)
+                 _cfg.get_block_for_node(base) != b) { // base not def'd in blk)
               // Base pointer is not currently live.  Since I stretched
               // the base pointer to here and it crosses basic-block
               // boundaries, the global live info is now incorrect.
@@ -1993,8 +1991,8 @@ void PhaseChaitin::dump(const Node *n) const {
   tty->print("\n");
 }
 
-void PhaseChaitin::dump( const Block * b ) const {
-  b->dump_head( &_cfg._bbs );
+void PhaseChaitin::dump(const Block *b) const {
+  b->dump_head(&_cfg);
 
   // For all instructions
   for( uint j = 0; j < b->_nodes.size(); j++ )
@@ -2299,7 +2297,7 @@ void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
       if (_lrg_map.find_const(n) == lidx) {
         if (!dump_once++) {
           tty->cr();
-          b->dump_head( &_cfg._bbs );
+          b->dump_head(&_cfg);
         }
         dump(n);
         continue;
@@ -2314,7 +2312,7 @@ void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
           if (_lrg_map.find_const(m) == lidx) {
             if (!dump_once++) {
               tty->cr();
-              b->dump_head(&_cfg._bbs);
+              b->dump_head(&_cfg);
             }
             dump(n);
           }

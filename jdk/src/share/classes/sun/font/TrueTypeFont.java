@@ -547,6 +547,17 @@ public class TrueTypeFont extends FileFont {
                     throw new FontFormatException("bad table, tag="+table.tag);
                 }
             }
+
+            if (getDirectoryEntry(headTag) == null) {
+                throw new FontFormatException("missing head table");
+            }
+            if (getDirectoryEntry(maxpTag) == null) {
+                throw new FontFormatException("missing maxp table");
+            }
+            if (getDirectoryEntry(hmtxTag) != null
+                    && getDirectoryEntry(hheaTag) == null) {
+                throw new FontFormatException("missing hhea table");
+            }
             initNames();
         } catch (Exception e) {
             if (FontUtilities.isLogging()) {

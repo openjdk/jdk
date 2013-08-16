@@ -85,6 +85,8 @@ public class TCKHijrahEra {
     @Test(dataProvider="HijrahEras")
     public void test_valueOf(HijrahEra era , String eraName, int eraValue) {
         assertEquals(era.getValue(), eraValue);
+
+        assertEquals(HijrahChronology.INSTANCE.eraOf(eraValue), era);
         assertEquals(HijrahEra.of(eraValue), era);
         assertEquals(HijrahEra.valueOf(eraName), era);
     }

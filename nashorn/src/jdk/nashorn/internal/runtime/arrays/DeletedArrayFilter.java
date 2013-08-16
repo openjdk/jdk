@@ -44,6 +44,13 @@ final class DeletedArrayFilter extends ArrayFilter {
     }
 
     @Override
+    public ArrayData copy() {
+        DeletedArrayFilter copy = new DeletedArrayFilter(underlying.copy());
+        copy.getDeleted().copy(deleted);
+        return copy;
+    }
+
+    @Override
     public Object[] asObjectArray() {
         final Object[] value = super.asObjectArray();
 

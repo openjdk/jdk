@@ -88,7 +88,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * The position prior to which data may be discarded.  Seeking
      * to a smaller position is not allowed.  <code>flushedPos</code>
-     * will always be >= 0.
+     * will always be {@literal >= 0}.
      */
     protected long flushedPos = 0;
 
