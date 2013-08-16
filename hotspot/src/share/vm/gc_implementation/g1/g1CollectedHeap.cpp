@@ -6807,10 +6807,14 @@ public:
 
 void G1CollectedHeap::mark_strong_code_roots(uint worker_id) {
   MarkStrongCodeRootsHRClosure cl(this, worker_id);
-  heap_region_par_iterate_chunked(&cl,
-                                  worker_id,
-                                  workers()->active_workers(),
-                                  HeapRegion::ParMarkRootClaimValue);
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    heap_region_par_iterate_chunked(&cl,
+                                    worker_id,
+                                    workers()->active_workers(),
+                                    HeapRegion::ParMarkRootClaimValue);
+  } else {
+    heap_region_iterate(&cl);
+  }
 }
 
 class RebuildStrongCodeRootClosure: public CodeBlobClosure {
