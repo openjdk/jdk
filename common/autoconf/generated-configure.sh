@@ -3794,7 +3794,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1373384053
+DATE_WHEN_GENERATED=1375350569
 
 ###############################################################################
 #
@@ -29582,7 +29582,7 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE"
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     # Setting these parameters makes it an error to link to macosx APIs that are
     # newer than the given OS version and makes the linked binaries compatible even
     # if built on a newer version of the OS.
