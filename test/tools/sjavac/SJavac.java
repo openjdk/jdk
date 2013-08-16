@@ -21,11 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Tests sjavac basic functionality
- */
-
 import java.util.*;
 import java.io.*;
 import java.net.*;
