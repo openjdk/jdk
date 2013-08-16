@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.Arrays;
  * specifies a half-open interval up to the next item:
  * <blockquote>
  * <pre>
- * X matches j if and only if limit[j] &lt;= X &lt; limit[j+1]
+ * X matches j if and only if limit[j] &le; X &lt; limit[j+1]
  * </pre>
  * </blockquote>
  * If there is no match, then either the first or last index is used, depending
@@ -85,21 +85,21 @@ import java.util.Arrays;
  * <p>
  * Here is a simple example that shows formatting and parsing:
  * <blockquote>
- * <pre>
+ * <pre>{@code
  * double[] limits = {1,2,3,4,5,6,7};
  * String[] dayOfWeekNames = {"Sun","Mon","Tue","Wed","Thur","Fri","Sat"};
  * ChoiceFormat form = new ChoiceFormat(limits, dayOfWeekNames);
  * ParsePosition status = new ParsePosition(0);
- * for (double i = 0.0; i &lt;= 8.0; ++i) {
+ * for (double i = 0.0; i <= 8.0; ++i) {
  *     status.setIndex(0);
- *     System.out.println(i + " -&gt; " + form.format(i) + " -&gt; "
+ *     System.out.println(i + " -> " + form.format(i) + " -> "
  *                              + form.parse(form.format(i),status));
  * }
- * </pre>
+ * }</pre>
  * </blockquote>
  * Here is a more complex example, with a pattern format:
  * <blockquote>
- * <pre>
+ * <pre>{@code
  * double[] filelimits = {0,1,2};
  * String[] filepart = {"are no files","is one file","are {2} files"};
  * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
@@ -107,20 +107,20 @@ import java.util.Arrays;
  * MessageFormat pattform = new MessageFormat("There {0} on {1}");
  * pattform.setFormats(testFormats);
  * Object[] testArgs = {null, "ADisk", null};
- * for (int i = 0; i &lt; 4; ++i) {
+ * for (int i = 0; i < 4; ++i) {
  *     testArgs[0] = new Integer(i);
  *     testArgs[2] = testArgs[0];
  *     System.out.println(pattform.format(testArgs));
  * }
- * </pre>
+ * }</pre>
  * </blockquote>
  * <p>
  * Specifying a pattern for ChoiceFormat objects is fairly straightforward.
  * For example:
  * <blockquote>
- * <pre>
+ * <pre>{@code
  * ChoiceFormat fmt = new ChoiceFormat(
- *      "-1#is negative| 0#is zero or fraction | 1#is one |1.0&lt;is 1+ |2#is two |2&lt;is more than 2.");
+ *      "-1#is negative| 0#is zero or fraction | 1#is one |1.0<is 1+ |2#is two |2<is more than 2.");
  * System.out.println("Formatter Pattern : " + fmt.toPattern());
  *
  * System.out.println("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
@@ -133,25 +133,25 @@ import java.util.Arrays;
  * System.out.println("Format with 2.1 : " + fmt.format(2.1));
  * System.out.println("Format with NaN : " + fmt.format(Double.NaN));
  * System.out.println("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
- * </pre>
+ * }</pre>
  * </blockquote>
  * And the output result would be like the following:
  * <blockquote>
- * <pre>
- *   Format with -INF : is negative
- *   Format with -1.0 : is negative
- *   Format with 0 : is zero or fraction
- *   Format with 0.9 : is zero or fraction
- *   Format with 1.0 : is one
- *   Format with 1.5 : is 1+
- *   Format with 2 : is two
- *   Format with 2.1 : is more than 2.
- *   Format with NaN : is negative
- *   Format with +INF : is more than 2.
- * </pre>
+ * <pre>{@code
+ * Format with -INF : is negative
+ * Format with -1.0 : is negative
+ * Format with 0 : is zero or fraction
+ * Format with 0.9 : is zero or fraction
+ * Format with 1.0 : is one
+ * Format with 1.5 : is 1+
+ * Format with 2 : is two
+ * Format with 2.1 : is more than 2.
+ * Format with NaN : is negative
+ * Format with +INF : is more than 2.
+ * }</pre>
  * </blockquote>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h3><a name="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Choice formats are not synchronized.
@@ -255,6 +255,8 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Gets the pattern.
+     *
+     * @return the pattern string
      */
     public String toPattern() {
         StringBuffer result = new StringBuffer();
@@ -305,6 +307,8 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Constructs with limits and corresponding formats based on the pattern.
+     *
+     * @param newPattern the new pattern string
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
@@ -313,6 +317,9 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Constructs with the limits and the corresponding formats.
+     *
+     * @param limits limits in ascending order
+     * @param formats corresponding format strings
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
@@ -322,9 +329,9 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Set the choices to be used in formatting.
      * @param limits contains the top value that you want
-     * parsed with that format,and should be in ascending sorted order. When
+     * parsed with that format, and should be in ascending sorted order. When
      * formatting X, the choice will be the i, where
-     * limit[i] &lt;= X &lt; limit[i+1].
+     * limit[i] &le; X {@literal <} limit[i+1].
      * If the limit array is not in ascending order, the results of formatting
      * will be incorrect.
      * @param formats are the formats you want to use for each limit.
@@ -434,9 +441,12 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Finds the least double greater than d.
-     * If NaN, returns same value.
+     * Finds the least double greater than {@code d}.
+     * If {@code NaN}, returns same value.
      * <p>Used to make half-open intervals.
+     *
+     * @param d the reference value
+     * @return the least double value greather than {@code d}
      * @see #previousDouble
      */
     public static final double nextDouble (double d) {
@@ -444,8 +454,11 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Finds the greatest double less than d.
-     * If NaN, returns same value.
+     * Finds the greatest double less than {@code d}.
+     * If {@code NaN}, returns same value.
+     *
+     * @param d the reference value
+     * @return the greatest double value less than {@code d}
      * @see #nextDouble
      */
     public static final double previousDouble (double d) {
@@ -553,15 +566,21 @@ public class ChoiceFormat extends NumberFormat {
     static final long POSITIVEINFINITY    = 0x7FF0000000000000L;
 
     /**
-     * Finds the least double greater than d (if positive == true),
-     * or the greatest double less than d (if positive == false).
-     * If NaN, returns same value.
+     * Finds the least double greater than {@code d} (if {@code positive} is
+     * {@code true}), or the greatest double less than {@code d} (if
+     * {@code positive} is {@code false}).
+     * If {@code NaN}, returns same value.
      *
      * Does not affect floating-point flags,
      * provided these member functions do not:
      *          Double.longBitsToDouble(long)
      *          Double.doubleToLongBits(double)
      *          Double.isNaN(double)
+     *
+     * @param d        the reference value
+     * @param positive {@code true} if the least double is desired;
+     *                 {@code false} otherwise
+     * @return the least or greater double value
      */
     public static double nextDouble (double d, boolean positive) {
 

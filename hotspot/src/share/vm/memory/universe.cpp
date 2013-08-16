@@ -105,10 +105,9 @@ objArrayOop Universe::_the_empty_class_klass_array    = NULL;
 Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
 oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
-LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
-LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
-LatestMethodOopCache* Universe::_pd_implies_cache         = NULL;
-ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
+LatestMethodCache* Universe::_finalizer_register_cache = NULL;
+LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
+LatestMethodCache* Universe::_pd_implies_cache         = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_metaspace          = NULL;
 oop Universe::_out_of_memory_error_class_metaspace    = NULL;
@@ -225,7 +224,6 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   f->do_ptr((void**)&_the_empty_klass_array);
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
-  _reflect_invoke_cache->serialize(f);
   _pd_implies_cache->serialize(f);
 }
 
@@ -649,10 +647,9 @@ jint universe_init() {
 
   // We have a heap so create the Method* caches before
   // Metaspace::initialize_shared_spaces() tries to populate them.
-  Universe::_finalizer_register_cache = new LatestMethodOopCache();
-  Universe::_loader_addClass_cache    = new LatestMethodOopCache();
-  Universe::_pd_implies_cache         = new LatestMethodOopCache();
-  Universe::_reflect_invoke_cache     = new ActiveMethodOopsCache();
+  Universe::_finalizer_register_cache = new LatestMethodCache();
+  Universe::_loader_addClass_cache    = new LatestMethodCache();
+  Universe::_pd_implies_cache         = new LatestMethodCache();
 
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
@@ -1088,35 +1085,21 @@ bool universe_post_init() {
                                   vmSymbols::register_method_name(),
                                   vmSymbols::register_method_signature());
   if (m == NULL || !m->is_static()) {
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
-      "java.lang.ref.Finalizer.register", false);
+    tty->print_cr("Unable to link/verify Finalizer.register method");
+    return false; // initialization failed (cannot throw exception yet)
   }
   Universe::_finalizer_register_cache->init(
-    SystemDictionary::Finalizer_klass(), m, CHECK_false);
-
-  // Resolve on first use and initialize class.
-  // Note: No race-condition here, since a resolve will always return the same result
-
-  // Setup method for security checks
-  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_reflect_Method(), true, CHECK_false);
-  k_h = instanceKlassHandle(THREAD, k);
-  k_h->link_class(CHECK_false);
-  m = k_h->find_method(vmSymbols::invoke_name(), vmSymbols::object_object_array_object_signature());
-  if (m == NULL || m->is_static()) {
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
-      "java.lang.reflect.Method.invoke", false);
-  }
-  Universe::_reflect_invoke_cache->init(k_h(), m, CHECK_false);
+    SystemDictionary::Finalizer_klass(), m);
 
   // Setup method for registering loaded classes in class loader vector
   InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
   m = InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
   if (m == NULL || m->is_static()) {
-    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
-      "java.lang.ClassLoader.addClass", false);
+    tty->print_cr("Unable to link/verify ClassLoader.addClass method");
+    return false; // initialization failed (cannot throw exception yet)
   }
   Universe::_loader_addClass_cache->init(
-    SystemDictionary::ClassLoader_klass(), m, CHECK_false);
+    SystemDictionary::ClassLoader_klass(), m);
 
   // Setup method for checking protection domain
   InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->link_class(CHECK_false);
@@ -1132,7 +1115,7 @@ bool universe_post_init() {
       return false; // initialization failed
     }
     Universe::_pd_implies_cache->init(
-      SystemDictionary::ProtectionDomain_klass(), m, CHECK_false);;
+      SystemDictionary::ProtectionDomain_klass(), m);;
   }
 
   // The folowing is initializing converter functions for serialization in
@@ -1455,7 +1438,7 @@ void Universe::compute_verify_oop_data() {
 }
 
 
-void CommonMethodOopCache::init(Klass* k, Method* m, TRAPS) {
+void LatestMethodCache::init(Klass* k, Method* m) {
   if (!UseSharedSpaces) {
     _klass = k;
   }
@@ -1471,88 +1454,7 @@ void CommonMethodOopCache::init(Klass* k, Method* m, TRAPS) {
 }
 
 
-ActiveMethodOopsCache::~ActiveMethodOopsCache() {
-  if (_prev_methods != NULL) {
-    delete _prev_methods;
-    _prev_methods = NULL;
-  }
-}
-
-
-void ActiveMethodOopsCache::add_previous_version(Method* method) {
-  assert(Thread::current()->is_VM_thread(),
-    "only VMThread can add previous versions");
-
-  // Only append the previous method if it is executing on the stack.
-  if (method->on_stack()) {
-
-    if (_prev_methods == NULL) {
-      // This is the first previous version so make some space.
-      // Start with 2 elements under the assumption that the class
-      // won't be redefined much.
-      _prev_methods = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Method*>(2, true);
-    }
-
-    // RC_TRACE macro has an embedded ResourceMark
-    RC_TRACE(0x00000100,
-      ("add: %s(%s): adding prev version ref for cached method @%d",
-        method->name()->as_C_string(), method->signature()->as_C_string(),
-        _prev_methods->length()));
-
-    _prev_methods->append(method);
-  }
-
-
-  // Since the caller is the VMThread and we are at a safepoint, this is a good
-  // time to clear out unused method references.
-
-  if (_prev_methods == NULL) return;
-
-  for (int i = _prev_methods->length() - 1; i >= 0; i--) {
-    Method* method = _prev_methods->at(i);
-    assert(method != NULL, "weak method ref was unexpectedly cleared");
-
-    if (!method->on_stack()) {
-      // This method isn't running anymore so remove it
-      _prev_methods->remove_at(i);
-      MetadataFactory::free_metadata(method->method_holder()->class_loader_data(), method);
-    } else {
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00000400,
-        ("add: %s(%s): previous cached method @%d is alive",
-         method->name()->as_C_string(), method->signature()->as_C_string(), i));
-    }
-  }
-} // end add_previous_version()
-
-
-bool ActiveMethodOopsCache::is_same_method(const Method* method) const {
-  InstanceKlass* ik = InstanceKlass::cast(klass());
-  const Method* check_method = ik->method_with_idnum(method_idnum());
-  assert(check_method != NULL, "sanity check");
-  if (check_method == method) {
-    // done with the easy case
-    return true;
-  }
-
-  if (_prev_methods != NULL) {
-    // The cached method has been redefined at least once so search
-    // the previous versions for a match.
-    for (int i = 0; i < _prev_methods->length(); i++) {
-      check_method = _prev_methods->at(i);
-      if (check_method == method) {
-        // a previous version matches
-        return true;
-      }
-    }
-  }
-
-  // either no previous versions or no previous version matched
-  return false;
-}
-
-
-Method* LatestMethodOopCache::get_Method() {
+Method* LatestMethodCache::get_method() {
   if (klass() == NULL) return NULL;
   InstanceKlass* ik = InstanceKlass::cast(klass());
   Method* m = ik->method_with_idnum(method_idnum());

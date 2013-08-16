@@ -283,9 +283,9 @@ $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
      $(DTraced_Files) ||\
   STATUS=$$?;\
-	if [ x"$$STATUS" = x"1" -a \
-       x`uname -r` = x"5.10" -a \
-       x`uname -p` = x"sparc" ]; then\
+  if [ x"$$STATUS" = x"1" ]; then \
+      if [ x`uname -r` = x"5.10" -a \
+           x`uname -p` = x"sparc" ]; then\
     echo "*****************************************************************";\
     echo "* If you are building server compiler, and the error message is ";\
     echo "* \"incorrect ELF machine type...\", you have run into solaris bug ";\
@@ -294,6 +294,20 @@ $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
     echo "* environment variable HOTSPOT_DISABLE_DTRACE_PROBES to disable ";\
     echo "* dtrace probes for this build.";\
     echo "*****************************************************************";\
+      elif [ x`uname -r` = x"5.10" ]; then\
+    echo "*****************************************************************";\
+    echo "* If you are seeing 'syntax error near \"umpiconninfo_t\"' on Solaris";\
+    echo "* 10, try doing 'cd /usr/lib/dtrace && gzip mpi.d' as root, ";\
+    echo "* or set the environment variable HOTSPOT_DISABLE_DTRACE_PROBES";\
+    echo "* to disable dtrace probes for this build.";\
+    echo "*****************************************************************";\
+      else \
+    echo "*****************************************************************";\
+    echo "* If you cannot fix dtrace build issues, try to ";\
+    echo "* set the environment variable HOTSPOT_DISABLE_DTRACE_PROBES";\
+    echo "* to disable dtrace probes for this build.";\
+    echo "*****************************************************************";\
+      fi; \
   fi;\
   exit $$STATUS
   # Since some DTraced_Files are in LIBJVM.o and they are touched by this

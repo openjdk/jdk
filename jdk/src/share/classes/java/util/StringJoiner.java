@@ -49,16 +49,17 @@ package java.util;
  * <p>
  * A {@code StringJoiner} may be employed to create formatted output from a
  * {@link java.util.stream.Stream} using
- * {@link java.util.stream.Collectors#toStringJoiner}. For example:
+ * {@link java.util.stream.Collectors#joining(CharSequence)}. For example:
  *
  * <pre> {@code
  * List<Integer> numbers = Arrays.asList(1, 2, 3, 4);
  * String commaSeparatedNumbers = numbers.stream()
  *     .map(i -> i.toString())
- *     .collect(Collectors.toStringJoiner(", ")).toString();
+ *     .collect(Collectors.joining(", "));
  * }</pre>
  *
- * @see java.util.stream.Collectors#toStringJoiner
+ * @see java.util.stream.Collectors#joining(CharSequence)
+ * @see java.util.stream.Collectors#joining(CharSequence, CharSequence, CharSequence)
  * @since  1.8
 */
 public final class StringJoiner {
@@ -202,15 +203,17 @@ public final class StringJoiner {
      * @param other The {@code StringJoiner} whose contents should be merged
      *              into this one
      * @throws NullPointerException if the other {@code StringJoiner} is null
+     * @return This {@code StringJoiner}
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
         if (other.value != null) {
+            final int length = other.value.length();
+            // lock the length so that we can seize the data to be appended
+            // before initiate copying to avoid interference, especially when
+            // merge 'this'
             StringBuilder builder = prepareBuilder();
-            StringBuilder otherBuilder = other.value;
-            if (other.prefix.length() < otherBuilder.length()) {
-                builder.append(otherBuilder, other.prefix.length(), otherBuilder.length());
-            }
+            builder.append(other.value, other.prefix.length(), length);
         }
         return this;
     }

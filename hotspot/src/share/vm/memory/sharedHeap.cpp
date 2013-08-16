@@ -65,7 +65,8 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   }
   _sh = this;  // ch is static, should be set only once.
   if ((UseParNewGC ||
-      (UseConcMarkSweepGC && CMSParallelRemarkEnabled) ||
+      (UseConcMarkSweepGC && (CMSParallelInitialMarkEnabled ||
+                              CMSParallelRemarkEnabled)) ||
        UseG1GC) &&
       ParallelGCThreads > 0) {
     _workers = new FlexibleWorkGang("Parallel GC Threads", ParallelGCThreads,

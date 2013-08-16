@@ -44,7 +44,7 @@ public class PhaseCFG extends Phase {
     Type type      = db.lookupType("PhaseCFG");
     numBlocksField = new CIntField(type.getCIntegerField("_num_blocks"), 0);
     blocksField = type.getAddressField("_blocks");
-    bbsField = type.getAddressField("_bbs");
+    bbsField = type.getAddressField("_node_to_block_mapping");
     brootField = type.getAddressField("_broot");
   }
 

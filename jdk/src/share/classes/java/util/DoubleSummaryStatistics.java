@@ -25,6 +25,7 @@
 package java.util;
 
 import java.util.function.DoubleConsumer;
+import java.util.stream.Collector;
 
 /**
  * A state object for collecting statistics such as count, min, max, sum, and
@@ -35,24 +36,24 @@ import java.util.function.DoubleConsumer;
  * summary statistics on a stream of doubles with:
  * <pre> {@code
  * DoubleSummaryStatistics stats = doubleStream.collect(DoubleSummaryStatistics::new,
- *     DoubleSummaryStatistics::accept,
- *     DoubleSummaryStatistics::combine);
+ *                                                      DoubleSummaryStatistics::accept,
+ *                                                      DoubleSummaryStatistics::combine);
  * }</pre>
  *
  * <p>{@code DoubleSummaryStatistics} can be used as a
- * {@linkplain java.util.stream.Stream#reduce(java.util.function.BinaryOperator) reduction}
+ * {@linkplain java.util.stream.Stream#collect(Collector) reduction}
  * target for a {@linkplain java.util.stream.Stream stream}. For example:
  *
  * <pre> {@code
  * DoubleSummaryStatistics stats = people.stream()
- *     .collect(Collectors.toDoubleSummaryStatistics(Person::getWeight));
+ *     .collect(Collectors.summarizingDouble(Person::getWeight));
  *}</pre>
  *
  * This computes, in a single pass, the count of people, as well as the minimum,
  * maximum, sum, and average of their weights.
  *
  * @implNote This implementation is not thread safe. However, it is safe to use
- * {@link java.util.stream.Collectors#toDoubleSummaryStatistics(java.util.function.ToDoubleFunction)
+ * {@link java.util.stream.Collectors#summarizingDouble(java.util.function.ToDoubleFunction)
  * Collectors.toDoubleStatistics()} on a parallel stream, because the parallel
  * implementation of {@link java.util.stream.Stream#collect Stream.collect()}
  * provides the necessary partitioning, isolation, and merging of results for
@@ -152,7 +153,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
     }
 
     /**
-     * Returns the average of values recorded, or zero if no values have been
+     * Returns the arithmetic mean of values recorded, or zero if no values have been
      * recorded. The average returned can vary depending upon the order in
      * which values are recorded. This is due to accumulated rounding error in
      * addition of values of differing magnitudes. Values sorted by increasing
@@ -160,7 +161,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
      * average will be {@code NaN}.
      *
-     * @return the average of values, or zero if none
+     * @return the arithmetic mean of values, or zero if none
      */
     public final double getAverage() {
         return getCount() > 0 ? getSum() / getCount() : 0.0d;

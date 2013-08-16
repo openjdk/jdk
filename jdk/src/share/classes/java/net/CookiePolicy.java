@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ public interface CookiePolicy {
      *
      * @param uri       the URI to consult accept policy with
      * @param cookie    the HttpCookie object in question
-     * @return          <tt>true</tt> if this cookie should be accepted;
-     *                  otherwise, <tt>false</tt>
+     * @return          {@code true} if this cookie should be accepted;
+     *                  otherwise, {@code false}
      */
     public boolean shouldAccept(URI uri, HttpCookie cookie);
 }

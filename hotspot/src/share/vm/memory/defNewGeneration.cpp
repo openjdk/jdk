@@ -567,8 +567,6 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
 
   _next_gen = gch->next_gen(this);
-  assert(_next_gen != NULL,
-    "This must be the youngest gen, and not the only gen");
 
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
@@ -901,8 +899,6 @@ bool DefNewGeneration::collection_attempt_is_safe() {
   if (_next_gen == NULL) {
     GenCollectedHeap* gch = GenCollectedHeap::heap();
     _next_gen = gch->next_gen(this);
-    assert(_next_gen != NULL,
-           "This must be the youngest gen, and not the only gen");
   }
   return _next_gen->promotion_attempt_is_safe(used());
 }
@@ -1033,6 +1029,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
+    if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+      _next_gen->sample_eden_chunk();
+    }
     return result;
   }
   do {
@@ -1063,13 +1062,19 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
   // circular dependency at compile time.
   if (result == NULL) {
     result = allocate_from_space(word_size);
+  } else if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+    _next_gen->sample_eden_chunk();
   }
   return result;
 }
 
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
-  return eden()->par_allocate(word_size);
+  HeapWord* res = eden()->par_allocate(word_size);
+  if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
+    _next_gen->sample_eden_chunk();
+  }
+  return res;
 }
 
 void DefNewGeneration::gc_prologue(bool full) {

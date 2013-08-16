@@ -30,7 +30,6 @@ import javax.lang.model.element.Element;
 import javax.tools.JavaCompiler.CompilationTask;
 
 import com.sun.source.doctree.DocCommentTree;
-import com.sun.source.doctree.ReferenceTree;
 import javax.tools.Diagnostic;
 
 /**
