@@ -328,8 +328,8 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, char* addr = NULL,
-                bool executable = false);
+  static char*  reserve_memory_special(size_t size, size_t alignment,
+                                       char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();

@@ -345,7 +345,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 };
 
   // byte_size is the size of the associated virtualspace.
-VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0), _container_count(0) {
+VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
   // align up to vm allocation granularity
   byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
 

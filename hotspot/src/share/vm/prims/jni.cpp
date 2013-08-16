@@ -5027,9 +5027,15 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   tty->print_cr("Running test: " #unit_test_function_call); \
   unit_test_function_call
 
+// Forward declaration
+void TestReservedSpace_test();
+void TestReserveMemorySpecial_test();
+
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
+    run_unit_test(TestReservedSpace_test());
+    run_unit_test(TestReserveMemorySpecial_test());
     run_unit_test(GlobalDefinitions::test_globals());
     run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());
