@@ -68,7 +68,6 @@ void Compile::Output() {
     return;
   }
   // Make sure I can find the Start Node
-  Block_Array& bbs = _cfg->_bbs;
   Block *entry = _cfg->_blocks[1];
   Block *broot = _cfg->_broot;
 
@@ -77,8 +76,8 @@ void Compile::Output() {
   // Replace StartNode with prolog
   MachPrologNode *prolog = new (this) MachPrologNode();
   entry->_nodes.map( 0, prolog );
-  bbs.map( prolog->_idx, entry );
-  bbs.map( start->_idx, NULL ); // start is no longer in any block
+  _cfg->map_node_to_block(prolog, entry);
+  _cfg->unmap_node_from_block(start); // start is no longer in any block
 
   // Virtual methods need an unverified entry point
 
@@ -117,8 +116,7 @@ void Compile::Output() {
       if( m->is_Mach() && m->as_Mach()->ideal_Opcode() != Op_Halt ) {
         MachEpilogNode *epilog = new (this) MachEpilogNode(m->as_Mach()->ideal_Opcode() == Op_Return);
         b->add_inst( epilog );
-        bbs.map(epilog->_idx, b);
-        //_regalloc->set_bad(epilog->_idx); // Already initialized this way.
+        _cfg->map_node_to_block(epilog, b);
       }
     }
   }
@@ -252,7 +250,7 @@ void Compile::Insert_zap_nodes() {
         if (insert) {
           Node *zap = call_zap_node(n->as_MachSafePoint(), i);
           b->_nodes.insert( j, zap );
-          _cfg->_bbs.map( zap->_idx, b );
+          _cfg->map_node_to_block(zap, b);
           ++j;
         }
       }
@@ -1234,7 +1232,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 #ifdef ASSERT
     if (!b->is_connector()) {
       stringStream st;
-      b->dump_head(&_cfg->_bbs, &st);
+      b->dump_head(_cfg, &st);
       MacroAssembler(cb).block_comment(st.as_string());
     }
     jmp_target[i] = 0;
@@ -1310,7 +1308,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           MachNode *nop = new (this) MachNopNode(nops_cnt);
           b->_nodes.insert(j++, nop);
           last_inst++;
-          _cfg->_bbs.map( nop->_idx, b );
+          _cfg->map_node_to_block(nop, b);
           nop->emit(*cb, _regalloc);
           cb->flush_bundle(true);
           current_offset = cb->insts_size();
@@ -1395,7 +1393,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               if (needs_padding && replacement->avoid_back_to_back()) {
                 MachNode *nop = new (this) MachNopNode();
                 b->_nodes.insert(j++, nop);
-                _cfg->_bbs.map(nop->_idx, b);
+                _cfg->map_node_to_block(nop, b);
                 last_inst++;
                 nop->emit(*cb, _regalloc);
                 cb->flush_bundle(true);
@@ -1549,7 +1547,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       if( padding > 0 ) {
         MachNode *nop = new (this) MachNopNode(padding / nop_size);
         b->_nodes.insert( b->_nodes.size(), nop );
-        _cfg->_bbs.map( nop->_idx, b );
+        _cfg->map_node_to_block(nop, b);
         nop->emit(*cb, _regalloc);
         current_offset = cb->insts_size();
       }
@@ -1737,7 +1735,6 @@ uint Scheduling::_total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+
 Scheduling::Scheduling(Arena *arena, Compile &compile)
   : _arena(arena),
     _cfg(compile.cfg()),
-    _bbs(compile.cfg()->_bbs),
     _regalloc(compile.regalloc()),
     _reg_node(arena),
     _bundle_instr_count(0),
@@ -2085,8 +2082,9 @@ void Scheduling::DecrementUseCounts(Node *n, const Block *bb) {
     if( def->is_Proj() )        // If this is a machine projection, then
       def = def->in(0);         // propagate usage thru to the base instruction
 
-    if( _bbs[def->_idx] != bb ) // Ignore if not block-local
+    if(_cfg->get_block_for_node(def) != bb) { // Ignore if not block-local
       continue;
+    }
 
     // Compute the latency
     uint l = _bundle_cycle_number + n->latency(i);
@@ -2358,9 +2356,10 @@ void Scheduling::ComputeUseCount(const Block *bb) {
       Node *inp = n->in(k);
       if (!inp) continue;
       assert(inp != n, "no cycles allowed" );
-      if( _bbs[inp->_idx] == bb ) { // Block-local use?
-        if( inp->is_Proj() )    // Skip through Proj's
+      if (_cfg->get_block_for_node(inp) == bb) { // Block-local use?
+        if (inp->is_Proj()) { // Skip through Proj's
           inp = inp->in(0);
+        }
         ++_uses[inp->_idx];     // Count 1 block-local use
       }
     }
@@ -2643,7 +2642,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
     return;
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
-  if( !pinch || _bbs[pinch->_idx] != b || // No pinch-point yet?
+  if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?
       is_def ) {    // Check for a true def (not a kill)
     _reg_node.map(def_reg,def); // Record def/kill as the optimistic pinch-point
     return;
@@ -2669,7 +2668,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
       return;
     }
-    _bbs.map(pinch->_idx,b);      // Pretend it's valid in this block (lazy init)
+    _cfg->map_node_to_block(pinch, b);      // Pretend it's valid in this block (lazy init)
     _reg_node.map(def_reg,pinch); // Record pinch-point
     //_regalloc->set_bad(pinch->_idx); // Already initialized this way.
     if( later_def->outcnt() == 0 || later_def->ideal_reg() == MachProjNode::fat_proj ) { // Distinguish def from kill
@@ -2713,9 +2712,9 @@ void Scheduling::anti_do_use( Block *b, Node *use, OptoReg::Name use_reg ) {
     return;
   Node *pinch = _reg_node[use_reg]; // Get pinch point
   // Check for no later def_reg/kill in block
-  if( pinch && _bbs[pinch->_idx] == b &&
+  if ((pinch != NULL) && _cfg->get_block_for_node(pinch) == b &&
       // Use has to be block-local as well
-      _bbs[use->_idx] == b ) {
+      _cfg->get_block_for_node(use) == b) {
     if( pinch->Opcode() == Op_Node && // Real pinch-point (not optimistic?)
         pinch->req() == 1 ) {   // pinch not yet in block?
       pinch->del_req(0);        // yank pointer to later-def, also set flag
@@ -2895,7 +2894,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
     int trace_cnt = 0;
     for (uint k = 0; k < _reg_node.Size(); k++) {
       Node* pinch = _reg_node[k];
-      if (pinch != NULL && pinch->Opcode() == Op_Node &&
+      if ((pinch != NULL) && pinch->Opcode() == Op_Node &&
           // no predecence input edges
           (pinch->req() == pinch->len() || pinch->in(pinch->req()) == NULL) ) {
         cleanup_pinch(pinch);
