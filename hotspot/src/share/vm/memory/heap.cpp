@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,12 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
+  const size_t reserved_segments_alignment = MAX2((size_t)os::vm_page_size(), granularity);
+  const size_t reserved_segments_size = align_size_up(_number_of_reserved_segments, reserved_segments_alignment);
+  const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 
   // reserve space for _segmap
-  if (!_segmap.initialize(align_to_page_size(_number_of_reserved_segments), align_to_page_size(_number_of_committed_segments))) {
+  if (!_segmap.initialize(reserved_segments_size, committed_segments_size)) {
     return false;
   }
 
