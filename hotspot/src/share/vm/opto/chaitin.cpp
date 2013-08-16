@@ -287,21 +287,26 @@ void PhaseChaitin::new_lrg(const Node *x, uint lrg) {
 }
 
 
-bool PhaseChaitin::clone_projs_shared(Block *b, uint idx, Node *con, Node *copy, uint max_lrg_id) {
-  Block* bcon = _cfg.get_block_for_node(con);
-  uint cindex = bcon->find_node(con);
-  Node *con_next = bcon->_nodes[cindex+1];
-  if (con_next->in(0) != con || !con_next->is_MachProj()) {
-    return false;               // No MachProj's follow
+int PhaseChaitin::clone_projs(Block* b, uint idx, Node* orig, Node* copy, uint& max_lrg_id) {
+  assert(b->find_node(copy) == (idx - 1), "incorrect insert index for copy kill projections");
+  DEBUG_ONLY( Block* borig = _cfg.get_block_for_node(orig); )
+  int found_projs = 0;
+  uint cnt = orig->outcnt();
+  for (uint i = 0; i < cnt; i++) {
+    Node* proj = orig->raw_out(i);
+    if (proj->is_MachProj()) {
+      assert(proj->outcnt() == 0, "only kill projections are expected here");
+      assert(_cfg.get_block_for_node(proj) == borig, "incorrect block for kill projections");
+      found_projs++;
+      // Copy kill projections after the cloned node
+      Node* kills = proj->clone();
+      kills->set_req(0, copy);
+      b->_nodes.insert(idx++, kills);
+      _cfg.map_node_to_block(kills, b);
+      new_lrg(kills, max_lrg_id++);
+    }
   }
-
-  // Copy kills after the cloned constant
-  Node *kills = con_next->clone();
-  kills->set_req(0, copy);
-  b->_nodes.insert(idx, kills);
-  _cfg.map_node_to_block(kills, b);
-  new_lrg(kills, max_lrg_id);
-  return true;
+  return found_projs;
 }
 
 // Renumber the live ranges to compact them.  Makes the IFG smaller.

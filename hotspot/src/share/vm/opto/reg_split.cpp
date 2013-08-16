@@ -397,10 +397,15 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
 #endif
   // See if the cloned def kills any flags, and copy those kills as well
   uint i = insidx+1;
-  if( clone_projs( b, i, def, spill, maxlrg) ) {
+  int found_projs = clone_projs( b, i, def, spill, maxlrg);
+  if (found_projs > 0) {
     // Adjust the point where we go hi-pressure
-    if( i <= b->_ihrp_index ) b->_ihrp_index++;
-    if( i <= b->_fhrp_index ) b->_fhrp_index++;
+    if (i <= b->_ihrp_index) {
+      b->_ihrp_index += found_projs;
+    }
+    if (i <= b->_fhrp_index) {
+      b->_fhrp_index += found_projs;
+    }
   }
 
   return spill;

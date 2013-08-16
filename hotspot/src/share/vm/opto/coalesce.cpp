@@ -322,9 +322,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               copy = m->clone();
               // Insert the copy in the basic block, just before us
               b->_nodes.insert(l++, copy);
-              if(_phc.clone_projs(b, l, m, copy, _phc._lrg_map)) {
-                l++;
-              }
+              l += _phc.clone_projs(b, l, m, copy, _phc._lrg_map);
             } else {
               const RegMask *rm = C->matcher()->idealreg2spillmask[m->ideal_reg()];
               copy = new (C) MachSpillCopyNode(m, *rm, *rm);
