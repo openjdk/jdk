@@ -674,7 +674,11 @@ public class TransTypes extends TreeTranslator {
         if (tree.varargsElement != null)
             tree.varargsElement = types.erasure(tree.varargsElement);
         else
-            Assert.check(tree.args.length() == argtypes.length());
+            if (tree.args.length() != argtypes.length()) {
+                log.error(tree.pos(),
+                              "method.invoked.with.incorrect.number.arguments",
+                              tree.args.length(), argtypes.length());
+            }
         tree.args = translateArgs(tree.args, argtypes, tree.varargsElement);
 
         tree.type = types.erasure(tree.type);

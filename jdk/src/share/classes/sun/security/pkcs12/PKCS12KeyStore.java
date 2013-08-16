@@ -775,7 +775,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
             }
             if (params != null) {
-                if (algorithm.equals(pbes2_OID)) {
+                if (algorithm.equals((Object)pbes2_OID)) {
                     algParams = AlgorithmParameters.getInstance("PBES2");
                 } else {
                     algParams = AlgorithmParameters.getInstance("PBE");
@@ -912,7 +912,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static String mapPBEParamsToAlgorithm(ObjectIdentifier algorithm,
         AlgorithmParameters algParams) throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
-        if (algorithm.equals(pbes2_OID) && algParams != null) {
+        if (algorithm.equals((Object)pbes2_OID) && algParams != null) {
             return algParams.toString();
         }
         return algorithm.toString();
@@ -1921,7 +1921,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
 
                 safeContentsData = safeContents.getData();
-            } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
+            } else if (contentType.equals((Object)ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
                    continue;
                 }

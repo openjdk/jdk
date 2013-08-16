@@ -60,16 +60,20 @@
 package tck.java.time.format;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 import java.text.ParsePosition;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -148,43 +152,44 @@ public class TCKZoneIdPrinterParser {
     @DataProvider(name="parseSuccess")
     Object[][] data_parseSuccess() {
         return new Object[][] {
-                {"Z", 1, -1, ZoneOffset.UTC},
-                {"UTC", 3, -1, ZoneOffset.UTC},
-                {"UT", 2, -1, ZoneOffset.UTC},
-                {"GMT", 3, -1, ZoneOffset.UTC},
-                {"UTC0", 4, -1, ZoneOffset.UTC},
-                {"UT0", 3, -1, ZoneOffset.UTC},
-                {"GMT0", 4, -1, ZoneOffset.UTC},
+                {"Z", 1, -1, ZoneId.of("Z")},
+                {"UTC", 3, -1, ZoneId.of("UTC")},
+                {"UT", 2, -1, ZoneId.of("UT")},
+                {"GMT", 3, -1, ZoneId.of("GMT")},
 
                 {"+00:00", 6, -1, ZoneOffset.UTC},
-                {"UTC+00:00", 9, -1, ZoneOffset.UTC},
-                {"UT+00:00", 8, -1, ZoneOffset.UTC},
-                {"GMT+00:00", 9, -1, ZoneOffset.UTC},
+                {"UTC+00:00", 9, -1, ZoneId.of("UTC")},
+                {"UT+00:00", 8, -1, ZoneId.of("UT")},
+                {"GMT+00:00", 9, -1, ZoneId.of("GMT")},
                 {"-00:00", 6, -1, ZoneOffset.UTC},
-                {"UTC-00:00", 9, -1, ZoneOffset.UTC},
-                {"UT-00:00", 8, -1, ZoneOffset.UTC},
-                {"GMT-00:00", 9, -1, ZoneOffset.UTC},
+                {"UTC-00:00", 9, -1, ZoneId.of("UTC")},
+                {"UT-00:00", 8, -1, ZoneId.of("UT")},
+                {"GMT-00:00", 9, -1, ZoneId.of("GMT")},
 
                 {"+01:30", 6, -1, ZoneOffset.ofHoursMinutes(1, 30)},
-                {"UTC+01:30", 9, -1, ZoneOffset.ofHoursMinutes(1, 30)},
-                {"UT+02:30", 8, -1, ZoneOffset.ofHoursMinutes(2, 30)},
-                {"GMT+03:30", 9, -1, ZoneOffset.ofHoursMinutes(3, 30)},
+                {"UTC+01:30", 9, -1, ZoneId.of("UTC+01:30")},
+                {"UT+02:30", 8, -1, ZoneId.of("UT+02:30")},
+                {"GMT+03:30", 9, -1, ZoneId.of("GMT+03:30")},
                 {"-01:30", 6, -1, ZoneOffset.ofHoursMinutes(-1, -30)},
-                {"UTC-01:30", 9, -1, ZoneOffset.ofHoursMinutes(-1, -30)},
-                {"UT-02:30", 8, -1, ZoneOffset.ofHoursMinutes(-2, -30)},
-                {"GMT-03:30", 9, -1, ZoneOffset.ofHoursMinutes(-3, -30)},
+                {"UTC-01:30", 9, -1, ZoneId.of("UTC-01:30")},
+                {"UT-02:30", 8, -1, ZoneId.of("UT-02:30")},
+                {"GMT-03:30", 9, -1, ZoneId.of("GMT-03:30")},
 
                 // fallback to UTC
-                {"UTC-01:WW", 3, -1, ZoneOffset.UTC},
-                {"UT-02:WW", 2, -1, ZoneOffset.UTC},
-                {"GMT-03:WW", 3, -1, ZoneOffset.UTC},
+                {"UTC-01:WW", 3, -1, ZoneId.of("UTC")},
+                {"UT-02:WW", 2, -1, ZoneId.of("UT")},
+                {"GMT-03:WW", 3, -1, ZoneId.of("GMT")},
                 {"Z0", 1, -1, ZoneOffset.UTC},
-                {"UTC1", 3, -1, ZoneOffset.UTC},
+                {"UTC1", 3, -1, ZoneId.of("UTC")},
 
                 // Z not parsed as zero
-                {"UTCZ", 3, -1, ZoneOffset.UTC},
-                {"UTZ", 2, -1, ZoneOffset.UTC},
-                {"GMTZ", 3, -1, ZoneOffset.UTC},
+                {"UTCZ", 3, -1, ZoneId.of("UTC")},
+                {"UTZ", 2, -1, ZoneId.of("UT")},
+                {"GMTZ", 3, -1, ZoneId.of("GMT")},
+
+                // 0 not parsed
+                {"UTC0", 3, -1, ZoneId.of("UTC")},
+                {"UT0", 2, -1, ZoneId.of("UT")},
 
                 // fail to parse
                 {"", 0, 0, null},
@@ -206,12 +211,12 @@ public class TCKZoneIdPrinterParser {
     public void test_parseSuccess_plain(String text, int expectedIndex, int expectedErrorIndex, ZoneId expected) {
         builder.appendZoneId();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text, pos);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex);
-        assertEquals(pos.getIndex(), expectedIndex);
+        assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + text);
+        assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + text);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
-            assertEquals(parsed.query(TemporalQuery.offset()), null);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + text);
+            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + text);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + text);
         } else {
             assertEquals(parsed, null);
         }
@@ -221,13 +226,14 @@ public class TCKZoneIdPrinterParser {
     public void test_parseSuccess_prefix(String text, int expectedIndex, int expectedErrorIndex, ZoneId expected) {
         builder.appendZoneId();
         pos.setIndex(3);
-        TemporalAccessor parsed = builder.toFormatter().parseUnresolved("XXX" + text, pos);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex >= 0  ? expectedErrorIndex + 3 : expectedErrorIndex);
-        assertEquals(pos.getIndex(), expectedIndex + 3);
+        String prefixText = "XXX" + text;
+        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(prefixText, pos);
+        assertEquals(pos.getErrorIndex(), expectedErrorIndex >= 0  ? expectedErrorIndex + 3 : expectedErrorIndex, "Incorrect error index parsing: " + prefixText);
+        assertEquals(pos.getIndex(), expectedIndex + 3, "Incorrect index parsing: " + prefixText);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
-            assertEquals(parsed.query(TemporalQuery.offset()), null);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + prefixText);
+            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + prefixText);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + prefixText);
         } else {
             assertEquals(parsed, null);
         }
@@ -236,13 +242,14 @@ public class TCKZoneIdPrinterParser {
     @Test(dataProvider="parseSuccess")
     public void test_parseSuccess_suffix(String text, int expectedIndex, int expectedErrorIndex, ZoneId expected) {
         builder.appendZoneId();
-        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text + "XXX", pos);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex);
-        assertEquals(pos.getIndex(), expectedIndex);
+        String suffixText = text + "XXX";
+        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(suffixText, pos);
+        assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + suffixText);
+        assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + suffixText);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
-            assertEquals(parsed.query(TemporalQuery.offset()), null);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + suffixText);
+            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + suffixText);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + suffixText);
         } else {
             assertEquals(parsed, null);
         }
@@ -251,15 +258,16 @@ public class TCKZoneIdPrinterParser {
     @Test(dataProvider="parseSuccess")
     public void test_parseSuccess_caseSensitive(String text, int expectedIndex, int expectedErrorIndex, ZoneId expected) {
         builder.parseCaseSensitive().appendZoneId();
-        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text.toLowerCase(Locale.ENGLISH), pos);
+        String lcText = text.toLowerCase(Locale.ENGLISH);
+        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(lcText, pos);
         if (text.matches("[^A-Z]*[A-Z].*")) {  // if input has letters
             assertEquals(pos.getErrorIndex() >= 0, true);
             assertEquals(pos.getIndex(), 0);
             assertEquals(parsed, null);
         } else {
             // case sensitive made no difference
-            assertEquals(pos.getIndex(), expectedIndex);
-            assertEquals(pos.getErrorIndex(), expectedErrorIndex);
+            assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + lcText);
+            assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + lcText);
             if (expected != null) {
                 assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
                 assertEquals(parsed.query(TemporalQuery.offset()), null);
@@ -273,13 +281,15 @@ public class TCKZoneIdPrinterParser {
     @Test(dataProvider="parseSuccess")
     public void test_parseSuccess_caseInsensitive(String text, int expectedIndex, int expectedErrorIndex, ZoneId expected) {
         builder.parseCaseInsensitive().appendZoneId();
-        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text.toLowerCase(Locale.ENGLISH), pos);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex);
-        assertEquals(pos.getIndex(), expectedIndex);
+        String lcText = text.toLowerCase(Locale.ENGLISH);
+        TemporalAccessor parsed = builder.toFormatter().parseUnresolved(lcText, pos);
+        assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + lcText);
+        assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + lcText);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
-            assertEquals(parsed.query(TemporalQuery.offset()), null);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected);
+            ZoneId zid = parsed.query(TemporalQuery.zoneId());
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + lcText);
+            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + lcText);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + lcText);
         } else {
             assertEquals(parsed, null);
         }

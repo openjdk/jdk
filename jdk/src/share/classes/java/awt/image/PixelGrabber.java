@@ -35,7 +35,7 @@ import java.awt.Image;
  * The PixelGrabber class implements an ImageConsumer which can be attached
  * to an Image or ImageProducer object to retrieve a subset of the pixels
  * in that image.  Here is an example:
- * <pre>
+ * <pre>{@code
  *
  * public void handlesinglepixel(int x, int y, int pixel) {
  *      int alpha = (pixel >> 24) & 0xff;
@@ -65,7 +65,7 @@ import java.awt.Image;
  *      }
  * }
  *
- * </pre>
+ * }</pre>
  *
  * @see ColorModel#getRGBdefault
  *
@@ -165,8 +165,8 @@ public class PixelGrabber implements ImageConsumer {
      * accumulated in the default RGB ColorModel.  If the forceRGB
      * parameter is true, then the pixels will be accumulated in the
      * default RGB ColorModel anyway.  A buffer is allocated by the
-     * PixelGrabber to hold the pixels in either case.  If (w < 0) or
-     * (h < 0), then they will default to the remaining width and
+     * PixelGrabber to hold the pixels in either case.  If {@code (w < 0)} or
+     * {@code (h < 0)}, then they will default to the remaining width and
      * height of the source data when that information is delivered.
      * @param img the image to retrieve the image data from
      * @param x the x coordinate of the upper left corner of the rectangle
@@ -233,10 +233,10 @@ public class PixelGrabber implements ImageConsumer {
      * behaves in the following ways, depending on the value of
      * <code>ms</code>:
      * <ul>
-     * <li> If <code>ms</code> == 0, waits until all pixels are delivered
-     * <li> If <code>ms</code> > 0, waits until all pixels are delivered
+     * <li> If {@code ms == 0}, waits until all pixels are delivered
+     * <li> If {@code ms > 0}, waits until all pixels are delivered
      * as timeout expires.
-     * <li> If <code>ms</code> < 0, returns <code>true</code> if all pixels
+     * <li> If {@code ms < 0}, returns <code>true</code> if all pixels
      * are grabbed, <code>false</code> otherwise and does not wait.
      * </ul>
      * @param ms the number of milliseconds to wait for the image pixels

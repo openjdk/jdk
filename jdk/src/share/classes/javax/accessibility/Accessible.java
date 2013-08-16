@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public interface Accessible {
      * of an object that implements Accessible, and that subclass
      * is not Accessible, the developer should override the
      * getAccessibleContext method to return null.
+     * @return the AccessibleContext associated with this object
      */
     public AccessibleContext getAccessibleContext();
 }

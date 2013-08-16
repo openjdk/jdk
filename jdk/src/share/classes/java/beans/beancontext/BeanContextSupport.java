@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ import java.util.Map;
 /**
  * This helper class provides a utility implementation of the
  * java.beans.beancontext.BeanContext interface.
- * </p>
  * <p>
  * Since this class directly implements the BeanContext interface, the class
  * can, and is intended to be used either by subclassing this implementation,
@@ -351,9 +350,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * of Child without having to override add() or the other Collection
      * methods that add children to the set.
      * </p>
-     *
      * @param targetChild the child to create the Child on behalf of
-     * @param peer        the peer if the tragetChild and the peer are related by an implementation of BeanContextProxy
+     * @param peer        the peer if the tragetChild and the peer are related by an implementation of BeanContextProxy     * @return Subtype-specific subclass of Child without overriding collection methods
      */
 
     protected BCSChild createBCSChild(Object targetChild, Object peer) {
@@ -492,6 +490,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @param callChildSetBC used to indicate that
      * the child should be notified that it is no
      * longer nested in this <tt>BeanContext</tt>.
+     * @return whether or not was present before being removed
      */
     protected boolean remove(Object targetChild, boolean callChildSetBC) {
 
@@ -580,7 +579,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * add Collection to set of Children (Unsupported)
      * implementations must synchronized on the hierarchy lock and "children" protected field
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException thrown unconditionally by this implementation
+     * @return this implementation unconditionally throws {@code UnsupportedOperationException}
      */
     public boolean addAll(Collection c) {
         throw new UnsupportedOperationException();
@@ -589,7 +589,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * remove all specified children (Unsupported)
      * implementations must synchronized on the hierarchy lock and "children" protected field
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException thrown unconditionally by this implementation
+     * @return this implementation unconditionally throws {@code UnsupportedOperationException}
+
      */
     public boolean removeAll(Collection c) {
         throw new UnsupportedOperationException();
@@ -599,7 +601,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * retain only specified children (Unsupported)
      * implementations must synchronized on the hierarchy lock and "children" protected field
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException thrown unconditionally by this implementation
+     * @return this implementation unconditionally throws {@code UnsupportedOperationException}
      */
     public boolean retainAll(Collection c) {
         throw new UnsupportedOperationException();
@@ -608,7 +611,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * clear the children (Unsupported)
      * implementations must synchronized on the hierarchy lock and "children" protected field
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException thrown unconditionally by this implementation
      */
     public void clear() {
         throw new UnsupportedOperationException();
@@ -618,7 +621,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * Adds a BeanContextMembershipListener
      *
      * @param  bcml the BeanContextMembershipListener to add
-     * @throws NullPointerException
+     * @throws NullPointerException if the argument is null
      */
 
     public void addBeanContextMembershipListener(BeanContextMembershipListener bcml) {
@@ -636,7 +639,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * Removes a BeanContextMembershipListener
      *
      * @param  bcml the BeanContextMembershipListener to remove
-     * @throws NullPointerException
+     * @throws NullPointerException if the argument is null
      */
 
     public void removeBeanContextMembershipListener(BeanContextMembershipListener bcml) {
@@ -655,7 +658,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @param bcc  the child object making the request.
      *
      * @return  the requested resource as an InputStream
-     * @throws  NullPointerException
+     * @throws  NullPointerException if the argument is null
      */
 
     public InputStream getResourceAsStream(String name, BeanContextChild bcc) {
@@ -849,6 +852,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      *
      * This method should not however be used by subclasses to replace their
      * own implementation (if any) of writeObject().
+     * @param oos the {@code ObjectOutputStream} to use during serialization
+     * @throws IOException if serialization failed
      */
 
     protected void bcsPreSerializationHook(ObjectOutputStream oos) throws IOException {
@@ -864,6 +869,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
      *
      * This method should not however be used by subclasses to replace their
      * own implementation (if any) of readObject().
+     * @param ois the {@code ObjectInputStream} to use during deserialization
+     * @throws IOException if deserialization failed
+     * @throws ClassNotFoundException if needed classes are not found
      */
 
     protected void bcsPreDeserializationHook(ObjectInputStream ois) throws IOException, ClassNotFoundException {
@@ -914,6 +922,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * used by readObject to deserialize a collection.
      * @param ois the ObjectInputStream to use
      * @param coll the Collection
+     * @throws IOException if deserialization failed
+     * @throws ClassNotFoundException if needed classes are not found
      */
     protected final void deserialize(ObjectInputStream ois, Collection coll) throws IOException, ClassNotFoundException {
         int count = 0;
@@ -1005,6 +1015,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * When an instance of this class is used as a delegate for the
      * implementation of the BeanContext protocols (and its subprotocols)
      * there exists a 'chicken and egg' problem during deserialization
+     * @param ois the ObjectInputStream to use
+     * @throws IOException if deserialization failed
+     * @throws ClassNotFoundException if needed classes are not found
      */
 
     public final void readChildren(ObjectInputStream ois) throws IOException, ClassNotFoundException {
@@ -1122,6 +1135,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * immediately prior to their being added to the BeanContext.
      * </p>
      *
+     * @param targetChild the child to create the Child on behalf of
      * @return true iff the child may be added to this BeanContext, otherwise false.
      */
 
@@ -1136,6 +1150,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * immediately prior to their being removed from the BeanContext.
      * </p>
      *
+     * @param targetChild the child to create the Child on behalf of
      * @return true iff the child may be removed from this BeanContext, otherwise false.
      */
 
@@ -1147,6 +1162,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * subclasses may override this method to simply extend add() semantics
      * after the child has been added and before the event notification has
      * occurred. The method is called with the child synchronized.
+     * @param child the child
+     * @param bcsc the BCSChild
      */
 
     protected void childJustAddedHook(Object child, BCSChild bcsc) {
@@ -1156,6 +1173,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * subclasses may override this method to simply extend remove() semantics
      * after the child has been removed and before the event notification has
      * occurred. The method is called with the child synchronized.
+     * @param child the child
+     * @param bcsc the BCSChild
      */
 
     protected void childJustRemovedHook(Object child, BCSChild bcsc) {
@@ -1254,6 +1273,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * @param bcme the event to fire
      */
 
     protected final void fireChildrenAdded(BeanContextMembershipEvent bcme) {
@@ -1267,6 +1287,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * @param bcme the event to fire
      */
 
     protected final void fireChildrenRemoved(BeanContextMembershipEvent bcme) {

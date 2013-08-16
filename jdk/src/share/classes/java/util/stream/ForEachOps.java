@@ -249,6 +249,7 @@ final class ForEachOps {
     }
 
     /** A {@code ForkJoinTask} for performing a parallel for-each operation */
+    @SuppressWarnings("serial")
     static final class ForEachTask<S, T> extends CountedCompleter<Void> {
         private Spliterator<S> spliterator;
         private final Sink<S> sink;
@@ -314,6 +315,7 @@ final class ForEachOps {
      * A {@code ForkJoinTask} for performing a parallel for-each operation
      * which visits the elements in encounter order
      */
+    @SuppressWarnings("serial")
     static final class ForEachOrderedTask<S, T> extends CountedCompleter<Void> {
         private final PipelineHelper<T> helper;
         private Spliterator<S> spliterator;

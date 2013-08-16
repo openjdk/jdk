@@ -47,7 +47,7 @@ import com.apple.laf.ClientPropertyApplicator.Property;
 import com.sun.awt.AWTUtilities;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
-    private native long nativeCreateNSWindow(long nsViewPtr, long styleBits, double x, double y, double w, double h);
+    private native long nativeCreateNSWindow(long nsViewPtr,long ownerPtr, long styleBits, double x, double y, double w, double h);
     private static native void nativeSetNSWindowStyleBits(long nsWindowPtr, int mask, int data);
     private static native void nativeSetNSWindowMenuBar(long nsWindowPtr, long menuBarPtr);
     private static native Insets nativeGetNSWindowInsets(long nsWindowPtr);
@@ -230,7 +230,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         contentView = createContentView();
         contentView.initialize(peer, responder);
 
-        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), styleBits, 0, 0, 0, 0);
+        final long ownerPtr = owner != null ? owner.getNSWindowPtr() : 0L;
+        final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), ownerPtr, styleBits, 0, 0, 0, 0);
         setPtr(nativeWindowPtr);
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -829,18 +830,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     //                          UTILITY METHODS
     // ----------------------------------------------------------------------
 
-    /*
-     * Find image to install into Title or into Application icon.
-     * First try icons installed for toplevel. If there is no icon
-     * use default Duke image.
-     * This method shouldn't return null.
+    /**
+     * Find image to install into Title or into Application icon. First try
+     * icons installed for toplevel. Null is returned, if there is no icon and
+     * default Duke image should be used.
      */
     private CImage getImageForTarget() {
-        List<Image> icons = target.getIconImages();
-        if (icons == null || icons.size() == 0) {
-            return null;
+        CImage icon = null;
+        try {
+            icon = CImage.getCreator().createFromImages(target.getIconImages());
+        } catch (Exception ignored) {
+            // Perhaps the icon passed into Java is broken. Skipping this icon.
         }
-        return CImage.getCreator().createFromImages(icons);
+        return icon;
     }
 
     /*

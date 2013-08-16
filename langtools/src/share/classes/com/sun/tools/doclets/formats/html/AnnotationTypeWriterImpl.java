@@ -262,7 +262,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         annotationInfoTree.addContent(hr);
         Tag[] deprs = annotationType.tags("deprecated");
         if (Util.isDeprecated(annotationType)) {
-            Content strong = HtmlTree.STRONG(deprecatedPhrase);
+            Content strong = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
             Content div = HtmlTree.DIV(HtmlStyle.block, strong);
             if (deprs.length > 0) {
                 Tag[] commentTags = deprs[0].inlineTags();

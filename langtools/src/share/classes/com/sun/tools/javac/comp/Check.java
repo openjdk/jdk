@@ -2997,7 +2997,8 @@ public class Check {
         for (Scope.Entry e = a.annotationType.type.tsym.members().elems;
                 e != null;
                 e = e.sibling)
-            if (e.sym.kind == MTH && e.sym.name != names.clinit)
+            if (e.sym.kind == MTH && e.sym.name != names.clinit &&
+                    (e.sym.flags() & SYNTHETIC) == 0)
                 members.add((MethodSymbol) e.sym);
 
         // remove the ones that are assigned values

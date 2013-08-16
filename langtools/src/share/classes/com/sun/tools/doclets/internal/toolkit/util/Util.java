@@ -631,6 +631,32 @@ public class Util {
         return result.toString();
     }
 
+    public static String normalizeNewlines(String text) {
+        StringBuilder sb = new StringBuilder();
+        final int textLength = text.length();
+        final String NL = DocletConstants.NL;
+        int pos = 0;
+        for (int i = 0; i < textLength; i++) {
+            char ch = text.charAt(i);
+            switch (ch) {
+                case '\n':
+                    sb.append(text, pos, i);
+                    sb.append(NL);
+                    pos = i + 1;
+                    break;
+                case '\r':
+                    sb.append(text, pos, i);
+                    sb.append(NL);
+                    if (i + 1 < textLength && text.charAt(i + 1) == '\n')
+                        i++;
+                    pos = i + 1;
+                    break;
+            }
+        }
+        sb.append(text, pos, textLength);
+        return sb.toString();
+    }
+
     /**
      * The documentation for values() and valueOf() in Enums are set by the
      * doclet.
