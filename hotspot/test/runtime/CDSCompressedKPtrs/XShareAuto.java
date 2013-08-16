@@ -22,68 +22,53 @@
  */
 
 /*
- * @test CdsSameObjectAlignment
- * @summary Testing CDS (class data sharing) using varying object alignment.
- *          Using same object alignment for each dump/load pair
+ * @test
+ * @bug 8005933
+ * @summary Test that -Xshare:auto uses CDS when explicitly specified with -server.
  * @library /testlibrary
+ * @run main XShareAuto
  */
 
 import com.oracle.java.testlibrary.*;
 
-public class CdsSameObjectAlignment {
+public class XShareAuto {
     public static void main(String[] args) throws Exception {
-        String nativeWordSize = System.getProperty("sun.arch.data.model");
         if (!Platform.is64bit()) {
             System.out.println("ObjectAlignmentInBytes for CDS is only " +
                 "supported on 64bit platforms; this plaform is " +
-                nativeWordSize);
+                System.getProperty("sun.arch.data.model"));
             System.out.println("Skipping the test");
-        } else {
-            dumpAndLoadSharedArchive(8);
-            dumpAndLoadSharedArchive(16);
-            dumpAndLoadSharedArchive(32);
-            dumpAndLoadSharedArchive(64);
+            return;
         }
-    }
-
-    private static void
-    dumpAndLoadSharedArchive(int objectAlignmentInBytes) throws Exception {
-        String objectAlignmentArg = "-XX:ObjectAlignmentInBytes="
-            + objectAlignmentInBytes;
-        System.out.println("dumpAndLoadSharedArchive(): objectAlignmentInBytes = "
-            + objectAlignmentInBytes);
-
-        // create shared archive
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
-            "-Xshare:dump",
-            objectAlignmentArg);
-
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
+            "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
 
-
-        // run using the shared archive
         pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa",
-            "-Xshare:on",
-            objectAlignmentArg,
-            "-version");
-
+            "-server", "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./sample.jsa", "-version");
         output = new OutputAnalyzer(pb.start());
+        output.shouldNotContain("sharing");
+        output.shouldHaveExitValue(0);
 
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-server", "-Xshare:auto", "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./sample.jsa", "-version");
+        output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("sharing");
             output.shouldHaveExitValue(0);
         } catch (RuntimeException e) {
-            // CDS uses absolute addresses for performance.
-            // It will try to reserve memory at a specific address;
-            // there is a chance such reservation will fail
-            // If it does, it is NOT considered a failure of the feature,
-            // rather a possible expected outcome, though not likely
+            // If this failed then check that it would also be unable
+            // to share even if -Xshare:on is specified.  If so, then
+            // return a success status.
+            pb = ProcessTools.createJavaProcessBuilder(
+                "-server", "-Xshare:on", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:SharedArchiveFile=./sample.jsa", "-version");
+            output = new OutputAnalyzer(pb.start());
             output.shouldContain("Could not allocate metaspace at a compatible address");
             output.shouldHaveExitValue(1);
         }
