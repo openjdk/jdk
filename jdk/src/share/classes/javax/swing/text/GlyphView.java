@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,7 +514,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
             int x1 = x0 + (int) painter.getSpan(this, p0, p1, getTabExpander(), x0);
 
             // calculate y coordinate
-            int y = alloc.y + alloc.height - (int) painter.getDescent(this);
+            int y = alloc.y + (int)(painter.getHeight(this) - painter.getDescent(this));
             if (underline) {
                 int yTmp = y + 1;
                 g.drawLine(x0, yTmp, x1, yTmp);

@@ -100,11 +100,11 @@ public interface ImageProducer {
      * <code>ImageProducer</code> should respond by executing
      * the following minimum set of <code>ImageConsumer</code>
      * method calls:
-     * <pre>
+     * <pre>{@code
      *  ic.setHints(TOPDOWNLEFTRIGHT | < otherhints >);
      *  ic.setPixels(...);      // As many times as needed
      *  ic.imageComplete();
-     * </pre>
+     * }</pre>
      * @param ic the specified <code>ImageConsumer</code>
      * @see ImageConsumer#setHints
      */
