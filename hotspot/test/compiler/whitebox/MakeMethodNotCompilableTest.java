@@ -27,7 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MakeMethodNotCompilableTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */

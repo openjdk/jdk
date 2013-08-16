@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
 import static java.nio.file.FileVisitResult.CONTINUE;
 
 import java.io.IOException;
@@ -21,6 +45,8 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
          boolean usePch = false;
          boolean disablePch = false;
          boolean useIgnore = false;
+         boolean isAltSrc = false;  // only needed as a debugging crumb
+         boolean isReplacedByAltSrc = false;
          String fileName = file.getFileName().toString();
 
          // TODO hideFile
@@ -28,6 +54,26 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
          // usePch applies to all configs for a file.
          if (fileName.equals(BuildConfig.getFieldString(null, "UseToGeneratePch"))) {
             usePch = true;
+         }
+
+         String fileLoc = vcProjLocation.relativize(file).toString();
+
+         // isAltSrc and isReplacedByAltSrc applies to all configs for a file
+         if (BuildConfig.matchesRelativeAltSrcInclude(
+               file.toAbsolutePath().toString())) {
+            // current file is an alternate source file so track it
+            isAltSrc = true;
+            BuildConfig.trackRelativeAltSrcFile(
+                file.toAbsolutePath().toString());
+         } else if (BuildConfig.matchesRelativeAltSrcFile(
+                    file.toAbsolutePath().toString())) {
+            // current file is a regular file that matches an alternate
+            // source file so yack about replacing the regular file
+            isReplacedByAltSrc = true;
+            System.out.println("INFO: alternate source file '" +
+                               BuildConfig.getMatchingRelativeAltSrcFile(
+                                   file.toAbsolutePath().toString()) +
+                               "' replaces '" + fileLoc + "'");
          }
 
          for (BuildConfig cfg : allConfigs) {
@@ -57,10 +103,9 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
             }
          }
 
-         String tagName = wg.getFileTagFromSuffix(fileName);
-         String fileLoc = vcProjLocation.relativize(file).toString();
+         String tagName = wg10.getFileTagFromSuffix(fileName);
 
-         if (!useIgnore && !disablePch && !usePch) {
+         if (!useIgnore && !disablePch && !usePch && !isReplacedByAltSrc) {
             wg.tag(tagName, new String[] { "Include", fileLoc});
          } else {
             wg.startTag(
@@ -78,12 +123,17 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
                if (disablePch) {
                   wg.tag("PrecompiledHeader", "Condition", "'$(Configuration)|$(Platform)'=='" + cfg.get("Name") + "'");
                }
+               if (isReplacedByAltSrc) {
+                  wg.tagData("ExcludedFromBuild", "true", "Condition",
+                             "'$(Configuration)|$(Platform)'=='" +
+                             cfg.get("Name") + "'");
+               }
             }
             wg.endTag();
          }
 
          String filter = startDir.relativize(file.getParent().toAbsolutePath()).toString();
-         wg.addFilterDependency(fileLoc, filter);
+         wg10.addFilterDependency(fileLoc, filter);
 
          return CONTINUE;
       }
@@ -112,7 +162,7 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
          if (!hide) {
             String name = startDir.relativize(path.toAbsolutePath()).toString();
             if (!"".equals(name)) {
-               wg.addFilter(name);
+               wg10.addFilter(name);
             }
 
             attributes.push(newAttr);
@@ -137,6 +187,4 @@ public class FileTreeCreatorVC10 extends FileTreeCreator {
       public void writeFileTree() throws IOException {
          Files.walkFileTree(this.startDir, this);
       }
-
-
-   }
+}
