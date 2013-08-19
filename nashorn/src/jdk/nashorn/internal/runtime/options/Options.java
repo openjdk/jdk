@@ -408,13 +408,13 @@ public final class Options {
         final LinkedList<String> argList = new LinkedList<>();
         Collections.addAll(argList, args);
 
-    final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
-    if (extra != null) {
-        final StringTokenizer st = new StringTokenizer(extra);
-        while (st.hasMoreTokens()) {
-        argList.add(st.nextToken());
+        final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
+        if (extra != null) {
+            final StringTokenizer st = new StringTokenizer(extra);
+            while (st.hasMoreTokens()) {
+                argList.add(st.nextToken());
+            }
         }
-    }
 
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);
@@ -431,8 +431,9 @@ public final class Options {
                 continue;
             }
 
-            // if it doesn't start with -, it's a file
-            if (!arg.startsWith("-")) {
+            // If it doesn't start with -, it's a file. But, if it is just "-",
+            // then it is a file representing standard input.
+            if (!arg.startsWith("-") || arg.length() == 1) {
                 files.add(arg);
                 continue;
             }
