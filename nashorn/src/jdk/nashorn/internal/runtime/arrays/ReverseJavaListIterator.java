@@ -25,21 +25,20 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.nashorn.internal.runtime.ScriptObject;
+import java.util.List;
 
 /**
- * Reverse iterator over a NativeArray
+ * Reverse iterator over a List
  */
-final class ReverseArrayIterator extends ArrayIterator {
-
+final class ReverseJavaListIterator extends JavaListIterator {
     /**
      * Constructor
-     * @param array array to iterate over
+     * @param list list to iterate over
      * @param includeUndefined should undefined elements be included in iteration
      */
-    public ReverseArrayIterator(final ScriptObject array, final boolean includeUndefined) {
-        super(array, includeUndefined);
-        this.index = array.getArray().length() - 1;
+    public ReverseJavaListIterator(final List<?> list, final boolean includeUndefined) {
+        super(list, includeUndefined);
+        this.index = list.size() - 1;
     }
 
     @Override

@@ -638,9 +638,9 @@ public final class NativeArray extends ScriptObject {
         if (isScriptArray || obj instanceof Iterable || (obj != null && obj.getClass().isArray())) {
             final Iterator<Object> iter = arrayLikeIterator(obj, true);
             if (iter.hasNext()) {
-                for(int i = 0; iter.hasNext(); ++i) {
+                for (int i = 0; iter.hasNext(); ++i) {
                     final Object value = iter.next();
-                    if(value == ScriptRuntime.UNDEFINED && isScriptObject && !((ScriptObject)obj).has(i)) {
+                    if (value == ScriptRuntime.UNDEFINED && isScriptObject && !((ScriptObject)obj).has(i)) {
                         // TODO: eventually rewrite arrayLikeIterator to use a three-state enum for handling
                         // UNDEFINED instead of an "includeUndefined" boolean with states SKIP, INCLUDE,
                         // RETURN_EMPTY. Until then, this is how we'll make sure that empty elements don't make it

@@ -2012,9 +2012,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final Object value = getObjectValue(find);
-            ScriptFunction func = null;
-            MethodHandle methodHandle = null;
+            final Object   value        = getObjectValue(find);
+            ScriptFunction func         = null;
+            MethodHandle   methodHandle = null;
+
             if (value instanceof ScriptFunction) {
                 func = (ScriptFunction)value;
                 methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
@@ -3219,6 +3220,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return property;
     }
 
+    /**
+     * Write a value to a spill slot
+     * @param slot  the slot index
+     * @param value the value
+     */
     protected final void setSpill(final int slot, final Object value) {
         if (spill == null) {
             // create new spill.
@@ -3233,6 +3239,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         spill[slot] = value;
     }
 
+    /**
+     * Get a value from a spill slot
+     * @param slot the slot index
+     * @return the value in the spill slot with the given index
+     */
     protected Object getSpill(final int slot) {
         return spill != null && slot < spill.length ? spill[slot] : null;
     }

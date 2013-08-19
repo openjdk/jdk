@@ -23,29 +23,37 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.linker;
+package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
- * Represents a Dynalink dynamic method bound to a receiver. Note that objects of this class are just the tuples of
- * a method and a bound this, without any behavior. All the behavior is defined in the {@code BoundDynamicMethodLinker}.
+ * Reverse iterator over a NativeArray
  */
-final class BoundDynamicMethod {
-    private final Object dynamicMethod;
-    private final Object boundThis;
+final class ReverseScriptArrayIterator extends ScriptArrayIterator {
 
-    BoundDynamicMethod(final Object dynamicMethod, final Object boundThis) {
-        assert BeansLinker.isDynamicMethod(dynamicMethod);
-        this.dynamicMethod = dynamicMethod;
-        this.boundThis = boundThis;
+    /**
+     * Constructor
+     * @param array array to iterate over
+     * @param includeUndefined should undefined elements be included in iteration
+     */
+    public ReverseScriptArrayIterator(final ScriptObject array, final boolean includeUndefined) {
+        super(array, includeUndefined);
+        this.index = array.getArray().length() - 1;
     }
 
-    Object getDynamicMethod() {
-        return dynamicMethod;
+    @Override
+    public boolean isReverse() {
+        return true;
     }
 
-    Object getBoundThis() {
-        return boundThis;
+    @Override
+    protected boolean indexInArray() {
+        return index >= 0;
+    }
+
+    @Override
+    protected long bumpIndex() {
+        return index--;
     }
 }
