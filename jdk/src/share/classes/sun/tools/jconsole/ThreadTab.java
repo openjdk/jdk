@@ -595,6 +595,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
 
             setBorder(thinEmptyBorder);
 
+            setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             addListSelectionListener(ThreadTab.this);
             setCellRenderer(new DefaultListCellRenderer() {
                 public Component getListCellRendererComponent(JList<?> list, Object value, int index,
