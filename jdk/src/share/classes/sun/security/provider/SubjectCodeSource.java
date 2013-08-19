@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.security.auth;
+package sun.security.provider;
 
 import java.net.URL;
 import java.util.*;
@@ -39,8 +39,7 @@ import sun.security.provider.PolicyParser.PrincipalEntry;
  * <p> This <code>SubjectCodeSource</code> class contains
  * a <code>URL</code>, signer certificates, and either a <code>Subject</code>
  * (that represents the <code>Subject</code> in the current
- * <code>AccessControlContext</code>),
- * or a linked list of Principals/PrincipalComparators
+ * <code>AccessControlContext</code>), or a linked list of Principals
  * (that represent a "subject" in a <code>Policy</code>).
  *
  */
@@ -148,10 +147,10 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      * <li> for each principal in this codesource's principal list:
      * <ol>
      * <li>     if the principal is an instanceof
-     *          <code>PrincipalComparator</code>, then the principal must
+     *          <code>Principal</code>, then the principal must
      *          imply the provided codesource's <code>Subject</code>.
      * <li>     if the principal is not an instanceof
-     *          <code>PrincipalComparator</code>, then the provided
+     *          <code>Principal</code>, then the provided
      *          codesource's <code>Subject</code> must have an
      *          associated <code>Principal</code>, <i>P</i>, where
      *          P.getClass().getName equals principal.principalClass,
@@ -203,16 +202,20 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             PrincipalEntry pppe = li.next();
             try {
 
-                // handle PrincipalComparators
+                // use new Principal.implies method
 
-                Class<?> principalComparator = Class.forName(
-                        pppe.getPrincipalClass(), true, sysClassLoader);
-                Constructor<?> c = principalComparator.getConstructor(PARAMS);
-                PrincipalComparator pc =
-                        (PrincipalComparator)c.newInstance
-                        (new Object[] { pppe.getPrincipalName() });
+                Class<?> pClass = Class.forName(pppe.principalClass,
+                                                true, sysClassLoader);
+                if (!Principal.class.isAssignableFrom(pClass)) {
+                    // not the right subtype
+                    throw new ClassCastException(pppe.principalClass +
+                                                 " is not a Principal");
+                }
+                Constructor<?> c = pClass.getConstructor(PARAMS);
+                Principal p = (Principal)c.newInstance(new Object[] {
+                                                       pppe.principalName });
 
-                if (!pc.implies(that.getSubject())) {
+                if (!p.implies(that.getSubject())) {
                     if (debug != null)
                         debug.println("\tSubjectCodeSource.implies: FAILURE 3");
                     return false;
@@ -223,7 +226,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
                 }
             } catch (Exception e) {
 
-                // no PrincipalComparator, simply compare Principals
+                // simply compare Principals
 
                 if (subjectList == null) {
 
