@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,6 @@ final public class Messages {
     public static String HELP_ABOUT_DIALOG_MASTHEAD_ACCESSIBLE_NAME;
     public static String HELP_ABOUT_DIALOG_MASTHEAD_TITLE;
     public static String HELP_ABOUT_DIALOG_TITLE;
-    public static String HELP_ABOUT_DIALOG_USER_GUIDE_LINK;
     public static String HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL;
     public static String HELP_MENU_ABOUT_TITLE;
     public static String HELP_MENU_USER_GUIDE_TITLE;
