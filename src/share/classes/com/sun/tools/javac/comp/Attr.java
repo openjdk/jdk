@@ -398,7 +398,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
-                if (site.kind == ERR)
+                if (site.kind == ERR || site.kind == ABSENT_TYP)
                     return site;
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
