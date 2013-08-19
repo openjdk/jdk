@@ -292,6 +292,14 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
+                if ("-".equals(fileName)) {
+                    final int res = readEvalPrint(context, global);
+                    if (res != SUCCESS) {
+                        return res;
+                    }
+                    continue;
+                }
+
                 final File file = new File(fileName);
                 final ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
