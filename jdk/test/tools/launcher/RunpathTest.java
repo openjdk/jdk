@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7190813, 8022719
+ * @bug 7190813 8022719
  * @summary Check for extended  RPATHs on *nixes
  * @compile -XDignore.symbol.file RunpathTest.java
  * @run main RunpathTest
