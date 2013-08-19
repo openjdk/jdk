@@ -180,6 +180,7 @@ DEBUG_OPT_OPTION     = /Od
 PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2005"
@@ -198,6 +199,7 @@ LD_FLAGS = /manifest $(LD_FLAGS) $(BUFFEROVERFLOWLIB)
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2008"
@@ -211,6 +213,7 @@ LD_FLAGS = /manifest $(LD_FLAGS)
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
+SAFESEH_FLAG = /SAFESEH
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2010"
@@ -240,9 +243,11 @@ LD_FLAGS = /manifest $(LD_FLAGS)
 !if "x$(MT)" == "x"
 MT=mt.exe
 !endif
-!if "$(BUILDARCH)" == "i486"
-LD_FLAGS = /SAFESEH $(LD_FLAGS)
+SAFESEH_FLAG = /SAFESEH
 !endif
+
+!if "$(BUILDARCH)" == "i486"
+LD_FLAGS = $(SAFESEH_FLAG) $(LD_FLAGS)
 !endif
 
 # If NO_OPTIMIZATIONS is defined in the environment, turn everything off
