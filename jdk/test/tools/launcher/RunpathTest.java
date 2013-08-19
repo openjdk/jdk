@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7190813
+ * @bug 7190813, 8022719
  * @summary Check for extended  RPATHs on *nixes
  * @compile -XDignore.symbol.file RunpathTest.java
  * @run main RunpathTest
@@ -65,12 +65,10 @@ public class RunpathTest extends TestHelper {
 
     void testRpath() {
         if (isDualMode && is64Bit) {
-            String expectedRpath = ".*RPATH.*\\$ORIGIN/../../lib/" + getJreArch()
-                    + ":\\$ORIGIN/../../jre/lib/" + getJreArch() + ".*";
+            String expectedRpath = ".*RPATH.*\\$ORIGIN/../../lib/" + getJreArch() + ".*";
             elfCheck(java64Cmd, expectedRpath);
         } else {
-            String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib/" + getJreArch()
-                    + ":\\$ORIGIN/../jre/lib/" + getJreArch() + ".*";
+            String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib/" + getJreArch() + ".*";
             elfCheck(javaCmd, expectedRpath);
         }
     }
