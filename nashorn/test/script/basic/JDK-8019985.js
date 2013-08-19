@@ -1,51 +1,50 @@
 /*
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
+ * 
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
+ * published by the Free Software Foundation.
+ * 
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- *
+ * 
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * 
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.linker;
-
-import jdk.internal.dynalink.beans.BeansLinker;
-
 /**
- * Represents a Dynalink dynamic method bound to a receiver. Note that objects of this class are just the tuples of
- * a method and a bound this, without any behavior. All the behavior is defined in the {@code BoundDynamicMethodLinker}.
+ * JDK-8019985: Date.parse("2000-01-01T00:00:00.Z") should return NaN
+ *
+ * @test
+ * @run
  */
-final class BoundDynamicMethod {
-    private final Object dynamicMethod;
-    private final Object boundThis;
 
-    BoundDynamicMethod(final Object dynamicMethod, final Object boundThis) {
-        assert BeansLinker.isDynamicMethod(dynamicMethod);
-        this.dynamicMethod = dynamicMethod;
-        this.boundThis = boundThis;
-    }
-
-    Object getDynamicMethod() {
-        return dynamicMethod;
-    }
-
-    Object getBoundThis() {
-        return boundThis;
+function testFail(str) {
+    if (!isNaN(Date.parse(str))) {
+        throw new Error("Parsed invalid date string: " + str);
     }
 }
+
+function testOk(str) {
+    if (isNaN(Date.parse(str))) {
+        throw new Error("Failed to parse valid date string: " + str);
+    }
+}
+
+testFail("2000-01-01T00:00:00.Z");
+testFail("2000-01-01T00:00:Z");
+testFail("2000-01-01T00:Z");
+testFail("2000-01-01T00Z");
+testOk("2000-01-01T00:00:00.000Z");
+testOk("2000-01-01T00:00:00.0Z");
+testOk("2000-01-01T00:00:00Z");
+testOk("2000-01-01T00:00Z");

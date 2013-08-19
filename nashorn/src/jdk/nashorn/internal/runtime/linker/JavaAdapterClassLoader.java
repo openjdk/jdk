@@ -114,9 +114,8 @@ final class JavaAdapterClassLoader {
                 if(name.equals(className)) {
                     assert classBytes != null : "what? already cleared .class bytes!!";
                     return defineClass(name, classBytes, 0, classBytes.length, GENERATED_PROTECTION_DOMAIN);
-                } else {
-                    throw new ClassNotFoundException(name);
                 }
+                throw new ClassNotFoundException(name);
             }
         };
     }
