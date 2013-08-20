@@ -136,6 +136,10 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static VirtualSpaceList* space_list()       { return _space_list; }
   static VirtualSpaceList* class_space_list() { return _class_space_list; }
+  static VirtualSpaceList* get_space_list(MetadataType mdtype) {
+    assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
+    return mdtype == ClassType ? class_space_list() : space_list();
+  }
 
   // This is used by DumpSharedSpaces only, where only _vsm is used. So we will
   // maintain a single list for now.
@@ -218,7 +222,6 @@ class Metaspace : public CHeapObj<mtClass> {
 
 class MetaspaceAux : AllStatic {
   static size_t free_chunks_total(Metaspace::MetadataType mdtype);
-  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
 
  public:
   // Statistics for class space and data space in metaspace.
@@ -262,6 +265,7 @@ class MetaspaceAux : AllStatic {
   // Used by MetaspaceCounters
   static size_t free_chunks_total();
   static size_t free_chunks_total_in_bytes();
+  static size_t free_chunks_total_in_bytes(Metaspace::MetadataType mdtype);
 
   static size_t allocated_capacity_words(Metaspace::MetadataType mdtype) {
     return _allocated_capacity_words[mdtype];
@@ -294,6 +298,7 @@ class MetaspaceAux : AllStatic {
   }
 
   static size_t free_bytes();
+  static size_t free_bytes(Metaspace::MetadataType mdtype);
 
   // Total capacity in all Metaspaces
   static size_t capacity_bytes_slow() {
