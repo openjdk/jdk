@@ -157,6 +157,13 @@ public class NonValidatingConfiguration
     protected static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
 
+      /** Property identifier: Security property manager. */
+      protected static final String XML_SECURITY_PROPERTY_MANAGER =
+              Constants.XML_SECURITY_PROPERTY_MANAGER;
+
+     /** Property identifier: Security manager. */
+     private static final String SECURITY_MANAGER = Constants.SECURITY_MANAGER;
+
     // debugging
 
     /** Set to true and recompile to print exception stack trace. */
@@ -310,7 +317,9 @@ public class NonValidatingConfiguration
             XMLGRAMMAR_POOL,
             DATATYPE_VALIDATOR_FACTORY,
             VALIDATION_MANAGER,
-            LOCALE
+            LOCALE,
+            SECURITY_MANAGER,
+            XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
 

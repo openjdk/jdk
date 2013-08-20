@@ -178,6 +178,25 @@ public class PropertyManager {
             supportedProps.put( Constants.XERCES_PROPERTY_PREFIX + Constants.STAX_ENTITY_RESOLVER_PROPERTY , new StaxEntityResolverWrapper((XMLResolver)value)) ;
         }
 
+        /**
+         * It's possible for users to set a security manager through the interface.
+         * If it's the old SecurityManager, convert it to the new XMLSecurityManager
+         */
+        if (property.equals(Constants.SECURITY_MANAGER)) {
+            fSecurityManager = XMLSecurityManager.convert(value, fSecurityManager);
+            supportedProps.put(Constants.SECURITY_MANAGER, fSecurityManager);
+            return;
+        }
+        if (property.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+            if (value == null) {
+                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+            } else {
+                fSecurityPropertyMgr = (XMLSecurityPropertyManager)value;
+            }
+            supportedProps.put(Constants.XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+            return;
+        }
+
         //check if the property is managed by security manager
         if (fSecurityManager == null ||
                 !fSecurityManager.setLimit(property, XMLSecurityManager.State.APIPROPERTY, value)) {
