@@ -203,6 +203,9 @@ public final class XMLLimitAnalyzer {
     }
 
     public boolean isTracking(String name) {
+        if (entityStart == null) {
+            return false;
+        }
         return entityStart.equals(name);
     }
     /**

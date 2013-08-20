@@ -26,6 +26,7 @@
 package com.sun.org.apache.xerces.internal.utils;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.util.SecurityManager;
 
 /**
  * This class manages standard and implementation-specific limitations.
@@ -517,5 +518,38 @@ public final class XMLSecurityManager {
             throw new NumberFormatException("Invalid setting for system property: " + limit.systemProperty());
         }
         return false;
+    }
+
+
+    /**
+     * Convert a value set through setProperty to XMLSecurityManager.
+     * If the value is an instance of XMLSecurityManager, use it to override the default;
+     * If the value is an old SecurityManager, convert to the new XMLSecurityManager.
+     *
+     * @param value user specified security manager
+     * @param securityManager an instance of XMLSecurityManager
+     * @return an instance of the new security manager XMLSecurityManager
+     */
+    static public XMLSecurityManager convert(Object value, XMLSecurityManager securityManager) {
+        if (value == null) {
+            if (securityManager == null) {
+                securityManager = new XMLSecurityManager(true);
+            }
+            return securityManager;
+        }
+        if (XMLSecurityManager.class.isAssignableFrom(value.getClass())) {
+            return (XMLSecurityManager)value;
+        } else {
+            if (securityManager == null) {
+                securityManager = new XMLSecurityManager(true);
+            }
+            if (SecurityManager.class.isAssignableFrom(value.getClass())) {
+                SecurityManager origSM = (SecurityManager)value;
+                securityManager.setLimit(Limit.MAX_OCCUR_NODE_LIMIT, State.APIPROPERTY, origSM.getMaxOccurNodeLimit());
+                securityManager.setLimit(Limit.ENTITY_EXPANSION_LIMIT, State.APIPROPERTY, origSM.getEntityExpansionLimit());
+                securityManager.setLimit(Limit.ELEMENT_ATTRIBUTE_LIMIT, State.APIPROPERTY, origSM.getElementAttrLimit());
+            }
+            return securityManager;
+        }
     }
 }

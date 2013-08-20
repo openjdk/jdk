@@ -408,8 +408,16 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "ProperyNameNull", null));
         }
         if (name.equals(SECURITY_MANAGER)) {
-            fSecurityManager = (XMLSecurityManager) object;
+            fSecurityManager = XMLSecurityManager.convert(object, fSecurityManager);
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+            return;
+        } else if (name.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+            if (object == null) {
+                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+            } else {
+                fSecurityPropertyMgr = (XMLSecurityPropertyManager)object;
+            }
+            fXMLSchemaLoader.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
             return;
         }
         else if (name.equals(XMLGRAMMAR_POOL)) {

@@ -29,6 +29,7 @@ import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
@@ -531,7 +532,54 @@ public class DOMParser
      */
     public void setProperty(String propertyId, Object value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
+        /**
+         * It's possible for users to set a security manager through the interface.
+         * If it's the old SecurityManager, convert it to the new XMLSecurityManager
+         */
+        if (propertyId.equals(Constants.SECURITY_MANAGER)) {
+            securityManager = XMLSecurityManager.convert(value, securityManager);
+            setProperty0(Constants.SECURITY_MANAGER, securityManager);
+            return;
+        }
+        if (propertyId.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+            if (value == null) {
+                securityPropertyManager = new XMLSecurityPropertyManager();
+            } else {
+                securityPropertyManager = (XMLSecurityPropertyManager)value;
+            }
+            setProperty0(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            return;
+        }
 
+        if (securityManager == null) {
+            securityManager = new XMLSecurityManager(true);
+            setProperty0(Constants.SECURITY_MANAGER, securityManager);
+        }
+
+        if (securityPropertyManager == null) {
+            securityPropertyManager = new XMLSecurityPropertyManager();
+            setProperty0(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+        }
+        int index = securityPropertyManager.getIndex(propertyId);
+
+        if (index > -1) {
+            /**
+             * this is a direct call to this parser, not a subclass since
+             * internally the support of this property is done through
+             * XMLSecurityPropertyManager
+             */
+            securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
+        } else {
+            //check if the property is managed by security manager
+            if (!securityManager.setLimit(propertyId, XMLSecurityManager.State.APIPROPERTY, value)) {
+                //fall back to the default configuration to handle the property
+                setProperty0(propertyId, value);
+            }
+        }
+    }
+
+    public void setProperty0(String propertyId, Object value)
+        throws SAXNotRecognizedException, SAXNotSupportedException {
         try {
             fConfiguration.setProperty(propertyId, value);
         }
