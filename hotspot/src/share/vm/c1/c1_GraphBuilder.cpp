@@ -1583,7 +1583,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       ObjectType* obj_type = obj->type()->as_ObjectType();
       if (obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
-        if (!const_oop->is_null_object()) {
+        if (!const_oop->is_null_object() && const_oop->is_loaded()) {
           if (field->is_constant()) {
             ciConstant field_val = field->constant_value_of(const_oop);
             BasicType field_type = field_val.basic_type();
