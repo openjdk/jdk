@@ -875,19 +875,23 @@ public class Check {
         }
         Type owntype = mtype;
         List<Type> formals = owntype.getParameterTypes();
+        List<Type> nonInferred = sym.type.getParameterTypes();
+        if (nonInferred.length() != formals.length()) nonInferred = formals;
         Type last = useVarargs ? formals.last() : null;
-        if (sym.name == names.init &&
-                sym.owner == syms.enumSym)
-                formals = formals.tail.tail;
+        if (sym.name == names.init && sym.owner == syms.enumSym) {
+            formals = formals.tail.tail;
+            nonInferred = nonInferred.tail.tail;
+        }
         List<JCExpression> args = argtrees;
         if (args != null) {
             //this is null when type-checking a method reference
             while (formals.head != last) {
                 JCTree arg = args.head;
-                Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
+                Warner warn = convertWarner(arg.pos(), arg.type, nonInferred.head);
                 assertConvertible(arg, arg.type, formals.head, warn);
                 args = args.tail;
                 formals = formals.tail;
+                nonInferred = nonInferred.tail;
             }
             if (useVarargs) {
                 Type varArg = types.elemtype(last);
@@ -903,17 +907,17 @@ public class Check {
                 Type varParam = owntype.getParameterTypes().last();
                 Type lastArg = argtypes.last();
                 if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
-                        !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
+                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
                     log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
-                            types.elemtype(varParam), varParam);
+                                types.elemtype(varParam), varParam);
             }
         }
         if (useVarargs) {
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
-                    (!allowSimplifiedVarargs ||
-                    sym.attribute(syms.trustMeType.tsym) == null ||
-                    !isTrustMeAllowedOnMethod(sym))) {
+                (!allowSimplifiedVarargs ||
+                 sym.attribute(syms.trustMeType.tsym) == null ||
+                 !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(),
                                   "unchecked.generic.array.creation",
                                   argtype);
@@ -929,15 +933,15 @@ public class Check {
          return owntype;
     }
     //where
-        private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
-            if (types.isConvertible(actual, formal, warn))
-                return;
+    private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
+        if (types.isConvertible(actual, formal, warn))
+            return;
 
-            if (formal.isCompound()
-                && types.isSubtype(actual, types.supertype(formal))
-                && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
-                return;
-        }
+        if (formal.isCompound()
+            && types.isSubtype(actual, types.supertype(formal))
+            && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
+            return;
+    }
 
     /**
      * Check that type 't' is a valid instantiation of a generic class
