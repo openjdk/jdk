@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.lang.model.element.Name;
@@ -345,7 +346,7 @@ public enum HtmlTag {
         WIDTH;
 
         public String getText() {
-            return name().toLowerCase();
+            return toLowerCase(name());
         }
 
         static final Map<String,Attr> index = new HashMap<String,Attr>();
@@ -424,11 +425,11 @@ public enum HtmlTag {
     }
 
     public String getText() {
-        return name().toLowerCase();
+        return toLowerCase(name());
     }
 
     public Attr getAttr(Name attrName) {
-        return Attr.index.get(attrName.toString().toLowerCase());
+        return Attr.index.get(toLowerCase(attrName.toString()));
     }
 
     public AttrKind getAttrKind(Name attrName) {
@@ -450,6 +451,10 @@ public enum HtmlTag {
     }
 
     static HtmlTag get(Name tagName) {
-        return index.get(tagName.toString().toLowerCase());
+        return index.get(toLowerCase(tagName.toString()));
+    }
+
+    private static String toLowerCase(String s) {
+        return s.toLowerCase(Locale.US);
     }
 }
