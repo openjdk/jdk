@@ -2480,16 +2480,13 @@ void SpaceManager::mangle_freed_chunks() {
 size_t MetaspaceAux::_allocated_capacity_words[] = {0, 0};
 size_t MetaspaceAux::_allocated_used_words[] = {0, 0};
 
+size_t MetaspaceAux::free_bytes(Metaspace::MetadataType mdtype) {
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  return list == NULL ? 0 : list->free_bytes();
+}
+
 size_t MetaspaceAux::free_bytes() {
-  size_t result = 0;
-  if (Metaspace::using_class_space() &&
-      (Metaspace::class_space_list() != NULL)) {
-    result = result + Metaspace::class_space_list()->free_bytes();
-  }
-  if (Metaspace::space_list() != NULL) {
-    result = result + Metaspace::space_list()->free_bytes();
-  }
-  return result;
+  return free_bytes(Metaspace::ClassType) + free_bytes(Metaspace::NonClassType);
 }
 
 void MetaspaceAux::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {
@@ -2571,23 +2568,18 @@ size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
 }
 
 size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {
-  if (mdtype == Metaspace::ClassType) {
-    return Metaspace::using_class_space() ?
-           Metaspace::class_space_list()->virtual_space_total() * BytesPerWord : 0;
-  } else {
-    return Metaspace::space_list()->virtual_space_total() * BytesPerWord;
-  }
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  return list == NULL ? 0 : list->virtual_space_total();
 }
 
 size_t MetaspaceAux::min_chunk_size() { return Metaspace::first_chunk_word_size(); }
 
 size_t MetaspaceAux::free_chunks_total(Metaspace::MetadataType mdtype) {
-  if ((mdtype == Metaspace::ClassType) && !Metaspace::using_class_space()) {
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  if (list == NULL) {
     return 0;
   }
-  ChunkManager* chunk = (mdtype == Metaspace::ClassType) ?
-                         Metaspace::class_space_list()->chunk_manager() :
-                         Metaspace::space_list()->chunk_manager();
+  ChunkManager* chunk = list->chunk_manager();
   chunk->slow_verify();
   return chunk->free_chunks_total();
 }
