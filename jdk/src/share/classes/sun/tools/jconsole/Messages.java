@@ -271,6 +271,7 @@ final public class Messages {
     public static String THREADS;
     public static String THREAD_TAB_THREAD_INFO_ACCESSIBLE_NAME;
     public static String THREAD_TAB_THREAD_PLOTTER_ACCESSIBLE_NAME;
+    public static String THREAD_TAB_INITIAL_STACK_TRACE_MESSAGE;
     public static String THRESHOLD;
     public static String TILE;
     public static String TIME_RANGE_COLON;
