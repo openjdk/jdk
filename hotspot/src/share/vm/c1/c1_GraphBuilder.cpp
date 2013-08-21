@@ -1667,9 +1667,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
 
-  // FIXME bail out for now
-  if (Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
-    BAILOUT("unlinked call site (FIXME needs patching or recompile support)");
+  if (!C1PatchInvokeDynamic && Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
+    BAILOUT("unlinked call site (C1PatchInvokeDynamic is off)");
   }
 
   // we have to make sure the argument size (incl. the receiver)
@@ -1713,10 +1712,23 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
       break;
     }
+  } else {
+    if (bc_raw == Bytecodes::_invokehandle) {
+      assert(!will_link, "should come here only for unlinked call");
+      code = Bytecodes::_invokespecial;
+    }
   }
 
   // Push appendix argument (MethodType, CallSite, etc.), if one.
-  if (stream()->has_appendix()) {
+  bool patch_for_appendix = false;
+  int patching_appendix_arg = 0;
+  if (C1PatchInvokeDynamic &&
+      (Bytecodes::has_optional_appendix(bc_raw) && (!will_link || PatchALot))) {
+    Value arg = append(new Constant(new ObjectConstant(compilation()->env()->unloaded_ciinstance()), copy_state_before()));
+    apush(arg);
+    patch_for_appendix = true;
+    patching_appendix_arg = (will_link && stream()->has_appendix()) ? 0 : 1;
+  } else if (stream()->has_appendix()) {
     ciObject* appendix = stream()->get_appendix();
     Value arg = append(new Constant(new ObjectConstant(appendix)));
     apush(arg);
@@ -1732,7 +1744,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
       !(// %%% FIXME: Are both of these relevant?
         target->is_method_handle_intrinsic() ||
-        target->is_compiled_lambda_form())) {
+        target->is_compiled_lambda_form()) &&
+      !patch_for_appendix) {
     Value receiver = NULL;
     ciInstanceKlass* receiver_klass = NULL;
     bool type_is_exact = false;
@@ -1850,7 +1863,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // check if we could do inlining
   if (!PatchALot && Inline && klass->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
-      && target->is_loaded()) {
+      && target->is_loaded()
+      && !patch_for_appendix) {
     // callee is known => check if we have static binding
     assert(target->is_loaded(), "callee must be known");
     if (code == Bytecodes::_invokestatic  ||
@@ -1901,7 +1915,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code == Bytecodes::_invokespecial   ||
     code == Bytecodes::_invokevirtual   ||
     code == Bytecodes::_invokeinterface;
-  Values* args = state()->pop_arguments(target->arg_size_no_receiver());
+  Values* args = state()->pop_arguments(target->arg_size_no_receiver() + patching_appendix_arg);
   Value recv = has_receiver ? apop() : NULL;
   int vtable_index = Method::invalid_vtable_index;
 

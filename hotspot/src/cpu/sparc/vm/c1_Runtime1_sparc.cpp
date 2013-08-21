@@ -804,6 +804,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
+    case load_appendix_patching_id:
+      { __ set_info("load_appendix_patching", dont_gc_arguments);
+        oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
+      }
+      break;
+
     case dtrace_object_alloc_id:
       { // O0: object
         __ set_info("dtrace_object_alloc", dont_gc_arguments);
