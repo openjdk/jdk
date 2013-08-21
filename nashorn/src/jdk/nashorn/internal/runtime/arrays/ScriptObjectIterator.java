@@ -32,12 +32,12 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 /**
  * Iterator over a map
  */
-class MapIterator extends ArrayLikeIterator<Object> {
+class ScriptObjectIterator extends ArrayLikeIterator<Object> {
 
     protected final ScriptObject obj;
     private final long length;
 
-    MapIterator(final ScriptObject obj, final boolean includeUndefined) {
+    ScriptObjectIterator(final ScriptObject obj, final boolean includeUndefined) {
         super(includeUndefined);
         this.obj    = obj;
         this.length = JSType.toUint32(obj.getLength());

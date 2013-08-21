@@ -22,20 +22,42 @@
  */
 
 /**
- * JDK-8020357: Return range error for too big native array buffers
+ * JDK-8020355: bind on built-in constructors don't use bound argument values
  *
  * @test
  * @run
  */
 
-var UNSIGNED_INT_BITS = 31
-var BYTES_PER_INT_32  =  4
-
-var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
-
-// A value over the limit should throw a RangeError.
-try {
-    Int32Array(limit)
-} catch(e) {
-    print(e)
+if (Array.bind(null, 2)().length != 2) {
+    fail("Expected Array.bind(null, 2)().length to be 2");
 }
+
+if (RegExp.bind(null, "a")().source.length != 1) {
+    fail("Expected RegExp.bind(null, 'a')().source.length to be 1");
+}
+
+// check user defined functions as well
+
+var res = (function(x, y) { return x*y }).bind(null, 20, 30)();
+if (res != 600) {
+    fail("Expected 600, but got " + res);
+}
+
+var obj = new ((function(x, y) { this.foo = x*y }).bind({}, 20, 30))();
+if (obj.foo != 600) {
+    fail("Expected this.foo = 600, but got " + res);
+}
+
+// try variadic function as well
+
+var res = (function() { return arguments[0]*arguments[1] }).bind(null, 20, 30)();
+if (res != 600) {
+    fail("Expected 600, but got " + res);
+}
+
+var obj = new ((function(x, y) { this.foo = arguments[0]*arguments[1] }).bind({}, 20, 30))();
+if (obj.foo != 600) {
+    fail("Expected this.foo = 600, but got " + res);
+}
+
+

@@ -85,12 +85,12 @@ package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
+import jdk.internal.dynalink.support.Lookup;
 
 /**
  * A relinkable call site that maintains a chain of linked method handles. In the default implementation, up to 8 method
@@ -103,6 +103,9 @@ import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
  * handle is always at the start of the chain.
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
+    private static final MethodHandle PRUNE = Lookup.findOwnSpecial(MethodHandles.lookup(), "prune", MethodHandle.class,
+            MethodHandle.class);
+
     private final AtomicReference<LinkedList<GuardedInvocation>> invocations = new AtomicReference<>();
 
     /**
@@ -193,19 +196,5 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
     @SuppressWarnings("unused")
     private MethodHandle prune(MethodHandle relink) {
         return relinkInternal(null, relink, false);
-    }
-
-    private static final MethodHandle PRUNE;
-    static {
-        try {
-            PRUNE = MethodHandles.lookup().findSpecial(ChainedCallSite.class, "prune", MethodType.methodType(
-                    MethodHandle.class, MethodHandle.class), ChainedCallSite.class);
-        // NOTE: using two catch blocks so we don't introduce a reference to 1.7 ReflectiveOperationException, allowing
-        // Dynalink to be used on 1.6 JVMs with Remi's backport library.
-        } catch(IllegalAccessException e) {
-            throw new AssertionError(e.getMessage(), e); // Can not happen
-        } catch(NoSuchMethodException e) {
-            throw new AssertionError(e.getMessage(), e); // Can not happen
-        }
     }
 }
