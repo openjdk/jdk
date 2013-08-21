@@ -944,10 +944,17 @@ public class Pretty extends JCTree.Visitor {
         try {
             if (tree.elemtype != null) {
                 print("new ");
-                printTypeAnnotations(tree.annotations);
                 JCTree elem = tree.elemtype;
                 printBaseElementType(elem);
-                boolean isElemAnnoType = elem instanceof JCAnnotatedType;
+
+                if (!tree.annotations.isEmpty()) {
+                    print(' ');
+                    printTypeAnnotations(tree.annotations);
+                }
+                if (tree.elems != null) {
+                    print("[]");
+                }
+
                 int i = 0;
                 List<List<JCAnnotation>> da = tree.dimAnnotations;
                 for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
@@ -960,17 +967,7 @@ public class Pretty extends JCTree.Visitor {
                     printExpr(l.head);
                     print("]");
                 }
-                if (tree.elems != null) {
-                    if (isElemAnnoType) {
-                        print(' ');
-                        printTypeAnnotations(((JCAnnotatedType)tree.elemtype).annotations);
-                    }
-                    print("[]");
-                }
-                if (isElemAnnoType)
-                    elem = ((JCAnnotatedType)elem).underlyingType;
-                if (elem instanceof JCArrayTypeTree)
-                    printBrackets((JCArrayTypeTree) elem);
+                printBrackets(elem);
             }
             if (tree.elems != null) {
                 print("{");
@@ -1260,20 +1257,24 @@ public class Pretty extends JCTree.Visitor {
     }
 
     // prints the brackets of a nested array in reverse order
-    private void printBrackets(JCArrayTypeTree tree) throws IOException {
-        JCTree elem;
+    // tree is either JCArrayTypeTree or JCAnnotatedTypeTree
+    private void printBrackets(JCTree tree) throws IOException {
+        JCTree elem = tree;
         while (true) {
-            elem = tree.elemtype;
             if (elem.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType atype = (JCAnnotatedType) elem;
                 elem = atype.underlyingType;
-                if (!elem.hasTag(TYPEARRAY)) break;
-                print(' ');
-                printTypeAnnotations(atype.annotations);
+                if (elem.hasTag(TYPEARRAY)) {
+                    print(' ');
+                    printTypeAnnotations(atype.annotations);
+                }
             }
-            print("[]");
-            if (!elem.hasTag(TYPEARRAY)) break;
-            tree = (JCArrayTypeTree) elem;
+            if (elem.hasTag(TYPEARRAY)) {
+                print("[]");
+                elem = ((JCArrayTypeTree)elem).elemtype;
+            } else {
+                break;
+            }
         }
     }
 
@@ -1378,22 +1379,15 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         try {
-            if (tree.underlyingType.getKind() == JCTree.Kind.MEMBER_SELECT) {
+            if (tree.underlyingType.hasTag(SELECT)) {
                 JCFieldAccess access = (JCFieldAccess) tree.underlyingType;
                 printExpr(access.selected, TreeInfo.postfixPrec);
                 print(".");
                 printTypeAnnotations(tree.annotations);
                 print(access.name);
-            } else if (tree.underlyingType.getKind() == JCTree.Kind.ARRAY_TYPE) {
-                JCArrayTypeTree array = (JCArrayTypeTree) tree.underlyingType;
+            } else if (tree.underlyingType.hasTag(TYPEARRAY)) {
                 printBaseElementType(tree);
-                print(' ');
-                printTypeAnnotations(tree.annotations);
-                print("[]");
-                JCExpression elem = array.elemtype;
-                if (elem.hasTag(TYPEARRAY)) {
-                    printBrackets((JCArrayTypeTree) elem);
-                }
+                printBrackets(tree);
             } else {
                 printTypeAnnotations(tree.annotations);
                 printExpr(tree.underlyingType);
