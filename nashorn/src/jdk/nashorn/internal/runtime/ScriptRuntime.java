@@ -37,7 +37,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
@@ -221,49 +223,71 @@ public final class ScriptRuntime {
     }
 
     /**
-     * Used to determine property iterator used in for in.
-     * @param obj Object to iterate on.
-     * @return Iterator.
+     * Returns an iterator over property identifiers used in the {@code for...in} statement. Note that the ECMAScript
+     * 5.1 specification, chapter 12.6.4. uses the terminology "property names", which seems to imply that the property
+     * identifiers are expected to be strings, but this is not actually spelled out anywhere, and Nashorn will in some
+     * cases deviate from this. Namely, we guarantee to always return an iterator over {@link String} values for any
+     * built-in JavaScript object. We will however return an iterator over {@link Integer} objects for native Java
+     * arrays and {@link List} objects, as well as arbitrary objects representing keys of a {@link Map}. Therefore, the
+     * expression {@code typeof i} within a {@code for(i in obj)} statement can return something other than
+     * {@code string} when iterating over native Java arrays, {@code List}, and {@code Map} objects.
+     * @param obj object to iterate on.
+     * @return iterator over the object's property names.
      */
-    public static Iterator<String> toPropertyIterator(final Object obj) {
+    public static Iterator<?> toPropertyIterator(final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).propertyIterator();
         }
 
         if (obj != null && obj.getClass().isArray()) {
-            final int length = Array.getLength(obj);
-
-            return new Iterator<String>() {
-                private int index = 0;
-
-                @Override
-                public boolean hasNext() {
-                    return index < length;
-                }
-
-                @Override
-                public String next() {
-                    return "" + index++; //TODO numeric property iterator?
-                }
-
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+            return new RangeIterator(Array.getLength(obj));
         }
 
         if (obj instanceof ScriptObjectMirror) {
             return ((ScriptObjectMirror)obj).keySet().iterator();
         }
 
+        if (obj instanceof List) {
+            return new RangeIterator(((List<?>)obj).size());
+        }
+
+        if (obj instanceof Map) {
+            return ((Map<?,?>)obj).keySet().iterator();
+        }
+
         return Collections.emptyIterator();
     }
 
+    private static final class RangeIterator implements Iterator<Integer> {
+        private final int length;
+        private int index;
+
+        RangeIterator(int length) {
+            this.length = length;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < length;
+        }
+
+        @Override
+        public Integer next() {
+            return index++;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     /**
-     * Used to determine property value iterator used in for each in.
-     * @param obj Object to iterate on.
-     * @return Iterator.
+     * Returns an iterator over property values used in the {@code for each...in} statement. Aside from built-in JS
+     * objects, it also operates on Java arrays, any {@link Iterable}, as well as on {@link Map} objects, iterating over
+     * map values.
+     * @param obj object to iterate on.
+     * @return iterator over the object's property values.
      */
     public static Iterator<?> toValueIterator(final Object obj) {
         if (obj instanceof ScriptObject) {
@@ -299,6 +323,10 @@ public final class ScriptRuntime {
 
         if (obj instanceof ScriptObjectMirror) {
             return ((ScriptObjectMirror)obj).values().iterator();
+        }
+
+        if (obj instanceof Map) {
+            return ((Map<?,?>)obj).values().iterator();
         }
 
         if (obj instanceof Iterable) {
