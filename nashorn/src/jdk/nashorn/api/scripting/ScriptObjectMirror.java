@@ -374,6 +374,19 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     }
 
     /**
+     * Set the __proto__ of this object.
+     * @param proto new proto for this object
+     */
+    public void setProto(final Object proto) {
+        inGlobal(new Callable<Void>() {
+            @Override public Void call() {
+                sobj.setProtoCheck(unwrap(proto, global));
+                return null;
+            }
+        });
+    }
+
+    /**
      * ECMA 8.12.1 [[GetOwnProperty]] (P)
      *
      * @param key property key

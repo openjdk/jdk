@@ -1129,6 +1129,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         proto = newProto;
 
         if (isPrototype()) {
+            // tell listeners that my __proto__ has been changed
+            notifyProtoChanged(this, oldProto, newProto);
+
             if (oldProto != null) {
                 oldProto.removePropertyListener(this);
             }
@@ -1144,7 +1147,19 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param newProto Prototype to set.
      */
     public final void setProtoCheck(final Object newProto) {
+        if (!isExtensible()) {
+            throw typeError("__proto__.set.non.extensible", ScriptRuntime.safeToString(this));
+        }
+
         if (newProto == null || newProto instanceof ScriptObject) {
+            // check for circularity
+            ScriptObject proto = (ScriptObject)newProto;
+            while (proto != null) {
+                if (proto == this) {
+                    throw typeError("circular.__proto__.set", ScriptRuntime.safeToString(this));
+                }
+                proto = proto.getProto();
+            }
             setProto((ScriptObject)newProto);
         } else {
             final ScriptObject global = Context.getGlobalTrusted();
