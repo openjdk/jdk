@@ -173,6 +173,9 @@ final class JavaAdapterBytecodeGenerator {
     private static final String CLASS_INIT = "<clinit>";
     private static final String STATIC_GLOBAL_FIELD_NAME = "staticGlobal";
 
+    // Method name prefix for invoking super-methods
+    private static final String SUPER_PREFIX = "super$";
+
     /**
      * Collection of methods we never override: Object.clone(), Object.finalize().
      */
@@ -240,6 +243,7 @@ final class JavaAdapterBytecodeGenerator {
         }
         generateConstructors();
         generateMethods();
+        generateSuperMethods();
         // }
         cw.visitEnd();
     }
@@ -507,6 +511,10 @@ final class JavaAdapterBytecodeGenerator {
 
     private static void endInitMethod(final InstructionAdapter mv) {
         mv.visitInsn(RETURN);
+        endMethod(mv);
+    }
+
+    private static void endMethod(final InstructionAdapter mv) {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
@@ -603,13 +611,8 @@ final class JavaAdapterBytecodeGenerator {
      */
     private void generateMethod(final MethodInfo mi) {
         final Method method = mi.method;
-        final int mod = method.getModifiers();
-        final int access = ACC_PUBLIC | (method.isVarArgs() ? ACC_VARARGS : 0);
         final Class<?>[] exceptions = method.getExceptionTypes();
-        final String[] exceptionNames = new String[exceptions.length];
-        for (int i = 0; i < exceptions.length; ++i) {
-            exceptionNames[i] = Type.getInternalName(exceptions[i]);
-        }
+        final String[] exceptionNames = getExceptionNames(exceptions);
         final MethodType type = mi.type;
         final String methodDesc = type.toMethodDescriptorString();
         final String name = mi.getName();
@@ -617,14 +620,8 @@ final class JavaAdapterBytecodeGenerator {
         final Type asmType = Type.getMethodType(methodDesc);
         final Type[] asmArgTypes = asmType.getArgumentTypes();
 
-        // Determine the first index for a local variable
-        int nextLocalVar = 1; // this
-        for(final Type t: asmArgTypes) {
-            nextLocalVar += t.getSize();
-        }
-
-        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(access, name, methodDesc, null,
-                exceptionNames));
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(getAccessModifiers(method), name,
+                methodDesc, null, exceptionNames));
         mv.visitCode();
 
         final Label instanceHandleDefined = new Label();
@@ -646,7 +643,7 @@ final class JavaAdapterBytecodeGenerator {
         }
 
         // No handle is available, fall back to default behavior
-        if(Modifier.isAbstract(mod)) {
+        if(Modifier.isAbstract(method.getModifiers())) {
             // If the super method is abstract, throw an exception
             mv.anew(UNSUPPORTED_OPERATION_TYPE);
             mv.dup();
@@ -654,14 +651,7 @@ final class JavaAdapterBytecodeGenerator {
             mv.athrow();
         } else {
             // If the super method is not abstract, delegate to it.
-            mv.visitVarInsn(ALOAD, 0);
-            int nextParam = 1;
-            for(final Type t: asmArgTypes) {
-                mv.load(nextParam, t);
-                nextParam += t.getSize();
-            }
-            mv.invokespecial(superClassName, name, methodDesc);
-            mv.areturn(asmReturnType);
+            emitSuperCall(mv, name, methodDesc);
         }
 
         final Label setupGlobal = new Label();
@@ -685,6 +675,12 @@ final class JavaAdapterBytecodeGenerator {
         // stack: [creatingGlobal, someHandle]
         mv.visitLabel(setupGlobal);
 
+        // Determine the first index for a local variable
+        int nextLocalVar = 1; // "this" is at 0
+        for(final Type t: asmArgTypes) {
+            nextLocalVar += t.getSize();
+        }
+        // Set our local variable indices
         final int currentGlobalVar  = nextLocalVar++;
         final int globalsDifferVar  = nextLocalVar++;
 
@@ -775,8 +771,7 @@ final class JavaAdapterBytecodeGenerator {
             }
             mv.visitTryCatchBlock(tryBlockStart, tryBlockEnd, throwableHandler, THROWABLE_TYPE_NAME);
         }
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
+        endMethod(mv);
     }
 
     /**
@@ -815,6 +810,53 @@ final class JavaAdapterBytecodeGenerator {
             }
         }
         return false;
+    }
+
+    private void generateSuperMethods() {
+        for(final MethodInfo mi: methodInfos) {
+            if(!Modifier.isAbstract(mi.method.getModifiers())) {
+                generateSuperMethod(mi);
+            }
+        }
+    }
+
+    private void generateSuperMethod(MethodInfo mi) {
+        final Method method = mi.method;
+
+        final String methodDesc = mi.type.toMethodDescriptorString();
+        final String name = mi.getName();
+
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(getAccessModifiers(method),
+                SUPER_PREFIX + name, methodDesc, null, getExceptionNames(method.getExceptionTypes())));
+        mv.visitCode();
+
+        emitSuperCall(mv, name, methodDesc);
+
+        endMethod(mv);
+    }
+
+    private void emitSuperCall(final InstructionAdapter mv, final String name, final String methodDesc) {
+        mv.visitVarInsn(ALOAD, 0);
+        int nextParam = 1;
+        final Type methodType = Type.getMethodType(methodDesc);
+        for(final Type t: methodType.getArgumentTypes()) {
+            mv.load(nextParam, t);
+            nextParam += t.getSize();
+        }
+        mv.invokespecial(superClassName, name, methodDesc);
+        mv.areturn(methodType.getReturnType());
+    }
+
+    private static String[] getExceptionNames(final Class<?>[] exceptions) {
+        final String[] exceptionNames = new String[exceptions.length];
+        for (int i = 0; i < exceptions.length; ++i) {
+            exceptionNames[i] = Type.getInternalName(exceptions[i]);
+        }
+        return exceptionNames;
+    }
+
+    private static int getAccessModifiers(final Method method) {
+        return ACC_PUBLIC | (method.isVarArgs() ? ACC_VARARGS : 0);
     }
 
     /**
