@@ -463,26 +463,34 @@ public abstract class Symbol implements Element {
         return false;
     }
 
-    /** Check for hiding.  Note that this doesn't handle multiple
-     *  (interface) inheritance. */
     private boolean hiddenIn(ClassSymbol clazz, Types types) {
-        if (kind == MTH && (flags() & STATIC) == 0) return false;
-        while (true) {
-            if (owner == clazz) return false;
-            Scope.Entry e = clazz.members().lookup(name);
-            while (e.scope != null) {
-                if (e.sym == this) return false;
-                if (e.sym.kind == kind &&
+        Symbol sym = hiddenInInternal(clazz, types);
+        return sym != null && sym != this;
+    }
+
+    private Symbol hiddenInInternal(ClassSymbol c, Types types) {
+        Scope.Entry e = c.members().lookup(name);
+        while (e.scope != null) {
+            if (e.sym.kind == kind &&
                     (kind != MTH ||
-                     (e.sym.flags() & STATIC) != 0 &&
-                     types.isSubSignature(e.sym.type, type)))
-                    return true;
-                e = e.next();
+                    (e.sym.flags() & STATIC) != 0 &&
+                    types.isSubSignature(e.sym.type, type))) {
+                return e.sym;
             }
-            Type superType = types.supertype(clazz.type);
-            if (!superType.hasTag(CLASS)) return false;
-            clazz = (ClassSymbol)superType.tsym;
+            e = e.next();
         }
+        List<Symbol> hiddenSyms = List.nil();
+        for (Type st : types.interfaces(c.type).prepend(types.supertype(c.type))) {
+            if (st != null && (st.hasTag(CLASS))) {
+                Symbol sym = hiddenInInternal((ClassSymbol)st.tsym, types);
+                if (sym != null) {
+                    hiddenSyms = hiddenSyms.prepend(hiddenInInternal((ClassSymbol)st.tsym, types));
+                }
+            }
+        }
+        return hiddenSyms.contains(this) ?
+                this :
+                (hiddenSyms.isEmpty() ? null : hiddenSyms.head);
     }
 
     /** Is this symbol inherited into a given class?
