@@ -98,9 +98,8 @@ final class LongArrayData extends ArrayData {
         final int length = (int) length();
         if (type == Double.class) {
             return new NumberArrayData(LongArrayData.toDoubleArray(array, length), length);
-        } else {
-            return new ObjectArrayData(LongArrayData.toObjectArray(array, length), length);
         }
+        return new ObjectArrayData(LongArrayData.toObjectArray(array, length), length);
     }
 
     @Override

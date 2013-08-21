@@ -22,20 +22,50 @@
  */
 
 /**
- * JDK-8020357: Return range error for too big native array buffers
+ * JDK-8023026: Array.prototype iterator functions like forEach, reduce should work for Java arrays, lists
  *
  * @test
  * @run
  */
 
-var UNSIGNED_INT_BITS = 31
-var BYTES_PER_INT_32  =  4
+function checkIterations(obj) {
+    if (typeof obj.getClass == 'function') {
+        print("iterating on an object of " + obj.getClass());
+    } else {
+        print("iterating on " + String(obj));
+    }
 
-var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
+    Array.prototype.forEach.call(obj,
+        function(x) { print("forEach " + x); });
 
-// A value over the limit should throw a RangeError.
-try {
-    Int32Array(limit)
-} catch(e) {
-    print(e)
+    print("left sum " + Array.prototype.reduce.call(obj,
+        function(x, y) { print("reduce", x, y); return x + y; }));
+
+    print("right sum " + Array.prototype.reduceRight.call(obj,
+        function(x, y) { print("reduceRight", x, y); return x + y; }));
+
+    print("squared " + Array.prototype.map.call(obj,
+        function(x) x*x));
 }
+
+var array = new (Java.type("[I"))(4);
+for (var i in array) {
+    array[i] = i;
+}
+
+checkIterations(array);
+
+var list = new java.util.ArrayList();
+list.add(1);
+list.add(3);
+list.add(5);
+list.add(7);
+
+checkIterations(list);
+
+var mirror = loadWithNewGlobal({
+    name: "test",
+    script: "[2, 4, 6, 8]"
+});
+
+checkIterations(mirror);

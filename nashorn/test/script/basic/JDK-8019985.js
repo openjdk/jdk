@@ -22,20 +22,29 @@
  */
 
 /**
- * JDK-8020357: Return range error for too big native array buffers
+ * JDK-8019985: Date.parse("2000-01-01T00:00:00.Z") should return NaN
  *
  * @test
  * @run
  */
 
-var UNSIGNED_INT_BITS = 31
-var BYTES_PER_INT_32  =  4
-
-var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
-
-// A value over the limit should throw a RangeError.
-try {
-    Int32Array(limit)
-} catch(e) {
-    print(e)
+function testFail(str) {
+    if (!isNaN(Date.parse(str))) {
+        throw new Error("Parsed invalid date string: " + str);
+    }
 }
+
+function testOk(str) {
+    if (isNaN(Date.parse(str))) {
+        throw new Error("Failed to parse valid date string: " + str);
+    }
+}
+
+testFail("2000-01-01T00:00:00.Z");
+testFail("2000-01-01T00:00:Z");
+testFail("2000-01-01T00:Z");
+testFail("2000-01-01T00Z");
+testOk("2000-01-01T00:00:00.000Z");
+testOk("2000-01-01T00:00:00.0Z");
+testOk("2000-01-01T00:00:00Z");
+testOk("2000-01-01T00:00Z");
