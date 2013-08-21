@@ -1089,7 +1089,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
         }
         if (allowTypeAnnos) {
-            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, env, tree, annotate);
         }
     }
 
