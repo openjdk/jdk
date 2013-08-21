@@ -42,7 +42,7 @@ import org.w3c.dom.Element;
 public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyInfoContent {
 
     /** JCA algorithm key types supported by this implementation. */
-    public static final String supportedKeyTypes[] = { "RSA", "DSA", "EC"};
+    private static final String supportedKeyTypes[] = { "RSA", "DSA", "EC"};
 
     /**
      * Constructor DEREncodedKeyValue

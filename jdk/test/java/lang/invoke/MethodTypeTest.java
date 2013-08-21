@@ -24,7 +24,7 @@
 /* @test
  * @summary unit tests for java.lang.invoke.MethodType
  * @compile MethodTypeTest.java
- * @run junit/othervm test.java.lang.invoke.MethodTypeTest
+ * @run testng/othervm test.java.lang.invoke.MethodTypeTest
  */
 
 package test.java.lang.invoke;
@@ -34,8 +34,9 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 import java.util.*;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.testng.*;
+import static org.testng.AssertJUnit.*;
+import org.testng.annotations.*;
 
 /**
  *
@@ -53,7 +54,7 @@ public class MethodTypeTest {
     private MethodType[] GALLERY;
     private Method compareTo;
 
-    @Before
+    @BeforeMethod
     public void setUp() throws Exception {
         rtype = void.class;
         ptypes = new Class<?>[] { int.class, String.class };
@@ -94,7 +95,7 @@ public class MethodTypeTest {
         };
     }
 
-    @After
+    @AfterMethod
     public void tearDown() throws Exception {
     }
 

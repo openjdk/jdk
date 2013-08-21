@@ -4508,7 +4508,6 @@ public class Collections {
         }
         @Override
         public void sort(Comparator<? super E> c) {
-            Objects.requireNonNull(c);
         }
 
         // Override default methods in Collection
