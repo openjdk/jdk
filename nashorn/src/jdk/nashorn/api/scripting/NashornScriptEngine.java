@@ -321,10 +321,11 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private ScriptObject getNashornGlobalFrom(final ScriptContext ctxt) {
         final Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
         if (bindings instanceof ScriptObjectMirror) {
-             ScriptObject sobj = ((ScriptObjectMirror)bindings).getScriptObject();
-             if (sobj instanceof GlobalObject) {
-                 return sobj;
-             }
+            final ScriptObjectMirror mirror = (ScriptObjectMirror)bindings;
+            ScriptObject sobj = ((ScriptObjectMirror)bindings).getScriptObject();
+            if (sobj instanceof GlobalObject && sobj.isOfContext(nashornContext)) {
+                return sobj;
+            }
         }
 
         // didn't find global object from context given - return the engine-wide global
@@ -402,8 +403,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             args = ScriptRuntime.EMPTY_ARRAY;
         }
         // if no arguments passed, expose it
-        args = ((GlobalObject)ctxtGlobal).wrapAsObject(args);
-        ctxtGlobal.set("arguments", args, false);
+        if (! (args instanceof ScriptObject)) {
+            args = ((GlobalObject)ctxtGlobal).wrapAsObject(args);
+            ctxtGlobal.set("arguments", args, false);
+        }
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {

@@ -1256,4 +1256,30 @@ public class ScriptEngineTest {
         // dos2unix - fix line endings if running on windows
         assertEquals(sw.toString().replaceAll("\r", ""), "34 true hello\n");
     }
+
+    @Test
+    public void mirrorNewObjectGlobalFunctionTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptEngine e2 = m.getEngineByName("nashorn");
+
+        e.eval("function func() {}");
+        e2.put("foo", e.get("func"));
+        final Object e2global = e2.eval("this");
+        final Object newObj = ((ScriptObjectMirror)e2global).newObject("foo");
+        assertTrue(newObj instanceof ScriptObjectMirror);
+    }
+
+    @Test
+    public void mirrorNewObjectInstanceFunctionTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptEngine e2 = m.getEngineByName("nashorn");
+
+        e.eval("function func() {}");
+        e2.put("func", e.get("func"));
+        final Object e2obj = e2.eval("({ foo: func })");
+        final Object newObj = ((ScriptObjectMirror)e2obj).newObject("foo");
+        assertTrue(newObj instanceof ScriptObjectMirror);
+    }
 }
