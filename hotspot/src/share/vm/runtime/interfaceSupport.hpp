@@ -107,6 +107,9 @@ class InterfaceSupport: AllStatic {
 #ifdef TARGET_OS_FAMILY_windows
 # include "interfaceSupport_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "interfaceSupport_aix.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "interfaceSupport_bsd.hpp"
 #endif

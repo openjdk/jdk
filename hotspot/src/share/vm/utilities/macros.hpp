@@ -254,6 +254,14 @@
 #define NOT_LINUX(code) code
 #endif
 
+#ifdef AIX
+#define AIX_ONLY(code) code
+#define NOT_AIX(code)
+#else
+#define AIX_ONLY(code)
+#define NOT_AIX(code) code
+#endif
+
 #ifdef SOLARIS
 #define SOLARIS_ONLY(code) code
 #define NOT_SOLARIS(code)

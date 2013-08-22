@@ -165,7 +165,7 @@ void os::Posix::print_rlimit_info(outputStream* st) {
   else st->print("%uk", rlim.rlim_cur >> 10);
 
   // Isn't there on solaris
-#ifndef TARGET_OS_FAMILY_solaris
+#if! defined(TARGET_OS_FAMILY_solaris) && !defined(TARGET_OS_FAMILY_aix)
   st->print(", NPROC ");
   getrlimit(RLIMIT_NPROC, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
@@ -487,7 +487,7 @@ bool os::Posix::is_valid_signal(int sig) {
 #define NUM_IMPORTANT_SIGS 32
 // Returns one-line short description of a signal set in a user provided buffer.
 const char* os::Posix::describe_signal_set_short(const sigset_t* set, char* buffer, size_t buf_size) {
-  assert(buf_size = (NUM_IMPORTANT_SIGS + 1), "wrong buffer size");
+  assert(buf_size == (NUM_IMPORTANT_SIGS + 1), "wrong buffer size");
   // Note: for shortness, just print out the first 32. That should
   // cover most of the useful ones, apart from realtime signals.
   for (int sig = 1; sig <= NUM_IMPORTANT_SIGS; sig++) {

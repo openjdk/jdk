@@ -73,7 +73,7 @@ friend class OptoReg;
 // friend class Location;
 private:
   enum {
-    BAD = -1
+    BAD_REG = -1
   };
 
 
@@ -86,7 +86,7 @@ private:
 
 public:
 
-  static VMReg  as_VMReg(int val, bool bad_ok = false) { assert(val > BAD || bad_ok, "invalid"); return (VMReg) (intptr_t) val; }
+  static VMReg  as_VMReg(int val, bool bad_ok = false) { assert(val > BAD_REG || bad_ok, "invalid"); return (VMReg) (intptr_t) val; }
 
   const char*  name() {
     if (is_reg()) {
@@ -98,8 +98,8 @@ public:
       return "STACKED REG";
     }
   }
-  static VMReg Bad() { return (VMReg) (intptr_t) BAD; }
-  bool is_valid() const { return ((intptr_t) this) != BAD; }
+  static VMReg Bad() { return (VMReg) (intptr_t) BAD_REG; }
+  bool is_valid() const { return ((intptr_t) this) != BAD_REG; }
   bool is_stack() const { return (intptr_t) this >= (intptr_t) stack0; }
   bool is_reg()   const { return is_valid() && !is_stack(); }
 
