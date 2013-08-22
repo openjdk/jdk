@@ -47,6 +47,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -1281,5 +1282,51 @@ public class ScriptEngineTest {
         final Object e2obj = e2.eval("({ foo: func })");
         final Object newObj = ((ScriptObjectMirror)e2obj).newObject("foo");
         assertTrue(newObj instanceof ScriptObjectMirror);
+    }
+
+    @Test
+    public void userEngineScopeBindingsTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval("function func() {}");
+
+        final ScriptContext newContext = new SimpleScriptContext();
+        newContext.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
+        // we are using a new bindings - so it should have 'func' defined
+        Object value = e.eval("typeof func", newContext);
+        assertTrue(value.equals("undefined"));
+    }
+
+    @Test
+    public void userEngineScopeBindingsNoLeakTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptContext newContext = new SimpleScriptContext();
+        newContext.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
+        e.eval("function foo() {}", newContext);
+
+        // in the default context's ENGINE_SCOPE, 'foo' shouldn't exist
+        assertTrue(e.eval("typeof foo").equals("undefined"));
+    }
+
+    @Test
+    public void userEngineScopeBindingsRetentionTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptContext newContext = new SimpleScriptContext();
+        newContext.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
+        e.eval("function foo() {}", newContext);
+
+        // definition retained with user's ENGINE_SCOPE Binding
+        assertTrue(e.eval("typeof foo", newContext).equals("function"));
+
+        final Bindings oldBindings = newContext.getBindings(ScriptContext.ENGINE_SCOPE);
+        // but not in another ENGINE_SCOPE binding
+        newContext.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
+        assertTrue(e.eval("typeof foo", newContext).equals("undefined"));
+
+        // restore ENGINE_SCOPE and check again
+        newContext.setBindings(oldBindings, ScriptContext.ENGINE_SCOPE);
+        assertTrue(e.eval("typeof foo", newContext).equals("function"));
     }
 }

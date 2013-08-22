@@ -55,6 +55,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.GlobalObject;
@@ -74,6 +75,11 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 public final class NashornScriptEngine extends AbstractScriptEngine implements Compilable, Invocable {
+    /**
+     * Key used to associate Nashorn global object mirror with arbitrary Bindings instance.
+     */
+    public static final String NASHORN_GLOBAL = "nashorn.global";
+
     private static AccessControlContext createPermAccCtxt(final String permName) {
         final Permissions perms = new Permissions();
         perms.add(new RuntimePermission(permName));
@@ -85,6 +91,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private final ScriptEngineFactory factory;
     private final Context             nashornContext;
+    // do we want to share single Nashorn global instance across ENGINE_SCOPEs?
+    private final boolean             _global_per_engine;
     private final ScriptObject        global;
     // initialized bit late to be made 'final'. Property object for "context"
     // property of global object
@@ -134,6 +142,9 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
         }, CREATE_CONTEXT_ACC_CTXT);
 
+        // cache this option that is used often
+        this._global_per_engine = nashornContext.getEnv()._global_per_engine;
+
         // create new global object
         this.global = createNashornGlobal();
         // set the default engine scope for the default context
@@ -176,8 +187,14 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     @Override
     public Bindings createBindings() {
-        final ScriptObject newGlobal = createNashornGlobal();
-        return new ScriptObjectMirror(newGlobal, newGlobal);
+        if (_global_per_engine) {
+            // just create normal SimpleBindings.
+            // We use same 'global' for all Bindings.
+            return new SimpleBindings();
+        } else {
+            final ScriptObject newGlobal = createNashornGlobal();
+            return new ScriptObjectMirror(newGlobal, newGlobal);
+        }
     }
 
     // Compilable methods
@@ -319,17 +336,43 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private ScriptObject getNashornGlobalFrom(final ScriptContext ctxt) {
+        if (_global_per_engine) {
+            // shared single global for all ENGINE_SCOPE Bindings
+            return global;
+        }
+
         final Bindings bindings = ctxt.getBindings(ScriptContext.ENGINE_SCOPE);
+        // is this Nashorn's own Bindings implementation?
         if (bindings instanceof ScriptObjectMirror) {
-            final ScriptObjectMirror mirror = (ScriptObjectMirror)bindings;
-            ScriptObject sobj = ((ScriptObjectMirror)bindings).getScriptObject();
-            if (sobj instanceof GlobalObject && sobj.isOfContext(nashornContext)) {
+            final ScriptObject sobj = globalFromMirror((ScriptObjectMirror)bindings);
+            if (sobj != null) {
                 return sobj;
             }
         }
 
-        // didn't find global object from context given - return the engine-wide global
-        return global;
+        // Arbitrary user Bindings implementation. Look for NASHORN_GLOBAL in it!
+        Object scope = bindings.get(NASHORN_GLOBAL);
+        if (scope instanceof ScriptObjectMirror) {
+            final ScriptObject sobj = globalFromMirror((ScriptObjectMirror)scope);
+            if (sobj != null) {
+                return sobj;
+            }
+        }
+
+        // We didn't find associated nashorn global mirror in the Bindings given!
+        // Create new global instance mirror and associate with the Bindings.
+        final ScriptObjectMirror mirror = (ScriptObjectMirror)createBindings();
+        bindings.put(NASHORN_GLOBAL, mirror);
+        return mirror.getScriptObject();
+    }
+
+    private ScriptObject globalFromMirror(final ScriptObjectMirror mirror) {
+        ScriptObject sobj = mirror.getScriptObject();
+        if (sobj instanceof GlobalObject && sobj.isOfContext(nashornContext)) {
+            return sobj;
+        }
+
+        return null;
     }
 
     private ScriptObject createNashornGlobal() {
