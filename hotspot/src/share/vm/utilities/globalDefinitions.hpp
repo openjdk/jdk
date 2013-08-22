@@ -38,6 +38,9 @@
 #ifdef TARGET_COMPILER_sparcWorks
 # include "utilities/globalDefinitions_sparcWorks.hpp"
 #endif
+#ifdef TARGET_COMPILER_xlc
+# include "utilities/globalDefinitions_xlc.hpp"
+#endif
 
 #include "utilities/macros.hpp"
 

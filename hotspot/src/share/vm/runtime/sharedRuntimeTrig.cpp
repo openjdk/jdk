@@ -658,7 +658,7 @@ C6  = -1.13596475577881948265e-11; /* 0xBDA8FAE9, 0xBE8838D4 */
 
 static double __kernel_cos(double x, double y)
 {
-  double a,hz,z,r,qx;
+  double a,h,z,r,qx;
   int ix;
   ix = __HI(x)&0x7fffffff;      /* ix = |x|'s high word*/
   if(ix<0x3e400000) {                   /* if x < 2**27 */
@@ -675,9 +675,9 @@ static double __kernel_cos(double x, double y)
       __HI(qx) = ix-0x00200000; /* x/4 */
       __LO(qx) = 0;
     }
-    hz = 0.5*z-qx;
-    a  = one-qx;
-    return a - (hz - (z*r-x*y));
+    h = 0.5*z-qx;
+    a = one-qx;
+    return a - (h - (z*r-x*y));
   }
 }
 

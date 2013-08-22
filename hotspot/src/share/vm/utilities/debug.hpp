@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_DEBUG_HPP
 #define SHARE_VM_UTILITIES_DEBUG_HPP
 
-#include "prims/jvm.h"
 #include "utilities/globalDefinitions.hpp"
+#include "prims/jvm.h"
 
 #include <stdarg.h>
 

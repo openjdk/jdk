@@ -747,7 +747,7 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
       // the correct no-access prefix.
       // The final value will be set in initialize_heap() below.
       Universe::set_narrow_oop_base((address)NarrowOopHeapMax);
-#ifdef _WIN64
+#if defined(_WIN64) || defined(AIX)
       if (UseLargePages) {
         // Cannot allocate guard pages for implicit checks in indexed
         // addressing mode when large pages are specified on windows.
@@ -825,6 +825,11 @@ jint Universe::initialize_heap() {
       // Can't reserve heap below 32Gb.
       // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+#ifdef AIX
+      // There is no protected page before the heap. This assures all oops
+      // are decoded so that NULL is preserved, so this page will not be accessed.
+      Universe::set_narrow_oop_use_implicit_null_checks(false);
+#endif
       if (verbose) {
         tty->print(", %s: "PTR_FORMAT,
             narrow_oop_mode_to_string(HeapBasedNarrowOop),

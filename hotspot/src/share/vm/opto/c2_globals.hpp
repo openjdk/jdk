@@ -47,6 +47,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "c2_globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "c2_globals_aix.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "c2_globals_bsd.hpp"
 #endif

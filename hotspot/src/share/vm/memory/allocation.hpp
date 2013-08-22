@@ -220,8 +220,11 @@ template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
 class StackObj ALLOCATION_SUPER_CLASS_SPEC {
  private:
   void* operator new(size_t size);
-  void  operator delete(void* p);
   void* operator new [](size_t size);
+#ifdef __IBMCPP__
+ public:
+#endif
+  void  operator delete(void* p);
   void  operator delete [](void* p);
 };
 
