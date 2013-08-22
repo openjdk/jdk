@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_MEMORY_METASPACECOUNTERS_HPP
-#define SHARE_VM_MEMORY_METASPACECOUNTERS_HPP
+package com.oracle.java.testlibrary;
 
-#include "memory/metaspace.hpp"
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 
-class MetaspacePerfCounters;
+/**
+ * This class provides access to the input arguments to the VM.
+ */
+public class InputArguments {
+    private static final List<String> args;
 
-class MetaspaceCounters: public AllStatic {
-  static MetaspacePerfCounters* _perf_counters;
-  static size_t calculate_capacity();
+    static {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        args = runtimeMxBean.getInputArguments();
+    }
 
- public:
-  static void initialize_performance_counters();
-  static void update_performance_counters();
-};
-
-class CompressedClassSpaceCounters: public AllStatic {
-  static MetaspacePerfCounters* _perf_counters;
-  static size_t calculate_capacity();
-  static const Metaspace::MetadataType _class_type = Metaspace::ClassType;
-
- public:
-  static void initialize_performance_counters();
-  static void update_performance_counters();
-};
-
-#endif // SHARE_VM_MEMORY_METASPACECOUNTERS_HPP
+    /**
+     * Returns true if {@code arg} is an input argument to the VM.
+     *
+     * @param arg The name of the argument.
+     * @return {@code true} if the given argument is an input argument,
+     *         otherwise {@code false}.
+     */
+    public static boolean contains(String arg) {
+        return args.contains(arg);
+    }
+}

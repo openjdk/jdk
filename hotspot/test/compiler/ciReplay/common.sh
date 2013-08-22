@@ -186,6 +186,11 @@ generate_replay() {
     then
         # enable core dump
         ulimit -c unlimited
+
+        if [ $VM_OS = "solaris" ]
+        then
+            coreadm -p core $$
+        fi
     fi
 
     cmd="${JAVA} ${TESTVMOPTS} $@ \
