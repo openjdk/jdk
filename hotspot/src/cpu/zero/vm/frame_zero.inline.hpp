@@ -36,7 +36,7 @@ inline frame::frame() {
   _deopt_state = unknown;
 }
 
-inline address  frame::sender_pc()           const { ShouldNotCallThis();  }
+inline address  frame::sender_pc()           const { ShouldNotCallThis(); return NULL; }
 
 inline frame::frame(ZeroFrame* zf, intptr_t* sp) {
   _zeroframe = zf;
@@ -89,6 +89,7 @@ inline intptr_t* frame::real_fp() const {
 
 inline intptr_t* frame::link() const {
   ShouldNotCallThis();
+  return NULL;
 }
 
 #ifdef CC_INTERP
@@ -151,14 +152,17 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   ShouldNotCallThis();
+  return NULL;
 }
 
 inline bool frame::is_older(intptr_t* id) const {
   ShouldNotCallThis();
+  return false;
 }
 
 inline intptr_t* frame::entry_frame_argument_at(int offset) const {
   ShouldNotCallThis();
+  return NULL;
 }
 
 inline intptr_t* frame::unextended_sp() const {

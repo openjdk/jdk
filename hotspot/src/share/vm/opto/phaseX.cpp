@@ -1643,8 +1643,8 @@ void PhasePeephole::do_transform() {
   bool method_name_not_printed = true;
 
   // Examine each basic block
-  for( uint block_number = 1; block_number < _cfg._num_blocks; ++block_number ) {
-    Block *block = _cfg._blocks[block_number];
+  for (uint block_number = 1; block_number < _cfg.number_of_blocks(); ++block_number) {
+    Block* block = _cfg.get_block(block_number);
     bool block_not_printed = true;
 
     // and each instruction within a block

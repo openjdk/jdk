@@ -32,8 +32,10 @@ const int ConcreteRegisterImpl::max_fpr =
 
 const char* RegisterImpl::name() const {
   ShouldNotCallThis();
+  return NULL;
 }
 
 const char* FloatRegisterImpl::name() const {
   ShouldNotCallThis();
+  return NULL;
 }
