@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug   4366807
  * @summary Need new APIs to get/set session timeout and session cache size.
  * @run main/othervm SessionCacheSizeTests
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -113,7 +115,9 @@ public class SessionCacheSizeTests {
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady = true;
+        if (createdPorts == serverPorts.length) {
+            serverReady = true;
+        }
         int read = 0;
         int nConnections = 0;
         /*
@@ -310,7 +314,6 @@ public class SessionCacheSizeTests {
      * Fork off the other side, then do your work.
      */
     SessionCacheSizeTests() throws Exception {
-
         /*
          * create the SSLServerSocket and SSLSocket factories
          */
@@ -323,46 +326,87 @@ public class SessionCacheSizeTests {
         int serverConns = MAX_ACTIVE_CONNECTIONS / (serverPorts.length);
         int remainingConns = MAX_ACTIVE_CONNECTIONS % (serverPorts.length);
 
-        if (separateServerThread) {
-            for (int i = 0; i < serverPorts.length; i++) {
-
-                // distribute remaining connections among the available ports
-                if (i < remainingConns)
-                    startServer(serverPorts[i], (serverConns + 1), true);
-                else
-                    startServer(serverPorts[i], serverConns, true);
+        Exception startException = null;
+        try {
+            if (separateServerThread) {
+                for (int i = 0; i < serverPorts.length; i++) {
+                    // distribute remaining connections among the
+                    // available ports
+                    if (i < remainingConns)
+                        startServer(serverPorts[i], (serverConns + 1), true);
+                    else
+                        startServer(serverPorts[i], serverConns, true);
+                }
+                startClient(false);
+            } else {
+                startClient(true);
+                for (int i = 0; i < serverPorts.length; i++) {
+                    if (i < remainingConns)
+                        startServer(serverPorts[i], (serverConns + 1), false);
+                    else
+                        startServer(serverPorts[i], serverConns, false);
+                }
             }
-            startClient(false);
-        } else {
-            startClient(true);
-            for (int i = 0; i < serverPorts.length; i++) {
-                if (i < remainingConns)
-                    startServer(serverPorts[i], (serverConns + 1), false);
-                else
-                    startServer(serverPorts[i], serverConns, false);
-            }
+        } catch (Exception e) {
+            startException = e;
         }
 
         /*
          * Wait for other side to close down.
          */
         if (separateServerThread) {
-            serverThread.join();
+            if (serverThread != null) {
+                serverThread.join();
+            }
         } else {
-            clientThread.join();
+            if (clientThread != null) {
+                clientThread.join();
+            }
         }
 
         /*
          * When we get here, the test is pretty much over.
-         *
-         * If the main thread excepted, that propagates back
-         * immediately.  If the other thread threw an exception, we
-         * should report back.
          */
-        if (serverException != null)
-            throw serverException;
-        if (clientException != null)
-            throw clientException;
+        Exception local;
+        Exception remote;
+
+        if (separateServerThread) {
+            remote = serverException;
+            local = clientException;
+        } else {
+            remote = clientException;
+            local = serverException;
+        }
+
+        Exception exception = null;
+
+        /*
+         * Check various exception conditions.
+         */
+        if ((local != null) && (remote != null)) {
+            // If both failed, return the curthread's exception.
+            local.initCause(remote);
+            exception = local;
+        } else if (local != null) {
+            exception = local;
+        } else if (remote != null) {
+            exception = remote;
+        } else if (startException != null) {
+            exception = startException;
+        }
+
+        /*
+         * If there was an exception *AND* a startException,
+         * output it.
+         */
+        if (exception != null) {
+            if (exception != startException && startException != null) {
+                exception.addSuppressed(startException);
+            }
+            throw exception;
+        }
+
+        // Fall-through: no exception to throw!
     }
 
     void startServer(final int port, final int nConns,
@@ -387,7 +431,13 @@ public class SessionCacheSizeTests {
             };
             serverThread.start();
         } else {
-            doServerSide(port, nConns);
+            try {
+                doServerSide(port, nConns);
+            } catch (Exception e) {
+                serverException = e;
+            } finally {
+                serverReady = true;
+            }
         }
     }
 
@@ -409,7 +459,11 @@ public class SessionCacheSizeTests {
             };
             clientThread.start();
         } else {
-            doClientSide();
+            try {
+                doClientSide();
+            } catch (Exception e) {
+                clientException = e;
+            }
         }
     }
 }
