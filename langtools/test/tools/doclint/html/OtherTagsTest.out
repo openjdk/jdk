@@ -10,19 +10,19 @@ OtherTagsTest.java:15: error: element not allowed in documentation comments: <fr
 OtherTagsTest.java:16: error: element not allowed in documentation comments: <head>
      *  <head> </head>
         ^
-OtherTagsTest.java:17: error: element not allowed in documentation comments: <link>
+OtherTagsTest.java:18: error: element not allowed in documentation comments: <link>
      *  <link>
         ^
-OtherTagsTest.java:18: error: element not allowed in documentation comments: <meta>
+OtherTagsTest.java:19: error: element not allowed in documentation comments: <meta>
      *  <meta>
         ^
-OtherTagsTest.java:19: error: element not allowed in documentation comments: <noframes>
+OtherTagsTest.java:20: error: element not allowed in documentation comments: <noframes>
      *  <noframes> </noframes>
         ^
-OtherTagsTest.java:20: error: element not allowed in documentation comments: <script>
+OtherTagsTest.java:21: error: element not allowed in documentation comments: <script>
      *  <script> </script>
         ^
-OtherTagsTest.java:21: error: element not allowed in documentation comments: <title>
+OtherTagsTest.java:22: error: element not allowed in documentation comments: <title>
      *  <title> </title>
         ^
 9 errors
