@@ -208,7 +208,7 @@ sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
 # jdk_io
 
 # 7160013
-java/io/File/MaxPathLength.java                                 windows-all
+#java/io/File/MaxPathLength.java                                 windows-all
 
 ############################################################################
 
