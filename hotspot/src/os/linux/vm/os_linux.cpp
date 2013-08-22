@@ -2796,7 +2796,19 @@ void os::numa_make_global(char *addr, size_t bytes) {
   Linux::numa_interleave_memory(addr, bytes);
 }
 
+// Define for numa_set_bind_policy(int). Setting the argument to 0 will set the
+// bind policy to MPOL_PREFERRED for the current thread.
+#define USE_MPOL_PREFERRED 0
+
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
+  // To make NUMA and large pages more robust when both enabled, we need to ease
+  // the requirements on where the memory should be allocated. MPOL_BIND is the
+  // default policy and it will force memory to be allocated on the specified
+  // node. Changing this to MPOL_PREFERRED will prefer to allocate the memory on
+  // the specified node, but will not force it. Using this policy will prevent
+  // getting SIGBUS when trying to allocate large pages on NUMA nodes with no
+  // free large pages.
+  Linux::numa_set_bind_policy(USE_MPOL_PREFERRED);
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
 }
 
@@ -2898,6 +2910,8 @@ bool os::Linux::libnuma_init() {
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
                                             libnuma_dlsym(handle, "numa_interleave_memory")));
+      set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
+                                            libnuma_dlsym(handle, "numa_set_bind_policy")));
 
 
       if (numa_available() != -1) {
@@ -2964,6 +2978,7 @@ os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
