@@ -3287,11 +3287,15 @@ void os::Bsd::install_signal_handlers() {
     // and if UserSignalHandler is installed all bets are off
     if (CheckJNICalls) {
       if (libjsig_is_loaded) {
-        tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
       if (AllowUserSignalHandlers) {
-        tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
     }
