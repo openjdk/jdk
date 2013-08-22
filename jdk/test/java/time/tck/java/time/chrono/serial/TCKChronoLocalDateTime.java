@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /*
- * Copyright (c) 2013, Stephen Colebourne & Michael Nascimento Santos
+ * Copyright (c) 2008-2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
  *
@@ -54,29 +54,29 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package tck.java.time.chrono;
+package tck.java.time.chrono.serial;
 
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
-import java.time.chrono.Chronology;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.IsoChronology;
-import java.time.chrono.JapaneseChronology;
-import java.time.chrono.MinguoChronology;
-import java.time.chrono.ThaiBuddhistChronology;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.chrono.*;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
-public class TCKChronologySerialization {
+/**
+ * Test assertions that must be true for all built-in chronologies.
+ */
+@Test
+public class TCKChronoLocalDateTime {
 
     //-----------------------------------------------------------------------
-    // regular data factory for names and descriptions of available calendars
+    // regular data factory for available calendars
     //-----------------------------------------------------------------------
     @DataProvider(name = "calendars")
     Chronology[][] data_of_calendars() {
@@ -89,48 +89,22 @@ public class TCKChronologySerialization {
     }
 
     //-----------------------------------------------------------------------
-    // Test Serialization of Calendars
+    // Test Serialization ZonedDateTime for each Chronology
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
-    public void test_ChronoSerialization(Chronology chrono) throws Exception {
+    @Test( dataProvider="calendars")
+    public void test_ChronoLocalDateTimeSerialization(Chronology chrono) throws Exception {
+        LocalDateTime ref = LocalDate.of(2013, 1, 5).atTime(12, 1, 2, 3);
+        ChronoLocalDateTime<?> orginal = chrono.date(ref).atTime(ref.toLocalTime());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(chrono);
+        out.writeObject(orginal);
         out.close();
-
-        byte[] bytes = baos.toByteArray();
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream in = new ObjectInputStream(bais);
-        @SuppressWarnings("unchecked")
-        Chronology ser = (Chronology) in.readObject();
-        assertEquals(ser, chrono, "deserialized Chronology is wrong");
+        ChronoLocalDateTime<?> ser = (ChronoLocalDateTime<?>) in.readObject();
+        assertEquals(ser, orginal, "deserialized date is wrong");
     }
 
-    /**
-     * Utility method to dump a byte array in a java syntax.
-     * @param bytes and array of bytes
-     * @param os the outputstream to receive the output.
-     */
-    static void dumpSerialStream(byte[] bytes, PrintStream os) {
-        os.printf("    byte[] bytes = {" );
-        final int linelen = 10;
-        for (int i = 0; i < bytes.length; i++) {
-            if (i % linelen == 0) {
-                os.printf("%n        ");
-            }
-            os.printf(" %3d,", bytes[i] & 0xff);
-            if ((i % linelen) == (linelen-1) || i == bytes.length - 1) {
-                os.printf("  /*");
-                int s = i / linelen * linelen;
-                int k = i % linelen;
-                for (int j = 0; j <= k && s + j < bytes.length; j++) {
-                    os.printf(" %c", bytes[s + j] & 0xff);
-                }
-                os.printf(" */");
-            }
-        }
-        os.printf("%n    };%n");
-    }
+    //-----------------------------------------------------------------------
 
 }

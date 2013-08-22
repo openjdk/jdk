@@ -210,43 +210,6 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2008_6_30_11_30_59_000000500);
-        assertSerializable(OffsetDateTime.MIN);
-        assertSerializable(OffsetDateTime.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(10);       // java.time.Ser.OFFSET_DATE_TIME_TYPE
-        }
-        byte[] bytes = baos.toByteArray();
-        ByteArrayOutputStream baosDateTime = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosDateTime) ) {
-            dos.writeByte(5);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(464_000_000);
-        }
-        byte[] bytesDateTime = baosDateTime.toByteArray();
-        ByteArrayOutputStream baosOffset = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baosOffset) ) {
-            dos.writeByte(8);
-            dos.writeByte(4);  // quarter hours stored: 3600 / 900
-        }
-        byte[] bytesOffset = baosOffset.toByteArray();
-        LocalDateTime ldt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 464_000_000);
-        assertSerializedBySer(OffsetDateTime.of(ldt, ZoneOffset.ofHours(1)), bytes, bytesDateTime, bytesOffset);
-    }
-
-    //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
     @Test

@@ -191,64 +191,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_12_30_40_987654321);
-        assertSerializable(LocalTime.MIN);
-        assertSerializable(LocalTime.MAX);
-    }
 
-    @Test
-    public void test_serialization_format_h() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(-1 - 22);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 0), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hm() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(-1 - 17);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hms() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(-1 - 59);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59), bytes);
-    }
-
-    @Test
-    public void test_serialization_format_hmsn() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(4);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalTime.of(22, 17, 59, 459_000_000), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     private void check(LocalTime test, int h, int m, int s, int n) {
         assertEquals(test.getHour(), h);
         assertEquals(test.getMinute(), m);

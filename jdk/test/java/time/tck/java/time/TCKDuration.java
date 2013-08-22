@@ -104,26 +104,6 @@ public class TCKDuration extends AbstractTCKTest {
     private static final long CYCLE_SECS = 146097L * 86400L;
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Duration.ofHours(5));
-        assertSerializable(Duration.ofHours(0));
-        assertSerializable(Duration.ofHours(-5));
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(1);
-            dos.writeLong(654321);
-            dos.writeInt(123456789);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Duration.ofSeconds(654321, 123456789), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
     @Test

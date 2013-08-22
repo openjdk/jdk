@@ -242,31 +242,6 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(TEST_2007_07_15_12_30_40_987654321);
-        assertSerializable(LocalDateTime.MIN);
-        assertSerializable(LocalDateTime.MAX);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(5);
-            dos.writeInt(2012);
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(459_000_000);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(LocalDateTime.of(2012, 9, 16, 22, 17, 59, 459_000_000), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // constants
     //-----------------------------------------------------------------------
     @Test

@@ -210,31 +210,6 @@ public class TCKZoneOffsetTransitionRule extends AbstractTCKTest {
         assertSerializable(test);
     }
 
-    @Test
-    public void test_serialization_unusualOffsets() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                ZoneOffset.ofHoursMinutesSeconds(-12, -20, -50),
-                ZoneOffset.ofHoursMinutesSeconds(-4, -10, -34),
-                ZoneOffset.ofHours(-18));
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_endOfDay() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, DayOfWeek.FRIDAY, LocalTime.MIDNIGHT, true, TimeDefinition.UTC,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_unusualTime() throws Exception {
-        ZoneOffsetTransitionRule test = ZoneOffsetTransitionRule.of(
-                Month.MARCH, 20, DayOfWeek.WEDNESDAY, LocalTime.of(13, 34, 56), false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
-    }
 
     //-----------------------------------------------------------------------
     // createTransition()
