@@ -1231,6 +1231,9 @@ public abstract class Symbol implements Element {
         /** The extra (synthetic/mandated) parameters of the method. */
         public List<VarSymbol> extraParams = List.nil();
 
+        /** The captured local variables in an anonymous class */
+        public List<VarSymbol> capturedLocals = List.nil();
+
         /** The parameters of the method. */
         public List<VarSymbol> params = null;
 
