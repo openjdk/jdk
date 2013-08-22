@@ -157,24 +157,6 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws IOException, ClassNotFoundException {
-        assertSerializable(TEST_2008_06);
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(12);       // java.time.temporal.Ser.YEAR_MONTH_TYPE
-            dos.writeInt(2012);
-            dos.writeByte(9);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(YearMonth.of(2012, 9), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     void check(YearMonth test, int y, int m) {
         assertEquals(test.getYear(), y);
         assertEquals(test.getMonth().getValue(), m);

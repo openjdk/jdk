@@ -152,25 +152,6 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Year.of(2));
-        assertSerializable(Year.of(0));
-        assertSerializable(Year.of(-2));
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(11);       // java.time.temporal.Ser.YEAR_TYPE
-            dos.writeInt(2012);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Year.of(2012), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
     @Test

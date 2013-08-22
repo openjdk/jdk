@@ -223,54 +223,6 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws ClassNotFoundException, IOException {
-        assertSerializable(TEST_DATE_TIME);
-    }
-
-    @Test
-    public void test_serialization_format_zoneId() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(7);  // zoneId
-            dos.writeUTF("Europe/London");
-        }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneId.of("Europe/London"));
-        assertSerializedBySer(zdt, bytes);
-    }
-
-    @Test
-    public void test_serialization_format_zoneOffset() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(6);
-            dos.writeInt(2012); // date
-            dos.writeByte(9);
-            dos.writeByte(16);
-            dos.writeByte(22);  // time
-            dos.writeByte(17);
-            dos.writeByte(59);
-            dos.writeInt(470_000_000);
-            dos.writeByte(4);  // offset
-            dos.writeByte(8);  // zoneId
-            dos.writeByte(4);
-        }
-        byte[] bytes = baos.toByteArray();
-        ZonedDateTime zdt = LocalDateTime.of(2012, 9, 16, 22, 17, 59, 470_000_000).atZone(ZoneOffset.ofHours(1));
-        assertSerializedBySer(zdt, bytes);
-    }
-
-    //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
     @Test

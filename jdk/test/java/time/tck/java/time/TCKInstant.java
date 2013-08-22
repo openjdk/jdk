@@ -155,24 +155,6 @@ public class TCKInstant extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Instant.ofEpochMilli(134l));
-    }
-
-    @Test
-    public void test_serialization_format() throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream dos = new DataOutputStream(baos) ) {
-            dos.writeByte(2);
-            dos.writeLong(654321);
-            dos.writeInt(123456789);
-        }
-        byte[] bytes = baos.toByteArray();
-        assertSerializedBySer(Instant.ofEpochSecond(654321, 123456789), bytes);
-    }
-
-    //-----------------------------------------------------------------------
     private void check(Instant instant, long epochSecs, int nos) {
         assertEquals(instant.getEpochSecond(), epochSecs);
         assertEquals(instant.getNano(), nos);

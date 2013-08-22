@@ -87,14 +87,6 @@ import org.testng.annotations.Test;
 public class TCKPeriod extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
-    @Test
-    public void test_serialization() throws Exception {
-        assertSerializable(Period.ZERO);
-        assertSerializable(Period.ofDays(1));
-        assertSerializable(Period.of(1, 2, 3));
-    }
-
-    //-----------------------------------------------------------------------
     // ofYears(int)
     //-----------------------------------------------------------------------
     @Test
