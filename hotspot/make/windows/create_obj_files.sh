@@ -73,19 +73,17 @@ done
 
 BASE_PATHS="${BASE_PATHS} ${GENERATED}/jvmtifiles ${GENERATED}/tracefiles"
 
-if [ -d "${ALTSRC}/share/vm/jfr" ]; then
-  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr"
+if [ -d "${ALTSRC}/share/vm/jfr/buffers" ]; then
   BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/buffers"
 fi
 
 BASE_PATHS="${BASE_PATHS} ${COMMONSRC}/share/vm/prims/wbtestmethods"
 
-CORE_PATHS="${BASE_PATHS}"
 # shared is already in BASE_PATHS. Should add vm/memory but that one is also in BASE_PATHS.
 if [ -d "${ALTSRC}/share/vm/gc_implementation" ]; then
-  CORE_PATHS="${CORE_PATHS} `$FIND ${ALTSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+  BASE_PATHS="${BASE_PATHS} `$FIND ${ALTSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
 fi
-CORE_PATHS="${CORE_PATHS} `$FIND ${COMMONSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
+BASE_PATHS="${BASE_PATHS} `$FIND ${COMMONSRC}/share/vm/gc_implementation ! -name gc_implementation -prune -type d \! -name shared`"
 
 if [ -d "${ALTSRC}/share/vm/c1" ]; then
   COMPILER1_PATHS="${ALTSRC}/share/vm/c1"
@@ -104,12 +102,11 @@ COMPILER2_PATHS="${COMPILER2_PATHS} ${GENERATED}/adfiles"
 
 # Include dirs per type.
 case "${TYPE}" in
-    "core")      Src_Dirs="${CORE_PATHS}" ;;
-    "compiler1") Src_Dirs="${CORE_PATHS} ${COMPILER1_PATHS}" ;;
-    "compiler2") Src_Dirs="${CORE_PATHS} ${COMPILER2_PATHS}" ;;
-    "tiered")    Src_Dirs="${CORE_PATHS} ${COMPILER1_PATHS} ${COMPILER2_PATHS}" ;;
-    "zero")      Src_Dirs="${CORE_PATHS}" ;;
-    "shark")     Src_Dirs="${CORE_PATHS}" ;;
+    "compiler1") Src_Dirs="${BASE_PATHS} ${COMPILER1_PATHS}" ;;
+    "compiler2") Src_Dirs="${BASE_PATHS} ${COMPILER2_PATHS}" ;;
+    "tiered")    Src_Dirs="${BASE_PATHS} ${COMPILER1_PATHS} ${COMPILER2_PATHS}" ;;
+    "zero")      Src_Dirs="${BASE_PATHS}" ;;
+    "shark")     Src_Dirs="${BASE_PATHS}" ;;
 esac
 
 COMPILER2_SPECIFIC_FILES="opto libadt bcEscapeAnalyzer.cpp c2_* runtime_*"
@@ -122,7 +119,6 @@ Src_Files_EXCLUDE="jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp"
 
 # Exclude per type.
 case "${TYPE}" in
-    "core")      Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
     "compiler1") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
     "compiler2") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;
     "tiered")    Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;
@@ -149,9 +145,17 @@ for e in ${Src_Dirs}; do
    Src_Files="${Src_Files}`findsrc ${e}` "
 done 
 
-Obj_Files=
+Obj_Files=" "
 for e in ${Src_Files}; do
-	Obj_Files="${Obj_Files}${e%\.[!.]*}.obj "
+        o="${e%\.[!.]*}.obj"
+        set +e
+        chk=`expr "${Obj_Files}" : ".* $o"`
+        set -e
+        if [ "$chk" != 0 ]; then
+             echo "# INFO: skipping duplicate $o"
+             continue
+        fi
+	Obj_Files="${Obj_Files}$o "
 done
 
 echo Obj_Files=${Obj_Files}
