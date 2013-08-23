@@ -140,13 +140,6 @@ public class SourceTreeScannerTest extends AbstractTreeScannerTest {
                         // not part of public API
                         continue;
                     }
-                    if (JCTree.JCNewArray.class.isAssignableFrom(tree.getClass())
-                            && (f.getName().equals("annotations")
-                                || f.getName().equals("dimAnnotations"))) {
-                        // these fields are incorrectly missing from the public API
-                        // (CR 6983297)
-                        continue;
-                    }
                     try {
                         //System.err.println("FIELD: " + f.getName());
                         reflectiveScan(f.get(tree));

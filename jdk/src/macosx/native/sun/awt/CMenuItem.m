@@ -296,7 +296,7 @@ static unichar AWTKeyToMacShortcut(jint awtKey, BOOL doShift) {
 
         case java_awt_event_KeyEvent_VK_HELP            : macKey = NSHelpFunctionKey; break;
         case java_awt_event_KeyEvent_VK_TAB             : macKey = NSTabCharacter; break;
-        case java_awt_event_KeyEvent_VK_ENTER           : macKey = NSCarriageReturnCharacter; break;
+        case java_awt_event_KeyEvent_VK_ENTER           : macKey = NSNewlineCharacter; break;
         case java_awt_event_KeyEvent_VK_BACK_SPACE      : macKey = NSBackspaceCharacter; break;
         case java_awt_event_KeyEvent_VK_DELETE          : macKey = NSDeleteCharacter; break;
         case java_awt_event_KeyEvent_VK_CLEAR           : macKey = NSClearDisplayFunctionKey; break;

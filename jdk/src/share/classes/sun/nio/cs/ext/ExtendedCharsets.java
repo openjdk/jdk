@@ -1031,6 +1031,24 @@ public class ExtendedCharsets
                     "ebcdic-s-871+euro"
                 });
 
+        charset("IBM290", "IBM290",
+                new String[] {
+                    "cp290",
+                    "ibm290",
+                    "ibm-290",
+                    "csIBM290",
+                    "EBCDIC-JP-kana",
+                    "290"
+                });
+
+        charset("x-IBM300", "IBM300",
+                new String[] {
+                    "cp300",
+                    "ibm300",
+                    "ibm-300",
+                    "300"
+                });
+
         // Macintosh MacOS/Apple char encodingd
 
 

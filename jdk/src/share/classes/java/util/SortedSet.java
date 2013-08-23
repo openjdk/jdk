@@ -238,7 +238,7 @@ public interface SortedSet<E> extends Set<E> {
      * The default implementation creates a
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
      * from the sorted set's {@code Iterator}.  The spliterator inherits the
-     * <em>fail-fast</em> properties of the collection's iterator.  The
+     * <em>fail-fast</em> properties of the set's iterator.  The
      * spliterator's comparator is the same as the sorted set's comparator.
      *
      * @implNote

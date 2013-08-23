@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,15 @@ public:
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
+
+  static size_t shared_spaces_size() {
+    return align_size_up(SharedReadOnlySize + SharedReadWriteSize +
+                         SharedMiscDataSize + SharedMiscCodeSize,
+                         os::vm_allocation_granularity());
+  }
+
+  // Stop CDS sharing and unmap CDS regions.
+  static void stop_sharing_and_unmap(const char* msg);
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

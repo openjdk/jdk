@@ -26,20 +26,14 @@
 /* @test
  * @summary tests for class-specific values
  * @compile ClassValueTest.java
- * @run junit/othervm test.java.lang.invoke.ClassValueTest
- */
-
-/*
-  Manually:
-   $ $JAVA7X_HOME/bin/javac -d foo -cp $JUNIT4_JAR test/java/lang/invoke/ClassValueTest.java
-   $ $JAVA7X_HOME/bin/java -cp foo:$JUNIT4_JAR org.junit.runner.JUnitCore test.java.lang.invoke.ClassValueTest
-  Output: .testAdd => 1000 : Integer
+ * @run testng/othervm test.java.lang.invoke.ClassValueTest
  */
 
 package test.java.lang.invoke;
 
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.testng.*;
+import static org.testng.AssertJUnit.*;
+import org.testng.annotations.*;
 
 /**
  * @author jrose
