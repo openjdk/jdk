@@ -22,30 +22,21 @@
  */
 
 /**
- * NASHORN-397 : typeof on certain member access expressions computes to undefined wrongly
+ * JDK-8023551: Mirror functions can not be invoked using invokeMethod, invokeFunction
  *
  * @test
  * @run
  */
 
-Object.defineProperty(Number.prototype, 'x',
-    { get : function() { return 42; } });
+var m = new javax.script.ScriptEngineManager();
+var e = m.getEngineByName("nashorn");
 
-if (typeof (5).x !== 'number') {
-    fail("typeof(5).x is not 'number'");
+function func(x) {
+   print("func: " + x);
 }
 
-// It is function because PrintStream implements Closeable, which is
-// marked with @FunctionalInterface. Yes, this means calling a stream
-// like "stream()" closes it.
-if (typeof (java.lang.System.out) != 'function') {
-    fail("typeof java.lang.System.out is not 'object'");
-}
+e.put("func", func);
+e.invokeFunction("func", "hello");
 
-if (typeof (java.lang.Math.PI) != 'number') {
-    fail("typeof java.lang.Math.PI is not 'number'");
-}
-
-if (typeof (java.io.File.separator) != 'string') {
-    fail("typeof java.io.File.separator is not 'string'");
-}
+var obj = e.eval("({ foo: func })");
+e.invokeMethod(obj, "foo", "world");

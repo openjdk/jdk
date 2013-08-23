@@ -22,30 +22,34 @@
  */
 
 /**
- * NASHORN-397 : typeof on certain member access expressions computes to undefined wrongly
+ * JDK-8022903: Enhance for-in and for-each for Lists and Maps
  *
  * @test
  * @run
  */
 
-Object.defineProperty(Number.prototype, 'x',
-    { get : function() { return 42; } });
+var colors = new java.util.ArrayList()
+colors.add("red")
+colors.add("purple")
+colors.add("pink")
 
-if (typeof (5).x !== 'number') {
-    fail("typeof(5).x is not 'number'");
+for(var index in colors) {
+    print("colors[" + index + "]=" + colors[index])
 }
 
-// It is function because PrintStream implements Closeable, which is
-// marked with @FunctionalInterface. Yes, this means calling a stream
-// like "stream()" closes it.
-if (typeof (java.lang.System.out) != 'function') {
-    fail("typeof java.lang.System.out is not 'object'");
+for each(var color in colors) {
+    print(color)
 }
 
-if (typeof (java.lang.Math.PI) != 'number') {
-    fail("typeof java.lang.Math.PI is not 'number'");
+var capitals = new java.util.LinkedHashMap()
+capitals.Sweden = "Stockholm"
+capitals.Hungary = "Budapet"
+capitals.Croatia = "Zagreb"
+
+for(var key in capitals) {
+    print("capital of " + key + " is " + capitals[key])
 }
 
-if (typeof (java.io.File.separator) != 'string') {
-    fail("typeof java.io.File.separator is not 'string'");
+for each(var capital in capitals) {
+    print(capital)
 }

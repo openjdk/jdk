@@ -125,6 +125,28 @@ public final class NativeObject {
     }
 
     /**
+     * Nashorn extension: Object.setPrototypeOf ( O, proto )
+     * Also found in ES6 draft specification.
+     *
+     * @param  self self reference
+     * @param  obj object to set prototype for
+     * @param  proto prototype object to be used
+     * @return object whose prototype is set
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
+        if (obj instanceof ScriptObject) {
+            ((ScriptObject)obj).setProtoCheck(proto);
+            return obj;
+        } else if (obj instanceof ScriptObjectMirror) {
+            ((ScriptObjectMirror)obj).setProto(proto);
+            return obj;
+        }
+
+        throw notAnObject(obj);
+    }
+
+    /**
      * ECMA 15.2.3.3 Object.getOwnPropertyDescriptor ( O, P )
      *
      * @param self  self reference
@@ -184,7 +206,7 @@ public final class NativeObject {
         // FIXME: should we create a proper object with correct number of
         // properties?
         final ScriptObject newObj = Global.newEmptyInstance();
-        newObj.setProtoCheck(proto);
+        newObj.setProto((ScriptObject)proto);
         if (props != UNDEFINED) {
             NativeObject.defineProperties(self, newObj, props);
         }
