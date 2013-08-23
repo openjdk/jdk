@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
- * @run junit/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
+ * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
 /* Examples of manual runs:
  * java -DPermuteArgsTest.{DRY_RUN=true,MAX_ARITY=253} test.java.lang.invoke.PermuteArgsTest
@@ -35,7 +35,8 @@
 
 package test.java.lang.invoke;
 
-import org.junit.*;
+import org.testng.*;
+import org.testng.annotations.*;
 
 import java.util.*;
 import java.lang.reflect.*;

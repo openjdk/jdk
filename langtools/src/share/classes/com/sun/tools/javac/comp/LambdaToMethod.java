@@ -473,7 +473,7 @@ public class LambdaToMethod extends TreeTranslator {
             //non-void to non-void conversion:
             // return (TYPE)BODY;
             JCExpression retExpr = transTypes.coerce(attrEnv, expr, restype);
-            return make.Block(0, List.<JCStatement>of(make.Return(retExpr)));
+            return make.at(retExpr).Block(0, List.<JCStatement>of(make.Return(retExpr)));
         }
     }
 

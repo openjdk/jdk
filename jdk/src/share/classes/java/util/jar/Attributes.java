@@ -565,15 +565,6 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         public static final Name MAIN_CLASS = new Name("Main-Class");
 
         /**
-         * {@code Name} object for {@code Profile} manifest attribute used by
-         * applications or libraries packaged as JAR files to indicate the
-         * minimum profile required to execute the application.
-         * @since 1.8
-         * @see UnsupportedProfileException
-         */
-        public static final Name PROFILE = new Name("Profile");
-
-        /**
          * <code>Name</code> object for <code>Sealed</code> manifest attribute
          * used for sealing.
          * @see <a href="../../../../technotes/guides/extensions/spec.html#sealing">
