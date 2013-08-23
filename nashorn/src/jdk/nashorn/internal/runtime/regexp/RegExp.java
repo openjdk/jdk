@@ -60,7 +60,7 @@ public abstract class RegExp {
      * @param flags the flags string
      */
     protected RegExp(final String source, final String flags) {
-        this.source = source;
+        this.source = source.length() == 0 ? "(?:)" : source;
         for (int i = 0; i < flags.length(); i++) {
             final char ch = flags.charAt(i);
             switch (ch) {
