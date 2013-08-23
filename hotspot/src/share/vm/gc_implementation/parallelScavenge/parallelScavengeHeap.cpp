@@ -216,6 +216,7 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
+  CompressedClassSpaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
