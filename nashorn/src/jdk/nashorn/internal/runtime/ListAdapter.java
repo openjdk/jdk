@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
+import java.util.concurrent.Callable;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -49,16 +50,73 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  */
 public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // These add to the back and front of the list
-    private static final InvokeByName PUSH    = new InvokeByName("push",    ScriptObject.class, void.class, Object.class);
-    private static final InvokeByName UNSHIFT = new InvokeByName("unshift", ScriptObject.class, void.class, Object.class);
+    private static final Object PUSH    = new Object();
+    private static InvokeByName getPUSH() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(PUSH,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("push", ScriptObject.class, void.class, Object.class);
+                    }
+                });
+    }
+
+    private static final Object UNSHIFT = new Object();
+    private static InvokeByName getUNSHIFT() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(UNSHIFT,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("unshift", ScriptObject.class, void.class, Object.class);
+                    }
+                });
+    }
 
     // These remove from the back and front of the list
-    private static final InvokeByName POP   = new InvokeByName("pop",   ScriptObject.class, Object.class);
-    private static final InvokeByName SHIFT = new InvokeByName("shift", ScriptObject.class, Object.class);
+    private static final Object POP = new Object();
+    private static InvokeByName getPOP() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(POP,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("pop", ScriptObject.class, Object.class);
+                    }
+                });
+    }
+
+    private static final Object SHIFT = new Object();
+    private static InvokeByName getSHIFT() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SHIFT,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("shift", ScriptObject.class, Object.class);
+                    }
+                });
+    }
 
     // These insert and remove in the middle of the list
-    private static final InvokeByName SPLICE_ADD    = new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class, Object.class);
-    private static final InvokeByName SPLICE_REMOVE = new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class);
+    private static final Object SPLICE_ADD = new Object();
+    private static InvokeByName getSPLICE_ADD() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SPLICE_ADD,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class, Object.class);
+                    }
+                });
+    }
+
+    private static final Object SPLICE_REMOVE = new Object();
+    private static InvokeByName getSPLICE_REMOVE() {
+        return ((GlobalObject)Context.getGlobal()).getInvokeByName(SPLICE_REMOVE,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("splice", ScriptObject.class, void.class, int.class, int.class);
+                    }
+                });
+    }
 
     private final ScriptObject obj;
 
@@ -109,9 +167,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     @Override
     public void addFirst(Object e) {
         try {
-            final Object fn = UNSHIFT.getGetter().invokeExact(obj);
-            checkFunction(fn, UNSHIFT);
-            UNSHIFT.getInvoker().invokeExact(fn, obj, e);
+            final InvokeByName unshiftInvoker = getUNSHIFT();
+            final Object fn = unshiftInvoker.getGetter().invokeExact(obj);
+            checkFunction(fn, unshiftInvoker);
+            unshiftInvoker.getInvoker().invokeExact(fn, obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(Throwable t) {
@@ -122,9 +181,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
     @Override
     public void addLast(Object e) {
         try {
-            final Object fn = PUSH.getGetter().invokeExact(obj);
-            checkFunction(fn, PUSH);
-            PUSH.getInvoker().invokeExact(fn, obj, e);
+            final InvokeByName pushInvoker = getPUSH();
+            final Object fn = pushInvoker.getGetter().invokeExact(obj);
+            checkFunction(fn, pushInvoker);
+            pushInvoker.getInvoker().invokeExact(fn, obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(Throwable t) {
@@ -142,9 +202,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
             } else {
                 final int size = size();
                 if(index < size) {
-                    final Object fn = SPLICE_ADD.getGetter().invokeExact(obj);
-                    checkFunction(fn, SPLICE_ADD);
-                    SPLICE_ADD.getInvoker().invokeExact(fn, obj, index, 0, e);
+                    final InvokeByName spliceAddInvoker = getSPLICE_ADD();
+                    final Object fn = spliceAddInvoker.getGetter().invokeExact(obj);
+                    checkFunction(fn, spliceAddInvoker);
+                    spliceAddInvoker.getInvoker().invokeExact(fn, obj, index, 0, e);
                 } else if(index == size) {
                     addLast(e);
                 } else {
@@ -234,9 +295,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
 
     private Object invokeShift() {
         try {
-            final Object fn = SHIFT.getGetter().invokeExact(obj);
-            checkFunction(fn, SHIFT);
-            return SHIFT.getInvoker().invokeExact(fn, obj);
+            final InvokeByName shiftInvoker = getSHIFT();
+            final Object fn = shiftInvoker.getGetter().invokeExact(obj);
+            checkFunction(fn, shiftInvoker);
+            return shiftInvoker.getInvoker().invokeExact(fn, obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(Throwable t) {
@@ -246,9 +308,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
 
     private Object invokePop() {
         try {
-            final Object fn = POP.getGetter().invokeExact(obj);
-            checkFunction(fn, POP);
-            return POP.getInvoker().invokeExact(fn, obj);
+            final InvokeByName popInvoker = getPOP();
+            final Object fn = popInvoker.getGetter().invokeExact(obj);
+            checkFunction(fn, popInvoker);
+            return popInvoker.getInvoker().invokeExact(fn, obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(Throwable t) {
@@ -263,9 +326,10 @@ public final class ListAdapter extends AbstractList<Object> implements RandomAcc
 
     private void invokeSpliceRemove(int fromIndex, int count) {
         try {
-            final Object fn = SPLICE_REMOVE.getGetter().invokeExact(obj);
-            checkFunction(fn, SPLICE_REMOVE);
-            SPLICE_REMOVE.getInvoker().invokeExact(fn, obj, fromIndex, count);
+            final InvokeByName spliceRemoveInvoker = getSPLICE_REMOVE();
+            final Object fn = spliceRemoveInvoker.getGetter().invokeExact(obj);
+            checkFunction(fn, spliceRemoveInvoker);
+            spliceRemoveInvoker.getInvoker().invokeExact(fn, obj, fromIndex, count);
         } catch(RuntimeException | Error ex) {
             throw ex;
         } catch(Throwable t) {

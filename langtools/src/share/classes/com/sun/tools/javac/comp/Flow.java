@@ -224,7 +224,7 @@ public class Flow {
         }
         try {
             new AliveAnalyzer().analyzeTree(env, that, make);
-            new FlowAnalyzer().analyzeTree(env, that, make);
+            new LambdaFlowAnalyzer().analyzeTree(env, that, make);
         } finally {
             if (!speculative) {
                 log.popDiagnosticHandler(diagHandler);
@@ -1259,12 +1259,24 @@ public class Flow {
             ListBuffer<FlowPendingExit> prevPending = pendingExits;
             try {
                 pendingExits = ListBuffer.lb();
-                caught = List.of(syms.throwableType); //inhibit exception checking
+                caught = tree.getDescriptorType(types).getThrownTypes();
                 thrown = List.nil();
                 scan(tree.body);
-                tree.inferredThrownTypes = thrown;
-            }
-            finally {
+                List<FlowPendingExit> exits = pendingExits.toList();
+                pendingExits = new ListBuffer<FlowPendingExit>();
+                while (exits.nonEmpty()) {
+                    FlowPendingExit exit = exits.head;
+                    exits = exits.tail;
+                    if (exit.thrown == null) {
+                        Assert.check(exit.tree.hasTag(RETURN));
+                    } else {
+                        // uncaught throws will be reported later
+                        pendingExits.append(exit);
+                    }
+                }
+
+                errorUncaught();
+            } finally {
                 pendingExits = prevPending;
                 caught = prevCaught;
                 thrown = prevThrown;
@@ -1298,6 +1310,33 @@ public class Flow {
                 Flow.this.make = null;
                 this.thrown = this.caught = null;
                 this.classDef = null;
+            }
+        }
+    }
+
+    /**
+     * Specialized pass that performs inference of thrown types for lambdas.
+     */
+    class LambdaFlowAnalyzer extends FlowAnalyzer {
+        @Override
+        public void visitLambda(JCLambda tree) {
+            if (tree.type != null &&
+                    tree.type.isErroneous()) {
+                return;
+            }
+            List<Type> prevCaught = caught;
+            List<Type> prevThrown = thrown;
+            ListBuffer<FlowPendingExit> prevPending = pendingExits;
+            try {
+                pendingExits = ListBuffer.lb();
+                caught = List.of(syms.throwableType);
+                thrown = List.nil();
+                scan(tree.body);
+                tree.inferredThrownTypes = thrown;
+            } finally {
+                pendingExits = prevPending;
+                caught = prevCaught;
+                thrown = prevThrown;
             }
         }
     }
