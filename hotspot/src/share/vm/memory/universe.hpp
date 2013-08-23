@@ -75,10 +75,10 @@ class LatestMethodCache : public CHeapObj<mtClass> {
 };
 
 
-// For UseCompressedOops and UseCompressedKlassPointers.
+// For UseCompressedOops.
 struct NarrowPtrStruct {
-  // Base address for oop/klass-within-java-object materialization.
-  // NULL if using wide oops/klasses or zero based narrow oops/klasses.
+  // Base address for oop-within-java-object materialization.
+  // NULL if using wide oops or zero based narrow oops.
   address _base;
   // Number of shift bits for encoding/decoding narrow ptrs.
   // 0 if using wide ptrs or zero based unscaled narrow ptrs,
@@ -106,6 +106,7 @@ class Universe: AllStatic {
   friend class SystemDictionary;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
+  friend class Metaspace;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -184,9 +185,6 @@ class Universe: AllStatic {
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
 
-  // Aligned size of the metaspace.
-  static size_t _class_metaspace_size;
-
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
   // index of next entry to clear
@@ -237,15 +235,6 @@ class Universe: AllStatic {
   static void     set_narrow_oop_use_implicit_null_checks(bool use) {
     assert(UseCompressedOops, "no compressed ptrs?");
     _narrow_oop._use_implicit_null_checks   = use;
-  }
-  static bool     reserve_metaspace_helper(bool with_base = false);
-  static ReservedHeapSpace reserve_heap_metaspace(size_t heap_size, size_t alignment, bool& contiguous);
-
-  static size_t  class_metaspace_size() {
-    return _class_metaspace_size;
-  }
-  static void    set_class_metaspace_size(size_t metaspace_size) {
-    _class_metaspace_size = metaspace_size;
   }
 
   // Debugging
