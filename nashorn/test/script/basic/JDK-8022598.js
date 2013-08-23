@@ -22,20 +22,35 @@
  */
 
 /**
- * JDK-8020357: Return range error for too big native array buffers
+ * JDK-8022598: Object.getPrototypeOf should return null for host objects rather than throwing TypeError
  *
  * @test
  * @run
  */
 
-var UNSIGNED_INT_BITS = 31
-var BYTES_PER_INT_32  =  4
+// the following should not throw TypeError, just return null instead
 
-var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
-
-// A value over the limit should throw a RangeError.
-try {
-    Int32Array(limit)
-} catch(e) {
-    print(e)
+var proto = Object.getPrototypeOf(new java.lang.Object());
+if (proto !== null) {
+    fail("Expected 'null' __proto__ for host objects");
 }
+
+// on primitive should result in TypeError
+
+function checkTypeError(obj) {
+    try {
+        Object.getPrototypeOf(obj);
+        fail("Expected TypeError for Object.getPrototypeOf on " + obj);
+    } catch (e) {
+        if (! (e instanceof TypeError)) {
+            fail("Expected TypeError, but got " + e);
+        }
+    }
+}
+
+checkTypeError(undefined);
+checkTypeError(null);
+checkTypeError(3.1415);
+checkTypeError("hello");
+checkTypeError(false);
+checkTypeError(true);
