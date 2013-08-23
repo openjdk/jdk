@@ -504,7 +504,10 @@ public interface Collection<E> extends Iterable<E> {
      *
      * <p>The returned {@code Spliterator} must report the characteristic
      * {@link Spliterator#SIZED}; implementations should document any additional
-     * characteristic values reported by the returned Spliterator.
+     * characteristic values reported by the returned spliterator.  If
+     * this collection contains no elements then the returned spliterator is
+     * only required to report {@link Spliterator#SIZED} and is not required to
+     * report additional characteristic values (if any).
      *
      * <p>The default implementation should be overridden by subclasses that
      * can return a more efficient spliterator.  In order to
@@ -534,6 +537,14 @@ public interface Collection<E> extends Iterable<E> {
      * @implNote
      * The returned {@code Spliterator} additionally reports
      * {@link Spliterator#SUBSIZED}.
+     *
+     * <p>If a spliterator covers no elements then the reporting of additional
+     * characteristic values, beyond that of {@code SIZED} and {@code SUBSIZED},
+     * does not aid clients to control, specialize or simplify computation.
+     * However, this does enable shared use of an immutable and empty
+     * spliterator instance (see {@link Spliterators#emptySpliterator()}) for
+     * empty collections, and enables clients to determine if such a spliterator
+     * covers no elements.
      *
      * @return a {@code Spliterator} over the elements in this collection
      * @since 1.8

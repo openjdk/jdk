@@ -72,7 +72,7 @@ public final class NativeDebug extends ScriptObject {
     public static Object getContext(final Object self) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.getContext"));
+            sm.checkPermission(new RuntimePermission(Context.NASHORN_GET_CONTEXT));
         }
         return Global.getThisContext();
     }
