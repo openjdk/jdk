@@ -32,7 +32,10 @@ import static org.testng.Assert.fail;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptContext;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.annotations.Test;
 
@@ -195,5 +198,26 @@ public class TrustedScriptEngineTest {
             }
         }
         fail("Cannot find nashorn factory!");
+    }
+
+    @Test
+    public void globalPerEngineTest() throws ScriptException {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final String[] options = new String[] { "--global-per-engine" };
+        final ScriptEngine e = fac.getScriptEngine(options);
+
+        e.eval("function foo() {}");
+
+        final ScriptContext newCtx = new SimpleScriptContext();
+        newCtx.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+
+        // all global definitions shared and so 'foo' should be
+        // visible in new Bindings as well.
+        assertTrue(e.eval("typeof foo", newCtx).equals("function"));
+
+        e.eval("function bar() {}", newCtx);
+
+        // bar should be visible in default context
+        assertTrue(e.eval("typeof bar").equals("function"));
     }
 }

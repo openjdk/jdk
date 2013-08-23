@@ -1008,10 +1008,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return getMap().findProperty(key);
     }
 
-    static String convertKey(final Object key) {
-        return (key instanceof String) ? (String)key : JSType.toString(key);
-    }
-
     /**
      * Overridden by {@link jdk.nashorn.internal.objects.NativeArguments} class (internal use.)
      * Used for argument access in a vararg function using parameter name.
@@ -1129,6 +1125,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         proto = newProto;
 
         if (isPrototype()) {
+            // tell listeners that my __proto__ has been changed
+            notifyProtoChanged(this, oldProto, newProto);
+
             if (oldProto != null) {
                 oldProto.removePropertyListener(this);
             }
@@ -1144,7 +1143,19 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param newProto Prototype to set.
      */
     public final void setProtoCheck(final Object newProto) {
+        if (!isExtensible()) {
+            throw typeError("__proto__.set.non.extensible", ScriptRuntime.safeToString(this));
+        }
+
         if (newProto == null || newProto instanceof ScriptObject) {
+            // check for circularity
+            ScriptObject proto = (ScriptObject)newProto;
+            while (proto != null) {
+                if (proto == this) {
+                    throw typeError("circular.__proto__.set", ScriptRuntime.safeToString(this));
+                }
+                proto = proto.getProto();
+            }
             setProto((ScriptObject)newProto);
         } else {
             final ScriptObject global = Context.getGlobalTrusted();
@@ -2359,7 +2370,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getInt(index);
         }
 
-        return getInt(index, convertKey(key));
+        return getInt(index, JSType.toString(key));
     }
 
     @Override
@@ -2371,7 +2382,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getInt(index);
         }
 
-        return getInt(index, convertKey(key));
+        return getInt(index, JSType.toString(key));
     }
 
     @Override
@@ -2383,7 +2394,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getInt(index);
         }
 
-        return getInt(index, convertKey(key));
+        return getInt(index, JSType.toString(key));
     }
 
     @Override
@@ -2394,7 +2405,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getInt(key);
         }
 
-        return getInt(key, convertKey(key));
+        return getInt(key, JSType.toString(key));
     }
 
     private long getLong(final int index, final String key) {
@@ -2436,7 +2447,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getLong(index);
         }
 
-        return getLong(index, convertKey(key));
+        return getLong(index, JSType.toString(key));
     }
 
     @Override
@@ -2448,7 +2459,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getLong(index);
         }
 
-        return getLong(index, convertKey(key));
+        return getLong(index, JSType.toString(key));
     }
 
     @Override
@@ -2460,7 +2471,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getLong(index);
         }
 
-        return getLong(index, convertKey(key));
+        return getLong(index, JSType.toString(key));
     }
 
     @Override
@@ -2471,7 +2482,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getLong(key);
         }
 
-        return getLong(key, convertKey(key));
+        return getLong(key, JSType.toString(key));
     }
 
     private double getDouble(final int index, final String key) {
@@ -2513,7 +2524,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getDouble(index);
         }
 
-        return getDouble(index, convertKey(key));
+        return getDouble(index, JSType.toString(key));
     }
 
     @Override
@@ -2525,7 +2536,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getDouble(index);
         }
 
-        return getDouble(index, convertKey(key));
+        return getDouble(index, JSType.toString(key));
     }
 
     @Override
@@ -2537,7 +2548,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getDouble(index);
         }
 
-        return getDouble(index, convertKey(key));
+        return getDouble(index, JSType.toString(key));
     }
 
     @Override
@@ -2548,7 +2559,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getDouble(key);
         }
 
-        return getDouble(key, convertKey(key));
+        return getDouble(key, JSType.toString(key));
     }
 
     private Object get(final int index, final String key) {
@@ -2590,7 +2601,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getObject(index);
         }
 
-        return get(index, convertKey(key));
+        return get(index, JSType.toString(key));
     }
 
     @Override
@@ -2602,7 +2613,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getObject(index);
         }
 
-        return get(index, convertKey(key));
+        return get(index, JSType.toString(key));
     }
 
     @Override
@@ -2614,7 +2625,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getObject(index);
         }
 
-        return get(index, convertKey(key));
+        return get(index, JSType.toString(key));
     }
 
     @Override
@@ -2625,7 +2636,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return array.getObject(key);
         }
 
-        return get(key, convertKey(key));
+        return get(key, JSType.toString(key));
     }
 
     /**
@@ -2640,7 +2651,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final long longIndex = index & JSType.MAX_UINT;
 
         if (!getArray().has(index)) {
-            final String key = convertKey(longIndex);
+            final String key = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
 
             if (find != null) {
@@ -2786,7 +2797,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return;
         }
 
-        final String       propName = convertKey(key);
+        final String       propName = JSType.toString(key);
         final FindProperty find     = findProperty(propName, true);
 
         setObject(find, strict, propName, value);
@@ -3008,7 +3019,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(convertKey(key), true);
+        final FindProperty find = findProperty(JSType.toString(key), true);
 
         return find != null;
     }
@@ -3025,7 +3036,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(convertKey(key), true);
+        final FindProperty find = findProperty(JSType.toString(key), true);
 
         return find != null;
     }
@@ -3042,7 +3053,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(convertKey(key), true);
+        final FindProperty find = findProperty(JSType.toString(key), true);
 
         return find != null;
     }
@@ -3059,7 +3070,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             }
         }
 
-        final FindProperty find = findProperty(convertKey(key), true);
+        final FindProperty find = findProperty(JSType.toString(key), true);
 
         return find != null;
     }
@@ -3072,7 +3083,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        final FindProperty find = findProperty(JSType.toString(key), false);
 
         return find != null;
     }
@@ -3085,7 +3096,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        final FindProperty find = findProperty(JSType.toString(key), false);
 
         return find != null;
     }
@@ -3098,7 +3109,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        final FindProperty find = findProperty(JSType.toString(key), false);
 
         return find != null;
     }
@@ -3111,7 +3122,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
             return true;
         }
 
-        final FindProperty find = findProperty(convertKey(key), false);
+        final FindProperty find = findProperty(JSType.toString(key), false);
 
         return find != null;
     }
@@ -3181,7 +3192,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     private boolean deleteObject(final Object key, final boolean strict) {
-        final String propName = convertKey(key);
+        final String propName = JSType.toString(key);
         final FindProperty find = findProperty(propName, false);
 
         if (find == null) {
