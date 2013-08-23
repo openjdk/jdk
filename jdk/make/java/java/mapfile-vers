@@ -100,7 +100,7 @@ SUNWprivate_1.1 {
 		Java_java_io_RandomAccessFile_open;
 		Java_java_io_RandomAccessFile_read;
 		Java_java_io_RandomAccessFile_readBytes;
-		Java_java_io_RandomAccessFile_seek;
+		Java_java_io_RandomAccessFile_seek0;
 		Java_java_io_RandomAccessFile_setLength;
 		Java_java_io_RandomAccessFile_write;
 		Java_java_io_RandomAccessFile_writeBytes;

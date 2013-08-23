@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,34 @@
  * questions.
  */
 
-public class Main {
-    private Main() { }
+/*
+ * @test
+ * @bug 8020842
+ * @summary SNIHostName does not throw IAE when hostname ends
+ *          with a trailing dot
+ */
 
-    public static void main(String[] args) {
-        Logging.log("main running");
+import javax.net.ssl.SNIHostName;
+
+public class IllegalSNIName {
+
+    public static void main(String[] args) throws Exception {
+        String[] illegalNames = {
+                "example\u3003\u3002com",
+                "example..com",
+                "com\u3002",
+                "com.",
+                "."
+            };
+
+        for (String name : illegalNames) {
+            try {
+                SNIHostName hostname = new SNIHostName(name);
+                throw new Exception(
+                    "Expected to get IllegalArgumentException for " + name);
+            } catch (IllegalArgumentException iae) {
+                // That's the right behavior.
+            }
+        }
     }
 }

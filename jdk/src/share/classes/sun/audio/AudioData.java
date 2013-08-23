@@ -26,6 +26,8 @@
 package sun.audio;
 
 import java.io.*;
+import java.util.Arrays;
+
 import javax.sound.sampled.*;
 
 
@@ -65,12 +67,11 @@ public final class AudioData {
     /**
      * Constructor
      */
-    public AudioData(byte buffer[]) {
-
-        this.buffer = buffer;
-        // if we cannot extract valid format information, we resort to assuming the data will be 8k mono u-law
-        // in order to provide maximal backwards compatibility....
-        this.format = DEFAULT_FORMAT;
+    public AudioData(final byte[] buffer) {
+        // if we cannot extract valid format information, we resort to assuming
+        // the data will be 8k mono u-law in order to provide maximal backwards
+        // compatibility....
+        this(DEFAULT_FORMAT, buffer);
 
         // okay, we need to extract the format and the byte buffer of data
         try {
@@ -90,9 +91,10 @@ public final class AudioData {
      * Non-public constructor; this is the one we use in ADS and CADS
      * constructors.
      */
-    AudioData(AudioFormat format, byte[] buffer) {
-
+    AudioData(final AudioFormat format, final byte[] buffer) {
         this.format = format;
-        this.buffer = buffer;
+        if (buffer != null) {
+            this.buffer = Arrays.copyOf(buffer, buffer.length);
+        }
     }
 }

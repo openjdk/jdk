@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,27 @@
  * questions.
  */
 
-public class Logging {
-    private Logging() { }
+/* @test
+   @bug 7173464
+   @summary Clipboard.getAvailableDataFlavors: Comparison method violates contract
+   @author Petr Pchelko
+   @run main DataFlavorComparatorTest
+*/
 
-    public static void log(String msg) {
-        System.out.println(msg);
+import sun.awt.datatransfer.DataTransferer;
+
+import java.awt.datatransfer.DataFlavor;
+
+public class DataFlavorComparatorTest {
+
+    public static void main(String[] args) {
+        DataTransferer.DataFlavorComparator comparator = new DataTransferer.DataFlavorComparator();
+        DataFlavor flavor1 = DataFlavor.imageFlavor;
+        DataFlavor flavor2 = DataFlavor.selectionHtmlFlavor;
+        if (comparator.compare(flavor1, flavor2) == 0) {
+            throw new RuntimeException(flavor1.getMimeType() + " and " + flavor2.getMimeType() +
+                " should not be equal");
+        }
     }
 }
+
