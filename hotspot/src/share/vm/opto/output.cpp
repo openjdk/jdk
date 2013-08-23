@@ -639,7 +639,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       Compile::set_sv_for_object_node(objs, sv);
 
-      uint first_ind = spobj->first_index();
+      uint first_ind = spobj->first_index(sfpt->jvms());
       for (uint i = 0; i < spobj->n_fields(); i++) {
         Node* fld_node = sfpt->in(first_ind+i);
         (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
@@ -894,7 +894,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     GrowableArray<MonitorValue*> *monarray = new GrowableArray<MonitorValue*>(num_mon);
 
     // Loop over monitors and insert into array
-    for(idx = 0; idx < num_mon; idx++) {
+    for (idx = 0; idx < num_mon; idx++) {
       // Grab the node that defines this monitor
       Node* box_node = sfn->monitor_box(jvms, idx);
       Node* obj_node = sfn->monitor_obj(jvms, idx);
@@ -902,11 +902,11 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
       // Create ScopeValue for object
       ScopeValue *scval = NULL;
 
-      if( obj_node->is_SafePointScalarObject() ) {
+      if (obj_node->is_SafePointScalarObject()) {
         SafePointScalarObjectNode* spobj = obj_node->as_SafePointScalarObject();
         scval = Compile::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
-          const Type *t = obj_node->bottom_type();
+          const Type *t = spobj->bottom_type();
           ciKlass* cik = t->is_oopptr()->klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
@@ -914,14 +914,14 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
                                             new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           Compile::set_sv_for_object_node(objs, sv);
 
-          uint first_ind = spobj->first_index();
+          uint first_ind = spobj->first_index(youngest_jvms);
           for (uint i = 0; i < spobj->n_fields(); i++) {
             Node* fld_node = sfn->in(first_ind+i);
             (void)FillLocArray(sv->field_values()->length(), sfn, fld_node, sv->field_values(), objs);
           }
           scval = sv;
         }
-      } else if( !obj_node->is_Con() ) {
+      } else if (!obj_node->is_Con()) {
         OptoReg::Name obj_reg = _regalloc->get_reg_first(obj_node);
         if( obj_node->bottom_type()->base() == Type::NarrowOop ) {
           scval = new_loc_value( _regalloc, obj_reg, Location::narrowoop );
