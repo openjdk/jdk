@@ -96,6 +96,7 @@ class ByteCodeMachine extends StackMachine {
         }
     }
 
+    @Override
     protected final int matchAt(int range, int sstart, int sprev) {
         this.range = range;
         this.sstart = sstart;
@@ -731,8 +732,6 @@ class ByteCodeMachine extends StackMachine {
         // STRING_CMP
         while(n-- > 0) if (chars[pstart++] != chars[s++]) {opFail(); return;}
 
-        int len;
-
         // beyond string check
         if (sprev < range) {
             while (sprev + 1 < s) sprev++;
@@ -768,7 +767,6 @@ class ByteCodeMachine extends StackMachine {
         if (!stringCmpIC(regex.caseFoldFlag, pstart, this, n, end)) {opFail(); return;}
         s = value;
 
-        int len;
         // if (sprev < chars.length)
         while (sprev + 1 < s) sprev++;
     }
@@ -795,8 +793,6 @@ class ByteCodeMachine extends StackMachine {
             }
 
             s = swork;
-
-            int len;
 
             // beyond string check
             if (sprev < range) {
@@ -829,7 +825,6 @@ class ByteCodeMachine extends StackMachine {
             if (!stringCmpIC(regex.caseFoldFlag, pstart, this, n, end)) continue loop; // STRING_CMP_VALUE_IC
             s = value;
 
-            int len;
             // if (sprev < chars.length)
             while (sprev + 1 < s) sprev++;
 
@@ -902,7 +897,6 @@ class ByteCodeMachine extends StackMachine {
 
         sprev = s;
         if (backrefMatchAtNestedLevel(ic != 0, regex.caseFoldFlag, level, tlen, ip)) { // (s) and (end) implicit
-            int len;
             while (sprev + 1 < s) sprev++;
             ip += tlen; // * SIZE_MEMNUM
         } else {

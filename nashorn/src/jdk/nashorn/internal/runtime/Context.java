@@ -894,7 +894,6 @@ public final class Context {
         return script;
     }
 
-    @SuppressWarnings("static-method")
     private ScriptLoader createNewLoader() {
         return AccessController.doPrivileged(
              new PrivilegedAction<ScriptLoader>() {

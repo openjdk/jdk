@@ -65,10 +65,9 @@ public final class NativeRegExp extends ScriptObject {
     private RegExp regexp;
 
     // Reference to global object needed to support static RegExp properties
-    private Global globalObject;
+    private final Global globalObject;
 
     // initialized by nasgen
-    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
     static PropertyMap getInitialMap() {

@@ -139,6 +139,7 @@ class Lexer extends ScannerSupport {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     /* \M-, \C-, \c, or \... */
     private int fetchEscapedValue() {
         if (!left()) {

@@ -44,6 +44,7 @@ final class DebuggerSupport {
          * Hook to force the loading of the DebuggerValueDesc class so that it is
          * available to external debuggers.
          */
+        @SuppressWarnings("unused")
         DebuggerValueDesc forceLoad = new DebuggerValueDesc(null, false, null, null);
     }
 
@@ -111,9 +112,8 @@ final class DebuggerSupport {
         if (value instanceof ScriptObject && !(value instanceof ScriptFunction)) {
             final ScriptObject object = (ScriptObject)value;
             return new DebuggerValueDesc(name, !object.isEmpty(), value, objectAsString(object, all, duplicates));
-        } else {
-            return new DebuggerValueDesc(name, false, value, valueAsString(value));
         }
+        return new DebuggerValueDesc(name, false, value, valueAsString(value));
     }
 
     /**
@@ -199,7 +199,7 @@ final class DebuggerSupport {
                     final String valueAsString = descs[i].valueAsString;
                     sb.append(descs[i].key);
                     sb.append(": ");
-                    sb.append(descs[i].valueAsString);
+                    sb.append(valueAsString);
                 }
             }
 
@@ -239,9 +239,8 @@ final class DebuggerSupport {
         case FUNCTION:
             if (value instanceof ScriptFunction) {
                 return ((ScriptFunction)value).toSource();
-            } else {
-                return value.toString();
             }
+            return value.toString();
 
         default:
             return value.toString();
