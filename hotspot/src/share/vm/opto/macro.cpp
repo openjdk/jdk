@@ -72,6 +72,8 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
   int jvms_adj  = new_dbg_start - old_dbg_start;
   assert (new_dbg_start == newcall->req(), "argument count mismatch");
 
+  // SafePointScalarObject node could be referenced several times in debug info.
+  // Use Dict to record cloned nodes.
   Dict* sosn_map = new Dict(cmpkey,hashkey);
   for (uint i = old_dbg_start; i < oldcall->req(); i++) {
     Node* old_in = oldcall->in(i);
@@ -79,8 +81,8 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
     if (old_in != NULL && old_in->is_SafePointScalarObject()) {
       SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
       uint old_unique = C->unique();
-      Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
-      if (old_unique != C->unique()) {
+      Node* new_in = old_sosn->clone(sosn_map);
+      if (old_unique != C->unique()) { // New node?
         new_in->set_req(0, C->root()); // reset control edge
         new_in = transform_later(new_in); // Register new node.
       }
@@ -725,7 +727,11 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   while (safepoints.length() > 0) {
     SafePointNode* sfpt = safepoints.pop();
     Node* mem = sfpt->memory();
-    uint first_ind = sfpt->req();
+    assert(sfpt->jvms() != NULL, "missed JVMS");
+    // Fields of scalar objs are referenced only at the end
+    // of regular debuginfo at the last (youngest) JVMS.
+    // Record relative start index.
+    uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
     SafePointScalarObjectNode* sobj = new (C) SafePointScalarObjectNode(res_type,
 #ifdef ASSERT
                                                  alloc,
@@ -799,7 +805,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           for (int i = start; i < end; i++) {
             if (sfpt_done->in(i)->is_SafePointScalarObject()) {
               SafePointScalarObjectNode* scobj = sfpt_done->in(i)->as_SafePointScalarObject();
-              if (scobj->first_index() == sfpt_done->req() &&
+              if (scobj->first_index(jvms) == sfpt_done->req() &&
                   scobj->n_fields() == (uint)nfields) {
                 assert(scobj->alloc() == alloc, "sanity");
                 sfpt_done->set_req(i, res);
