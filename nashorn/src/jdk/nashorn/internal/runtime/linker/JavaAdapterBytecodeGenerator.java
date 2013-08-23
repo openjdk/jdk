@@ -174,7 +174,7 @@ final class JavaAdapterBytecodeGenerator {
     private static final String STATIC_GLOBAL_FIELD_NAME = "staticGlobal";
 
     // Method name prefix for invoking super-methods
-    private static final String SUPER_PREFIX = "super$";
+    static final String SUPER_PREFIX = "super$";
 
     /**
      * Collection of methods we never override: Object.clone(), Object.finalize().

@@ -67,11 +67,12 @@ final class BoundDynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
         // BeansLinker.
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
         final MethodType type = descriptor.getMethodType();
+        final Class<?> dynamicMethodClass = dynamicMethod.getClass();
         final CallSiteDescriptor newDescriptor = descriptor.changeMethodType(
-                type.changeParameterType(0, dynamicMethod.getClass()).changeParameterType(1, boundThis.getClass()));
+                type.changeParameterType(0, dynamicMethodClass).changeParameterType(1, boundThis.getClass()));
 
         // Delegate to BeansLinker
-        final GuardedInvocation inv = BeansLinker.getLinkerForClass(dynamicMethod.getClass()).getGuardedInvocation(
+        final GuardedInvocation inv = BeansLinker.getLinkerForClass(dynamicMethodClass).getGuardedInvocation(
                 linkRequest.replaceArguments(newDescriptor, args), linkerServices);
         if(inv == null) {
             return null;
