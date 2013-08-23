@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.incompatible.thrown.types.in.lambda
+// key: compiler.warn.option.obsolete.source
+// key: compiler.warn.option.obsolete.target
+// key: compiler.warn.option.obsolete.suppression
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 1.5 -target 1.5
 
-class IncompatibleThrownTypesInLambda {
-    interface SAM {
-        void m();
-    }
-
-    SAM s = ()-> { throw new Exception(); };
+class ObsoleteSourceAndTarget {
+    public static void foo() {;}
 }
