@@ -73,7 +73,7 @@ public final class WithObject extends ScriptObject implements Scope {
     public boolean delete(final Object key, final boolean strict) {
         if (expression instanceof ScriptObject) {
             final ScriptObject self = (ScriptObject)expression;
-            final String propName = ScriptObject.convertKey(key);
+            final String propName = JSType.toString(key);
 
             final FindProperty find = self.findProperty(propName, true);
 

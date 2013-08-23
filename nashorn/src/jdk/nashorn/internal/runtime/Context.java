@@ -91,6 +91,11 @@ public final class Context {
      */
     public static final String NASHORN_JAVA_REFLECTION = "nashorn.JavaReflection";
 
+    /* Force DebuggerSupport to be loaded. */
+    static {
+        DebuggerSupport.FORCELOAD = true;
+    }
+
     /**
      * ContextCodeInstaller that has the privilege of installing classes in the Context.
      * Can only be instantiated from inside the context and is opaque to other classes
