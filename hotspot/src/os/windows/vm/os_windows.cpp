@@ -5394,6 +5394,75 @@ inline BOOL os::Advapi32Dll::AdvapiAvailable() {
   return true;
 }
 
+void* os::get_default_process_handle() {
+  return (void*)GetModuleHandle(NULL);
+}
+
+// Builds a platform dependent Agent_OnLoad_<lib_name> function name
+// which is used to find statically linked in agents.
+// Additionally for windows, takes into account __stdcall names.
+// Parameters:
+//            sym_name: Symbol in library we are looking for
+//            lib_name: Name of library to look in, NULL for shared libs.
+//            is_absolute_path == true if lib_name is absolute path to agent
+//                                     such as "C:/a/b/L.dll"
+//            == false if only the base name of the library is passed in
+//               such as "L"
+char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
+                                    bool is_absolute_path) {
+  char *agent_entry_name;
+  size_t len;
+  size_t name_len;
+  size_t prefix_len = strlen(JNI_LIB_PREFIX);
+  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
+  const char *start;
+
+  if (lib_name != NULL) {
+    len = name_len = strlen(lib_name);
+    if (is_absolute_path) {
+      // Need to strip path, prefix and suffix
+      if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
+        lib_name = ++start;
+      } else {
+        // Need to check for C:
+        if ((start = strchr(lib_name, ':')) != NULL) {
+          lib_name = ++start;
+        }
+      }
+      if (len <= (prefix_len + suffix_len)) {
+        return NULL;
+      }
+      lib_name += prefix_len;
+      name_len = strlen(lib_name) - suffix_len;
+    }
+  }
+  len = (lib_name != NULL ? name_len : 0) + strlen(sym_name) + 2;
+  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
+  if (agent_entry_name == NULL) {
+    return NULL;
+  }
+  if (lib_name != NULL) {
+    const char *p = strrchr(sym_name, '@');
+    if (p != NULL && p != sym_name) {
+      // sym_name == _Agent_OnLoad@XX
+      strncpy(agent_entry_name, sym_name, (p - sym_name));
+      agent_entry_name[(p-sym_name)] = '\0';
+      // agent_entry_name == _Agent_OnLoad
+      strcat(agent_entry_name, "_");
+      strncat(agent_entry_name, lib_name, name_len);
+      strcat(agent_entry_name, p);
+      // agent_entry_name == _Agent_OnLoad_lib_name@XX
+    } else {
+      strcpy(agent_entry_name, sym_name);
+      strcat(agent_entry_name, "_");
+      strncat(agent_entry_name, lib_name, name_len);
+    }
+  } else {
+    strcpy(agent_entry_name, sym_name);
+  }
+  return agent_entry_name;
+}
+
 #else
 // Kernel32 API
 typedef BOOL (WINAPI* SwitchToThread_Fn)(void);
