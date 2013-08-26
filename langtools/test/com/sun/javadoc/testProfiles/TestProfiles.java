@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684
+ * @bug      8006124 8009684 8016921
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -33,7 +33,7 @@
 public class TestProfiles extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "8006124-8009684";
+    private static final String BUG_ID = "8006124-8009684-8016921";
     private static final String PROFILE_BUG_ID = BUG_ID + "-1";
     private static final String PACKAGE_BUG_ID = BUG_ID + "-2";
     //Javadoc arguments.
@@ -105,6 +105,14 @@ public class TestProfiles extends JavadocTester {
         {PROFILE_BUG_ID + FS + "index.html",
             "<frame src=\"overview-frame.html\" name=\"packageListFrame\" " +
             "title=\"All Packages\">"
+        },
+        //Test for "overview-summary.html" showing the profile list.
+        {PROFILE_BUG_ID + FS + "overview-summary.html",
+            "<ul>" + NL +"<li><a href=\"compact1-summary.html\" target=\"classFrame\">" +
+            "compact1</a></li>" + NL + "<li><a href=\"compact2-summary.html\" " +
+            "target=\"classFrame\">compact2</a></li>" + NL + "<li><a href=\"" +
+            "compact3-summary.html\" target=\"classFrame\">compact3</a></li>" + NL +
+            "</ul>"
         }
     };
     private static final String[][] PROFILES_NEGATED_TEST = {
@@ -159,6 +167,13 @@ public class TestProfiles extends JavadocTester {
         },
         {PACKAGE_BUG_ID + FS + "pkg2" + FS + "Class1Pkg2.html",
             "<div class=\"subTitle\">compact1, compact2, compact3</div>"
+        },
+        {PACKAGE_BUG_ID + FS + "overview-summary.html",
+            "<ul>" + NL +"<li><a href=\"compact1-summary.html\" target=\"classFrame\">" +
+            "compact1</a></li>" + NL + "<li><a href=\"compact2-summary.html\" " +
+            "target=\"classFrame\">compact2</a></li>" + NL + "<li><a href=\"" +
+            "compact3-summary.html\" target=\"classFrame\">compact3</a></li>" + NL +
+            "</ul>"
         }
     };
 

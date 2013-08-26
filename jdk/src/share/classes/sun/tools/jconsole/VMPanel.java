@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
 
     // Each VMPanel has its own instance of the JConsolePlugin
     // A map of JConsolePlugin to the previous SwingWorker
-    private Map<JConsolePlugin, SwingWorker<?, ?>> plugins = null;
+    private Map<ExceptionSafePlugin, SwingWorker<?, ?>> plugins = null;
     private boolean pluginTabsAdded = false;
 
     // Update these only on the EDT
@@ -107,10 +107,10 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
             }
         }
 
-        plugins = new LinkedHashMap<JConsolePlugin, SwingWorker<?, ?>>();
+        plugins = new LinkedHashMap<ExceptionSafePlugin, SwingWorker<?, ?>>();
         for (JConsolePlugin p : JConsole.getPlugins()) {
             p.setContext(proxyClient);
-            plugins.put(p, null);
+            plugins.put(new ExceptionSafePlugin(p), null);
         }
 
         Utilities.updateTransparency(this);
@@ -566,7 +566,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
             }
 
             // plugin GUI update
-            for (JConsolePlugin p : plugins.keySet()) {
+            for (ExceptionSafePlugin p : plugins.keySet()) {
                 SwingWorker<?, ?> sw = p.newSwingWorker();
                 SwingWorker<?, ?> prevSW = plugins.get(p);
                 // schedule SwingWorker to run only if the previous
@@ -575,7 +575,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
                     if (sw == null || sw.getState() == SwingWorker.StateValue.PENDING) {
                         plugins.put(p, sw);
                         if (sw != null) {
-                            sw.execute();
+                            p.executeSwingWorker(sw);
                         }
                     }
                 }

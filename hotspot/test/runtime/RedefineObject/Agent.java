@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 import java.security.*;
 import java.lang.instrument.*;
+import java.lang.reflect.*;
 
 public class Agent implements ClassFileTransformer {
     public synchronized byte[] transform(final ClassLoader classLoader,
@@ -29,22 +30,34 @@ public class Agent implements ClassFileTransformer {
                                          Class<?> classBeingRedefined,
                                          ProtectionDomain protectionDomain,
                                          byte[] classfileBuffer) {
-        //System.out.println("Transforming class " + className);
+        System.out.println("Transforming class " + className);
         return classfileBuffer;
     }
 
-    public static void premain(String agentArgs, Instrumentation instrumentation) {
+    public static void redefine(String agentArgs, Instrumentation instrumentation, Class to_redefine) {
 
-        Agent transformer = new Agent();
-
-        instrumentation.addTransformer(transformer, true);
-
-        Class c = Object.class;
         try {
-            instrumentation.retransformClasses(c);
+            instrumentation.retransformClasses(to_redefine);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+    }
+
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
+        Agent transformer = new Agent();
+        instrumentation.addTransformer(transformer, true);
+
+        // Redefine java/lang/Object and java/lang/reflect/Method.invoke and
+        // java/lang/ClassLoader
+        Class object_class = Object.class;
+        redefine(agentArgs, instrumentation, object_class);
+
+        Class method_class = Method.class;
+        redefine(agentArgs, instrumentation, method_class);
+
+        Class loader_class = ClassLoader.class;
+        redefine(agentArgs, instrumentation, loader_class);
 
         instrumentation.removeTransformer(transformer);
     }
@@ -56,6 +69,15 @@ public class Agent implements ClassFileTransformer {
         for (int i = 0; i < 1000 ; i++) {
             System.gc();
             ba.clone();
+        }
+        try {
+            // Use java/lang/reflect/Method.invoke to call
+            WalkThroughInvoke a = new WalkThroughInvoke();
+            Class aclass = WalkThroughInvoke.class;
+            Method m = aclass.getMethod("stackWalk");
+            m.invoke(a);
+        } catch (Exception x) {
+            x.printStackTrace();
         }
     }
 }
