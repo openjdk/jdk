@@ -4196,7 +4196,7 @@ public final class Formatter implements Closeable, Flushable {
                 case DateTime.CENTURY:                // 'C' (00 - 99)
                 case DateTime.YEAR_2:                 // 'y' (00 - 99)
                 case DateTime.YEAR_4:               { // 'Y' (0000 - 9999)
-                    int i = t.get(ChronoField.YEAR);
+                    int i = t.get(ChronoField.YEAR_OF_ERA);
                     int size = 2;
                     switch (c) {
                     case DateTime.CENTURY:

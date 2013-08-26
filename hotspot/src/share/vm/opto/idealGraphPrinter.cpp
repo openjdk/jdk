@@ -413,10 +413,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     print_prop("debug_idx", node->_debug_idx);
 #endif
 
-    if(C->cfg() != NULL) {
-      Block *block = C->cfg()->_bbs[node->_idx];
-      if(block == NULL) {
-        print_prop("block", C->cfg()->_blocks[0]->_pre_order);
+    if (C->cfg() != NULL) {
+      Block* block = C->cfg()->get_block_for_node(node);
+      if (block == NULL) {
+        print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
       }
@@ -637,10 +637,10 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
   if (C->cfg() != NULL) {
     // once we have a CFG there are some nodes that aren't really
     // reachable but are in the CFG so add them here.
-    for (uint i = 0; i < C->cfg()->_blocks.size(); i++) {
-      Block *b = C->cfg()->_blocks[i];
-      for (uint s = 0; s < b->_nodes.size(); s++) {
-        nodeStack.push(b->_nodes[s]);
+    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+      Block* block = C->cfg()->get_block(i);
+      for (uint s = 0; s < block->_nodes.size(); s++) {
+        nodeStack.push(block->_nodes[s]);
       }
     }
   }
@@ -698,24 +698,24 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
   tail(EDGES_ELEMENT);
   if (C->cfg() != NULL) {
     head(CONTROL_FLOW_ELEMENT);
-    for (uint i = 0; i < C->cfg()->_blocks.size(); i++) {
-      Block *b = C->cfg()->_blocks[i];
+    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+      Block* block = C->cfg()->get_block(i);
       begin_head(BLOCK_ELEMENT);
-      print_attr(BLOCK_NAME_PROPERTY, b->_pre_order);
+      print_attr(BLOCK_NAME_PROPERTY, block->_pre_order);
       end_head();
 
       head(SUCCESSORS_ELEMENT);
-      for (uint s = 0; s < b->_num_succs; s++) {
+      for (uint s = 0; s < block->_num_succs; s++) {
         begin_elem(SUCCESSOR_ELEMENT);
-        print_attr(BLOCK_NAME_PROPERTY, b->_succs[s]->_pre_order);
+        print_attr(BLOCK_NAME_PROPERTY, block->_succs[s]->_pre_order);
         end_elem();
       }
       tail(SUCCESSORS_ELEMENT);
 
       head(NODES_ELEMENT);
-      for (uint s = 0; s < b->_nodes.size(); s++) {
+      for (uint s = 0; s < block->_nodes.size(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, get_node_id(b->_nodes[s]));
+        print_attr(NODE_ID_PROPERTY, get_node_id(block->_nodes[s]));
         end_elem();
       }
       tail(NODES_ELEMENT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
     if (format() != 0) {
       assert(type() == relocInfo::oop_type || type() == relocInfo::metadata_type, "only narrow oops or klasses case");
-      jint np = type() == relocInfo::oop_type ? oopDesc::encode_heap_oop((oop)x) : oopDesc::encode_klass((Klass*)x);
+      jint np = type() == relocInfo::oop_type ? oopDesc::encode_heap_oop((oop)x) : Klass::encode_klass((Klass*)x);
       inst &= ~Assembler::hi22(-1);
       inst |=  Assembler::hi22((intptr_t)np);
       if (verify_only) {

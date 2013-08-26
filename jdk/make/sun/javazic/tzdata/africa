@@ -1,22 +1,22 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#  
+#
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
 # published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
 # by Oracle in the LICENSE file that accompanied this code.
-#  
+#
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
-#  
+#
 # You should have received a copy of the GNU General Public License version
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#  
+#
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
@@ -875,12 +875,18 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # announced that year's Ramadan daylight-saving transitions would be
 # 2012-07-20 and 2012-08-20; see
 # <http://www.mmsp.gov.ma/fr/actualites.aspx?id=288>.
-#
+
+# From Andrew Paprocki (2013-07-02):
+# Morocco announced that the year's Ramadan daylight-savings
+# transitions would be 2013-07-07 and 2013-08-10; see:
+# http://www.maroc.ma/en/news/morocco-suspends-daylight-saving-time-july-7-aug10
+
+# From Paul Eggert (2013-07-03):
 # To estimate what the Moroccan government will do in future years,
-# transition dates for 2013 through 2021 were determined by running
+# transition dates for 2014 through 2021 were determined by running
 # the following program under GNU Emacs 24.3:
 #
-# (let ((islamic-year 1434))
+# (let ((islamic-year 1435))
 #   (while (< islamic-year 1444)
 #     (let ((a
 #	     (calendar-gregorian-from-absolute
@@ -933,8 +939,8 @@ Rule	Morocco	2012	2019	-	Apr	 lastSun 2:00	1:00	S
 Rule	Morocco	2012	max	-	Sep	 lastSun 3:00	0	-
 Rule	Morocco	2012	only	-	Jul	 20	 3:00	0	-
 Rule	Morocco	2012	only	-	Aug	 20	 2:00	1:00	S
-Rule	Morocco	2013	only	-	Jul	  9	 3:00	0	-
-Rule	Morocco	2013	only	-	Aug	  8	 2:00	1:00	S
+Rule	Morocco	2013	only	-	Jul	  7	 3:00	0	-
+Rule	Morocco	2013	only	-	Aug	 10	 2:00	1:00	S
 Rule	Morocco	2014	only	-	Jun	 29	 3:00	0	-
 Rule	Morocco	2014	only	-	Jul	 29	 2:00	1:00	S
 Rule	Morocco	2015	only	-	Jun	 18	 3:00	0	-
