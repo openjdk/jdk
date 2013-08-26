@@ -141,7 +141,7 @@ inline intptr_t* frame::id() const {
   return fp();
 }
 
-inline JavaCallWrapper* frame::entry_frame_call_wrapper() const {
+inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
   return zero_entryframe()->call_wrapper();
 }
 
