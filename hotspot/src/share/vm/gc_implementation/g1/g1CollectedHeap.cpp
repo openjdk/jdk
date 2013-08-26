@@ -2006,10 +2006,12 @@ jint G1CollectedHeap::initialize() {
 
   size_t init_byte_size = collector_policy()->initial_heap_byte_size();
   size_t max_byte_size = collector_policy()->max_heap_byte_size();
+  size_t heap_alignment = collector_policy()->max_alignment();
 
   // Ensure that the sizes are properly aligned.
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
+  Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
   _cg1r = new ConcurrentG1Refine(this);
 
@@ -2026,12 +2028,8 @@ jint G1CollectedHeap::initialize() {
   // If this happens then we could end up using a non-optimal
   // compressed oops mode.
 
-  // Since max_byte_size is aligned to the size of a heap region (checked
-  // above).
-  Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
-
   ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size,
-                                                 HeapRegion::GrainBytes);
+                                                 heap_alignment);
 
   // It is important to do this in a way such that concurrent readers can't
   // temporarily think something is in the heap.  (I've actually seen this
