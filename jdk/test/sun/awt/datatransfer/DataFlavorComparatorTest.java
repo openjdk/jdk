@@ -19,39 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
+/* @test
+   @bug 7173464
+   @summary Clipboard.getAvailableDataFlavors: Comparison method violates contract
+   @author Petr Pchelko
+   @run main DataFlavorComparatorTest
+*/
 
-#include "precompiled.hpp"
-#include "gc_implementation/shared/objectCountEventSender.hpp"
-#include "memory/heapInspection.hpp"
-#include "trace/tracing.hpp"
-#include "utilities/globalDefinitions.hpp"
+import sun.awt.datatransfer.DataTransferer;
 
-#if INCLUDE_SERVICES
+import java.awt.datatransfer.DataFlavor;
 
-void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, jlong timestamp) {
-#if INCLUDE_TRACE
-  assert(Tracing::is_event_enabled(EventObjectCountAfterGC::eventId),
-         "Only call this method if the event is enabled");
+public class DataFlavorComparatorTest {
 
-  EventObjectCountAfterGC event(UNTIMED);
-  event.set_gcId(gc_id);
-  event.set_class(entry->klass());
-  event.set_count(entry->count());
-  event.set_totalSize(entry->words() * BytesPerWord);
-  event.set_endtime(timestamp);
-  event.commit();
-#endif // INCLUDE_TRACE
+    public static void main(String[] args) {
+        DataTransferer.DataFlavorComparator comparator = new DataTransferer.DataFlavorComparator();
+        DataFlavor flavor1 = DataFlavor.imageFlavor;
+        DataFlavor flavor2 = DataFlavor.selectionHtmlFlavor;
+        if (comparator.compare(flavor1, flavor2) == 0) {
+            throw new RuntimeException(flavor1.getMimeType() + " and " + flavor2.getMimeType() +
+                " should not be equal");
+        }
+    }
 }
 
-bool ObjectCountEventSender::should_send_event() {
-#if INCLUDE_TRACE
-  return Tracing::is_event_enabled(EventObjectCountAfterGC::eventId);
-#else
-  return false;
-#endif // INCLUDE_TRACE
-}
-
-#endif // INCLUDE_SERVICES
