@@ -3156,7 +3156,12 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
+char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr, bool exec) {
+  assert(UseLargePages, "only for large pages");
+
+  if (!is_size_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
+    return NULL; // Fallback to small pages.
+  }
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
@@ -5637,4 +5642,10 @@ BOOL os::Advapi32Dll::AdvapiAvailable() {
     _LookupPrivilegeValue != NULL;
 }
 
+#endif
+
+#ifndef PRODUCT
+void TestReserveMemorySpecial_test() {
+  // No tests available for this platform
+}
 #endif
