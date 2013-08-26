@@ -67,12 +67,13 @@ Java_sun_java2d_opengl_WGLSurfaceData_initOps(JNIEnv *env, jobject wglsd,
 
     J2dTraceLn(J2D_TRACE_INFO, "WGLSurfaceData_initOps");
 
-    if (oglsdo == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
-        return;
-    }
     if (wglsdo == NULL) {
         JNU_ThrowOutOfMemoryError(env, "creating native wgl ops");
+        return;
+    }
+    if (oglsdo == NULL) {
+        free(wglsdo);
+        JNU_ThrowOutOfMemoryError(env, "Initialization of SurfaceData failed.");
         return;
     }
 

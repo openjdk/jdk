@@ -2590,7 +2590,7 @@ void ClassFileParser::parse_classfile_sourcefile_attribute(TRAPS) {
     valid_symbol_at(sourcefile_index),
     "Invalid SourceFile attribute at constant pool index %u in class file %s",
     sourcefile_index, CHECK);
-  set_class_sourcefile(_cp->symbol_at(sourcefile_index));
+  set_class_sourcefile_index(sourcefile_index);
 }
 
 
@@ -2728,7 +2728,7 @@ void ClassFileParser::parse_classfile_signature_attribute(TRAPS) {
     valid_symbol_at(signature_index),
     "Invalid constant pool index %u in Signature attribute in class file %s",
     signature_index, CHECK);
-  set_class_generic_signature(_cp->symbol_at(signature_index));
+  set_class_generic_signature_index(signature_index);
 }
 
 void ClassFileParser::parse_classfile_bootstrap_methods_attribute(u4 attribute_byte_length, TRAPS) {
@@ -2975,13 +2975,11 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
 void ClassFileParser::apply_parsed_class_attributes(instanceKlassHandle k) {
   if (_synthetic_flag)
     k->set_is_synthetic();
-  if (_sourcefile != NULL) {
-    _sourcefile->increment_refcount();
-    k->set_source_file_name(_sourcefile);
+  if (_sourcefile_index != 0) {
+    k->set_source_file_name_index(_sourcefile_index);
   }
-  if (_generic_signature != NULL) {
-    _generic_signature->increment_refcount();
-    k->set_generic_signature(_generic_signature);
+  if (_generic_signature_index != 0) {
+    k->set_generic_signature_index(_generic_signature_index);
   }
   if (_sde_buffer != NULL) {
     k->set_source_debug_extension(_sde_buffer, _sde_length);

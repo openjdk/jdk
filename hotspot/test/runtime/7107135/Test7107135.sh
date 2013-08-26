@@ -53,9 +53,6 @@ case "$OS" in
     fi
     ;;
   *)
-    NULL=NUL
-    PS=";"
-    FS="\\"
     echo "Test passed; only valid for Linux"
     exit 0;
     ;;
@@ -87,14 +84,16 @@ ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rw
 
 echo
 echo Test changing of stack protection:
-echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rw
+echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rwx
 ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} Test test-rwx
+JAVA_RETVAL=$?
 
-if [ "$?" == "0" ]
+if [ "$JAVA_RETVAL" == "0" ]
 then
   echo
   echo ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} TestMT test-rwx
   ${TESTJAVA}${FS}bin${FS}java -cp ${THIS_DIR} TestMT test-rwx
+  JAVA_RETVAL=$?
 fi
 
-exit $?
+exit $JAVA_RETVAL

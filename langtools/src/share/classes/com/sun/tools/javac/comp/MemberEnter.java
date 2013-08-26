@@ -189,7 +189,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         staticImportAccessible(sym, packge) &&
                         sym.isMemberOf(origin, types) &&
                         !toScope.includes(sym))
-                        toScope.enter(sym, fromScope, origin.members());
+                        toScope.enter(sym, fromScope, origin.members(), true);
                 }
             }
         }.importFrom(tsym);
@@ -217,7 +217,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         staticImportAccessible(sym, packge) &&
                         !toScope.includes(sym) &&
                         sym.isMemberOf(origin, types)) {
-                        toScope.enter(sym, fromScope, origin.members());
+                        toScope.enter(sym, fromScope, origin.members(), true);
                     }
                 }
             }
@@ -283,7 +283,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         staticImportAccessible(sym, packge) &&
                         sym.isMemberOf(origin, types) &&
                         chk.checkUniqueStaticImport(pos, sym, toScope))
-                        toScope.enter(sym, sym.owner.members(), origin.members());
+                        toScope.enter(sym, sym.owner.members(), origin.members(), true);
                 }
             }
         }.importFrom(tsym);
@@ -313,9 +313,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                         staticImportAccessible(sym, packge) &&
                         sym.isMemberOf(origin, types)) {
                         found = true;
-                        if (sym.kind == MTH ||
-                            sym.kind != TYP && chk.checkUniqueStaticImport(pos, sym, toScope))
-                            toScope.enter(sym, sym.owner.members(), origin.members());
+                        if (sym.kind != TYP) {
+                            toScope.enter(sym, sym.owner.members(), origin.members(), true);
+                        }
                     }
                 }
             }

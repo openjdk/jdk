@@ -747,6 +747,7 @@ void Method::set_not_compilable(int comp_level, bool report, const char* reason)
       set_not_c2_compilable();
   }
   CompilationPolicy::policy()->disable_compilation(this);
+  assert(!CompilationPolicy::can_be_compiled(this, comp_level), "sanity check");
 }
 
 bool Method::is_not_osr_compilable(int comp_level) const {
@@ -773,6 +774,7 @@ void Method::set_not_osr_compilable(int comp_level, bool report, const char* rea
       set_not_c2_osr_compilable();
   }
   CompilationPolicy::policy()->disable_compilation(this);
+  assert(!CompilationPolicy::can_be_osr_compiled(this, comp_level), "sanity check");
 }
 
 // Revert to using the interpreter and clear out the nmethod
@@ -981,7 +983,6 @@ bool Method::should_not_be_cached() const {
 bool Method::is_ignored_by_security_stack_walk() const {
   const bool use_new_reflection = JDK_Version::is_gte_jdk14x_version() && UseNewReflection;
 
-  assert(intrinsic_id() != vmIntrinsics::_invoke || Universe::reflect_invoke_cache()->is_same_method((Method*)this), "sanity");
   if (intrinsic_id() == vmIntrinsics::_invoke) {
     // This is Method.invoke() -- ignore it
     return true;

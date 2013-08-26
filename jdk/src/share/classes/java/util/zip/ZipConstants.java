@@ -71,10 +71,17 @@ interface ZipConstants {
     /*
      * Extra field header ID
      */
-    static final int  EXTID_ZIP64 = 0x0001;      // Zip64
-    static final int  EXTID_NTFS  = 0x000a;      // NTFS
-    static final int  EXTID_UNIX  = 0x000d;      // UNIX
-    static final int  EXTID_EXTT  = 0x5455;      // Info-ZIP Extended Timestamp
+    static final int  EXTID_ZIP64 = 0x0001;    // Zip64
+    static final int  EXTID_NTFS  = 0x000a;    // NTFS
+    static final int  EXTID_UNIX  = 0x000d;    // UNIX
+    static final int  EXTID_EXTT  = 0x5455;    // Info-ZIP Extended Timestamp
+
+    /*
+     * EXTT timestamp flags
+     */
+    static final int  EXTT_FLAG_LMT = 0x1;       // LastModifiedTime
+    static final int  EXTT_FLAG_LAT = 0x2;       // LastAccessTime
+    static final int  EXTT_FLAT_CT  = 0x4;       // CreationTime
 
     /*
      * Central directory (CEN) header field offsets
