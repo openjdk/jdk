@@ -105,15 +105,53 @@ class CFGElement : public ResourceObj {
 // any optimization pass.  They are created late in the game.
 class Block : public CFGElement {
   friend class VMStructs;
- public:
+
+private:
   // Nodes in this block, in order
   Node_List _nodes;
+
+public:
+
+  // Get the node at index 'at_index', if 'at_index' is out of bounds return NULL
+  Node* get_node(uint at_index) const {
+    return _nodes[at_index];
+  }
+
+  // Get the number of nodes in this block
+  uint number_of_nodes() const {
+    return _nodes.size();
+  }
+
+  // Map a node 'node' to index 'to_index' in the block, if the index is out of bounds the size of the node list is increased
+  void map_node(Node* node, uint to_index) {
+    _nodes.map(to_index, node);
+  }
+
+  // Insert a node 'node' at index 'at_index', moving all nodes that are on a higher index one step, if 'at_index' is out of bounds we crash
+  void insert_node(Node* node, uint at_index) {
+    _nodes.insert(at_index, node);
+  }
+
+  // Remove a node at index 'at_index'
+  void remove_node(uint at_index) {
+    _nodes.remove(at_index);
+  }
+
+  // Push a node 'node' onto the node list
+  void push_node(Node* node) {
+    _nodes.push(node);
+  }
+
+  // Pop the last node off the node list
+  Node* pop_node() {
+    return _nodes.pop();
+  }
 
   // Basic blocks have a Node which defines Control for all Nodes pinned in
   // this block.  This Node is a RegionNode.  Exception-causing Nodes
   // (division, subroutines) and Phi functions are always pinned.  Later,
   // every Node will get pinned to some block.
-  Node *head() const { return _nodes[0]; }
+  Node *head() const { return get_node(0); }
 
   // CAUTION: num_preds() is ONE based, so that predecessor numbers match
   // input edges to Regions and Phis.
@@ -274,7 +312,7 @@ class Block : public CFGElement {
 
   // Add an instruction to an existing block.  It must go after the head
   // instruction and before the end instruction.
-  void add_inst( Node *n ) { _nodes.insert(end_idx(),n); }
+  void add_inst( Node *n ) { insert_node(n, end_idx()); }
   // Find node in block
   uint find_node( const Node *n ) const;
   // Find and remove n from block list
@@ -550,7 +588,7 @@ class PhaseCFG : public Phase {
 
   // Insert a node into a block at index and map the node to the block
   void insert(Block *b, uint idx, Node *n) {
-    b->_nodes.insert( idx, n );
+    b->insert_node(n , idx);
     map_node_to_block(n, b);
   }
 

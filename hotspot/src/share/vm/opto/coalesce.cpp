@@ -54,9 +54,9 @@ void PhaseCoalesce::dump() const {
     for( j=0; j<b->_num_succs; j++ )
       tty->print("B%d ",b->_succs[j]->_pre_order);
     tty->print(" IDom: B%d/#%d\n", b->_idom ? b->_idom->_pre_order : 0, b->_dom_depth);
-    uint cnt = b->_nodes.size();
+    uint cnt = b->number_of_nodes();
     for( j=0; j<cnt; j++ ) {
-      Node *n = b->_nodes[j];
+      Node *n = b->get_node(j);
       dump( n );
       tty->print("\t%s\t",n->Name());
 
@@ -152,7 +152,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
   // after the last use.  Last use is really first-use on a backwards scan.
   uint i = b->end_idx()-1;
   while(1) {
-    Node *n = b->_nodes[i];
+    Node *n = b->get_node(i);
     // Check for end of virtual copies; this is also the end of the
     // parallel renaming effort.
     if (n->_idx < _unique) {
@@ -174,7 +174,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
   // the last kill.  Thus it is the first kill on a backwards scan.
   i = b->end_idx()-1;
   while (1) {
-    Node *n = b->_nodes[i];
+    Node *n = b->get_node(i);
     // Check for end of virtual copies; this is also the end of the
     // parallel renaming effort.
     if (n->_idx < _unique) {
@@ -200,13 +200,13 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
     tmp ->set_req(idx,copy->in(idx));
     copy->set_req(idx,tmp);
     // Save source in temp early, before source is killed
-    b->_nodes.insert(kill_src_idx,tmp);
+    b->insert_node(tmp, kill_src_idx);
     _phc._cfg.map_node_to_block(tmp, b);
     last_use_idx++;
   }
 
   // Insert just after last use
-  b->_nodes.insert(last_use_idx+1,copy);
+  b->insert_node(copy, last_use_idx + 1);
 }
 
 void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
@@ -237,8 +237,8 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
     Block *b = _phc._cfg.get_block(i);
     uint cnt = b->num_preds();  // Number of inputs to the Phi
 
-    for( uint l = 1; l<b->_nodes.size(); l++ ) {
-      Node *n = b->_nodes[l];
+    for( uint l = 1; l<b->number_of_nodes(); l++ ) {
+      Node *n = b->get_node(l);
 
       // Do not use removed-copies, use copied value instead
       uint ncnt = n->req();
@@ -260,7 +260,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
         if (_phc._lrg_map.find(n) == _phc._lrg_map.find(def)) {
           n->replace_by(def);
           n->set_req(cidx,NULL);
-          b->_nodes.remove(l);
+          b->remove_node(l);
           l--;
           continue;
         }
@@ -321,13 +321,13 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
                m->as_Mach()->rematerialize()) {
               copy = m->clone();
               // Insert the copy in the basic block, just before us
-              b->_nodes.insert(l++, copy);
+              b->insert_node(copy, l++);
               l += _phc.clone_projs(b, l, m, copy, _phc._lrg_map);
             } else {
               const RegMask *rm = C->matcher()->idealreg2spillmask[m->ideal_reg()];
               copy = new (C) MachSpillCopyNode(m, *rm, *rm);
               // Insert the copy in the basic block, just before us
-              b->_nodes.insert(l++, copy);
+              b->insert_node(copy, l++);
             }
             // Insert the copy in the use-def chain
             n->set_req(idx, copy);
@@ -376,7 +376,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               // Insert the copy in the use-def chain
               n->set_req(inpidx, copy );
               // Insert the copy in the basic block, just before us
-              b->_nodes.insert( l++, copy );
+              b->insert_node(copy,  l++);
               // Extend ("register allocate") the names array for the copy.
               uint max_lrg_id = _phc._lrg_map.max_lrg_id();
               _phc.new_lrg(copy, max_lrg_id);
@@ -431,8 +431,8 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
     }
 
     // Visit all the Phis in successor block
-    for( uint k = 1; k<bs->_nodes.size(); k++ ) {
-      Node *n = bs->_nodes[k];
+    for( uint k = 1; k<bs->number_of_nodes(); k++ ) {
+      Node *n = bs->get_node(k);
       if( !n->is_Phi() ) break;
       combine_these_two( n, n->in(j) );
     }
@@ -442,7 +442,7 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
   // Check _this_ block for 2-address instructions and copies.
   uint cnt = b->end_idx();
   for( i = 1; i<cnt; i++ ) {
-    Node *n = b->_nodes[i];
+    Node *n = b->get_node(i);
     uint idx;
     // 2-address instructions have a virtual Copy matching their input
     // to their output
@@ -490,10 +490,10 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   dst_copy->set_req( didx, src_def );
   // Add copy to free list
   // _phc.free_spillcopy(b->_nodes[bindex]);
-  assert( b->_nodes[bindex] == dst_copy, "" );
+  assert( b->get_node(bindex) == dst_copy, "" );
   dst_copy->replace_by( dst_copy->in(didx) );
   dst_copy->set_req( didx, NULL);
-  b->_nodes.remove(bindex);
+  b->remove_node(bindex);
   if( bindex < b->_ihrp_index ) b->_ihrp_index--;
   if( bindex < b->_fhrp_index ) b->_fhrp_index--;
 
@@ -523,8 +523,8 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
       bindex2 = b2->end_idx()-1;
     }
     // Get prior instruction
-    assert(bindex2 < b2->_nodes.size(), "index out of bounds");
-    Node *x = b2->_nodes[bindex2];
+    assert(bindex2 < b2->number_of_nodes(), "index out of bounds");
+    Node *x = b2->get_node(bindex2);
     if( x == prev_copy ) {      // Previous copy in copy chain?
       if( prev_copy == src_copy)// Found end of chain and all interferences
         break;                  // So break out of loop
@@ -776,7 +776,7 @@ void PhaseConservativeCoalesce::coalesce( Block *b ) {
   for( uint i = 1; i<b->end_idx(); i++ ) {
     // Check for actual copies on inputs.  Coalesce a copy into its
     // input if use and copy's input are compatible.
-    Node *copy1 = b->_nodes[i];
+    Node *copy1 = b->get_node(i);
     uint idx1 = copy1->is_Copy();
     if( !idx1 ) continue;       // Not a copy
 

@@ -57,7 +57,7 @@ extern int emit_deopt_handler(CodeBuffer &cbuf);
 // Convert Nodes to instruction bits and pass off to the VM
 void Compile::Output() {
   // RootNode goes
-  assert( _cfg->get_root_block()->_nodes.size() == 0, "" );
+  assert( _cfg->get_root_block()->number_of_nodes() == 0, "" );
 
   // The number of new nodes (mostly MachNop) is proportional to
   // the number of java calls and inner loops which are aligned.
@@ -70,11 +70,11 @@ void Compile::Output() {
   Block *entry = _cfg->get_block(1);
   Block *broot = _cfg->get_root_block();
 
-  const StartNode *start = entry->_nodes[0]->as_Start();
+  const StartNode *start = entry->head()->as_Start();
 
   // Replace StartNode with prolog
   MachPrologNode *prolog = new (this) MachPrologNode();
-  entry->_nodes.map( 0, prolog );
+  entry->map_node(prolog, 0);
   _cfg->map_node_to_block(prolog, entry);
   _cfg->unmap_node_from_block(start); // start is no longer in any block
 
@@ -144,8 +144,8 @@ void Compile::Output() {
     for (uint i = 0; i < _cfg->number_of_blocks(); i++) {
       tty->print("\nBB#%03d:\n", i);
       Block* block = _cfg->get_block(i);
-      for (uint j = 0; j < block->_nodes.size(); j++) {
-        Node* n = block->_nodes[j];
+      for (uint j = 0; j < block->number_of_nodes(); j++) {
+        Node* n = block->get_node(j);
         OptoReg::Name reg = _regalloc->get_reg_first(n);
         tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
         n->dump();
@@ -226,8 +226,8 @@ void Compile::Insert_zap_nodes() {
   // Insert call to zap runtime stub before every node with an oop map
   for( uint i=0; i<_cfg->number_of_blocks(); i++ ) {
     Block *b = _cfg->get_block(i);
-    for ( uint j = 0;  j < b->_nodes.size();  ++j ) {
-      Node *n = b->_nodes[j];
+    for ( uint j = 0;  j < b->number_of_nodes();  ++j ) {
+      Node *n = b->get_node(j);
 
       // Determining if we should insert a zap-a-lot node in output.
       // We do that for all nodes that has oopmap info, except for calls
@@ -256,7 +256,7 @@ void Compile::Insert_zap_nodes() {
         }
         if (insert) {
           Node *zap = call_zap_node(n->as_MachSafePoint(), i);
-          b->_nodes.insert( j, zap );
+          b->insert_node(zap, j);
           _cfg->map_node_to_block(zap, b);
           ++j;
         }
@@ -379,10 +379,10 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
     DEBUG_ONLY( jmp_rule[i]   = 0; )
 
     // Sum all instruction sizes to compute block size
-    uint last_inst = block->_nodes.size();
+    uint last_inst = block->number_of_nodes();
     uint blk_size = 0;
     for (uint j = 0; j < last_inst; j++) {
-      Node* nj = block->_nodes[j];
+      Node* nj = block->get_node(j);
       // Handle machine instruction nodes
       if (nj->is_Mach()) {
         MachNode *mach = nj->as_Mach();
@@ -477,18 +477,18 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
     for (uint i = 0; i < nblocks; i++) {
       Block* block = _cfg->get_block(i);
       int idx = jmp_nidx[i];
-      MachNode* mach = (idx == -1) ? NULL: block->_nodes[idx]->as_Mach();
+      MachNode* mach = (idx == -1) ? NULL: block->get_node(idx)->as_Mach();
       if (mach != NULL && mach->may_be_short_branch()) {
 #ifdef ASSERT
         assert(jmp_size[i] > 0 && mach->is_MachBranch(), "sanity");
         int j;
         // Find the branch; ignore trailing NOPs.
-        for (j = block->_nodes.size()-1; j>=0; j--) {
-          Node* n = block->_nodes[j];
+        for (j = block->number_of_nodes()-1; j>=0; j--) {
+          Node* n = block->get_node(j);
           if (!n->is_Mach() || n->as_Mach()->ideal_Opcode() != Op_Con)
             break;
         }
-        assert(j >= 0 && j == idx && block->_nodes[j] == (Node*)mach, "sanity");
+        assert(j >= 0 && j == idx && block->get_node(j) == (Node*)mach, "sanity");
 #endif
         int br_size = jmp_size[i];
         int br_offs = blk_starts[i] + jmp_offset[i];
@@ -522,7 +522,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
             diff -= nop_size;
           }
           adjust_block_start += diff;
-          block->_nodes.map(idx, replacement);
+          block->map_node(replacement, idx);
           mach->subsume_by(replacement, C);
           mach = replacement;
           progress = true;
@@ -1088,8 +1088,8 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
     for (uint i = 0; i < _cfg->number_of_blocks(); i++) {
       Block* b = _cfg->get_block(i);
 
-      for (uint j = 0; j < b->_nodes.size(); j++) {
-        Node* n = b->_nodes[j];
+      for (uint j = 0; j < b->number_of_nodes(); j++) {
+        Node* n = b->get_node(j);
 
         // If the node is a MachConstantNode evaluate the constant
         // value section.
@@ -1247,14 +1247,14 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     // Define the label at the beginning of the basic block
     MacroAssembler(cb).bind(blk_labels[block->_pre_order]);
 
-    uint last_inst = block->_nodes.size();
+    uint last_inst = block->number_of_nodes();
 
     // Emit block normally, except for last instruction.
     // Emit means "dump code bits into code buffer".
     for (uint j = 0; j<last_inst; j++) {
 
       // Get the node
-      Node* n = block->_nodes[j];
+      Node* n = block->get_node(j);
 
       // See if delay slots are supported
       if (valid_bundle_info(n) &&
@@ -1308,7 +1308,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");
           int nops_cnt = padding / nop_size;
           MachNode *nop = new (this) MachNopNode(nops_cnt);
-          block->_nodes.insert(j++, nop);
+          block->insert_node(nop, j++);
           last_inst++;
           _cfg->map_node_to_block(nop, block);
           nop->emit(*cb, _regalloc);
@@ -1394,7 +1394,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               // Insert padding between avoid_back_to_back branches.
               if (needs_padding && replacement->avoid_back_to_back()) {
                 MachNode *nop = new (this) MachNopNode();
-                block->_nodes.insert(j++, nop);
+                block->insert_node(nop, j++);
                 _cfg->map_node_to_block(nop, block);
                 last_inst++;
                 nop->emit(*cb, _regalloc);
@@ -1407,7 +1407,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               jmp_size[i]   = new_size;
               jmp_rule[i]   = mach->rule();
 #endif
-              block->_nodes.map(j, replacement);
+              block->map_node(replacement, j);
               mach->subsume_by(replacement, C);
               n    = replacement;
               mach = replacement;
@@ -1438,7 +1438,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
             count++;
             uint i4;
             for (i4 = 0; i4 < last_inst; ++i4) {
-              if (block->_nodes[i4] == oop_store) {
+              if (block->get_node(i4) == oop_store) {
                 break;
               }
             }
@@ -1548,7 +1548,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       int padding = nb->alignment_padding(current_offset);
       if( padding > 0 ) {
         MachNode *nop = new (this) MachNopNode(padding / nop_size);
-        block->_nodes.insert(block->_nodes.size(), nop);
+        block->insert_node(nop, block->number_of_nodes());
         _cfg->map_node_to_block(nop, block);
         nop->emit(*cb, _regalloc);
         current_offset = cb->insts_size();
@@ -1655,8 +1655,8 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
     int j;
 
     // Find the branch; ignore trailing NOPs.
-    for (j = block->_nodes.size() - 1; j >= 0; j--) {
-      n = block->_nodes[j];
+    for (j = block->number_of_nodes() - 1; j >= 0; j--) {
+      n = block->get_node(j);
       if (!n->is_Mach() || n->as_Mach()->ideal_Opcode() != Op_Con) {
         break;
       }
@@ -1675,8 +1675,8 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
       uint call_return = call_returns[block->_pre_order];
 #ifdef ASSERT
       assert( call_return > 0, "no call seen for this basic block" );
-      while (block->_nodes[--j]->is_MachProj()) ;
-      assert(block->_nodes[j]->is_MachCall(), "CatchProj must follow call");
+      while (block->get_node(--j)->is_MachProj()) ;
+      assert(block->get_node(j)->is_MachCall(), "CatchProj must follow call");
 #endif
       // last instruction is a CatchNode, find it's CatchProjNodes
       int nof_succs = block->_num_succs;
@@ -1782,7 +1782,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   // Get the last node
   Block* block = _cfg->get_block(_cfg->number_of_blocks() - 1);
 
-  _next_node = block->_nodes[block->_nodes.size() - 1];
+  _next_node = block->get_node(block->number_of_nodes() - 1);
 }
 
 #ifndef PRODUCT
@@ -1875,7 +1875,7 @@ void Scheduling::ComputeLocalLatenciesForward(const Block *bb) {
     // Used to allow latency 0 to force an instruction to the beginning
     // of the bb
     uint latency = 1;
-    Node *use = bb->_nodes[j];
+    Node *use = bb->get_node(j);
     uint nlen = use->len();
 
     // Walk over all the inputs
@@ -2286,7 +2286,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
        (OptoReg::is_valid(_regalloc->get_reg_first(n)) || op != Op_BoxLock)) ) {
 
     // Push any trailing projections
-    if( bb->_nodes[bb->_nodes.size()-1] != n ) {
+    if( bb->get_node(bb->number_of_nodes()-1) != n ) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node *foi = n->fast_out(i);
         if( foi->is_Proj() )
@@ -2329,21 +2329,21 @@ void Scheduling::ComputeUseCount(const Block *bb) {
   _unconditional_delay_slot = NULL;
 
 #ifdef ASSERT
-  for( uint i=0; i < bb->_nodes.size(); i++ )
-    assert( _uses[bb->_nodes[i]->_idx] == 0, "_use array not clean" );
+  for( uint i=0; i < bb->number_of_nodes(); i++ )
+    assert( _uses[bb->get_node(i)->_idx] == 0, "_use array not clean" );
 #endif
 
   // Force the _uses count to never go to zero for unscheduable pieces
   // of the block
   for( uint k = 0; k < _bb_start; k++ )
-    _uses[bb->_nodes[k]->_idx] = 1;
-  for( uint l = _bb_end; l < bb->_nodes.size(); l++ )
-    _uses[bb->_nodes[l]->_idx] = 1;
+    _uses[bb->get_node(k)->_idx] = 1;
+  for( uint l = _bb_end; l < bb->number_of_nodes(); l++ )
+    _uses[bb->get_node(l)->_idx] = 1;
 
   // Iterate backwards over the instructions in the block.  Don't count the
   // branch projections at end or the block header instructions.
   for( uint j = _bb_end-1; j >= _bb_start; j-- ) {
-    Node *n = bb->_nodes[j];
+    Node *n = bb->get_node(j);
     if( n->is_Proj() ) continue; // Projections handled another way
 
     // Account for all uses
@@ -2398,8 +2398,8 @@ void Scheduling::DoScheduling() {
 #ifndef PRODUCT
     if (_cfg->C->trace_opto_output()) {
       tty->print("#  Schedule BB#%03d (initial)\n", i);
-      for (uint j = 0; j < bb->_nodes.size(); j++) {
-        bb->_nodes[j]->dump();
+      for (uint j = 0; j < bb->number_of_nodes(); j++) {
+        bb->get_node(j)->dump();
       }
     }
 #endif
@@ -2426,10 +2426,10 @@ void Scheduling::DoScheduling() {
     }
 
     // Leave untouched the starting instruction, any Phis, a CreateEx node
-    // or Top.  bb->_nodes[_bb_start] is the first schedulable instruction.
-    _bb_end = bb->_nodes.size()-1;
+    // or Top.  bb->get_node(_bb_start) is the first schedulable instruction.
+    _bb_end = bb->number_of_nodes()-1;
     for( _bb_start=1; _bb_start <= _bb_end; _bb_start++ ) {
-      Node *n = bb->_nodes[_bb_start];
+      Node *n = bb->get_node(_bb_start);
       // Things not matched, like Phinodes and ProjNodes don't get scheduled.
       // Also, MachIdealNodes do not get scheduled
       if( !n->is_Mach() ) continue;     // Skip non-machine nodes
@@ -2449,19 +2449,19 @@ void Scheduling::DoScheduling() {
     // in the block), because they have delay slots we can fill.  Calls all
     // have their delay slots filled in the template expansions, so we don't
     // bother scheduling them.
-    Node *last = bb->_nodes[_bb_end];
+    Node *last = bb->get_node(_bb_end);
     // Ignore trailing NOPs.
     while (_bb_end > 0 && last->is_Mach() &&
            last->as_Mach()->ideal_Opcode() == Op_Con) {
-      last = bb->_nodes[--_bb_end];
+      last = bb->get_node(--_bb_end);
     }
     assert(!last->is_Mach() || last->as_Mach()->ideal_Opcode() != Op_Con, "");
     if( last->is_Catch() ||
        // Exclude unreachable path case when Halt node is in a separate block.
        (_bb_end > 1 && last->is_Mach() && last->as_Mach()->ideal_Opcode() == Op_Halt) ) {
       // There must be a prior call.  Skip it.
-      while( !bb->_nodes[--_bb_end]->is_MachCall() ) {
-        assert( bb->_nodes[_bb_end]->is_MachProj(), "skipping projections after expected call" );
+      while( !bb->get_node(--_bb_end)->is_MachCall() ) {
+        assert( bb->get_node(_bb_end)->is_MachProj(), "skipping projections after expected call" );
       }
     } else if( last->is_MachNullCheck() ) {
       // Backup so the last null-checked memory instruction is
@@ -2470,7 +2470,7 @@ void Scheduling::DoScheduling() {
       Node *mem = last->in(1);
       do {
         _bb_end--;
-      } while (mem != bb->_nodes[_bb_end]);
+      } while (mem != bb->get_node(_bb_end));
     } else {
       // Set _bb_end to point after last schedulable inst.
       _bb_end++;
@@ -2499,7 +2499,7 @@ void Scheduling::DoScheduling() {
     assert( _scheduled.size() == _bb_end - _bb_start, "wrong number of instructions" );
 #ifdef ASSERT
     for( uint l = _bb_start; l < _bb_end; l++ ) {
-      Node *n = bb->_nodes[l];
+      Node *n = bb->get_node(l);
       uint m;
       for( m = 0; m < _bb_end-_bb_start; m++ )
         if( _scheduled[m] == n )
@@ -2510,14 +2510,14 @@ void Scheduling::DoScheduling() {
 
     // Now copy the instructions (in reverse order) back to the block
     for ( uint k = _bb_start; k < _bb_end; k++ )
-      bb->_nodes.map(k, _scheduled[_bb_end-k-1]);
+      bb->map_node(_scheduled[_bb_end-k-1], k);
 
 #ifndef PRODUCT
     if (_cfg->C->trace_opto_output()) {
       tty->print("#  Schedule BB#%03d (final)\n", i);
       uint current = 0;
-      for (uint j = 0; j < bb->_nodes.size(); j++) {
-        Node *n = bb->_nodes[j];
+      for (uint j = 0; j < bb->number_of_nodes(); j++) {
+        Node *n = bb->get_node(j);
         if( valid_bundle_info(n) ) {
           Bundle *bundle = node_bundling(n);
           if (bundle->instr_count() > 0 || bundle->flags() > 0) {
@@ -2579,8 +2579,8 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
   // Walk over the block backwards.  Check to make sure each DEF doesn't
   // kill a live value (other than the one it's supposed to).  Add each
   // USE to the live set.
-  for( uint i = b->_nodes.size()-1; i >= _bb_start; i-- ) {
-    Node *n = b->_nodes[i];
+  for( uint i = b->number_of_nodes()-1; i >= _bb_start; i-- ) {
+    Node *n = b->get_node(i);
     int n_op = n->Opcode();
     if( n_op == Op_MachProj && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
@@ -2711,7 +2711,7 @@ void Scheduling::anti_do_use( Block *b, Node *use, OptoReg::Name use_reg ) {
         pinch->req() == 1 ) {   // pinch not yet in block?
       pinch->del_req(0);        // yank pointer to later-def, also set flag
       // Insert the pinch-point in the block just after the last use
-      b->_nodes.insert(b->find_node(use)+1,pinch);
+      b->insert_node(pinch, b->find_node(use) + 1);
       _bb_end++;                // Increase size scheduled region in block
     }
 
@@ -2763,10 +2763,10 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
   // it being in the current block.
   bool fat_proj_seen = false;
   uint last_safept = _bb_end-1;
-  Node* end_node         = (_bb_end-1 >= _bb_start) ? b->_nodes[last_safept] : NULL;
+  Node* end_node         = (_bb_end-1 >= _bb_start) ? b->get_node(last_safept) : NULL;
   Node* last_safept_node = end_node;
   for( uint i = _bb_end-1; i >= _bb_start; i-- ) {
-    Node *n = b->_nodes[i];
+    Node *n = b->get_node(i);
     int is_def = n->outcnt();   // def if some uses prior to adding precedence edges
     if( n->is_MachProj() && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
@@ -2815,7 +2815,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
     // Do not allow defs of new derived values to float above GC
     // points unless the base is definitely available at the GC point.
 
-    Node *m = b->_nodes[i];
+    Node *m = b->get_node(i);
 
     // Add precedence edge from following safepoint to use of derived pointer
     if( last_safept_node != end_node &&
@@ -2832,11 +2832,11 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     if( n->jvms() ) {           // Precedence edge from derived to safept
       // Check if last_safept_node was moved by pinch-point insertion in anti_do_use()
-      if( b->_nodes[last_safept] != last_safept_node ) {
+      if( b->get_node(last_safept) != last_safept_node ) {
         last_safept = b->find_node(last_safept_node);
       }
       for( uint j=last_safept; j > i; j-- ) {
-        Node *mach = b->_nodes[j];
+        Node *mach = b->get_node(j);
         if( mach->is_Mach() && mach->as_Mach()->ideal_Opcode() == Op_AddP )
           mach->add_prec( n );
       }
