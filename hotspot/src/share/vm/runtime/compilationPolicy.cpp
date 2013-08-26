@@ -138,6 +138,23 @@ bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
   return false;
 }
 
+// Returns true if m is allowed to be osr compiled
+bool CompilationPolicy::can_be_osr_compiled(methodHandle m, int comp_level) {
+  bool result = false;
+  if (comp_level == CompLevel_all) {
+    if (TieredCompilation) {
+      // enough to be osr compilable at any level for tiered
+      result = !m->is_not_osr_compilable(CompLevel_simple) || !m->is_not_osr_compilable(CompLevel_full_optimization);
+    } else {
+      // must be osr compilable at available level for non-tiered
+      result = !m->is_not_osr_compilable(CompLevel_highest_tier);
+    }
+  } else if (is_compile(comp_level)) {
+    result = !m->is_not_osr_compilable(comp_level);
+  }
+  return (result && can_be_compiled(m, comp_level));
+}
+
 bool CompilationPolicy::is_compilation_enabled() {
   // NOTE: CompileBroker::should_compile_new_jobs() checks for UseCompiler
   return !delay_compilation_during_startup() && CompileBroker::should_compile_new_jobs();
@@ -458,7 +475,7 @@ void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThr
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m, comp_level)) {
+  if (is_compilation_enabled() && can_be_osr_compiled(m, comp_level)) {
     CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
@@ -514,7 +531,7 @@ void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, Java
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (is_compilation_enabled() && !m->is_not_osr_compilable(comp_level) && can_be_compiled(m, comp_level)) {
+  if (is_compilation_enabled() && can_be_osr_compiled(m, comp_level)) {
     CompileBroker::compile_method(m, bci, comp_level, m, hot_count, comment, thread);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }

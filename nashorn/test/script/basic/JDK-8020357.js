@@ -33,17 +33,6 @@ var BYTES_PER_INT_32  =  4
 
 var limit = Math.pow(2, UNSIGNED_INT_BITS)/BYTES_PER_INT_32
 
-try {
-    // A value at or under the limit should either succeed if we have
-    // enough heap, or throw an OutOfMemoryError if we don't.
-    Int32Array(limit - 1)
-} catch(e) {
-    if(!(e instanceof java.lang.OutOfMemoryError)) {
-        // Only print an unexpected result; OutOfMemoryError is expected
-        print(e)
-    }
-}
-
 // A value over the limit should throw a RangeError.
 try {
     Int32Array(limit)

@@ -37,12 +37,9 @@
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 
-//=============================================================================
-//------------------------------IFG--------------------------------------------
 PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 }
 
-//------------------------------init-------------------------------------------
 void PhaseIFG::init( uint maxlrg ) {
   _maxlrg = maxlrg;
   _yanked = new (_arena) VectorSet(_arena);
@@ -59,7 +56,6 @@ void PhaseIFG::init( uint maxlrg ) {
   }
 }
 
-//------------------------------add--------------------------------------------
 // Add edge between vertices a & b.  These are sorted (triangular matrix),
 // then the smaller number is inserted in the larger numbered array.
 int PhaseIFG::add_edge( uint a, uint b ) {
@@ -71,7 +67,6 @@ int PhaseIFG::add_edge( uint a, uint b ) {
   return _adjs[a].insert( b );
 }
 
-//------------------------------add_vector-------------------------------------
 // Add an edge between 'a' and everything in the vector.
 void PhaseIFG::add_vector( uint a, IndexSet *vec ) {
   // IFG is triangular, so do the inserts where 'a' < 'b'.
@@ -86,7 +81,6 @@ void PhaseIFG::add_vector( uint a, IndexSet *vec ) {
   }
 }
 
-//------------------------------test-------------------------------------------
 // Is there an edge between a and b?
 int PhaseIFG::test_edge( uint a, uint b ) const {
   // Sort a and b, so that a is larger
@@ -95,7 +89,6 @@ int PhaseIFG::test_edge( uint a, uint b ) const {
   return _adjs[a].member(b);
 }
 
-//------------------------------SquareUp---------------------------------------
 // Convert triangular matrix to square matrix
 void PhaseIFG::SquareUp() {
   assert( !_is_square, "only on triangular" );
@@ -111,7 +104,6 @@ void PhaseIFG::SquareUp() {
   _is_square = true;
 }
 
-//------------------------------Compute_Effective_Degree-----------------------
 // Compute effective degree in bulk
 void PhaseIFG::Compute_Effective_Degree() {
   assert( _is_square, "only on square" );
@@ -120,7 +112,6 @@ void PhaseIFG::Compute_Effective_Degree() {
     lrgs(i).set_degree(effective_degree(i));
 }
 
-//------------------------------test_edge_sq-----------------------------------
 int PhaseIFG::test_edge_sq( uint a, uint b ) const {
   assert( _is_square, "only on square" );
   // Swap, so that 'a' has the lesser count.  Then binary search is on
@@ -130,7 +121,6 @@ int PhaseIFG::test_edge_sq( uint a, uint b ) const {
   return _adjs[a].member(b);
 }
 
-//------------------------------Union------------------------------------------
 // Union edges of B into A
 void PhaseIFG::Union( uint a, uint b ) {
   assert( _is_square, "only on square" );
@@ -146,7 +136,6 @@ void PhaseIFG::Union( uint a, uint b ) {
   }
 }
 
-//------------------------------remove_node------------------------------------
 // Yank a Node and all connected edges from the IFG.  Return a
 // list of neighbors (edges) yanked.
 IndexSet *PhaseIFG::remove_node( uint a ) {
@@ -165,7 +154,6 @@ IndexSet *PhaseIFG::remove_node( uint a ) {
   return neighbors(a);
 }
 
-//------------------------------re_insert--------------------------------------
 // Re-insert a yanked Node.
 void PhaseIFG::re_insert( uint a ) {
   assert( _is_square, "only on square" );
@@ -180,7 +168,6 @@ void PhaseIFG::re_insert( uint a ) {
   }
 }
 
-//------------------------------compute_degree---------------------------------
 // Compute the degree between 2 live ranges.  If both live ranges are
 // aligned-adjacent powers-of-2 then we use the MAX size.  If either is
 // mis-aligned (or for Fat-Projections, not-adjacent) then we have to
@@ -196,7 +183,6 @@ int LRG::compute_degree( LRG &l ) const {
   return tmp;
 }
 
-//------------------------------effective_degree-------------------------------
 // Compute effective degree for this live range.  If both live ranges are
 // aligned-adjacent powers-of-2 then we use the MAX size.  If either is
 // mis-aligned (or for Fat-Projections, not-adjacent) then we have to
@@ -221,7 +207,6 @@ int PhaseIFG::effective_degree( uint lidx ) const {
 
 
 #ifndef PRODUCT
-//------------------------------dump-------------------------------------------
 void PhaseIFG::dump() const {
   tty->print_cr("-- Interference Graph --%s--",
                 _is_square ? "square" : "triangular" );
@@ -260,7 +245,6 @@ void PhaseIFG::dump() const {
   tty->print("\n");
 }
 
-//------------------------------stats------------------------------------------
 void PhaseIFG::stats() const {
   ResourceMark rm;
   int *h_cnt = NEW_RESOURCE_ARRAY(int,_maxlrg*2);
@@ -276,7 +260,6 @@ void PhaseIFG::stats() const {
   tty->print_cr("");
 }
 
-//------------------------------verify-----------------------------------------
 void PhaseIFG::verify( const PhaseChaitin *pc ) const {
   // IFG is square, sorted and no need for Find
   for( uint i = 0; i < _maxlrg; i++ ) {
@@ -298,7 +281,6 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
 }
 #endif
 
-//------------------------------interfere_with_live----------------------------
 // Interfere this register with everything currently live.  Use the RegMasks
 // to trim the set of possible interferences. Return a count of register-only
 // interferences as an estimate of register pressure.
@@ -315,7 +297,6 @@ void PhaseChaitin::interfere_with_live( uint r, IndexSet *liveout ) {
       _ifg->add_edge( r, l );
 }
 
-//------------------------------build_ifg_virtual------------------------------
 // Actually build the interference graph.  Uses virtual registers only, no
 // physical register masks.  This allows me to be very aggressive when
 // coalescing copies.  Some of this aggressiveness will have to be undone
@@ -325,9 +306,9 @@ void PhaseChaitin::interfere_with_live( uint r, IndexSet *liveout ) {
 void PhaseChaitin::build_ifg_virtual( ) {
 
   // For all blocks (in any order) do...
-  for( uint i=0; i<_cfg._num_blocks; i++ ) {
-    Block *b = _cfg._blocks[i];
-    IndexSet *liveout = _live->live(b);
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
+    IndexSet* liveout = _live->live(block);
 
     // The IFG is built by a single reverse pass over each basic block.
     // Starting with the known live-out set, we remove things that get
@@ -337,8 +318,8 @@ void PhaseChaitin::build_ifg_virtual( ) {
     // The defined value interferes with everything currently live.  The
     // value is then removed from the live-ness set and it's inputs are
     // added to the live-ness set.
-    for( uint j = b->end_idx() + 1; j > 1; j-- ) {
-      Node *n = b->_nodes[j-1];
+    for (uint j = block->end_idx() + 1; j > 1; j--) {
+      Node* n = block->_nodes[j - 1];
 
       // Get value being defined
       uint r = _lrg_map.live_range_id(n);
@@ -408,7 +389,6 @@ void PhaseChaitin::build_ifg_virtual( ) {
   } // End of forall blocks
 }
 
-//------------------------------count_int_pressure-----------------------------
 uint PhaseChaitin::count_int_pressure( IndexSet *liveout ) {
   IndexSetIterator elements(liveout);
   uint lidx;
@@ -424,7 +404,6 @@ uint PhaseChaitin::count_int_pressure( IndexSet *liveout ) {
   return cnt;
 }
 
-//------------------------------count_float_pressure---------------------------
 uint PhaseChaitin::count_float_pressure( IndexSet *liveout ) {
   IndexSetIterator elements(liveout);
   uint lidx;
@@ -438,7 +417,6 @@ uint PhaseChaitin::count_float_pressure( IndexSet *liveout ) {
   return cnt;
 }
 
-//------------------------------lower_pressure---------------------------------
 // Adjust register pressure down by 1.  Capture last hi-to-low transition,
 static void lower_pressure( LRG *lrg, uint where, Block *b, uint *pressure, uint *hrp_index ) {
   if (lrg->mask().is_UP() && lrg->mask_size()) {
@@ -460,40 +438,41 @@ static void lower_pressure( LRG *lrg, uint where, Block *b, uint *pressure, uint
   }
 }
 
-//------------------------------build_ifg_physical-----------------------------
 // Build the interference graph using physical registers when available.
 // That is, if 2 live ranges are simultaneously alive but in their acceptable
 // register sets do not overlap, then they do not interfere.
 uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
   NOT_PRODUCT( Compile::TracePhase t3("buildIFG", &_t_buildIFGphysical, TimeCompiler); )
 
-  uint spill_reg = LRG::SPILL_REG;
   uint must_spill = 0;
 
   // For all blocks (in any order) do...
-  for( uint i = 0; i < _cfg._num_blocks; i++ ) {
-    Block *b = _cfg._blocks[i];
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
     // Clone (rather than smash in place) the liveout info, so it is alive
     // for the "collect_gc_info" phase later.
-    IndexSet liveout(_live->live(b));
-    uint last_inst = b->end_idx();
+    IndexSet liveout(_live->live(block));
+    uint last_inst = block->end_idx();
     // Compute first nonphi node index
     uint first_inst;
-    for( first_inst = 1; first_inst < last_inst; first_inst++ )
-      if( !b->_nodes[first_inst]->is_Phi() )
+    for (first_inst = 1; first_inst < last_inst; first_inst++) {
+      if (!block->_nodes[first_inst]->is_Phi()) {
         break;
+      }
+    }
 
     // Spills could be inserted before CreateEx node which should be
     // first instruction in block after Phis. Move CreateEx up.
-    for( uint insidx = first_inst; insidx < last_inst; insidx++ ) {
-      Node *ex = b->_nodes[insidx];
-      if( ex->is_SpillCopy() ) continue;
-      if( insidx > first_inst && ex->is_Mach() &&
-          ex->as_Mach()->ideal_Opcode() == Op_CreateEx ) {
+    for (uint insidx = first_inst; insidx < last_inst; insidx++) {
+      Node *ex = block->_nodes[insidx];
+      if (ex->is_SpillCopy()) {
+        continue;
+      }
+      if (insidx > first_inst && ex->is_Mach() && ex->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         // If the CreateEx isn't above all the MachSpillCopies
         // then move it to the top.
-        b->_nodes.remove(insidx);
-        b->_nodes.insert(first_inst, ex);
+        block->_nodes.remove(insidx);
+        block->_nodes.insert(first_inst, ex);
       }
       // Stop once a CreateEx or any other node is found
       break;
@@ -503,12 +482,12 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     uint pressure[2], hrp_index[2];
     pressure[0] = pressure[1] = 0;
     hrp_index[0] = hrp_index[1] = last_inst+1;
-    b->_reg_pressure = b->_freg_pressure = 0;
+    block->_reg_pressure = block->_freg_pressure = 0;
     // Liveout things are presumed live for the whole block.  We accumulate
     // 'area' accordingly.  If they get killed in the block, we'll subtract
     // the unused part of the block from the area.
     int inst_count = last_inst - first_inst;
-    double cost = (inst_count <= 0) ? 0.0 : b->_freq * double(inst_count);
+    double cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
     assert(!(cost < 0.0), "negative spill cost" );
     IndexSetIterator elements(&liveout);
     uint lidx;
@@ -519,13 +498,15 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       if (lrg.mask().is_UP() && lrg.mask_size()) {
         if (lrg._is_float || lrg._is_vector) {   // Count float pressure
           pressure[1] += lrg.reg_pressure();
-          if( pressure[1] > b->_freg_pressure )
-            b->_freg_pressure = pressure[1];
+          if (pressure[1] > block->_freg_pressure) {
+            block->_freg_pressure = pressure[1];
+          }
           // Count int pressure, but do not count the SP, flags
-        } else if( lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
+        } else if(lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI])) {
           pressure[0] += lrg.reg_pressure();
-          if( pressure[0] > b->_reg_pressure )
-            b->_reg_pressure = pressure[0];
+          if (pressure[0] > block->_reg_pressure) {
+            block->_reg_pressure = pressure[0];
+          }
         }
       }
     }
@@ -541,8 +522,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // value is then removed from the live-ness set and it's inputs are added
     // to the live-ness set.
     uint j;
-    for( j = last_inst + 1; j > 1; j-- ) {
-      Node *n = b->_nodes[j - 1];
+    for (j = last_inst + 1; j > 1; j--) {
+      Node* n = block->_nodes[j - 1];
 
       // Get value being defined
       uint r = _lrg_map.live_range_id(n);
@@ -551,7 +532,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       if(r) {
         // A DEF normally costs block frequency; rematerialized values are
         // removed from the DEF sight, so LOWER costs here.
-        lrgs(r)._cost += n->rematerialize() ? 0 : b->_freq;
+        lrgs(r)._cost += n->rematerialize() ? 0 : block->_freq;
 
         // If it is not live, then this instruction is dead.  Probably caused
         // by spilling and rematerialization.  Who cares why, yank this baby.
@@ -560,12 +541,12 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if( !n->is_Proj() ||
               // Could also be a flags-projection of a dead ADD or such.
               (_lrg_map.live_range_id(def) && !liveout.member(_lrg_map.live_range_id(def)))) {
-            b->_nodes.remove(j - 1);
+            block->_nodes.remove(j - 1);
             if (lrgs(r)._def == n) {
               lrgs(r)._def = 0;
             }
             n->disconnect_inputs(NULL, C);
-            _cfg._bbs.map(n->_idx,NULL);
+            _cfg.unmap_node_from_block(n);
             n->replace_by(C->top());
             // Since yanking a Node from block, high pressure moves up one
             hrp_index[0]--;
@@ -580,21 +561,21 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             RegMask itmp = lrgs(r).mask();
             itmp.AND(*Matcher::idealreg2regmask[Op_RegI]);
             int iregs = itmp.Size();
-            if( pressure[0]+iregs > b->_reg_pressure )
-              b->_reg_pressure = pressure[0]+iregs;
-            if( pressure[0]       <= (uint)INTPRESSURE &&
-                pressure[0]+iregs >  (uint)INTPRESSURE ) {
-              hrp_index[0] = j-1;
+            if (pressure[0]+iregs > block->_reg_pressure) {
+              block->_reg_pressure = pressure[0] + iregs;
+            }
+            if (pressure[0] <= (uint)INTPRESSURE && pressure[0] + iregs > (uint)INTPRESSURE) {
+              hrp_index[0] = j - 1;
             }
             // Count the float-only registers
             RegMask ftmp = lrgs(r).mask();
             ftmp.AND(*Matcher::idealreg2regmask[Op_RegD]);
             int fregs = ftmp.Size();
-            if( pressure[1]+fregs > b->_freg_pressure )
-              b->_freg_pressure = pressure[1]+fregs;
-            if( pressure[1]       <= (uint)FLOATPRESSURE &&
-                pressure[1]+fregs >  (uint)FLOATPRESSURE ) {
-              hrp_index[1] = j-1;
+            if (pressure[1] + fregs > block->_freg_pressure) {
+              block->_freg_pressure = pressure[1] + fregs;
+            }
+            if(pressure[1] <= (uint)FLOATPRESSURE && pressure[1]+fregs > (uint)FLOATPRESSURE) {
+              hrp_index[1] = j - 1;
             }
           }
 
@@ -607,7 +588,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if( n->is_SpillCopy()
               && lrgs(r).is_singledef()        // MultiDef live range can still split
               && n->outcnt() == 1              // and use must be in this block
-              && _cfg._bbs[n->unique_out()->_idx] == b ) {
+              && _cfg.get_block_for_node(n->unique_out()) == block) {
             // All single-use MachSpillCopy(s) that immediately precede their
             // use must color early.  If a longer live range steals their
             // color, the spill copy will split and may push another spill copy
@@ -617,14 +598,16 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             //
 
             Node *single_use = n->unique_out();
-            assert( b->find_node(single_use) >= j, "Use must be later in block");
+            assert(block->find_node(single_use) >= j, "Use must be later in block");
             // Use can be earlier in block if it is a Phi, but then I should be a MultiDef
 
             // Find first non SpillCopy 'm' that follows the current instruction
             // (j - 1) is index for current instruction 'n'
             Node *m = n;
-            for( uint i = j; i <= last_inst && m->is_SpillCopy(); ++i ) { m = b->_nodes[i]; }
-            if( m == single_use ) {
+            for (uint i = j; i <= last_inst && m->is_SpillCopy(); ++i) {
+              m = block->_nodes[i];
+            }
+            if (m == single_use) {
               lrgs(r)._area = 0.0;
             }
           }
@@ -633,7 +616,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if( liveout.remove(r) ) {
             // Adjust register pressure.
             // Capture last hi-to-lo pressure transition
-            lower_pressure( &lrgs(r), j-1, b, pressure, hrp_index );
+            lower_pressure(&lrgs(r), j - 1, block, pressure, hrp_index);
             assert( pressure[0] == count_int_pressure  (&liveout), "" );
             assert( pressure[1] == count_float_pressure(&liveout), "" );
           }
@@ -646,7 +629,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             if (liveout.remove(x)) {
               lrgs(x)._area -= cost;
               // Adjust register pressure.
-              lower_pressure(&lrgs(x), j-1, b, pressure, hrp_index);
+              lower_pressure(&lrgs(x), j - 1, block, pressure, hrp_index);
               assert( pressure[0] == count_int_pressure  (&liveout), "" );
               assert( pressure[1] == count_float_pressure(&liveout), "" );
             }
@@ -718,7 +701,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
       // Area remaining in the block
       inst_count--;
-      cost = (inst_count <= 0) ? 0.0 : b->_freq * double(inst_count);
+      cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
 
       // Make all inputs live
       if( !n->is_Phi() ) {      // Phi function uses come from prior block
@@ -743,7 +726,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if (k < debug_start) {
             // A USE costs twice block frequency (once for the Load, once
             // for a Load-delay).  Rematerialized uses only cost once.
-            lrg._cost += (def->rematerialize() ? b->_freq : (b->_freq + b->_freq));
+            lrg._cost += (def->rematerialize() ? block->_freq : (block->_freq + block->_freq));
           }
           // It is live now
           if (liveout.insert(x)) {
@@ -753,12 +736,14 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             if (lrg.mask().is_UP() && lrg.mask_size()) {
               if (lrg._is_float || lrg._is_vector) {
                 pressure[1] += lrg.reg_pressure();
-                if( pressure[1] > b->_freg_pressure )
-                  b->_freg_pressure = pressure[1];
+                if (pressure[1] > block->_freg_pressure)  {
+                  block->_freg_pressure = pressure[1];
+                }
               } else if( lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
                 pressure[0] += lrg.reg_pressure();
-                if( pressure[0] > b->_reg_pressure )
-                  b->_reg_pressure = pressure[0];
+                if (pressure[0] > block->_reg_pressure) {
+                  block->_reg_pressure = pressure[0];
+                }
               }
             }
             assert( pressure[0] == count_int_pressure  (&liveout), "" );
@@ -772,44 +757,47 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // If we run off the top of the block with high pressure and
     // never see a hi-to-low pressure transition, just record that
     // the whole block is high pressure.
-    if( pressure[0] > (uint)INTPRESSURE   ) {
+    if (pressure[0] > (uint)INTPRESSURE) {
       hrp_index[0] = 0;
-      if( pressure[0] > b->_reg_pressure )
-        b->_reg_pressure = pressure[0];
+      if (pressure[0] > block->_reg_pressure) {
+        block->_reg_pressure = pressure[0];
+      }
     }
-    if( pressure[1] > (uint)FLOATPRESSURE ) {
+    if (pressure[1] > (uint)FLOATPRESSURE) {
       hrp_index[1] = 0;
-      if( pressure[1] > b->_freg_pressure )
-        b->_freg_pressure = pressure[1];
+      if (pressure[1] > block->_freg_pressure) {
+        block->_freg_pressure = pressure[1];
+      }
     }
 
     // Compute high pressure indice; avoid landing in the middle of projnodes
     j = hrp_index[0];
-    if( j < b->_nodes.size() && j < b->end_idx()+1 ) {
-      Node *cur = b->_nodes[j];
-      while( cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch() ) {
+    if (j < block->_nodes.size() && j < block->end_idx() + 1) {
+      Node* cur = block->_nodes[j];
+      while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
         j--;
-        cur = b->_nodes[j];
+        cur = block->_nodes[j];
       }
     }
-    b->_ihrp_index = j;
+    block->_ihrp_index = j;
     j = hrp_index[1];
-    if( j < b->_nodes.size() && j < b->end_idx()+1 ) {
-      Node *cur = b->_nodes[j];
-      while( cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch() ) {
+    if (j < block->_nodes.size() && j < block->end_idx() + 1) {
+      Node* cur = block->_nodes[j];
+      while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
         j--;
-        cur = b->_nodes[j];
+        cur = block->_nodes[j];
       }
     }
-    b->_fhrp_index = j;
+    block->_fhrp_index = j;
 
 #ifndef PRODUCT
     // Gather Register Pressure Statistics
     if( PrintOptoStatistics ) {
-      if( b->_reg_pressure > (uint)INTPRESSURE || b->_freg_pressure > (uint)FLOATPRESSURE )
+      if (block->_reg_pressure > (uint)INTPRESSURE || block->_freg_pressure > (uint)FLOATPRESSURE) {
         _high_pressure++;
-      else
+      } else {
         _low_pressure++;
+      }
     }
 #endif
   } // End of for all blocks

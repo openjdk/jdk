@@ -43,32 +43,15 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
-#include <errno.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <limits.h>
 
-#ifdef __APPLE__
-#include <crt_externs.h>
-#define environ (*_NSGetEnviron())
-#else
-/* This is one of the rare times it's more portable to declare an
- * external symbol explicitly, rather than via a system header.
- * The declaration is standardized as part of UNIX98, but there is
- * no standard (not even de-facto) header file where the
- * declaration is to be found.  See:
- * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
- * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
- *
- * "All identifiers in this volume of IEEE Std 1003.1-2001, except
- * environ, are defined in at least one of the headers" (!)
- */
-extern char **environ;
+#if defined(__solaris__) || defined(_ALLBSD_SOURCE)
+#include <spawn.h>
 #endif
 
+#include "childproc.h"
+
 /*
- * There are 3 possible strategies we might use to "fork":
+ * There are 4 possible strategies we might use to "fork":
  *
  * - fork(2).  Very portable and reliable but subject to
  *   failure due to overcommit (see the documentation on
@@ -103,67 +86,20 @@ extern char **environ;
  *     http://sources.redhat.com/bugzilla/show_bug.cgi?id=10311
  *   but the glibc maintainers closed it as WONTFIX.
  *
+ * - posix_spawn(). While posix_spawn() is a fairly elaborate and
+ *   complicated system call, it can't quite do everything that the old
+ *   fork()/exec() combination can do, so the only feasible way to do
+ *   this, is to use posix_spawn to launch a new helper executable
+ *   "jprochelper", which in turn execs the target (after cleaning
+ *   up file-descriptors etc.) The end result is the same as before,
+ *   a child process linked to the parent in the same way, but it
+ *   avoids the problem of duplicating the parent (VM) process
+ *   address space temporarily, before launching the target command.
+ *
  * Based on the above analysis, we are currently using vfork() on
- * Linux and fork() on other Unix systems, but the code to use clone()
- * remains.
+ * Linux and spawn() on other Unix systems, but the code to use clone()
+ * and fork() remains.
  */
-
-#define START_CHILD_USE_CLONE 0  /* clone() currently disabled; see above. */
-
-#ifndef START_CHILD_USE_CLONE
-  #ifdef __linux__
-    #define START_CHILD_USE_CLONE 1
-  #else
-    #define START_CHILD_USE_CLONE 0
-  #endif
-#endif
-
-/* By default, use vfork() on Linux. */
-#ifndef START_CHILD_USE_VFORK
-  #ifdef __linux__
-    #define START_CHILD_USE_VFORK 1
-  #else
-    #define START_CHILD_USE_VFORK 0
-  #endif
-#endif
-
-#if START_CHILD_USE_CLONE
-#include <sched.h>
-#define START_CHILD_SYSTEM_CALL "clone"
-#elif START_CHILD_USE_VFORK
-#define START_CHILD_SYSTEM_CALL "vfork"
-#else
-#define START_CHILD_SYSTEM_CALL "fork"
-#endif
-
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
-#endif
-
-#ifndef SA_NOCLDSTOP
-#define SA_NOCLDSTOP 0
-#endif
-
-#ifndef SA_RESTART
-#define SA_RESTART 0
-#endif
-
-#define FAIL_FILENO (STDERR_FILENO + 1)
-
-/* TODO: Refactor. */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 
 static void
@@ -266,17 +202,10 @@ effectivePathv(JNIEnv *env)
     return pathv;
 }
 
-/**
- * The cached and split version of the JDK's effective PATH.
- * (We don't support putenv("PATH=...") in native code)
- */
-static const char * const *parentPathv;
-
 JNIEXPORT void JNICALL
 Java_java_lang_UNIXProcess_init(JNIEnv *env, jclass clazz)
 {
     parentPathv = effectivePathv(env);
-
     setSIGCHLDHandler(env);
 }
 
@@ -343,96 +272,6 @@ Java_java_lang_UNIXProcess_waitForProcessExit(JNIEnv* env,
     }
 }
 
-static ssize_t
-restartableWrite(int fd, const void *buf, size_t count)
-{
-    ssize_t result;
-    RESTARTABLE(write(fd, buf, count), result);
-    return result;
-}
-
-static int
-restartableDup2(int fd_from, int fd_to)
-{
-    int err;
-    RESTARTABLE(dup2(fd_from, fd_to), err);
-    return err;
-}
-
-static int
-restartableClose(int fd)
-{
-    int err;
-    RESTARTABLE(close(fd), err);
-    return err;
-}
-
-static int
-closeSafely(int fd)
-{
-    return (fd == -1) ? 0 : restartableClose(fd);
-}
-
-static int
-isAsciiDigit(char c)
-{
-  return c >= '0' && c <= '9';
-}
-
-#ifdef _ALLBSD_SOURCE
-#define FD_DIR "/dev/fd"
-#define dirent64 dirent
-#define readdir64 readdir
-#else
-#define FD_DIR "/proc/self/fd"
-#endif
-
-static int
-closeDescriptors(void)
-{
-    DIR *dp;
-    struct dirent64 *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    restartableClose(from_fd);          /* for possible use by opendir() */
-    restartableClose(from_fd + 1);      /* another one for good luck */
-
-    if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
-
-    /* We use readdir64 instead of readdir to work around Solaris bug
-     * 6395699: /proc/self/fd fails to report file descriptors >= 1024 on Solaris 9
-     */
-    while ((dirp = readdir64(dp)) != NULL) {
-        int fd;
-        if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            restartableClose(fd);
-    }
-
-    closedir(dp);
-
-    return 1;
-}
-
-static int
-moveDescriptor(int fd_from, int fd_to)
-{
-    if (fd_from != fd_to) {
-        if ((restartableDup2(fd_from, fd_to) == -1) ||
-            (restartableClose(fd_from) == -1))
-            return -1;
-    }
-    return 0;
-}
-
 static const char *
 getBytes(JNIEnv *env, jbyteArray arr)
 {
@@ -445,19 +284,6 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
 {
     if (parr != NULL)
         (*env)->ReleaseByteArrayElements(env, arr, (jbyte*) parr, JNI_ABORT);
-}
-
-static void
-initVectorFromBlock(const char**vector, const char* block, int count)
-{
-    int i;
-    const char *p;
-    for (i = 0, p = block; i < count; i++) {
-        /* Invariant: p always points to the start of a C string. */
-        vector[i] = p;
-        while (*(p++));
-    }
-    vector[count] = NULL;
 }
 
 static void
@@ -503,182 +329,6 @@ debugPrint(char *format, ...)
 }
 #endif /* DEBUG_PROCESS */
 
-/**
- * Exec FILE as a traditional Bourne shell script (i.e. one without #!).
- * If we could do it over again, we would probably not support such an ancient
- * misfeature, but compatibility wins over sanity.  The original support for
- * this was imported accidentally from execvp().
- */
-static void
-execve_as_traditional_shell_script(const char *file,
-                                   const char *argv[],
-                                   const char *const envp[])
-{
-    /* Use the extra word of space provided for us in argv by caller. */
-    const char *argv0 = argv[0];
-    const char *const *end = argv;
-    while (*end != NULL)
-        ++end;
-    memmove(argv+2, argv+1, (end-argv) * sizeof (*end));
-    argv[0] = "/bin/sh";
-    argv[1] = file;
-    execve(argv[0], (char **) argv, (char **) envp);
-    /* Can't even exec /bin/sh?  Big trouble, but let's soldier on... */
-    memmove(argv+1, argv+2, (end-argv) * sizeof (*end));
-    argv[0] = argv0;
-}
-
-/**
- * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
- * be a shell script and the system default shell is invoked to run it.
- */
-static void
-execve_with_shell_fallback(const char *file,
-                           const char *argv[],
-                           const char *const envp[])
-{
-#if START_CHILD_USE_CLONE || START_CHILD_USE_VFORK
-    /* shared address space; be very careful. */
-    execve(file, (char **) argv, (char **) envp);
-    if (errno == ENOEXEC)
-        execve_as_traditional_shell_script(file, argv, envp);
-#else
-    /* unshared address space; we can mutate environ. */
-    environ = (char **) envp;
-    execvp(file, (char **) argv);
-#endif
-}
-
-/**
- * 'execvpe' should have been included in the Unix standards,
- * and is a GNU extension in glibc 2.10.
- *
- * JDK_execvpe is identical to execvp, except that the child environment is
- * specified via the 3rd argument instead of being inherited from environ.
- */
-static void
-JDK_execvpe(const char *file,
-            const char *argv[],
-            const char *const envp[])
-{
-    if (envp == NULL || (char **) envp == environ) {
-        execvp(file, (char **) argv);
-        return;
-    }
-
-    if (*file == '\0') {
-        errno = ENOENT;
-        return;
-    }
-
-    if (strchr(file, '/') != NULL) {
-        execve_with_shell_fallback(file, argv, envp);
-    } else {
-        /* We must search PATH (parent's, not child's) */
-        char expanded_file[PATH_MAX];
-        int filelen = strlen(file);
-        int sticky_errno = 0;
-        const char * const * dirs;
-        for (dirs = parentPathv; *dirs; dirs++) {
-            const char * dir = *dirs;
-            int dirlen = strlen(dir);
-            if (filelen + dirlen + 2 >= PATH_MAX) {
-                errno = ENAMETOOLONG;
-                continue;
-            }
-            memcpy(expanded_file, dir, dirlen);
-            if (expanded_file[dirlen - 1] != '/')
-                expanded_file[dirlen++] = '/';
-            memcpy(expanded_file + dirlen, file, filelen);
-            expanded_file[dirlen + filelen] = '\0';
-            execve_with_shell_fallback(expanded_file, argv, envp);
-            /* There are 3 responses to various classes of errno:
-             * return immediately, continue (especially for ENOENT),
-             * or continue with "sticky" errno.
-             *
-             * From exec(3):
-             *
-             * If permission is denied for a file (the attempted
-             * execve returned EACCES), these functions will continue
-             * searching the rest of the search path.  If no other
-             * file is found, however, they will return with the
-             * global variable errno set to EACCES.
-             */
-            switch (errno) {
-            case EACCES:
-                sticky_errno = errno;
-                /* FALLTHRU */
-            case ENOENT:
-            case ENOTDIR:
-#ifdef ELOOP
-            case ELOOP:
-#endif
-#ifdef ESTALE
-            case ESTALE:
-#endif
-#ifdef ENODEV
-            case ENODEV:
-#endif
-#ifdef ETIMEDOUT
-            case ETIMEDOUT:
-#endif
-                break; /* Try other directories in PATH */
-            default:
-                return;
-            }
-        }
-        if (sticky_errno != 0)
-            errno = sticky_errno;
-    }
-}
-
-/*
- * Reads nbyte bytes from file descriptor fd into buf,
- * The read operation is retried in case of EINTR or partial reads.
- *
- * Returns number of bytes read (normally nbyte, but may be less in
- * case of EOF).  In case of read errors, returns -1 and sets errno.
- */
-static ssize_t
-readFully(int fd, void *buf, size_t nbyte)
-{
-    ssize_t remaining = nbyte;
-    for (;;) {
-        ssize_t n = read(fd, buf, remaining);
-        if (n == 0) {
-            return nbyte - remaining;
-        } else if (n > 0) {
-            remaining -= n;
-            if (remaining <= 0)
-                return nbyte;
-            /* We were interrupted in the middle of reading the bytes.
-             * Unlikely, but possible. */
-            buf = (void *) (((char *)buf) + n);
-        } else if (errno == EINTR) {
-            /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
-        } else {
-            return -1;
-        }
-    }
-}
-
-typedef struct _ChildStuff
-{
-    int in[2];
-    int out[2];
-    int err[2];
-    int fail[2];
-    int fds[3];
-    const char **argv;
-    const char **envv;
-    const char *pdir;
-    jboolean redirectErrorStream;
-#if START_CHILD_USE_CLONE
-    void *clone_stack;
-#endif
-} ChildStuff;
-
 static void
 copyPipe(int from[2], int to[2])
 {
@@ -686,97 +336,67 @@ copyPipe(int from[2], int to[2])
     to[1] = from[1];
 }
 
-/**
- * Child process after a successful fork() or clone().
- * This function must not return, and must be prepared for either all
- * of its address space to be shared with its parent, or to be a copy.
- * It must not modify global variables such as "environ".
+/* arg is an array of pointers to 0 terminated strings. array is terminated
+ * by a null element.
+ *
+ * *nelems and *nbytes receive the number of elements of array (incl 0)
+ * and total number of bytes (incl. 0)
+ * Note. An empty array will have one null element
+ * But if arg is null, then *nelems set to 0, and *nbytes to 0
  */
-static int
-childProcess(void *arg)
+static void arraysize(const char * const *arg, int *nelems, int *nbytes)
 {
-    const ChildStuff* p = (const ChildStuff*) arg;
-
-    /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
-       would do it anyways, but a little paranoia is a good thing. */
-    if ((closeSafely(p->in[1])   == -1) ||
-        (closeSafely(p->out[0])  == -1) ||
-        (closeSafely(p->err[0])  == -1) ||
-        (closeSafely(p->fail[0]) == -1))
-        goto WhyCantJohnnyExec;
-
-    /* Give the child sides of the pipes the right fileno's. */
-    /* Note: it is possible for in[0] == 0 */
-    if ((moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
-                        STDIN_FILENO) == -1) ||
-        (moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1],
-                        STDOUT_FILENO) == -1))
-        goto WhyCantJohnnyExec;
-
-    if (p->redirectErrorStream) {
-        if ((closeSafely(p->err[1]) == -1) ||
-            (restartableDup2(STDOUT_FILENO, STDERR_FILENO) == -1))
-            goto WhyCantJohnnyExec;
-    } else {
-        if (moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
-                           STDERR_FILENO) == -1)
-            goto WhyCantJohnnyExec;
+    int i, bytes, count;
+    const char * const *a = arg;
+    char *p;
+    int *q;
+    if (arg == 0) {
+        *nelems = 0;
+        *nbytes = 0;
+        return;
     }
-
-    if (moveDescriptor(p->fail[1], FAIL_FILENO) == -1)
-        goto WhyCantJohnnyExec;
-
-    /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
-        int max_fd = (int)sysconf(_SC_OPEN_MAX);
-        int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (restartableClose(fd) == -1 && errno != EBADF)
-                goto WhyCantJohnnyExec;
+    /* count the array elements and number of bytes */
+    for (count=0, bytes=0; *a != 0; count++, a++) {
+        bytes += strlen(*a)+1;
     }
+    *nbytes = bytes;
+    *nelems = count+1;
+}
 
-    /* change to the new working directory */
-    if (p->pdir != NULL && chdir(p->pdir) < 0)
-        goto WhyCantJohnnyExec;
+/* copy the strings from arg[] into buf, starting at given offset
+ * return new offset to next free byte
+ */
+static int copystrings(char *buf, int offset, const char * const *arg) {
+    char *p;
+    const char * const *a;
+    int count=0;
 
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
-        goto WhyCantJohnnyExec;
-
-    JDK_execvpe(p->argv[0], p->argv, p->envv);
-
- WhyCantJohnnyExec:
-    /* We used to go to an awful lot of trouble to predict whether the
-     * child would fail, but there is no reliable way to predict the
-     * success of an operation without *trying* it, and there's no way
-     * to try a chdir or exec in the parent.  Instead, all we need is a
-     * way to communicate any failure back to the parent.  Easy; we just
-     * send the errno back to the parent over a pipe in case of failure.
-     * The tricky thing is, how do we communicate the *success* of exec?
-     * We use FD_CLOEXEC together with the fact that a read() on a pipe
-     * yields EOF when the write ends (we have two of them!) are closed.
-     */
-    {
-        int errnum = errno;
-        restartableWrite(FAIL_FILENO, &errnum, sizeof(errnum));
+    if (arg == 0) {
+        return offset;
     }
-    restartableClose(FAIL_FILENO);
-    _exit(-1);
-    return 0;  /* Suppress warning "no return value from function" */
+    for (p=buf+offset, a=arg; *a != 0; a++) {
+        int len = strlen(*a) +1;
+        memcpy(p, *a, len);
+        p += len;
+        count += len;
+    }
+    return offset+count;
 }
 
 /**
- * Start a child process running function childProcess.
- * This function only returns in the parent.
  * We are unusually paranoid; use of clone/vfork is
  * especially likely to tickle gcc/glibc bugs.
  */
 #ifdef __attribute_noinline__  /* See: sys/cdefs.h */
 __attribute_noinline__
 #endif
+
+#define START_CHILD_USE_CLONE 0  /* clone() currently disabled; see above. */
+
+#ifdef START_CHILD_USE_CLONE
 static pid_t
-startChild(ChildStuff *c) {
-#if START_CHILD_USE_CLONE
+cloneChild(ChildStuff *c) {
+#ifdef __linux__
 #define START_CHILD_CLONE_STACK_SIZE (64 * 1024)
     /*
      * See clone(2).
@@ -790,33 +410,161 @@ startChild(ChildStuff *c) {
                  c->clone_stack + START_CHILD_CLONE_STACK_SIZE,
                  CLONE_VFORK | CLONE_VM | SIGCHLD, c);
 #else
-  #if START_CHILD_USE_VFORK
+/* not available on Solaris / Mac */
+    assert(0);
+    return -1;
+#endif
+}
+#endif
+
+static pid_t
+vforkChild(ChildStuff *c) {
+    volatile pid_t resultPid;
+
     /*
      * We separate the call to vfork into a separate function to make
      * very sure to keep stack of child from corrupting stack of parent,
      * as suggested by the scary gcc warning:
      *  warning: variable 'foo' might be clobbered by 'longjmp' or 'vfork'
      */
-    volatile pid_t resultPid = vfork();
-  #else
+    resultPid = vfork();
+
+    if (resultPid == 0) {
+        childProcess(c);
+    }
+    assert(resultPid != 0);  /* childProcess never returns */
+    return resultPid;
+}
+
+static pid_t
+forkChild(ChildStuff *c) {
+    pid_t resultPid;
+
     /*
      * From Solaris fork(2): In Solaris 10, a call to fork() is
      * identical to a call to fork1(); only the calling thread is
      * replicated in the child process. This is the POSIX-specified
      * behavior for fork().
      */
-    pid_t resultPid = fork();
-  #endif
-    if (resultPid == 0)
+    resultPid = fork();
+
+    if (resultPid == 0) {
         childProcess(c);
+    }
     assert(resultPid != 0);  /* childProcess never returns */
     return resultPid;
-#endif /* ! START_CHILD_USE_CLONE */
+}
+
+#if defined(__solaris__) || defined(_ALLBSD_SOURCE)
+static pid_t
+spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
+    pid_t resultPid;
+    jboolean isCopy;
+    int i, offset, rval, bufsize, magic;
+    char *buf, buf1[16];
+    char *hlpargs[2];
+    SpawnInfo sp;
+
+    /* need to tell helper which fd is for receiving the childstuff
+     * and which fd to send response back on
+     */
+    snprintf(buf1, sizeof(buf1), "%d:%d", c->childenv[0], c->fail[1]);
+    /* put the fd string as argument to the helper cmd */
+    hlpargs[0] = buf1;
+    hlpargs[1] = 0;
+
+    /* Following items are sent down the pipe to the helper
+     * after it is spawned.
+     * All strings are null terminated. All arrays of strings
+     * have an empty string for termination.
+     * - the ChildStuff struct
+     * - the SpawnInfo struct
+     * - the argv strings array
+     * - the envv strings array
+     * - the home directory string
+     * - the parentPath string
+     * - the parentPathv array
+     */
+    /* First calculate the sizes */
+    arraysize(c->argv, &sp.nargv, &sp.argvBytes);
+    bufsize = sp.argvBytes;
+    arraysize(c->envv, &sp.nenvv, &sp.envvBytes);
+    bufsize += sp.envvBytes;
+    sp.dirlen = c->pdir == 0 ? 0 : strlen(c->pdir)+1;
+    bufsize += sp.dirlen;
+    arraysize(parentPathv, &sp.nparentPathv, &sp.parentPathvBytes);
+    bufsize += sp.parentPathvBytes;
+    /* We need to clear FD_CLOEXEC if set in the fds[].
+     * Files are created FD_CLOEXEC in Java.
+     * Otherwise, they will be closed when the target gets exec'd */
+    for (i=0; i<3; i++) {
+        if (c->fds[i] != -1) {
+            int flags = fcntl(c->fds[i], F_GETFD);
+            if (flags & FD_CLOEXEC) {
+                fcntl(c->fds[i], F_SETFD, flags & (~1));
+            }
+        }
+    }
+
+    rval = posix_spawn(&resultPid, helperpath, 0, 0, (char * const *) hlpargs, environ);
+
+    if (rval != 0) {
+        return -1;
+    }
+
+    /* now the lengths are known, copy the data */
+    buf = NEW(char, bufsize);
+    if (buf == 0) {
+        return -1;
+    }
+    offset = copystrings(buf, 0, &c->argv[0]);
+    offset = copystrings(buf, offset, &c->envv[0]);
+    memcpy(buf+offset, c->pdir, sp.dirlen);
+    offset += sp.dirlen;
+    offset = copystrings(buf, offset, parentPathv);
+    assert(offset == bufsize);
+
+    magic = magicNumber();
+
+    /* write the two structs and the data buffer */
+    write(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
+    write(c->childenv[1], (char *)c, sizeof(*c));
+    write(c->childenv[1], (char *)&sp, sizeof(sp));
+    write(c->childenv[1], buf, bufsize);
+    free(buf);
+
+    /* In this mode an external main() in invoked which calls back into
+     * childProcess() in this file, rather than directly
+     * via the statement below */
+    return resultPid;
+}
+#endif
+
+/*
+ * Start a child process running function childProcess.
+ * This function only returns in the parent.
+ */
+static pid_t
+startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
+    switch (c->mode) {
+      case MODE_VFORK:
+        return vforkChild(c);
+      case MODE_FORK:
+        return forkChild(c);
+#if defined(__solaris__) || defined(_ALLBSD_SOURCE)
+      case MODE_POSIX_SPAWN:
+        return spawnChild(env, process, c, helperpath);
+#endif
+      default:
+        return -1;
+    }
 }
 
 JNIEXPORT jint JNICALL
 Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
                                        jobject process,
+                                       jint mode,
+                                       jbyteArray helperpath,
                                        jbyteArray prog,
                                        jbyteArray argBlock, jint argc,
                                        jbyteArray envBlock, jint envc,
@@ -826,32 +574,35 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 {
     int errnum;
     int resultPid = -1;
-    int in[2], out[2], err[2], fail[2];
+    int in[2], out[2], err[2], fail[2], childenv[2];
     jint *fds = NULL;
+    const char *phelperpath = NULL;
     const char *pprog = NULL;
     const char *pargBlock = NULL;
     const char *penvBlock = NULL;
     ChildStuff *c;
 
     in[0] = in[1] = out[0] = out[1] = err[0] = err[1] = fail[0] = fail[1] = -1;
+    childenv[0] = childenv[1] = -1;
 
     if ((c = NEW(ChildStuff, 1)) == NULL) return -1;
     c->argv = NULL;
     c->envv = NULL;
     c->pdir = NULL;
-#if START_CHILD_USE_CLONE
     c->clone_stack = NULL;
-#endif
 
     /* Convert prog + argBlock into a char ** argv.
      * Add one word room for expansion of argv for use by
      * execve_as_traditional_shell_script.
+     * This word is also used when using spawn mode
      */
     assert(prog != NULL && argBlock != NULL);
+    if ((phelperpath = getBytes(env, helperpath))   == NULL) goto Catch;
     if ((pprog     = getBytes(env, prog))       == NULL) goto Catch;
     if ((pargBlock = getBytes(env, argBlock))   == NULL) goto Catch;
     if ((c->argv = NEW(const char *, argc + 3)) == NULL) goto Catch;
     c->argv[0] = pprog;
+    c->argc = argc + 2;
     initVectorFromBlock(c->argv+1, pargBlock, argc);
 
     if (envBlock != NULL) {
@@ -872,6 +623,7 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     if ((fds[0] == -1 && pipe(in)  < 0) ||
         (fds[1] == -1 && pipe(out) < 0) ||
         (fds[2] == -1 && pipe(err) < 0) ||
+        (pipe(childenv) < 0) ||
         (pipe(fail) < 0)) {
         throwIOException(env, errno, "Bad file descriptor");
         goto Catch;
@@ -884,18 +636,29 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     copyPipe(out,  c->out);
     copyPipe(err,  c->err);
     copyPipe(fail, c->fail);
+    copyPipe(childenv, c->childenv);
 
     c->redirectErrorStream = redirectErrorStream;
+    c->mode = mode;
 
-    resultPid = startChild(c);
+    resultPid = startChild(env, process, c, phelperpath);
     assert(resultPid != 0);
 
     if (resultPid < 0) {
-        throwIOException(env, errno, START_CHILD_SYSTEM_CALL " failed");
+        switch (c->mode) {
+          case MODE_VFORK:
+            throwIOException(env, errno, "vfork failed");
+            break;
+          case MODE_FORK:
+            throwIOException(env, errno, "fork failed");
+            break;
+          case MODE_POSIX_SPAWN:
+            throwIOException(env, errno, "spawn failed");
+            break;
+        }
         goto Catch;
     }
-
-    restartableClose(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec */
+    close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec  (childproc.c)  */
 
     switch (readFully(fail[0], &errnum, sizeof(errnum))) {
     case 0: break; /* Exec succeeded */
@@ -913,18 +676,18 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     fds[2] = (err[0] != -1) ? err[0] : -1;
 
  Finally:
-#if START_CHILD_USE_CLONE
     free(c->clone_stack);
-#endif
 
     /* Always clean up the child's side of the pipes */
     closeSafely(in [0]);
     closeSafely(out[1]);
     closeSafely(err[1]);
 
-    /* Always clean up fail descriptors */
+    /* Always clean up fail and childEnv descriptors */
     closeSafely(fail[0]);
     closeSafely(fail[1]);
+    closeSafely(childenv[0]);
+    closeSafely(childenv[1]);
 
     releaseBytes(env, prog,     pprog);
     releaseBytes(env, argBlock, pargBlock);
@@ -942,9 +705,9 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 
  Catch:
     /* Clean up the parent's side of the pipes in case of failure only */
-    closeSafely(in [1]);
-    closeSafely(out[0]);
-    closeSafely(err[0]);
+    closeSafely(in [1]); in[1] = -1;
+    closeSafely(out[0]); out[0] = -1;
+    closeSafely(err[0]); err[0] = -1;
     goto Finally;
 }
 

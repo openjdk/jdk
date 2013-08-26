@@ -15,6 +15,7 @@ PCK	  x-PCK      PCK      basic     sun.nio.cs.ext    true    0x81   0xfc   0x40
 IBM1364	  x-IBM1364  Cp1364   ebcdic	sun.nio.cs.ext	  false   0x40   0xde   0x40  0xfe
 IBM1381	  x-IBM1381  Cp1381   basic     sun.nio.cs.ext    true    0x8c   0xf7   0xa1  0xfe
 IBM1383	  x-IBM1383  Cp1383   euc_sim   sun.nio.cs.ext    true    0xa1   0xfe   0xa1  0xfe
+IBM300	  x-IBM300   Cp300    dbcsonly  sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
 IBM930	  x-IBM930   Cp930    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe
 IBM933	  x-IBM933   Cp933    ebcdic    sun.nio.cs.ext    false   0x40   0xdd   0x40  0xfe
 IBM935	  x-IBM935   Cp935    ebcdic    sun.nio.cs.ext    false   0x40   0x7f   0x40  0xfe

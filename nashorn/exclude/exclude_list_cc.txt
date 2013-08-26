@@ -3,4 +3,5 @@
 <excludeList>
   <test id="JDK-8014647.js" />
   <test id="javaclassoverrides.js" />
+  <test id="JDK-8020809.js" />
 </excludeList>
