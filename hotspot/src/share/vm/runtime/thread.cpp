@@ -3636,6 +3636,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   CompileBroker::compilation_init();
 #endif
 
+  if (EnableInvokeDynamic) {
+    // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
+    // It is done after compilers are initialized, because otherwise compilations of
+    // signature polymorphic MH intrinsics can be missed
+    // (see SystemDictionary::find_method_handle_intrinsic).
+    initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK_0);
+    initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK_0);
+  }
+
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
 #endif // INCLUDE_MANAGEMENT
