@@ -808,7 +808,10 @@ public class JavacState
 
         // Create a set of filenames with full paths.
         for (Source s : now.sources().values()) {
-            calculatedSources.add(s.file().getPath());
+            // Don't include link only sources when comparing sources to compile
+            if (!s.isLinkedOnly()) {
+                calculatedSources.add(s.file().getPath());
+            }
         }
         // Read in the file and create another set of filenames with full paths.
         try {

@@ -34,8 +34,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -68,18 +66,7 @@ public class Shell {
     /**
      * Shell message bundle.
      */
-    private static ResourceBundle bundle;
-
-    static {
-        // Without do privileged, under security manager messages can not be
-        // loaded.
-        bundle = AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
-            @Override
-            public ResourceBundle run() {
-                return ResourceBundle.getBundle(MESSAGE_RESOURCE, Locale.getDefault());
-            }
-        });
-    }
+    private static final ResourceBundle bundle = ResourceBundle.getBundle(MESSAGE_RESOURCE, Locale.getDefault());
 
     /**
      * Exit code for command line tool - successful
@@ -305,6 +292,14 @@ public class Shell {
 
             // For each file on the command line.
             for (final String fileName : files) {
+                if ("-".equals(fileName)) {
+                    final int res = readEvalPrint(context, global);
+                    if (res != SUCCESS) {
+                        return res;
+                    }
+                    continue;
+                }
+
                 final File file = new File(fileName);
                 final ScriptFunction script = context.compileScript(new Source(fileName, file.toURI().toURL()), global);
                 if (script == null || errors.getNumberOfErrors() != 0) {
