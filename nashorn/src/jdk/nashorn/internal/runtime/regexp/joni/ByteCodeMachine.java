@@ -26,7 +26,6 @@ import static jdk.nashorn.internal.runtime.regexp.joni.Option.isFindNotEmpty;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isNotBol;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isNotEol;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isPosixRegion;
-import static jdk.nashorn.internal.runtime.regexp.joni.EncodingHelper.isCrnl;
 import static jdk.nashorn.internal.runtime.regexp.joni.EncodingHelper.isNewLine;
 
 import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
@@ -500,7 +499,7 @@ class ByteCodeMachine extends StackMachine {
 
     private void opAnyChar() {
         if (s >= range) {opFail(); return;}
-        if (chars[s] == EncodingHelper.NEW_LINE) {opFail(); return;}
+        if (isNewLine(chars[s])) {opFail(); return;}
         s++;
         sprev = sbegin; // break;
     }
@@ -538,7 +537,7 @@ class ByteCodeMachine extends StackMachine {
         while (s < range) {
             char b = chars[s];
             if (c == b) pushAlt(ip + 1, s, sprev);
-            if (b == EncodingHelper.NEW_LINE) {opFail(); return;}
+            if (isNewLine(b)) {opFail(); return;}
             sprev = s;
             s++;
         }
@@ -617,7 +616,7 @@ class ByteCodeMachine extends StackMachine {
         if (s == str) {
             if (isNotBol(msaOptions)) opFail();
             return;
-        } else if (EncodingHelper.isNewLine(chars, sprev, end) && s != end) {
+        } else if (isNewLine(chars, sprev, end) && s != end) {
             return;
         }
         opFail();
@@ -626,7 +625,7 @@ class ByteCodeMachine extends StackMachine {
     private void opEndLine()  {
         if (s == end) {
             if (Config.USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE) {
-                if (str == end || !EncodingHelper.isNewLine(chars, sprev, end)) {
+                if (str == end || !isNewLine(chars, sprev, end)) {
                     if (isNotEol(msaOptions)) opFail();
                 }
                 return;
@@ -634,7 +633,7 @@ class ByteCodeMachine extends StackMachine {
                 if (isNotEol(msaOptions)) opFail();
                 return;
             }
-        } else if (isNewLine(chars, s, end) || (Config.USE_CRNL_AS_LINE_TERMINATOR && isCrnl(chars, s, end))) {
+        } else if (isNewLine(chars, s, end)) {
             return;
         }
         opFail();
@@ -653,9 +652,6 @@ class ByteCodeMachine extends StackMachine {
             }
         } else if (isNewLine(chars, s, end) && s + 1 == end) {
             return;
-        } else if (Config.USE_CRNL_AS_LINE_TERMINATOR && isCrnl(chars, s, end)) {
-            int ss = s + 2;
-            if (ss == end) return;
         }
         opFail();
     }

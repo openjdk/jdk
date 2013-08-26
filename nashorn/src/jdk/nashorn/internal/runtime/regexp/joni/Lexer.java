@@ -732,7 +732,7 @@ class Lexer extends ScannerSupport {
                         if (syntax.opLineAnchor()) fetchTokenFor_anchor(isSingleline(env.option) ? AnchorType.BEGIN_BUF : AnchorType.BEGIN_LINE);
                         break;
                     case '$':
-                        if (syntax.opLineAnchor()) fetchTokenFor_anchor(isSingleline(env.option) ? AnchorType.SEMI_END_BUF : AnchorType.END_LINE);
+                        if (syntax.opLineAnchor()) fetchTokenFor_anchor(isSingleline(env.option) ? AnchorType.END_BUF : AnchorType.END_LINE);
                         break;
                     case '[':
                         if (syntax.opBracketCC()) token.type = TokenType.CC_CC_OPEN;
