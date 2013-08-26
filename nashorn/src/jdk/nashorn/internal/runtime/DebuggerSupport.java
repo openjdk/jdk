@@ -79,6 +79,27 @@ final class DebuggerSupport {
     }
 
     /**
+     * Call eval on the current global.
+     * @param scope           Scope to use.
+     * @param self            Receiver to use.
+     * @param string          String to evaluate.
+     * @param returnException true if exceptions are to be returned.
+     * @return Result of eval as string, or, an exception or null depending on returnException.
+     */
+    static Object eval(final ScriptObject scope, final Object self, final String string, final boolean returnException) {
+        final ScriptObject global = Context.getGlobalTrusted();
+        final ScriptObject initialScope = scope != null ? scope : global;
+        final Object callThis = self != null ? self : global;
+        final Context context = global.getContext();
+
+        try {
+            return context.eval(initialScope, string, callThis, ScriptRuntime.UNDEFINED, false);
+        } catch (Throwable ex) {
+            return returnException ? ex : null;
+        }
+    }
+
+    /**
      * This method returns a bulk description of an object's properties.
      * @param object Script object to be displayed by the debugger.
      * @param all    true if to include non-enumerable values.
@@ -135,7 +156,7 @@ final class DebuggerSupport {
 
         for (int i = 0; i < keys.length; i++) {
             final String key = keys[i];
-            descs[i] = valueInfo(key, object.get(key), true, duplicates);
+            descs[i] = valueInfo(key, object.get(key), all, duplicates);
         }
 
         duplicates.remove(object);
@@ -172,7 +193,7 @@ final class DebuggerSupport {
                         }
 
                         if (valueAsObject instanceof ScriptObject && !(valueAsObject instanceof ScriptFunction)) {
-                            final String objectString = objectAsString((ScriptObject)valueAsObject, true, duplicates);
+                            final String objectString = objectAsString((ScriptObject)valueAsObject, all, duplicates);
                             sb.append(objectString != null ? objectString : "{...}");
                         } else {
                             sb.append(valueAsString(valueAsObject));
