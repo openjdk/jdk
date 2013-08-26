@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004698 8007073
+ * @bug 8004698 8007073 8022343
  * @summary Unit test for type annotations
  */
 
@@ -58,7 +58,7 @@ public class TypeAnnotationReflection {
     }
 
     private static void testSuper() throws Exception {
-        check(Object.class.getAnnotatedSuperclass().getAnnotations().length == 0);
+        check(Object.class.getAnnotatedSuperclass() == null);
         check(Class.class.getAnnotatedSuperclass().getAnnotations().length == 0);
 
         AnnotatedType a;
