@@ -102,12 +102,12 @@ void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
     uint j = 0;
     if (pb->_num_succs != 1) {  // More then 1 successor?
       // Search for successor
-      uint max = pb->_nodes.size();
+      uint max = pb->number_of_nodes();
       assert( max > 1, "" );
       uint start = max - pb->_num_succs;
       // Find which output path belongs to projection
       for (j = start; j < max; j++) {
-        if( pb->_nodes[j] == in0 )
+        if( pb->get_node(j) == in0 )
           break;
       }
       assert( j < max, "must find" );
@@ -1027,8 +1027,8 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   Block* least       = LCA;
   double least_freq  = least->_freq;
   uint target        = get_latency_for_node(self);
-  uint start_latency = get_latency_for_node(LCA->_nodes[0]);
-  uint end_latency   = get_latency_for_node(LCA->_nodes[LCA->end_idx()]);
+  uint start_latency = get_latency_for_node(LCA->head());
+  uint end_latency   = get_latency_for_node(LCA->get_node(LCA->end_idx()));
   bool in_latency    = (target <= start_latency);
   const Block* root_block = get_block_for_node(_root);
 
@@ -1049,9 +1049,9 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     self->dump();
     tty->print_cr("#   B%d: start latency for [%4d]=%d, end latency for [%4d]=%d, freq=%g",
       LCA->_pre_order,
-      LCA->_nodes[0]->_idx,
+      LCA->head()->_idx,
       start_latency,
-      LCA->_nodes[LCA->end_idx()]->_idx,
+      LCA->get_node(LCA->end_idx())->_idx,
       end_latency,
       least_freq);
   }
@@ -1074,14 +1074,14 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     if (mach && LCA == root_block)
       break;
 
-    uint start_lat = get_latency_for_node(LCA->_nodes[0]);
+    uint start_lat = get_latency_for_node(LCA->head());
     uint end_idx   = LCA->end_idx();
-    uint end_lat   = get_latency_for_node(LCA->_nodes[end_idx]);
+    uint end_lat   = get_latency_for_node(LCA->get_node(end_idx));
     double LCA_freq = LCA->_freq;
 #ifndef PRODUCT
     if (trace_opto_pipelining()) {
       tty->print_cr("#   B%d: start latency for [%4d]=%d, end latency for [%4d]=%d, freq=%g",
-        LCA->_pre_order, LCA->_nodes[0]->_idx, start_lat, end_idx, end_lat, LCA_freq);
+        LCA->_pre_order, LCA->head()->_idx, start_lat, end_idx, end_lat, LCA_freq);
     }
 #endif
     cand_cnt++;
@@ -1726,7 +1726,7 @@ void CFGLoop::compute_freq() {
 // Determine the probability of reaching successor 'i' from the receiver block.
 float Block::succ_prob(uint i) {
   int eidx = end_idx();
-  Node *n = _nodes[eidx];  // Get ending Node
+  Node *n = get_node(eidx);  // Get ending Node
 
   int op = n->Opcode();
   if (n->is_Mach()) {
@@ -1761,7 +1761,7 @@ float Block::succ_prob(uint i) {
     float prob  = n->as_MachIf()->_prob;
     assert(prob >= 0.0 && prob <= 1.0, "out of range probability");
     // If succ[i] is the FALSE branch, invert path info
-    if( _nodes[i + eidx + 1]->Opcode() == Op_IfFalse ) {
+    if( get_node(i + eidx + 1)->Opcode() == Op_IfFalse ) {
       return 1.0f - prob; // not taken
     } else {
       return prob; // taken
@@ -1773,7 +1773,7 @@ float Block::succ_prob(uint i) {
     return 1.0f/_num_succs;
 
   case Op_Catch: {
-    const CatchProjNode *ci = _nodes[i + eidx + 1]->as_CatchProj();
+    const CatchProjNode *ci = get_node(i + eidx + 1)->as_CatchProj();
     if (ci->_con == CatchProjNode::fall_through_index) {
       // Fall-thru path gets the lion's share.
       return 1.0f - PROB_UNLIKELY_MAG(5)*_num_succs;
@@ -1810,7 +1810,7 @@ float Block::succ_prob(uint i) {
 // Return the number of fall-through candidates for a block
 int Block::num_fall_throughs() {
   int eidx = end_idx();
-  Node *n = _nodes[eidx];  // Get ending Node
+  Node *n = get_node(eidx);  // Get ending Node
 
   int op = n->Opcode();
   if (n->is_Mach()) {
@@ -1834,7 +1834,7 @@ int Block::num_fall_throughs() {
 
   case Op_Catch: {
     for (uint i = 0; i < _num_succs; i++) {
-      const CatchProjNode *ci = _nodes[i + eidx + 1]->as_CatchProj();
+      const CatchProjNode *ci = get_node(i + eidx + 1)->as_CatchProj();
       if (ci->_con == CatchProjNode::fall_through_index) {
         return 1;
       }
@@ -1862,14 +1862,14 @@ int Block::num_fall_throughs() {
 // Return true if a specific successor could be fall-through target.
 bool Block::succ_fall_through(uint i) {
   int eidx = end_idx();
-  Node *n = _nodes[eidx];  // Get ending Node
+  Node *n = get_node(eidx);  // Get ending Node
 
   int op = n->Opcode();
   if (n->is_Mach()) {
     if (n->is_MachNullCheck()) {
       // In theory, either side can fall-thru, for simplicity sake,
       // let's say only the false branch can now.
-      return _nodes[i + eidx + 1]->Opcode() == Op_IfFalse;
+      return get_node(i + eidx + 1)->Opcode() == Op_IfFalse;
     }
     op = n->as_Mach()->ideal_Opcode();
   }
@@ -1883,7 +1883,7 @@ bool Block::succ_fall_through(uint i) {
     return true;
 
   case Op_Catch: {
-    const CatchProjNode *ci = _nodes[i + eidx + 1]->as_CatchProj();
+    const CatchProjNode *ci = get_node(i + eidx + 1)->as_CatchProj();
     return ci->_con == CatchProjNode::fall_through_index;
   }
 
@@ -1907,7 +1907,7 @@ bool Block::succ_fall_through(uint i) {
 // Update the probability of a two-branch to be uncommon
 void Block::update_uncommon_branch(Block* ub) {
   int eidx = end_idx();
-  Node *n = _nodes[eidx];  // Get ending Node
+  Node *n = get_node(eidx);  // Get ending Node
 
   int op = n->as_Mach()->ideal_Opcode();
 
@@ -1923,7 +1923,7 @@ void Block::update_uncommon_branch(Block* ub) {
 
   // If ub is the true path, make the proability small, else
   // ub is the false path, and make the probability large
-  bool invert = (_nodes[s + eidx + 1]->Opcode() == Op_IfFalse);
+  bool invert = (get_node(s + eidx + 1)->Opcode() == Op_IfFalse);
 
   // Get existing probability
   float p = n->as_MachIf()->_prob;
