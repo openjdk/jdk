@@ -52,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -1149,12 +1150,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
         if (newProto == null || newProto instanceof ScriptObject) {
             // check for circularity
-            ScriptObject proto = (ScriptObject)newProto;
-            while (proto != null) {
-                if (proto == this) {
+            ScriptObject p = (ScriptObject)newProto;
+            while (p != null) {
+                if (p == this) {
                     throw typeError("circular.__proto__.set", ScriptRuntime.safeToString(this));
                 }
-                proto = proto.getProto();
+                p = p.getProto();
             }
             setProto((ScriptObject)newProto);
         } else {
@@ -2017,6 +2018,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * @param request the link request
      * @return GuardedInvocation to be invoked at call site.
      */
+    @SuppressWarnings("null")
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final FindProperty find = findProperty(NO_SUCH_PROPERTY_NAME, true);

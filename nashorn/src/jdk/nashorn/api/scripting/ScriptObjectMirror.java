@@ -391,6 +391,15 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     }
 
     /**
+     * ECMA [[Class]] property
+     *
+     * @return ECMA [[Class]] property value of this object
+     */
+    public String getClassName() {
+        return sobj.getClassName();
+    }
+
+    /**
      * ECMA 8.12.1 [[GetOwnProperty]] (P)
      *
      * @param key property key
