@@ -30,6 +30,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -400,8 +401,7 @@ public class ScriptEngineTest {
             exp.printStackTrace();
             fail(exp.getMessage());
         }
-        // dos2unix - fix line endings if running on windows
-        assertEquals(sw.toString().replaceAll("\r", ""), "hello world\n");
+        assertEquals(sw.toString(), println("hello world"));
     }
 
     @Test
@@ -490,8 +490,7 @@ public class ScriptEngineTest {
             fail(t.getMessage());
         }
 
-        // dos2unix - fix line endings if running on windows
-        assertEquals(sw.toString().replaceAll("\r", ""), "hello\n");
+        assertEquals(sw.toString(), println("hello"));
     }
 
     @Test
@@ -508,7 +507,14 @@ public class ScriptEngineTest {
             fail(t.getMessage());
         }
 
-        // dos2unix - fix line endings if running on windows
-        assertEquals(sw.toString().replaceAll("\r", ""), "34 true hello\n");
+        assertEquals(sw.toString(), println("34 true hello"));
+    }
+
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    // Returns String that would be the result of calling PrintWriter.println
+    // of the given String. (This is to handle platform specific newline).
+    private static String println(final String str) {
+        return str + LINE_SEPARATOR;
     }
 }
