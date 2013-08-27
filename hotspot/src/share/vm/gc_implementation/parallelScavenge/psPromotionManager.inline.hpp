@@ -32,7 +32,7 @@
 inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
   assert(index >= 0 && index <= (int)ParallelGCThreads, "out of range manager_array access");
-  return _manager_array[index];
+  return &_manager_array[index];
 }
 
 template <class T>

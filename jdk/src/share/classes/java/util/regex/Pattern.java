@@ -219,7 +219,7 @@ import java.util.stream.StreamSupport;
  *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks, categories and binary properties</th></tr>
- * * <tr><td valign="top" headers="construct unicode">{@code \p{IsLatin}}</td>
+ * <tr><td valign="top" headers="construct unicode">{@code \p{IsLatin}}</td>
  *     <td headers="matches">A Latin&nbsp;script character (<a href="#usc">script</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode">{@code \p{InGreek}}</td>
  *     <td headers="matches">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
