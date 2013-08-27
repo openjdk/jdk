@@ -3685,14 +3685,8 @@ class CommandLineFlags {
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
-  develop(bool, ParseAllGenericSignatures, false,                           \
-          "Parse all generic signatures while classloading")                \
-                                                                            \
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
-                                                                            \
-  product(bool, ParseGenericDefaults, false,                                \
-          "Parse generic signatures for default method handling")           \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
