@@ -446,7 +446,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
 
             if (target.compareTo(Target.JDK1_5) <= 0) {
-                log.warning(LintCategory.OPTIONS, "option.obsolete.target", source.name);
+                log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
                 obsoleteOptionFound = true;
             }
 
