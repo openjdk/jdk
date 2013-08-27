@@ -124,6 +124,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     // load engine.js and return content as a char[]
+    @SuppressWarnings("resource")
     private static char[] loadEngineJSSource() {
         final String script = "resources/engine.js";
         try {
@@ -212,9 +213,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             // just create normal SimpleBindings.
             // We use same 'global' for all Bindings.
             return new SimpleBindings();
-        } else {
-            return createGlobalMirror(null);
         }
+        return createGlobalMirror(null);
     }
 
     // Compilable methods

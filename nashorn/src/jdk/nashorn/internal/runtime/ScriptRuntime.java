@@ -190,6 +190,8 @@ public final class ScriptRuntime {
         case FUNCTION:
             if (self instanceof ScriptObject) {
                 className = ((ScriptObject)self).getClassName();
+            } else if (self instanceof ScriptObjectMirror) {
+                className = ((ScriptObjectMirror)self).getClassName();
             } else {
                 className = self.getClass().getName();
             }
