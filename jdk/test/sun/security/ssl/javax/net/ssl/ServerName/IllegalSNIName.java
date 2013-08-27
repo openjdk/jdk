@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,34 @@
  * questions.
  */
 
-/**
- * Compare: an interface to enable users to define the result of
- *          a comparison of two objects.
- *
- * @author Sunita Mani
+/*
+ * @test
+ * @bug 8020842
+ * @summary SNIHostName does not throw IAE when hostname ends
+ *          with a trailing dot
  */
 
-package sun.misc;
+import javax.net.ssl.SNIHostName;
 
-public interface Compare {
+public class IllegalSNIName {
 
-    /**
-     * doCompare
-     *
-     * @param  obj1 first object to compare.
-     * @param  obj2 second object to compare.
-     * @return -1 if obj1 < obj2, 0 if obj1 == obj2, 1 if obj1 > obj2.
-     */
-    public int doCompare(Object obj1, Object obj2);
+    public static void main(String[] args) throws Exception {
+        String[] illegalNames = {
+                "example\u3003\u3002com",
+                "example..com",
+                "com\u3002",
+                "com.",
+                "."
+            };
 
+        for (String name : illegalNames) {
+            try {
+                SNIHostName hostname = new SNIHostName(name);
+                throw new Exception(
+                    "Expected to get IllegalArgumentException for " + name);
+            } catch (IllegalArgumentException iae) {
+                // That's the right behavior.
+            }
+        }
+    }
 }

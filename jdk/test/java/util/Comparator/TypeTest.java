@@ -75,7 +75,7 @@ public class TypeTest {
         }
     }
 
-    public static void main(String[] args) {
+    public void testOrder() {
         Manager m1 = new Manager("Manager", 2, 2000);
         Manager m2 = new Manager("Manager", 4, 1300);
 

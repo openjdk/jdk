@@ -790,8 +790,19 @@ public class TreeMap<K,V>
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
-     * The set's iterator returns the keys in ascending order.
-     * The set is backed by the map, so changes to the map are
+     *
+     * <p>The set's iterator returns the keys in ascending order.
+     * The set's spliterator is
+     * <em><a href="Spliterator.html#binding">late-binding</a></em>,
+     * <em>fail-fast</em>, and additionally reports {@link Spliterator#SORTED}
+     * and {@link Spliterator#ORDERED} with an encounter order that is ascending
+     * key order.  The spliterator's comparator (see
+     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
+     * the tree map's comparator (see {@link #comparator()}) is {@code null}.
+     * Otherwise, the spliterator's comparator is the same as or imposes the
+     * same total ordering as the tree map's comparator.
+     *
+     * <p>The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
      * the iterator's own {@code remove} operation), the results of
@@ -823,9 +834,15 @@ public class TreeMap<K,V>
 
     /**
      * Returns a {@link Collection} view of the values contained in this map.
-     * The collection's iterator returns the values in ascending order
-     * of the corresponding keys.
-     * The collection is backed by the map, so changes to the map are
+     *
+     * <p>The collection's iterator returns the values in ascending order
+     * of the corresponding keys. The collection's spliterator is
+     * <em><a href="Spliterator.html#binding">late-binding</a></em>,
+     * <em>fail-fast</em>, and additionally reports {@link Spliterator#ORDERED}
+     * with an encounter order that is ascending order of the corresponding
+     * keys.
+     *
+     * <p>The collection is backed by the map, so changes to the map are
      * reflected in the collection, and vice-versa.  If the map is
      * modified while an iteration over the collection is in progress
      * (except through the iterator's own {@code remove} operation),
@@ -843,8 +860,15 @@ public class TreeMap<K,V>
 
     /**
      * Returns a {@link Set} view of the mappings contained in this map.
-     * The set's iterator returns the entries in ascending key order.
-     * The set is backed by the map, so changes to the map are
+     *
+     * <p>The set's iterator returns the entries in ascending key order. The
+     * sets's spliterator is
+     * <em><a href="Spliterator.html#binding">late-binding</a></em>,
+     * <em>fail-fast</em>, and additionally reports {@link Spliterator#SORTED} and
+     * {@link Spliterator#ORDERED} with an encounter order that is ascending key
+     * order.
+     *
+     * <p>The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
      * while an iteration over the set is in progress (except through
      * the iterator's own {@code remove} operation, or through the
@@ -946,6 +970,27 @@ public class TreeMap<K,V>
      */
     public SortedMap<K,V> tailMap(K fromKey) {
         return tailMap(fromKey, true);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        Entry<K,V> p = getEntry(key);
+        if (p!=null && Objects.equals(oldValue, p.value)) {
+            p.value = newValue;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public V replace(K key, V value) {
+        Entry<K,V> p = getEntry(key);
+        if (p!=null) {
+            V oldValue = p.value;
+            p.value = value;
+            return oldValue;
+        }
+        return null;
     }
 
     @Override

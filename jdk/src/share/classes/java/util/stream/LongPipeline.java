@@ -186,7 +186,7 @@ abstract class LongPipeline<E_IN>
                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Double>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept((double) t);
@@ -208,9 +208,8 @@ abstract class LongPipeline<E_IN>
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Long>(sink) {
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsLong(t));
                     }
@@ -226,9 +225,8 @@ abstract class LongPipeline<E_IN>
                                                           StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<U> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<U>(sink) {
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.apply(t));
                     }
@@ -244,9 +242,8 @@ abstract class LongPipeline<E_IN>
                                                  StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Integer>(sink) {
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsInt(t));
                     }
@@ -262,7 +259,7 @@ abstract class LongPipeline<E_IN>
                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Double>(sink) {
                     @Override
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsDouble(t));
@@ -278,7 +275,7 @@ abstract class LongPipeline<E_IN>
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Long>(sink) {
                     @Override
                     public void begin(long size) {
                         downstream.begin(-1);
@@ -315,7 +312,7 @@ abstract class LongPipeline<E_IN>
                                      StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Long>(sink) {
                     @Override
                     public void begin(long size) {
                         downstream.begin(-1);
@@ -338,7 +335,7 @@ abstract class LongPipeline<E_IN>
                                      0) {
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Long>(sink) {
                     @Override
                     public void accept(long t) {
                         consumer.accept(t);
