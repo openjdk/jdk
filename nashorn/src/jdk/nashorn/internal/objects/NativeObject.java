@@ -669,15 +669,43 @@ public final class NativeObject {
 
         final List<AccessorProperty> properties = new ArrayList<>(propertyNames.size() + methodNames.size());
         for(final String methodName: methodNames) {
-            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE,
-                    getBoundBeanMethodGetter(source, getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source)),
-                    null));
+            final MethodHandle method;
+            try {
+                method = getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source);
+            } catch(final IllegalAccessError e) {
+                // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                continue;
+            }
+            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE, getBoundBeanMethodGetter(source,
+                    method), null));
         }
         for(final String propertyName: propertyNames) {
+            MethodHandle getter;
+            if(readablePropertyNames.contains(propertyName)) {
+                try {
+                    getter = getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    getter = Lookup.EMPTY_GETTER;
+                }
+            } else {
+                getter = Lookup.EMPTY_GETTER;
+            }
             final boolean isWritable = writablePropertyNames.contains(propertyName);
-            properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE,
-                    readablePropertyNames.contains(propertyName) ? getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source) : Lookup.EMPTY_GETTER,
-                    isWritable ? getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source) : Lookup.EMPTY_SETTER));
+            MethodHandle setter;
+            if(isWritable) {
+                try {
+                    setter = getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    setter = Lookup.EMPTY_SETTER;
+                }
+            } else {
+                setter = Lookup.EMPTY_SETTER;
+            }
+            if(getter != Lookup.EMPTY_GETTER || setter != Lookup.EMPTY_SETTER) {
+                properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE, getter, setter));
+            }
         }
 
         targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));
