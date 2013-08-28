@@ -24,42 +24,31 @@
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.SplittableRandom;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * @test
- * @run testng SplittableRandomTest
- * @run testng/othervm -Djava.util.secureRandomSeed=true SplittableRandomTest
- * @summary test methods on SplittableRandom
+ * @run testng ThreadLocalRandomTest
+ * @summary test methods on ThreadLocalRandom
  */
 @Test
-public class SplittableRandomTest {
+public class ThreadLocalRandomTest {
 
-    // Note: this test was copied from the 166 TCK SplittableRandomTest test
+    // Note: this test was copied from the 166 TCK ThreadLocalRandomTest test
     // and modified to be a TestNG test
 
     /*
      * Testing coverage notes:
      *
-     * 1. Many of the test methods are adapted from ThreadLocalRandomTest.
-     *
-     * 2. These tests do not check for random number generator quality.
-     * But we check for minimal API compliance by requiring that
-     * repeated calls to nextX methods, up to NCALLS tries, produce at
-     * least two distinct results. (In some possible universe, a
-     * "correct" implementation might fail, but the odds are vastly
-     * less than that of encountering a hardware failure while running
-     * the test.) For bounded nextX methods, we sample various
-     * intervals across multiples of primes. In other tests, we repeat
-     * under REPS different values.
+     * We don't test randomness properties, but only that repeated
+     * calls, up to NCALLS tries, produce at least one different
+     * result.  For bounded versions, we sample various intervals
+     * across multiples of primes.
      */
 
     // max numbers of calls to detect getting stuck on one value
@@ -75,13 +64,20 @@ public class SplittableRandomTest {
     static final int REPS = 20;
 
     /**
+     * setSeed throws UnsupportedOperationException
+     */
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void testSetSeed() {
+        ThreadLocalRandom.current().setSeed(17);
+    }
+
+    /**
      * Repeated calls to nextInt produce at least two distinct results
      */
     public void testNextInt() {
-        SplittableRandom sr = new SplittableRandom();
-        int f = sr.nextInt();
+        int f = ThreadLocalRandom.current().nextInt();
         int i = 0;
-        while (i < NCALLS && sr.nextInt() == f)
+        while (i < NCALLS && ThreadLocalRandom.current().nextInt() == f)
             ++i;
         assertTrue(i < NCALLS);
     }
@@ -90,10 +86,31 @@ public class SplittableRandomTest {
      * Repeated calls to nextLong produce at least two distinct results
      */
     public void testNextLong() {
-        SplittableRandom sr = new SplittableRandom();
-        long f = sr.nextLong();
+        long f = ThreadLocalRandom.current().nextLong();
         int i = 0;
-        while (i < NCALLS && sr.nextLong() == f)
+        while (i < NCALLS && ThreadLocalRandom.current().nextLong() == f)
+            ++i;
+        assertTrue(i < NCALLS);
+    }
+
+    /**
+     * Repeated calls to nextBoolean produce at least two distinct results
+     */
+    public void testNextBoolean() {
+        boolean f = ThreadLocalRandom.current().nextBoolean();
+        int i = 0;
+        while (i < NCALLS && ThreadLocalRandom.current().nextBoolean() == f)
+            ++i;
+        assertTrue(i < NCALLS);
+    }
+
+    /**
+     * Repeated calls to nextFloat produce at least two distinct results
+     */
+    public void testNextFloat() {
+        float f = ThreadLocalRandom.current().nextFloat();
+        int i = 0;
+        while (i < NCALLS && ThreadLocalRandom.current().nextFloat() == f)
             ++i;
         assertTrue(i < NCALLS);
     }
@@ -102,55 +119,22 @@ public class SplittableRandomTest {
      * Repeated calls to nextDouble produce at least two distinct results
      */
     public void testNextDouble() {
-        SplittableRandom sr = new SplittableRandom();
-        double f = sr.nextDouble();
+        double f = ThreadLocalRandom.current().nextDouble();
         int i = 0;
-        while (i < NCALLS && sr.nextDouble() == f)
+        while (i < NCALLS && ThreadLocalRandom.current().nextDouble() == f)
             ++i;
         assertTrue(i < NCALLS);
     }
 
     /**
-     * Two SplittableRandoms created with the same seed produce the
-     * same values for nextLong.
+     * Repeated calls to nextGaussian produce at least two distinct results
      */
-    public void testSeedConstructor() {
-        for (long seed = 2; seed < MAX_LONG_BOUND; seed += 15485863)  {
-            SplittableRandom sr1 = new SplittableRandom(seed);
-            SplittableRandom sr2 = new SplittableRandom(seed);
-            for (int i = 0; i < REPS; ++i)
-                assertEquals(sr1.nextLong(), sr2.nextLong());
-        }
-    }
-
-    /**
-     * A SplittableRandom produced by split() of a default-constructed
-     * SplittableRandom generates a different sequence
-     */
-    public void testSplit1() {
-        SplittableRandom sr = new SplittableRandom();
-        for (int reps = 0; reps < REPS; ++reps) {
-            SplittableRandom sc = sr.split();
-            int i = 0;
-            while (i < NCALLS && sr.nextLong() == sc.nextLong())
-                ++i;
-            assertTrue(i < NCALLS);
-        }
-    }
-
-    /**
-     * A SplittableRandom produced by split() of a seeded-constructed
-     * SplittableRandom generates a different sequence
-     */
-    public void testSplit2() {
-        SplittableRandom sr = new SplittableRandom(12345);
-        for (int reps = 0; reps < REPS; ++reps) {
-            SplittableRandom sc = sr.split();
-            int i = 0;
-            while (i < NCALLS && sr.nextLong() == sc.nextLong())
-                ++i;
-            assertTrue(i < NCALLS);
-        }
+    public void testNextGaussian() {
+        double f = ThreadLocalRandom.current().nextGaussian();
+        int i = 0;
+        while (i < NCALLS && ThreadLocalRandom.current().nextGaussian() == f)
+            ++i;
+        assertTrue(i < NCALLS);
     }
 
     /**
@@ -158,8 +142,7 @@ public class SplittableRandomTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNextIntBoundedNeg() {
-        SplittableRandom sr = new SplittableRandom();
-        int f = sr.nextInt(-17);
+        int f = ThreadLocalRandom.current().nextInt(-17);
     }
 
     /**
@@ -167,24 +150,22 @@ public class SplittableRandomTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNextIntBadBounds() {
-        SplittableRandom sr = new SplittableRandom();
-        int f = sr.nextInt(17, 2);
+        int f = ThreadLocalRandom.current().nextInt(17, 2);
     }
 
     /**
-     * nextInt(bound) returns 0 <= value < bound;
-     * repeated calls produce at least two distinct results
+     * nextInt(bound) returns 0 <= value < bound; repeated calls produce at
+     * least two distinct results
      */
     public void testNextIntBounded() {
-        SplittableRandom sr = new SplittableRandom();
         // sample bound space across prime number increments
         for (int bound = 2; bound < MAX_INT_BOUND; bound += 524959) {
-            int f = sr.nextInt(bound);
+            int f = ThreadLocalRandom.current().nextInt(bound);
             assertTrue(0 <= f && f < bound);
             int i = 0;
             int j;
             while (i < NCALLS &&
-                   (j = sr.nextInt(bound)) == f) {
+                   (j = ThreadLocalRandom.current().nextInt(bound)) == f) {
                 assertTrue(0 <= j && j < bound);
                 ++i;
             }
@@ -193,19 +174,18 @@ public class SplittableRandomTest {
     }
 
     /**
-     * nextInt(least, bound) returns least <= value < bound;
-     * repeated calls produce at least two distinct results
+     * nextInt(least, bound) returns least <= value < bound; repeated calls
+     * produce at least two distinct results
      */
     public void testNextIntBounded2() {
-        SplittableRandom sr = new SplittableRandom();
         for (int least = -15485863; least < MAX_INT_BOUND; least += 524959) {
             for (int bound = least + 2; bound > least && bound < MAX_INT_BOUND; bound += 49979687) {
-                int f = sr.nextInt(least, bound);
+                int f = ThreadLocalRandom.current().nextInt(least, bound);
                 assertTrue(least <= f && f < bound);
                 int i = 0;
                 int j;
                 while (i < NCALLS &&
-                       (j = sr.nextInt(least, bound)) == f) {
+                       (j = ThreadLocalRandom.current().nextInt(least, bound)) == f) {
                     assertTrue(least <= j && j < bound);
                     ++i;
                 }
@@ -219,8 +199,7 @@ public class SplittableRandomTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNextLongBoundedNeg() {
-        SplittableRandom sr = new SplittableRandom();
-        long f = sr.nextLong(-17);
+        long f = ThreadLocalRandom.current().nextLong(-17);
     }
 
     /**
@@ -228,23 +207,21 @@ public class SplittableRandomTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNextLongBadBounds() {
-        SplittableRandom sr = new SplittableRandom();
-        long f = sr.nextLong(17, 2);
+        long f = ThreadLocalRandom.current().nextLong(17, 2);
     }
 
     /**
-     * nextLong(bound) returns 0 <= value < bound;
-     * repeated calls produce at least two distinct results
+     * nextLong(bound) returns 0 <= value < bound; repeated calls produce at
+     * least two distinct results
      */
     public void testNextLongBounded() {
-        SplittableRandom sr = new SplittableRandom();
         for (long bound = 2; bound < MAX_LONG_BOUND; bound += 15485863) {
-            long f = sr.nextLong(bound);
+            long f = ThreadLocalRandom.current().nextLong(bound);
             assertTrue(0 <= f && f < bound);
             int i = 0;
             long j;
             while (i < NCALLS &&
-                   (j = sr.nextLong(bound)) == f) {
+                   (j = ThreadLocalRandom.current().nextLong(bound)) == f) {
                 assertTrue(0 <= j && j < bound);
                 ++i;
             }
@@ -253,19 +230,18 @@ public class SplittableRandomTest {
     }
 
     /**
-     * nextLong(least, bound) returns least <= value < bound;
-     * repeated calls produce at least two distinct results
+     * nextLong(least, bound) returns least <= value < bound; repeated calls
+     * produce at least two distinct results
      */
     public void testNextLongBounded2() {
-        SplittableRandom sr = new SplittableRandom();
         for (long least = -86028121; least < MAX_LONG_BOUND; least += 982451653L) {
             for (long bound = least + 2; bound > least && bound < MAX_LONG_BOUND; bound += Math.abs(bound * 7919)) {
-                long f = sr.nextLong(least, bound);
+                long f = ThreadLocalRandom.current().nextLong(least, bound);
                 assertTrue(least <= f && f < bound);
                 int i = 0;
                 long j;
                 while (i < NCALLS &&
-                       (j = sr.nextLong(least, bound)) == f) {
+                       (j = ThreadLocalRandom.current().nextLong(least, bound)) == f) {
                     assertTrue(least <= j && j < bound);
                     ++i;
                 }
@@ -278,13 +254,13 @@ public class SplittableRandomTest {
      * nextDouble(bound) throws IllegalArgumentException
      */
     public void testNextDoubleBadBound() {
-        SplittableRandom sr = new SplittableRandom();
-        executeAndCatchIAE(() -> sr.nextDouble(0.0));
-        executeAndCatchIAE(() -> sr.nextDouble(-0.0));
-        executeAndCatchIAE(() -> sr.nextDouble(+0.0));
-        executeAndCatchIAE(() -> sr.nextDouble(-1.0));
-        executeAndCatchIAE(() -> sr.nextDouble(Double.NaN));
-        executeAndCatchIAE(() -> sr.nextDouble(Double.NEGATIVE_INFINITY));
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        executeAndCatchIAE(() -> r.nextDouble(0.0));
+        executeAndCatchIAE(() -> r.nextDouble(-0.0));
+        executeAndCatchIAE(() -> r.nextDouble(+0.0));
+        executeAndCatchIAE(() -> r.nextDouble(-1.0));
+        executeAndCatchIAE(() -> r.nextDouble(Double.NaN));
+        executeAndCatchIAE(() -> r.nextDouble(Double.NEGATIVE_INFINITY));
 
         // Returns Double.MAX_VALUE
 //        executeAndCatchIAE(() -> r.nextDouble(Double.POSITIVE_INFINITY));
@@ -294,7 +270,7 @@ public class SplittableRandomTest {
      * nextDouble(origin, bound) throws IllegalArgumentException
      */
     public void testNextDoubleBadOriginBound() {
-        testDoubleBadOriginBound(new SplittableRandom()::nextDouble);
+        testDoubleBadOriginBound(ThreadLocalRandom.current()::nextDouble);
     }
 
     // An arbitrary finite double value
@@ -322,19 +298,18 @@ public class SplittableRandomTest {
     }
 
     /**
-     * nextDouble(least, bound) returns least <= value < bound;
-     * repeated calls produce at least two distinct results
+     * nextDouble(least, bound) returns least <= value < bound; repeated calls
+     * produce at least two distinct results
      */
     public void testNextDoubleBounded2() {
-        SplittableRandom sr = new SplittableRandom();
         for (double least = 0.0001; least < 1.0e20; least *= 8) {
             for (double bound = least * 1.001; bound < 1.0e20; bound *= 16) {
-                double f = sr.nextDouble(least, bound);
+                double f = ThreadLocalRandom.current().nextDouble(least, bound);
                 assertTrue(least <= f && f < bound);
                 int i = 0;
                 double j;
                 while (i < NCALLS &&
-                       (j = sr.nextDouble(least, bound)) == f) {
+                       (j = ThreadLocalRandom.current().nextDouble(least, bound)) == f) {
                     assertTrue(least <= j && j < bound);
                     ++i;
                 }
@@ -348,7 +323,7 @@ public class SplittableRandomTest {
      * IllegalArgumentException
      */
     public void testBadStreamSize() {
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         executeAndCatchIAE(() -> r.ints(-1L));
         executeAndCatchIAE(() -> r.ints(-1L, 2, 3));
         executeAndCatchIAE(() -> r.longs(-1L));
@@ -362,7 +337,7 @@ public class SplittableRandomTest {
      * IllegalArgumentException
      */
     public void testBadStreamBounds() {
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         executeAndCatchIAE(() -> r.ints(2, 1));
         executeAndCatchIAE(() -> r.ints(10, 42, 42));
         executeAndCatchIAE(() -> r.longs(-1L, -1L));
@@ -397,11 +372,13 @@ public class SplittableRandomTest {
      */
     public void testIntsCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 0;
         for (int reps = 0; reps < REPS; ++reps) {
             counter.reset();
-            r.ints(size).parallel().forEach(x -> {counter.increment();});
+            r.ints(size).parallel().forEach(x -> {
+                counter.increment();
+            });
             assertEquals(counter.sum(), size);
             size += 524959;
         }
@@ -412,11 +389,13 @@ public class SplittableRandomTest {
      */
     public void testLongsCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 0;
         for (int reps = 0; reps < REPS; ++reps) {
             counter.reset();
-            r.longs(size).parallel().forEach(x -> {counter.increment();});
+            r.longs(size).parallel().forEach(x -> {
+                counter.increment();
+            });
             assertEquals(counter.sum(), size);
             size += 524959;
         }
@@ -427,11 +406,13 @@ public class SplittableRandomTest {
      */
     public void testDoublesCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 0;
         for (int reps = 0; reps < REPS; ++reps) {
             counter.reset();
-            r.doubles(size).parallel().forEach(x -> {counter.increment();});
+            r.doubles(size).parallel().forEach(x -> {
+                counter.increment();
+            });
             assertEquals(counter.sum(), size);
             size += 524959;
         }
@@ -442,14 +423,16 @@ public class SplittableRandomTest {
      */
     public void testBoundedInts() {
         AtomicInteger fails = new AtomicInteger(0);
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 12345L;
         for (int least = -15485867; least < MAX_INT_BOUND; least += 524959) {
             for (int bound = least + 2; bound > least && bound < MAX_INT_BOUND; bound += 67867967) {
                 final int lo = least, hi = bound;
                 r.ints(size, lo, hi).parallel().
-                    forEach(x -> {if (x < lo || x >= hi)
-                                fails.getAndIncrement(); });
+                        forEach(x -> {
+                            if (x < lo || x >= hi)
+                                fails.getAndIncrement();
+                        });
             }
         }
         assertEquals(fails.get(), 0);
@@ -460,14 +443,16 @@ public class SplittableRandomTest {
      */
     public void testBoundedLongs() {
         AtomicInteger fails = new AtomicInteger(0);
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 123L;
         for (long least = -86028121; least < MAX_LONG_BOUND; least += 1982451653L) {
             for (long bound = least + 2; bound > least && bound < MAX_LONG_BOUND; bound += Math.abs(bound * 7919)) {
                 final long lo = least, hi = bound;
                 r.longs(size, lo, hi).parallel().
-                    forEach(x -> {if (x < lo || x >= hi)
-                                fails.getAndIncrement(); });
+                        forEach(x -> {
+                            if (x < lo || x >= hi)
+                                fails.getAndIncrement();
+                        });
             }
         }
         assertEquals(fails.get(), 0);
@@ -478,14 +463,16 @@ public class SplittableRandomTest {
      */
     public void testBoundedDoubles() {
         AtomicInteger fails = new AtomicInteger(0);
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 456;
         for (double least = 0.00011; least < 1.0e20; least *= 9) {
             for (double bound = least * 1.0011; bound < 1.0e20; bound *= 17) {
                 final double lo = least, hi = bound;
                 r.doubles(size, lo, hi).parallel().
-                    forEach(x -> {if (x < lo || x >= hi)
-                                fails.getAndIncrement(); });
+                        forEach(x -> {
+                            if (x < lo || x >= hi)
+                                fails.getAndIncrement();
+                        });
             }
         }
         assertEquals(fails.get(), 0);
@@ -496,9 +483,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedIntsCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.ints().limit(size).parallel().forEach(x -> {counter.increment();});
+        r.ints().limit(size).parallel().forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
@@ -507,9 +496,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedLongsCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.longs().limit(size).parallel().forEach(x -> {counter.increment();});
+        r.longs().limit(size).parallel().forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
@@ -518,9 +509,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedDoublesCount() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.doubles().limit(size).parallel().forEach(x -> {counter.increment();});
+        r.doubles().limit(size).parallel().forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
@@ -529,9 +522,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedIntsCountSeq() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.ints().limit(size).forEach(x -> {counter.increment();});
+        r.ints().limit(size).forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
@@ -540,9 +535,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedLongsCountSeq() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.longs().limit(size).forEach(x -> {counter.increment();});
+        r.longs().limit(size).forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
@@ -551,9 +548,11 @@ public class SplittableRandomTest {
      */
     public void testUnsizedDoublesCountSeq() {
         LongAdder counter = new LongAdder();
-        SplittableRandom r = new SplittableRandom();
+        ThreadLocalRandom r = ThreadLocalRandom.current();
         long size = 100;
-        r.doubles().limit(size).forEach(x -> {counter.increment();});
+        r.doubles().limit(size).forEach(x -> {
+            counter.increment();
+        });
         assertEquals(counter.sum(), size);
     }
 
