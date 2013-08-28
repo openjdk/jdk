@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ endif
 #
 # Java files to compile.
 #
-FILES_java = com/sun/java/accessibility/AccessBridge.java
+FILES_java = com/sun/java/accessibility/AccessBridgeLoader.java com/sun/java/accessibility/AccessBridge.java
 
 #
 # Location for the newly built classfiles.
@@ -68,7 +68,7 @@ FILES_class = $(FILES_java:%.java=$(CLASSDESTDIR)/%.class)
 build: prebuild
 
 prebuild:
-	$(CP) $(CLOSED_PLATFORM_SRC)/classes/com/sun/java/accessibility/$(ABPLATFORM)/AccessBridge.java \
+	$(CP) $(CLOSED_PLATFORM_SRC)/classes/com/sun/java/accessibility/$(ABPLATFORM)/AccessBridgeLoader.java \
 		$(CLOSED_PLATFORM_SRC)/classes/com/sun/java/accessibility
 
 all : build $(JARFILE) 
