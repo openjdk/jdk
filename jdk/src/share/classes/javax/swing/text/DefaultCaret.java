@@ -1211,12 +1211,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     boolean isPositionLTR(int position, Position.Bias bias) {
         Document doc = component.getDocument();
-        if(doc instanceof AbstractDocument ) {
-            if(bias == Position.Bias.Backward && --position < 0)
-                position = 0;
-            return ((AbstractDocument)doc).isLeftToRight(position, position);
-        }
-        return true;
+        if(bias == Position.Bias.Backward && --position < 0)
+            position = 0;
+        return AbstractDocument.isLeftToRight(doc, position, position);
     }
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,

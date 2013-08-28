@@ -267,8 +267,6 @@ public class ParagraphView extends FlowView implements TabExpander {
               throws BadLocationException {
         JTextComponent text = (JTextComponent)getContainer();
         Document doc = getDocument();
-        AbstractDocument aDoc = (doc instanceof AbstractDocument) ?
-                                (AbstractDocument)doc : null;
         View row = getView(rowIndex);
         int lastPos = -1;
         // This could be made better to check backward positions too.
@@ -276,8 +274,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         for(int vc = 0, numViews = row.getViewCount(); vc < numViews; vc++) {
             View v = row.getView(vc);
             int start = v.getStartOffset();
-            boolean ltr = (aDoc != null) ? aDoc.isLeftToRight
-                           (start, start + 1) : true;
+            boolean ltr = AbstractDocument.isLeftToRight(doc, start, start + 1);
             if(ltr) {
                 lastPos = start;
                 for(int end = v.getEndOffset(); lastPos < end; lastPos++) {
@@ -338,12 +335,8 @@ public class ParagraphView extends FlowView implements TabExpander {
     protected boolean flipEastAndWestAtEnds(int position,
                                             Position.Bias bias) {
         Document doc = getDocument();
-        if(doc instanceof AbstractDocument &&
-           !((AbstractDocument)doc).isLeftToRight(getStartOffset(),
-                                                  getStartOffset() + 1)) {
-            return true;
-        }
-        return false;
+        position = getStartOffset();
+        return !AbstractDocument.isLeftToRight(doc, position, position + 1);
     }
 
     // --- FlowView methods ---------------------------------------------
