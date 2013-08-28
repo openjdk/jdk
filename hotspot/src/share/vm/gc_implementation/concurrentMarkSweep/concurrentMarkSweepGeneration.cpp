@@ -3460,7 +3460,9 @@ void ConcurrentMarkSweepGeneration::shrink_by(size_t bytes) {
 void ConcurrentMarkSweepGeneration::shrink(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   size_t size = ReservedSpace::page_align_size_down(bytes);
-  if (size > 0) {
+  // Only shrink if a compaction was done so that all the free space
+  // in the generation is in a contiguous block at the end.
+  if (size > 0 && did_compact()) {
     shrink_by(size);
   }
 }
@@ -8696,9 +8698,10 @@ void SweepClosure::lookahead_and_flush(FreeChunk* fc, size_t chunk_size) {
   assert(inFreeRange(), "Should only be called if currently in a free range.");
   HeapWord* const eob = ((HeapWord*)fc) + chunk_size;
   assert(_sp->used_region().contains(eob - 1),
-         err_msg("eob = " PTR_FORMAT " out of bounds wrt _sp = [" PTR_FORMAT "," PTR_FORMAT ")"
+         err_msg("eob = " PTR_FORMAT " eob-1 = " PTR_FORMAT " _limit = " PTR_FORMAT
+                 " out of bounds wrt _sp = [" PTR_FORMAT "," PTR_FORMAT ")"
                  " when examining fc = " PTR_FORMAT "(" SIZE_FORMAT ")",
-                 _limit, _sp->bottom(), _sp->end(), fc, chunk_size));
+                 eob, eob-1, _limit, _sp->bottom(), _sp->end(), fc, chunk_size));
   if (eob >= _limit) {
     assert(eob == _limit || fc->is_free(), "Only a free chunk should allow us to cross over the limit");
     if (CMSTraceSweeper) {
