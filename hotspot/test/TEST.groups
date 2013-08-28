@@ -131,6 +131,7 @@ needs_compact3 = \
 # Compact 2 adds full VM tests
 compact2 = \
   :compact2_minimal \
+  :compact1 \
   :needs_full_vm_compact2 \
  -:needs_compact3 \
  -:needs_jre \
@@ -165,6 +166,7 @@ needs_full_vm_compact1 = \
 compact2_minimal = \
   :compact1_minimal \
   :needs_compact2 \
+ -:needs_full_vm_compact2 \
  -:needs_compact3 \
  -:needs_jre \
  -:needs_jdk
