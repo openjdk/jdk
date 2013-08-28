@@ -3217,15 +3217,6 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class_oop);
 
-  if (the_class_oop == Universe::reflect_invoke_cache()->klass()) {
-    // We are redefining java.lang.reflect.Method. Method.invoke() is
-    // cached and users of the cache care about each active version of
-    // the method so we have to track this previous version.
-    // Do this before methods get switched
-    Universe::reflect_invoke_cache()->add_previous_version(
-      the_class->method_with_idnum(Universe::reflect_invoke_cache()->method_idnum()));
-  }
-
   // Deoptimize all compiled code that depends on this class
   flush_dependent_code(the_class, THREAD);
 
