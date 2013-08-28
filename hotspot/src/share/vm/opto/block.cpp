@@ -221,7 +221,7 @@ bool Block::has_uncommon_code() const {
 //------------------------------is_uncommon------------------------------------
 // True if block is low enough frequency or guarded by a test which
 // mostly does not go here.
-bool Block::is_uncommon( Block_Array &bbs ) const {
+bool Block::is_uncommon(PhaseCFG* cfg) const {
   // Initial blocks must never be moved, so are never uncommon.
   if (head()->is_Root() || head()->is_Start())  return false;
 
@@ -238,7 +238,7 @@ bool Block::is_uncommon( Block_Array &bbs ) const {
   uint uncommon_for_freq_preds = 0;
 
   for( uint i=1; i<num_preds(); i++ ) {
-    Block* guard = bbs[pred(i)->_idx];
+    Block* guard = cfg->get_block_for_node(pred(i));
     // Check to see if this block follows its guard 1 time out of 10000
     // or less.
     //
@@ -285,11 +285,11 @@ void Block::dump_bidx(const Block* orig, outputStream* st) const {
   }
 }
 
-void Block::dump_pred(const Block_Array *bbs, Block* orig, outputStream* st) const {
+void Block::dump_pred(const PhaseCFG* cfg, Block* orig, outputStream* st) const {
   if (is_connector()) {
     for (uint i=1; i<num_preds(); i++) {
-      Block *p = ((*bbs)[pred(i)->_idx]);
-      p->dump_pred(bbs, orig, st);
+      Block *p = cfg->get_block_for_node(pred(i));
+      p->dump_pred(cfg, orig, st);
     }
   } else {
     dump_bidx(orig, st);
@@ -297,7 +297,7 @@ void Block::dump_pred(const Block_Array *bbs, Block* orig, outputStream* st) con
   }
 }
 
-void Block::dump_head( const Block_Array *bbs, outputStream* st ) const {
+void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
   // Print the basic block
   dump_bidx(this, st);
   st->print(": #\t");
@@ -311,26 +311,28 @@ void Block::dump_head( const Block_Array *bbs, outputStream* st ) const {
   if( head()->is_block_start() ) {
     for (uint i=1; i<num_preds(); i++) {
       Node *s = pred(i);
-      if (bbs) {
-        Block *p = (*bbs)[s->_idx];
-        p->dump_pred(bbs, p, st);
+      if (cfg != NULL) {
+        Block *p = cfg->get_block_for_node(s);
+        p->dump_pred(cfg, p, st);
       } else {
         while (!s->is_block_start())
           s = s->in(0);
         st->print("N%d ", s->_idx );
       }
     }
-  } else
+  } else {
     st->print("BLOCK HEAD IS JUNK  ");
+  }
 
   // Print loop, if any
   const Block *bhead = this;    // Head of self-loop
   Node *bh = bhead->head();
-  if( bbs && bh->is_Loop() && !head()->is_Root() ) {
+
+  if ((cfg != NULL) && bh->is_Loop() && !head()->is_Root()) {
     LoopNode *loop = bh->as_Loop();
-    const Block *bx = (*bbs)[loop->in(LoopNode::LoopBackControl)->_idx];
+    const Block *bx = cfg->get_block_for_node(loop->in(LoopNode::LoopBackControl));
     while (bx->is_connector()) {
-      bx = (*bbs)[bx->pred(1)->_idx];
+      bx = cfg->get_block_for_node(bx->pred(1));
     }
     st->print("\tLoop: B%d-B%d ", bhead->_pre_order, bx->_pre_order);
     // Dump any loop-specific bits, especially for CountedLoops.
@@ -349,29 +351,32 @@ void Block::dump_head( const Block_Array *bbs, outputStream* st ) const {
   st->print_cr("");
 }
 
-void Block::dump() const { dump(NULL); }
+void Block::dump() const {
+  dump(NULL);
+}
 
-void Block::dump( const Block_Array *bbs ) const {
-  dump_head(bbs);
-  uint cnt = _nodes.size();
-  for( uint i=0; i<cnt; i++ )
+void Block::dump(const PhaseCFG* cfg) const {
+  dump_head(cfg);
+  for (uint i=0; i< _nodes.size(); i++) {
     _nodes[i]->dump();
+  }
   tty->print("\n");
 }
 #endif
 
 //=============================================================================
 //------------------------------PhaseCFG---------------------------------------
-PhaseCFG::PhaseCFG( Arena *a, RootNode *r, Matcher &m ) :
-  Phase(CFG),
-  _bbs(a),
-  _root(r),
-  _node_latency(NULL)
+PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
+: Phase(CFG)
+, _block_arena(arena)
+, _node_to_block_mapping(arena)
+, _root(root)
+, _node_latency(NULL)
 #ifndef PRODUCT
-  , _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
+, _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
 #endif
 #ifdef ASSERT
-  , _raw_oops(a)
+, _raw_oops(arena)
 #endif
 {
   ResourceMark rm;
@@ -380,13 +385,13 @@ PhaseCFG::PhaseCFG( Arena *a, RootNode *r, Matcher &m ) :
   // Node on demand.
   Node *x = new (C) GotoNode(NULL);
   x->init_req(0, x);
-  _goto = m.match_tree(x);
+  _goto = matcher.match_tree(x);
   assert(_goto != NULL, "");
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
   _num_blocks = build_cfg();
-  _broot = _bbs[_root->_idx];
+  _broot = get_block_for_node(_root);
 }
 
 //------------------------------build_cfg--------------------------------------
@@ -440,9 +445,9 @@ uint PhaseCFG::build_cfg() {
       // 'p' now points to the start of this basic block
 
       // Put self in array of basic blocks
-      Block *bb = new (_bbs._arena) Block(_bbs._arena,p);
-      _bbs.map(p->_idx,bb);
-      _bbs.map(x->_idx,bb);
+      Block *bb = new (_block_arena) Block(_block_arena, p);
+      map_node_to_block(p, bb);
+      map_node_to_block(x, bb);
       if( x != p ) {                // Only for root is x == p
         bb->_nodes.push((Node*)x);
       }
@@ -473,16 +478,16 @@ uint PhaseCFG::build_cfg() {
       // Check if it the fist node pushed on stack at the beginning.
       if (idx == 0) break;          // end of the build
       // Find predecessor basic block
-      Block *pb = _bbs[x->_idx];
+      Block *pb = get_block_for_node(x);
       // Insert into nodes array, if not already there
-      if( !_bbs.lookup(proj->_idx) ) {
+      if (!has_block(proj)) {
         assert( x != proj, "" );
         // Map basic block of projection
-        _bbs.map(proj->_idx,pb);
+        map_node_to_block(proj, pb);
         pb->_nodes.push(proj);
       }
       // Insert self as a child of my predecessor block
-      pb->_succs.map(pb->_num_succs++, _bbs[np->_idx]);
+      pb->_succs.map(pb->_num_succs++, get_block_for_node(np));
       assert( pb->_nodes[ pb->_nodes.size() - pb->_num_succs ]->is_block_proj(),
               "too many control users, not a CFG?" );
     }
@@ -511,15 +516,15 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   RegionNode* region = new (C) RegionNode(2);
   region->init_req(1, proj);
   // setup corresponding basic block
-  Block* block = new (_bbs._arena) Block(_bbs._arena, region);
-  _bbs.map(region->_idx, block);
+  Block* block = new (_block_arena) Block(_block_arena, region);
+  map_node_to_block(region, block);
   C->regalloc()->set_bad(region->_idx);
   // add a goto node
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, region);
   // add it to the basic block
   block->_nodes.push(gto);
-  _bbs.map(gto->_idx, block);
+  map_node_to_block(gto, block);
   C->regalloc()->set_bad(gto->_idx);
   // hook up successor block
   block->_succs.map(block->_num_succs++, out);
@@ -570,7 +575,7 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   gto->set_req(0, b->head());
   Node *bp = b->_nodes[end_idx];
   b->_nodes.map(end_idx,gto); // Slam over NeverBranch
-  _bbs.map(gto->_idx, b);
+  map_node_to_block(gto, b);
   C->regalloc()->set_bad(gto->_idx);
   b->_nodes.pop();              // Yank projections
   b->_nodes.pop();              // Yank projections
@@ -613,7 +618,7 @@ bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
   // If the previous block conditionally falls into bx, return false,
   // because moving bx will create an extra jump.
   for(uint k = 1; k < bx->num_preds(); k++ ) {
-    Block* pred = _bbs[bx->pred(k)->_idx];
+    Block* pred = get_block_for_node(bx->pred(k));
     if (pred == _blocks[bx_index-1]) {
       if (pred->_num_succs != 1) {
         return false;
@@ -682,7 +687,7 @@ void PhaseCFG::remove_empty() {
 
     // Look for uncommon blocks and move to end.
     if (!C->do_freq_based_layout()) {
-      if( b->is_uncommon(_bbs) ) {
+      if (b->is_uncommon(this)) {
         move_to_end(b, i);
         last--;                   // No longer check for being uncommon!
         if( no_flip_branch(b) ) { // Fall-thru case must follow?
@@ -870,28 +875,31 @@ void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
   } while( !p->is_block_start() );
 
   // Recursively visit
-  for( uint i=1; i<p->req(); i++ )
-    _dump_cfg(p->in(i),visited);
+  for (uint i = 1; i < p->req(); i++) {
+    _dump_cfg(p->in(i), visited);
+  }
 
   // Dump the block
-  _bbs[p->_idx]->dump(&_bbs);
+  get_block_for_node(p)->dump(this);
 }
 
 void PhaseCFG::dump( ) const {
   tty->print("\n--- CFG --- %d BBs\n",_num_blocks);
-  if( _blocks.size() ) {        // Did we do basic-block layout?
-    for( uint i=0; i<_num_blocks; i++ )
-      _blocks[i]->dump(&_bbs);
+  if (_blocks.size()) {        // Did we do basic-block layout?
+    for (uint i = 0; i < _num_blocks; i++) {
+      _blocks[i]->dump(this);
+    }
   } else {                      // Else do it with a DFS
-    VectorSet visited(_bbs._arena);
+    VectorSet visited(_block_arena);
     _dump_cfg(_root,visited);
   }
 }
 
 void PhaseCFG::dump_headers() {
   for( uint i = 0; i < _num_blocks; i++ ) {
-    if( _blocks[i] == NULL ) continue;
-    _blocks[i]->dump_head(&_bbs);
+    if (_blocks[i]) {
+      _blocks[i]->dump_head(this);
+    }
   }
 }
 
@@ -904,7 +912,7 @@ void PhaseCFG::verify( ) const {
     uint j;
     for (j = 0; j < cnt; j++)  {
       Node *n = b->_nodes[j];
-      assert( _bbs[n->_idx] == b, "" );
+      assert(get_block_for_node(n) == b, "");
       if (j >= 1 && n->is_Mach() &&
           n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         assert(j == 1 || b->_nodes[j-1]->is_Phi(),
@@ -913,13 +921,12 @@ void PhaseCFG::verify( ) const {
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
         if (def && def != n) {
-          assert(_bbs[def->_idx] || def->is_Con(),
-                 "must have block; constants for debug info ok");
+          assert(get_block_for_node(def) || def->is_Con(), "must have block; constants for debug info ok");
           // Verify that instructions in the block is in correct order.
           // Uses must follow their definition if they are at the same block.
           // Mostly done to check that MachSpillCopy nodes are placed correctly
           // when CreateEx node is moved in build_ifg_physical().
-          if (_bbs[def->_idx] == b &&
+          if (get_block_for_node(def) == b &&
               !(b->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {

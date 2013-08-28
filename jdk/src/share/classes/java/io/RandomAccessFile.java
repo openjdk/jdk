@@ -518,7 +518,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @exception  IOException  if {@code pos} is less than
      *                          {@code 0} or if an I/O error occurs.
      */
-    public native void seek(long pos) throws IOException;
+    public void seek(long pos) throws IOException {
+        if (pos < 0) {
+            throw new IOException("Negative seek offset");
+        } else {
+            seek0(pos);
+        }
+    }
+
+    private native void seek0(long pos) throws IOException;
 
     /**
      * Returns the length of this file.

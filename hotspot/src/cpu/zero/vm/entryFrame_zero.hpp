@@ -58,8 +58,8 @@ class EntryFrame : public ZeroFrame {
                            JavaCallWrapper* call_wrapper,
                            TRAPS);
  public:
-  JavaCallWrapper *call_wrapper() const {
-    return (JavaCallWrapper *) value_of_word(call_wrapper_off);
+  JavaCallWrapper **call_wrapper() const {
+    return (JavaCallWrapper **) addr_of_word(call_wrapper_off);
   }
 
  public:

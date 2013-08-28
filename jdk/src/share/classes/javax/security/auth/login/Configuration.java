@@ -75,7 +75,7 @@ import sun.security.jca.GetInstance;
  * LoginModules configured for that application.  Each {@code LoginModule}
  * is specified via its fully qualified class name.
  * Authentication proceeds down the module list in the exact order specified.
- * If an application does not have specific entry,
+ * If an application does not have a specific entry,
  * it defaults to the specific entry for "<i>other</i>".
  *
  * <p> The <i>Flag</i> value controls the overall behavior as authentication
@@ -248,7 +248,7 @@ public abstract class Configuration {
                     }
                 });
                 if (config_class == null) {
-                    config_class = "com.sun.security.auth.login.ConfigFile";
+                    config_class = "sun.security.provider.ConfigFile";
                 }
 
                 try {
