@@ -870,7 +870,6 @@ class ErasedShadowChecker : public ShadowChecker {
     : ShadowChecker(thread, name, holder, target) {}
 };
 
-
 // Find the unique qualified candidate from the perspective of the super_class
 // which is the resolved_klass, which must be an immediate superinterface
 // of klass
@@ -884,43 +883,48 @@ Method* find_erased_super_default(InstanceKlass* current_class, InstanceKlass* s
 
   if (family != NULL) {
     family->determine_target(current_class, CHECK_NULL);  // get target from current_class
-  }
 
-  if (family->has_target()) {
-    Method* target = family->get_selected_target();
-    InstanceKlass* holder = InstanceKlass::cast(target->method_holder());
+    if (family->has_target()) {
+      Method* target = family->get_selected_target();
+      InstanceKlass* holder = InstanceKlass::cast(target->method_holder());
 
-    // Verify that the identified method is valid from the context of
-    // the current class, which is the caller class for invokespecial
-    // link resolution, i.e. ensure there it is not shadowed.
-    // You can use invokespecial to disambiguate interface methods, but
-    // you can not use it to skip over an interface method that would shadow it.
-    ErasedShadowChecker checker(THREAD, target->name(), holder, super_class);
-    checker.run(current_class);
+      // Verify that the identified method is valid from the context of
+      // the current class, which is the caller class for invokespecial
+      // link resolution, i.e. ensure there it is not shadowed.
+      // You can use invokespecial to disambiguate interface methods, but
+      // you can not use it to skip over an interface method that would shadow it.
+      ErasedShadowChecker checker(THREAD, target->name(), holder, super_class);
+      checker.run(current_class);
 
-    if (checker.found_shadow()) {
+      if (checker.found_shadow()) {
 #ifndef PRODUCT
-      if (TraceDefaultMethods) {
-        tty->print_cr("    Only candidate found was shadowed.");
-      }
+        if (TraceDefaultMethods) {
+          tty->print_cr("    Only candidate found was shadowed.");
+        }
 #endif // ndef PRODUCT
-      THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
-                 "Accessible default method not found", NULL);
+        THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
+                   "Accessible default method not found", NULL);
+      } else {
+#ifndef PRODUCT
+        if (TraceDefaultMethods) {
+          family->print_sig_on(tty, target->signature(), 1);
+        }
+#endif // ndef PRODUCT
+        return target;
+      }
     } else {
-#ifndef PRODUCT
-      if (TraceDefaultMethods) {
-        family->print_sig_on(tty, target->signature(), 1);
-      }
-#endif // ndef PRODUCT
-      return target;
-    }
+      assert(family->throws_exception(), "must have target or throw");
+      THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
+                 family->get_exception_message()->as_C_string(), NULL);
+   }
   } else {
-    assert(family->throws_exception(), "must have target or throw");
-    THROW_MSG_(vmSymbols::java_lang_AbstractMethodError(),
-               family->get_exception_message()->as_C_string(), NULL);
+    // no method found
+    ResourceMark rm(THREAD);
+    THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(),
+              Method::name_and_sig_as_C_string(current_class,
+                                               method_name, sig), NULL);
   }
 }
-
 // This is called during linktime when we find an invokespecial call that
 // refers to a direct superinterface.  It indicates that we should find the
 // default method in the hierarchy of that superinterface, and if that method
