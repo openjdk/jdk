@@ -1,0 +1,190 @@
+#
+# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Profile-based Test Group Definitions
+#
+# These groups define the tests that cover the different possible runtimes:
+# - compact1, compact2, compact3, full JRE, JDK
+#
+# In addition they support testing of the minimal VM on compact1 and compact2.
+# Essentially this defines groups based around the specified API's and VM 
+# services available in the runtime.
+#
+# The groups are defined hierarchically in two forms:
+# - The need_xxx groups list all the tests that have a dependency on
+# a specific profile. This is either because it tests a feature in
+# that profile, or the test infrastructure uses a feature in that
+# profile.
+# - The primary groups are defined in terms of the other primary groups
+# combined with the needs_xxx groups (including and excluding them as
+# appropriate). For example the jre can run all tests from compact3, plus
+# those from needs_jre, but excluding those from need_jdk.
+#
+# The bottom group defines all the actual tests to be considered, simply
+# by listing the top-level test directories.
+#
+# To use a group simply list it on the jtreg command line eg:
+#   jtreg :jdk    
+# runs all tests. While
+#   jtreg :compact2  
+# runs those tests that only require compact1 and compact2 API's.
+#
+
+# Full JDK can run all tests
+#
+jdk = \
+  :jre \
+  :needs_jdk
+
+# Tests that require a full JDK to execute. Either they test a feature
+# only in the JDK or they use tools that are only in the JDK. The latter
+# can be resolved in some cases by using tools from the compile-jdk.
+#
+needs_jdk = \
+  gc/TestG1ZeroPGCTJcmdThreadPrint.java \
+  gc/metaspace/ClassMetaspaceSizeInJmapHeap.java \
+  gc/metaspace/TestMetaspacePerfCounters.java \
+  runtime/6819213/TestBootNativeLibraryPath.java \
+  runtime/6878713/Test6878713.sh \
+  runtime/6925573/SortMethodsTest.java \
+  runtime/7107135/Test7107135.sh \
+  runtime/7158988/FieldMonitor.java \
+  runtime/7194254/Test7194254.java \
+  runtime/jsig/Test8017498.sh \
+  runtime/Metaspace/FragmentMetaspace.java \
+  runtime/NMT/BaselineWithParameter.java \
+  runtime/NMT/JcmdScale.java \
+  runtime/NMT/JcmdWithNMTDisabled.java \
+  runtime/NMT/MallocTestType.java \
+  runtime/NMT/ReleaseCommittedMemory.java \
+  runtime/NMT/ShutdownTwice.java \
+  runtime/NMT/SummaryAfterShutdown.java \
+  runtime/NMT/SummarySanityCheck.java \
+  runtime/NMT/ThreadedMallocTestType.java \
+  runtime/NMT/ThreadedVirtualAllocTestType.java \
+  runtime/NMT/VirtualAllocTestType.java \
+  runtime/RedefineObject/TestRedefineObject.java \
+  serviceability/attach/AttachWithStalePidFile.java
+
+# JRE adds further tests to compact3
+#
+jre = \
+  :compact3 \
+  :needs_jre \
+ -:needs_jdk
+
+# Tests that require the full JRE
+#
+needs_jre = \
+  compiler/6852078/Test6852078.java \
+  compiler/7047069/Test7047069.java \
+  runtime/6294277/SourceDebugExtension.java
+
+# Compact 3 adds further tests to compact2
+#
+compact3 = \
+  :compact2 \
+  :needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+
+# Tests that require compact3 API's
+#
+needs_compact3 = \
+  compiler/whitebox/DeoptimizeMethodTest.java \
+  compiler/whitebox/SetForceInlineMethodTest.java \
+  compiler/whitebox/SetDontInlineMethodTest.java \
+  compiler/whitebox/DeoptimizeAllTest.java \
+  compiler/whitebox/MakeMethodNotCompilableTest.java \
+  compiler/whitebox/ClearMethodStateTest.java \
+  compiler/whitebox/EnqueueMethodForCompilationTest.java \
+  compiler/whitebox/IsMethodCompilableTest.java \
+  gc/6581734/Test6581734.java \
+  gc/7072527/TestFullGCCount.java \
+  gc/7168848/HumongousAlloc.java \
+  gc/arguments/TestG1HeapRegionSize.java \
+  gc/metaspace/TestMetaspaceMemoryPool.java \
+  runtime/InternalApi/ThreadCpuTimesDeadlock.java \
+  serviceability/threads/TestFalseDeadLock.java
+
+# Compact 2 adds full VM tests
+compact2 = \
+  :compact2_minimal \
+  :needs_full_vm_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact2 API's and a full VM
+#  
+needs_full_vm_compact2 =
+
+# Compact 1 adds full VM tests
+#
+compact1 = \
+  :compact1_minimal \
+  :needs_full_vm_compact1 \
+ -:needs_compact2 \
+ -:needs_full_vm_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact1 API's and a full VM
+#
+needs_full_vm_compact1 = \
+  runtime/NMT \
+  gc/g1/TestRegionAlignment.java \
+  gc/g1/TestShrinkToOneRegion.java \
+  gc/metaspace/G1AddMetaspaceDependency.java \
+  runtime/6929067/Test6929067.sh
+
+# Minimal VM on Compact 2 adds in some compact2 tests
+#
+compact2_minimal = \
+  :compact1_minimal \
+  :needs_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact2 API's
+#
+needs_compact2 = \
+  compiler/6589834/Test_ia32.java
+
+# All tests that run on the most minimal configuration: Minimal VM on Compact 1
+compact1_minimal = \
+  serviceability/ \
+  compiler/ \
+  testlibrary/ \
+  sanity/ \
+  runtime/ \
+  gc/ \
+ -:needs_full_vm_compact1 \
+ -:needs_full_vm_compact2 \
+ -:needs_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
