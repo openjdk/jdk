@@ -1179,7 +1179,7 @@ public abstract class Symbol implements Element {
         /**
          * The variable's constant value, if this is a constant.
          * Before the constant value is evaluated, it points to an
-         * initalizer environment.  If this is not a constant, it can
+         * initializer environment.  If this is not a constant, it can
          * be used for other stuff.
          */
         private Object data;
