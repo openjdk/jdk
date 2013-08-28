@@ -981,7 +981,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
     if (should_try_gc) {
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_inc_collection_pause);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -1106,7 +1107,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // enough space for the allocation to succeed after the pause.
 
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_humongous_allocation);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -3698,14 +3700,15 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
 
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                unsigned int gc_count_before,
-                                               bool* succeeded) {
+                                               bool* succeeded,
+                                               GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
   g1_policy()->record_stop_world_start();
   VM_G1IncCollectionPause op(gc_count_before,
                              word_size,
                              false, /* should_initiate_conc_mark */
                              g1_policy()->max_pause_time_ms(),
-                             GCCause::_g1_inc_collection_pause);
+                             gc_cause);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
