@@ -102,7 +102,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
             configuration.standardmessage.
                      error("doclet.exception_encountered",
                            exc.toString(), filename);
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
