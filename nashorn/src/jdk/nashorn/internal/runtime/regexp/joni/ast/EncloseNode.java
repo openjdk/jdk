@@ -19,7 +19,6 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
-import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import jdk.nashorn.internal.runtime.regexp.joni.Option;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.EncloseType;
 
