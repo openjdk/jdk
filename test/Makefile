@@ -49,61 +49,22 @@ else \
 fi
 endef
 
-# Test target list for langtools repository
-LANGTOOLS_TEST_LIST = langtools_jtreg
-
-# Test target list for jdk repository
-JDK_ALL_TEST_LIST = \
-	jdk_beans1 \
-	jdk_io  \
-	jdk_lang  \
-	jdk_math  \
-	jdk_other  \
-	jdk_net  \
-	jdk_nio \
-	jdk_security1 \
-	jdk_text  \
-	jdk_util  \
-	jdk_time \
-	jdk_awt \
-	jdk_beans2 jdk_beans3  \
-	jdk_management \
-	jdk_jmx \
-	jdk_security2 jdk_security3  \
-	jdk_rmi \
-	jdk_sound \
-	jdk_swing \
-	jdk_tools \
-	jdk_jdi \
-	jdk_jfr
-
-# Theses are meta test targets in jdk
-JDK_META_TEST_LIST = jdk_all jdk_default jdk_core
-
-# These are the current jck test targets in the jdk repository
-JDK_JCK7_LIST = jck7devtools jck7compiler jck7runtime
-
 # Default test target (core)
-default: jdk_core $(LANGTOOLS_TEST_LIST)
+default: jdk_core langtools_jtreg
 
 # All testing
-all: $(JDK_ALL_TEST_LIST) $(LANGTOOLS_TEST_LIST)
+all: jdk_all langtools_all
 
 # Test targets
-$(LANGTOOLS_TEST_LIST):
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
+langtools_% :
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
 
-$(JDK_ALL_TEST_LIST) $(JDK_META_TEST_LIST) $(JDK_JCK7_LIST):
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), $@)
-
-clean:
+jdk_% :
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), TEST="$@" $@)
 
 ################################################################
 
 # Phony targets (e.g. these are not filenames)
-.PHONY: all clean \
-        $(JDK_ALL_TEST_LIST) $(JDK_META_TEST_LIST) $(JDK_JCK7_LIST) \
-        $(LANGTOOLS_TEST_LIST)
+.PHONY: all clean
 
 ################################################################
-
