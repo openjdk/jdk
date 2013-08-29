@@ -81,10 +81,27 @@ public final class Converter {
         }
 
         return toString(packet.getMessage());
+    }
 
+    public static String toStringNoIndent(Packet packet) {
+        if (packet == null) {
+            return "[ Null packet ]";
+        } else if (packet.getMessage() == null) {
+                return "[ Empty packet ]";
+        }
+
+        return toStringNoIndent(packet.getMessage());
     }
 
     public static String toString(Message message) {
+        return toString(message, true);
+    }
+
+    public static String toStringNoIndent(Message message) {
+        return toString(message, false);
+    }
+
+    private static String toString(Message message, boolean createIndenter) {
         if (message == null) {
             return "[ Null message ]";
         }
@@ -94,7 +111,9 @@ public final class Converter {
             XMLStreamWriter writer = null;
             try {
                 writer = xmlOutputFactory.createXMLStreamWriter(stringOut);
-                writer = createIndenter(writer);
+                if (createIndenter) {
+                    writer = createIndenter(writer);
+                }
                 message.copy().writeTo(writer);
             } catch (Exception e) { // WSIT-1596 - Message Dumping should not affect other processing
                 LOGGER.log(Level.WARNING, "Unexpected exception occured while dumping message", e);

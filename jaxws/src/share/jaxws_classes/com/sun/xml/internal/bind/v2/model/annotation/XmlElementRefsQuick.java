@@ -29,6 +29,11 @@ import java.lang.annotation.Annotation;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 
+
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 final class XmlElementRefsQuick
     extends Quick
     implements XmlElementRefs
