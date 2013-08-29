@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
+#include <pthread.h>
+#include <signal.h>
 
 
 // Check core dump limit and report possible place where core can be found
@@ -271,11 +273,17 @@ os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
  * The callback is supposed to provide the method that should be protected.
  */
 bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  sigset_t saved_sig_mask;
+
   assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
   assert(!WatcherThread::watcher_thread()->has_crash_protection(),
       "crash_protection already set?");
 
-  if (sigsetjmp(_jmpbuf, 1) == 0) {
+  // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
+  // since on at least some systems (OS X) siglongjmp will restore the mask
+  // for the process, not the thread
+  pthread_sigmask(0, NULL, &saved_sig_mask);
+  if (sigsetjmp(_jmpbuf, 0) == 0) {
     // make sure we can see in the signal handler that we have crash protection
     // installed
     WatcherThread::watcher_thread()->set_crash_protection(this);
@@ -285,6 +293,7 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
     return true;
   }
   // this happens when we siglongjmp() back
+  pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
   WatcherThread::watcher_thread()->set_crash_protection(NULL);
   return false;
 }
