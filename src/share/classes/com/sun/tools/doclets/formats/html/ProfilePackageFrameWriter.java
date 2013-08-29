@@ -115,7 +115,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
             configuration.standardmessage.error(
                     "doclet.exception_encountered",
                     exc.toString(), DocPaths.PACKAGE_FRAME.getPath());
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 

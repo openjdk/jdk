@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8009299
- * @ignore 8013875: Incorrect vtable index being set during methodHandle creation for static
  * @summary Javac crashes when compiling method reference to static interface method
  * @run main/othervm -Xverify:none MethodReference66
  */
