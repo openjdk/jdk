@@ -1540,6 +1540,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime plus(TemporalAmount amountToAdd) {
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return resolveLocal(dateTime.plus(periodToAdd));
+        }
         return (ZonedDateTime) amountToAdd.addTo(this);
     }
 
@@ -1787,6 +1792,11 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime minus(TemporalAmount amountToSubtract) {
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return resolveLocal(dateTime.minus(periodToSubtract));
+        }
         return (ZonedDateTime) amountToSubtract.subtractFrom(this);
     }
 
