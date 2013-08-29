@@ -30,6 +30,11 @@ import javax.xml.bind.annotation.XmlNs;
 import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.bind.annotation.XmlSchema;
 
+
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 final class XmlSchemaQuick
     extends Quick
     implements XmlSchema

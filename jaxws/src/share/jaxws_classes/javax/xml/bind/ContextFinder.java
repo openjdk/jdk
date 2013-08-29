@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,17 +310,16 @@ class ContextFinder {
             }
         }
 
-        if (getContextClassLoader() == classLoader) {
-            Class factory = lookupUsingOSGiServiceLoader("javax.xml.bind.JAXBContext");
-            if (factory != null) {
-                logger.fine("OSGi environment detected");
-                return newInstance(contextPath, factory, classLoader, properties);
-            }
+        // OSGi search
+        Class jaxbContext = lookupJaxbContextUsingOsgiServiceLoader();
+        if (jaxbContext != null) {
+            logger.fine("OSGi environment detected");
+            return newInstance(contextPath, jaxbContext, classLoader, properties);
         }
 
         logger.fine("Searching META-INF/services");
         // search META-INF services next
-        BufferedReader r;
+        BufferedReader r = null;
         try {
             final StringBuilder resource = new StringBuilder().append("META-INF/services/").append(jaxbContextFQCN);
             final InputStream resourceStream =
@@ -328,7 +327,10 @@ class ContextFinder {
 
             if (resourceStream != null) {
                 r = new BufferedReader(new InputStreamReader(resourceStream, "UTF-8"));
-                factoryClassName = r.readLine().trim();
+                factoryClassName = r.readLine();
+                if (factoryClassName != null) {
+                    factoryClassName = factoryClassName.trim();
+                }
                 r.close();
                 return newInstance(contextPath, factoryClassName, classLoader, properties);
             } else {
@@ -339,6 +341,14 @@ class ContextFinder {
             throw new JAXBException(e);
         } catch (IOException e) {
             throw new JAXBException(e);
+        } finally {
+            try {
+                if (r != null) {
+                    r.close();
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(ContextFinder.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         // else no provider found
@@ -402,15 +412,16 @@ class ContextFinder {
             }
         }
 
-        Class factory = lookupUsingOSGiServiceLoader("javax.xml.bind.JAXBContext");
-        if (factory != null) {
+        // OSGi search
+        Class jaxbContext = lookupJaxbContextUsingOsgiServiceLoader();
+        if (jaxbContext != null) {
             logger.fine("OSGi environment detected");
-            return newInstance(classes, properties, factory);
+            return newInstance(classes, properties, jaxbContext);
         }
 
         // search META-INF services next
         logger.fine("Checking META-INF/services");
-        BufferedReader r;
+        BufferedReader r = null;
         try {
             final String resource = new StringBuilder("META-INF/services/").append(jaxbContextFQCN).toString();
             ClassLoader classLoader = getContextClassLoader();
@@ -423,7 +434,10 @@ class ContextFinder {
             if (resourceURL != null) {
                 logger.log(Level.FINE, "Reading {0}", resourceURL);
                 r = new BufferedReader(new InputStreamReader(resourceURL.openStream(), "UTF-8"));
-                factoryClassName = r.readLine().trim();
+                factoryClassName = r.readLine();
+                if (factoryClassName != null) {
+                    factoryClassName = factoryClassName.trim();
+                }
                 return newInstance(classes, properties, factoryClassName);
             } else {
                 logger.log(Level.FINE, "Unable to find: {0}", resource);
@@ -433,6 +447,14 @@ class ContextFinder {
             throw new JAXBException(e);
         } catch (IOException e) {
             throw new JAXBException(e);
+        } finally {
+            if (r != null) {
+                try {
+                    r.close();
+                } catch (IOException ex) {
+                    logger.log(Level.FINE, "Unable to close stream", ex);
+                }
+            }
         }
 
         // else no provider found
@@ -440,16 +462,15 @@ class ContextFinder {
         return newInstance(classes, properties, PLATFORM_DEFAULT_FACTORY_CLASS);
     }
 
-    private static Class lookupUsingOSGiServiceLoader(String factoryId) {
+    private static Class lookupJaxbContextUsingOsgiServiceLoader() {
         try {
-            // Use reflection to avoid having any dependendcy on ServiceLoader class
-            Class serviceClass = Class.forName(factoryId);
+            // Use reflection to avoid having any dependency on ServiceLoader class
             Class target = Class.forName("com.sun.org.glassfish.hk2.osgiresourcelocator.ServiceLoader");
             Method m = target.getMethod("lookupProviderClasses", Class.class);
-            Iterator iter = ((Iterable) m.invoke(null, serviceClass)).iterator();
+            Iterator iter = ((Iterable) m.invoke(null, JAXBContext.class)).iterator();
             return iter.hasNext() ? (Class)iter.next() : null;
         } catch(Exception e) {
-            logger.log(Level.FINE, "Unable to find from OSGi: {0}", factoryId);
+            logger.log(Level.FINE, "Unable to find from OSGi: javax.xml.bind.JAXBContext");
             return null;
         }
     }

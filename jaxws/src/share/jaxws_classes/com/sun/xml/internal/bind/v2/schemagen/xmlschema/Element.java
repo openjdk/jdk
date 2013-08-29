@@ -29,6 +29,11 @@ import javax.xml.namespace.QName;
 import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.annotation.XmlAttribute;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 public interface Element
     extends Annotated, ComplexTypeHost, FixedOrDefault, SimpleTypeHost, TypedXmlWriter
 {
@@ -38,10 +43,10 @@ public interface Element
     public Element type(QName value);
 
     @XmlAttribute
-    public Element block(String value);
+    public Element block(String[] value);
 
     @XmlAttribute
-    public Element block(String[] value);
+    public Element block(String value);
 
     @XmlAttribute
     public Element nillable(boolean value);
