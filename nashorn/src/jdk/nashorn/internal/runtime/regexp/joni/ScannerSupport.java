@@ -21,9 +21,6 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.IntHolder;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.SyntaxException;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 abstract class ScannerSupport extends IntHolder implements ErrorMessages {
 

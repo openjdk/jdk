@@ -58,6 +58,7 @@ public final class CodeRangeBuffer implements Cloneable {
         used = orig.used;
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("CodeRange");
