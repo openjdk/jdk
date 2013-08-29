@@ -1125,6 +1125,11 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(TemporalAmount amountToAdd) {
+        Objects.requireNonNull(amountToAdd, "amountToAdd");
+        if (amountToAdd instanceof Period) {
+            Period periodToAdd = (Period) amountToAdd;
+            return plusMonths(periodToAdd.toTotalMonths()).plusDays(periodToAdd.getDays());
+        }
         return (LocalDate) amountToAdd.addTo(this);
     }
 
@@ -1353,6 +1358,11 @@ public final class LocalDate
      */
     @Override
     public LocalDate minus(TemporalAmount amountToSubtract) {
+        Objects.requireNonNull(amountToSubtract, "amountToSubtract");
+        if (amountToSubtract instanceof Period) {
+            Period periodToSubtract = (Period) amountToSubtract;
+            return minusMonths(periodToSubtract.toTotalMonths()).minusDays(periodToSubtract.getDays());
+        }
         return (LocalDate) amountToSubtract.subtractFrom(this);
     }
 
