@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 1234567
+ * @bug 8023522
  * @summary test Pretty print of type annotations
  * @author wmdietl
  */
@@ -87,7 +87,7 @@ public class TypeAnnotationsPretty {
         }
         if (!tap.mismatches.isEmpty()) {
             for (String mm : tap.mismatches)
-                System.err.println(mm + "\n");
+                System.err.println(mm + NL);
             throw new RuntimeException("Tests failed!");
         }
     }
@@ -107,6 +107,7 @@ public class TypeAnnotationsPretty {
             "@Target(ElementType.TYPE_USE)" +
             "@interface TD {}";
 
+    private static final String NL = System.getProperty("line.separator");
 
     private void runField(String code) throws IOException {
         String src = prefix +
@@ -116,17 +117,10 @@ public class TypeAnnotationsPretty {
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
                 null, Arrays.asList(new MyFileObject(src)));
 
-
         for (CompilationUnitTree cut : ct.parse()) {
             JCTree.JCVariableDecl var =
                     (JCTree.JCVariableDecl) ((ClassTree) cut.getTypeDecls().get(0)).getMembers().get(0);
-
-            if (!code.equals(var.toString())) {
-                mismatches.add("Expected: " + code +
-                        "\nObtained: " + var.toString());
-            } else {
-                matches.add("Passed: " + code);
-            }
+            checkMatch(code, var);
         }
     }
 
@@ -140,15 +134,20 @@ public class TypeAnnotationsPretty {
 
 
         for (CompilationUnitTree cut : ct.parse()) {
-            JCTree.JCMethodDecl var =
+            JCTree.JCMethodDecl meth =
                     (JCTree.JCMethodDecl) ((ClassTree) cut.getTypeDecls().get(0)).getMembers().get(0);
+            checkMatch(code, meth);
+        }
+    }
 
-            if (!code.equals(var.toString())) {
-                mismatches.add("Expected: " + code +
-                        "\nObtained: " + var.toString());
-            } else {
-                matches.add("Passed: " + code);
-            }
+    void checkMatch(String code, JCTree tree) {
+        String expect = code.replace("\n", NL);
+        String found = tree.toString();
+        if (!expect.equals(found)) {
+            mismatches.add("Expected: " + expect + NL +
+                    "Obtained: " + found);
+        } else {
+            matches.add("Passed: " + expect);
         }
     }
 }
