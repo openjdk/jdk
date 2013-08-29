@@ -139,6 +139,7 @@ ifeq ($(USE_CLANG), true)
     PCH_FLAG/loopTransform.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrig.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrans.o = $(PCH_FLAG/NO_PCH)
+    PCH_FLAG/unsafe.o = $(PCH_FLAG/NO_PCH)
   
   endif
 else # ($(USE_CLANG), true)
@@ -306,6 +307,7 @@ OPT_CFLAGS/NOOPT=-O0
 ifeq ($(USE_CLANG), true)
   ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 2), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
+    OPT_CFLAGS/unsafe.o += -01
   endif
 else
   # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation.
