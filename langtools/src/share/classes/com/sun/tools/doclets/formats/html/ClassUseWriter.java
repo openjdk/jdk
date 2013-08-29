@@ -218,7 +218,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             configuration.standardmessage.
                 error("doclet.exception_encountered",
                       exc.toString(), path.getPath());
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
