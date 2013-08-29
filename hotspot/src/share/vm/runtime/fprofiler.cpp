@@ -264,7 +264,7 @@ class ProfilerNode {
 
  public:
 
-  void* operator new(size_t size, ThreadProfiler* tp);
+  void* operator new(size_t size, ThreadProfiler* tp) throw();
   void  operator delete(void* p);
 
   ProfilerNode() {
@@ -373,7 +373,7 @@ class ProfilerNode {
   }
 };
 
-void* ProfilerNode::operator new(size_t size, ThreadProfiler* tp){
+void* ProfilerNode::operator new(size_t size, ThreadProfiler* tp) throw() {
   void* result = (void*) tp->area_top;
   tp->area_top += size;
 
