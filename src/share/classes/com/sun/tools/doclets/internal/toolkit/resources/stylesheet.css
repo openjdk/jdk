@@ -180,6 +180,12 @@ ul.subNavList li{
     margin: auto 5px;
     border:1px solid #c9aa44;
 }
+.skipNav {
+    position:absolute;
+    top:auto;
+    left:-9999px;
+    overflow:hidden;
+    }
 /*
 Page header and footer styles
 */
