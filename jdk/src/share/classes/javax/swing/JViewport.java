@@ -25,6 +25,8 @@
 
 package javax.swing;
 
+import sun.swing.JLightweightFrame;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.ComponentPeer;
@@ -359,6 +361,17 @@ public class JViewport extends JComponent implements Accessible
     public void remove(Component child) {
         child.removeComponentListener(viewListener);
         super.remove(child);
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        // JLightweightFrame does not support BLIT_SCROLL_MODE, so it should be replaced
+        Window rootWindow = SwingUtilities.getWindowAncestor(this);
+        if (rootWindow instanceof JLightweightFrame
+                && getScrollMode() == BLIT_SCROLL_MODE) {
+            setScrollMode(BACKINGSTORE_SCROLL_MODE);
+        }
     }
 
 
