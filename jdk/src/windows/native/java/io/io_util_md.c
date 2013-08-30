@@ -251,12 +251,6 @@ winFileHandleOpen(JNIEnv *env, jstring path, int flags)
     free(pathbuf);
 
     if (h == INVALID_HANDLE_VALUE) {
-        int error = GetLastError();
-        if (error == ERROR_TOO_MANY_OPEN_FILES) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "IOException",
-                            "Too many open files");
-            return -1;
-        }
         throwFileNotFoundException(env, path);
         return -1;
     }

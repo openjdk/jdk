@@ -340,6 +340,14 @@ public abstract class Attribute implements AnnotationValue {
         }
     }
 
+    public static class UnresolvedClass extends Error {
+        public Type classType;
+        public UnresolvedClass(Type type, Type classType) {
+            super(type);
+            this.classType = classType;
+        }
+    }
+
     /** A visitor type for dynamic dispatch on the kind of attribute value. */
     public static interface Visitor {
         void visitConstant(Attribute.Constant value);

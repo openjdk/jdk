@@ -5478,40 +5478,42 @@ CMSParMarkTask::do_young_space_rescan(uint worker_id,
   HandleMark   hm;
 
   SequentialSubTasksDone* pst = space->par_seq_tasks();
-  assert(pst->valid(), "Uninitialized use?");
 
   uint nth_task = 0;
   uint n_tasks  = pst->n_tasks();
 
-  HeapWord *start, *end;
-  while (!pst->is_task_claimed(/* reference */ nth_task)) {
-    // We claimed task # nth_task; compute its boundaries.
-    if (chunk_top == 0) {  // no samples were taken
-      assert(nth_task == 0 && n_tasks == 1, "Can have only 1 EdenSpace task");
-      start = space->bottom();
-      end   = space->top();
-    } else if (nth_task == 0) {
-      start = space->bottom();
-      end   = chunk_array[nth_task];
-    } else if (nth_task < (uint)chunk_top) {
-      assert(nth_task >= 1, "Control point invariant");
-      start = chunk_array[nth_task - 1];
-      end   = chunk_array[nth_task];
-    } else {
-      assert(nth_task == (uint)chunk_top, "Control point invariant");
-      start = chunk_array[chunk_top - 1];
-      end   = space->top();
+  if (n_tasks > 0) {
+    assert(pst->valid(), "Uninitialized use?");
+    HeapWord *start, *end;
+    while (!pst->is_task_claimed(/* reference */ nth_task)) {
+      // We claimed task # nth_task; compute its boundaries.
+      if (chunk_top == 0) {  // no samples were taken
+        assert(nth_task == 0 && n_tasks == 1, "Can have only 1 EdenSpace task");
+        start = space->bottom();
+        end   = space->top();
+      } else if (nth_task == 0) {
+        start = space->bottom();
+        end   = chunk_array[nth_task];
+      } else if (nth_task < (uint)chunk_top) {
+        assert(nth_task >= 1, "Control point invariant");
+        start = chunk_array[nth_task - 1];
+        end   = chunk_array[nth_task];
+      } else {
+        assert(nth_task == (uint)chunk_top, "Control point invariant");
+        start = chunk_array[chunk_top - 1];
+        end   = space->top();
+      }
+      MemRegion mr(start, end);
+      // Verify that mr is in space
+      assert(mr.is_empty() || space->used_region().contains(mr),
+             "Should be in space");
+      // Verify that "start" is an object boundary
+      assert(mr.is_empty() || oop(mr.start())->is_oop(),
+             "Should be an oop");
+      space->par_oop_iterate(mr, cl);
     }
-    MemRegion mr(start, end);
-    // Verify that mr is in space
-    assert(mr.is_empty() || space->used_region().contains(mr),
-           "Should be in space");
-    // Verify that "start" is an object boundary
-    assert(mr.is_empty() || oop(mr.start())->is_oop(),
-           "Should be an oop");
-    space->par_oop_iterate(mr, cl);
+    pst->all_tasks_completed();
   }
-  pst->all_tasks_completed();
 }
 
 void
@@ -5788,7 +5790,7 @@ initialize_sequential_subtasks_for_young_gen_rescan(int n_threads) {
   DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
 
   // Eden space
-  {
+  if (!dng->eden()->is_empty()) {
     SequentialSubTasksDone* pst = dng->eden()->par_seq_tasks();
     assert(!pst->valid(), "Clobbering existing data?");
     // Each valid entry in [0, _eden_chunk_index) represents a task.
