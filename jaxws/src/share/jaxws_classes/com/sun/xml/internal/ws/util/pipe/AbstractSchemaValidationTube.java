@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.sun.xml.internal.ws.util.xml.XmlUtil.allowFileAccess;
+
 /**
  * {@link Tube} that does the schema validation.
  *
@@ -90,7 +92,7 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
         super(next);
         this.binding = binding;
         feature = binding.getFeature(SchemaValidationFeature.class);
-        sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        sf = allowFileAccess(SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI), false);
     }
 
     protected AbstractSchemaValidationTube(AbstractSchemaValidationTube that, TubeCloner cloner) {

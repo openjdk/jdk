@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
+
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
@@ -48,6 +50,9 @@ import org.xml.sax.SAXNotSupportedException;
  * @author snajper
  */
 public class XmlFactory {
+
+    // not in older JDK, so must be duplicated here, otherwise javax.xml.XMLConstants should be used
+    public static final String ACCESS_EXTERNAL_SCHEMA = "http://javax.xml.XMLConstants/property/accessExternalSchema";
 
     private static final Logger LOGGER = Logger.getLogger(XmlFactory.class.getName());
 
@@ -184,6 +189,24 @@ public class XmlFactory {
             LOGGER.log(Level.SEVERE, null, er);
             throw new IllegalStateException(Messages.INVALID_JAXP_IMPLEMENTATION.format(), er);
         }
+    }
+
+    public static SchemaFactory allowFileAccess(SchemaFactory sf, boolean disableSecureProcessing) {
+
+        // if feature secure processing enabled, nothing to do, file is allowed,
+        // or user is able to control access by standard JAXP mechanisms
+        if (disableSecureProcessing) {
+            return sf;
+        }
+
+        try {
+            sf.setProperty(ACCESS_EXTERNAL_SCHEMA, "file");
+            LOGGER.log(Level.FINE, Messages.JAXP_SUPPORTED_PROPERTY.format(ACCESS_EXTERNAL_SCHEMA));
+        } catch (SAXException ignored) {
+            // nothing to do; support depends on version JDK or SAX implementation
+            LOGGER.log(Level.CONFIG, Messages.JAXP_UNSUPPORTED_PROPERTY.format(ACCESS_EXTERNAL_SCHEMA), ignored);
+        }
+        return sf;
     }
 
 }

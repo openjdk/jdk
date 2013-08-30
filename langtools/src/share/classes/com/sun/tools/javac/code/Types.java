@@ -505,12 +505,27 @@ public class Types {
 
             //merge thrown types - form the intersection of all the thrown types in
             //all the signatures in the list
+            boolean toErase = !bestSoFar.type.hasTag(FORALL);
             List<Type> thrown = null;
-            for (Symbol msym1 : methodSyms) {
-                Type mt1 = memberType(origin.type, msym1);
+            Type mt1 = memberType(origin.type, bestSoFar);
+            for (Symbol msym2 : methodSyms) {
+                Type mt2 = memberType(origin.type, msym2);
+                List<Type> thrown_mt2 = mt2.getThrownTypes();
+                if (toErase) {
+                    thrown_mt2 = erasure(thrown_mt2);
+                } else {
+                    /* If bestSoFar is generic then all the methods are generic.
+                     * The opposite is not true: a non generic method can override
+                     * a generic method (raw override) so it's safe to cast mt1 and
+                     * mt2 to ForAll.
+                     */
+                    ForAll fa1 = (ForAll)mt1;
+                    ForAll fa2 = (ForAll)mt2;
+                    thrown_mt2 = subst(thrown_mt2, fa2.tvars, fa1.tvars);
+                }
                 thrown = (thrown == null) ?
-                    mt1.getThrownTypes() :
-                    chk.intersect(mt1.getThrownTypes(), thrown);
+                    thrown_mt2 :
+                    chk.intersect(thrown_mt2, thrown);
             }
 
             final List<Type> thrown1 = thrown;

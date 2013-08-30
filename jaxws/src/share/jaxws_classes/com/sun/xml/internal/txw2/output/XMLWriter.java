@@ -932,7 +932,7 @@ public class XMLWriter extends XMLFilterImpl implements LexicalHandler
             write("<![CDATA[");
             inCDATA = true;
         } catch (IOException e) {
-            new SAXException(e);
+            throw new SAXException(e);
         }
     }
 

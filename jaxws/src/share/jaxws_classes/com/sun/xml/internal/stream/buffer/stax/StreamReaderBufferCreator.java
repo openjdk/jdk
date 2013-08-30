@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,8 @@ public class StreamReaderBufferCreator extends StreamBufferCreator {
                     CharSequence c = reader.getPCDATA();
                     if (c instanceof Base64Data) {
                         storeStructure(T_TEXT_AS_OBJECT);
-                        storeContentObject(((Base64Data)c).clone());
+                        //Instead of clone the Base64Data, the original Base64Data instance is used here to preserve the DataHandler
+                        storeContentObject(c);
                     } else {
                         storeContentCharacters(T_TEXT_AS_CHAR_ARRAY,
                                 reader.getTextCharacters(), reader.getTextStart(),
