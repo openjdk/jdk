@@ -220,7 +220,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             return this;
         }
         // Validate that the new Temporal is a ChronoLocalDate (and not something else)
-        D cd = ChronoDateImpl.ensureValid(date.getChronology(), newDate);
+        D cd = ChronoLocalDateImpl.ensureValid(date.getChronology(), newDate);
         return new ChronoLocalDateTimeImpl<>(cd, newTime);
     }
 

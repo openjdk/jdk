@@ -96,7 +96,7 @@ import java.util.Objects;
  * @since 1.8
  */
 public final class MinguoDate
-        extends ChronoDateImpl<MinguoDate>
+        extends ChronoLocalDateImpl<MinguoDate>
         implements ChronoLocalDate, Serializable {
 
     /**
