@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.xml.internal.ws.api.server;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -91,6 +90,7 @@ public abstract class Container implements ComponentRegistry, ComponentEx {
     }
 
     public <S> S getSPI(Class<S> spiType) {
+        if (components == null) return null;
         for (Component c : components) {
                 S s = c.getSPI(spiType);
                 if (s != null)

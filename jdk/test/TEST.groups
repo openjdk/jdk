@@ -1,0 +1,214 @@
+#  Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+#  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+#  This code is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License version 2 only, as
+#  published by the Free Software Foundation.
+#
+#  This code is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#  version 2 for more details (a copy is included in the LICENSE file that
+#  accompanied this code).
+#
+#  You should have received a copy of the GNU General Public License version
+#  2 along with this work; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+#  or visit www.oracle.com if you need additional information or have any
+#  questions.
+#
+
+jdk_lang = \
+    java/lang \
+    -java/lang/management \
+    -java/lang/instrument \
+    sun/invoke \
+    sun/misc \
+    sun/reflect \
+    vm
+
+jdk_util = \
+    java/util \
+    sun/util
+
+jdk_math = \
+    java/math
+
+jdk_io = \
+    java/io
+
+jdk_nio = \
+    java/nio \
+    sun/nio
+
+jdk_net = \
+    java/net \
+    com/sun/net \
+    com/oracle/net \
+    sun/net
+
+jdk_time = \
+    java/time
+
+jdk_rmi = \
+    java/rmi \
+    javax/rmi/ssl \
+    sun/rmi
+
+jdk_security1 = \
+    java/security
+
+jdk_security2 = \
+    javax/crypto \
+    javax/xml/crypto \
+    com/sun/crypto
+
+jdk_security3 = \
+    javax/security  \
+    com/sun/security \
+    com/sun/org/apache/xml/internal/security \
+    com/oracle/security \
+    sun/security \
+    lib/security
+
+jdk_security = \
+    :jdk_security1 \
+    :jdk_security2 \
+    :jdk_security3
+
+jdk_text = \
+    java/text \
+    sun/text
+
+jdk_management = \
+    java/lang/management \
+    com/sun/management \
+    sun/management
+
+jdk_instrument = \
+    java/lang/instrument
+
+jdk_jmx = \
+    javax/management \
+    com/sun/jmx
+
+jdk_jdi = \
+    com/sun/jdi
+
+#
+# Tool (and tool API) tests are split into core and svc groups
+#
+core_tools = \
+    tools \
+    com/sun/tools/extcheck \
+    sun/tools/java \
+    sun/tools/native2ascii \
+    sun/tools/jrunscript
+
+svc_tools = \
+    com/sun/tools/attach \
+    com/sun/tracing \
+    sun/tools \
+    -sun/tools/java \
+    -sun/tools/native2ascii \
+    -sun/tools/jrunscript \
+    sun/jvmstat \
+    demo/jvmti
+
+jdk_tools = \
+    :core_tools \
+    :svc_tools
+
+#
+# Catch-all for other areas with a small number of tests
+#
+jdk_other = \
+    java/sql \
+    javax/sql \
+    javax/naming \
+    javax/script \
+    javax/smartcardio \
+    javax/xml \
+    -javax/xml/crypto \
+    jdk/asm \
+    jdk/lambda \
+    com/sun/jndi \
+    com/sun/corba \
+    lib/testlibrary \
+    demo/zipfs \
+    sample
+
+#
+# SCTP is its own group as it is highly sensitive to kernel/network config
+#
+jdk_sctp = \
+    com/sun/nio/sctp
+
+
+#
+# core group to run all core area tests
+#
+jdk_core = \
+    :jdk_lang \
+    :jdk_util \
+    :jdk_math \
+    :jdk_io \
+    :jdk_nio \
+    :jdk_net \
+    :jdk_rmi \
+    :jdk_time \
+    :jdk_security \
+    :jdk_text \
+    :core_tools \
+    :jdk_other
+
+#
+# svc group to run all serviceability area tests
+#
+jdk_svc = \
+    :jdk_management \
+    :jdk_instrument \
+    :jdk_jmx \
+    :jdk_jdi \
+    :svc_tools
+
+#############################
+
+#
+# Client area groups
+#
+
+jdk_awt = \
+    java/awt \
+    com/sun/awt \
+    com/apple/eawt \
+    sun/awt
+
+jdk_2d = \
+    javax/print \
+    sun/pisces  \
+    sun/java2d
+
+jdk_beans = \
+    java/beans
+
+jdk_swing = \
+    javax/accessibility \
+    javax/swing \
+    com/sun/java/swing
+
+jdk_sound = \
+    javax/sound
+
+jdk_imageio = \
+    javax/imageio
+
+jdk_desktop = \
+    :jdk_awt \
+    :jdk_2d \
+    :jdk_beans \
+    :jdk_swing \
+    :jdk_sound \
+    :jdk_imageio

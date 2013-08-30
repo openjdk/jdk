@@ -2216,11 +2216,11 @@ public class Check {
         if  (t.hasTag(TYPEVAR) && (t.tsym.flags() & UNATTRIBUTED) != 0)
             return;
         if (seen.contains(t)) {
-            tv = (TypeVar)t;
+            tv = (TypeVar)t.unannotatedType();
             tv.bound = types.createErrorType(t);
             log.error(pos, "cyclic.inheritance", t);
         } else if (t.hasTag(TYPEVAR)) {
-            tv = (TypeVar)t;
+            tv = (TypeVar)t.unannotatedType();
             seen = seen.prepend(tv);
             for (Type b : types.getBounds(tv))
                 checkNonCyclic1(pos, b, seen);

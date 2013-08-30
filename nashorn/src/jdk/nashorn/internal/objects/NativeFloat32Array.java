@@ -145,6 +145,11 @@ public final class NativeFloat32Array extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Float32Array";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }

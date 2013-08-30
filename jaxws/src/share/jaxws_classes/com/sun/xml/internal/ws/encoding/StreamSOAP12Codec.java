@@ -47,12 +47,6 @@ import java.io.IOException;
  * @author Paul.Sandoz@Sun.Com
  */
 final class StreamSOAP12Codec extends StreamSOAPCodec {
-    static final StreamHeaderDecoder SOAP12StreamHeaderDecoder = new StreamHeaderDecoder() {
-        @Override
-        public Header decodeHeader(XMLStreamReader reader, XMLStreamBuffer mark) {
-            return new StreamHeader12(reader, mark);
-        }
-    };
 
     public static final String SOAP12_MIME_TYPE = "application/soap+xml";
     public static final String DEFAULT_SOAP12_CONTENT_TYPE =

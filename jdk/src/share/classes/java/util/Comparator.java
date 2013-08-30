@@ -199,7 +199,7 @@ public interface Comparator<T> {
      * composed using following code,
      *
      * <pre>{@code
-     *     Comparator<String> cmp = Comparator.comparing(String::length)
+     *     Comparator<String> cmp = Comparator.comparingInt(String::length)
      *             .thenComparing(String.CASE_INSENSITIVE_ORDER);
      * }</pre>
      *
@@ -270,18 +270,18 @@ public interface Comparator<T> {
      * extracts a {@code int} sort key.
      *
      * @implSpec This default implementation behaves as if {@code
-     *           thenComparing(comparing(keyExtractor))}.
+     *           thenComparing(comparingInt(keyExtractor))}.
      *
      * @param  keyExtractor the function used to extract the integer sort key
      * @return a lexicographic-order comparator composed of this and then the
      *         {@code int} sort key
      * @throws NullPointerException if the argument is null.
-     * @see #comparing(ToIntFunction)
+     * @see #comparingInt(ToIntFunction)
      * @see #thenComparing(Comparator)
      * @since 1.8
      */
-    default Comparator<T> thenComparing(ToIntFunction<? super T> keyExtractor) {
-        return thenComparing(comparing(keyExtractor));
+    default Comparator<T> thenComparingInt(ToIntFunction<? super T> keyExtractor) {
+        return thenComparing(comparingInt(keyExtractor));
     }
 
     /**
@@ -289,18 +289,18 @@ public interface Comparator<T> {
      * extracts a {@code long} sort key.
      *
      * @implSpec This default implementation behaves as if {@code
-     *           thenComparing(comparing(keyExtractor))}.
+     *           thenComparing(comparingLong(keyExtractor))}.
      *
      * @param  keyExtractor the function used to extract the long sort key
      * @return a lexicographic-order comparator composed of this and then the
      *         {@code long} sort key
      * @throws NullPointerException if the argument is null.
-     * @see #comparing(ToLongFunction)
+     * @see #comparingLong(ToLongFunction)
      * @see #thenComparing(Comparator)
      * @since 1.8
      */
-    default Comparator<T> thenComparing(ToLongFunction<? super T> keyExtractor) {
-        return thenComparing(comparing(keyExtractor));
+    default Comparator<T> thenComparingLong(ToLongFunction<? super T> keyExtractor) {
+        return thenComparing(comparingLong(keyExtractor));
     }
 
     /**
@@ -308,18 +308,18 @@ public interface Comparator<T> {
      * extracts a {@code double} sort key.
      *
      * @implSpec This default implementation behaves as if {@code
-     *           thenComparing(comparing(keyExtractor))}.
+     *           thenComparing(comparingDouble(keyExtractor))}.
      *
      * @param  keyExtractor the function used to extract the double sort key
      * @return a lexicographic-order comparator composed of this and then the
      *         {@code double} sort key
      * @throws NullPointerException if the argument is null.
-     * @see #comparing(ToDoubleFunction)
+     * @see #comparingDouble(ToDoubleFunction)
      * @see #thenComparing(Comparator)
      * @since 1.8
      */
-    default Comparator<T> thenComparing(ToDoubleFunction<? super T> keyExtractor) {
-        return thenComparing(comparing(keyExtractor));
+    default Comparator<T> thenComparingDouble(ToDoubleFunction<? super T> keyExtractor) {
+        return thenComparing(comparingDouble(keyExtractor));
     }
 
     /**
@@ -484,7 +484,7 @@ public interface Comparator<T> {
      * @throws NullPointerException if the argument is null
      * @since 1.8
      */
-    public static <T> Comparator<T> comparing(ToIntFunction<? super T> keyExtractor) {
+    public static <T> Comparator<T> comparingInt(ToIntFunction<? super T> keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return (Comparator<T> & Serializable)
             (c1, c2) -> Integer.compare(keyExtractor.applyAsInt(c1), keyExtractor.applyAsInt(c2));
@@ -505,7 +505,7 @@ public interface Comparator<T> {
      * @throws NullPointerException if the argument is null
      * @since 1.8
      */
-    public static <T> Comparator<T> comparing(ToLongFunction<? super T> keyExtractor) {
+    public static <T> Comparator<T> comparingLong(ToLongFunction<? super T> keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return (Comparator<T> & Serializable)
             (c1, c2) -> Long.compare(keyExtractor.applyAsLong(c1), keyExtractor.applyAsLong(c2));
@@ -526,7 +526,7 @@ public interface Comparator<T> {
      * @throws NullPointerException if the argument is null
      * @since 1.8
      */
-    public static<T> Comparator<T> comparing(ToDoubleFunction<? super T> keyExtractor) {
+    public static<T> Comparator<T> comparingDouble(ToDoubleFunction<? super T> keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return (Comparator<T> & Serializable)
             (c1, c2) -> Double.compare(keyExtractor.applyAsDouble(c1), keyExtractor.applyAsDouble(c2));
