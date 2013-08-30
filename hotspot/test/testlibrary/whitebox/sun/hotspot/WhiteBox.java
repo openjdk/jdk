@@ -93,23 +93,45 @@ public class WhiteBox {
 
   // Compiler
   public native void    deoptimizeAll();
-  public native boolean isMethodCompiled(Executable method);
-  public boolean isMethodCompilable(Executable method) {
-      return isMethodCompilable(method, -1 /*any*/);
+  public        boolean isMethodCompiled(Executable method) {
+    return isMethodCompiled(method, false /*not osr*/);
   }
-  public native boolean isMethodCompilable(Executable method, int compLevel);
+  public native boolean isMethodCompiled(Executable method, boolean isOsr);
+  public        boolean isMethodCompilable(Executable method) {
+    return isMethodCompilable(method, -1 /*any*/);
+  }
+  public        boolean isMethodCompilable(Executable method, int compLevel) {
+    return isMethodCompilable(method, compLevel, false /*not osr*/);
+  }
+  public native boolean isMethodCompilable(Executable method, int compLevel, boolean isOsr);
   public native boolean isMethodQueuedForCompilation(Executable method);
-  public native int     deoptimizeMethod(Executable method);
-  public void makeMethodNotCompilable(Executable method) {
-      makeMethodNotCompilable(method, -1 /*any*/);
+  public        int     deoptimizeMethod(Executable method) {
+    return deoptimizeMethod(method, false /*not osr*/);
   }
-  public native void    makeMethodNotCompilable(Executable method, int compLevel);
-  public native int     getMethodCompilationLevel(Executable method);
+  public native int     deoptimizeMethod(Executable method, boolean isOsr);
+  public        void    makeMethodNotCompilable(Executable method) {
+    makeMethodNotCompilable(method, -1 /*any*/);
+  }
+  public        void    makeMethodNotCompilable(Executable method, int compLevel) {
+    makeMethodNotCompilable(method, compLevel, false /*not osr*/);
+  }
+  public native void    makeMethodNotCompilable(Executable method, int compLevel, boolean isOsr);
+  public        int     getMethodCompilationLevel(Executable method) {
+    return getMethodCompilationLevel(method, false /*not ost*/);
+  }
+  public native int     getMethodCompilationLevel(Executable method, boolean isOsr);
   public native boolean testSetDontInlineMethod(Executable method, boolean value);
-  public native int     getCompileQueuesSize();
+  public        int     getCompileQueuesSize() {
+    return getCompileQueueSize(-1 /*any*/);
+  }
+  public native int     getCompileQueueSize(int compLevel);
   public native boolean testSetForceInlineMethod(Executable method, boolean value);
-  public native boolean enqueueMethodForCompilation(Executable method, int compLevel);
+  public boolean        enqueueMethodForCompilation(Executable method, int compLevel) {
+    return enqueueMethodForCompilation(method, compLevel, -1 /*InvocationEntryBci*/);
+  }
+  public native boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci);
   public native void    clearMethodState(Executable method);
+  public native int     getMethodEntryBci(Executable method);
 
   // Intered strings
   public native boolean isInStringTable(String str);

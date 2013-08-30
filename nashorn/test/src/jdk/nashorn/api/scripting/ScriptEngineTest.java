@@ -1235,7 +1235,8 @@ public class ScriptEngineTest {
             fail(t.getMessage());
         }
 
-        assertEquals(sw.toString(), "hello\n");
+        // dos2unix - fix line endings if running on windows
+        assertEquals(sw.toString().replaceAll("\r", ""), "hello\n");
     }
 
     @Test
@@ -1252,6 +1253,7 @@ public class ScriptEngineTest {
             fail(t.getMessage());
         }
 
-        assertEquals(sw.toString(), "34 true hello\n");
+        // dos2unix - fix line endings if running on windows
+        assertEquals(sw.toString().replaceAll("\r", ""), "34 true hello\n");
     }
 }
