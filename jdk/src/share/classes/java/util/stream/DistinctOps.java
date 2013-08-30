@@ -101,7 +101,7 @@ final class DistinctOps {
                 if (StreamOpFlag.DISTINCT.isKnown(flags)) {
                     return sink;
                 } else if (StreamOpFlag.SORTED.isKnown(flags)) {
-                    return new Sink.ChainedReference<T>(sink) {
+                    return new Sink.ChainedReference<T, T>(sink) {
                         boolean seenNull;
                         T lastSeen;
 
@@ -132,7 +132,7 @@ final class DistinctOps {
                         }
                     };
                 } else {
-                    return new Sink.ChainedReference<T>(sink) {
+                    return new Sink.ChainedReference<T, T>(sink) {
                         Set<T> seen;
 
                         @Override

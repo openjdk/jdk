@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ final class XmlReader extends Reader {
     //
 
     /**
-     * Constructs the reader from an input stream, auto-detecting
+     * Constructs the reader from an input stream, autodetecting
      * the encoding to use according to the heuristic specified
      * in the XML 1.0 recommendation.
      *
@@ -104,7 +104,7 @@ final class XmlReader extends Reader {
      *
      * @param in       the input stream from which the reader is constructed
      * @param encoding the IETF standard name of the encoding to use;
-     *                 if null, auto-detection is used.
+     *                 if null, autodetection is used.
      * @throws IOException on error, including unrecognized encoding
      */
     public static Reader createReader(InputStream in, String encoding)

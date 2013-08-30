@@ -85,4 +85,24 @@ public class Constructors {
                " } } }";
     }
 
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
+                typeIndex = 0, offset = 4),
+        @TADescription(annotation = "TB", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
+                typeIndex = 0, offset = 0)
+    })
+    public String generic1() {
+        return "class Test { <T> Test(int i) { new <@TA T>Test(); }" +
+                           " <T> Test() { <@TB String>this(0); } }";
+    }
+
+    @TADescriptions({
+        @TADescription(annotation = "TA", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
+                typeIndex = 0, offset = 0)
+    })
+    public String generic2() {
+        return "class Super { <T> Super(int i) { } } " +
+                "class Test extends Super { <T> Test() { <@TA String>super(0); } }";
+    }
+
 }

@@ -54,6 +54,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.SchemaFactory;
 import javax.xml.ws.WebServiceException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
@@ -74,6 +75,10 @@ import java.util.logging.Logger;
  * @author WS Development Team
  */
 public class XmlUtil {
+
+    // not in older JDK, so must be duplicated here, otherwise javax.xml.XMLConstants should be used
+    private static final String ACCESS_EXTERNAL_SCHEMA = "http://javax.xml.XMLConstants/property/accessExternalSchema";
+
     private final static String LEXICAL_HANDLER_PROPERTY =
         "http://xml.org/sax/properties/lexical-handler";
 
@@ -414,4 +419,21 @@ public class XmlUtil {
         return globalSecureXmlProcessingEnabled && localSecureXmlProcessingEnabled;
     }
 
+    public static SchemaFactory allowFileAccess(SchemaFactory sf, boolean disableSecureProcessing) {
+
+        // if feature secure processing enabled, nothing to do, file is allowed,
+        // or user is able to control access by standard JAXP mechanisms
+        if (checkGlobalOverride(disableSecureProcessing)) {
+            return sf;
+        }
+
+        try {
+            sf.setProperty(ACCESS_EXTERNAL_SCHEMA, "file");
+            LOGGER.log(Level.FINE, "Property \"{}\" is supported and has been successfully set by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+        } catch (SAXException ignored) {
+            // depending on JDK/SAX implementation used
+            LOGGER.log(Level.CONFIG, "Property \"{}\" is not supported by used JAXP implementation.", new Object[]{ACCESS_EXTERNAL_SCHEMA});
+        }
+        return sf;
+    }
 }

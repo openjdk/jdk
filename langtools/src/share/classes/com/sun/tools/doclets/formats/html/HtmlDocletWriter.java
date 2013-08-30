@@ -411,7 +411,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             head.addContent(headComment);
         }
         if (configuration.charset.length() > 0) {
-            Content meta = HtmlTree.META("Content-Type", "text/html",
+            Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
                     configuration.charset);
             head.addContent(meta);
         }
