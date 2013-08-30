@@ -1323,6 +1323,19 @@ public class Vector<E>
         modCount++;
     }
 
+    /**
+     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
+     * and <em>fail-fast</em> {@link Spliterator} over the elements in this
+     * list.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
+     * {@link Spliterator#SUBSIZED}, and {@link Spliterator#ORDERED}.
+     * Overriding implementations should document the reporting of additional
+     * characteristic values.
+     *
+     * @return a {@code Spliterator} over the elements in this list
+     * @since 1.8
+     */
     @Override
     public Spliterator<E> spliterator() {
         return new VectorSpliterator<>(this, null, 0, -1, 0);

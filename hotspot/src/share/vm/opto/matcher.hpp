@@ -88,7 +88,7 @@ class Matcher : public PhaseTransform {
 
   Node *transform( Node *dummy );
 
-  Node_List &_proj_list;        // For Machine nodes killing many values
+  Node_List _projection_list;        // For Machine nodes killing many values
 
   Node_Array _shared_nodes;
 
@@ -183,10 +183,30 @@ public:
   void collect_null_checks( Node *proj, Node *orig_proj );
   void validate_null_checks( );
 
-  Matcher( Node_List &proj_list );
+  Matcher();
+
+  // Get a projection node at position pos
+  Node* get_projection(uint pos) {
+    return _projection_list[pos];
+  }
+
+  // Push a projection node onto the projection list
+  void push_projection(Node* node) {
+    _projection_list.push(node);
+  }
+
+  Node* pop_projection() {
+    return _projection_list.pop();
+  }
+
+  // Number of nodes in the projection list
+  uint number_of_projections() const {
+    return _projection_list.size();
+  }
 
   // Select instructions for entire method
-  void  match( );
+  void match();
+
   // Helper for match
   OptoReg::Name warp_incoming_stk_arg( VMReg reg );
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ import javax.security.auth.login.Configuration;
 import java.net.URI;
 
 // NOTE: As of JDK 8, this class instantiates
-// sun.security.provider.ConfigSpiFile and forwards all methods to that
+// sun.security.provider.ConfigFile.Spi and forwards all methods to that
 // implementation. All implementation fixes and enhancements should be made to
-// sun.security.provider.ConfigSpiFile and not this class.
+// sun.security.provider.ConfigFile.Spi and not this class.
 // See JDK-8005117 for more information.
 
 /**
@@ -85,7 +85,7 @@ import java.net.URI;
  */
 public class ConfigFile extends Configuration {
 
-    private sun.security.provider.ConfigSpiFile configFile;
+    private final sun.security.provider.ConfigFile.Spi spi;
 
     /**
      * Create a new {@code Configuration} object.
@@ -94,7 +94,7 @@ public class ConfigFile extends Configuration {
      *                           initialized
      */
     public ConfigFile() {
-        configFile = new sun.security.provider.ConfigSpiFile();
+        spi = new sun.security.provider.ConfigFile.Spi();
     }
 
     /**
@@ -106,7 +106,7 @@ public class ConfigFile extends Configuration {
      * @throws NullPointerException if {@code uri} is null
      */
     public ConfigFile(URI uri) {
-        configFile = new sun.security.provider.ConfigSpiFile(uri);
+        spi = new sun.security.provider.ConfigFile.Spi(uri);
     }
 
     /**
@@ -123,7 +123,7 @@ public class ConfigFile extends Configuration {
     public AppConfigurationEntry[] getAppConfigurationEntry
         (String applicationName) {
 
-        return configFile.engineGetAppConfigurationEntry(applicationName);
+        return spi.engineGetAppConfigurationEntry(applicationName);
     }
 
     /**
@@ -134,7 +134,7 @@ public class ConfigFile extends Configuration {
      *                           to refresh the {@code Configuration}
      */
     @Override
-    public synchronized void refresh() {
-        configFile.engineRefresh();
+    public void refresh() {
+        spi.engineRefresh();
     }
 }

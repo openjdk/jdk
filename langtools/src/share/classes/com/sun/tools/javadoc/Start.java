@@ -269,6 +269,8 @@ public class Start extends ToolOption.Helper {
         setDocletInvoker(docletClass, fileManager, argv);
 
         compOpts = Options.instance(context);
+        // Make sure no obsolete source/target messages are reported
+        compOpts.put("-Xlint:-options", "-Xlint:-options");
 
         // Parse arguments
         for (int i = 0 ; i < argv.length ; i++) {
