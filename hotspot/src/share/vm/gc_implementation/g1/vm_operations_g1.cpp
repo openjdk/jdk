@@ -70,9 +70,6 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(
   guarantee(target_pause_time_ms > 0.0,
             err_msg("target_pause_time_ms = %1.6lf should be positive",
                     target_pause_time_ms));
-  guarantee(word_size == 0 || gc_cause == GCCause::_g1_inc_collection_pause,
-            "we can only request an allocation if the GC cause is for "
-            "an incremental GC pause");
   _gc_cause = gc_cause;
 }
 
