@@ -559,10 +559,8 @@ static int getFlags0(JNIEnv *env, jstring name) {
 
     if ((sock = openSocketWithFallback(env, name_utf)) < 0) {
         (*env)->ReleaseStringUTFChars(env, name, name_utf);
-         return -1;
+        return -1;
     }
-
-    name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
 
     ret = getFlags(sock, name_utf, &flags);
 

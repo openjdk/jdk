@@ -49,6 +49,7 @@ class MetaspaceSummary;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
+class nmethod;
 
 class GCMessage : public FormatBuffer<1024> {
  public:
@@ -602,6 +603,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   void print_heap_before_gc();
   void print_heap_after_gc();
+
+  // Registering and unregistering an nmethod (compiled code) with the heap.
+  // Override with specific mechanism for each specialized heap type.
+  virtual void register_nmethod(nmethod* nm);
+  virtual void unregister_nmethod(nmethod* nm);
 
   void trace_heap_before_gc(GCTracer* gc_tracer);
   void trace_heap_after_gc(GCTracer* gc_tracer);

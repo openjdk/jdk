@@ -1554,6 +1554,20 @@ bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
     return false;
   }
 
+  // rewrite sourc file name index:
+  u2 source_file_name_idx = scratch_class->source_file_name_index();
+  if (source_file_name_idx != 0) {
+    u2 new_source_file_name_idx = find_new_index(source_file_name_idx);
+    scratch_class->set_source_file_name_index(new_source_file_name_idx);
+  }
+
+  // rewrite class generic signature index:
+  u2 generic_signature_index = scratch_class->generic_signature_index();
+  if (generic_signature_index != 0) {
+    u2 new_generic_signature_index = find_new_index(generic_signature_index);
+    scratch_class->set_generic_signature_index(new_generic_signature_index);
+  }
+
   return true;
 } // end rewrite_cp_refs()
 
@@ -3370,7 +3384,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // Leave arrays of jmethodIDs and itable index cache unchanged
 
   // Copy the "source file name" attribute from new class version
-  the_class->set_source_file_name(scratch_class->source_file_name());
+  the_class->set_source_file_name_index(
+    scratch_class->source_file_name_index());
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /*
  * @test
- * @bug 6960424
- * @summary new option -Xpkginfo for better control of when package-info.class is generated
+ * @bug 6960424 8022161
+ * @summary new option -Xpkginfo for better control of when package-info.class
+ *          is generated, also ensures no failures if package-info.java is
+ *          not available.
  */
 
 import java.io.*;
@@ -43,8 +45,11 @@ public class TestPkgInfo {
     public static void main(String... args) throws Exception {
         new TestPkgInfo().run(args);
     }
-
     public void run(String... args) throws Exception {
+        testPositive();
+        testNoExceptions();
+    }
+    public void testPositive(String... args) throws Exception {
         boolean[] booleanValues = { false, true };
         for (OptKind ok: OptKind.values()) {
             for (boolean sr: booleanValues) {
@@ -63,6 +68,32 @@ public class TestPkgInfo {
 
         if (errors > 0)
             throw new Exception(errors + " errors occurred");
+    }
+
+    /** this should throw no exceptions **/
+    void testNoExceptions() throws Exception {
+        count++;
+        System.err.println("Test " + count + ": ALWAYS nofile");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("package test; class Hello{}");
+
+        // test specific tmp directory
+        File tmpDir = new File("tmp.test" + count);
+        File classesDir = new File(tmpDir, "classes");
+        classesDir.mkdirs();
+        File javafile = new File(new File(tmpDir, "src"), "Hello.java");
+        writeFile(javafile, sb.toString());
+        // build up list of options and files to be compiled
+        List<String> opts = new ArrayList<>();
+        List<File> files = new ArrayList<>();
+
+        opts.add("-d");
+        opts.add(classesDir.getPath());
+        opts.add("-Xpkginfo:always");
+        files.add(javafile);
+
+        compile(opts, files);
     }
 
     void test(OptKind ok, boolean sr, boolean cr, boolean rr) throws Exception {
@@ -91,15 +122,15 @@ public class TestPkgInfo {
         writeFile(pkginfo_java, sb.toString());
 
         // build up list of options and files to be compiled
-        List<String> opts = new ArrayList<String>();
-        List<File> files = new ArrayList<File>();
+        List<String> opts = new ArrayList<>();
+        List<File> files = new ArrayList<>();
 
         opts.add("-d");
         opts.add(classesDir.getPath());
         if (ok.opt != null)
             opts.add(ok.opt);
         //opts.add("-verbose");
-        files.add(pkginfo_java);
+            files.add(pkginfo_java);
 
         compile(opts, files);
 
@@ -134,7 +165,7 @@ public class TestPkgInfo {
     /** Compile files with options provided. */
     void compile(List<String> opts, List<File> files) throws Exception {
         System.err.println("javac: " + opts + " " + files);
-        List<String> args = new ArrayList<String>();
+        List<String> args = new ArrayList<>();
         args.addAll(opts);
         for (File f: files)
             args.add(f.getPath());

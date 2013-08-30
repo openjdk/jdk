@@ -29573,7 +29573,7 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE"
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     # Setting these parameters makes it an error to link to macosx APIs that are
     # newer than the given OS version and makes the linked binaries compatible even
     # if built on a newer version of the OS.

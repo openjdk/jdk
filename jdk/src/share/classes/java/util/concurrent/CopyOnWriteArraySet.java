@@ -404,6 +404,21 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
         al.forEach(action);
     }
 
+    /**
+     * Returns a {@link Spliterator} over the elements in this set in the order
+     * in which these elements were added.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#IMMUTABLE},
+     * {@link Spliterator#DISTINCT}, {@link Spliterator#SIZED}, and
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * <p>The spliterator provides a snapshot of the state of the set
+     * when the spliterator was constructed. No synchronization is needed while
+     * operating on the spliterator.
+     *
+     * @return a {@code Spliterator} over the elements in this set
+     * @since 1.8
+     */
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator
             (al.getArray(), Spliterator.IMMUTABLE | Spliterator.DISTINCT);

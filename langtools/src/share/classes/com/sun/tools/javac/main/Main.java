@@ -262,6 +262,11 @@ public class Main {
             }
         }
 
+        if (options.get(PROFILE) != null && options.get(BOOTCLASSPATH) != null) {
+            error("err.profile.bootclasspath.conflict");
+            return null;
+        }
+
         if (this.classnames != null && classNames != null) {
             this.classnames.addAll(Arrays.asList(classNames));
         }
