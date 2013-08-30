@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -800,7 +800,7 @@ nmethod::nmethod(
 }
 #endif // def HAVE_DTRACE_H
 
-void* nmethod::operator new(size_t size, int nmethod_size) throw () {
+void* nmethod::operator new(size_t size, int nmethod_size) throw() {
   // Not critical, may return null if there is too little continuous memory
   return CodeCache::allocate(nmethod_size);
 }

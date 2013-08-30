@@ -2230,7 +2230,7 @@ bool Arguments::check_vm_args_consistency() {
   // among the distinct pages.
   if (ContendedPaddingWidth < 0 || ContendedPaddingWidth > 8192) {
     jio_fprintf(defaultStream::error_stream(),
-                "ContendedPaddingWidth=" INTX_FORMAT " must be the between %d and %d\n",
+                "ContendedPaddingWidth=" INTX_FORMAT " must be in between %d and %d\n",
                 ContendedPaddingWidth, 0, 8192);
     status = false;
   }
@@ -2239,7 +2239,7 @@ bool Arguments::check_vm_args_consistency() {
   // It is sufficient to check against the largest type size.
   if ((ContendedPaddingWidth % BytesPerLong) != 0) {
     jio_fprintf(defaultStream::error_stream(),
-                "ContendedPaddingWidth=" INTX_FORMAT " must be the multiple of %d\n",
+                "ContendedPaddingWidth=" INTX_FORMAT " must be a multiple of %d\n",
                 ContendedPaddingWidth, BytesPerLong);
     status = false;
   }
