@@ -445,7 +445,7 @@ public class Shell {
                     continue;
                 }
 
-                if (res != null && res != ScriptRuntime.UNDEFINED) {
+                if (res != ScriptRuntime.UNDEFINED) {
                     err.println(JSType.toString(res));
                 }
             }
