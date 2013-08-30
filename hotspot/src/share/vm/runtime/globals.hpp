@@ -3514,6 +3514,8 @@ class CommandLineFlags {
           "Temporary flag for transition to AbstractMethodError wrapped "   \
           "in InvocationTargetException. See 6531596")                      \
                                                                             \
+  develop(bool, VerifyLambdaBytecodes, false,                               \
+          "Force verification of jdk 8 lambda metafactory bytecodes.")      \
                                                                             \
   develop(intx, FastSuperclassLimit, 8,                                     \
           "Depth of hardwired instanceof accelerator array")                \

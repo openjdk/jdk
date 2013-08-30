@@ -188,6 +188,10 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class) {
   Symbol* name = klass->name();
   Klass* refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
+  Klass* lambda_magic_klass = SystemDictionary::lambda_MagicLambdaImpl_klass();
+
+  bool is_reflect = refl_magic_klass != NULL && klass->is_subtype_of(refl_magic_klass);
+  bool is_lambda = lambda_magic_klass != NULL && klass->is_subtype_of(lambda_magic_klass);
 
   return (should_verify_for(klass->class_loader(), should_verify_class) &&
     // return if the class is a bootstrapping class
@@ -210,9 +214,9 @@ bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool shou
     // sun/reflect/SerializationConstructorAccessor.
     // NOTE: this is called too early in the bootstrapping process to be
     // guarded by Universe::is_gte_jdk14x_version()/UseNewReflection.
-    (refl_magic_klass == NULL ||
-     !klass->is_subtype_of(refl_magic_klass) ||
-     VerifyReflectionBytecodes)
+    // Also for lambda generated code, gte jdk8
+    (!is_reflect || VerifyReflectionBytecodes) &&
+    (!is_lambda || VerifyLambdaBytecodes)
   );
 }
 
