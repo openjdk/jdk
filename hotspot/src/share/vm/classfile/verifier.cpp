@@ -2318,9 +2318,6 @@ void ClassVerifier::verify_invoke_instructions(
       types = 1 << JVM_CONSTANT_InvokeDynamic;
       break;
     case Bytecodes::_invokespecial:
-      types = (1 << JVM_CONSTANT_InterfaceMethodref) |
-              (1 << JVM_CONSTANT_Methodref);
-      break;
     case Bytecodes::_invokestatic:
       types = (_klass->major_version() < STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION) ?
         (1 << JVM_CONSTANT_Methodref) :

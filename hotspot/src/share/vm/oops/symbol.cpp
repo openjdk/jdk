@@ -41,19 +41,19 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   }
 }
 
-void* Symbol::operator new(size_t sz, int len, TRAPS) {
+void* Symbol::operator new(size_t sz, int len, TRAPS) throw() {
   int alloc_size = size(len)*HeapWordSize;
   address res = (address) AllocateHeap(alloc_size, mtSymbol);
   return res;
 }
 
-void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) {
+void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) throw() {
   int alloc_size = size(len)*HeapWordSize;
   address res = (address)arena->Amalloc(alloc_size);
   return res;
 }
 
-void* Symbol::operator new(size_t sz, int len, ClassLoaderData* loader_data, TRAPS) {
+void* Symbol::operator new(size_t sz, int len, ClassLoaderData* loader_data, TRAPS) throw() {
   address res;
   int alloc_size = size(len)*HeapWordSize;
   res = (address) Metaspace::allocate(loader_data, size(len), true,
