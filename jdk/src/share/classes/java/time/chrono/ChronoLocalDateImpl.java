@@ -140,7 +140,7 @@ import java.util.Objects;
  * @param <D> the ChronoLocalDate of this date-time
  * @since 1.8
  */
-abstract class ChronoDateImpl<D extends ChronoLocalDate>
+abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
         implements ChronoLocalDate, Temporal, TemporalAdjuster, Serializable {
 
     /**
@@ -170,7 +170,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
     /**
      * Creates an instance.
      */
-    ChronoDateImpl() {
+    ChronoLocalDateImpl() {
     }
 
     @Override
@@ -309,7 +309,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      */
     @SuppressWarnings("unchecked")
     D minusYears(long yearsToSubtract) {
-        return (yearsToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusYears(Long.MAX_VALUE)).plusYears(1) : plusYears(-yearsToSubtract));
+        return (yearsToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusYears(Long.MAX_VALUE)).plusYears(1) : plusYears(-yearsToSubtract));
     }
 
     /**
@@ -330,7 +330,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      */
     @SuppressWarnings("unchecked")
     D minusMonths(long monthsToSubtract) {
-        return (monthsToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusMonths(Long.MAX_VALUE)).plusMonths(1) : plusMonths(-monthsToSubtract));
+        return (monthsToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusMonths(Long.MAX_VALUE)).plusMonths(1) : plusMonths(-monthsToSubtract));
     }
 
     /**
@@ -350,7 +350,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      */
     @SuppressWarnings("unchecked")
     D minusWeeks(long weeksToSubtract) {
-        return (weeksToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusWeeks(Long.MAX_VALUE)).plusWeeks(1) : plusWeeks(-weeksToSubtract));
+        return (weeksToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusWeeks(Long.MAX_VALUE)).plusWeeks(1) : plusWeeks(-weeksToSubtract));
     }
 
     /**
@@ -368,7 +368,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      */
     @SuppressWarnings("unchecked")
     D minusDays(long daysToSubtract) {
-        return (daysToSubtract == Long.MIN_VALUE ? ((ChronoDateImpl<D>)plusDays(Long.MAX_VALUE)).plusDays(1) : plusDays(-daysToSubtract));
+        return (daysToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusDays(Long.MAX_VALUE)).plusDays(1) : plusDays(-daysToSubtract));
     }
 
     //-----------------------------------------------------------------------
@@ -411,7 +411,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
     private long monthsUntil(ChronoLocalDate end) {
         ValueRange range = getChronology().range(MONTH_OF_YEAR);
         if (range.getMaximum() != 12) {
-            throw new IllegalStateException("ChronoDateImpl only supports Chronologies with 12 months per year");
+            throw new IllegalStateException("ChronoLocalDateImpl only supports Chronologies with 12 months per year");
         }
         long packed1 = getLong(PROLEPTIC_MONTH) * 32L + get(DAY_OF_MONTH);  // no overflow
         long packed2 = end.getLong(PROLEPTIC_MONTH) * 32L + end.get(DAY_OF_MONTH);  // no overflow

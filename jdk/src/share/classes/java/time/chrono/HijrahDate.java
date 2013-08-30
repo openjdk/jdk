@@ -109,7 +109,7 @@ import java.time.temporal.ValueRange;
  * @since 1.8
  */
 public final class HijrahDate
-        extends ChronoDateImpl<HijrahDate>
+        extends ChronoLocalDateImpl<HijrahDate>
         implements ChronoLocalDate, Serializable {
 
     /**

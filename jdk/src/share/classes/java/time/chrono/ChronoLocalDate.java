@@ -428,7 +428,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate with(TemporalAdjuster adjuster) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -442,7 +442,7 @@ public interface ChronoLocalDate
         if (field instanceof ChronoField) {
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
-        return ChronoDateImpl.ensureValid(getChronology(), field.adjustInto(this, newValue));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), field.adjustInto(this, newValue));
     }
 
     /**
@@ -452,7 +452,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate plus(TemporalAmount amount) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -465,7 +465,7 @@ public interface ChronoLocalDate
         if (unit instanceof ChronoUnit) {
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return ChronoDateImpl.ensureValid(getChronology(), unit.addTo(this, amountToAdd));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), unit.addTo(this, amountToAdd));
     }
 
     /**
@@ -475,7 +475,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate minus(TemporalAmount amount) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -486,7 +486,7 @@ public interface ChronoLocalDate
      */
     @Override
     default ChronoLocalDate minus(long amountToSubtract, TemporalUnit unit) {
-        return ChronoDateImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
+        return ChronoLocalDateImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------

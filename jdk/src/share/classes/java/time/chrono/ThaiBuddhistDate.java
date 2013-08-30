@@ -96,7 +96,7 @@ import java.util.Objects;
  * @since 1.8
  */
 public final class ThaiBuddhistDate
-        extends ChronoDateImpl<ThaiBuddhistDate>
+        extends ChronoLocalDateImpl<ThaiBuddhistDate>
         implements ChronoLocalDate, Serializable {
 
     /**
