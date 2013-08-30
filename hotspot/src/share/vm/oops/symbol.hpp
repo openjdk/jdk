@@ -136,9 +136,9 @@ class Symbol : private SymbolBase {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len, TRAPS);
-  void* operator new(size_t size, int len, Arena* arena, TRAPS);
-  void* operator new(size_t size, int len, ClassLoaderData* loader_data, TRAPS);
+  void* operator new(size_t size, int len, TRAPS) throw();
+  void* operator new(size_t size, int len, Arena* arena, TRAPS) throw();
+  void* operator new(size_t size, int len, ClassLoaderData* loader_data, TRAPS) throw();
 
   void  operator delete(void* p);
 

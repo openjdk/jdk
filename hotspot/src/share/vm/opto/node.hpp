@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ public:
 
   // New Operator that takes a Compile pointer, this will eventually
   // be the "new" New operator.
-  inline void* operator new( size_t x, Compile* C) {
+  inline void* operator new( size_t x, Compile* C) throw() {
     Node* n = (Node*)C->node_arena()->Amalloc_D(x);
 #ifdef ASSERT
     n->_in = (Node**)n; // magic cookie for assertion check
