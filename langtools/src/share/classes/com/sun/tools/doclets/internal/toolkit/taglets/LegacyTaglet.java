@@ -130,7 +130,13 @@ public class LegacyTaglet implements Taglet {
     public Content getTagletOutput(Doc holder, TagletWriter writer)
             throws IllegalArgumentException {
         Content output = writer.getOutputInstance();
-        output.addContent(new RawHtml(legacyTaglet.toString(holder.tags(getName()))));
+        Tag[] tags = holder.tags(getName());
+        if (tags.length > 0) {
+            String tagString = legacyTaglet.toString(tags);
+            if (tagString != null) {
+                output.addContent(new RawHtml(tagString));
+            }
+        }
         return output;
     }
 }
