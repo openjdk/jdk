@@ -925,6 +925,8 @@ void FlatProfiler::record_thread_ticks() {
       FlatProfiler::interval_print();
       FlatProfiler::interval_reset();
     }
+
+    FREE_C_HEAP_ARRAY(JavaThread *, threadsList, mtInternal);
   } else {
     // Couldn't get the threads lock, just record that rather than blocking
     FlatProfiler::threads_lock_ticks += 1;
