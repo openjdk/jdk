@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684 8016921
+ * @bug      8006124 8009684 8016921 8023700
  * @summary  Test javadoc support for profiles.
  * @author   Bhavesh Patel
  * @library  ../lib/
@@ -49,7 +49,7 @@ public class TestProfiles extends JavadocTester {
         // Tests for profile-overview-frame.html listing all profiles.
         {PROFILE_BUG_ID + FS + "profile-overview-frame.html",
             "<span><a href=\"overview-frame.html\" "
-            + "target=\"packageListFrame\">All Packages</a></span>"
+            + "target=\"packageListFrame\">All&nbsp;Packages</a></span>"
         },
         {PROFILE_BUG_ID + FS + "profile-overview-frame.html",
             "<li><a href=\"compact1-frame.html\" target=\"packageListFrame\">"
@@ -58,8 +58,8 @@ public class TestProfiles extends JavadocTester {
         // Tests for profileName-frame.html listing all packages in a profile.
         {PROFILE_BUG_ID + FS + "compact2-frame.html",
             "<span><a href=\"overview-frame.html\" target=\"packageListFrame\">"
-            + "All Packages</a></span><span><a href=\"profile-overview-frame.html\" "
-            + "target=\"packageListFrame\">All Profiles</a></span>"
+            + "All&nbsp;Packages</a></span><span><a href=\"profile-overview-frame.html\" "
+            + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>"
         },
         {PROFILE_BUG_ID + FS + "compact2-frame.html",
             "<li><a href=\"pkg4/compact2-package-frame.html\" "
@@ -74,8 +74,8 @@ public class TestProfiles extends JavadocTester {
         },
         // Tests for profileName-summary.html listing the summary for a profile.
         {PROFILE_BUG_ID + FS + "compact2-summary.html",
-            "<li><a href=\"compact1-summary.html\">Prev Profile</a></li>" + NL
-            + "<li><a href=\"compact3-summary.html\">Next Profile</a></li>"
+            "<li><a href=\"compact1-summary.html\">Prev&nbsp;Profile</a></li>" + NL
+            + "<li><a href=\"compact3-summary.html\">Next&nbsp;Profile</a></li>"
         },
         {PROFILE_BUG_ID + FS + "compact2-summary.html",
             "<h1 title=\"Profile\" class=\"title\">Profile&nbsp;compact2</h1>"
@@ -87,7 +87,7 @@ public class TestProfiles extends JavadocTester {
         // Tests for profileName-package-summary.html listing the summary for a
         // package in a profile.
         {PROFILE_BUG_ID + FS + "pkg5" + FS + "compact3-package-summary.html",
-            "<li><a href=\"../pkg4/compact3-package-summary.html\">Prev Package"
+            "<li><a href=\"../pkg4/compact3-package-summary.html\">Prev&nbsp;Package"
             + "</a></li>"
         },
         {PROFILE_BUG_ID + FS + "pkg5" + FS + "compact3-package-summary.html",
@@ -96,7 +96,7 @@ public class TestProfiles extends JavadocTester {
         //Test for "overview-frame.html" showing the "All Profiles" link.
         {PROFILE_BUG_ID + FS + "overview-frame.html",
             "<span><a href=\"profile-overview-frame.html\" "
-            + "target=\"packageListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>"
         },
         //Test for "className.html" showing the profile information for the type.
         {PROFILE_BUG_ID + FS + "pkg2" + FS + "Class1Pkg2.html",
@@ -143,12 +143,12 @@ public class TestProfiles extends JavadocTester {
     private static final String[][] PACKAGES_NEGATED_TEST = {
         {PACKAGE_BUG_ID + FS + "profile-overview-frame.html",
             "<span><a href=\"overview-frame.html\" "
-            + "target=\"packageListFrame\">All Packages</a></span>"
+            + "target=\"packageListFrame\">All&nbsp;Packages</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "compact2-frame.html",
             "<span><a href=\"overview-frame.html\" target=\"packageListFrame\">"
-            + "All Packages</a></span><span><a href=\"profile-overview-frame.html\" "
-            + "target=\"packageListFrame\">All Profiles</a></span>"
+            + "All&nbsp;Packages</a></span><span><a href=\"profile-overview-frame.html\" "
+            + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "pkg2" + FS + "compact2-package-frame.html",
             "<a href=\"../compact2-summary.html\" target=\"classFrame\">"
@@ -163,7 +163,7 @@ public class TestProfiles extends JavadocTester {
         },
         {PACKAGE_BUG_ID + FS + "overview-frame.html",
             "<span><a href=\"profile-overview-frame.html\" "
-            + "target=\"packageListFrame\">All Profiles</a></span>"
+            + "target=\"packageListFrame\">All&nbsp;Profiles</a></span>"
         },
         {PACKAGE_BUG_ID + FS + "pkg2" + FS + "Class1Pkg2.html",
             "<div class=\"subTitle\">compact1, compact2, compact3</div>"

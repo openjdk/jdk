@@ -203,27 +203,27 @@ public class HtmlWriter {
         useLabel = getResource("doclet.navClassUse");
         prevLabel = getResource("doclet.Prev");
         nextLabel = getResource("doclet.Next");
-        prevclassLabel = getResource("doclet.Prev_Class");
-        nextclassLabel = getResource("doclet.Next_Class");
+        prevclassLabel = getNonBreakResource("doclet.Prev_Class");
+        nextclassLabel = getNonBreakResource("doclet.Next_Class");
         summaryLabel = getResource("doclet.Summary");
         detailLabel = getResource("doclet.Detail");
         framesLabel = getResource("doclet.Frames");
-        noframesLabel = getResource("doclet.No_Frames");
+        noframesLabel = getNonBreakResource("doclet.No_Frames");
         treeLabel = getResource("doclet.Tree");
         classLabel = getResource("doclet.Class");
         deprecatedLabel = getResource("doclet.navDeprecated");
         deprecatedPhrase = getResource("doclet.Deprecated");
-        allclassesLabel = getResource("doclet.All_Classes");
-        allpackagesLabel = getResource("doclet.All_Packages");
-        allprofilesLabel = getResource("doclet.All_Profiles");
+        allclassesLabel = getNonBreakResource("doclet.All_Classes");
+        allpackagesLabel = getNonBreakResource("doclet.All_Packages");
+        allprofilesLabel = getNonBreakResource("doclet.All_Profiles");
         indexLabel = getResource("doclet.Index");
         helpLabel = getResource("doclet.Help");
         seeLabel = getResource("doclet.See");
         descriptionLabel = getResource("doclet.Description");
-        prevpackageLabel = getResource("doclet.Prev_Package");
-        nextpackageLabel = getResource("doclet.Next_Package");
-        prevprofileLabel = getResource("doclet.Prev_Profile");
-        nextprofileLabel = getResource("doclet.Next_Profile");
+        prevpackageLabel = getNonBreakResource("doclet.Prev_Package");
+        nextpackageLabel = getNonBreakResource("doclet.Next_Package");
+        prevprofileLabel = getNonBreakResource("doclet.Prev_Profile");
+        nextprofileLabel = getNonBreakResource("doclet.Next_Profile");
         packagesLabel = getResource("doclet.Packages");
         profilesLabel = getResource("doclet.Profiles");
         methodDetailsLabel = getResource("doclet.Method_Detail");
@@ -254,6 +254,27 @@ public class HtmlWriter {
      */
     public Content getResource(String key) {
         return configuration.getResource(key);
+    }
+
+    /**
+     * Get the configuration string as a content, replacing spaces
+     * with non-breaking spaces.
+     *
+     * @param key the key to look for in the configuration file
+     * @return a content tree for the text
+     */
+    public Content getNonBreakResource(String key) {
+        String text = configuration.getText(key);
+        Content c = configuration.newContent();
+        int start = 0;
+        int p;
+        while ((p = text.indexOf(" ", start)) != -1) {
+            c.addContent(text.substring(start, p));
+            c.addContent(RawHtml.nbsp);
+            start = p + 1;
+        }
+        c.addContent(text.substring(start));
+        return c;
     }
 
     /**
