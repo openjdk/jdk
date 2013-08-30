@@ -502,16 +502,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (!configuration.nonavbar) {
             String allClassesId = "allclasses_";
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
+            Content skipNavLinks = configuration.getResource("doclet.Skip_navigation_links");
             if (header) {
                 body.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
                 navDiv.addStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
                 Content a = getMarkerAnchor("navbar_top");
+                //WCAG - Hyperlinks should contain text or an image with alt text - for AT tools
                 navDiv.addContent(a);
-                Content skipLinkContent = getHyperLink(DocLink.fragment("skip-navbar_top"),
-                        HtmlTree.EMPTY,
-                        configuration.getText("doclet.Skip_navigation_links"),
-                        "");
+                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
+                    DocLink.fragment("skip-navbar_top"), skipNavLinks,
+                    skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             } else {
                 body.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
@@ -519,10 +520,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 allClassesId += "navbar_bottom";
                 Content a = getMarkerAnchor("navbar_bottom");
                 navDiv.addContent(a);
-                Content skipLinkContent = getHyperLink(DocLink.fragment("skip-navbar_bottom"),
-                        HtmlTree.EMPTY,
-                        configuration.getText("doclet.Skip_navigation_links"),
-                        "");
+                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
+                    DocLink.fragment("skip-navbar_bottom"), skipNavLinks,
+                    skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             }
             if (header) {
