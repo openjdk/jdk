@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class oopDesc {
   volatile markOop  _mark;
   union _metadata {
     Klass*      _klass;
-    narrowOop       _compressed_klass;
+    narrowKlass _compressed_klass;
   } _metadata;
 
   // Fast access to barrier set.  Must be initialized.
@@ -84,7 +84,7 @@ class oopDesc {
   Klass* klass() const;
   Klass* klass_or_null() const volatile;
   Klass** klass_addr();
-  narrowOop* compressed_klass_addr();
+  narrowKlass* compressed_klass_addr();
 
   void set_klass(Klass* k);
 
@@ -188,13 +188,6 @@ class oopDesc {
                                          volatile HeapWord *dest,
                                          oop compare_value,
                                          bool prebarrier = false);
-
-  // klass encoding for klass pointer in objects.
-  static narrowOop encode_klass_not_null(Klass* v);
-  static narrowOop encode_klass(Klass* v);
-
-  static Klass* decode_klass_not_null(narrowOop v);
-  static Klass* decode_klass(narrowOop v);
 
   // Access to fields in a instanceOop through these methods.
   oop obj_field(int offset) const;

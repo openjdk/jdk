@@ -825,7 +825,7 @@ public final class Math {
     public static int multiplyExact(int x, int y) {
         long r = (long)x * (long)y;
         if ((int)r != r) {
-            throw new ArithmeticException("long overflow");
+            throw new ArithmeticException("integer overflow");
         }
         return (int)r;
     }
@@ -854,6 +854,108 @@ public final class Math {
             }
         }
         return r;
+    }
+
+    /**
+     * Returns the argument incremented by one, throwing an exception if the
+     * result overflows an {@code int}.
+     *
+     * @param a the value to increment
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @since 1.8
+     */
+    public static int incrementExact(int a) {
+        if (a == Integer.MAX_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+
+        return a + 1;
+    }
+
+    /**
+     * Returns the argument incremented by one, throwing an exception if the
+     * result overflows a {@code long}.
+     *
+     * @param a the value to increment
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @since 1.8
+     */
+    public static long incrementExact(long a) {
+        if (a == Long.MAX_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+
+        return a + 1L;
+    }
+
+    /**
+     * Returns the argument decremented by one, throwing an exception if the
+     * result overflows an {@code int}.
+     *
+     * @param a the value to decrement
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @since 1.8
+     */
+    public static int decrementExact(int a) {
+        if (a == Integer.MIN_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+
+        return a - 1;
+    }
+
+    /**
+     * Returns the argument decremented by one, throwing an exception if the
+     * result overflows a {@code long}.
+     *
+     * @param a the value to decrement
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @since 1.8
+     */
+    public static long decrementExact(long a) {
+        if (a == Long.MIN_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+
+        return a - 1L;
+    }
+
+    /**
+     * Returns the negation of the argument, throwing an exception if the
+     * result overflows an {@code int}.
+     *
+     * @param a the value to negate
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @since 1.8
+     */
+    public static int negateExact(int a) {
+        if (a == Integer.MIN_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+
+        return -a;
+    }
+
+    /**
+     * Returns the negation of the argument, throwing an exception if the
+     * result overflows a {@code long}.
+     *
+     * @param a the value to negate
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @since 1.8
+     */
+    public static long negateExact(long a) {
+        if (a == Long.MIN_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+
+        return -a;
     }
 
     /**
