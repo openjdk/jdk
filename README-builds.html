@@ -1210,19 +1210,18 @@
             <blockquote>
 
                 <p>
-                    <b>Q:</b> The <code>configure</code> file looks horrible! 
+                    <b>Q:</b> The <code>generated-configure.sh</code> file looks horrible! 
                     How are you going to edit it?
                     <br>
-                    <b>A:</b> The <code>configure</code> file is generated (think
+                    <b>A:</b> The <code>generated-configure.sh</code> file is generated (think
                     "compiled") by the autoconf tools. The source code is
-                    in <code>configure.ac</code> various .m4 files in common/autoconf,
-                    which are
-                    much more readable.
+                    in <code>configure.ac</code> and various .m4 files in common/autoconf,
+                    which are much more readable.
                 </p>
 
                 <p>
                     <b>Q:</b> 
-                    Why is the <code>configure</code> file checked in, 
+                    Why is the <code>generated-configure.sh</code> file checked in, 
                     if it is generated?
                     <br>
                     <b>A:</b> 
@@ -1237,13 +1236,29 @@
                 <p>
                     <b>Q:</b>
                     Do you require a specific version of autoconf for regenerating
-                    <code>configure</code>?
+                    <code>generated-configure.sh</code>?
                     <br>
                     <b>A:</b>
-                    Currently, no, but this will likely be the case when things have 
-                    settled down a bit more. (The reason for this is to avoid
-                    large spurious changes in <code>configure</code> 
-                    in commits that made small changes to <code>configure.ac</code>).
+                    Yes, version 2.69 is required and should be easy
+                    enough to aquire on all supported operating
+                    systems.  The reason for this is to avoid
+                    large spurious changes in <code>generated-configure.sh</code>.
+                </p>
+
+                <p>
+                    <b>Q:</b>
+                    How do you regenerate <code>generated-configure.sh</code>
+                    after making changes to the input files?
+                    <br>
+                    <b>A:</b>
+                    Regnerating <code>generated-configure.sh</code>
+                    should always be done using the
+                    script <code>common/autoconf/autogen.sh</code> to
+                    ensure that the correct files get updated. This
+                    script should also be run after mercurial tries to
+                    merge <code>generated-configure.sh</code> as a
+                    merge of the generated file is not guaranteed to
+                    be correct.
                 </p>
 
                 <p>
