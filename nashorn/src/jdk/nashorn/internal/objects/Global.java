@@ -35,12 +35,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -72,8 +72,8 @@ import jdk.nashorn.internal.scripts.JO;
  */
 @ScriptClass("Global")
 public final class Global extends ScriptObject implements GlobalObject, Scope {
-    private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
-    private static final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
+    private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
+    private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
 
     /** ECMA 15.1.2.2 parseInt (string , radix) */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
@@ -418,7 +418,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
         // security check first
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new RuntimePermission("nashorn.newGlobal"));
+            sm.checkPermission(new RuntimePermission(Context.NASHORN_CREATE_GLOBAL));
         }
 
         // null check on context
@@ -707,6 +707,35 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     public void cacheClass(final Source source, final Class<?> clazz) {
         assert classCache != null : "Class cache used without being initialized";
         classCache.put(source, new SoftReference<Class<?>>(clazz));
+    }
+
+    private static <T> T getLazilyCreatedValue(final Object key, final Callable<T> creator, final Map<Object, T> map) {
+        final T obj = map.get(key);
+        if (obj != null) {
+            return obj;
+        }
+
+        try {
+            final T newObj = creator.call();
+            final T existingObj = map.putIfAbsent(key, newObj);
+            return existingObj != null ? existingObj : newObj;
+        } catch (final Exception exp) {
+            throw new RuntimeException(exp);
+        }
+    }
+
+    private final Map<Object, InvokeByName> namedInvokers = new ConcurrentHashMap<>();
+
+    @Override
+    public InvokeByName getInvokeByName(final Object key, final Callable<InvokeByName> creator) {
+        return getLazilyCreatedValue(key, creator, namedInvokers);
+    }
+
+    private final Map<Object, MethodHandle> dynamicInvokers = new ConcurrentHashMap<>();
+
+    @Override
+    public MethodHandle getDynamicInvoker(final Object key, final Callable<MethodHandle> creator) {
+        return getLazilyCreatedValue(key, creator, dynamicInvokers);
     }
 
     /**
@@ -1749,19 +1778,13 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                for (Field f : scriptEnv.getClass().getFields()) {
-                    try {
-                        options.set(f.getName(), f.get(scriptEnv), false);
-                    } catch (final IllegalArgumentException | IllegalAccessException exp) {
-                        throw new RuntimeException(exp);
-                    }
-                }
-                return null;
+        for (Field f : scriptEnv.getClass().getFields()) {
+            try {
+                options.set(f.getName(), f.get(scriptEnv), false);
+            } catch (final IllegalArgumentException | IllegalAccessException exp) {
+                throw new RuntimeException(exp);
             }
-        });
+        }
     }
 
     private void initTypedArray() {

@@ -98,8 +98,7 @@ public class ClipboardTransferable implements Transferable {
                 }
 
                 flavors = DataTransferer.getInstance().
-                    setToSortedDataFlavorArray(flavorsToData.keySet(),
-                                               flavorsForFormats);
+                    setToSortedDataFlavorArray(flavorsToData.keySet());
             }
         } finally {
             clipboard.closeClipboard();

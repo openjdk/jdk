@@ -76,6 +76,7 @@ public class SAXParser
         XMLGRAMMAR_POOL,
     };
 
+    XMLSecurityPropertyManager securityPropertyManager;
     //
     // Constructors
     //
@@ -129,16 +130,19 @@ public class SAXParser
      */
     public void setProperty(String name, Object value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
-        XMLSecurityPropertyManager spm = new XMLSecurityPropertyManager();
-        int index = spm.getIndex(name);
+        if (securityPropertyManager == null) {
+            securityPropertyManager = new XMLSecurityPropertyManager();
+        }
+        int index = securityPropertyManager.getIndex(name);
+
         if (index > -1) {
             /**
              * this is a direct call to this parser, not a subclass since
              * internally the support of this property is done through
              * XMLSecurityPropertyManager
              */
-            spm.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
-            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, spm);
+            securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
+            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
         } else {
             super.setProperty(name, value);
         }

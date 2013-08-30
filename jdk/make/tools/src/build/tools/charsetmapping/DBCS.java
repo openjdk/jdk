@@ -196,11 +196,14 @@ public class DBCS {
 
         // (5) c2b replacement, only used for JIs0208/0212, which
         // are two pure db charsets so default '3f' does not work
+        // TBD: move this into configuration file
         String c2bRepl = "";
         if (clzName.startsWith("JIS_X_0208")) {
             c2bRepl = "new byte[]{ (byte)0x21, (byte)0x29 },";
         } else if (clzName.startsWith("JIS_X_0212")) {
             c2bRepl = "new byte[]{ (byte)0x22, (byte)0x44 },";
+        } else if (clzName.startsWith("IBM300")) {
+            c2bRepl = "new byte[]{ (byte)0x42, (byte)0x6f },";
         }
 
         while (s.hasNextLine()) {
