@@ -24,28 +24,8 @@
 package pkg2;
 
 /**
- * @deprecated Class1Pkg2. This class is deprecated
+ * Simple error class.
  *
- * @author Bhavesh Patel
+ * @author Evgeniya Stepanova
  */
-public class Class1Pkg2 {
-
-    /**
-     * A sample enum.
-     */
-    public static enum ModalExclusionType {
-        /**
-         * Test comment.
-         */
-        NO_EXCLUDE,
-        /**
-         * Another comment.
-         */
-        APPLICATION_EXCLUDE
-    };
-
-    /**
-     * A string constant.
-     */
-    public static final String CONSTANT1 = "C2";
-}
+public class ClassError extends Error {}

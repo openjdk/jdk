@@ -21,31 +21,9 @@
  * questions.
  */
 
-package pkg2;
-
 /**
- * @deprecated Class1Pkg2. This class is deprecated
+ * Deprecated package.
  *
- * @author Bhavesh Patel
+ * @deprecated This package is <b>Deprecated</b>. Use pkg1.
  */
-public class Class1Pkg2 {
-
-    /**
-     * A sample enum.
-     */
-    public static enum ModalExclusionType {
-        /**
-         * Test comment.
-         */
-        NO_EXCLUDE,
-        /**
-         * Another comment.
-         */
-        APPLICATION_EXCLUDE
-    };
-
-    /**
-     * A string constant.
-     */
-    public static final String CONSTANT1 = "C2";
-}
+package pkgDeprecated;
