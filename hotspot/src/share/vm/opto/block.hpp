@@ -318,23 +318,6 @@ public:
   // Find and remove n from block list
   void find_remove( const Node *n );
 
-  // helper function that adds caller save registers to MachProjNode
-  void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe);
-  // Schedule a call next in the block
-  uint sched_call(Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call);
-
-  // Perform basic-block local scheduling
-  Node *select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot);
-  void set_next_call( Node *n, VectorSet &next_call, PhaseCFG* cfg);
-  void needed_for_next_call(Node *this_call, VectorSet &next_call, PhaseCFG* cfg);
-  bool schedule_local(PhaseCFG *cfg, Matcher &m, GrowableArray<int> &ready_cnt, VectorSet &next_call);
-  // Cleanup if any code lands between a Call and his Catch
-  void call_catch_cleanup(PhaseCFG* cfg, Compile *C);
-  // Detect implicit-null-check opportunities.  Basically, find NULL checks
-  // with suitable memory ops nearby.  Use the memory op to do the NULL check.
-  // I can generate a memory op if there is not one nearby.
-  void implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowed_reasons);
-
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
   int is_Empty() const;
@@ -365,10 +348,6 @@ public:
 
   // Examine block's code shape to predict if it is not commonly executed.
   bool has_uncommon_code() const;
-
-  // Use frequency calculations and code shape to predict if the block
-  // is uncommon.
-  bool is_uncommon(PhaseCFG* cfg) const;
 
 #ifndef PRODUCT
   // Debugging print of basic block
@@ -451,6 +430,27 @@ class PhaseCFG : public Phase {
   // Pick a block between early and late that is a cheaper alternative
   // to late. Helper for schedule_late.
   Block* hoist_to_cheaper_block(Block* LCA, Block* early, Node* self);
+
+  bool schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call);
+  void set_next_call(Block* block, Node* n, VectorSet& next_call);
+  void needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call);
+
+  // Perform basic-block local scheduling
+  Node* select(Block* block, Node_List& worklist, GrowableArray<int>& ready_cnt, VectorSet& next_call, uint sched_slot);
+
+  // Schedule a call next in the block
+  uint sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call);
+
+  // Cleanup if any code lands between a Call and his Catch
+  void call_catch_cleanup(Block* block);
+
+  Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
+  void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
+
+  // Detect implicit-null-check opportunities.  Basically, find NULL checks
+  // with suitable memory ops nearby.  Use the memory op to do the NULL check.
+  // I can generate a memory op if there is not one nearby.
+  void implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons);
 
   // Perform a Depth First Search (DFS).
   // Setup 'vertex' as DFS to vertex mapping.
@@ -567,6 +567,10 @@ class PhaseCFG : public Phase {
   bool has_block(const Node* node) const {
     return (_node_to_block_mapping.lookup(node->_idx) != NULL);
   }
+
+  // Use frequency calculations and code shape to predict if the block
+  // is uncommon.
+  bool is_uncommon(const Block* block);
 
 #ifdef ASSERT
   Unique_Node_List _raw_oops;

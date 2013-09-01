@@ -209,15 +209,15 @@ bool Block::has_uncommon_code() const {
 
 // True if block is low enough frequency or guarded by a test which
 // mostly does not go here.
-bool Block::is_uncommon(PhaseCFG* cfg) const {
+bool PhaseCFG::is_uncommon(const Block* block) {
   // Initial blocks must never be moved, so are never uncommon.
-  if (head()->is_Root() || head()->is_Start())  return false;
+  if (block->head()->is_Root() || block->head()->is_Start())  return false;
 
   // Check for way-low freq
-  if( _freq < BLOCK_FREQUENCY(0.00001f) ) return true;
+  if(block->_freq < BLOCK_FREQUENCY(0.00001f) ) return true;
 
   // Look for code shape indicating uncommon_trap or slow path
-  if (has_uncommon_code()) return true;
+  if (block->has_uncommon_code()) return true;
 
   const float epsilon = 0.05f;
   const float guard_factor = PROB_UNLIKELY_MAG(4) / (1.f - epsilon);
@@ -225,8 +225,8 @@ bool Block::is_uncommon(PhaseCFG* cfg) const {
   uint freq_preds = 0;
   uint uncommon_for_freq_preds = 0;
 
-  for( uint i=1; i<num_preds(); i++ ) {
-    Block* guard = cfg->get_block_for_node(pred(i));
+  for( uint i=1; i< block->num_preds(); i++ ) {
+    Block* guard = get_block_for_node(block->pred(i));
     // Check to see if this block follows its guard 1 time out of 10000
     // or less.
     //
@@ -244,14 +244,14 @@ bool Block::is_uncommon(PhaseCFG* cfg) const {
       uncommon_preds++;
     } else {
       freq_preds++;
-      if( _freq < guard->_freq * guard_factor ) {
+      if(block->_freq < guard->_freq * guard_factor ) {
         uncommon_for_freq_preds++;
       }
     }
   }
-  if( num_preds() > 1 &&
+  if( block->num_preds() > 1 &&
       // The block is uncommon if all preds are uncommon or
-      (uncommon_preds == (num_preds()-1) ||
+      (uncommon_preds == (block->num_preds()-1) ||
       // it is uncommon for all frequent preds.
        uncommon_for_freq_preds == freq_preds) ) {
     return true;
@@ -669,7 +669,7 @@ void PhaseCFG::remove_empty_blocks() {
 
     // Look for uncommon blocks and move to end.
     if (!C->do_freq_based_layout()) {
-      if (block->is_uncommon(this)) {
+      if (is_uncommon(block)) {
         move_to_end(block, i);
         last--;                   // No longer check for being uncommon!
         if (no_flip_branch(block)) { // Fall-thru case must follow?

@@ -339,7 +339,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
         } // End of is two-adr
 
         // Insert a copy at a debug use for a lrg which has high frequency
-        if (b->_freq < OPTO_DEBUG_SPLIT_FREQ || b->is_uncommon(&_phc._cfg)) {
+        if (b->_freq < OPTO_DEBUG_SPLIT_FREQ || _phc._cfg.is_uncommon(b)) {
           // Walk the debug inputs to the node and check for lrg freq
           JVMState* jvms = n->jvms();
           uint debug_start = jvms ? jvms->debug_start() : 999999;
@@ -769,7 +769,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 // Conservative (but pessimistic) copy coalescing of a single block
 void PhaseConservativeCoalesce::coalesce( Block *b ) {
   // Bail out on infrequent blocks
-  if (b->is_uncommon(&_phc._cfg)) {
+  if (_phc._cfg.is_uncommon(b)) {
     return;
   }
   // Check this block for copies.
