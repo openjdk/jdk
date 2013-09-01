@@ -295,10 +295,10 @@ public class XRCompositeManager {
                 sy, 0, 0, dx, dy, w, h);
     }
 
-    public void compositeText(int dst, int glyphSet, int maskFormat,
-            GrowableEltArray elts) {
-        con.XRenderCompositeText(compRule, src.picture, dst, maskFormat, 0, 0,
-                0, 0, glyphSet, elts);
+    public void compositeText(XRSurfaceData dst, int sx, int sy,
+            int glyphSet, int maskFormat, GrowableEltArray elts) {
+        con.XRenderCompositeText(compRule, src.picture, dst.picture,
+                maskFormat, sx, sy, 0, 0, glyphSet, elts);
     }
 
     public XRColor getMaskColor() {
