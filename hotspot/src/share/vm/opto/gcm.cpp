@@ -1342,7 +1342,7 @@ void PhaseCFG::global_code_motion() {
       Node* proj = _matcher._null_check_tests[i];
       Node* val  = _matcher._null_check_tests[i + 1];
       Block* block = get_block_for_node(proj);
-      block->implicit_null_check(this, proj, val, allowed_reasons);
+      implicit_null_check(block, proj, val, allowed_reasons);
       // The implicit_null_check will only perform the transformation
       // if the null branch is truly uncommon, *and* it leads to an
       // uncommon trap.  Combined with the too_many_traps guards
@@ -1363,7 +1363,7 @@ void PhaseCFG::global_code_motion() {
   visited.Clear();
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
-    if (!block->schedule_local(this, _matcher, ready_cnt, visited)) {
+    if (!schedule_local(block, ready_cnt, visited)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
         C->record_method_not_compilable("local schedule failed");
       }
@@ -1375,7 +1375,7 @@ void PhaseCFG::global_code_motion() {
   // clone the instructions on all paths below the Catch.
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
-    block->call_catch_cleanup(this, C);
+    call_catch_cleanup(block);
   }
 
 #ifndef PRODUCT
