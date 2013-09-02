@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
-// key: compiler.misc.cyclic.inference
+// key: compiler.warn.potentially.ambiguous.overload
+// options: -Xlint:overloads
 
-class CyclicInference {
-    interface SAM<X> {
-        void m(X x);
+class PotentiallyAmbiguousOverload {
+    interface F1 {
+        void m(String s);
     }
 
-    <Z> void g(SAM<Z> sz) { }
-
-    void test() {
-        g(x-> {});
+    interface F2 {
+        void m(Integer s);
     }
+
+    void m(F1 f1) { }
+    void m(F2 f2) { }
 }

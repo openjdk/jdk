@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,9 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  check that raw qualifier in unbound method reference is inferred from descriptor
- * @run main MethodReference48
+ * @compile/fail/ref=MethodReference48.out -XDrawDiagnostics MethodReference48.java
  */
 public class MethodReference48 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
 
     static class Foo<X> {
         X m() { return null; };
@@ -54,12 +46,20 @@ public class MethodReference48 {
         Object m(Foo<Integer> fi);
     }
 
-    static void g(SAM1 s) { assertTrue(false); } //return type not compatible
-    static void g(SAM2 s) { assertTrue(true); } //ok
-    static void g(SAM3 s) { assertTrue(false); } //ok but less specific
+    static void g1(SAM1 s) { } //return type not compatible
+
+    static void g2(SAM2 s) { } //ok
+
+    static void g3(SAM3 s) { } //ok
+
+    static void g4(SAM1 s) { } //return type not compatible
+    static void g4(SAM2 s) { } //ok
+    static void g4(SAM3 s) { } //ok
 
     public static void main(String[] args) {
-        g(Foo::m);
-        assertTrue(assertionCount == 1);
+        g1(Foo::m);
+        g2(Foo::m);
+        g3(Foo::m);
+        g4(Foo::m);
     }
 }

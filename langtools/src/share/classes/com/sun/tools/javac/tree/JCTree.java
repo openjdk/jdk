@@ -1908,6 +1908,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * Selects a member expression.
      */
     public static class JCMemberReference extends JCFunctionalExpression implements MemberReferenceTree {
+
         public ReferenceMode mode;
         public ReferenceKind kind;
         public Name name;
@@ -1917,6 +1918,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Type varargsElement;
         public PolyKind refPolyKind;
         public boolean ownerAccessible;
+        public OverloadKind overloadKind;
+
+        public enum OverloadKind {
+            OVERLOADED,
+            UNOVERLOADED;
+        }
 
         /**
          * Javac-dependent classification for member references, based
