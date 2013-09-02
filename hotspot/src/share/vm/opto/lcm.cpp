@@ -550,11 +550,12 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
   Node* call = NULL;
   for (DUIterator_Fast imax, i = this_call->fast_outs(imax); i < imax; i++) {
     Node* m = this_call->fast_out(i);
-    if(get_block_for_node(m) == block && // Local-block user
+    if (get_block_for_node(m) == block && // Local-block user
         m != this_call &&       // Not self-start node
-        m->is_MachCall() )
+        m->is_MachCall()) {
       call = m;
       break;
+    }
   }
   if (call == NULL)  return;    // No next call (e.g., block end is near)
   // Set next-call for all inputs to this call
