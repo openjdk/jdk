@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,9 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  check that diamond inference is applied when using raw constructor reference qualifier
- * @run main MethodReference43
+ * @compile/fail/ref=MethodReference43.out -XDrawDiagnostics MethodReference43.java
  */
 public class MethodReference43 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
 
     interface SAM1 {
        Foo<?> m(String s);
@@ -58,14 +50,24 @@ public class MethodReference43 {
         Foo(X x) { }
     }
 
+    static void m1(SAM1 s) { }
 
-    static void m(SAM1 s) { assertTrue(false); }
-    static void m(SAM2 s) { assertTrue(false); }
-    static void m(SAM3 s) { assertTrue(false); }
-    static void m(SAM4 s) { assertTrue(true); }
+    static void m2(SAM2 s) { }
+
+    static void m3(SAM3 s) { }
+
+    static void m4(SAM4 s) { }
+
+    static void m5(SAM1 s) { }
+    static void m5(SAM2 s) { }
+    static void m5(SAM3 s) { }
+    static void m5(SAM4 s) { }
 
     public static void main(String[] args) {
-        m(Foo::new);
-        assertTrue(assertionCount == 1);
+        m1(Foo::new);
+        m2(Foo::new);
+        m3(Foo::new);
+        m4(Foo::new);
+        m5(Foo::new);
     }
 }

@@ -175,6 +175,11 @@ public class Lint
         OPTIONS("options"),
 
         /**
+         * Warn about issues regarding method overloads.
+         */
+        OVERLOADS("overloads"),
+
+        /**
          * Warn about issues regarding method overrides.
          */
         OVERRIDES("overrides"),
