@@ -695,6 +695,10 @@ class GraphKit : public Phase {
   void write_barrier_post(Node *store, Node* obj,
                           Node* adr,  uint adr_idx, Node* val, bool use_precise);
 
+  // Allow reordering of pre-barrier with oop store and/or post-barrier.
+  // Used for load_store operations which loads old value.
+  bool can_move_pre_barrier() const;
+
   // G1 pre/post barriers
   void g1_write_barrier_pre(bool do_load,
                             Node* obj,
