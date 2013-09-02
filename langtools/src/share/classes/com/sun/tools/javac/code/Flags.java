@@ -266,6 +266,11 @@ public class Flags {
      */
     public static final long THROWS = 1L<<47;
 
+    /**
+     * Flag that marks potentially ambiguous overloads
+     */
+    public static final long POTENTIALLY_AMBIGUOUS = 1L<<48;
+
     /** Modifier masks.
      */
     public static final int
