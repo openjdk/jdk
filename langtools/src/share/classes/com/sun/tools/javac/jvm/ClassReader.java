@@ -727,12 +727,14 @@ public class ClassReader implements Completer {
                 ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                if (outer == Type.noType)
-                    outer = t.erasure(types);
-                else
-                    outer = new ClassType(outer, List.<Type>nil(), t);
-                sbp = startSbp;
-                return outer;
+
+                try {
+                    return (outer == Type.noType) ?
+                            t.erasure(types) :
+                            new ClassType(outer, List.<Type>nil(), t);
+                } finally {
+                    sbp = startSbp;
+                }
             }
 
             case '<':           // generic arguments
@@ -797,6 +799,13 @@ public class ClassReader implements Completer {
                 continue;
 
             case '.':
+                //we have seen an enclosing non-generic class
+                if (outer != Type.noType) {
+                    t = enterClass(names.fromUtf(signatureBuffer,
+                                                 startSbp,
+                                                 sbp - startSbp));
+                    outer = new ClassType(outer, List.<Type>nil(), t);
+                }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
             case '/':
