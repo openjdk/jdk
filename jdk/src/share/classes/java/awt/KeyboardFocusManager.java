@@ -348,7 +348,7 @@ public abstract class KeyboardFocusManager
      * Component of those Windows that has no such array of its own explicitly
      * set.
      */
-    private Set[] defaultFocusTraversalKeys = new Set[4];
+    private Set<AWTKeyStroke>[] defaultFocusTraversalKeys = new Set[4];
 
     /**
      * The current focus cycle root. If the focus owner is itself a focus cycle
@@ -376,7 +376,7 @@ public abstract class KeyboardFocusManager
      * KeyEventDispatchers are registered, this field may be null or refer to
      * a List of length 0.
      */
-    private java.util.LinkedList keyEventDispatchers;
+    private java.util.LinkedList<KeyEventDispatcher> keyEventDispatchers;
 
     /**
      * This KeyboardFocusManager's KeyEventPostProcessor chain. The List does
@@ -385,12 +385,12 @@ public abstract class KeyboardFocusManager
      * If no other KeyEventPostProcessors are registered, this field may be
      * null or refer to a List of length 0.
      */
-    private java.util.LinkedList keyEventPostProcessors;
+    private java.util.LinkedList<KeyEventPostProcessor> keyEventPostProcessors;
 
     /**
      * Maps Windows to those Windows' most recent focus owners.
      */
-    private static java.util.Map mostRecentFocusOwners = new WeakHashMap();
+    private static java.util.Map<Window, WeakReference<Component>> mostRecentFocusOwners = new WeakHashMap<>();
 
     /**
      * We cache the permission used to verify that the calling thread is
@@ -431,7 +431,7 @@ public abstract class KeyboardFocusManager
      */
     public KeyboardFocusManager() {
         for (int i = 0; i < TRAVERSAL_KEY_LENGTH; i++) {
-            Set work_set = new HashSet();
+            Set<AWTKeyStroke> work_set = new HashSet<>();
             for (int j = 0; j < defaultFocusTraversalKeyStrokes[i].length; j++) {
                 work_set.add(defaultFocusTraversalKeyStrokes[i][j]);
             }
@@ -1125,7 +1125,7 @@ public abstract class KeyboardFocusManager
             throw new IllegalArgumentException("cannot set null Set of default focus traversal keys");
         }
 
-        Set oldKeys;
+        Set<AWTKeyStroke> oldKeys;
 
         synchronized (this) {
             for (AWTKeyStroke keystroke : keystrokes) {
@@ -1153,7 +1153,7 @@ public abstract class KeyboardFocusManager
 
             oldKeys = defaultFocusTraversalKeys[id];
             defaultFocusTraversalKeys[id] =
-                Collections.unmodifiableSet(new HashSet(keystrokes));
+                Collections.unmodifiableSet(new HashSet<>(keystrokes));
         }
 
         firePropertyChange(defaultFocusTraversalKeyPropertyNames[id],
@@ -1699,7 +1699,7 @@ public abstract class KeyboardFocusManager
         if (dispatcher != null) {
             synchronized (this) {
                 if (keyEventDispatchers == null) {
-                    keyEventDispatchers = new java.util.LinkedList();
+                    keyEventDispatchers = new java.util.LinkedList<>();
                 }
                 keyEventDispatchers.add(dispatcher);
             }
@@ -1787,7 +1787,7 @@ public abstract class KeyboardFocusManager
         if (processor != null) {
             synchronized (this) {
                 if (keyEventPostProcessors == null) {
-                    keyEventPostProcessors = new java.util.LinkedList();
+                    keyEventPostProcessors = new java.util.LinkedList<>();
                 }
                 keyEventPostProcessors.add(processor);
             }
@@ -1865,9 +1865,9 @@ public abstract class KeyboardFocusManager
         // of Component.parent fields.  Since WeakHasMap refers to its
         // values strongly, we need to break the strong link from the
         // value (component) back to its key (window).
-        WeakReference weakValue = null;
+        WeakReference<Component> weakValue = null;
         if (component != null) {
-            weakValue = new WeakReference(component);
+            weakValue = new WeakReference<>(component);
         }
         mostRecentFocusOwners.put(window, weakValue);
     }
@@ -1906,7 +1906,7 @@ public abstract class KeyboardFocusManager
      * javax.swing.JComponent.runInputVerifier() using reflection.
      */
     static synchronized Component getMostRecentFocusOwner(Window window) {
-        WeakReference weakValue =
+        WeakReference<Component> weakValue =
             (WeakReference)mostRecentFocusOwners.get(window);
         return weakValue == null ? null : (Component)weakValue.get();
     }
@@ -2649,11 +2649,11 @@ public abstract class KeyboardFocusManager
                 Component lastFocusOwner = null;
                 Component currentFocusOwner = null;
 
-                for (Iterator iter = localLightweightRequests.iterator(); iter.hasNext(); ) {
+                for (Iterator<KeyboardFocusManager.LightweightFocusRequest> iter = localLightweightRequests.iterator(); iter.hasNext(); ) {
 
                     currentFocusOwner = manager.getGlobalFocusOwner();
                     LightweightFocusRequest lwFocusRequest =
-                        (LightweightFocusRequest)iter.next();
+                        iter.next();
 
                     /*
                      * WARNING: This is based on DKFM's logic solely!
@@ -2978,12 +2978,12 @@ public abstract class KeyboardFocusManager
             if (hwFocusRequest != null) {
                 heavyweightRequests.removeFirst();
                 if (hwFocusRequest.lightweightRequests != null) {
-                    for (Iterator lwIter = hwFocusRequest.lightweightRequests.
+                    for (Iterator<KeyboardFocusManager.LightweightFocusRequest> lwIter = hwFocusRequest.lightweightRequests.
                              iterator();
                          lwIter.hasNext(); )
                     {
                         manager.dequeueKeyEvents
-                            (-1, ((LightweightFocusRequest)lwIter.next()).
+                            (-1, lwIter.next().
                              component);
                     }
                 }
@@ -3063,8 +3063,8 @@ public abstract class KeyboardFocusManager
     // Accessor to private field isProxyActive of KeyEvent
     private static boolean isProxyActiveImpl(KeyEvent e) {
         if (proxyActive == null) {
-            proxyActive = (Field) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+            proxyActive =  AccessController.doPrivileged(new PrivilegedAction<Field>() {
+                    public Field run() {
                         Field field = null;
                         try {
                             field = KeyEvent.class.getDeclaredField("isProxyActive");
