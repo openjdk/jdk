@@ -23,39 +23,53 @@
 
 /*
  * @test
- * @bug 4486658
+ * @bug 4486658 8010293
  * @summary thread safety of toArray methods of subCollections
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
-public class toArray {
+public class ToArray {
 
     public static void main(String[] args) throws Throwable {
+        // Execute a number of times to increase the probability of
+        // failure if there is an issue
+        for (int i = 0; i < 16; i++) {
+            executeTest();
+        }
+    }
+
+    static void executeTest() throws Throwable {
         final Throwable throwable[] = new Throwable[1];
-        final int maxSize = 1000;
-        final ConcurrentHashMap<Integer, Integer> m
-            = new ConcurrentHashMap<Integer, Integer>();
+        final ConcurrentHashMap<Integer, Integer> m = new ConcurrentHashMap<>();
 
-        final Thread t1 = new Thread() { public void run() {
-            for (int i = 0; i < maxSize; i++)
-                m.put(i,i);}};
+        // Number of workers equal to the number of processors
+        // Each worker will put globally unique keys into the map
+        final int nWorkers = Runtime.getRuntime().availableProcessors();
+        final int sizePerWorker = 1024;
+        final int maxSize = nWorkers * sizePerWorker;
 
-        final Thread t2 = new Thread() {
-            public Throwable exception = null;
+        // The foreman keeps checking that the size of the arrays
+        // obtained from the key and value sets is never less than the
+        // previously observed size and is never greater than the maximum size
+        // NOTE: these size constraints are not specific to toArray and are
+        // applicable to any form of traversal of the collection views
+        CompletableFuture<?> foreman = CompletableFuture.runAsync(new Runnable() {
             private int prevSize = 0;
 
             private boolean checkProgress(Object[] a) {
                 int size = a.length;
                 if (size < prevSize) throw new RuntimeException("WRONG WAY");
-                if (size > maxSize)  throw new RuntimeException("OVERSHOOT");
+                if (size > maxSize) throw new RuntimeException("OVERSHOOT");
                 if (size == maxSize) return true;
                 prevSize = size;
                 return false;
             }
 
+            @Override
             public void run() {
                 try {
                     Integer[] empty = new Integer[0];
@@ -65,15 +79,25 @@ public class toArray {
                         if (checkProgress(m.values().toArray(empty))) return;
                         if (checkProgress(m.keySet().toArray(empty))) return;
                     }
-                } catch (Throwable t) {
-                   throwable[0] = t;
-                }}};
+                }
+                catch (Throwable t) {
+                    throwable[0] = t;
+                }
+            }
+        });
 
-        t2.start();
-        t1.start();
+        // Create workers
+        // Each worker will put globally unique keys into the map
+        CompletableFuture<?>[] workers = IntStream.range(0, nWorkers).
+                mapToObj(w -> CompletableFuture.runAsync(() -> {
+                    for (int i = 0, o = w * sizePerWorker; i < sizePerWorker; i++)
+                        m.put(o + i, i);
+                })).
+                toArray(CompletableFuture<?>[]::new);
 
-        t1.join();
-        t2.join();
+        // Wait for workers and then foreman to complete
+        CompletableFuture.allOf(workers).join();
+        foreman.join();
 
         if (throwable[0] != null)
             throw throwable[0];
