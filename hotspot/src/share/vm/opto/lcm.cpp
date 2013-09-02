@@ -58,14 +58,14 @@
 // The proj is the control projection for the not-null case.
 // The val is the pointer being checked for nullness or
 // decodeHeapOop_not_null node if it did not fold into address.
-void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowed_reasons) {
+void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
   // Assume if null check need for 0 offset then always needed
   // Intel solaris doesn't support any null checks yet and no
   // mechanism exists (yet) to set the switches at an os_cpu level
   if( !ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(0)) return;
 
   // Make sure the ptr-is-null path appears to be uncommon!
-  float f = end()->as_MachIf()->_prob;
+  float f = block->end()->as_MachIf()->_prob;
   if( proj->Opcode() == Op_IfTrue ) f = 1.0f - f;
   if( f > PROB_UNLIKELY_MAG(4) ) return;
 
@@ -75,13 +75,13 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // Get the successor block for if the test ptr is non-null
   Block* not_null_block;  // this one goes with the proj
   Block* null_block;
-  if (_nodes[_nodes.size()-1] == proj) {
-    null_block     = _succs[0];
-    not_null_block = _succs[1];
+  if (block->get_node(block->number_of_nodes()-1) == proj) {
+    null_block     = block->_succs[0];
+    not_null_block = block->_succs[1];
   } else {
-    assert(_nodes[_nodes.size()-2] == proj, "proj is one or the other");
-    not_null_block = _succs[0];
-    null_block     = _succs[1];
+    assert(block->get_node(block->number_of_nodes()-2) == proj, "proj is one or the other");
+    not_null_block = block->_succs[0];
+    null_block     = block->_succs[1];
   }
   while (null_block->is_Empty() == Block::empty_with_goto) {
     null_block     = null_block->_succs[0];
@@ -93,8 +93,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // detect failure of this optimization, as in 6366351.)
   {
     bool found_trap = false;
-    for (uint i1 = 0; i1 < null_block->_nodes.size(); i1++) {
-      Node* nn = null_block->_nodes[i1];
+    for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
+      Node* nn = null_block->get_node(i1);
       if (nn->is_MachCall() &&
           nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
@@ -237,20 +237,20 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     }
 
     // Check ctrl input to see if the null-check dominates the memory op
-    Block *cb = cfg->get_block_for_node(mach);
+    Block *cb = get_block_for_node(mach);
     cb = cb->_idom;             // Always hoist at least 1 block
     if( !was_store ) {          // Stores can be hoisted only one block
-      while( cb->_dom_depth > (_dom_depth + 1))
+      while( cb->_dom_depth > (block->_dom_depth + 1))
         cb = cb->_idom;         // Hoist loads as far as we want
       // The non-null-block should dominate the memory op, too. Live
       // range spilling will insert a spill in the non-null-block if it is
       // needs to spill the memory op for an implicit null check.
-      if (cb->_dom_depth == (_dom_depth + 1)) {
+      if (cb->_dom_depth == (block->_dom_depth + 1)) {
         if (cb != not_null_block) continue;
         cb = cb->_idom;
       }
     }
-    if( cb != this ) continue;
+    if( cb != block ) continue;
 
     // Found a memory user; see if it can be hoisted to check-block
     uint vidx = 0;              // Capture index of value into memop
@@ -262,8 +262,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
         if( is_decoden ) continue;
       }
       // Block of memory-op input
-      Block *inb = cfg->get_block_for_node(mach->in(j));
-      Block *b = this;          // Start from nul check
+      Block *inb = get_block_for_node(mach->in(j));
+      Block *b = block;          // Start from nul check
       while( b != inb && b->_dom_depth > inb->_dom_depth )
         b = b->_idom;           // search upwards for input
       // See if input dominates null check
@@ -272,28 +272,28 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     }
     if( j > 0 )
       continue;
-    Block *mb = cfg->get_block_for_node(mach);
+    Block *mb = get_block_for_node(mach);
     // Hoisting stores requires more checks for the anti-dependence case.
     // Give up hoisting if we have to move the store past any load.
     if( was_store ) {
       Block *b = mb;            // Start searching here for a local load
       // mach use (faulting) trying to hoist
       // n might be blocker to hoisting
-      while( b != this ) {
+      while( b != block ) {
         uint k;
-        for( k = 1; k < b->_nodes.size(); k++ ) {
-          Node *n = b->_nodes[k];
+        for( k = 1; k < b->number_of_nodes(); k++ ) {
+          Node *n = b->get_node(k);
           if( n->needs_anti_dependence_check() &&
               n->in(LoadNode::Memory) == mach->in(StoreNode::Memory) )
             break;              // Found anti-dependent load
         }
-        if( k < b->_nodes.size() )
+        if( k < b->number_of_nodes() )
           break;                // Found anti-dependent load
         // Make sure control does not do a merge (would have to check allpaths)
         if( b->num_preds() != 2 ) break;
-        b = cfg->get_block_for_node(b->pred(1)); // Move up to predecessor block
+        b = get_block_for_node(b->pred(1)); // Move up to predecessor block
       }
-      if( b != this ) continue;
+      if( b != block ) continue;
     }
 
     // Make sure this memory op is not already being used for a NullCheck
@@ -303,7 +303,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
 
     // Found a candidate!  Pick one with least dom depth - the highest
     // in the dom tree should be closest to the null check.
-    if (best == NULL || cfg->get_block_for_node(mach)->_dom_depth < cfg->get_block_for_node(best)->_dom_depth) {
+    if (best == NULL || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
       best = mach;
       bidx = vidx;
     }
@@ -319,46 +319,45 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
 
   if( is_decoden ) {
     // Check if we need to hoist decodeHeapOop_not_null first.
-    Block *valb = cfg->get_block_for_node(val);
-    if( this != valb && this->_dom_depth < valb->_dom_depth ) {
+    Block *valb = get_block_for_node(val);
+    if( block != valb && block->_dom_depth < valb->_dom_depth ) {
       // Hoist it up to the end of the test block.
       valb->find_remove(val);
-      this->add_inst(val);
-      cfg->map_node_to_block(val, this);
+      block->add_inst(val);
+      map_node_to_block(val, block);
       // DecodeN on x86 may kill flags. Check for flag-killing projections
       // that also need to be hoisted.
       for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
         Node* n = val->fast_out(j);
         if( n->is_MachProj() ) {
-          cfg->get_block_for_node(n)->find_remove(n);
-          this->add_inst(n);
-          cfg->map_node_to_block(n, this);
+          get_block_for_node(n)->find_remove(n);
+          block->add_inst(n);
+          map_node_to_block(n, block);
         }
       }
     }
   }
   // Hoist the memory candidate up to the end of the test block.
-  Block *old_block = cfg->get_block_for_node(best);
+  Block *old_block = get_block_for_node(best);
   old_block->find_remove(best);
-  add_inst(best);
-  cfg->map_node_to_block(best, this);
+  block->add_inst(best);
+  map_node_to_block(best, block);
 
   // Move the control dependence
-  if (best->in(0) && best->in(0) == old_block->_nodes[0])
-    best->set_req(0, _nodes[0]);
+  if (best->in(0) && best->in(0) == old_block->head())
+    best->set_req(0, block->head());
 
   // Check for flag-killing projections that also need to be hoisted
   // Should be DU safe because no edge updates.
   for (DUIterator_Fast jmax, j = best->fast_outs(jmax); j < jmax; j++) {
     Node* n = best->fast_out(j);
     if( n->is_MachProj() ) {
-      cfg->get_block_for_node(n)->find_remove(n);
-      add_inst(n);
-      cfg->map_node_to_block(n, this);
+      get_block_for_node(n)->find_remove(n);
+      block->add_inst(n);
+      map_node_to_block(n, block);
     }
   }
 
-  Compile *C = cfg->C;
   // proj==Op_True --> ne test; proj==Op_False --> eq test.
   // One of two graph shapes got matched:
   //   (IfTrue  (If (Bool NE (CmpP ptr NULL))))
@@ -368,10 +367,10 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // We need to flip the projections to keep the same semantics.
   if( proj->Opcode() == Op_IfTrue ) {
     // Swap order of projections in basic block to swap branch targets
-    Node *tmp1 = _nodes[end_idx()+1];
-    Node *tmp2 = _nodes[end_idx()+2];
-    _nodes.map(end_idx()+1, tmp2);
-    _nodes.map(end_idx()+2, tmp1);
+    Node *tmp1 = block->get_node(block->end_idx()+1);
+    Node *tmp2 = block->get_node(block->end_idx()+2);
+    block->map_node(tmp2, block->end_idx()+1);
+    block->map_node(tmp1, block->end_idx()+2);
     Node *tmp = new (C) Node(C->top()); // Use not NULL input
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
@@ -384,8 +383,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // it as well.
   Node *old_tst = proj->in(0);
   MachNode *nul_chk = new (C) MachNullCheckNode(old_tst->in(0),best,bidx);
-  _nodes.map(end_idx(),nul_chk);
-  cfg->map_node_to_block(nul_chk, this);
+  block->map_node(nul_chk, block->end_idx());
+  map_node_to_block(nul_chk, block);
   // Redirect users of old_test to nul_chk
   for (DUIterator_Last i2min, i2 = old_tst->last_outs(i2min); i2 >= i2min; --i2)
     old_tst->last_out(i2)->set_req(0, nul_chk);
@@ -393,8 +392,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   for (uint i3 = 0; i3 < old_tst->req(); i3++)
     old_tst->set_req(i3, NULL);
 
-  cfg->latency_from_uses(nul_chk);
-  cfg->latency_from_uses(best);
+  latency_from_uses(nul_chk);
+  latency_from_uses(best);
 }
 
 
@@ -408,7 +407,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
 // remaining cases (most), choose the instruction with the greatest latency
 // (that is, the most number of pseudo-cycles required to the end of the
 // routine). If there is a tie, choose the instruction with the most inputs.
-Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot) {
+Node* PhaseCFG::select(Block* block, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot) {
 
   // If only a single entry on the stack, use it
   uint cnt = worklist.size();
@@ -442,7 +441,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
     }
 
     // Final call in a block must be adjacent to 'catch'
-    Node *e = end();
+    Node *e = block->end();
     if( e->is_Catch() && e->in(0)->in(0) == n )
       continue;
 
@@ -468,7 +467,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
         Node* use = n->fast_out(j);
 
         // The use is a conditional branch, make them adjacent
-        if (use->is_MachIf() && cfg->get_block_for_node(use) == this) {
+        if (use->is_MachIf() && get_block_for_node(use) == block) {
           found_machif = true;
           break;
         }
@@ -501,7 +500,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
       n_choice = 1;
     }
 
-    uint n_latency = cfg->get_latency_for_node(n);
+    uint n_latency = get_latency_for_node(n);
     uint n_score   = n->req();   // Many inputs get high score to break ties
 
     // Keep best latency found
@@ -529,13 +528,13 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
 
 
 //------------------------------set_next_call----------------------------------
-void Block::set_next_call( Node *n, VectorSet &next_call, PhaseCFG* cfg) {
+void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
   if( next_call.test_set(n->_idx) ) return;
   for( uint i=0; i<n->len(); i++ ) {
     Node *m = n->in(i);
     if( !m ) continue;  // must see all nodes in block that precede call
-    if (cfg->get_block_for_node(m) == this) {
-      set_next_call(m, next_call, cfg);
+    if (get_block_for_node(m) == block) {
+      set_next_call(block, m, next_call);
     }
   }
 }
@@ -546,12 +545,12 @@ void Block::set_next_call( Node *n, VectorSet &next_call, PhaseCFG* cfg) {
 // next subroutine call get priority - basically it moves things NOT needed
 // for the next call till after the call.  This prevents me from trying to
 // carry lots of stuff live across a call.
-void Block::needed_for_next_call(Node *this_call, VectorSet &next_call, PhaseCFG* cfg) {
+void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& next_call) {
   // Find the next control-defining Node in this block
   Node* call = NULL;
   for (DUIterator_Fast imax, i = this_call->fast_outs(imax); i < imax; i++) {
     Node* m = this_call->fast_out(i);
-    if(cfg->get_block_for_node(m) == this && // Local-block user
+    if(get_block_for_node(m) == block && // Local-block user
         m != this_call &&       // Not self-start node
         m->is_MachCall() )
       call = m;
@@ -559,11 +558,12 @@ void Block::needed_for_next_call(Node *this_call, VectorSet &next_call, PhaseCFG
   }
   if (call == NULL)  return;    // No next call (e.g., block end is near)
   // Set next-call for all inputs to this call
-  set_next_call(call, next_call, cfg);
+  set_next_call(block, call, next_call);
 }
 
 //------------------------------add_call_kills-------------------------------------
-void Block::add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
+// helper function that adds caller save registers to MachProjNode
+static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
     if( !regs.Member(r) ) {     // Not already defined by the call
@@ -579,7 +579,7 @@ void Block::add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
 
 
 //------------------------------sched_call-------------------------------------
-uint Block::sched_call( Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call ) {
+uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
   RegMask regs;
 
   // Schedule all the users of the call right now.  All the users are
@@ -592,18 +592,18 @@ uint Block::sched_call( Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_Lis
     ready_cnt.at_put(n->_idx, n_cnt);
     assert( n_cnt == 0, "" );
     // Schedule next to call
-    _nodes.map(node_cnt++, n);
+    block->map_node(n, node_cnt++);
     // Collect defined registers
     regs.OR(n->out_RegMask());
     // Check for scheduling the next control-definer
     if( n->bottom_type() == Type::CONTROL )
       // Warm up next pile of heuristic bits
-      needed_for_next_call(n, next_call, cfg);
+      needed_for_next_call(block, n, next_call);
 
     // Children of projections are now all ready
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* m = n->fast_out(j); // Get user
-      if(cfg->get_block_for_node(m) != this) {
+      if(get_block_for_node(m) != block) {
         continue;
       }
       if( m->is_Phi() ) continue;
@@ -617,14 +617,14 @@ uint Block::sched_call( Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_Lis
 
   // Act as if the call defines the Frame Pointer.
   // Certainly the FP is alive and well after the call.
-  regs.Insert(matcher.c_frame_pointer());
+  regs.Insert(_matcher.c_frame_pointer());
 
   // Set all registers killed and not already defined by the call.
   uint r_cnt = mcall->tf()->range()->cnt();
   int op = mcall->ideal_Opcode();
-  MachProjNode *proj = new (matcher.C) MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
-  cfg->map_node_to_block(proj, this);
-  _nodes.insert(node_cnt++, proj);
+  MachProjNode *proj = new (C) MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
+  map_node_to_block(proj, block);
+  block->insert_node(proj, node_cnt++);
 
   // Select the right register save policy.
   const char * save_policy;
@@ -633,13 +633,13 @@ uint Block::sched_call( Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_Lis
     case Op_CallLeaf:
     case Op_CallLeafNoFP:
       // Calling C code so use C calling convention
-      save_policy = matcher._c_reg_save_policy;
+      save_policy = _matcher._c_reg_save_policy;
       break;
 
     case Op_CallStaticJava:
     case Op_CallDynamicJava:
       // Calling Java code so use Java calling convention
-      save_policy = matcher._register_save_policy;
+      save_policy = _matcher._register_save_policy;
       break;
 
     default:
@@ -674,44 +674,46 @@ uint Block::sched_call( Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_Lis
 
 //------------------------------schedule_local---------------------------------
 // Topological sort within a block.  Someday become a real scheduler.
-bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &ready_cnt, VectorSet &next_call) {
+bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call) {
   // Already "sorted" are the block start Node (as the first entry), and
   // the block-ending Node and any trailing control projections.  We leave
   // these alone.  PhiNodes and ParmNodes are made to follow the block start
   // Node.  Everything else gets topo-sorted.
 
 #ifndef PRODUCT
-    if (cfg->trace_opto_pipelining()) {
-      tty->print_cr("# --- schedule_local B%d, before: ---", _pre_order);
-      for (uint i = 0;i < _nodes.size();i++) {
+    if (trace_opto_pipelining()) {
+      tty->print_cr("# --- schedule_local B%d, before: ---", block->_pre_order);
+      for (uint i = 0;i < block->number_of_nodes(); i++) {
         tty->print("# ");
-        _nodes[i]->fast_dump();
+        block->get_node(i)->fast_dump();
       }
       tty->print_cr("#");
     }
 #endif
 
   // RootNode is already sorted
-  if( _nodes.size() == 1 ) return true;
+  if (block->number_of_nodes() == 1) {
+    return true;
+  }
 
   // Move PhiNodes and ParmNodes from 1 to cnt up to the start
-  uint node_cnt = end_idx();
+  uint node_cnt = block->end_idx();
   uint phi_cnt = 1;
   uint i;
   for( i = 1; i<node_cnt; i++ ) { // Scan for Phi
-    Node *n = _nodes[i];
+    Node *n = block->get_node(i);
     if( n->is_Phi() ||          // Found a PhiNode or ParmNode
-        (n->is_Proj()  && n->in(0) == head()) ) {
+        (n->is_Proj()  && n->in(0) == block->head()) ) {
       // Move guy at 'phi_cnt' to the end; makes a hole at phi_cnt
-      _nodes.map(i,_nodes[phi_cnt]);
-      _nodes.map(phi_cnt++,n);  // swap Phi/Parm up front
+      block->map_node(block->get_node(phi_cnt), i);
+      block->map_node(n, phi_cnt++);  // swap Phi/Parm up front
     } else {                    // All others
       // Count block-local inputs to 'n'
       uint cnt = n->len();      // Input count
       uint local = 0;
       for( uint j=0; j<cnt; j++ ) {
         Node *m = n->in(j);
-        if( m && cfg->get_block_for_node(m) == this && !m->is_top() )
+        if( m && get_block_for_node(m) == block && !m->is_top() )
           local++;              // One more block-local input
       }
       ready_cnt.at_put(n->_idx, local); // Count em up
@@ -723,7 +725,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
           for (uint prec = n->req(); prec < n->len(); prec++) {
             Node* oop_store = n->in(prec);
             if (oop_store != NULL) {
-              assert(cfg->get_block_for_node(oop_store)->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
+              assert(get_block_for_node(oop_store)->_dom_depth <= block->_dom_depth, "oop_store must dominate card-mark");
             }
           }
         }
@@ -747,16 +749,16 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
       }
     }
   }
-  for(uint i2=i; i2<_nodes.size(); i2++ ) // Trailing guys get zapped count
-    ready_cnt.at_put(_nodes[i2]->_idx, 0);
+  for(uint i2=i; i2< block->number_of_nodes(); i2++ ) // Trailing guys get zapped count
+    ready_cnt.at_put(block->get_node(i2)->_idx, 0);
 
   // All the prescheduled guys do not hold back internal nodes
   uint i3;
   for(i3 = 0; i3<phi_cnt; i3++ ) {  // For all pre-scheduled
-    Node *n = _nodes[i3];       // Get pre-scheduled
+    Node *n = block->get_node(i3);       // Get pre-scheduled
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* m = n->fast_out(j);
-      if (cfg->get_block_for_node(m) == this) { // Local-block user
+      if (get_block_for_node(m) == block) { // Local-block user
         int m_cnt = ready_cnt.at(m->_idx)-1;
         ready_cnt.at_put(m->_idx, m_cnt);   // Fix ready count
       }
@@ -767,7 +769,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
   // Make a worklist
   Node_List worklist;
   for(uint i4=i3; i4<node_cnt; i4++ ) {    // Put ready guys on worklist
-    Node *m = _nodes[i4];
+    Node *m = block->get_node(i4);
     if( !ready_cnt.at(m->_idx) ) {   // Zero ready count?
       if (m->is_iteratively_computed()) {
         // Push induction variable increments last to allow other uses
@@ -789,15 +791,15 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
   }
 
   // Warm up the 'next_call' heuristic bits
-  needed_for_next_call(_nodes[0], next_call, cfg);
+  needed_for_next_call(block, block->head(), next_call);
 
 #ifndef PRODUCT
-    if (cfg->trace_opto_pipelining()) {
-      for (uint j=0; j<_nodes.size(); j++) {
-        Node     *n = _nodes[j];
+    if (trace_opto_pipelining()) {
+      for (uint j=0; j< block->number_of_nodes(); j++) {
+        Node     *n = block->get_node(j);
         int     idx = n->_idx;
         tty->print("#   ready cnt:%3d  ", ready_cnt.at(idx));
-        tty->print("latency:%3d  ", cfg->get_latency_for_node(n));
+        tty->print("latency:%3d  ", get_latency_for_node(n));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
@@ -808,7 +810,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
   while( worklist.size() ) {    // Worklist is not ready
 
 #ifndef PRODUCT
-    if (cfg->trace_opto_pipelining()) {
+    if (trace_opto_pipelining()) {
       tty->print("#   ready list:");
       for( uint i=0; i<worklist.size(); i++ ) { // Inspect entire worklist
         Node *n = worklist[i];      // Get Node on worklist
@@ -819,13 +821,13 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
 #endif
 
     // Select and pop a ready guy from worklist
-    Node* n = select(cfg, worklist, ready_cnt, next_call, phi_cnt);
-    _nodes.map(phi_cnt++,n);    // Schedule him next
+    Node* n = select(block, worklist, ready_cnt, next_call, phi_cnt);
+    block->map_node(n, phi_cnt++);    // Schedule him next
 
 #ifndef PRODUCT
-    if (cfg->trace_opto_pipelining()) {
+    if (trace_opto_pipelining()) {
       tty->print("#    select %d: %s", n->_idx, n->Name());
-      tty->print(", latency:%d", cfg->get_latency_for_node(n));
+      tty->print(", latency:%d", get_latency_for_node(n));
       n->dump();
       if (Verbose) {
         tty->print("#   ready list:");
@@ -840,26 +842,26 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
 #endif
     if( n->is_MachCall() ) {
       MachCallNode *mcall = n->as_MachCall();
-      phi_cnt = sched_call(matcher, cfg, phi_cnt, worklist, ready_cnt, mcall, next_call);
+      phi_cnt = sched_call(block, phi_cnt, worklist, ready_cnt, mcall, next_call);
       continue;
     }
 
     if (n->is_Mach() && n->as_Mach()->has_call()) {
       RegMask regs;
-      regs.Insert(matcher.c_frame_pointer());
+      regs.Insert(_matcher.c_frame_pointer());
       regs.OR(n->out_RegMask());
 
-      MachProjNode *proj = new (matcher.C) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
-      cfg->map_node_to_block(proj, this);
-      _nodes.insert(phi_cnt++, proj);
+      MachProjNode *proj = new (C) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      map_node_to_block(proj, block);
+      block->insert_node(proj, phi_cnt++);
 
-      add_call_kills(proj, regs, matcher._c_reg_save_policy, false);
+      add_call_kills(proj, regs, _matcher._c_reg_save_policy, false);
     }
 
     // Children are now all ready
     for (DUIterator_Fast i5max, i5 = n->fast_outs(i5max); i5 < i5max; i5++) {
       Node* m = n->fast_out(i5); // Get user
-      if (cfg->get_block_for_node(m) != this) {
+      if (get_block_for_node(m) != block) {
         continue;
       }
       if( m->is_Phi() ) continue;
@@ -874,9 +876,8 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
     }
   }
 
-  if( phi_cnt != end_idx() ) {
+  if( phi_cnt != block->end_idx() ) {
     // did not schedule all.  Retry, Bailout, or Die
-    Compile* C = matcher.C;
     if (C->subsume_loads() == true && !C->failing()) {
       // Retry with subsume_loads == false
       // If this is the first failure, the sentinel string will "stick"
@@ -888,12 +889,12 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
   }
 
 #ifndef PRODUCT
-  if (cfg->trace_opto_pipelining()) {
+  if (trace_opto_pipelining()) {
     tty->print_cr("#");
     tty->print_cr("# after schedule_local");
-    for (uint i = 0;i < _nodes.size();i++) {
+    for (uint i = 0;i < block->number_of_nodes();i++) {
       tty->print("# ");
-      _nodes[i]->fast_dump();
+      block->get_node(i)->fast_dump();
     }
     tty->cr();
   }
@@ -919,7 +920,7 @@ static void catch_cleanup_fix_all_inputs(Node *use, Node *old_def, Node *new_def
 }
 
 //------------------------------catch_cleanup_find_cloned_def------------------
-static Node *catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def_blk, PhaseCFG* cfg, int n_clone_idx) {
+Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def_blk, int n_clone_idx) {
   assert( use_blk != def_blk, "Inter-block cleanup only");
 
   // The use is some block below the Catch.  Find and return the clone of the def
@@ -945,14 +946,14 @@ static Node *catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def
     // PhiNode, the PhiNode uses from the def and IT's uses need fixup.
     Node_Array inputs = new Node_List(Thread::current()->resource_area());
     for(uint k = 1; k < use_blk->num_preds(); k++) {
-      Block* block = cfg->get_block_for_node(use_blk->pred(k));
-      inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, cfg, n_clone_idx));
+      Block* block = get_block_for_node(use_blk->pred(k));
+      inputs.map(k, catch_cleanup_find_cloned_def(block, def, def_blk, n_clone_idx));
     }
 
     // Check to see if the use_blk already has an identical phi inserted.
     // If it exists, it will be at the first position since all uses of a
     // def are processed together.
-    Node *phi = use_blk->_nodes[1];
+    Node *phi = use_blk->get_node(1);
     if( phi->is_Phi() ) {
       fixup = phi;
       for (uint k = 1; k < use_blk->num_preds(); k++) {
@@ -967,8 +968,8 @@ static Node *catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def
     // If an existing PhiNode was not found, make a new one.
     if (fixup == NULL) {
       Node *new_phi = PhiNode::make(use_blk->head(), def);
-      use_blk->_nodes.insert(1, new_phi);
-      cfg->map_node_to_block(new_phi, use_blk);
+      use_blk->insert_node(new_phi, 1);
+      map_node_to_block(new_phi, use_blk);
       for (uint k = 1; k < use_blk->num_preds(); k++) {
         new_phi->set_req(k, inputs[k]);
       }
@@ -977,7 +978,7 @@ static Node *catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def
 
   } else {
     // Found the use just below the Catch.  Make it use the clone.
-    fixup = use_blk->_nodes[n_clone_idx];
+    fixup = use_blk->get_node(n_clone_idx);
   }
 
   return fixup;
@@ -997,36 +998,36 @@ static void catch_cleanup_intra_block(Node *use, Node *def, Block *blk, int beg,
   for( uint k = 0; k < blk->_num_succs; k++ ) {
     // Get clone in each successor block
     Block *sb = blk->_succs[k];
-    Node *clone = sb->_nodes[offset_idx+1];
+    Node *clone = sb->get_node(offset_idx+1);
     assert( clone->Opcode() == use->Opcode(), "" );
 
     // Make use-clone reference the def-clone
-    catch_cleanup_fix_all_inputs(clone, def, sb->_nodes[n_clone_idx]);
+    catch_cleanup_fix_all_inputs(clone, def, sb->get_node(n_clone_idx));
   }
 }
 
 //------------------------------catch_cleanup_inter_block---------------------
 // Fix all input edges in use that reference "def".  The use is in a different
 // block than the def.
-static void catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, PhaseCFG* cfg, int n_clone_idx) {
+void PhaseCFG::catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx) {
   if( !use_blk ) return;        // Can happen if the use is a precedence edge
 
-  Node *new_def = catch_cleanup_find_cloned_def(use_blk, def, def_blk, cfg, n_clone_idx);
+  Node *new_def = catch_cleanup_find_cloned_def(use_blk, def, def_blk, n_clone_idx);
   catch_cleanup_fix_all_inputs(use, def, new_def);
 }
 
 //------------------------------call_catch_cleanup-----------------------------
 // If we inserted any instructions between a Call and his CatchNode,
 // clone the instructions on all paths below the Catch.
-void Block::call_catch_cleanup(PhaseCFG* cfg, Compile* C) {
+void PhaseCFG::call_catch_cleanup(Block* block) {
 
   // End of region to clone
-  uint end = end_idx();
-  if( !_nodes[end]->is_Catch() ) return;
+  uint end = block->end_idx();
+  if( !block->get_node(end)->is_Catch() ) return;
   // Start of region to clone
   uint beg = end;
-  while(!_nodes[beg-1]->is_MachProj() ||
-        !_nodes[beg-1]->in(0)->is_MachCall() ) {
+  while(!block->get_node(beg-1)->is_MachProj() ||
+        !block->get_node(beg-1)->in(0)->is_MachCall() ) {
     beg--;
     assert(beg > 0,"Catch cleanup walking beyond block boundary");
   }
@@ -1035,15 +1036,15 @@ void Block::call_catch_cleanup(PhaseCFG* cfg, Compile* C) {
 
   // Clone along all Catch output paths.  Clone area between the 'beg' and
   // 'end' indices.
-  for( uint i = 0; i < _num_succs; i++ ) {
-    Block *sb = _succs[i];
+  for( uint i = 0; i < block->_num_succs; i++ ) {
+    Block *sb = block->_succs[i];
     // Clone the entire area; ignoring the edge fixup for now.
     for( uint j = end; j > beg; j-- ) {
       // It is safe here to clone a node with anti_dependence
       // since clones dominate on each path.
-      Node *clone = _nodes[j-1]->clone();
-      sb->_nodes.insert( 1, clone );
-      cfg->map_node_to_block(clone, sb);
+      Node *clone = block->get_node(j-1)->clone();
+      sb->insert_node(clone, 1);
+      map_node_to_block(clone, sb);
     }
   }
 
@@ -1051,7 +1052,7 @@ void Block::call_catch_cleanup(PhaseCFG* cfg, Compile* C) {
   // Fixup edges.  Check the def-use info per cloned Node
   for(uint i2 = beg; i2 < end; i2++ ) {
     uint n_clone_idx = i2-beg+1; // Index of clone of n in each successor block
-    Node *n = _nodes[i2];        // Node that got cloned
+    Node *n = block->get_node(i2);        // Node that got cloned
     // Need DU safe iterator because of edge manipulation in calls.
     Unique_Node_List *out = new Unique_Node_List(Thread::current()->resource_area());
     for (DUIterator_Fast j1max, j1 = n->fast_outs(j1max); j1 < j1max; j1++) {
@@ -1060,19 +1061,19 @@ void Block::call_catch_cleanup(PhaseCFG* cfg, Compile* C) {
     uint max = out->size();
     for (uint j = 0; j < max; j++) {// For all users
       Node *use = out->pop();
-      Block *buse = cfg->get_block_for_node(use);
+      Block *buse = get_block_for_node(use);
       if( use->is_Phi() ) {
         for( uint k = 1; k < use->req(); k++ )
           if( use->in(k) == n ) {
-            Block* block = cfg->get_block_for_node(buse->pred(k));
-            Node *fixup = catch_cleanup_find_cloned_def(block, n, this, cfg, n_clone_idx);
+            Block* b = get_block_for_node(buse->pred(k));
+            Node *fixup = catch_cleanup_find_cloned_def(b, n, block, n_clone_idx);
             use->set_req(k, fixup);
           }
       } else {
-        if (this == buse) {
-          catch_cleanup_intra_block(use, n, this, beg, n_clone_idx);
+        if (block == buse) {
+          catch_cleanup_intra_block(use, n, block, beg, n_clone_idx);
         } else {
-          catch_cleanup_inter_block(use, buse, n, this, cfg, n_clone_idx);
+          catch_cleanup_inter_block(use, buse, n, block, n_clone_idx);
         }
       }
     } // End for all users
@@ -1081,30 +1082,30 @@ void Block::call_catch_cleanup(PhaseCFG* cfg, Compile* C) {
 
   // Remove the now-dead cloned ops
   for(uint i3 = beg; i3 < end; i3++ ) {
-    _nodes[beg]->disconnect_inputs(NULL, C);
-    _nodes.remove(beg);
+    block->get_node(beg)->disconnect_inputs(NULL, C);
+    block->remove_node(beg);
   }
 
   // If the successor blocks have a CreateEx node, move it back to the top
-  for(uint i4 = 0; i4 < _num_succs; i4++ ) {
-    Block *sb = _succs[i4];
+  for(uint i4 = 0; i4 < block->_num_succs; i4++ ) {
+    Block *sb = block->_succs[i4];
     uint new_cnt = end - beg;
     // Remove any newly created, but dead, nodes.
     for( uint j = new_cnt; j > 0; j-- ) {
-      Node *n = sb->_nodes[j];
+      Node *n = sb->get_node(j);
       if (n->outcnt() == 0 &&
           (!n->is_Proj() || n->as_Proj()->in(0)->outcnt() == 1) ){
         n->disconnect_inputs(NULL, C);
-        sb->_nodes.remove(j);
+        sb->remove_node(j);
         new_cnt--;
       }
     }
     // If any newly created nodes remain, move the CreateEx node to the top
     if (new_cnt > 0) {
-      Node *cex = sb->_nodes[1+new_cnt];
+      Node *cex = sb->get_node(1+new_cnt);
       if( cex->is_Mach() && cex->as_Mach()->ideal_Opcode() == Op_CreateEx ) {
-        sb->_nodes.remove(1+new_cnt);
-        sb->_nodes.insert(1,cex);
+        sb->remove_node(1+new_cnt);
+        sb->insert_node(cex, 1);
       }
     }
   }

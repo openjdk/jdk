@@ -362,7 +362,7 @@ int LIR_Assembler::check_icache() {
 
 void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo* info) {
   jobject o = NULL;
-  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_mirror_id);
+  PatchingStub* patch = new PatchingStub(_masm, patching_id(info));
   __ movoop(reg, o);
   patching_epilog(patch, lir_patch_normal, reg, info);
 }
