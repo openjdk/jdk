@@ -1254,6 +1254,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             KeyEvent ke = (KeyEvent) e;
             delegateEvent = new KeyEvent(getDelegateFocusOwner(), ke.getID(), ke.getWhen(),
                     ke.getModifiers(), ke.getKeyCode(), ke.getKeyChar(), ke.getKeyLocation());
+            AWTAccessor.getKeyEventAccessor().setExtendedKeyCode((KeyEvent) delegateEvent,
+                    ke.getExtendedKeyCode());
         } else if (e instanceof FocusEvent) {
             FocusEvent fe = (FocusEvent) e;
             delegateEvent = new FocusEvent(getDelegateFocusOwner(), fe.getID(), fe.isTemporary());
