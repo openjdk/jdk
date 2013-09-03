@@ -35,7 +35,8 @@ import java.util.Spliterator;
  * @param <S> type of stream implementing {@code BaseStream}
  * @since 1.8
  */
-public interface BaseStream<T, S extends BaseStream<T, S>> {
+public interface BaseStream<T, S extends BaseStream<T, S>>
+        extends AutoCloseable {
     /**
      * Returns an iterator for the elements of this stream.
      *
@@ -103,4 +104,33 @@ public interface BaseStream<T, S extends BaseStream<T, S>> {
      * @return an unordered stream
      */
     S unordered();
+
+    /**
+     * Returns an equivalent stream with an additional close handler.  Close
+     * handlers are run when the {@link #close()} method
+     * is called on the stream, and are executed in the order they were
+     * added.  All close handlers are run, even if earlier close handlers throw
+     * exceptions.  If any close handler throws an exception, the first
+     * exception thrown will be relayed to the caller of {@code close()}, with
+     * any remaining exceptions added to that exception as suppressed exceptions
+     * (unless one of the remaining exceptions is the same exception as the
+     * first exception, since an exception cannot suppress itself.)  May
+     * return itself.
+     *
+     * <p>This is an <a href="package-summary.html#StreamOps">intermediate
+     * operation</a>.
+     *
+     * @param closeHandler A task to execute when the stream is closed
+     * @return a stream with a handler that is run if the stream is closed
+     */
+    S onClose(Runnable closeHandler);
+
+    /**
+     * Closes this stream, causing all close handlers for this stream pipeline
+     * to be called.
+     *
+     * @see AutoCloseable#close()
+     */
+    @Override
+    void close();
 }
