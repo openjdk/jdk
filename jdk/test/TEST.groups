@@ -27,6 +27,7 @@ jdk_lang = \
     sun/invoke \
     sun/misc \
     sun/reflect \
+    jdk/lambda \
     vm
 
 jdk_util = \
@@ -133,7 +134,6 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/asm \
-    jdk/lambda \
     com/sun/jndi \
     com/sun/corba \
     lib/testlibrary \
