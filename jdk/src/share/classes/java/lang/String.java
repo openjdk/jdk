@@ -2457,8 +2457,8 @@ public final class String
      *     String message = String.join(" ", strings);
      *     //message returned is: "Java is cool"
      *
-     *     Set<String> strings = new HashSet<>();
-     *     Strings.add("Java"); strings.add("is");
+     *     Set<String> strings = new LinkedHashSet<>();
+     *     strings.add("Java"); strings.add("is");
      *     strings.add("very"); strings.add("cool");
      *     String message = String.join("-", strings);
      *     //message returned is: "Java-is-very-cool"
