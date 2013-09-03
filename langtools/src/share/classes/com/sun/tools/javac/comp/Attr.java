@@ -2647,6 +2647,13 @@ public class Attr extends JCTree.Visitor {
 
             if (that.getMode() == JCMemberReference.ReferenceMode.NEW) {
                 exprType = chk.checkConstructorRefType(that.expr, exprType);
+                if (!exprType.isErroneous() &&
+                    exprType.isRaw() &&
+                    that.typeargs != null) {
+                    log.error(that.expr.pos(), "invalid.mref", Kinds.kindName(that.getMode()),
+                        diags.fragment("mref.infer.and.explicit.params"));
+                    exprType = types.createErrorType(exprType);
+                }
             }
 
             if (exprType.isErroneous()) {
