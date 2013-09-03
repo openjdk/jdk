@@ -933,7 +933,12 @@ public class LWWindowPeer
                 focusOwner = this.getTarget();
             }
         }
-        postEvent(new KeyEvent(focusOwner, id, when, modifiers, keyCode, keyChar, keyLocation));
+
+        KeyEvent keyEvent = new KeyEvent(focusOwner, id, when, modifiers,
+            keyCode, keyChar, keyLocation);
+        AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(keyEvent,
+            ExtendedKeyCodes.getExtendedKeyCodeForChar(keyChar));
+        postEvent(keyEvent);
     }
 
     // ---- UTILITY METHODS ---- //
