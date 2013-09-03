@@ -3350,6 +3350,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         private void updateView() {
             int tabPlacement = tabPane.getTabPlacement();
             int tabCount = tabPane.getTabCount();
+            assureRectsCreated(tabCount);
             Rectangle vpRect = viewport.getBounds();
             Dimension viewSize = viewport.getViewSize();
             Rectangle viewRect = viewport.getViewRect();
