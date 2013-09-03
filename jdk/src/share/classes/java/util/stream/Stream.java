@@ -657,7 +657,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      */
-    <R, A> R collect(Collector<? super T, A, ? extends R> collector);
+    <R, A> R collect(Collector<? super T, A, R> collector);
 
     /**
      * Returns the minimum element of this stream according to the provided

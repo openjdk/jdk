@@ -493,7 +493,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     @SuppressWarnings("unchecked")
-    public final <R, A> R collect(Collector<? super P_OUT, A, ? extends R> collector) {
+    public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
