@@ -302,10 +302,11 @@ abstract class IntPipeline<E_IN>
 
                     @Override
                     public void accept(int t) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        IntStream result = mapper.apply(t);
-                        if (result != null)
-                            result.sequential().forEach(i -> downstream.accept(i));
+                        try (IntStream result = mapper.apply(t)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(i -> downstream.accept(i));
+                        }
                     }
                 };
             }
