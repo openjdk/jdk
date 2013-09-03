@@ -2546,22 +2546,26 @@ public class Resolve {
                     @Override
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
                         if (sym.kind >= AMBIGUOUS) {
-                            final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                            ((InapplicableSymbolError)sym).errCandidate().snd :
-                                            null;
-                            sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
-                                @Override
-                                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
-                                        Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                                    String key = details == null ?
-                                        "cant.apply.diamond" :
-                                        "cant.apply.diamond.1";
-                                    return diags.create(dkind, log.currentSource(), pos, key,
-                                            diags.fragment("diamond", site.tsym), details);
-                                }
-                            };
-                            sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
-                            env.info.pendingResolutionPhase = currentResolutionContext.step;
+                            if (sym.kind == HIDDEN) {
+                                sym = super.access(env, pos, location, sym);
+                            } else {
+                                final JCDiagnostic details = sym.kind == WRONG_MTH ?
+                                                ((InapplicableSymbolError)sym).errCandidate().snd :
+                                                null;
+                                sym = new InapplicableSymbolError(sym.kind, "diamondError", currentResolutionContext) {
+                                    @Override
+                                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                                            Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                                        String key = details == null ?
+                                            "cant.apply.diamond" :
+                                            "cant.apply.diamond.1";
+                                        return diags.create(dkind, log.currentSource(), pos, key,
+                                                diags.fragment("diamond", site.tsym), details);
+                                    }
+                                };
+                                sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
+                                env.info.pendingResolutionPhase = currentResolutionContext.step;
+                            }
                         }
                         return sym;
                     }});
