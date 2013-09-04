@@ -372,7 +372,9 @@ AwtFileDialog::Show(void *p)
 
         // Report result to peer.
         if (result) {
-            jint length = (jint)GetBufferLength(ofn.lpstrFile, ofn.nMaxFile);
+            jint length = multipleMode
+                    ? (jint)GetBufferLength(ofn.lpstrFile, ofn.nMaxFile)
+                    : (jint)_tcslen(ofn.lpstrFile);
             jcharArray jnames = env->NewCharArray(length);
             env->SetCharArrayRegion(jnames, 0, length, (jchar*)ofn.lpstrFile);
 
