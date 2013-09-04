@@ -406,10 +406,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content htmlDocType = DocType.TRANSITIONAL;
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
-        if (!configuration.notimestamp) {
-            Content headComment = new Comment(getGeneratedByString());
-            head.addContent(headComment);
-        }
+        head.addContent(getGeneratedBy(!configuration.notimestamp));
         if (configuration.charset.length() > 0) {
             Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
                     configuration.charset);
