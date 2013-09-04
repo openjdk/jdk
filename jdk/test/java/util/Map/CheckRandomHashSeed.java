@@ -53,8 +53,6 @@ public class CheckRandomHashSeed {
             throw new Error("Error in test setup: " + (expectRandom ? "" : "not " ) + "expecting random hashSeed, but " + PROP_NAME + " is " + (propSet ? "" : "not ") + "enabled");
         }
 
-        testMap(new HashMap());
-        testMap(new LinkedHashMap());
         testMap(new WeakHashMap());
         testMap(new Hashtable());
     }
