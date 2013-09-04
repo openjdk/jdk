@@ -170,7 +170,8 @@ public interface Temporal extends TemporalAccessor {
      * </pre>
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -209,7 +210,7 @@ public interface Temporal extends TemporalAccessor {
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
      * passing {@code this} as the first argument.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      *
@@ -232,16 +233,17 @@ public interface Temporal extends TemporalAccessor {
      * <p>
      * Some example code indicating how and why this method is used:
      * <pre>
-     *  date = date.plus(period);                      // add a Period instance
-     *  date = date.plus(duration);                    // add a Duration instance
-     *  date = date.plus(workingDays(6));              // example user-written workingDays method
+     *  date = date.plus(period);                // add a Period instance
+     *  date = date.plus(duration);              // add a Duration instance
+     *  date = date.plus(workingDays(6));        // example user-written workingDays method
      * </pre>
      * <p>
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -280,7 +282,7 @@ public interface Temporal extends TemporalAccessor {
      * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
      * passing {@code this} as the first argument.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      *
@@ -303,16 +305,17 @@ public interface Temporal extends TemporalAccessor {
      * <p>
      * Some example code indicating how and why this method is used:
      * <pre>
-     *  date = date.minus(period);                      // subtract a Period instance
-     *  date = date.minus(duration);                    // subtract a Duration instance
-     *  date = date.minus(workingDays(6));              // example user-written workingDays method
+     *  date = date.minus(period);               // subtract a Period instance
+     *  date = date.minus(duration);             // subtract a Duration instance
+     *  date = date.minus(workingDays(6));       // example user-written workingDays method
      * </pre>
      * <p>
      * Note that calling {@code plus} followed by {@code minus} is not guaranteed to
      * return the same date-time.
      *
      * @implSpec
-     * Implementations must not alter either this object.
+     * <p>
+     * Implementations must not alter either this object or the specified temporal object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>
@@ -345,7 +348,7 @@ public interface Temporal extends TemporalAccessor {
      * @implSpec
      * Implementations must behave in a manor equivalent to the default method behavior.
      * <p>
-     * Implementations must not alter either this object or the specified temporal object.
+     * Implementations must not alter this object.
      * Instead, an adjusted copy of the original must be returned.
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      * <p>

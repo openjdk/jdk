@@ -1642,12 +1642,12 @@ public final class LocalDate
      * </pre>
      * The choice should be made based on which makes the code more readable.
      *
-     * @param endDate  the end date, exclusive, which may be in any chronology, not null
+     * @param endDateExclusive  the end date, exclusive, which may be in any chronology, not null
      * @return the period between this date and the end date, not null
      */
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        LocalDate end = LocalDate.from(endDate);
+    public Period until(ChronoLocalDate endDateExclusive) {
+        LocalDate end = LocalDate.from(endDateExclusive);
         long totalMonths = end.getProlepticMonth() - this.getProlepticMonth();  // safe
         int days = end.day - this.day;
         if (totalMonths > 0 && days < 0) {
