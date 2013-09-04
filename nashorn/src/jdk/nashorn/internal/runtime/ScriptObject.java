@@ -88,7 +88,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
 public abstract class ScriptObject extends PropertyListenerManager implements PropertyAccess {
     /** __proto__ special property name */
-    static final String PROTO_PROPERTY_NAME   = "__proto__";
+    public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
     /** Search fall back routine name for "no such method" */
     static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
@@ -154,6 +154,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
     /** Method handle for setting the proto of a ScriptObject */
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
+
+    /** Method handle for setting the proto of a ScriptObject after checking argument */
+    public static final Call SET_PROTO_CHECK    = virtualCallNoLookup(ScriptObject.class, "setProtoCheck", void.class, Object.class);
 
     /** Method handle for setting the user accessors of a ScriptObject */
     public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
