@@ -183,7 +183,7 @@ bootcycle-images-only: start-make
 test: images test-only
 test-only: start-make
 	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) JPRT_JAVA_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
 	@$(call TargetExit)
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
