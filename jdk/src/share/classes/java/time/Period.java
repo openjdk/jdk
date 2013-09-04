@@ -61,7 +61,6 @@
  */
 package java.time;
 
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.YEARS;
@@ -70,17 +69,19 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
-import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -89,12 +90,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A date-based amount of time, such as '2 years, 3 months and 4 days'.
+ * A date-based amount of time in the ISO-8601 calendar system,
+ * such as '2 years, 3 months and 4 days'.
  * <p>
  * This class models a quantity or amount of time in terms of years, months and days.
  * See {@link Duration} for the time-based equivalent to this class.
  * <p>
- * Durations and period differ in their treatment of daylight savings time
+ * Durations and periods differ in their treatment of daylight savings time
  * when added to {@link ZonedDateTime}. A {@code Duration} will add an exact
  * number of seconds, thus a duration of one day is always exactly 24 hours.
  * By contrast, a {@code Period} will add a conceptual day, trying to maintain
@@ -110,14 +112,12 @@ import java.util.regex.Pattern;
  * {@link ChronoUnit#MONTHS MONTHS} and {@link ChronoUnit#DAYS DAYS}.
  * All three fields are always present, but may be set to zero.
  * <p>
- * The period may be used with any calendar system.
- * The meaning of a "year" or "month" is only applied when the object is added to a date.
+ * The ISO-8601 calendar system is the modern civil calendar system used today
+ * in most of the world. It is equivalent to the proleptic Gregorian calendar
+ * system, in which today's rules for leap years are applied for all time.
  * <p>
  * The period is modeled as a directed amount of time, meaning that individual parts of the
  * period may be negative.
- * <p>
- * The months and years fields may be {@linkplain #normalized() normalized}.
- * The normalization assumes a 12 month year, so is not appropriate for all calendar systems.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -125,7 +125,7 @@ import java.util.regex.Pattern;
  * @since 1.8
  */
 public final class Period
-        implements TemporalAmount, Serializable {
+        implements ChronoPeriod, Serializable {
 
     /**
      * A constant for a period of zero.
@@ -140,6 +140,7 @@ public final class Period
      */
     private final static Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
+
     /**
      * The set of supported units.
      */
@@ -234,12 +235,14 @@ public final class Period
      * <p>
      * This obtains a period based on the specified amount.
      * A {@code TemporalAmount} represents an  amount of time, which may be
-     * date-based or time-based, which this factory extracts to a period.
+     * date-based or time-based, which this factory extracts to a {@code Period}.
      * <p>
      * The conversion loops around the set of units from the amount and uses
      * the {@link ChronoUnit#YEARS YEARS}, {@link ChronoUnit#MONTHS MONTHS}
      * and {@link ChronoUnit#DAYS DAYS} units to create a period.
      * If any other units are found then an exception is thrown.
+     * <p>
+     * If the amount is a {@code ChronoPeriod} then it must use the ISO chronology.
      *
      * @param amount  the temporal amount to convert, not null
      * @return the equivalent period, not null
@@ -247,6 +250,14 @@ public final class Period
      * @throws ArithmeticException if the amount of years, months or days exceeds an int
      */
     public static Period from(TemporalAmount amount) {
+        if (amount instanceof Period) {
+            return (Period) amount;
+        }
+        if (amount instanceof ChronoPeriod) {
+            if (IsoChronology.INSTANCE.equals(((ChronoPeriod) amount).getChronology()) == false) {
+                throw new DateTimeException("Period requires ISO chronology: " + amount);
+            }
+        }
         Objects.requireNonNull(amount, "amount");
         int years = 0;
         int months = 0;
@@ -358,13 +369,13 @@ public final class Period
      * The result of this method can be a negative period if the end is before the start.
      * The negative sign will be the same in each of year, month and day.
      *
-     * @param startDate  the start date, inclusive, not null
-     * @param endDate  the end date, exclusive, not null
+     * @param startDateInclusive  the start date, inclusive, not null
+     * @param endDateExclusive  the end date, exclusive, not null
      * @return the period between this date and the end date, not null
      * @see ChronoLocalDate#until(ChronoLocalDate)
      */
-    public static Period between(LocalDate startDate, LocalDate endDate) {
-        return startDate.until(endDate);
+    public static Period between(LocalDate startDateInclusive, LocalDate endDateExclusive) {
+        return startDateInclusive.until(endDateExclusive);
     }
 
     //-----------------------------------------------------------------------
@@ -439,6 +450,21 @@ public final class Period
         return SUPPORTED_UNITS;
     }
 
+    /**
+     * Gets the chronology of this period, which is the ISO calendar system.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The ISO-8601 calendar system is the modern civil calendar system used today
+     * in most of the world. It is equivalent to the proleptic Gregorian calendar
+     * system, in which today's rules for leap years are applied for all time.
+     *
+     * @return the ISO chronology, not null
+     */
+    @Override
+    public IsoChronology getChronology() {
+        return IsoChronology.INSTANCE;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Checks if all three units of this period are zero.
@@ -468,7 +494,7 @@ public final class Period
      * <p>
      * This returns the years unit.
      * <p>
-     * The months unit is not normalized with the years unit.
+     * The months unit is not automatically normalized with the years unit.
      * This means that a period of "15 months" is different to a period
      * of "1 year and 3 months".
      *
@@ -483,7 +509,7 @@ public final class Period
      * <p>
      * This returns the months unit.
      * <p>
-     * The months unit is not normalized with the years unit.
+     * The months unit is not automatically normalized with the years unit.
      * This means that a period of "15 months" is different to a period
      * of "1 year and 3 months".
      *
@@ -511,7 +537,7 @@ public final class Period
      * This sets the amount of the years unit in a copy of this period.
      * The months and days units are unaffected.
      * <p>
-     * The months unit is not normalized with the years unit.
+     * The months unit is not automatically normalized with the years unit.
      * This means that a period of "15 months" is different to a period
      * of "1 year and 3 months".
      * <p>
@@ -533,7 +559,7 @@ public final class Period
      * This sets the amount of the months unit in a copy of this period.
      * The years and days units are unaffected.
      * <p>
-     * The months unit is not normalized with the years unit.
+     * The months unit is not automatically normalized with the years unit.
      * This means that a period of "15 months" is different to a period
      * of "1 year and 3 months".
      * <p>
@@ -572,21 +598,28 @@ public final class Period
      * Returns a copy of this period with the specified period added.
      * <p>
      * This operates separately on the years, months and days.
+     * No normalization is performed.
      * <p>
      * For example, "1 year, 6 months and 3 days" plus "2 years, 2 months and 2 days"
      * returns "3 years, 8 months and 5 days".
+     * <p>
+     * The specified amount is typically an instance of {@code Period}.
+     * Other types are interpreted using {@link Period#from(TemporalAmount)}.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param amountToAdd  the period to add, not null
      * @return a {@code Period} based on this period with the requested period added, not null
+     * @throws DateTimeException if the specified amount has a non-ISO chronology or
+     *  contains an invalid unit
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period plus(Period amountToAdd) {
+    public Period plus(TemporalAmount amountToAdd) {
+        Period isoAmount = Period.from(amountToAdd);
         return create(
-                Math.addExact(years, amountToAdd.years),
-                Math.addExact(months, amountToAdd.months),
-                Math.addExact(days, amountToAdd.days));
+                Math.addExact(years, isoAmount.years),
+                Math.addExact(months, isoAmount.months),
+                Math.addExact(days, isoAmount.days));
     }
 
     /**
@@ -654,21 +687,28 @@ public final class Period
      * Returns a copy of this period with the specified period subtracted.
      * <p>
      * This operates separately on the years, months and days.
+     * No normalization is performed.
      * <p>
      * For example, "1 year, 6 months and 3 days" minus "2 years, 2 months and 2 days"
      * returns "-1 years, 4 months and 1 day".
+     * <p>
+     * The specified amount is typically an instance of {@code Period}.
+     * Other types are interpreted using {@link Period#from(TemporalAmount)}.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param amountToSubtract  the period to subtract, not null
      * @return a {@code Period} based on this period with the requested period subtracted, not null
+     * @throws DateTimeException if the specified amount has a non-ISO chronology or
+     *  contains an invalid unit
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public Period minus(Period amountToSubtract) {
+    public Period minus(TemporalAmount amountToSubtract) {
+        Period isoAmount = Period.from(amountToSubtract);
         return create(
-                Math.subtractExact(years, amountToSubtract.years),
-                Math.subtractExact(months, amountToSubtract.months),
-                Math.subtractExact(days, amountToSubtract.days));
+                Math.subtractExact(years, isoAmount.years),
+                Math.subtractExact(months, isoAmount.months),
+                Math.subtractExact(days, isoAmount.days));
     }
 
     /**
@@ -766,8 +806,7 @@ public final class Period
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this period with the years and months normalized
-     * using a 12 month year.
+     * Returns a copy of this period with the years and months normalized.
      * <p>
      * This normalizes the years and months units, leaving the days unit unchanged.
      * The months unit is adjusted to have an absolute value less than 11,
@@ -777,8 +816,6 @@ public final class Period
      * The sign of the years and months units will be the same after normalization.
      * For example, a period of "1 year and -25 months" will be normalized to
      * "-1 year and -1 month".
-     * <p>
-     * This normalization uses a 12 month year which is not valid for all calendar systems.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -796,12 +833,10 @@ public final class Period
     }
 
     /**
-     * Gets the total number of months in this period using a 12 month year.
+     * Gets the total number of months in this period.
      * <p>
      * This returns the total number of months in the period by multiplying the
      * number of years by 12 and adding the number of months.
-     * <p>
-     * This uses a 12 month year which is not valid for all calendar systems.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -817,6 +852,7 @@ public final class Period
      * <p>
      * This returns a temporal object of the same observable type as the input
      * with this period added.
+     * If the temporal has a chronology, it must be the ISO chronology.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
      * {@link Temporal#plus(TemporalAmount)}.
@@ -826,10 +862,17 @@ public final class Period
      *   dateTime = dateTime.plus(thisPeriod);
      * </pre>
      * <p>
-     * The calculation will add the years, then months, then days.
-     * Only non-zero amounts will be added.
-     * If the date-time has a calendar system with a fixed number of months in a
-     * year, then the years and months will be combined before being added.
+     * The calculation operates as follows.
+     * First, the chronology of the temporal is checked to ensure it is ISO chronology or null.
+     * Second, if the months are zero, the years are added if non-zero, otherwise
+     * the combination of years and months is added if non-zero.
+     * Finally, any days are added.
+     * <p>
+     * This approach ensures that a partial period can be added to a partial date.
+     * For example, a period of years and/or months can be added to a {@code YearMonth},
+     * but a period including days cannot.
+     * The approach also adds years and months together when necessary, which ensures
+     * correct behaviour at the end of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -840,18 +883,15 @@ public final class Period
      */
     @Override
     public Temporal addTo(Temporal temporal) {
-        Objects.requireNonNull(temporal, "temporal");
-        if ((years | months) != 0) {
-            long monthRange = monthRange(temporal);
-            if (monthRange >= 0) {
-                temporal = temporal.plus(years * monthRange + months, MONTHS);
-            } else {
-                if (years != 0) {
-                    temporal = temporal.plus(years, YEARS);
-                }
-                if (months != 0) {
-                    temporal = temporal.plus(months, MONTHS);
-                }
+        validateChrono(temporal);
+        if (months == 0) {
+            if (years != 0) {
+                temporal = temporal.plus(years, YEARS);
+            }
+        } else {
+            long totalMonths = toTotalMonths();
+            if (totalMonths != 0) {
+                temporal = temporal.plus(totalMonths, MONTHS);
             }
         }
         if (days != 0) {
@@ -865,6 +905,7 @@ public final class Period
      * <p>
      * This returns a temporal object of the same observable type as the input
      * with this period subtracted.
+     * If the temporal has a chronology, it must be the ISO chronology.
      * <p>
      * In most cases, it is clearer to reverse the calling pattern by using
      * {@link Temporal#minus(TemporalAmount)}.
@@ -874,10 +915,17 @@ public final class Period
      *   dateTime = dateTime.minus(thisPeriod);
      * </pre>
      * <p>
-     * The calculation will subtract the years, then months, then days.
-     * Only non-zero amounts will be subtracted.
-     * If the date-time has a calendar system with a fixed number of months in a
-     * year, then the years and months will be combined before being subtracted.
+     * The calculation operates as follows.
+     * First, the chronology of the temporal is checked to ensure it is ISO chronology or null.
+     * Second, if the months are zero, the years are subtracted if non-zero, otherwise
+     * the combination of years and months is subtracted if non-zero.
+     * Finally, any days are subtracted.
+     * <p>
+     * This approach ensures that a partial period can be subtracted from a partial date.
+     * For example, a period of years and/or months can be subtracted from a {@code YearMonth},
+     * but a period including days cannot.
+     * The approach also subtracts years and months together when necessary, which ensures
+     * correct behaviour at the end of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -888,18 +936,15 @@ public final class Period
      */
     @Override
     public Temporal subtractFrom(Temporal temporal) {
-        Objects.requireNonNull(temporal, "temporal");
-        if ((years | months) != 0) {
-            long monthRange = monthRange(temporal);
-            if (monthRange >= 0) {
-                temporal = temporal.minus(years * monthRange + months, MONTHS);
-            } else {
-                if (years != 0) {
-                    temporal = temporal.minus(years, YEARS);
-                }
-                if (months != 0) {
-                    temporal = temporal.minus(months, MONTHS);
-                }
+        validateChrono(temporal);
+        if (months == 0) {
+            if (years != 0) {
+                temporal = temporal.minus(years, YEARS);
+            }
+        } else {
+            long totalMonths = toTotalMonths();
+            if (totalMonths != 0) {
+                temporal = temporal.minus(totalMonths, MONTHS);
             }
         }
         if (days != 0) {
@@ -909,26 +954,21 @@ public final class Period
     }
 
     /**
-     * Calculates the range of months based on the temporal.
-     *
-     * @param temporal  the temporal, not null
-     * @return the month range, negative if not fixed range
+     * Validates that the temporal has the correct chronology.
      */
-    private long monthRange(Temporal temporal) {
-        if (temporal.isSupported(MONTH_OF_YEAR)) {
-            ValueRange startRange = Chronology.from(temporal).range(MONTH_OF_YEAR);
-            if (startRange.isFixed() && startRange.isIntValue()) {
-                return startRange.getMaximum() - startRange.getMinimum() + 1;
-            }
+    private void validateChrono(TemporalAccessor temporal) {
+        Objects.requireNonNull(temporal, "temporal");
+        Chronology temporalChrono = temporal.query(TemporalQuery.chronology());
+        if (temporalChrono != null && IsoChronology.INSTANCE.equals(temporalChrono) == false) {
+            throw new DateTimeException("Chronology mismatch, expected: ISO, actual: " + temporalChrono.getId());
         }
-        return -1;
     }
 
     //-----------------------------------------------------------------------
     /**
      * Checks if this period is equal to another period.
      * <p>
-     * The comparison is based on the amounts held in the period.
+     * The comparison is based on the type {@code Period} and each of the three amounts.
      * To be equal, the years, months and days units must be individually equal.
      * Note that this means that a period of "15 Months" is not equal to a period
      * of "1 Year and 3 Months".

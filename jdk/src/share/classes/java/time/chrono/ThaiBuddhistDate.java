@@ -421,8 +421,9 @@ public final class ThaiBuddhistDate
     }
 
     @Override
-    public Period until(ChronoLocalDate endDate) {
-        return isoDate.until(endDate);
+    public ChronoPeriod until(ChronoLocalDate endDate) {
+        Period period = isoDate.until(endDate);
+        return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
     @Override  // override for performance

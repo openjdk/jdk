@@ -69,7 +69,6 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -602,9 +601,12 @@ public interface ChronoLocalDate
     long until(Temporal endDate, TemporalUnit unit);
 
     /**
-     * Calculates the period between this date and another date as a {@code Period}.
+     * Calculates the period between this date and another date as a {@code ChronoPeriod}.
      * <p>
-     * This calculates the period between two dates in terms of years, months and days.
+     * This calculates the period between two dates. All supplied chronologies
+     * calculate the period using years, months and days, however the
+     * {@code ChronoPeriod} API allows the period to be represented using other units.
+     * <p>
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
      * The negative sign will be the same in each of year, month and day.
@@ -614,12 +616,12 @@ public interface ChronoLocalDate
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDate  the end date, exclusive, which may be in any chronology, not null
+     * @param endDateExclusive  the end date, exclusive, which may be in any chronology, not null
      * @return the period between this date and the end date, not null
      * @throws DateTimeException if the period cannot be calculated
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Period until(ChronoLocalDate endDate);
+    ChronoPeriod until(ChronoLocalDate endDateExclusive);
 
     /**
      * Formats this date using the specified formatter.
