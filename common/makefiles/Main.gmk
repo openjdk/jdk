@@ -242,7 +242,7 @@ clean-test:
 
 .PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install test docs
 .PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only test-only docs-only
-.PHONY: all clean dist-clean bootcycle-images start-make
+.PHONY: default all clean dist-clean bootcycle-images start-make
 .PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-docs clean-test clean-overlay-images clean-bootcycle-build
 .PHONY: profiles profiles-only profiles-oscheck
 
