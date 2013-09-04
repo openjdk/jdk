@@ -315,8 +315,6 @@ class Arguments : AllStatic {
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
   static julong limit_by_allocatable_memory(julong size);
-  // Setup HeapBaseMinAddress
-  static void set_heap_base_min_address();
   // Setup heap size
   static void set_heap_size();
   // Based on automatic selection criteria, should the
