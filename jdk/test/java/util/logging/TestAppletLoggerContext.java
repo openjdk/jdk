@@ -110,28 +110,19 @@ public class TestAppletLoggerContext {
             }
 
             TestExc exc;
-            TestExc global = new TestExc();
 
             @Override
-            public Object getContext() { return active ? global : null; }
+            public Object getAppletContext() { return active ? exc : null; }
             @Override
-            public Object getExecutionContext() { return active ? exc : null; }
+            public Object get(Object o) { return exc.get(o); }
             @Override
-            public Object get(Object o, Object o1) { return TestExc.exc(o).get(o1); }
+            public void put(Object o, Object o1) { exc.put(o, o1); }
             @Override
-            public void put(Object o, Object o1, Object o2) { TestExc.exc(o).put(o1, o2); }
-            @Override
-            public void remove(Object o, Object o1) { TestExc.exc(o).remove(o1); }
-            @Override
-            public Object get(Object o) { return global.get(o); }
-            @Override
-            public void put(Object o, Object o1) { global.put(o, o1); }
-            @Override
-            public void remove(Object o) { global.remove(o); }
+            public void remove(Object o) { exc.remove(o); }
             @Override
             public boolean isDisposed() { return false; }
             @Override
-            public boolean isMainAppContext() { return exc == null; }
+            public boolean isMainAppContext() { return !active || exc == null; }
         }
 
         final static JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();
