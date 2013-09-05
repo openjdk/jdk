@@ -285,7 +285,12 @@ public class XRCompositeManager {
         if (xorEnabled) {
             con.GCRectangles(dst.getXid(), dst.getGC(), rects);
         } else {
-            con.renderRectangles(dst.getPicture(), compRule, solidColor, rects);
+            if (rects.getSize() == 1) {
+                con.renderRectangle(dst.getPicture(), compRule, solidColor,
+                        rects.getX(0), rects.getY(0), rects.getWidth(0), rects.getHeight(0));
+            } else {
+                con.renderRectangles(dst.getPicture(), compRule, solidColor, rects);
+            }
         }
     }
 
