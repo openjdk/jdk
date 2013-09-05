@@ -50,7 +50,9 @@ import org.xml.sax.SAXParseException;
  *  <li>manage mapping between namespace URIs and prefixes.
  *
  *  <li>TODO: provide support for interleaving.
- *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  * @version $Id: NGCCRuntime.java,v 1.15 2002/09/29 02:55:48 okajima Exp $
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */

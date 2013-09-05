@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,6 @@ jint init_globals() {
   management_init();
   bytecodes_init();
   classLoader_init();
-  Metaspace::global_initialize(); // must be before codeCache
   codeCache_init();
   VM_Version_init();
   os_init_globals();

@@ -244,7 +244,10 @@ public class AnnotationProxyMaker {
         }
 
         public void visitError(Attribute.Error e) {
-            value = null;       // indicates a type mismatch
+            if (e instanceof Attribute.UnresolvedClass)
+                value = new MirroredTypeExceptionProxy(((Attribute.UnresolvedClass)e).classType);
+            else
+                value = null;       // indicates a type mismatch
         }
 
 

@@ -27,7 +27,6 @@ package jdk.nashorn.internal.tools.nasgen;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.CONSTRUCTOR_SUFFIX;

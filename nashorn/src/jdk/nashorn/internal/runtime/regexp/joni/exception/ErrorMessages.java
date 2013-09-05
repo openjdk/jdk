@@ -19,8 +19,6 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.exception;
 
-import jdk.nashorn.internal.runtime.regexp.joni.Config;
-
 public interface ErrorMessages {
 
     /* from jcodings */

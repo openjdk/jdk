@@ -38,6 +38,8 @@ package java.util.concurrent;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
+import java.util.Spliterator;
+import java.util.Spliterators;
 
 /**
  * A {@linkplain BlockingQueue blocking queue} in which each insert
@@ -1062,21 +1064,17 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      *
      * @return an empty iterator
      */
-    @SuppressWarnings("unchecked")
     public Iterator<E> iterator() {
-        return (Iterator<E>) EmptyIterator.EMPTY_ITERATOR;
+        return Collections.emptyIterator();
     }
 
-    // Replicated from a previous version of Collections
-    private static class EmptyIterator<E> implements Iterator<E> {
-        static final EmptyIterator<Object> EMPTY_ITERATOR
-            = new EmptyIterator<Object>();
-
-        public boolean hasNext() { return false; }
-        public E next() { throw new NoSuchElementException(); }
-        public void remove() { throw new IllegalStateException(); }
-    }
-
+    /**
+     * Returns an empty spliterator in which calls to
+     * {@link java.util.Spliterator#trySplit()} always return {@code null}.
+     *
+     * @return an empty spliterator
+     * @since 1.8
+     */
     public Spliterator<E> spliterator() {
         return Spliterators.emptySpliterator();
     }
@@ -1163,6 +1161,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Saves this queue to a stream (that is, serializes it).
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -1182,8 +1182,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Reconstitutes this queue from a stream (that is, deserializes it).
+     * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
-    private void readObject(final java.io.ObjectInputStream s)
+    private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
         if (waitingProducers instanceof FifoWaitQueue)

@@ -40,7 +40,7 @@ include Tools.gmk
 
 BUILD_LAUNCHERS=
 
-# When building a legacy overlay image (on solaris 64 bit), the launchers 
+# When building a legacy overlay image (on solaris 64 bit), the launchers
 # need to be built with a different rpath and a different output dir.
 ifeq ($(OVERLAY_IMAGES),true)
     ORIGIN_ROOT:=/../..
@@ -63,7 +63,7 @@ endif
 #
 ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris),)
     ORIGIN_ARG+=$(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR)) \
-                $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)) 
+                $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR))
 endif
 
 define SetupLauncher
@@ -200,7 +200,7 @@ define SetupLauncher
     ifeq ($(OPENJDK_TARGET_OS),windows)
         $$(BUILD_LAUNCHER_$1) : $(JDK_OUTPUTDIR)/objs/libjava/java.lib \
 				$$($1_WINDOWS_JLI_LIB)
-    endif    	 
+    endif
 endef
 
 ##########################################################################################
@@ -452,7 +452,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
 endif
 # On windows, unpack200 is linked completely differently to all other
 # executables, using the compiler with the compiler arguments.
-# It's also linked incrementally, producing a .ilk file that needs to 
+# It's also linked incrementally, producing a .ilk file that needs to
 # be kept away.
 ifeq ($(OPENJDK_TARGET_OS),windows)
     BUILD_UNPACKEXE_LDEXE:=$(CC)
@@ -511,7 +511,7 @@ $(BUILD_UNPACKEXE) : $(UNPACKEXE_ZIPOBJS)
 endif
 
 # Build into object dir and copy executable afterwards to avoid .ilk file in
-# image. The real fix would be clean up linking of unpack200 using 
+# image. The real fix would be clean up linking of unpack200 using
 # -link -incremental:no
 # like all other launchers.
 $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX): $(BUILD_UNPACKEXE)
@@ -522,7 +522,7 @@ BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX)
 ##########################################################################################
 
 
-BUILD_JEXEC := 
+BUILD_JEXEC :=
 BUILD_JEXEC_SRC :=
 BUILD_JEXEC_INC :=
 BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
@@ -602,11 +602,11 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
-# TODO: 
+# TODO:
 # On windows java-rmi.cgi shouldn't be bundled since Java 1.2, but has been built all
 # this time anyway. Since jdk6, it has been built from the wrong source and resulted
-# in a (almost) copy of the standard java launcher named "java-rmi.exe" ending up in 
-# the final images bin dir. This weird behavior is mimicked here in the converted 
+# in a (almost) copy of the standard java launcher named "java-rmi.exe" ending up in
+# the final images bin dir. This weird behavior is mimicked here in the converted
 # makefiles for now. Should probably just be deleted.
 # http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6512052
 ifeq ($(OPENJDK_TARGET_OS),windows)
@@ -616,6 +616,44 @@ else
     $(JAVA_RMI_CGI): $(JDK_TOPDIR)/src/solaris/bin/java-rmi.cgi.sh
 	$(call install-file)
 	$(CHMOD) a+x $@
+endif
+
+##########################################################################################
+
+BUILD_JSPAWNHELPER :=
+BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/solaris/native/java/lang
+BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+LINK_JSPAWNHELPER_OBJECTS := $(JDK_OUTPUTDIR)/objs/libjava/childproc.o
+LINK_JSPAWNHELPER_FLAGS :=
+
+ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris),)
+    BUILD_JSPAWNHELPER := 1
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+    BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib
+endif
+
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+    LINK_JSPAWNHELPER_FLAGS += -m64
+endif
+
+ifeq ($(BUILD_JSPAWNHELPER), 1)
+    $(eval $(call SetupNativeCompilation,BUILD_JSPAWNHELPER,\
+        SRC:=$(BUILD_JSPAWNHELPER_SRC),\
+        INCLUDE_FILES:=jspawnhelper.c,\
+        LANG:=C,\
+        OPTIMIZATION := LOW, \
+        CFLAGS:=$(CFLAGS_JDKEXE), \
+        LDFLAGS:=$(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \
+        LDFLAGS_SUFFIX:= $(LINK_JSPAWNHELPER_OBJECTS), \
+        OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/jspawnhelper,\
+        OUTPUT_DIR:=$(BUILD_JSPAWNHELPER_DST_DIR),\
+        PROGRAM:=jspawnhelper))
+
+    $(BUILD_JSPAWNHELPER): $(LINK_JSPAWNHELPER_OBJECTS)
+
+    BUILD_LAUNCHERS += $(BUILD_JSPAWNHELPER)
 endif
 
 ##########################################################################################
