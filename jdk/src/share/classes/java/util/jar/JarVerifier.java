@@ -32,6 +32,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.zip.ZipEntry;
 
+import sun.misc.JarIndex;
 import sun.security.util.ManifestDigester;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
@@ -139,13 +140,22 @@ class JarVerifier {
                     return;
                 }
 
+                if (uname.equals(JarFile.MANIFEST_NAME) ||
+                        uname.equals(JarIndex.INDEX_NAME)) {
+                    return;
+                }
+
                 if (SignatureFileVerifier.isBlockOrSF(uname)) {
                     /* We parse only DSA, RSA or EC PKCS7 blocks. */
                     parsingBlockOrSF = true;
                     baos.reset();
                     mev.setEntry(null, je);
+                    return;
                 }
-                return;
+
+                // If a META-INF entry is not MF or block or SF, they should
+                // be normal entries. According to 2 above, no more block or
+                // SF will appear. Let's doneWithMeta.
             }
         }
 

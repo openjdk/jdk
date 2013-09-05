@@ -35,7 +35,7 @@ import java.nio.charset.*;
 public class AdaptServerSocket {
 
     static java.io.PrintStream out = System.out;
-
+    static volatile boolean clientStarted = false;
     static volatile Exception clientException = null;
     static volatile Thread client = null;
 
@@ -44,15 +44,14 @@ public class AdaptServerSocket {
     {
         Thread t = new Thread() {
                 public void run() {
-                    try {
-                        Socket so = new Socket();
+                    try (Socket so = new Socket()) {
                         out.println("client:  " + so);
+                        clientStarted = true;
                         if (dally > 0)
                             Thread.sleep(dally);
                         so.connect(new InetSocketAddress(port));
                         if (Thread.interrupted()) {
                             out.println("client interrupted");
-                            so.close();
                             return;
                         }
                         out.println("client:  " + so);
@@ -61,7 +60,6 @@ public class AdaptServerSocket {
                         a += 1;
                         so.getOutputStream().write(a);
                         out.println("client:  wrote " + a);
-                        so.close();
                     } catch (Exception x) {
                         if (x instanceof InterruptedException)
                             return;
@@ -78,43 +76,44 @@ public class AdaptServerSocket {
     static void test(int clientDally, int timeout, boolean shouldTimeout)
         throws Exception
     {
+        clientStarted = false;
         out.println();
 
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ServerSocket sso = ssc.socket();
-        out.println("created: " + ssc);
-        out.println("         " + sso);
-        if (timeout != 0)
-            sso.setSoTimeout(timeout);
-        out.println("timeout: " + sso.getSoTimeout());
-        sso.bind(null);
-        out.println("bound:   " + ssc);
-        out.println("         " + sso);
-        startClient(sso.getLocalPort(), clientDally);
-        Thread.sleep(10);
+        try (ServerSocketChannel ssc = ServerSocketChannel.open();
+             ServerSocket sso = ssc.socket()) {
+            out.println("created: " + ssc);
+            out.println("         " + sso);
+            if (timeout != 0)
+                sso.setSoTimeout(timeout);
+            out.println("timeout: " + sso.getSoTimeout());
+            sso.bind(null);
+            out.println("bound:   " + ssc);
+            out.println("         " + sso);
+            startClient(sso.getLocalPort(), clientDally);
+            while (!clientStarted) {
+                Thread.sleep(20);
+            }
+            Socket so = null;
+            try {
+                so = sso.accept();
+            } catch (SocketTimeoutException x) {
+                if (shouldTimeout)
+                    out.println("Accept timed out, as expected");
+                else
+                    throw x;
+            }
+            if (shouldTimeout && (so != null))
+                throw new Exception("Accept did not time out");
 
-        Socket so = null;
-        try {
-            so = sso.accept();
-        } catch (SocketTimeoutException x) {
-            if (shouldTimeout)
-                out.println("Accept timed out, as expected");
-            else
-                throw x;
+            if (so != null) {
+                int a = 42;
+                so.getOutputStream().write(a);
+                int b = so.getInputStream().read();
+                if (b != a + 1)
+                    throw new Exception("Read incorrect data");
+                out.println("server:  read " + b);
+            }
         }
-        if (shouldTimeout && (so != null))
-            throw new Exception("Accept did not time out");
-
-        if (so != null) {
-            int a = 42;
-            so.getOutputStream().write(a);
-            int b = so.getInputStream().read();
-            if (b != a + 1)
-                throw new Exception("Read incorrect data");
-            out.println("server:  read " + b);
-            sso.close();
-        }
-
         client.interrupt();
         client.join();
         if (clientException != null)

@@ -501,7 +501,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
       n_choice = 1;
     }
 
-    uint n_latency = cfg->_node_latency->at_grow(n->_idx);
+    uint n_latency = cfg->get_latency_for_node(n);
     uint n_score   = n->req();   // Many inputs get high score to break ties
 
     // Keep best latency found
@@ -797,7 +797,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
         Node     *n = _nodes[j];
         int     idx = n->_idx;
         tty->print("#   ready cnt:%3d  ", ready_cnt.at(idx));
-        tty->print("latency:%3d  ", cfg->_node_latency->at_grow(idx));
+        tty->print("latency:%3d  ", cfg->get_latency_for_node(n));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
@@ -825,7 +825,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &
 #ifndef PRODUCT
     if (cfg->trace_opto_pipelining()) {
       tty->print("#    select %d: %s", n->_idx, n->Name());
-      tty->print(", latency:%d", cfg->_node_latency->at_grow(n->_idx));
+      tty->print(", latency:%d", cfg->get_latency_for_node(n));
       n->dump();
       if (Verbose) {
         tty->print("#   ready list:");

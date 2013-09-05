@@ -671,7 +671,7 @@ public interface List<E> extends Collection<E> {
      * The default implementation creates a
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
      * from the list's {@code Iterator}.  The spliterator inherits the
-     * <em>fail-fast</em> properties of the collection's iterator.
+     * <em>fail-fast</em> properties of the list's iterator.
      *
      * @implNote
      * The created {@code Spliterator} additionally reports

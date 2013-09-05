@@ -246,9 +246,4 @@ class KQueueSelectorImpl
         }
         return this;
     }
-
-
-    static {
-        Util.load();
-    }
 }

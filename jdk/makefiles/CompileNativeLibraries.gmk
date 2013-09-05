@@ -199,13 +199,13 @@ LIBJAVA_CFLAGS:=$(foreach dir,$(LIBJAVA_SRC_DIRS),-I$(dir)) \
 LIBJAVA_CFLAGS += -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
                   -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
                   -DJDK_MICRO_VERSION='"$(JDK_MICRO_VERSION)"' \
-                  -DJDK_BUILD_NUMBER='"$(JDK_BUILD_NUMBER)"' 
+                  -DJDK_BUILD_NUMBER='"$(JDK_BUILD_NUMBER)"'
 
 ifneq (,$(JDK_UPDATE_VERSION))
 	LIBJAVA_CFLAGS += -DJDK_UPDATE_VERSION='"$(JDK_UPDATE_VERSION)"'
 endif
 
-LIBJAVA_EXCLUDE_FILES:=check_code.c check_format.c
+LIBJAVA_EXCLUDE_FILES:=check_code.c check_format.c jspawnhelper.c
 
 ifneq ($(OPENJDK_TARGET_OS),macosx)
 	LIBJAVA_EXCLUDE_FILES += java_props_macosx.c
@@ -279,7 +279,7 @@ $(BUILD_LIBJAVA) : $(BUILD_LIBFDLIBM)
 BUILD_LIBMLIB_SRC:=$(JDK_TOPDIR)/src/share/native/sun/awt/medialib
 BUILD_LIBMLIB_CFLAGS:=-D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES \
 			-I$(BUILD_LIBMLIB_SRC) \
-			-I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/awt/medialib 
+			-I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/awt/medialib
 
 BUILD_LIBMLIB_LDLIBS:=
 BUILD_LIBMLIB_IMAGE_MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libmlib_image/mapfile-vers
@@ -1042,6 +1042,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH,\
 		LANG:=C,\
 		OPTIMIZATION:=LOW, \
 		CFLAGS:=$(CFLAGS_JDKLIB),\
+		CFLAGS_windows:=/Gy,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS) \
@@ -1051,6 +1052,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_solaris:=-ldoor,\
+		LDFLAGS_windows:=/ORDER:@$(JDK_TOPDIR)/makefiles/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU),\
 		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
 		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib psapi.lib,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libattach,\
@@ -1413,10 +1415,10 @@ ifndef OPENJDK
 #    ifeq ($(OPENJDK_TARGET_OS), linux)
 #        ifeq ("$(CC_VER_MAJOR)", "3")
 #            OTHER_LDLIBS  += -Wl,-Bstatic -lgcc_eh -Wl,-Bdynamic
-#        endif                           
+#        endif
 #    endif
 #
-# The resulting size of the t2k lib file is (at least on linux) dependant on the order of 
+# The resulting size of the t2k lib file is (at least on linux) dependant on the order of
 # the input .o files. Because of this the new build will differ in size to the old build.
     BUILD_LIBT2K_CFLAGS_COMMON:=-I$(JDK_TOPDIR)/src/share/native/sun/font \
 		            -I$(JDK_TOPDIR)/src/closed/share/native/sun/font/t2k \
@@ -1590,8 +1592,8 @@ LIBINSTRUMENT_LDFLAGS_SUFFIX:=
 ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBINSTRUMENT_LDFLAGS += $(JDK_OUTPUTDIR)/objs/jli_static.lib $(WIN_JAVA_LIB) \
 				 -export:Agent_OnAttach advapi32.lib
-    # Statically link the C runtime so that there are not dependencies on modules 
-    # not on the search patch when invoked from the Windows system directory 
+    # Statically link the C runtime so that there are not dependencies on modules
+    # not on the search patch when invoked from the Windows system directory
     # (or elsewhere).
     LIBINSTRUMENT_CFLAGS := $(filter-out -MD,$(LIBINSTRUMENT_CFLAGS))
     # equivalent of strcasecmp is stricmp on Windows
@@ -2065,13 +2067,13 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 	BUILD_LIBJLI_FILES += java_md.c \
-			      cmdtoargs.c	
+			      cmdtoargs.c
         # Staticically link with c runtime on windows.
 	LIBJLI_CFLAGS:=$(filter-out -MD,$(LIBJLI_CFLAGS))
 else ifneq ($(OPENJDK_TARGET_OS), macosx)
 
 	BUILD_LIBJLI_FILES += java_md_common.c
-	BUILD_LIBJLI_FILES += java_md_solinux.c ergo.c 
+	BUILD_LIBJLI_FILES += java_md_solinux.c ergo.c
 
 	ERGO_ARCH_FILE = ergo_$(ERGO_FAMILY).c
 
@@ -2521,7 +2523,7 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 BUILD_LIBRARIES += $(LIBSPLASHSCREEN)
 
 ifeq ($(OPENJDK_TARGET_OS),macosx)
-$(LIBSPLASHSCREEN) :  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)osxapp$(SHARED_LIBRARY_SUFFIX) 
+$(LIBSPLASHSCREEN) :  $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)osxapp$(SHARED_LIBRARY_SUFFIX)
 endif
 
 endif
@@ -3253,7 +3255,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT,\
 
 BUILD_LIBRARIES += $(BUILD_LIBAWT_LWAWT)
 
-$(BUILD_LIBAWT_LWAWT) : $(BUILD_LIBAWT) 
+$(BUILD_LIBAWT_LWAWT) : $(BUILD_LIBAWT)
 
 $(BUILD_LIBAWT_LWAWT) : $(BUILD_LIBMLIB_IMAGE)
 
@@ -3294,7 +3296,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSXUI,\
 
 BUILD_LIBRARIES += $(BUILD_LIBOSXUI)
 
-$(BUILD_LIBOSXUI) : $(BUILD_LIBAWT) 
+$(BUILD_LIBOSXUI) : $(BUILD_LIBAWT)
 
 $(BUILD_LIBOSXUI) : $(BUILD_LIBOSXAPP)
 

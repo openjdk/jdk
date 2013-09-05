@@ -40,6 +40,7 @@ class InterpreterMacroAssembler : public MacroAssembler {
                                         Register  tmp,
                                         int       offset) {
     ShouldNotCallThis();
+    return RegisterOrConstant();
   }
 };
 

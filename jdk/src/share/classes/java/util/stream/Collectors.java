@@ -137,6 +137,11 @@ public final class Collectors {
         return (u,v) -> { throw new IllegalStateException(String.format("Duplicate key %s", u)); };
     }
 
+    @SuppressWarnings("unchecked")
+    private static <I, R> Function<I, R> castingIdentity() {
+        return i -> (R) i;
+    }
+
     /**
      * Simple implementation class for {@code Collector}.
      *
@@ -166,7 +171,7 @@ public final class Collectors {
                       BiConsumer<A, T> accumulator,
                       BinaryOperator<A> combiner,
                       Set<Characteristics> characteristics) {
-            this(supplier, accumulator, combiner, i -> (R) i, characteristics);
+            this(supplier, accumulator, combiner, castingIdentity(), characteristics);
         }
 
         @Override
@@ -209,7 +214,7 @@ public final class Collectors {
      */
     public static <T, C extends Collection<T>>
     Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
-        return new CollectorImpl<>(collectionFactory, Collection::add,
+        return new CollectorImpl<>(collectionFactory, Collection<T>::add,
                                    (r1, r2) -> { r1.addAll(r2); return r1; },
                                    CH_ID);
     }
@@ -351,6 +356,43 @@ public final class Collectors {
                                    (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
                                    downstream.combiner(), downstream.finisher(),
                                    downstream.characteristics());
+    }
+
+    /**
+     * Adapts a {@code Collector} to perform an additional finishing
+     * transformation.  For example, one could adapt the {@link #toList()}
+     * collector to always produce an immutable list with:
+     * <pre>{@code
+     *     List<String> people
+     *         = people.stream().collect(collectingAndThen(toList(), Collections::unmodifiableList));
+     * }</pre>
+     *
+     * @param <T> the type of the input elements
+     * @param <A> intermediate accumulation type of the downstream collector
+     * @param <R> result type of the downstream collector
+     * @param <RR> result type of the resulting collector
+     * @param downstream a collector
+     * @param finisher a function to be applied to the final result of the downstream collector
+     * @return a collector which performs the action of the downstream collector,
+     * followed by an additional finishing step
+     */
+    public static<T,A,R,RR> Collector<T,A,RR> collectingAndThen(Collector<T,A,R> downstream,
+                                                                Function<R,RR> finisher) {
+        Set<Collector.Characteristics> characteristics = downstream.characteristics();
+        if (characteristics.contains(Collector.Characteristics.IDENTITY_FINISH)) {
+            if (characteristics.size() == 1)
+                characteristics = Collectors.CH_NOID;
+            else {
+                characteristics = EnumSet.copyOf(characteristics);
+                characteristics.remove(Collector.Characteristics.IDENTITY_FINISH);
+                characteristics = Collections.unmodifiableSet(characteristics);
+            }
+        }
+        return new CollectorImpl<>(downstream.supplier(),
+                                   downstream.accumulator(),
+                                   downstream.combiner(),
+                                   downstream.finisher().andThen(finisher),
+                                   characteristics);
     }
 
     /**
@@ -1009,30 +1051,23 @@ public final class Collectors {
     public static <T, D, A>
     Collector<T, ?, Map<Boolean, D>> partitioningBy(Predicate<? super T> predicate,
                                                     Collector<? super T, A, D> downstream) {
-        @SuppressWarnings("unchecked")
-        BiConsumer<D, ? super T> downstreamAccumulator = (BiConsumer<D, ? super T>) downstream.accumulator();
-        BiConsumer<Map<Boolean, A>, T> accumulator = (result, t) -> {
-            Partition<D> asPartition = ((Partition<D>) result);
-            downstreamAccumulator.accept(predicate.test(t) ? asPartition.forTrue : asPartition.forFalse, t);
-        };
+        BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
+        BiConsumer<Partition<A>, T> accumulator = (result, t) ->
+                downstreamAccumulator.accept(predicate.test(t) ? result.forTrue : result.forFalse, t);
         BinaryOperator<A> op = downstream.combiner();
-        BinaryOperator<Map<Boolean, A>> merger = (m1, m2) -> {
-            Partition<A> left = (Partition<A>) m1;
-            Partition<A> right = (Partition<A>) m2;
-            return new Partition<>(op.apply(left.forTrue, right.forTrue),
-                                   op.apply(left.forFalse, right.forFalse));
-        };
-        Supplier<Map<Boolean, A>> supplier = () -> new Partition<>(downstream.supplier().get(),
-                                                                   downstream.supplier().get());
+        BinaryOperator<Partition<A>> merger = (left, right) ->
+                new Partition<>(op.apply(left.forTrue, right.forTrue),
+                                op.apply(left.forFalse, right.forFalse));
+        Supplier<Partition<A>> supplier = () ->
+                new Partition<>(downstream.supplier().get(),
+                                downstream.supplier().get());
         if (downstream.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
             return new CollectorImpl<>(supplier, accumulator, merger, CH_ID);
         }
         else {
-            Function<Map<Boolean, A>, Map<Boolean, D>> finisher = (Map<Boolean, A> par) -> {
-                Partition<A> asAPartition = (Partition<A>) par;
-                return new Partition<>(downstream.finisher().apply(asAPartition.forTrue),
-                                       downstream.finisher().apply(asAPartition.forFalse));
-            };
+            Function<Partition<A>, Map<Boolean, D>> finisher = par ->
+                    new Partition<>(downstream.finisher().apply(par.forTrue),
+                                    downstream.finisher().apply(par.forFalse));
             return new CollectorImpl<>(supplier, accumulator, merger, finisher, CH_NOID);
         }
     }

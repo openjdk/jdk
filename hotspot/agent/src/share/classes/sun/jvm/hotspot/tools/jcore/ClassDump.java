@@ -92,8 +92,13 @@ public class ClassDump extends Tool {
                     System.err.println("Warning: Can not create class filter!");
                 }
             }
-            String outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir", ".");
-            setOutputDirectory(outputDirectory);
+
+            // outputDirectory and jarStream are alternatives: setting one closes the other.
+            // If neither is set, use outputDirectory from the System property:
+            if (outputDirectory == null && jarStream == null) {
+                String dirName = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir", ".");
+                setOutputDirectory(dirName);
+            }
 
             // walk through the system dictionary
             SystemDictionary dict = VM.getVM().getSystemDictionary();

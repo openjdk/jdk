@@ -687,6 +687,7 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
       CodeCache::add_scavenge_root_nmethod(this);
+      Universe::heap()->register_nmethod(this);
     }
     debug_only(verify_scavenge_root_oops());
     CodeCache::commit(this);
@@ -881,6 +882,7 @@ nmethod::nmethod(
     dependencies->copy_to(this);
     if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
       CodeCache::add_scavenge_root_nmethod(this);
+      Universe::heap()->register_nmethod(this);
     }
     debug_only(verify_scavenge_root_oops());
 
@@ -1300,6 +1302,13 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   methodHandle the_method(method());
   No_Safepoint_Verifier nsv;
 
+  // during patching, depending on the nmethod state we must notify the GC that
+  // code has been unloaded, unregistering it. We cannot do this right while
+  // holding the Patching_lock because we need to use the CodeCache_lock. This
+  // would be prone to deadlocks.
+  // This flag is used to remember whether we need to later lock and unregister.
+  bool nmethod_needs_unregister = false;
+
   {
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
@@ -1330,6 +1339,13 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       // It's a true state change, so mark the method as decompiled.
       // Do it only for transition from alive.
       inc_decompile_count();
+    }
+
+    // If the state is becoming a zombie, signal to unregister the nmethod with
+    // the heap.
+    // This nmethod may have already been unloaded during a full GC.
+    if ((state == zombie) && !is_unloaded()) {
+      nmethod_needs_unregister = true;
     }
 
     // Change state
@@ -1367,6 +1383,9 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       // safepoint can sneak in, otherwise the oops used by the
       // dependency logic could have become stale.
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      if (nmethod_needs_unregister) {
+        Universe::heap()->unregister_nmethod(this);
+      }
       flush_dependencies(NULL);
     }
 
@@ -1817,21 +1836,10 @@ void nmethod::metadata_do(void f(Metadata*)) {
   if (_method != NULL) f(_method);
 }
 
-
-// This method is called twice during GC -- once while
-// tracing the "active" nmethods on thread stacks during
-// the (strong) marking phase, and then again when walking
-// the code cache contents during the weak roots processing
-// phase. The two uses are distinguished by means of the
-// 'do_strong_roots_only' flag, which is true in the first
-// case. We want to walk the weak roots in the nmethod
-// only in the second case. The weak roots in the nmethod
-// are the oops in the ExceptionCache and the InlineCache
-// oops.
-void nmethod::oops_do(OopClosure* f, bool do_strong_roots_only) {
+void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
   // make sure the oops ready to receive visitors
-  assert(!is_zombie() && !is_unloaded(),
-         "should not call follow on zombie or unloaded nmethod");
+  assert(allow_zombie || !is_zombie(), "should not call follow on zombie nmethod");
+  assert(!is_unloaded(), "should not call follow on unloaded nmethod");
 
   // If the method is not entrant or zombie then a JMP is plastered over the
   // first few bytes.  If an oop in the old code was there, that oop
