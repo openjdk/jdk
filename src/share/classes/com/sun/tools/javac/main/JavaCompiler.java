@@ -80,7 +80,7 @@ import static com.sun.tools.javac.util.ListBuffer.lb;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class JavaCompiler implements ClassReader.SourceCompleter {
+public class JavaCompiler {
     /** The context key for the compiler. */
     protected static final Context.Key<JavaCompiler> compilerKey =
         new Context.Key<JavaCompiler>();
@@ -311,6 +311,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     protected JavaCompiler delegateCompiler;
 
     /**
+     * SourceCompleter that delegates to the complete-method of this class.
+     */
+    protected final ClassReader.SourceCompleter thisCompleter =
+            new ClassReader.SourceCompleter() {
+                @Override
+                public void complete(ClassSymbol sym) throws CompletionFailure {
+                    JavaCompiler.this.complete(sym);
+                }
+            };
+
+    /**
      * Command line options.
      */
     protected Options options;
@@ -374,7 +385,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         types = Types.instance(context);
         taskListener = MultiTaskListener.instance(context);
 
-        reader.sourceCompleter = this;
+        reader.sourceCompleter = thisCompleter;
 
         options = Options.instance(context);
 
