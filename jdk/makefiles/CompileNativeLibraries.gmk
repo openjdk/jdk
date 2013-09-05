@@ -3297,67 +3297,6 @@ endif
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-
-# Ugly hack to mimic behaviour in old build where this is built as an xcode project.
-SET_SHARED_LIBRARY_NAME=-Xlinker -install_name -Xlinker /usr/local/lib/libJObjC.dylib
-
-$(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC32,\
-		LIBRARY:=JObjC,\
-                OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc32,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/native \
-                     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/native ,\
-		LANG:=C,\
-		OPTIMIZATION:=LOW, \
-		CFLAGS:=-fpascal-strings \
-                        -fobjc-gc \
-                        -gdwarf-2 \
-                        $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
-                        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-			-m32,\
-		LDFLAGS:=$(LDFLAGS_JDKLIB)\
-			-m32, \
-		LDFLAGS_SUFFIX:=-framework Foundation -framework JavaVM \
-                                  -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-                                  -framework JavaNativeFoundation \
-                                  -lffi, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc32,\
-		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
-
-$(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC64,\
-		LIBRARY:=JObjC,\
-                OUTPUT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc64,\
-		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/native \
-                     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/native ,\
-		LANG:=C,\
-		OPTIMIZATION:=LOW, \
-		CFLAGS:=-fpascal-strings \
-                        -fobjc-gc \
-                        -gdwarf-2 \
-                        $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers_jobjc \
-                        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-			, \
-		LDFLAGS:=-fpascal-strings \
-                         -fobjc-gc \
-                         -gdwarf-2 \
-                         $(LDFLAGS_JDKLIB)\
-			 $(call SET_SHARED_LIBRARY_ORIGIN), \
-		LDFLAGS_SUFFIX:=-framework Foundation -framework JavaVM \
-                                  -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-                                  -framework JavaNativeFoundation \
-                                  -lffi, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc64,\
-		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
-
-$(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)JObjC$(SHARED_LIBRARY_SUFFIX): $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
-	$(LIPO) -create -output $@ $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
-
-BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)JObjC$(SHARED_LIBRARY_SUFFIX)
-
-endif
-
-##########################################################################################
-
 ifndef OPENJDK
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
