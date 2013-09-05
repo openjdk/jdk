@@ -109,10 +109,6 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
     ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/ext/sunmscapi.jar
 endif 
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/JObjC.jar
-endif
-
 ifeq ($(PROFILE), profile_1)
     PROFILE_JARS := $(PROFILE_1_JARS)
 else ifeq ($(PROFILE), profile_2)
