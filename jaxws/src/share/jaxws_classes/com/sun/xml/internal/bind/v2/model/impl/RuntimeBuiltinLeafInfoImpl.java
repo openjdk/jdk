@@ -91,6 +91,9 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 import com.sun.xml.internal.bind.v2.util.ByteArrayOutputStreamEx;
 import com.sun.xml.internal.bind.v2.util.DataSourceSource;
+import java.util.logging.Logger;
+import com.sun.xml.internal.bind.Util;
+import java.util.logging.Level;
 
 import org.xml.sax.SAXException;
 
@@ -104,6 +107,8 @@ import org.xml.sax.SAXException;
  */
 public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<Type,Class>
     implements RuntimeBuiltinLeafInfo, Transducer<T> {
+
+    private static final Logger logger = Util.getClassLogger();
 
     private RuntimeBuiltinLeafInfoImpl(Class type, QName... typeNames) {
         super(type, typeNames);
@@ -196,6 +201,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
     public static final List<RuntimeBuiltinLeafInfoImpl<?>> builtinBeanInfos;
 
     public static final String MAP_ANYURI_TO_URI = "mapAnyUriToUri";
+    public static final String USE_OLD_GMONTH_MAPPING = "jaxb.ri.useOldGmonthMapping";
 
     static {
 
@@ -960,7 +966,14 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
         m.put(DatatypeConstants.DATETIME,   "%Y-%M-%DT%h:%m:%s"+ "%z");
         m.put(DatatypeConstants.DATE,       "%Y-%M-%D" +"%z");
         m.put(DatatypeConstants.TIME,       "%h:%m:%s"+ "%z");
-        m.put(DatatypeConstants.GMONTH,     "--%M--%z");
+        if (System.getProperty(USE_OLD_GMONTH_MAPPING) == null) {
+            m.put(DatatypeConstants.GMONTH, "--%M%z");      //  E2-12 Error. http://www.w3.org/2001/05/xmlschema-errata#e2-12
+        } else {                                            //  backw. compatibility
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Old GMonth mapping used.");
+            }
+            m.put(DatatypeConstants.GMONTH, "--%M--%z");
+        }
         m.put(DatatypeConstants.GDAY,       "---%D" + "%z");
         m.put(DatatypeConstants.GYEAR,      "%Y" + "%z");
         m.put(DatatypeConstants.GYEARMONTH, "%Y-%M" + "%z");

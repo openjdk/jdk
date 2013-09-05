@@ -98,7 +98,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             configuration.standardmessage.error(
                         "doclet.exception_encountered",
                         exc.toString(), filename);
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
@@ -123,15 +123,20 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addProfilesList(Content profileSummary, String profilesTableSummary,
-            Content body) {
-        Content table = HtmlTree.TABLE(HtmlStyle.overviewSummary, 0, 3, 0, profilesTableSummary,
-                getTableCaption(profileSummary));
-        table.addContent(getSummaryTableHeader(profileTableHeader, "col"));
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        addProfilesList(tbody);
-        table.addContent(tbody);
-        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+    protected void addProfilesList(Content profileSummary, Content body) {
+        Content h2 = HtmlTree.HEADING(HtmlTag.H2, profileSummary);
+        Content profilesDiv = HtmlTree.DIV(h2);
+        Content ul = new HtmlTree(HtmlTag.UL);
+        String profileName;
+        for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
+            profileName = Profile.lookup(i).name;
+            Content profileLinkContent = getTargetProfileLink("classFrame",
+                    new StringContent(profileName), profileName);
+            Content li = HtmlTree.LI(profileLinkContent);
+            ul.addContent(li);
+        }
+        profilesDiv.addContent(ul);
+        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, profilesDiv);
         body.addContent(div);
     }
 
@@ -148,31 +153,6 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         table.addContent(tbody);
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
         body.addContent(div);
-    }
-
-    /**
-     * Adds list of profiles in the index table. Generate link to each profile.
-     *
-     * @param tbody the documentation tree to which the list will be added
-     */
-    protected void addProfilesList(Content tbody) {
-        for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
-            String profileName = Profile.lookup(i).name;
-            Content profileLinkContent = getTargetProfileLink("classFrame",
-                    new StringContent(profileName), profileName);
-            Content tdProfile = HtmlTree.TD(HtmlStyle.colFirst, profileLinkContent);
-            HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
-            tdSummary.addStyle(HtmlStyle.colLast);
-            tdSummary.addContent(getSpace());
-            HtmlTree tr = HtmlTree.TR(tdProfile);
-            tr.addContent(tdSummary);
-            if (i % 2 == 0) {
-                tr.addStyle(HtmlStyle.altColor);
-            } else {
-                tr.addStyle(HtmlStyle.rowColor);
-            }
-            tbody.addContent(tr);
-        }
     }
 
     /**

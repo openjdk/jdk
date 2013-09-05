@@ -748,6 +748,6 @@ class UnixAsynchronousSocketChannelImpl
     private static native void checkConnect(int fdVal) throws IOException;
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

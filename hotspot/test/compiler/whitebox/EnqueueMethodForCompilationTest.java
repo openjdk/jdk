@@ -23,10 +23,11 @@
 
 /*
  * @test EnqueueMethodForCompilationTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build EnqueueMethodForCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI EnqueueMethodForCompilationTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* EnqueueMethodForCompilationTest
  * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */
@@ -50,7 +51,7 @@ public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
 
         // method can not be compiled on level 'none'
         WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_NONE);
-        if (WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_NONE)) {
+        if (isCompilable(COMP_LEVEL_NONE)) {
             throw new RuntimeException(method
                     + " is compilable at level COMP_LEVEL_NONE");
         }
@@ -60,27 +61,29 @@ public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
         WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_ANY);
         checkNotCompiled();
 
-        WHITE_BOX.enqueueMethodForCompilation(method, 5);
-        if (!WHITE_BOX.isMethodCompilable(method, 5)) {
-            checkNotCompiled();
-            compile();
-            checkCompiled();
-        } else {
-            checkCompiled();
-        }
-
-        int compLevel = WHITE_BOX.getMethodCompilationLevel(method);
-        WHITE_BOX.deoptimizeMethod(method);
-        checkNotCompiled();
-
-        WHITE_BOX.enqueueMethodForCompilation(method, compLevel);
-        checkCompiled();
-        WHITE_BOX.deoptimizeMethod(method);
+        // not existing comp level
+        WHITE_BOX.enqueueMethodForCompilation(method, 42);
         checkNotCompiled();
 
         compile();
         checkCompiled();
-        WHITE_BOX.deoptimizeMethod(method);
+
+        int compLevel = getCompLevel();
+        int bci = WHITE_BOX.getMethodEntryBci(method);
+        System.out.println("bci = " + bci);
+        printInfo();
+        deoptimize();
+        printInfo();
+        checkNotCompiled();
+        printInfo();
+        WHITE_BOX.enqueueMethodForCompilation(method, compLevel, bci);
+        checkCompiled();
+        deoptimize();
+        checkNotCompiled();
+
+        compile();
+        checkCompiled();
+        deoptimize();
         checkNotCompiled();
     }
 }

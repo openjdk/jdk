@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.Callable;
 
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -68,12 +69,32 @@ public final class UserAccessorProperty extends Property {
             "userAccessorSetter", void.class, ScriptObject.class, int.class, String.class, Object.class, Object.class);
 
     /** Dynamic invoker for getter */
-    private static final MethodHandle INVOKE_UA_GETTER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-            Object.class, Object.class);
+    private static final Object INVOKE_UA_GETTER = new Object();
+
+    private static MethodHandle getINVOKE_UA_GETTER() {
+
+        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_GETTER,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class,
+                            Object.class, Object.class);
+                    }
+                });
+    }
 
     /** Dynamic invoker for setter */
-    private static final MethodHandle INVOKE_UA_SETTER = Bootstrap.createDynamicInvoker("dyn:call", void.class,
-            Object.class, Object.class, Object.class);
+    private static Object INVOKE_UA_SETTER = new Object();
+    private static MethodHandle getINVOKE_UA_SETTER() {
+        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_SETTER,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicInvoker("dyn:call", void.class,
+                            Object.class, Object.class, Object.class);
+                    }
+                });
+    }
 
     /**
      * Constructor
@@ -191,7 +212,7 @@ public final class UserAccessorProperty extends Property {
 
         if (func instanceof ScriptFunction) {
             try {
-                return INVOKE_UA_GETTER.invokeExact(func, self);
+                return getINVOKE_UA_GETTER().invokeExact(func, self);
             } catch(final Error|RuntimeException t) {
                 throw t;
             } catch(final Throwable t) {
@@ -208,7 +229,7 @@ public final class UserAccessorProperty extends Property {
 
         if (func instanceof ScriptFunction) {
             try {
-                INVOKE_UA_SETTER.invokeExact(func, self, value);
+                getINVOKE_UA_SETTER().invokeExact(func, self, value);
             } catch(final Error|RuntimeException t) {
                 throw t;
             } catch(final Throwable t) {

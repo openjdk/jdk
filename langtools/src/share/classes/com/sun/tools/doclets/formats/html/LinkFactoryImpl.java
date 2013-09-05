@@ -109,7 +109,7 @@ public class LinkFactoryImpl extends LinkFactory {
             }
         }
         // Can't link so just write label.
-        link.addContent(label.toString());
+        link.addContent(label);
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.addContent(getTypeParameterLinks(linkInfo));
         }

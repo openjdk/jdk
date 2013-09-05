@@ -26,8 +26,11 @@
 package jdk.nashorn.internal.runtime.options;
 
 import java.io.PrintWriter;
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -51,6 +55,15 @@ import jdk.nashorn.internal.runtime.QuotedStringTokenizer;
  * Manages global runtime options.
  */
 public final class Options {
+    // permission to just read nashorn.* System properties
+    private static AccessControlContext createPropertyReadAccCtxt() {
+        final Permissions perms = new Permissions();
+        perms.add(new PropertyPermission("nashorn.*", "read"));
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
+    private static final AccessControlContext READ_PROPERTY_ACC_CTXT = createPropertyReadAccCtxt();
+
     /** Resource tag. */
     private final String resource;
 
@@ -144,7 +157,7 @@ public final class Options {
                             return false;
                         }
                     }
-                });
+                }, READ_PROPERTY_ACC_CTXT);
     }
 
     /**
@@ -171,7 +184,7 @@ public final class Options {
                             return defValue;
                         }
                     }
-                });
+                }, READ_PROPERTY_ACC_CTXT);
     }
 
     /**
@@ -198,7 +211,7 @@ public final class Options {
                             return defValue;
                         }
                     }
-                });
+                }, READ_PROPERTY_ACC_CTXT);
     }
 
     /**
@@ -395,13 +408,13 @@ public final class Options {
         final LinkedList<String> argList = new LinkedList<>();
         Collections.addAll(argList, args);
 
-    final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
-    if (extra != null) {
-        final StringTokenizer st = new StringTokenizer(extra);
-        while (st.hasMoreTokens()) {
-        argList.add(st.nextToken());
+        final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
+        if (extra != null) {
+            final StringTokenizer st = new StringTokenizer(extra);
+            while (st.hasMoreTokens()) {
+                argList.add(st.nextToken());
+            }
         }
-    }
 
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);
@@ -418,8 +431,9 @@ public final class Options {
                 continue;
             }
 
-            // if it doesn't start with -, it's a file
-            if (!arg.startsWith("-")) {
+            // If it doesn't start with -, it's a file. But, if it is just "-",
+            // then it is a file representing standard input.
+            if (!arg.startsWith("-") || arg.length() == 1) {
                 files.add(arg);
                 continue;
             }
@@ -567,15 +581,7 @@ public final class Options {
     private static String definePropPrefix;
 
     static {
-        // Without do privileged, under security manager messages can not be
-        // loaded.
-        Options.bundle = AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
-            @Override
-            public ResourceBundle run() {
-                return ResourceBundle.getBundle(Options.MESSAGES_RESOURCE, Locale.getDefault());
-            }
-        });
-
+        Options.bundle = ResourceBundle.getBundle(Options.MESSAGES_RESOURCE, Locale.getDefault());
         Options.validOptions = new TreeSet<>();
         Options.usage        = new HashMap<>();
 

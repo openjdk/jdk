@@ -37,7 +37,7 @@ class SinkChannelImpl
 {
 
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new FileDispatcherImpl();
 
     // The file descriptor associated with this channel
     FileDescriptor fd;
@@ -206,10 +206,4 @@ class SinkChannelImpl
            throw new IndexOutOfBoundsException();
         return write(Util.subsequence(srcs, offset, length));
     }
-
-    static {
-        Util.load();
-        nd = new FileDispatcherImpl();
-    }
-
 }

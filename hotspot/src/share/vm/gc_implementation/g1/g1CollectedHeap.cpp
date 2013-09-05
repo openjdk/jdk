@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/g1/bufferingOopClosure.hpp"
 #include "gc_implementation/g1/concurrentG1Refine.hpp"
@@ -980,7 +981,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
     if (should_try_gc) {
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_inc_collection_pause);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -1105,7 +1107,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // enough space for the allocation to succeed after the pause.
 
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_humongous_allocation);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -1176,20 +1179,27 @@ class PostMCRemSetClearClosure: public HeapRegionClosure {
   ModRefBarrierSet* _mr_bs;
 public:
   PostMCRemSetClearClosure(G1CollectedHeap* g1h, ModRefBarrierSet* mr_bs) :
-    _g1h(g1h), _mr_bs(mr_bs) { }
+    _g1h(g1h), _mr_bs(mr_bs) {}
+
   bool doHeapRegion(HeapRegion* r) {
+    HeapRegionRemSet* hrrs = r->rem_set();
+
     if (r->continuesHumongous()) {
+      // We'll assert that the strong code root list and RSet is empty
+      assert(hrrs->strong_code_roots_list_length() == 0, "sanity");
+      assert(hrrs->occupied() == 0, "RSet should be empty");
       return false;
     }
+
     _g1h->reset_gc_time_stamps(r);
-    HeapRegionRemSet* hrrs = r->rem_set();
-    if (hrrs != NULL) hrrs->clear();
+    hrrs->clear();
     // You might think here that we could clear just the cards
     // corresponding to the used region.  But no: if we leave a dirty card
     // in a region we might allocate into, then it would prevent that card
     // from being enqueued, and cause it to be missed.
     // Re: the performance cost: we shouldn't be doing full GC anyway!
     _mr_bs->clear(MemRegion(r->bottom(), r->end()));
+
     return false;
   }
 };
@@ -1267,30 +1277,6 @@ public:
 void G1CollectedHeap::print_hrs_post_compaction() {
   PostCompactionPrinterClosure cl(hr_printer());
   heap_region_iterate(&cl);
-}
-
-double G1CollectedHeap::verify(bool guard, const char* msg) {
-  double verify_time_ms = 0.0;
-
-  if (guard && total_collections() >= VerifyGCStartAt) {
-    double verify_start = os::elapsedTime();
-    HandleMark hm;  // Discard invalid handles created during verification
-    prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, msg);
-    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
-  }
-
-  return verify_time_ms;
-}
-
-void G1CollectedHeap::verify_before_gc() {
-  double verify_time_ms = verify(VerifyBeforeGC, " VerifyBeforeGC:");
-  g1_policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
-}
-
-void G1CollectedHeap::verify_after_gc() {
-  double verify_time_ms = verify(VerifyAfterGC, " VerifyAfterGC:");
-  g1_policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
 }
 
 bool G1CollectedHeap::do_collection(bool explicit_gc,
@@ -1433,7 +1419,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       // Delete metaspaces for unloaded class loaders and clean up loader_data graph
       ClassLoaderDataGraph::purge();
-    MetaspaceAux::verify_metrics();
+      MetaspaceAux::verify_metrics();
 
       // Note: since we've just done a full GC, concurrent
       // marking is no longer active. Therefore we need not
@@ -1503,6 +1489,9 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         RebuildRSOutOfRegionClosure rebuild_rs(this);
         heap_region_iterate(&rebuild_rs);
       }
+
+      // Rebuild the strong code root lists for each region
+      rebuild_strong_code_roots();
 
       if (true) { // FIXME
         MetaspaceGC::compute_new_size();
@@ -2019,10 +2008,12 @@ jint G1CollectedHeap::initialize() {
 
   size_t init_byte_size = collector_policy()->initial_heap_byte_size();
   size_t max_byte_size = collector_policy()->max_heap_byte_size();
+  size_t heap_alignment = collector_policy()->max_alignment();
 
   // Ensure that the sizes are properly aligned.
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
+  Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
   _cg1r = new ConcurrentG1Refine(this);
 
@@ -2039,12 +2030,8 @@ jint G1CollectedHeap::initialize() {
   // If this happens then we could end up using a non-optimal
   // compressed oops mode.
 
-  // Since max_byte_size is aligned to the size of a heap region (checked
-  // above).
-  Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
-
   ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size,
-                                                 HeapRegion::GrainBytes);
+                                                 heap_alignment);
 
   // It is important to do this in a way such that concurrent readers can't
   // temporarily think something is in the heap.  (I've actually seen this
@@ -3109,6 +3096,145 @@ const char* G1CollectedHeap::top_at_mark_start_str(VerifyOption vo) {
   return NULL; // keep some compilers happy
 }
 
+// TODO: VerifyRootsClosure extends OopsInGenClosure so that we can
+//       pass it as the perm_blk to SharedHeap::process_strong_roots.
+//       When process_strong_roots stop calling perm_blk->younger_refs_iterate
+//       we can change this closure to extend the simpler OopClosure.
+class VerifyRootsClosure: public OopsInGenClosure {
+private:
+  G1CollectedHeap* _g1h;
+  VerifyOption     _vo;
+  bool             _failures;
+public:
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyRootsClosure(VerifyOption vo) :
+    _g1h(G1CollectedHeap::heap()),
+    _vo(vo),
+    _failures(false) { }
+
+  bool failures() { return _failures; }
+
+  template <class T> void do_oop_nv(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      if (_g1h->is_obj_dead_cond(obj, _vo)) {
+        gclog_or_tty->print_cr("Root location "PTR_FORMAT" "
+                              "points to dead obj "PTR_FORMAT, p, (void*) obj);
+        if (_vo == VerifyOption_G1UseMarkWord) {
+          gclog_or_tty->print_cr("  Mark word: "PTR_FORMAT, (void*)(obj->mark()));
+        }
+        obj->print_on(gclog_or_tty);
+        _failures = true;
+      }
+    }
+  }
+
+  void do_oop(oop* p)       { do_oop_nv(p); }
+  void do_oop(narrowOop* p) { do_oop_nv(p); }
+};
+
+class G1VerifyCodeRootOopClosure: public OopsInGenClosure {
+  G1CollectedHeap* _g1h;
+  OopClosure* _root_cl;
+  nmethod* _nm;
+  VerifyOption _vo;
+  bool _failures;
+
+  template <class T> void do_oop_work(T* p) {
+    // First verify that this root is live
+    _root_cl->do_oop(p);
+
+    if (!G1VerifyHeapRegionCodeRoots) {
+      // We're not verifying the code roots attached to heap region.
+      return;
+    }
+
+    // Don't check the code roots during marking verification in a full GC
+    if (_vo == VerifyOption_G1UseMarkWord) {
+      return;
+    }
+
+    // Now verify that the current nmethod (which contains p) is
+    // in the code root list of the heap region containing the
+    // object referenced by p.
+
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+
+      // Now fetch the region containing the object
+      HeapRegion* hr = _g1h->heap_region_containing(obj);
+      HeapRegionRemSet* hrrs = hr->rem_set();
+      // Verify that the strong code root list for this region
+      // contains the nmethod
+      if (!hrrs->strong_code_roots_list_contains(_nm)) {
+        gclog_or_tty->print_cr("Code root location "PTR_FORMAT" "
+                              "from nmethod "PTR_FORMAT" not in strong "
+                              "code roots for region ["PTR_FORMAT","PTR_FORMAT")",
+                              p, _nm, hr->bottom(), hr->end());
+        _failures = true;
+      }
+    }
+  }
+
+public:
+  G1VerifyCodeRootOopClosure(G1CollectedHeap* g1h, OopClosure* root_cl, VerifyOption vo):
+    _g1h(g1h), _root_cl(root_cl), _vo(vo), _nm(NULL), _failures(false) {}
+
+  void do_oop(oop* p) { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+
+  void set_nmethod(nmethod* nm) { _nm = nm; }
+  bool failures() { return _failures; }
+};
+
+class G1VerifyCodeRootBlobClosure: public CodeBlobClosure {
+  G1VerifyCodeRootOopClosure* _oop_cl;
+
+public:
+  G1VerifyCodeRootBlobClosure(G1VerifyCodeRootOopClosure* oop_cl):
+    _oop_cl(oop_cl) {}
+
+  void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      _oop_cl->set_nmethod(nm);
+      nm->oops_do(_oop_cl);
+    }
+  }
+};
+
+class YoungRefCounterClosure : public OopClosure {
+  G1CollectedHeap* _g1h;
+  int              _count;
+ public:
+  YoungRefCounterClosure(G1CollectedHeap* g1h) : _g1h(g1h), _count(0) {}
+  void do_oop(oop* p)       { if (_g1h->is_in_young(*p)) { _count++; } }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+
+  int count() { return _count; }
+  void reset_count() { _count = 0; };
+};
+
+class VerifyKlassClosure: public KlassClosure {
+  YoungRefCounterClosure _young_ref_counter_closure;
+  OopClosure *_oop_closure;
+ public:
+  VerifyKlassClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
+  void do_klass(Klass* k) {
+    k->oops_do(_oop_closure);
+
+    _young_ref_counter_closure.reset_count();
+    k->oops_do(&_young_ref_counter_closure);
+    if (_young_ref_counter_closure.count() > 0) {
+      guarantee(k->has_modified_oops(), err_msg("Klass %p, has young refs but is not dirty.", k));
+    }
+  }
+};
+
 class VerifyLivenessOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   VerifyOption _vo;
@@ -3242,75 +3368,7 @@ public:
   }
 };
 
-class YoungRefCounterClosure : public OopClosure {
-  G1CollectedHeap* _g1h;
-  int              _count;
- public:
-  YoungRefCounterClosure(G1CollectedHeap* g1h) : _g1h(g1h), _count(0) {}
-  void do_oop(oop* p)       { if (_g1h->is_in_young(*p)) { _count++; } }
-  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-
-  int count() { return _count; }
-  void reset_count() { _count = 0; };
-};
-
-class VerifyKlassClosure: public KlassClosure {
-  YoungRefCounterClosure _young_ref_counter_closure;
-  OopClosure *_oop_closure;
- public:
-  VerifyKlassClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
-  void do_klass(Klass* k) {
-    k->oops_do(_oop_closure);
-
-    _young_ref_counter_closure.reset_count();
-    k->oops_do(&_young_ref_counter_closure);
-    if (_young_ref_counter_closure.count() > 0) {
-      guarantee(k->has_modified_oops(), err_msg("Klass %p, has young refs but is not dirty.", k));
-    }
-  }
-};
-
-// TODO: VerifyRootsClosure extends OopsInGenClosure so that we can
-//       pass it as the perm_blk to SharedHeap::process_strong_roots.
-//       When process_strong_roots stop calling perm_blk->younger_refs_iterate
-//       we can change this closure to extend the simpler OopClosure.
-class VerifyRootsClosure: public OopsInGenClosure {
-private:
-  G1CollectedHeap* _g1h;
-  VerifyOption     _vo;
-  bool             _failures;
-public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseMarkWord    -> use mark word from object header.
-  VerifyRootsClosure(VerifyOption vo) :
-    _g1h(G1CollectedHeap::heap()),
-    _vo(vo),
-    _failures(false) { }
-
-  bool failures() { return _failures; }
-
-  template <class T> void do_oop_nv(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if (_g1h->is_obj_dead_cond(obj, _vo)) {
-        gclog_or_tty->print_cr("Root location "PTR_FORMAT" "
-                              "points to dead obj "PTR_FORMAT, p, (void*) obj);
-        if (_vo == VerifyOption_G1UseMarkWord) {
-          gclog_or_tty->print_cr("  Mark word: "PTR_FORMAT, (void*)(obj->mark()));
-        }
-        obj->print_on(gclog_or_tty);
-        _failures = true;
-      }
-    }
-  }
-
-  void do_oop(oop* p)       { do_oop_nv(p); }
-  void do_oop(narrowOop* p) { do_oop_nv(p); }
-};
-
-// This is the task used for parallel heap verification.
+// This is the task used for parallel verification of the heap regions
 
 class G1ParVerifyTask: public AbstractGangTask {
 private:
@@ -3344,20 +3402,15 @@ public:
   }
 };
 
-void G1CollectedHeap::verify(bool silent) {
-  verify(silent, VerifyOption_G1UsePrevMarking);
-}
-
-void G1CollectedHeap::verify(bool silent,
-                             VerifyOption vo) {
+void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
   if (SafepointSynchronize::is_at_safepoint()) {
-    if (!silent) { gclog_or_tty->print("Roots "); }
-    VerifyRootsClosure rootsCl(vo);
-
     assert(Thread::current()->is_VM_thread(),
            "Expected to be executed serially by the VM thread at this point");
 
-    CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
+    if (!silent) { gclog_or_tty->print("Roots "); }
+    VerifyRootsClosure rootsCl(vo);
+    G1VerifyCodeRootOopClosure codeRootsCl(this, &rootsCl, vo);
+    G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
     VerifyKlassClosure klassCl(this, &rootsCl);
 
     // We apply the relevant closures to all the oops in the
@@ -3376,7 +3429,7 @@ void G1CollectedHeap::verify(bool silent,
                          &klassCl
                          );
 
-    bool failures = rootsCl.failures();
+    bool failures = rootsCl.failures() || codeRootsCl.failures();
 
     if (vo != VerifyOption_G1UseMarkWord) {
       // If we're verifying during a full GC then the region sets
@@ -3443,6 +3496,34 @@ void G1CollectedHeap::verify(bool silent,
     if (!silent)
       gclog_or_tty->print("(SKIPPING roots, heapRegionSets, heapRegions, remset) ");
   }
+}
+
+void G1CollectedHeap::verify(bool silent) {
+  verify(silent, VerifyOption_G1UsePrevMarking);
+}
+
+double G1CollectedHeap::verify(bool guard, const char* msg) {
+  double verify_time_ms = 0.0;
+
+  if (guard && total_collections() >= VerifyGCStartAt) {
+    double verify_start = os::elapsedTime();
+    HandleMark hm;  // Discard invalid handles created during verification
+    prepare_for_verify();
+    Universe::verify(VerifyOption_G1UsePrevMarking, msg);
+    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
+  }
+
+  return verify_time_ms;
+}
+
+void G1CollectedHeap::verify_before_gc() {
+  double verify_time_ms = verify(VerifyBeforeGC, " VerifyBeforeGC:");
+  g1_policy()->phase_times()->record_verify_before_time_ms(verify_time_ms);
+}
+
+void G1CollectedHeap::verify_after_gc() {
+  double verify_time_ms = verify(VerifyAfterGC, " VerifyAfterGC:");
+  g1_policy()->phase_times()->record_verify_after_time_ms(verify_time_ms);
 }
 
 class PrintRegionClosure: public HeapRegionClosure {
@@ -3619,14 +3700,15 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
 
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                unsigned int gc_count_before,
-                                               bool* succeeded) {
+                                               bool* succeeded,
+                                               GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
   g1_policy()->record_stop_world_start();
   VM_G1IncCollectionPause op(gc_count_before,
                              word_size,
                              false, /* should_initiate_conc_mark */
                              g1_policy()->max_pause_time_ms(),
-                             GCCause::_g1_inc_collection_pause);
+                             gc_cause);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
@@ -3866,8 +3948,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       append_secondary_free_list_if_not_empty_with_lock();
     }
 
-    assert(check_young_list_well_formed(),
-      "young list should be well formed");
+    assert(check_young_list_well_formed(), "young list should be well formed");
+    assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
+           "sanity check");
 
     // Don't dynamically change the number of GC threads this early.  A value of
     // 0 is used to indicate serial work.  When parallel work is done,
@@ -4987,7 +5070,11 @@ public:
 
       G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
 
-      int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+      // Don't scan the scavengable methods in the code cache as part
+      // of strong root scanning. The code roots that point into a
+      // region in the collection set are scanned when we scan the
+      // region's RSet.
+      int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings;
 
       pss.start_strong_roots();
       _g1h->g1_process_strong_roots(/* is scavenging */ true,
@@ -5029,67 +5116,6 @@ public:
 
 // *** Common G1 Evacuation Stuff
 
-// Closures that support the filtering of CodeBlobs scanned during
-// external root scanning.
-
-// Closure applied to reference fields in code blobs (specifically nmethods)
-// to determine whether an nmethod contains references that point into
-// the collection set. Used as a predicate when walking code roots so
-// that only nmethods that point into the collection set are added to the
-// 'marked' list.
-
-class G1FilteredCodeBlobToOopClosure : public CodeBlobToOopClosure {
-
-  class G1PointsIntoCSOopClosure : public OopClosure {
-    G1CollectedHeap* _g1;
-    bool _points_into_cs;
-  public:
-    G1PointsIntoCSOopClosure(G1CollectedHeap* g1) :
-      _g1(g1), _points_into_cs(false) { }
-
-    bool points_into_cs() const { return _points_into_cs; }
-
-    template <class T>
-    void do_oop_nv(T* p) {
-      if (!_points_into_cs) {
-        T heap_oop = oopDesc::load_heap_oop(p);
-        if (!oopDesc::is_null(heap_oop) &&
-            _g1->in_cset_fast_test(oopDesc::decode_heap_oop_not_null(heap_oop))) {
-          _points_into_cs = true;
-        }
-      }
-    }
-
-    virtual void do_oop(oop* p)        { do_oop_nv(p); }
-    virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-  };
-
-  G1CollectedHeap* _g1;
-
-public:
-  G1FilteredCodeBlobToOopClosure(G1CollectedHeap* g1, OopClosure* cl) :
-    CodeBlobToOopClosure(cl, true), _g1(g1) { }
-
-  virtual void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL && !(nm->test_oops_do_mark())) {
-      G1PointsIntoCSOopClosure predicate_cl(_g1);
-      nm->oops_do(&predicate_cl);
-
-      if (predicate_cl.points_into_cs()) {
-        // At least one of the reference fields or the oop relocations
-        // in the nmethod points into the collection set. We have to
-        // 'mark' this nmethod.
-        // Note: Revisit the following if CodeBlobToOopClosure::do_code_blob()
-        // or MarkingCodeBlobClosure::do_code_blob() change.
-        if (!nm->test_set_oops_do_mark()) {
-          do_newly_marked_nmethod(nm);
-        }
-      }
-    }
-  }
-};
-
 // This method is run in a GC worker.
 
 void
@@ -5107,9 +5133,10 @@ g1_process_strong_roots(bool is_scavenging,
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
 
-  // Walk the code cache w/o buffering, because StarTask cannot handle
-  // unaligned oop locations.
-  G1FilteredCodeBlobToOopClosure eager_scan_code_roots(this, scan_non_heap_roots);
+  assert(so & SO_CodeCache || scan_rs != NULL, "must scan code roots somehow");
+  // Walk the code cache/strong code roots w/o buffering, because StarTask
+  // cannot handle unaligned oop locations.
+  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
 
   process_strong_roots(false, // no scoping; this is parallel code
                        is_scavenging, so,
@@ -5154,9 +5181,22 @@ g1_process_strong_roots(bool is_scavenging,
   }
   g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
+  // If this is an initial mark pause, and we're not scanning
+  // the entire code cache, we need to mark the oops in the
+  // strong code root lists for the regions that are not in
+  // the collection set.
+  // Note all threads participate in this set of root tasks.
+  double mark_strong_code_roots_ms = 0.0;
+  if (g1_policy()->during_initial_mark_pause() && !(so & SO_CodeCache)) {
+    double mark_strong_roots_start = os::elapsedTime();
+    mark_strong_code_roots(worker_i);
+    mark_strong_code_roots_ms = (os::elapsedTime() - mark_strong_roots_start) * 1000.0;
+  }
+  g1_policy()->phase_times()->record_strong_code_root_mark_time(worker_i, mark_strong_code_roots_ms);
+
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
-    g1_rem_set()->oops_into_collection_set_do(scan_rs, worker_i);
+    g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
   }
   _process_strong_tasks->all_tasks_completed();
 }
@@ -5774,9 +5814,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   process_discovered_references(n_workers);
 
   // Weak root processing.
-  // Note: when JSR 292 is enabled and code blobs can contain
-  // non-perm oops then we will need to process the code blobs
-  // here too.
   {
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
@@ -5791,6 +5828,17 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // collection set are reset when the collection set is freed.
   hot_card_cache->reset_hot_cache();
   hot_card_cache->set_use_cache(true);
+
+  // Migrate the strong code roots attached to each region in
+  // the collection set. Ideally we would like to do this
+  // after we have finished the scanning/evacuation of the
+  // strong code roots for a particular heap region.
+  migrate_strong_code_roots();
+
+  if (g1_policy()->during_initial_mark_pause()) {
+    // Reset the claim values set during marking the strong code roots
+    reset_heap_region_claim_values();
+  }
 
   finalize_for_evac_failure();
 
@@ -6587,4 +6635,209 @@ void G1CollectedHeap::verify_region_sets() {
   _old_set.verify_end();
   _humongous_set.verify_end();
   _free_list.verify_end();
+}
+
+// Optimized nmethod scanning
+
+class RegisterNMethodOopClosure: public OopClosure {
+  G1CollectedHeap* _g1h;
+  nmethod* _nm;
+
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      HeapRegion* hr = _g1h->heap_region_containing(obj);
+      assert(!hr->isHumongous(), "code root in humongous region?");
+
+      // HeapRegion::add_strong_code_root() avoids adding duplicate
+      // entries but having duplicates is  OK since we "mark" nmethods
+      // as visited when we scan the strong code root lists during the GC.
+      hr->add_strong_code_root(_nm);
+      assert(hr->rem_set()->strong_code_roots_list_contains(_nm), "add failed?");
+    }
+  }
+
+public:
+  RegisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+
+class UnregisterNMethodOopClosure: public OopClosure {
+  G1CollectedHeap* _g1h;
+  nmethod* _nm;
+
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      HeapRegion* hr = _g1h->heap_region_containing(obj);
+      assert(!hr->isHumongous(), "code root in humongous region?");
+      hr->remove_strong_code_root(_nm);
+      assert(!hr->rem_set()->strong_code_roots_list_contains(_nm), "remove failed?");
+    }
+  }
+
+public:
+  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
+    _g1h(g1h), _nm(nm) {}
+
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+
+void G1CollectedHeap::register_nmethod(nmethod* nm) {
+  CollectedHeap::register_nmethod(nm);
+
+  guarantee(nm != NULL, "sanity");
+  RegisterNMethodOopClosure reg_cl(this, nm);
+  nm->oops_do(&reg_cl);
+}
+
+void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
+  CollectedHeap::unregister_nmethod(nm);
+
+  guarantee(nm != NULL, "sanity");
+  UnregisterNMethodOopClosure reg_cl(this, nm);
+  nm->oops_do(&reg_cl, true);
+}
+
+class MigrateCodeRootsHeapRegionClosure: public HeapRegionClosure {
+public:
+  bool doHeapRegion(HeapRegion *hr) {
+    assert(!hr->isHumongous(), "humongous region in collection set?");
+    hr->migrate_strong_code_roots();
+    return false;
+  }
+};
+
+void G1CollectedHeap::migrate_strong_code_roots() {
+  MigrateCodeRootsHeapRegionClosure cl;
+  double migrate_start = os::elapsedTime();
+  collection_set_iterate(&cl);
+  double migration_time_ms = (os::elapsedTime() - migrate_start) * 1000.0;
+  g1_policy()->phase_times()->record_strong_code_root_migration_time(migration_time_ms);
+}
+
+// Mark all the code roots that point into regions *not* in the
+// collection set.
+//
+// Note we do not want to use a "marking" CodeBlobToOopClosure while
+// walking the the code roots lists of regions not in the collection
+// set. Suppose we have an nmethod (M) that points to objects in two
+// separate regions - one in the collection set (R1) and one not (R2).
+// Using a "marking" CodeBlobToOopClosure here would result in "marking"
+// nmethod M when walking the code roots for R1. When we come to scan
+// the code roots for R2, we would see that M is already marked and it
+// would be skipped and the objects in R2 that are referenced from M
+// would not be evacuated.
+
+class MarkStrongCodeRootCodeBlobClosure: public CodeBlobClosure {
+
+  class MarkStrongCodeRootOopClosure: public OopClosure {
+    ConcurrentMark* _cm;
+    HeapRegion* _hr;
+    uint _worker_id;
+
+    template <class T> void do_oop_work(T* p) {
+      T heap_oop = oopDesc::load_heap_oop(p);
+      if (!oopDesc::is_null(heap_oop)) {
+        oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+        // Only mark objects in the region (which is assumed
+        // to be not in the collection set).
+        if (_hr->is_in(obj)) {
+          _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
+        }
+      }
+    }
+
+  public:
+    MarkStrongCodeRootOopClosure(ConcurrentMark* cm, HeapRegion* hr, uint worker_id) :
+      _cm(cm), _hr(hr), _worker_id(worker_id) {
+      assert(!_hr->in_collection_set(), "sanity");
+    }
+
+    void do_oop(narrowOop* p) { do_oop_work(p); }
+    void do_oop(oop* p)       { do_oop_work(p); }
+  };
+
+  MarkStrongCodeRootOopClosure _oop_cl;
+
+public:
+  MarkStrongCodeRootCodeBlobClosure(ConcurrentMark* cm, HeapRegion* hr, uint worker_id):
+    _oop_cl(cm, hr, worker_id) {}
+
+  void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = (cb == NULL) ? NULL : cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      nm->oops_do(&_oop_cl);
+    }
+  }
+};
+
+class MarkStrongCodeRootsHRClosure: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+  uint _worker_id;
+
+public:
+  MarkStrongCodeRootsHRClosure(G1CollectedHeap* g1h, uint worker_id) :
+    _g1h(g1h), _worker_id(worker_id) {}
+
+  bool doHeapRegion(HeapRegion *hr) {
+    HeapRegionRemSet* hrrs = hr->rem_set();
+    if (hr->isHumongous()) {
+      // Code roots should never be attached to a humongous region
+      assert(hrrs->strong_code_roots_list_length() == 0, "sanity");
+      return false;
+    }
+
+    if (hr->in_collection_set()) {
+      // Don't mark code roots into regions in the collection set here.
+      // They will be marked when we scan them.
+      return false;
+    }
+
+    MarkStrongCodeRootCodeBlobClosure cb_cl(_g1h->concurrent_mark(), hr, _worker_id);
+    hr->strong_code_roots_do(&cb_cl);
+    return false;
+  }
+};
+
+void G1CollectedHeap::mark_strong_code_roots(uint worker_id) {
+  MarkStrongCodeRootsHRClosure cl(this, worker_id);
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    heap_region_par_iterate_chunked(&cl,
+                                    worker_id,
+                                    workers()->active_workers(),
+                                    HeapRegion::ParMarkRootClaimValue);
+  } else {
+    heap_region_iterate(&cl);
+  }
+}
+
+class RebuildStrongCodeRootClosure: public CodeBlobClosure {
+  G1CollectedHeap* _g1h;
+
+public:
+  RebuildStrongCodeRootClosure(G1CollectedHeap* g1h) :
+    _g1h(g1h) {}
+
+  void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = (cb != NULL) ? cb->as_nmethod_or_null() : NULL;
+    if (nm == NULL) {
+      return;
+    }
+
+    if (ScavengeRootsInCode && nm->detect_scavenge_root_oops()) {
+      _g1h->register_nmethod(nm);
+    }
+  }
+};
+
+void G1CollectedHeap::rebuild_strong_code_roots() {
+  RebuildStrongCodeRootClosure blob_cl(this);
+  CodeCache::blobs_do(&blob_cl);
 }

@@ -56,7 +56,6 @@ class PipeImpl
     private static final Random rnd;
 
     static {
-        Util.load();
         byte[] someBytes = new byte[8];
         boolean resultOK = IOUtil.randomBytes(someBytes);
         if (resultOK) {

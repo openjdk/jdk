@@ -26,7 +26,6 @@
 /**
  * @test
  * @bug 8003639
- * @ignore 8013875: Incorrect vtable index being set during methodHandle creation for static
  * @summary convert lambda testng tests to jtreg and add them
  * @run testng InInterface
  */
