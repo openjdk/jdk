@@ -378,7 +378,6 @@ Table styles
     overflow:hidden;
     padding:0px;
     margin:0px;
-    white-space:pre;
 }
 caption a:link, caption a:hover, caption a:active, caption a:visited {
     color:#FFFFFF;
@@ -387,35 +386,32 @@ caption a:link, caption a:hover, caption a:active, caption a:visited {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/titlebar.gif);
-    height:18px;
 }
 .contentContainer ul.blockList li.blockList caption span.activeTableTab span {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/activetitlebar.gif);
-    height:18px;
 }
 .contentContainer ul.blockList li.blockList caption span.tableTab span {
     white-space:nowrap;
     padding-top:8px;
     padding-left:8px;
-    display:block;
+    display:inline-block;
     float:left;
     background-image:url(resources/titlebar.gif);
-    height:18px;
 }
 .contentContainer ul.blockList li.blockList caption span.tableTab, .contentContainer ul.blockList li.blockList caption span.activeTableTab {
     padding-top:0px;
     padding-left:0px;
     background-image:none;
     float:none;
-    display:inline;
+    display:inline-block;
 }
 .overviewSummary .tabEnd, .packageSummary .tabEnd, .contentContainer ul.blockList li.blockList .tabEnd, .summary .tabEnd, .classUseContainer .tabEnd, .constantValuesContainer .tabEnd {
     width:10px;
