@@ -127,32 +127,55 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
 
 class HRRSStatsIter: public HeapRegionClosure {
   size_t _occupied;
-  size_t _total_mem_sz;
-  size_t _max_mem_sz;
-  HeapRegion* _max_mem_sz_region;
+
+  size_t _total_rs_mem_sz;
+  size_t _max_rs_mem_sz;
+  HeapRegion* _max_rs_mem_sz_region;
+
+  size_t _total_code_root_mem_sz;
+  size_t _max_code_root_mem_sz;
+  HeapRegion* _max_code_root_mem_sz_region;
 public:
   HRRSStatsIter() :
     _occupied(0),
-    _total_mem_sz(0),
-    _max_mem_sz(0),
-    _max_mem_sz_region(NULL)
+    _total_rs_mem_sz(0),
+    _max_rs_mem_sz(0),
+    _max_rs_mem_sz_region(NULL),
+    _total_code_root_mem_sz(0),
+    _max_code_root_mem_sz(0),
+    _max_code_root_mem_sz_region(NULL)
   {}
 
   bool doHeapRegion(HeapRegion* r) {
-    size_t mem_sz = r->rem_set()->mem_size();
-    if (mem_sz > _max_mem_sz) {
-      _max_mem_sz = mem_sz;
-      _max_mem_sz_region = r;
+    HeapRegionRemSet* hrrs = r->rem_set();
+
+    // HeapRegionRemSet::mem_size() includes the
+    // size of the strong code roots
+    size_t rs_mem_sz = hrrs->mem_size();
+    if (rs_mem_sz > _max_rs_mem_sz) {
+      _max_rs_mem_sz = rs_mem_sz;
+      _max_rs_mem_sz_region = r;
     }
-    _total_mem_sz += mem_sz;
-    size_t occ = r->rem_set()->occupied();
+    _total_rs_mem_sz += rs_mem_sz;
+
+    size_t code_root_mem_sz = hrrs->strong_code_roots_mem_size();
+    if (code_root_mem_sz > _max_code_root_mem_sz) {
+      _max_code_root_mem_sz = code_root_mem_sz;
+      _max_code_root_mem_sz_region = r;
+    }
+    _total_code_root_mem_sz += code_root_mem_sz;
+
+    size_t occ = hrrs->occupied();
     _occupied += occ;
     return false;
   }
-  size_t total_mem_sz() { return _total_mem_sz; }
-  size_t max_mem_sz() { return _max_mem_sz; }
+  size_t total_rs_mem_sz() { return _total_rs_mem_sz; }
+  size_t max_rs_mem_sz() { return _max_rs_mem_sz; }
+  HeapRegion* max_rs_mem_sz_region() { return _max_rs_mem_sz_region; }
+  size_t total_code_root_mem_sz() { return _total_code_root_mem_sz; }
+  size_t max_code_root_mem_sz() { return _max_code_root_mem_sz; }
+  HeapRegion* max_code_root_mem_sz_region() { return _max_code_root_mem_sz_region; }
   size_t occupied() { return _occupied; }
-  HeapRegion* max_mem_sz_region() { return _max_mem_sz_region; }
 };
 
 double calc_percentage(size_t numerator, size_t denominator) {
@@ -184,22 +207,33 @@ void G1RemSetSummary::print_on(outputStream* out) {
 
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
+  // RemSet stats
   out->print_cr("  Total heap region rem set sizes = "SIZE_FORMAT"K."
                 "  Max = "SIZE_FORMAT"K.",
-                blk.total_mem_sz()/K, blk.max_mem_sz()/K);
+                blk.total_rs_mem_sz()/K, blk.max_rs_mem_sz()/K);
   out->print_cr("  Static structures = "SIZE_FORMAT"K,"
                 " free_lists = "SIZE_FORMAT"K.",
                 HeapRegionRemSet::static_mem_size() / K,
                 HeapRegionRemSet::fl_mem_size() / K);
   out->print_cr("    "SIZE_FORMAT" occupied cards represented.",
                 blk.occupied());
-  HeapRegion* max_mem_sz_region = blk.max_mem_sz_region();
-  HeapRegionRemSet* rem_set = max_mem_sz_region->rem_set();
+  HeapRegion* max_rs_mem_sz_region = blk.max_rs_mem_sz_region();
+  HeapRegionRemSet* max_rs_rem_set = max_rs_mem_sz_region->rem_set();
   out->print_cr("    Max size region = "HR_FORMAT", "
                 "size = "SIZE_FORMAT "K, occupied = "SIZE_FORMAT"K.",
-                HR_FORMAT_PARAMS(max_mem_sz_region),
-                (rem_set->mem_size() + K - 1)/K,
-                (rem_set->occupied() + K - 1)/K);
-
+                HR_FORMAT_PARAMS(max_rs_mem_sz_region),
+                (max_rs_rem_set->mem_size() + K - 1)/K,
+                (max_rs_rem_set->occupied() + K - 1)/K);
   out->print_cr("    Did %d coarsenings.", num_coarsenings());
+  // Strong code root stats
+  out->print_cr("  Total heap region code-root set sizes = "SIZE_FORMAT"K."
+                "  Max = "SIZE_FORMAT"K.",
+                blk.total_code_root_mem_sz()/K, blk.max_code_root_mem_sz()/K);
+  HeapRegion* max_code_root_mem_sz_region = blk.max_code_root_mem_sz_region();
+  HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region->rem_set();
+  out->print_cr("    Max size region = "HR_FORMAT", "
+                "size = "SIZE_FORMAT "K, num_elems = "SIZE_FORMAT".",
+                HR_FORMAT_PARAMS(max_code_root_mem_sz_region),
+                (max_code_root_rem_set->strong_code_roots_mem_size() + K - 1)/K,
+                (max_code_root_rem_set->strong_code_roots_list_length()));
 }

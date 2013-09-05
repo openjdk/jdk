@@ -1344,32 +1344,23 @@ public class Resolve {
         if (bestSoFar.exists())
             return bestSoFar;
 
-        Scope.Entry e = env.toplevel.namedImportScope.lookup(name);
-        for (; e.scope != null; e = e.next()) {
-            sym = e.sym;
-            Type origin = e.getOrigin().owner.type;
-            if (sym.kind == VAR) {
-                if (e.sym.owner.type != origin)
-                    sym = sym.clone(e.getOrigin().owner);
-                return isAccessible(env, origin, sym)
-                    ? sym : new AccessError(env, origin, sym);
-            }
-        }
-
         Symbol origin = null;
-        e = env.toplevel.starImportScope.lookup(name);
-        for (; e.scope != null; e = e.next()) {
-            sym = e.sym;
-            if (sym.kind != VAR)
-                continue;
-            // invariant: sym.kind == VAR
-            if (bestSoFar.kind < AMBIGUOUS && sym.owner != bestSoFar.owner)
-                return new AmbiguityError(bestSoFar, sym);
-            else if (bestSoFar.kind >= VAR) {
-                origin = e.getOrigin().owner;
-                bestSoFar = isAccessible(env, origin.type, sym)
-                    ? sym : new AccessError(env, origin.type, sym);
+        for (Scope sc : new Scope[] { env.toplevel.namedImportScope, env.toplevel.starImportScope }) {
+            Scope.Entry e = sc.lookup(name);
+            for (; e.scope != null; e = e.next()) {
+                sym = e.sym;
+                if (sym.kind != VAR)
+                    continue;
+                // invariant: sym.kind == VAR
+                if (bestSoFar.kind < AMBIGUOUS && sym.owner != bestSoFar.owner)
+                    return new AmbiguityError(bestSoFar, sym);
+                else if (bestSoFar.kind >= VAR) {
+                    origin = e.getOrigin().owner;
+                    bestSoFar = isAccessible(env, origin.type, sym)
+                        ? sym : new AccessError(env, origin.type, sym);
+                }
             }
+            if (bestSoFar.exists()) break;
         }
         if (bestSoFar.kind == VAR && bestSoFar.owner.type != origin.type)
             return bestSoFar.clone(origin);
@@ -1868,7 +1859,10 @@ public class Resolve {
         }
     }
 
-    /** Find qualified member type.
+
+    /**
+     * Find a type declared in a scope (not inherited).  Return null
+     * if none is found.
      *  @param env       The current environment.
      *  @param site      The original type from where the selection takes
      *                   place.
@@ -1877,12 +1871,10 @@ public class Resolve {
      *                   always a superclass or implemented interface of
      *                   site's class.
      */
-    Symbol findMemberType(Env<AttrContext> env,
-                          Type site,
-                          Name name,
-                          TypeSymbol c) {
-        Symbol bestSoFar = typeNotFound;
-        Symbol sym;
+    Symbol findImmediateMemberType(Env<AttrContext> env,
+                                   Type site,
+                                   Name name,
+                                   TypeSymbol c) {
         Scope.Entry e = c.members().lookup(name);
         while (e.scope != null) {
             if (e.sym.kind == TYP) {
@@ -1892,6 +1884,24 @@ public class Resolve {
             }
             e = e.next();
         }
+        return typeNotFound;
+    }
+
+    /** Find a member type inherited from a superclass or interface.
+     *  @param env       The current environment.
+     *  @param site      The original type from where the selection takes
+     *                   place.
+     *  @param name      The type's name.
+     *  @param c         The class to search for the member type. This is
+     *                   always a superclass or implemented interface of
+     *                   site's class.
+     */
+    Symbol findInheritedMemberType(Env<AttrContext> env,
+                                   Type site,
+                                   Name name,
+                                   TypeSymbol c) {
+        Symbol bestSoFar = typeNotFound;
+        Symbol sym;
         Type st = types.supertype(c.type);
         if (st != null && st.hasTag(CLASS)) {
             sym = findMemberType(env, site, name, st.tsym);
@@ -1908,6 +1918,28 @@ public class Resolve {
                 bestSoFar = sym;
         }
         return bestSoFar;
+    }
+
+    /** Find qualified member type.
+     *  @param env       The current environment.
+     *  @param site      The original type from where the selection takes
+     *                   place.
+     *  @param name      The type's name.
+     *  @param c         The class to search for the member type. This is
+     *                   always a superclass or implemented interface of
+     *                   site's class.
+     */
+    Symbol findMemberType(Env<AttrContext> env,
+                          Type site,
+                          Name name,
+                          TypeSymbol c) {
+        Symbol sym = findImmediateMemberType(env, site, name, c);
+
+        if (sym != typeNotFound)
+            return sym;
+
+        return findInheritedMemberType(env, site, name, c);
+
     }
 
     /** Find a global type in given scope and load corresponding class.
@@ -1928,6 +1960,21 @@ public class Resolve {
         return bestSoFar;
     }
 
+    Symbol findTypeVar(Env<AttrContext> env, Name name, boolean staticOnly) {
+        for (Scope.Entry e = env.info.scope.lookup(name);
+             e.scope != null;
+             e = e.next()) {
+            if (e.sym.kind == TYP) {
+                if (staticOnly &&
+                    e.sym.type.hasTag(TYPEVAR) &&
+                    e.sym.owner.kind == TYP)
+                    return new StaticError(e.sym);
+                return e.sym;
+            }
+        }
+        return typeNotFound;
+    }
+
     /** Find an unqualified type symbol.
      *  @param env       The current environment.
      *  @param name      The type's name.
@@ -1938,19 +1985,26 @@ public class Resolve {
         boolean staticOnly = false;
         for (Env<AttrContext> env1 = env; env1.outer != null; env1 = env1.outer) {
             if (isStatic(env1)) staticOnly = true;
-            for (Scope.Entry e = env1.info.scope.lookup(name);
-                 e.scope != null;
-                 e = e.next()) {
-                if (e.sym.kind == TYP) {
-                    if (staticOnly &&
-                        e.sym.type.hasTag(TYPEVAR) &&
-                        e.sym.owner.kind == TYP) return new StaticError(e.sym);
-                    return e.sym;
-                }
+            // First, look for a type variable and the first member type
+            final Symbol tyvar = findTypeVar(env1, name, staticOnly);
+            sym = findImmediateMemberType(env1, env1.enclClass.sym.type,
+                                          name, env1.enclClass.sym);
+
+            // Return the type variable if we have it, and have no
+            // immediate member, OR the type variable is for a method.
+            if (tyvar != typeNotFound) {
+                if (sym == typeNotFound ||
+                    (tyvar.kind == TYP && tyvar.exists() &&
+                     tyvar.owner.kind == MTH))
+                    return tyvar;
             }
 
-            sym = findMemberType(env1, env1.enclClass.sym.type, name,
-                                 env1.enclClass.sym);
+            // If the environment is a class def, finish up,
+            // otherwise, do the entire findMemberType
+            if (sym == typeNotFound)
+                sym = findInheritedMemberType(env1, env1.enclClass.sym.type,
+                                              name, env1.enclClass.sym);
+
             if (staticOnly && sym.kind == TYP &&
                 sym.type.hasTag(CLASS) &&
                 sym.type.getEnclosingType().hasTag(CLASS) &&

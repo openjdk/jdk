@@ -28,7 +28,7 @@
  * @library ../../../..
  * @build test.java.lang.invoke.AccessControlTest
  * @build test.java.lang.invoke.AccessControlTest_subpkg.Acquaintance_remote
- * @run junit/othervm test.java.lang.invoke.AccessControlTest
+ * @run testng/othervm test.java.lang.invoke.AccessControlTest
  */
 
 package test.java.lang.invoke;
@@ -36,12 +36,14 @@ package test.java.lang.invoke;
 import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.util.*;
-import org.junit.*;
+import org.testng.*;
+import org.testng.annotations.*;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 import static java.lang.invoke.MethodType.*;
-import static org.junit.Assert.*;
+import static org.testng.Assert.*;
+
 import test.java.lang.invoke.AccessControlTest_subpkg.Acquaintance_remote;
 
 

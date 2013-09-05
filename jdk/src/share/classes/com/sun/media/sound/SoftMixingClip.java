@@ -38,7 +38,7 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineUnavailableException;
 
 /**
- * Clip implemention for the SoftMixingMixer.
+ * Clip implementation for the SoftMixingMixer.
  *
  * @author Karl Helgason
  */
@@ -357,7 +357,9 @@ public final class SoftMixingClip extends SoftMixingDataLine implements Clip {
                 throw new IllegalArgumentException(
                         "Buffer size does not represent an integral number of sample frames!");
 
-            this.data = data;
+            if (data != null) {
+                this.data = Arrays.copyOf(data, data.length);
+            }
             this.offset = offset;
             this.bufferSize = bufferSize;
             this.format = format;

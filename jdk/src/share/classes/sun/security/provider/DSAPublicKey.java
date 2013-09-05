@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.interfaces.DSAParams;
 
 import sun.security.x509.X509Key;
 import sun.security.x509.AlgIdDSA;
+import sun.security.util.BitArray;
 import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
@@ -88,8 +89,9 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
         algid = new AlgIdDSA(p, q, g);
 
         try {
-            key = new DerValue(DerValue.tag_Integer,
+            byte[] keyArray = new DerValue(DerValue.tag_Integer,
                                y.toByteArray()).toByteArray();
+            setKey(new BitArray(keyArray.length*8, keyArray));
             encode();
         } catch (IOException e) {
             throw new InvalidKeyException("could not DER encode y: " +
@@ -142,7 +144,7 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
 
     protected void parseKeyBits() throws InvalidKeyException {
         try {
-            DerInputStream in = new DerInputStream(key);
+            DerInputStream in = new DerInputStream(getKey().toByteArray());
             y = in.getBigInteger();
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid key: y value\n" +

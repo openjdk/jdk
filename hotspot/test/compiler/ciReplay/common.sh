@@ -89,7 +89,10 @@ negative_test() {
 # $1 - initial error_code
 common_tests() {
     positive_test $1 "COMMON :: THE SAME FLAGS"
-    positive_test `expr $1 + 1` "COMMON :: TIERED" -XX:+TieredCompilation
+    if [ $tiered_available -eq 1 ]
+    then
+        positive_test `expr $1 + 1` "COMMON :: TIERED" -XX:+TieredCompilation
+    fi
 }
 
 # $1 - initial error_code
@@ -115,8 +118,11 @@ client_tests() {
     then
         negative_test $1 "SERVER :: NON-TIERED" -XX:-TieredCompilation \
                 -server
-        positive_test `expr $1 + 1` "SERVER :: TIERED" -XX:+TieredCompilation \
-                -server
+        if [ $tiered_available -eq 1 ]
+        then
+            positive_test `expr $1 + 1` "SERVER :: TIERED" -XX:+TieredCompilation \
+                    -server
+        fi
     fi
     nontiered_tests `expr $1 + 2` $client_level 
 }
@@ -167,6 +173,9 @@ client_available=`${JAVA} ${TESTVMOPTS} -client -Xinternalversion 2>&1 | \
         grep -c Client`
 server_available=`${JAVA} ${TESTVMOPTS} -server -Xinternalversion 2>&1 | \
         grep -c Server`
+tiered_available=`${JAVA} ${TESTVMOPTS} -XX:+TieredCompilation -XX:+PrintFlagsFinal -version | \
+        grep TieredCompilation | \
+        grep -c true`
 is_tiered=`${JAVA} ${TESTVMOPTS} -XX:+PrintFlagsFinal -version | \
         grep TieredCompilation | \
         grep -c true`
@@ -177,6 +186,7 @@ server_level=4
 
 echo "client_available=$client_available"
 echo "server_available=$server_available"
+echo "tiered_available=$tiered_available"
 echo "is_tiered=$is_tiered"
 
 # crash vm in compiler thread with generation replay data and 'small' dump-file
@@ -186,6 +196,11 @@ generate_replay() {
     then
         # enable core dump
         ulimit -c unlimited
+
+        if [ $VM_OS = "solaris" ]
+        then
+            coreadm -p core $$
+        fi
     fi
 
     cmd="${JAVA} ${TESTVMOPTS} $@ \

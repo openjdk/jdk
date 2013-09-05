@@ -30,7 +30,6 @@
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @run main MOAT
- * @run main/othervm -XX:+AggressiveOpts MOAT
  */
 
 /* Mother Of All (Collection) Tests

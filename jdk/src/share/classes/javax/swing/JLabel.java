@@ -1185,14 +1185,13 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Determine the bounding box of the character at the given
-         * index into the string.  The bounds are returned in local
-         * coordinates.  If the index is invalid an empty rectangle is
-         * returned.
+         * Returns the bounding box of the character at the given
+         * index in the string.  The bounds are returned in local
+         * coordinates. If the index is invalid, <code>null</code> is returned.
          *
          * @param i the index into the String
-         * @return the screen coordinates of the character's the bounding box,
-         * if index is invalid returns an empty rectangle.
+         * @return the screen coordinates of the character's bounding box.
+         * If the index is invalid, <code>null</code> is returned.
          * @since 1.3
          */
         public Rectangle getCharacterBounds(int i) {

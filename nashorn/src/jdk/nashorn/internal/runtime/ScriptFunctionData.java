@@ -250,9 +250,18 @@ public abstract class ScriptFunctionData {
         final int length = args == null ? 0 : args.length;
 
         CompiledFunctions boundList = new CompiledFunctions();
-        for (final CompiledFunction inv : code) {
+        if (code.size() == 1) {
+            // only one variant - bind that
+            boundList.add(bind(code.first(), fn, self, allArgs));
+        } else {
+            // There are specialized versions. Get the most generic one.
+            // This is to avoid ambiguous overloaded versions of bound and
+            // specialized variants and choosing wrong overload.
+            final MethodHandle genInvoker = getGenericInvoker();
+            final CompiledFunction inv = new CompiledFunction(genInvoker.type(), genInvoker, getGenericConstructor());
             boundList.add(bind(inv, fn, self, allArgs));
         }
+
         ScriptFunctionData boundData = new FinalScriptFunctionData(name, arity == -1 ? -1 : Math.max(0, arity - length), boundList, isStrict(), isBuiltin(), isConstructor());
         return boundData;
     }

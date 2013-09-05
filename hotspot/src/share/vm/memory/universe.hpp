@@ -41,10 +41,11 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 
 
-// Common parts of a Method* cache. This cache safely interacts with
-// the RedefineClasses API.
-//
-class CommonMethodOopCache : public CHeapObj<mtClass> {
+// A helper class for caching a Method* when the user of the cache
+// only cares about the latest version of the Method*.  This cache safely
+// interacts with the RedefineClasses API.
+
+class LatestMethodCache : public CHeapObj<mtClass> {
   // We save the Klass* and the idnum of Method* in order to get
   // the current cached Method*.
  private:
@@ -52,12 +53,14 @@ class CommonMethodOopCache : public CHeapObj<mtClass> {
   int                   _method_idnum;
 
  public:
-  CommonMethodOopCache()   { _klass = NULL; _method_idnum = -1; }
-  ~CommonMethodOopCache()  { _klass = NULL; _method_idnum = -1; }
+  LatestMethodCache()   { _klass = NULL; _method_idnum = -1; }
+  ~LatestMethodCache()  { _klass = NULL; _method_idnum = -1; }
 
-  void     init(Klass* k, Method* m, TRAPS);
-  Klass* klass() const         { return _klass; }
-  int      method_idnum() const  { return _method_idnum; }
+  void   init(Klass* k, Method* m);
+  Klass* klass() const           { return _klass; }
+  int    method_idnum() const    { return _method_idnum; }
+
+  Method* get_method();
 
   // Enhanced Class Redefinition support
   void classes_do(void f(Klass*)) {
@@ -72,43 +75,10 @@ class CommonMethodOopCache : public CHeapObj<mtClass> {
 };
 
 
-// A helper class for caching a Method* when the user of the cache
-// cares about all versions of the Method*.
-//
-class ActiveMethodOopsCache : public CommonMethodOopCache {
-  // This subclass adds weak references to older versions of the
-  // Method* and a query method for a Method*.
-
- private:
-  // If the cached Method* has not been redefined, then
-  // _prev_methods will be NULL. If all of the previous
-  // versions of the method have been collected, then
-  // _prev_methods can have a length of zero.
-  GrowableArray<Method*>* _prev_methods;
-
- public:
-  ActiveMethodOopsCache()   { _prev_methods = NULL; }
-  ~ActiveMethodOopsCache();
-
-  void add_previous_version(Method* method);
-  bool is_same_method(const Method* method) const;
-};
-
-
-// A helper class for caching a Method* when the user of the cache
-// only cares about the latest version of the Method*.
-//
-class LatestMethodOopCache : public CommonMethodOopCache {
-  // This subclass adds a getter method for the latest Method*.
-
- public:
-  Method* get_Method();
-};
-
-// For UseCompressedOops and UseCompressedKlassPointers.
+// For UseCompressedOops.
 struct NarrowPtrStruct {
-  // Base address for oop/klass-within-java-object materialization.
-  // NULL if using wide oops/klasses or zero based narrow oops/klasses.
+  // Base address for oop-within-java-object materialization.
+  // NULL if using wide oops or zero based narrow oops.
   address _base;
   // Number of shift bits for encoding/decoding narrow ptrs.
   // 0 if using wide ptrs or zero based unscaled narrow ptrs,
@@ -136,6 +106,7 @@ class Universe: AllStatic {
   friend class SystemDictionary;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
+  friend class Metaspace;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -174,10 +145,10 @@ class Universe: AllStatic {
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
   static oop          _the_null_string;               // A cache of "null" as a Java string
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
-  static LatestMethodOopCache* _finalizer_register_cache; // static method for registering finalizable objects
-  static LatestMethodOopCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
-  static LatestMethodOopCache* _pd_implies_cache;         // method for checking protection domain attributes
-  static ActiveMethodOopsCache* _reflect_invoke_cache;    // method for security checks
+  static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
+  static LatestMethodCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
+  static LatestMethodCache* _pd_implies_cache;         // method for checking protection domain attributes
+
   // preallocated error objects (no backtrace)
   static oop          _out_of_memory_error_java_heap;
   static oop          _out_of_memory_error_metaspace;
@@ -213,9 +184,6 @@ class Universe: AllStatic {
   // For UseCompressedKlassPointers.
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
-
-  // Aligned size of the metaspace.
-  static size_t _class_metaspace_size;
 
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
@@ -267,15 +235,6 @@ class Universe: AllStatic {
   static void     set_narrow_oop_use_implicit_null_checks(bool use) {
     assert(UseCompressedOops, "no compressed ptrs?");
     _narrow_oop._use_implicit_null_checks   = use;
-  }
-  static bool     reserve_metaspace_helper(bool with_base = false);
-  static ReservedHeapSpace reserve_heap_metaspace(size_t heap_size, size_t alignment, bool& contiguous);
-
-  static size_t  class_metaspace_size() {
-    return _class_metaspace_size;
-  }
-  static void    set_class_metaspace_size(size_t metaspace_size) {
-    _class_metaspace_size = metaspace_size;
   }
 
   // Debugging
@@ -334,11 +293,11 @@ class Universe: AllStatic {
   static Array<Klass*>* the_array_interfaces_array() { return _the_array_interfaces_array;   }
   static oop          the_null_string()               { return _the_null_string;               }
   static oop          the_min_jint_string()          { return _the_min_jint_string;          }
-  static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_Method(); }
-  static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_Method(); }
 
-  static Method*      protection_domain_implies_method() { return _pd_implies_cache->get_Method(); }
-  static ActiveMethodOopsCache* reflect_invoke_cache() { return _reflect_invoke_cache; }
+  static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
+  static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
+
+  static Method*      protection_domain_implies_method() { return _pd_implies_cache->get_method(); }
 
   static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
@@ -387,7 +346,7 @@ class Universe: AllStatic {
   };
   static NARROW_OOP_MODE narrow_oop_mode();
   static const char* narrow_oop_mode_to_string(NARROW_OOP_MODE mode);
-  static char*    preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
+  static char*    preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode);
   static char*    preferred_metaspace_base(size_t heap_size, NARROW_OOP_MODE mode);
   static address  narrow_oop_base()                       { return  _narrow_oop._base; }
   static bool  is_narrow_oop_base(void* addr)             { return (narrow_oop_base() == (address)addr); }

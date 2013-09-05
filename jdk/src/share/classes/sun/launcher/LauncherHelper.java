@@ -65,13 +65,10 @@ import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import sun.misc.Version;
-import sun.misc.URLClassPath;
 
 public enum LauncherHelper {
     INSTANCE;
     private static final String MAIN_CLASS = "Main-Class";
-    private static final String PROFILE    = "Profile";
 
     private static StringBuilder outBuf = new StringBuilder();
 
@@ -412,27 +409,6 @@ public enum LauncherHelper {
             mainValue = mainAttrs.getValue(MAIN_CLASS);
             if (mainValue == null) {
                 abort(null, "java.launcher.jar.error3", jarname);
-            }
-
-            /*
-             * If this is not a full JRE then the Profile attribute must be
-             * present with the Main-Class attribute so as to indicate the minimum
-             * profile required. Note that we need to suppress checking of the Profile
-             * attribute after we detect an error. This is because the abort may
-             * need to lookup resources and this may involve opening additional JAR
-             * files that would result in errors that suppress the main error.
-             */
-            String profile = mainAttrs.getValue(PROFILE);
-            if (profile == null) {
-                if (!Version.isFullJre()) {
-                    URLClassPath.suppressProfileCheckForLauncher();
-                    abort(null, "java.launcher.jar.error4", jarname);
-                }
-            } else {
-                if (!Version.supportsProfile(profile)) {
-                    URLClassPath.suppressProfileCheckForLauncher();
-                    abort(null, "java.launcher.jar.error5", profile, jarname);
-                }
             }
 
             /*

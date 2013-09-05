@@ -12,7 +12,7 @@ import java.util.Vector;
 public class FileTreeCreatorVC7 extends FileTreeCreator {
 
       public FileTreeCreatorVC7(Path startDir, Vector<BuildConfig> allConfigs, WinGammaPlatform wg) {
-         super(startDir, allConfigs, null);
+         super(startDir, allConfigs, wg);
       }
 
       @Override

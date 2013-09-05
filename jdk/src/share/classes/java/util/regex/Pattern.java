@@ -219,7 +219,7 @@ import java.util.stream.StreamSupport;
  *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks, categories and binary properties</th></tr>
- * * <tr><td valign="top" headers="construct unicode">{@code \p{IsLatin}}</td>
+ * <tr><td valign="top" headers="construct unicode">{@code \p{IsLatin}}</td>
  *     <td headers="matches">A Latin&nbsp;script character (<a href="#usc">script</a>)</td></tr>
  * <tr><td valign="top" headers="construct unicode">{@code \p{InGreek}}</td>
  *     <td headers="matches">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
@@ -4456,16 +4456,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             groups[groupIndex+1] = i;
                             groups[groupIndex] = i - k;
                         }
-                        i = i - k;
                         return true;
                     }
                     // backing off
+                    i = i - k;
                     if (capture) {
                         groups[groupIndex+1] = i;
                         groups[groupIndex] = i - k;
                     }
-                    i = i - k;
                     j--;
+
                 }
                 break;
             }
@@ -4883,7 +4883,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int k = matcher.groups[groupIndex+1];
 
             int groupSize = k - j;
-
             // If the referenced group didn't match, neither can this
             if (j < 0)
                 return false;
@@ -4893,7 +4892,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 matcher.hitEnd = true;
                 return false;
             }
-
             // Check each new char to make sure it matches what the group
             // referenced matched last time around
             for (int index=0; index<groupSize; index++)
