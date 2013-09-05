@@ -819,6 +819,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   KlassHandle init_klass(THREAD, NULL); // klass needed by load_klass_patching code
   KlassHandle load_klass(THREAD, NULL); // klass needed by load_klass_patching code
   Handle mirror(THREAD, NULL);                    // oop needed by load_mirror_patching code
+  Handle appendix(THREAD, NULL);                  // oop needed by appendix_patching code
   bool load_klass_or_mirror_patch_id =
     (stub_id == Runtime1::load_klass_patching_id || stub_id == Runtime1::load_mirror_patching_id);
 
@@ -888,10 +889,32 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           mirror = Handle(THREAD, m);
         }
         break;
-      default: Unimplemented();
+      default: fatal("unexpected bytecode for load_klass_or_mirror_patch_id");
     }
     // convert to handle
     load_klass = KlassHandle(THREAD, k);
+  } else if (stub_id == load_appendix_patching_id) {
+    Bytecode_invoke bytecode(caller_method, bci);
+    Bytecodes::Code bc = bytecode.invoke_code();
+
+    CallInfo info;
+    constantPoolHandle pool(thread, caller_method->constants());
+    int index = bytecode.index();
+    LinkResolver::resolve_invoke(info, Handle(), pool, index, bc, CHECK);
+    appendix = info.resolved_appendix();
+    switch (bc) {
+      case Bytecodes::_invokehandle: {
+        int cache_index = ConstantPool::decode_cpcache_index(index, true);
+        assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
+        pool->cache()->entry_at(cache_index)->set_method_handle(pool, info);
+        break;
+      }
+      case Bytecodes::_invokedynamic: {
+        pool->invokedynamic_cp_cache_entry_at(index)->set_dynamic_call(pool, info);
+        break;
+      }
+      default: fatal("unexpected bytecode for load_appendix_patching_id");
+    }
   } else {
     ShouldNotReachHere();
   }
@@ -992,8 +1015,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
                    n_copy->data() == (intptr_t)Universe::non_oop_word(),
                    "illegal init value");
             if (stub_id == Runtime1::load_klass_patching_id) {
-            assert(load_klass() != NULL, "klass not set");
-            n_copy->set_data((intx) (load_klass()));
+              assert(load_klass() != NULL, "klass not set");
+              n_copy->set_data((intx) (load_klass()));
             } else {
               assert(mirror() != NULL, "klass not set");
               n_copy->set_data((intx) (mirror()));
@@ -1002,43 +1025,55 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             if (TracePatching) {
               Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
             }
+          }
+        } else if (stub_id == Runtime1::load_appendix_patching_id) {
+          NativeMovConstReg* n_copy = nativeMovConstReg_at(copy_buff);
+          assert(n_copy->data() == 0 ||
+                 n_copy->data() == (intptr_t)Universe::non_oop_word(),
+                 "illegal init value");
+          n_copy->set_data((intx) (appendix()));
 
-#if defined(SPARC) || defined(PPC)
-            // Update the location in the nmethod with the proper
-            // metadata.  When the code was generated, a NULL was stuffed
-            // in the metadata table and that table needs to be update to
-            // have the right value.  On intel the value is kept
-            // directly in the instruction instead of in the metadata
-            // table, so set_data above effectively updated the value.
-            nmethod* nm = CodeCache::find_nmethod(instr_pc);
-            assert(nm != NULL, "invalid nmethod_pc");
-            RelocIterator mds(nm, copy_buff, copy_buff + 1);
-            bool found = false;
-            while (mds.next() && !found) {
-              if (mds.type() == relocInfo::oop_type) {
-                assert(stub_id == Runtime1::load_mirror_patching_id, "wrong stub id");
-                oop_Relocation* r = mds.oop_reloc();
-                oop* oop_adr = r->oop_addr();
-                *oop_adr = mirror();
-                r->fix_oop_relocation();
-                found = true;
-              } else if (mds.type() == relocInfo::metadata_type) {
-                assert(stub_id == Runtime1::load_klass_patching_id, "wrong stub id");
-                metadata_Relocation* r = mds.metadata_reloc();
-                Metadata** metadata_adr = r->metadata_addr();
-                *metadata_adr = load_klass();
-                r->fix_metadata_relocation();
-                found = true;
-              }
-            }
-            assert(found, "the metadata must exist!");
-#endif
-
+          if (TracePatching) {
+            Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
           }
         } else {
           ShouldNotReachHere();
         }
 
+#if defined(SPARC) || defined(PPC)
+        if (load_klass_or_mirror_patch_id ||
+            stub_id == Runtime1::load_appendix_patching_id) {
+          // Update the location in the nmethod with the proper
+          // metadata.  When the code was generated, a NULL was stuffed
+          // in the metadata table and that table needs to be update to
+          // have the right value.  On intel the value is kept
+          // directly in the instruction instead of in the metadata
+          // table, so set_data above effectively updated the value.
+          nmethod* nm = CodeCache::find_nmethod(instr_pc);
+          assert(nm != NULL, "invalid nmethod_pc");
+          RelocIterator mds(nm, copy_buff, copy_buff + 1);
+          bool found = false;
+          while (mds.next() && !found) {
+            if (mds.type() == relocInfo::oop_type) {
+              assert(stub_id == Runtime1::load_mirror_patching_id ||
+                     stub_id == Runtime1::load_appendix_patching_id, "wrong stub id");
+              oop_Relocation* r = mds.oop_reloc();
+              oop* oop_adr = r->oop_addr();
+              *oop_adr = stub_id == Runtime1::load_mirror_patching_id ? mirror() : appendix();
+              r->fix_oop_relocation();
+              found = true;
+            } else if (mds.type() == relocInfo::metadata_type) {
+              assert(stub_id == Runtime1::load_klass_patching_id, "wrong stub id");
+              metadata_Relocation* r = mds.metadata_reloc();
+              Metadata** metadata_adr = r->metadata_addr();
+              *metadata_adr = load_klass();
+              r->fix_metadata_relocation();
+              found = true;
+            }
+          }
+          assert(found, "the metadata must exist!");
+        }
+#endif
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
@@ -1077,7 +1112,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           ICache::invalidate_range(instr_pc, *byte_count);
           NativeGeneralJump::replace_mt_safe(instr_pc, copy_buff);
 
-          if (load_klass_or_mirror_patch_id) {
+          if (load_klass_or_mirror_patch_id ||
+              stub_id == Runtime1::load_appendix_patching_id) {
             relocInfo::relocType rtype =
               (stub_id == Runtime1::load_klass_patching_id) ?
                                    relocInfo::metadata_type :
@@ -1118,7 +1154,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
 
   // If we are patching in a non-perm oop, make sure the nmethod
   // is on the right list.
-  if (ScavengeRootsInCode && mirror.not_null() && mirror()->is_scavengable()) {
+  if (ScavengeRootsInCode && ((mirror.not_null() && mirror()->is_scavengable()) ||
+                              (appendix.not_null() && appendix->is_scavengable()))) {
     MutexLockerEx ml_code (CodeCache_lock, Mutex::_no_safepoint_check_flag);
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     guarantee(nm != NULL, "only nmethods can contain non-perm oops");
@@ -1179,6 +1216,24 @@ int Runtime1::move_mirror_patching(JavaThread* thread) {
   return caller_is_deopted();
 }
 
+int Runtime1::move_appendix_patching(JavaThread* thread) {
+//
+// NOTE: we are still in Java
+//
+  Thread* THREAD = thread;
+  debug_only(NoHandleMark nhm;)
+  {
+    // Enter VM mode
+
+    ResetNoHandleMark rnhm;
+    patch_code(thread, load_appendix_patching_id);
+  }
+  // Back in JAVA, use no oops DON'T safepoint
+
+  // Return true if calling code is deoptimized
+
+  return caller_is_deopted();
+}
 //
 // Entry point for compiled code. We want to patch a nmethod.
 // We don't do a normal VM transition here because we want to

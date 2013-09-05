@@ -2756,10 +2756,28 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
       newval = _gvn.makecon(TypePtr::NULL_PTR);
 
     // Reference stores need a store barrier.
-    pre_barrier(true /* do_load*/,
-                control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
-                NULL /* pre_val*/,
-                T_OBJECT);
+    if (kind == LS_xchg) {
+      // If pre-barrier must execute before the oop store, old value will require do_load here.
+      if (!can_move_pre_barrier()) {
+        pre_barrier(true /* do_load*/,
+                    control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
+                    NULL /* pre_val*/,
+                    T_OBJECT);
+      } // Else move pre_barrier to use load_store value, see below.
+    } else if (kind == LS_cmpxchg) {
+      // Same as for newval above:
+      if (_gvn.type(oldval) == TypePtr::NULL_PTR) {
+        oldval = _gvn.makecon(TypePtr::NULL_PTR);
+      }
+      // The only known value which might get overwritten is oldval.
+      pre_barrier(false /* do_load */,
+                  control(), NULL, NULL, max_juint, NULL, NULL,
+                  oldval /* pre_val */,
+                  T_OBJECT);
+    } else {
+      ShouldNotReachHere();
+    }
+
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = _gvn.transform(new (C) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
@@ -2795,15 +2813,26 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
   Node* proj = _gvn.transform(new (C) SCMemProjNode(load_store));
   set_memory(proj, alias_idx);
 
+  if (type == T_OBJECT && kind == LS_xchg) {
+#ifdef _LP64
+    if (adr->bottom_type()->is_ptr_to_narrowoop()) {
+      load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->get_ptr_type()));
+    }
+#endif
+    if (can_move_pre_barrier()) {
+      // Don't need to load pre_val. The old value is returned by load_store.
+      // The pre_barrier can execute after the xchg as long as no safepoint
+      // gets inserted between them.
+      pre_barrier(false /* do_load */,
+                  control(), NULL, NULL, max_juint, NULL, NULL,
+                  load_store /* pre_val */,
+                  T_OBJECT);
+    }
+  }
+
   // Add the trailing membar surrounding the access
   insert_mem_bar(Op_MemBarCPUOrder);
   insert_mem_bar(Op_MemBarAcquire);
-
-#ifdef _LP64
-  if (type == T_OBJECT && adr->bottom_type()->is_ptr_to_narrowoop() && kind == LS_xchg) {
-    load_store = _gvn.transform(new (C) DecodeNNode(load_store, load_store->get_ptr_type()));
-  }
-#endif
 
   assert(type2size[load_store->bottom_type()->basic_type()] == type2size[rtype], "result type should match");
   set_result(load_store);
