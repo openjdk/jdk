@@ -567,8 +567,6 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
 
   _next_gen = gch->next_gen(this);
-  assert(_next_gen != NULL,
-    "This must be the youngest gen, and not the only gen");
 
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
@@ -901,8 +899,6 @@ bool DefNewGeneration::collection_attempt_is_safe() {
   if (_next_gen == NULL) {
     GenCollectedHeap* gch = GenCollectedHeap::heap();
     _next_gen = gch->next_gen(this);
-    assert(_next_gen != NULL,
-           "This must be the youngest gen, and not the only gen");
   }
   return _next_gen->promotion_attempt_is_safe(used());
 }

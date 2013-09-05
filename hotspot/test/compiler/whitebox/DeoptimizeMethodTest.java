@@ -23,10 +23,11 @@
 
 /*
  * @test DeoptimizeMethodTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build DeoptimizeMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeMethodTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* DeoptimizeMethodTest
  * @summary testing of WB::deoptimizeMethod()
  * @author igor.ignatyev@oracle.com
  */
@@ -54,7 +55,7 @@ public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
     protected void test() throws Exception {
         compile();
         checkCompiled();
-        WHITE_BOX.deoptimizeMethod(method);
+        deoptimize();
         checkNotCompiled();
     }
 }

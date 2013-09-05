@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,8 +251,8 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * occurred in a user supplied component.  The
      * {@linkplain Throwable#getCause() cause} will be the error in
      * user code.
-     * @throws IllegalArgumentException if any of the given
-     * compilation units are of other kind than
+     * @throws IllegalArgumentException if any of the options are invalid,
+     * or if any of the given compilation units are of other kind than
      * {@linkplain JavaFileObject.Kind#SOURCE source}
      */
     CompilationTask getTask(Writer out,

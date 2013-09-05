@@ -1642,6 +1642,8 @@ void os::print_os_info(outputStream* st) {
 
 void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
+  SYSTEM_INFO si;
+
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
@@ -1651,6 +1653,18 @@ void os::win32::print_windows_version(outputStream* st) {
   }
 
   int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+
+  ZeroMemory(&si, sizeof(SYSTEM_INFO));
+  if (os_vers >= 5002) {
+    // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+    // find out whether we are running on 64 bit processor or not.
+    if (os::Kernel32Dll::GetNativeSystemInfoAvailable()) {
+      os::Kernel32Dll::GetNativeSystemInfo(&si);
+    } else {
+      GetSystemInfo(&si);
+    }
+  }
+
   if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
     switch (os_vers) {
     case 3051: st->print(" Windows NT 3.51"); break;
@@ -1658,57 +1672,48 @@ void os::win32::print_windows_version(outputStream* st) {
     case 5000: st->print(" Windows 2000"); break;
     case 5001: st->print(" Windows XP"); break;
     case 5002:
-    case 6000:
-    case 6001:
-    case 6002: {
-      // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
-      // find out whether we are running on 64 bit processor or not.
-      SYSTEM_INFO si;
-      ZeroMemory(&si, sizeof(SYSTEM_INFO));
-        if (!os::Kernel32Dll::GetNativeSystemInfoAvailable()){
-          GetSystemInfo(&si);
+      if (osvi.wProductType == VER_NT_WORKSTATION &&
+          si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+        st->print(" Windows XP x64 Edition");
       } else {
-        os::Kernel32Dll::GetNativeSystemInfo(&si);
-      }
-      if (os_vers == 5002) {
-        if (osvi.wProductType == VER_NT_WORKSTATION &&
-            si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-          st->print(" Windows XP x64 Edition");
-        else
-            st->print(" Windows Server 2003 family");
-      } else if (os_vers == 6000) {
-        if (osvi.wProductType == VER_NT_WORKSTATION)
-            st->print(" Windows Vista");
-        else
-            st->print(" Windows Server 2008");
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else if (os_vers == 6001) {
-        if (osvi.wProductType == VER_NT_WORKSTATION) {
-            st->print(" Windows 7");
-        } else {
-            // Unrecognized windows, print out its major and minor versions
-            st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-        }
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else if (os_vers == 6002) {
-        if (osvi.wProductType == VER_NT_WORKSTATION) {
-            st->print(" Windows 8");
-        } else {
-            st->print(" Windows Server 2012");
-        }
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else { // future os
-        // Unrecognized windows, print out its major and minor versions
-        st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
+        st->print(" Windows Server 2003 family");
       }
       break;
-    }
-    default: // future windows, print out its major and minor versions
+
+    case 6000:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows Vista");
+      } else {
+        st->print(" Windows Server 2008");
+      }
+      break;
+
+    case 6001:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 7");
+      } else {
+        st->print(" Windows Server 2008 R2");
+      }
+      break;
+
+    case 6002:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 8");
+      } else {
+        st->print(" Windows Server 2012");
+      }
+      break;
+
+    case 6003:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 8.1");
+      } else {
+        st->print(" Windows Server 2012 R2");
+      }
+      break;
+
+    default: // future os
+      // Unrecognized windows, print out its major and minor versions
       st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
     }
   } else {
@@ -1720,6 +1725,11 @@ void os::win32::print_windows_version(outputStream* st) {
       st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
     }
   }
+
+  if (os_vers >= 6000 && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+    st->print(" , 64 bit");
+  }
+
   st->print(" Build %d", osvi.dwBuildNumber);
   st->print(" %s", osvi.szCSDVersion);           // service pack
   st->cr();
@@ -3146,7 +3156,12 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
+char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr, bool exec) {
+  assert(UseLargePages, "only for large pages");
+
+  if (!is_size_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
+    return NULL; // Fallback to small pages.
+  }
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
@@ -5384,6 +5399,75 @@ inline BOOL os::Advapi32Dll::AdvapiAvailable() {
   return true;
 }
 
+void* os::get_default_process_handle() {
+  return (void*)GetModuleHandle(NULL);
+}
+
+// Builds a platform dependent Agent_OnLoad_<lib_name> function name
+// which is used to find statically linked in agents.
+// Additionally for windows, takes into account __stdcall names.
+// Parameters:
+//            sym_name: Symbol in library we are looking for
+//            lib_name: Name of library to look in, NULL for shared libs.
+//            is_absolute_path == true if lib_name is absolute path to agent
+//                                     such as "C:/a/b/L.dll"
+//            == false if only the base name of the library is passed in
+//               such as "L"
+char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
+                                    bool is_absolute_path) {
+  char *agent_entry_name;
+  size_t len;
+  size_t name_len;
+  size_t prefix_len = strlen(JNI_LIB_PREFIX);
+  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
+  const char *start;
+
+  if (lib_name != NULL) {
+    len = name_len = strlen(lib_name);
+    if (is_absolute_path) {
+      // Need to strip path, prefix and suffix
+      if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
+        lib_name = ++start;
+      } else {
+        // Need to check for C:
+        if ((start = strchr(lib_name, ':')) != NULL) {
+          lib_name = ++start;
+        }
+      }
+      if (len <= (prefix_len + suffix_len)) {
+        return NULL;
+      }
+      lib_name += prefix_len;
+      name_len = strlen(lib_name) - suffix_len;
+    }
+  }
+  len = (lib_name != NULL ? name_len : 0) + strlen(sym_name) + 2;
+  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
+  if (agent_entry_name == NULL) {
+    return NULL;
+  }
+  if (lib_name != NULL) {
+    const char *p = strrchr(sym_name, '@');
+    if (p != NULL && p != sym_name) {
+      // sym_name == _Agent_OnLoad@XX
+      strncpy(agent_entry_name, sym_name, (p - sym_name));
+      agent_entry_name[(p-sym_name)] = '\0';
+      // agent_entry_name == _Agent_OnLoad
+      strcat(agent_entry_name, "_");
+      strncat(agent_entry_name, lib_name, name_len);
+      strcat(agent_entry_name, p);
+      // agent_entry_name == _Agent_OnLoad_lib_name@XX
+    } else {
+      strcpy(agent_entry_name, sym_name);
+      strcat(agent_entry_name, "_");
+      strncat(agent_entry_name, lib_name, name_len);
+    }
+  } else {
+    strcpy(agent_entry_name, sym_name);
+  }
+  return agent_entry_name;
+}
+
 #else
 // Kernel32 API
 typedef BOOL (WINAPI* SwitchToThread_Fn)(void);
@@ -5627,4 +5711,10 @@ BOOL os::Advapi32Dll::AdvapiAvailable() {
     _LookupPrivilegeValue != NULL;
 }
 
+#endif
+
+#ifndef PRODUCT
+void TestReserveMemorySpecial_test() {
+  // No tests available for this platform
+}
 #endif

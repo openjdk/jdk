@@ -23,10 +23,11 @@
 
 /*
  * @test DeoptimizeAllTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build DeoptimizeAllTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DeoptimizeAllTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* DeoptimizeAllTest
  * @summary testing of WB::deoptimizeAll()
  * @author igor.ignatyev@oracle.com
  */

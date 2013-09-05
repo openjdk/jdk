@@ -1947,6 +1947,9 @@ class CommandLineFlags {
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests.")                         \
                                                                             \
+  notproduct(bool, VerboseInternalVMTests, false,                           \
+          "Turn on logging for internal VM tests.")                         \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -3050,7 +3053,7 @@ class CommandLineFlags {
   product(uintx, MaxMetaspaceSize, max_uintx,                               \
           "Maximum size of Metaspaces (in bytes)")                          \
                                                                             \
-  product(uintx, ClassMetaspaceSize, 2*M,                                   \
+  product(uintx, ClassMetaspaceSize, 1*G,                                   \
           "Maximum size of InstanceKlass area in Metaspace used for "       \
           "UseCompressedKlassPointers")                                     \
                                                                             \

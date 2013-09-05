@@ -605,7 +605,23 @@ public class CLDRConverter {
                 copyIfPresent(map, key, formatData);
             }
         }
-
+        // Workaround for islamic-umalqura name support (JDK-8015986)
+        switch (id) {
+        case "ar":
+            map.put(CLDRConverter.CALENDAR_NAME_PREFIX
+                    + CalendarType.ISLAMIC_UMALQURA.lname(),
+                    // derived from CLDR 24 draft
+                    "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 "
+                    +"\u0627\u0644\u0625\u0633\u0644\u0627\u0645\u064a "
+                    +"[\u0623\u0645 \u0627\u0644\u0642\u0631\u0649]");
+            break;
+        case "en":
+            map.put(CLDRConverter.CALENDAR_NAME_PREFIX
+                    + CalendarType.ISLAMIC_UMALQURA.lname(),
+                    // derived from CLDR 24 draft
+                    "Islamic Calendar [Umm al-Qura]");
+            break;
+        }
         // Copy available calendar names
         for (String key : map.keySet()) {
             if (key.startsWith(CLDRConverter.CALENDAR_NAME_PREFIX)) {

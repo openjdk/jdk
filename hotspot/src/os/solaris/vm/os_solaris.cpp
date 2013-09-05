@@ -3341,7 +3341,7 @@ bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t size, char* addr, bool exec) {
+char* os::reserve_memory_special(size_t size, size_t alignment, char* addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on Solaris.");
   return NULL;
 }
@@ -6557,3 +6557,9 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
+
+#ifndef PRODUCT
+void TestReserveMemorySpecial_test() {
+  // No tests available for this platform
+}
+#endif

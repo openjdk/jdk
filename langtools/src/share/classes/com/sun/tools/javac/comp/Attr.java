@@ -398,7 +398,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
-                if (site.kind == ERR)
+                if (site.kind == ERR || site.kind == ABSENT_TYP)
                     return site;
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
@@ -1063,9 +1063,7 @@ public class Attr extends JCTree.Visitor {
 
             if (tree.init != null) {
                 if ((v.flags_field & FINAL) != 0 &&
-                        !tree.init.hasTag(NEWCLASS) &&
-                        !tree.init.hasTag(LAMBDA) &&
-                        !tree.init.hasTag(REFERENCE)) {
+                    memberEnter.needsLazyConstValue(tree.init)) {
                     // In this case, `v' is final.  Ensure that it's initializer is
                     // evaluated.
                     v.getConstValue(); // ensure initializer is evaluated
@@ -2395,7 +2393,7 @@ public class Attr extends JCTree.Visitor {
 
             ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
                 recoveryInfo :
-                new LambdaResultInfo(lambdaType.getReturnType(), funcContext);
+                new ResultInfo(VAL, lambdaType.getReturnType(), funcContext);
             localEnv.info.returnResult = bodyResultInfo;
 
             Log.DeferredDiagnosticHandler lambdaDeferredHandler = new Log.DeferredDiagnosticHandler(log);
@@ -2602,35 +2600,12 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        class LambdaResultInfo extends ResultInfo {
-
-            LambdaResultInfo(Type pt, CheckContext checkContext) {
-                super(VAL, pt, checkContext);
-            }
-
-            @Override
-            protected Type check(DiagnosticPosition pos, Type found) {
-                return super.check(pos, found.baseType());
-            }
-
-            @Override
-            protected ResultInfo dup(CheckContext newContext) {
-                return new LambdaResultInfo(pt, newContext);
-            }
-
-            @Override
-            protected ResultInfo dup(Type newPt) {
-                return new LambdaResultInfo(newPt, checkContext);
-            }
-        }
-
         /**
         * Lambda compatibility. Check that given return types, thrown types, parameter types
         * are compatible with the expected functional interface descriptor. This means that:
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
         * types must be compatible with the return type of the expected descriptor;
-        * (iii) thrown types must be 'included' in the thrown types list of the expected
-        * descriptor.
+        * (iii) finish inference of thrown types if required.
         */
         private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext, boolean speculativeAttr) {
             Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType());
@@ -2652,9 +2627,7 @@ public class Attr extends JCTree.Visitor {
 
             if (!speculativeAttr) {
                 List<Type> thrownTypes = checkContext.inferenceContext().asFree(descriptor.getThrownTypes());
-                if (chk.unhandled(tree.inferredThrownTypes == null ? List.<Type>nil() : tree.inferredThrownTypes, thrownTypes).nonEmpty()) {
-                    log.error(tree, "incompatible.thrown.types.in.lambda", tree.inferredThrownTypes);
-                }
+                chk.unhandled(tree.inferredThrownTypes == null ? List.<Type>nil() : tree.inferredThrownTypes, thrownTypes);
             }
         }
 

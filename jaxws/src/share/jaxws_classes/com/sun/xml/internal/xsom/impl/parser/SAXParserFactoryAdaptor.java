@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.io.IOException;
  * {@link SAXParserFactory} implementation that ultimately
  * uses {@link XMLParser} to parse documents.
  *
+ * @deprecated
+ *
  * @author
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
@@ -58,7 +60,7 @@ public class SAXParserFactoryAdaptor extends SAXParserFactory {
     }
 
     public void setFeature(String name, boolean value) {
-        ;
+        throw new UnsupportedOperationException("XSOM parser does not support JAXP features.");
     }
 
     public boolean getFeature(String name) {
