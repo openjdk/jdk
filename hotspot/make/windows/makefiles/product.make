@@ -51,9 +51,6 @@ HS_BUILD_ID=$(HS_BUILD_VER)
 # Force resources to be rebuilt every time
 $(Res_Files): FORCE
 
-vm.def: $(Obj_Files)
-	sh $(WorkSpace)/make/windows/build_vm_def.sh
-
 $(AOUT): $(Res_Files) $(Obj_Files) vm.def
 	$(LD) @<<
   $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)

@@ -175,7 +175,7 @@ public class SAAJMessage extends Message {
      */
     @Override
     public @NotNull AttachmentSet getAttachments() {
-        parse();
+        if (attachmentSet == null) attachmentSet = new SAAJAttachmentSet(sm);
         return attachmentSet;
     }
 
@@ -185,23 +185,21 @@ public class SAAJMessage extends Message {
      */
     @Override
     protected boolean hasAttachments() {
-        parse();
-        return attachmentSet!=null;
+        return !getAttachments().isEmpty();
     }
 
     public @Nullable String getPayloadLocalPart() {
-        access();
+        soapBodyFirstChild();
         return payloadLocalName;
     }
 
     public String getPayloadNamespaceURI() {
-        access();
+        soapBodyFirstChild();
         return payloadNamespace;
     }
 
     public boolean hasPayload() {
-        access();
-        return payloadNamespace != null;
+        return soapBodyFirstChild() != null;
     }
 
     private void addAttributes(Element e, NamedNodeMap attrs) {
@@ -327,15 +325,7 @@ public class SAAJMessage extends Message {
     }
 
     public XMLStreamReader readPayload() throws XMLStreamException {
-        access();
-        if (payload != null) {
-            DOMStreamReader dss = new DOMStreamReader();
-            dss.setCurrentNode(payload);
-            dss.nextTag();
-            assert dss.getEventType() == XMLStreamReader.START_ELEMENT;
-            return dss;
-        }
-        return null;
+        return soapBodyFirstChildReader();
     }
 
     public void writePayloadTo(XMLStreamWriter sw) throws XMLStreamException {
@@ -522,7 +512,7 @@ public class SAAJMessage extends Message {
     private static final AttributesImpl EMPTY_ATTS = new AttributesImpl();
     private static final LocatorImpl NULL_LOCATOR = new LocatorImpl();
 
-    private static class SAAJAttachment implements AttachmentEx {
+    protected static class SAAJAttachment implements AttachmentEx {
 
         final AttachmentPart ap;
 
@@ -651,7 +641,7 @@ public class SAAJMessage extends Message {
      * SAAJ wants '&lt;' and '>' for the content ID, but {@link AttachmentSet}
      * doesn't. S this class also does the conversion between them.
      */
-    private static class SAAJAttachmentSet implements AttachmentSet {
+    protected static class SAAJAttachmentSet implements AttachmentSet {
 
         private Map<String, Attachment> attMap;
         private Iterator attIter;
@@ -714,5 +704,75 @@ public class SAAJMessage extends Message {
 
     public SOAPVersion getSOAPVersion() {
         return soapVersion;
+    }
+
+    private XMLStreamReader soapBodyFirstChildReader;
+
+    /**
+     * This allow the subclass to retain the XMLStreamReader.
+     */
+    protected XMLStreamReader getXMLStreamReader(SOAPElement soapElement) {
+        return null;
+    }
+
+    protected XMLStreamReader createXMLStreamReader(SOAPElement soapElement) {
+        DOMStreamReader dss = new DOMStreamReader();
+        dss.setCurrentNode(soapElement);
+        return dss;
+    }
+
+    protected XMLStreamReader soapBodyFirstChildReader() {
+        if (soapBodyFirstChildReader != null) return soapBodyFirstChildReader;
+        soapBodyFirstChild();
+        if (soapBodyFirstChild != null) {
+            soapBodyFirstChildReader = getXMLStreamReader(soapBodyFirstChild);
+            if (soapBodyFirstChildReader == null) soapBodyFirstChildReader =
+                createXMLStreamReader(soapBodyFirstChild);
+            if (soapBodyFirstChildReader.getEventType() == XMLStreamReader.START_DOCUMENT) {
+                try {
+                    while(soapBodyFirstChildReader.getEventType() != XMLStreamReader.START_ELEMENT)
+                        soapBodyFirstChildReader.next();
+                } catch (XMLStreamException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return soapBodyFirstChildReader;
+        } else {
+            payloadLocalName = null;
+            payloadNamespace = null;
+            return null;
+        }
+    }
+
+    private SOAPElement soapBodyFirstChild;
+
+    SOAPElement soapBodyFirstChild() {
+        if (soapBodyFirstChild != null) return soapBodyFirstChild;
+        try {
+            boolean foundElement = false;
+            for (Node n = sm.getSOAPBody().getFirstChild(); n != null && !foundElement; n = n.getNextSibling()) {
+                if (n.getNodeType() == Node.ELEMENT_NODE) {
+                    foundElement = true;
+                    if (n instanceof SOAPElement) {
+                        soapBodyFirstChild = (SOAPElement) n;
+                        payloadLocalName = soapBodyFirstChild.getLocalName();
+                        payloadNamespace = soapBodyFirstChild.getNamespaceURI();
+                        return soapBodyFirstChild;
+                    }
+                }
+            }
+            if(foundElement) for(Iterator i = sm.getSOAPBody().getChildElements(); i.hasNext();){
+                Object o = i.next();
+                if (o instanceof SOAPElement) {
+                    soapBodyFirstChild = (SOAPElement)o;
+                    payloadLocalName = soapBodyFirstChild.getLocalName();
+                    payloadNamespace = soapBodyFirstChild.getNamespaceURI();
+                    return soapBodyFirstChild;
+                }
+            }
+        } catch (SOAPException e) {
+            throw new RuntimeException(e);
+        }
+        return soapBodyFirstChild;
     }
 }

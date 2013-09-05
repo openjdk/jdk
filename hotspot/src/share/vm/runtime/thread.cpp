@@ -3699,15 +3699,18 @@ extern "C" {
 // num_symbol_entries must be passed-in since only the caller knows the number of symbols in the array.
 static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_symbols[], size_t num_symbol_entries) {
   OnLoadEntry_t on_load_entry = NULL;
-  void *library = agent->os_lib();  // check if we have looked it up before
+  void *library = NULL;
 
-  if (library == NULL) {
+  if (!agent->valid()) {
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 
-    if (agent->is_absolute_path()) {
+    // First check to see if agent is statcally linked into executable
+    if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
+      library = agent->os_lib();
+    } else if (agent->is_absolute_path()) {
       library = os::dll_load(name, ebuf, sizeof ebuf);
       if (library == NULL) {
         const char *sub_msg = " in absolute path, with error: ";
@@ -3741,13 +3744,15 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
       }
     }
     agent->set_os_lib(library);
+    agent->set_valid();
   }
 
   // Find the OnLoad function.
-  for (size_t symbol_index = 0; symbol_index < num_symbol_entries; symbol_index++) {
-    on_load_entry = CAST_TO_FN_PTR(OnLoadEntry_t, os::dll_lookup(library, on_load_symbols[symbol_index]));
-    if (on_load_entry != NULL) break;
-  }
+  on_load_entry =
+    CAST_TO_FN_PTR(OnLoadEntry_t, os::find_agent_function(agent,
+                                                          false,
+                                                          on_load_symbols,
+                                                          num_symbol_entries));
   return on_load_entry;
 }
 
@@ -3822,22 +3827,23 @@ extern "C" {
 void Threads::shutdown_vm_agents() {
   // Send any Agent_OnUnload notifications
   const char *on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;
+  size_t num_symbol_entries = ARRAY_SIZE(on_unload_symbols);
   extern struct JavaVM_ main_vm;
   for (AgentLibrary* agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
 
     // Find the Agent_OnUnload function.
-    for (uint symbol_index = 0; symbol_index < ARRAY_SIZE(on_unload_symbols); symbol_index++) {
-      Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
-               os::dll_lookup(agent->os_lib(), on_unload_symbols[symbol_index]));
+    Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
+      os::find_agent_function(agent,
+      false,
+      on_unload_symbols,
+      num_symbol_entries));
 
-      // Invoke the Agent_OnUnload function
-      if (unload_entry != NULL) {
-        JavaThread* thread = JavaThread::current();
-        ThreadToNativeFromVM ttn(thread);
-        HandleMark hm(thread);
-        (*unload_entry)(&main_vm);
-        break;
-      }
+    // Invoke the Agent_OnUnload function
+    if (unload_entry != NULL) {
+      JavaThread* thread = JavaThread::current();
+      ThreadToNativeFromVM ttn(thread);
+      HandleMark hm(thread);
+      (*unload_entry)(&main_vm);
     }
   }
 }

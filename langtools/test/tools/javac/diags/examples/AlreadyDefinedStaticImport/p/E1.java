@@ -23,4 +23,6 @@
 
 package p;
 
-public enum E1 { A, B, C}
+public class E1 {
+    public static class A { }
+}

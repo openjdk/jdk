@@ -70,8 +70,8 @@ const uint Matcher::_begin_rematerialize = _BEGIN_REMATERIALIZE;
 const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 
 //---------------------------Matcher-------------------------------------------
-Matcher::Matcher( Node_List &proj_list ) :
-  PhaseTransform( Phase::Ins_Select ),
+Matcher::Matcher()
+: PhaseTransform( Phase::Ins_Select ),
 #ifdef ASSERT
   _old2new_map(C->comp_arena()),
   _new2old_map(C->comp_arena()),
@@ -81,7 +81,7 @@ Matcher::Matcher( Node_List &proj_list ) :
   _swallowed(swallowed),
   _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
   _end_inst_chain_rule(_END_INST_CHAIN_RULE),
-  _must_clone(must_clone), _proj_list(proj_list),
+  _must_clone(must_clone),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
   _register_save_type(register_save_type),
@@ -1307,8 +1307,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
         proj->_rout.Insert(OptoReg::Name(i));
     }
-    if( proj->_rout.is_NotEmpty() )
-      _proj_list.push(proj);
+    if (proj->_rout.is_NotEmpty()) {
+      push_projection(proj);
+    }
   }
   // Transfer the safepoint information from the call to the mcall
   // Move the JVMState list
@@ -1688,14 +1689,15 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   }
 
   // If the _leaf is an AddP, insert the base edge
-  if( leaf->is_AddP() )
+  if (leaf->is_AddP()) {
     mach->ins_req(AddPNode::Base,leaf->in(AddPNode::Base));
+  }
 
-  uint num_proj = _proj_list.size();
+  uint number_of_projections_prior = number_of_projections();
 
   // Perform any 1-to-many expansions required
-  MachNode *ex = mach->Expand(s,_proj_list, mem);
-  if( ex != mach ) {
+  MachNode *ex = mach->Expand(s, _projection_list, mem);
+  if (ex != mach) {
     assert(ex->ideal_reg() == mach->ideal_reg(), "ideal types should match");
     if( ex->in(1)->is_Con() )
       ex->in(1)->set_req(0, C->root());
@@ -1716,7 +1718,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   // generated belatedly during spill code generation.
   if (_allocation_started) {
     guarantee(ex == mach, "no expand rules during spill generation");
-    guarantee(_proj_list.size() == num_proj, "no allocation during spill generation");
+    guarantee(number_of_projections_prior == number_of_projections(), "no allocation during spill generation");
   }
 
   if (leaf->is_Con() || leaf->is_DecodeNarrowPtr()) {

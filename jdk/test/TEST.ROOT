@@ -9,3 +9,6 @@ othervm.dirs=java/awt java/beans java/rmi javax/accessibility javax/imageio java
 
 # Tests that cannot run concurrently
 exclusiveAccess.dirs=java/rmi/Naming java/util/Currency java/util/prefs sun/management/jmxremote sun/tools/jstatd sun/security/mscapi
+
+# Group definitions
+groups=TEST.groups [closed/TEST.groups]

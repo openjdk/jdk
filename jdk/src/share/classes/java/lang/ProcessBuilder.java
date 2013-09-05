@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -1033,9 +1032,9 @@ public final class ProcessBuilder
                 // Can not disclose the fail reason for read-protected files.
                 try {
                     security.checkRead(prog);
-                } catch (AccessControlException ace) {
+                } catch (SecurityException se) {
                     exceptionInfo = "";
-                    cause = ace;
+                    cause = se;
                 }
             }
             // It's much easier for us to create a high-quality error
