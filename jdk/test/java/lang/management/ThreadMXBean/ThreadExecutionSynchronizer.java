@@ -23,7 +23,7 @@
 
 /*
  *
- * @summary Thiseclass is used to synchronize execution off two threads.
+ * @summary This class is used to synchronize execution of two threads.
  * @author  Swamy Venkataramanappa
  */
 
@@ -31,8 +31,8 @@ import java.util.concurrent.Semaphore;
 
 public class ThreadExecutionSynchronizer {
 
-    private boolean  waiting;
-    private Semaphore semaphore;
+    private volatile boolean waiting;
+    private final Semaphore semaphore;
 
     public ThreadExecutionSynchronizer() {
         semaphore = new Semaphore(1);
