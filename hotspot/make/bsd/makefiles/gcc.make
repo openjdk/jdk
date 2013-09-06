@@ -247,7 +247,7 @@ ifeq ($(USE_CLANG), true)
 # Not yet supported by clang in Xcode 4.6.2
 #  WARNINGS_ARE_ERRORS += -Wno-tautological-constant-out-of-range-compare
   WARNINGS_ARE_ERRORS += -Wno-delete-non-virtual-dtor -Wno-deprecated -Wno-format -Wno-dynamic-class-memaccess
-  WARNINGS_ARE_ERRORS += -Wno-return-type -Wno-empty-body
+  WARNINGS_ARE_ERRORS += -Wno-empty-body
 endif
 
 WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef

@@ -141,7 +141,7 @@ public class DateParser {
      * Try parsing the date string according to the rules laid out in ES5 15.9.1.15.
      * The date string must conform to the following format:
      *
-     * <pre>  [('-'|'+')yy]yyyy[-MM[-dd]][hh:mm[:ss[.sss]][Z|(+|-)hh:mm]] </pre>
+     * <pre>  [('-'|'+')yy]yyyy[-MM[-dd]][Thh:mm[:ss[.sss]][Z|(+|-)hh:mm]] </pre>
      *
      * <p>If the string does not contain a time zone offset, the <tt>TIMEZONE</tt> field
      * is set to <tt>0</tt> (GMT).</p>
@@ -249,7 +249,7 @@ public class DateParser {
 
             switch (token) {
                 case NUMBER:
-                    if (skip(':')) {
+                    if (skipDelimiter(':')) {
                         // A number followed by ':' is parsed as time
                         if (!setTimeField(numValue)) {
                             return false;
@@ -260,14 +260,14 @@ public class DateParser {
                             if (token != Token.NUMBER || !setTimeField(numValue)) {
                                 return false;
                             }
-                        } while (skip(isSet(SECOND) ? '.' : ':'));
+                        } while (skipDelimiter(isSet(SECOND) ? '.' : ':'));
 
                     } else {
                         // Parse as date token
                         if (!setDateField(numValue)) {
                             return false;
                         }
-                        skip('-');
+                        skipDelimiter('-');
                     }
                     break;
 
@@ -297,7 +297,7 @@ public class DateParser {
                             break;
                     }
                     if (nameValue.type != Name.TIMEZONE_ID) {
-                        skip('-');
+                        skipDelimiter('-');
                     }
                     break;
 
@@ -359,7 +359,18 @@ public class DateParser {
         return pos < length ? string.charAt(pos) : -1;
     }
 
-    private boolean skip(final char c) {
+    // Skip delimiter if followed by a number. Used for ISO 8601 formatted dates
+    private boolean skipNumberDelimiter(final char c) {
+        if (pos < length - 1 && string.charAt(pos) == c
+                && Character.getType(string.charAt(pos + 1)) == DECIMAL_DIGIT_NUMBER) {
+            token = null;
+            pos++;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean skipDelimiter(final char c) {
         if (pos < length && string.charAt(pos) == c) {
             token = null;
             pos++;
@@ -452,14 +463,14 @@ public class DateParser {
         switch (currentField) {
             case YEAR:
             case MONTH:
-                return skip('-') || peek() == 'T' || peek() == -1;
+                return skipNumberDelimiter('-') || peek() == 'T' || peek() == -1;
             case DAY:
                 return peek() == 'T' || peek() == -1;
             case HOUR:
             case MINUTE:
-                return skip(':') || endOfTime();
+                return skipNumberDelimiter(':') || endOfTime();
             case SECOND:
-                return skip('.') || endOfTime();
+                return skipNumberDelimiter('.') || endOfTime();
             default:
                 return true;
         }
@@ -515,7 +526,7 @@ public class DateParser {
     private int readTimeZoneOffset() {
         final int sign = string.charAt(pos - 1) == '+' ? 1 : -1;
         int offset = readNumber(2);
-        skip(':');
+        skipDelimiter(':');
         offset = offset * 60 + readNumber(2);
         return sign * offset;
     }

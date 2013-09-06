@@ -2406,15 +2406,6 @@ search:
     }
 
     /**
-     * Helper function to reduce a Map with DataFlavor keys to a DataFlavor
-     * array. The array will be sorted according to
-     * <code>DataFlavorComparator</code>.
-     */
-    public static DataFlavor[] keysToDataFlavorArray(Map map) {
-        return setToSortedDataFlavorArray(map.keySet(), map);
-    }
-
-    /**
      * Helper function to convert a Set of DataFlavors to a sorted array.
      * The array will be sorted according to <code>DataFlavorComparator</code>.
      */
@@ -2423,24 +2414,6 @@ search:
         flavorsSet.toArray(flavors);
         final Comparator comparator =
                 new DataFlavorComparator(IndexedComparator.SELECT_WORST);
-        Arrays.sort(flavors, comparator);
-        return flavors;
-    }
-
-    /**
-     * Helper function to convert a Set of DataFlavors to a sorted array.
-     * The array will be sorted according to a
-     * <code>DataFlavorComparator</code> created with the specified
-     * flavor-to-native map as an argument.
-     */
-    public static DataFlavor[] setToSortedDataFlavorArray
-        (Set flavorsSet, Map flavorToNativeMap)
-    {
-        DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
-        flavorsSet.toArray(flavors);
-        Comparator comparator =
-            new DataFlavorComparator(flavorToNativeMap,
-                                     IndexedComparator.SELECT_WORST);
         Arrays.sort(flavors, comparator);
         return flavors;
     }
@@ -2724,11 +2697,9 @@ search:
      * application/x-java-* MIME types. Unknown application types are preferred
      * because if the user provides his own data flavor, it will likely be the
      * most descriptive one. For flavors which are otherwise equal, the
-     * flavors' native formats are compared, with greater long values
-     * taking precedence.
+     * flavors' string representation are compared in the alphabetical order.
      */
     public static class DataFlavorComparator extends IndexedComparator {
-        protected final Map flavorToFormatMap;
 
         private final CharsetComparator charsetComparator;
 
@@ -2864,20 +2835,6 @@ search:
             super(order);
 
             charsetComparator = new CharsetComparator(order);
-            flavorToFormatMap = Collections.EMPTY_MAP;
-        }
-
-        public DataFlavorComparator(Map map) {
-            this(map, SELECT_BEST);
-        }
-
-        public DataFlavorComparator(Map map, boolean order) {
-            super(order);
-
-            charsetComparator = new CharsetComparator(order);
-            HashMap hashMap = new HashMap(map.size());
-            hashMap.putAll(map);
-            flavorToFormatMap = Collections.unmodifiableMap(hashMap);
         }
 
         public int compare(Object obj1, Object obj2) {
@@ -2973,10 +2930,9 @@ search:
                 }
             }
 
-            // As a last resort, take the DataFlavor with the greater integer
-            // format.
-            return compareLongs(flavorToFormatMap, flavor1, flavor2,
-                                UNKNOWN_OBJECT_LOSES_L);
+            // The flavours are not equal but still not distinguishable.
+            // Compare String representations in alphabetical order
+            return flavor1.getMimeType().compareTo(flavor2.getMimeType());
         }
     }
 

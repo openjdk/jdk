@@ -45,6 +45,13 @@ public class ThreadedVirtualAllocTestType {
     String pid = Integer.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
+    boolean has_nmt_detail = wb.NMTIsDetailSupported();
+    if (has_nmt_detail) {
+      System.out.println("NMT detail support detected.");
+    } else {
+      System.out.println("NMT detail support not detected.");
+    }
+
     Thread reserveThread = new Thread() {
       public void run() {
         addr = wb.NMTReserveMemory(reserveSize);
@@ -58,7 +65,9 @@ public class ThreadedVirtualAllocTestType {
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail"});
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Test (reserved=512KB, committed=0KB)");
-    output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved 512KB for Test");
+    if (has_nmt_detail) {
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved 512KB for Test");
+    }
 
     Thread commitThread = new Thread() {
       public void run() {
@@ -72,7 +81,9 @@ public class ThreadedVirtualAllocTestType {
 
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Test (reserved=512KB, committed=128KB)");
-    output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed 128KB");
+    if (has_nmt_detail) {
+      output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed 128KB");
+    }
 
     Thread uncommitThread = new Thread() {
       public void run() {

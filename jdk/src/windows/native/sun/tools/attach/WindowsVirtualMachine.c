@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ typedef struct {
  * Code copied to target process
  */
 #pragma check_stack (off)
-static DWORD WINAPI thread_func(DataBlock *pData)
+DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
 {
     HINSTANCE h;
     EnqueueOperationFunc addr;
@@ -117,8 +117,8 @@ static DWORD WINAPI thread_func(DataBlock *pData)
     }
 }
 
-/* This function marks the end of thread_func. */
-static void thread_end (void) {
+/* This function marks the end of jvm_attach_thread_func. */
+void jvm_attach_thread_func_end (void) {
 }
 #pragma check_stack
 
@@ -152,10 +152,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_tools_attach_WindowsVirtualMachine_generat
     DWORD len;
     jbyteArray array;
 
-    len = (DWORD)((LPBYTE) thread_end - (LPBYTE) thread_func);
+    len = (DWORD)((LPBYTE) jvm_attach_thread_func_end - (LPBYTE) jvm_attach_thread_func);
     array= (*env)->NewByteArray(env, (jsize)len);
     if (array != NULL) {
-        (*env)->SetByteArrayRegion(env, array, 0, (jint)len, (jbyte*)&thread_func);
+        (*env)->SetByteArrayRegion(env, array, 0, (jint)len, (jbyte*)&jvm_attach_thread_func);
     }
     return array;
 }

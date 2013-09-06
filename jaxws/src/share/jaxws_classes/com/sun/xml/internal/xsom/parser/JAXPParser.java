@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,14 @@ package com.sun.xml.internal.xsom.parser;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 import com.sun.xml.internal.xsom.impl.parser.Messages;
@@ -51,6 +47,11 @@ import com.sun.xml.internal.xsom.impl.parser.Messages;
  */
 public class JAXPParser implements XMLParser {
 
+    // not in older JDK, so must be duplicated here, otherwise javax.xml.XMLConstants should be used
+    private static final String ACCESS_EXTERNAL_SCHEMA = "http://javax.xml.XMLConstants/property/accessExternalSchema";
+
+    private static final Logger LOGGER = Logger.getLogger(JAXPParser.class.getName());
+
     private final SAXParserFactory factory;
 
     public JAXPParser( SAXParserFactory factory ) {
@@ -58,6 +59,11 @@ public class JAXPParser implements XMLParser {
         this.factory = factory;
     }
 
+    /**
+     * @deprecated Unsafe, use JAXPParser(factory) instead with
+     * security features initialized by setting
+     * XMLConstants.FEATURE_SECURE_PROCESSING feature.
+     */
     public JAXPParser() {
         this( SAXParserFactory.newInstance());
     }
@@ -68,8 +74,8 @@ public class JAXPParser implements XMLParser {
         throws SAXException, IOException {
 
         try {
-            XMLReader reader = factory.newSAXParser().getXMLReader();
-            reader = new XMLReaderEx(reader);
+            SAXParser saxParser = allowFileAccess(factory.newSAXParser(), false);
+            XMLReader reader = new XMLReaderEx(saxParser.getXMLReader());
 
             reader.setContentHandler(handler);
             if(errorHandler!=null)
@@ -83,6 +89,24 @@ public class JAXPParser implements XMLParser {
             errorHandler.fatalError(spe);
             throw spe;
         }
+    }
+
+    private static SAXParser allowFileAccess(SAXParser saxParser, boolean disableSecureProcessing) throws SAXException {
+
+        // if feature secure processing enabled, nothing to do, file is allowed,
+        // or user is able to control access by standard JAXP mechanisms
+        if (disableSecureProcessing) {
+            return saxParser;
+        }
+
+        try {
+            saxParser.setProperty(ACCESS_EXTERNAL_SCHEMA, "file");
+            LOGGER.log(Level.FINE, Messages.format(Messages.JAXP_SUPPORTED_PROPERTY, ACCESS_EXTERNAL_SCHEMA));
+        } catch (SAXException ignored) {
+            // nothing to do; support depends on version JDK or SAX implementation
+            LOGGER.log(Level.CONFIG, Messages.format(Messages.JAXP_UNSUPPORTED_PROPERTY, ACCESS_EXTERNAL_SCHEMA), ignored);
+        }
+        return saxParser;
     }
 
     /**

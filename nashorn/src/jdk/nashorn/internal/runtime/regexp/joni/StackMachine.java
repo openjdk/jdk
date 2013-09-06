@@ -458,7 +458,7 @@ abstract class StackMachine extends Matcher implements StackType {
                                         isNull = 0;
                                         break;
                                     } else if (endp != s) {
-                                        isNull = -1;; /* empty, but position changed */
+                                        isNull = -1; /* empty, but position changed */
                                     }
                                 }
                                 k++;

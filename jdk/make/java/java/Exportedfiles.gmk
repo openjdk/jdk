@@ -50,6 +50,7 @@ FILES_export = \
     java/lang/SecurityManager.java \
     java/lang/Shutdown.java \
     java/lang/Package.java \
+    java/lang/UNIXProcess.java \
     java/lang/ref/Finalizer.java \
     java/lang/reflect/AccessibleObject.java \
     java/lang/reflect/Field.java \

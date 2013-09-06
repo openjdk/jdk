@@ -25,14 +25,17 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +52,14 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * netscape.javascript.JSObject interface.
  */
 public final class ScriptObjectMirror extends JSObject implements Bindings {
+    private static AccessControlContext getContextAccCtxt() {
+        final Permissions perms = new Permissions();
+        perms.add(new RuntimePermission(Context.NASHORN_GET_CONTEXT));
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
+    private static final AccessControlContext GET_CONTEXT_ACC_CTXT = getContextAccCtxt();
+
     private final ScriptObject sobj;
     private final ScriptObject global;
 
@@ -88,12 +99,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             }
 
             final Object val = functionName == null? sobj : sobj.get(functionName);
-            if (! (val instanceof ScriptFunction)) {
-                throw new NoSuchMethodException("No such function " + ((functionName != null)? functionName : ""));
+            if (val instanceof ScriptFunction) {
+                final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
+                return wrap(ScriptRuntime.checkAndApply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+            } else if (val instanceof ScriptObjectMirror && ((ScriptObjectMirror)val).isFunction()) {
+                return ((ScriptObjectMirror)val).call(null, args);
             }
 
-            final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-            return wrap(ScriptRuntime.checkAndApply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+            throw new NoSuchMethodException("No such function " + ((functionName != null)? functionName : ""));
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -116,12 +129,14 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             }
 
             final Object val = functionName == null? sobj : sobj.get(functionName);
-            if (! (val instanceof ScriptFunction)) {
-                throw new RuntimeException("not a constructor " + ((functionName != null)? functionName : ""));
+            if (val instanceof ScriptFunction) {
+                final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
+                return wrap(ScriptRuntime.checkAndConstruct((ScriptFunction)val, unwrapArray(modArgs, global)), global);
+            } else if (val instanceof ScriptObjectMirror && ((ScriptObjectMirror)val).isFunction()) {
+                return ((ScriptObjectMirror)val).newObject(null, args);
             }
 
-            final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-            return wrap(ScriptRuntime.checkAndConstruct((ScriptFunction)val, unwrapArray(modArgs, global)), global);
+            throw new RuntimeException("not a constructor " + ((functionName != null)? functionName : ""));
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -144,7 +159,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                             public Context run() {
                                 return Context.getContext();
                             }
-                        });
+                        }, GET_CONTEXT_ACC_CTXT);
                 return wrap(context.eval(global, s, null, null, false), global);
             }
         });
@@ -360,6 +375,28 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                 return wrap(sobj.getProto(), global);
             }
         });
+    }
+
+    /**
+     * Set the __proto__ of this object.
+     * @param proto new proto for this object
+     */
+    public void setProto(final Object proto) {
+        inGlobal(new Callable<Void>() {
+            @Override public Void call() {
+                sobj.setProtoCheck(unwrap(proto, global));
+                return null;
+            }
+        });
+    }
+
+    /**
+     * ECMA [[Class]] property
+     *
+     * @return ECMA [[Class]] property value of this object
+     */
+    public String getClassName() {
+        return sobj.getClassName();
     }
 
     /**

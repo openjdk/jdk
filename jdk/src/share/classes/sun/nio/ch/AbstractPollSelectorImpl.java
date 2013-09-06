@@ -193,9 +193,4 @@ abstract class AbstractPollSelectorImpl
         if (!selch.isOpen() && !selch.isRegistered())
             ((SelChImpl)selch).kill();
     }
-
-    static {
-        Util.load();
-    }
-
 }

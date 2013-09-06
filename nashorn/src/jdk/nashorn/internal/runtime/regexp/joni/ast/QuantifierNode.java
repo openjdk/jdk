@@ -223,6 +223,7 @@ public final class QuantifierNode extends StateNode {
         other.target = null; // remove target from reduced quantifier
     }
 
+    @SuppressWarnings("fallthrough")
     public int setQuantifier(Node tgt, boolean group, ScanEnvironment env, char[] chars, int p, int end) {
         if (lower == 1 && upper == 1) return 1;
 
