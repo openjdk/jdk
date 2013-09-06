@@ -128,7 +128,7 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
 WB_END
 #endif // INCLUDE_ALL_GCS
 
-#ifdef INCLUDE_NMT
+#if INCLUDE_NMT
 // Alloc memory using the test memory type so that we can use that to see if
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
@@ -179,6 +179,10 @@ WB_ENTRY(jboolean, WB_NMTWaitForDataMerge(JNIEnv* env))
   }
 
   return MemTracker::wbtest_wait_for_data_merge();
+WB_END
+
+WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
+  return MemTracker::tracking_level() == MemTracker::NMT_detail;
 WB_END
 
 #endif // INCLUDE_NMT
@@ -439,7 +443,7 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
 #endif // INCLUDE_ALL_GCS
-#ifdef INCLUDE_NMT
+#if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
   {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
@@ -447,6 +451,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
   {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
+  {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",

@@ -101,6 +101,11 @@ public final class NativeUint8Array extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Uint8Array";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }

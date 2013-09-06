@@ -29,10 +29,12 @@ import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 
 /**
  * Template {@link Accessor} for boolean getter/setter.
- *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  * <p>
- * All the MethodAccessors are generated from <code>MethodAccessor_B y t e</code>
- *
+ *     All the MethodAccessors are generated from <code>MethodAccessor_B y t e</code>
+ * </p>
  * @author Kohsuke Kawaguchi
  */
 public class MethodAccessor_Float extends Accessor {
