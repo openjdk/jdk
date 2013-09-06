@@ -119,6 +119,8 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void comp_op(LIR_Condition condition, LIR_Opr src, LIR_Opr result, LIR_Op2* op);
 
+  PatchingStub::PatchID patching_id(CodeEmitInfo* info);
+
  public:
   LIR_Assembler(Compilation* c);
   ~LIR_Assembler();

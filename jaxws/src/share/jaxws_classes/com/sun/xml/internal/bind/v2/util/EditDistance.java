@@ -25,8 +25,10 @@
 
 package com.sun.xml.internal.bind.v2.util;
 
-import java.util.Collection;
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.WeakHashMap;
 
 /**
  * Computes the string edit distance.
@@ -41,13 +43,29 @@ import java.util.Arrays;
 public class EditDistance {
 
     /**
+     * Weak results cache to avoid additional computations.
+     * Because of high complexity caching is required.
+     */
+    private static final WeakHashMap<AbstractMap.SimpleEntry<String,String>, Integer> CACHE = new WeakHashMap<AbstractMap.SimpleEntry<String, String>, Integer>();
+
+    /**
      * Computes the edit distance between two strings.
      *
      * <p>
      * The complexity is O(nm) where n=a.length() and m=b.length().
      */
     public static int editDistance( String a, String b ) {
-        return new EditDistance(a,b).calc();
+        // let's check cache
+        AbstractMap.SimpleEntry<String,String> entry = new AbstractMap.SimpleEntry<String, String>(a, b); // using this class to avoid creation of my own which will handle PAIR of values
+        Integer result = null;
+        if (CACHE.containsKey(entry))
+            result = CACHE.get(entry); // looks like we have it
+
+        if (result == null) {
+            result = new EditDistance(a, b).calc();
+            CACHE.put(entry, result); // cache the result
+        }
+        return result;
     }
 
     /**

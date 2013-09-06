@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,23 @@
  * questions.
  */
 
-/**
- * Compare: an interface to enable users to define the result of
- *          a comparison of two objects.
- *
- * @author Sunita Mani
- */
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 
-package sun.misc;
+import java.util.Set;
 
-public interface Compare {
+/* A simple annotation processor. */
+@SupportedAnnotationTypes("*")
+public class DummyProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 
-    /**
-     * doCompare
-     *
-     * @param  obj1 first object to compare.
-     * @param  obj2 second object to compare.
-     * @return -1 if obj1 < obj2, 0 if obj1 == obj2, 1 if obj1 > obj2.
-     */
-    public int doCompare(Object obj1, Object obj2);
-
+    @Override
+    public final boolean process(Set<? extends TypeElement> annotations,
+            RoundEnvironment roundEnv) {
+        return false;
+    }
 }

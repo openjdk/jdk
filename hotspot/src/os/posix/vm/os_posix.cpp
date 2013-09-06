@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
+#include <pthread.h>
+#include <signal.h>
 
 
 // Check core dump limit and report possible place where core can be found
@@ -260,6 +262,55 @@ FILE* os::open(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
+void* os::get_default_process_handle() {
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+}
+
+// Builds a platform dependent Agent_OnLoad_<lib_name> function name
+// which is used to find statically linked in agents.
+// Parameters:
+//            sym_name: Symbol in library we are looking for
+//            lib_name: Name of library to look in, NULL for shared libs.
+//            is_absolute_path == true if lib_name is absolute path to agent
+//                                     such as "/a/b/libL.so"
+//            == false if only the base name of the library is passed in
+//               such as "L"
+char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
+                                    bool is_absolute_path) {
+  char *agent_entry_name;
+  size_t len;
+  size_t name_len;
+  size_t prefix_len = strlen(JNI_LIB_PREFIX);
+  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
+  const char *start;
+
+  if (lib_name != NULL) {
+    len = name_len = strlen(lib_name);
+    if (is_absolute_path) {
+      // Need to strip path, prefix and suffix
+      if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
+        lib_name = ++start;
+      }
+      if (len <= (prefix_len + suffix_len)) {
+        return NULL;
+      }
+      lib_name += prefix_len;
+      name_len = strlen(lib_name) - suffix_len;
+    }
+  }
+  len = (lib_name != NULL ? name_len : 0) + strlen(sym_name) + 2;
+  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
+  if (agent_entry_name == NULL) {
+    return NULL;
+  }
+  strcpy(agent_entry_name, sym_name);
+  if (lib_name != NULL) {
+    strcat(agent_entry_name, "_");
+    strncat(agent_entry_name, lib_name, name_len);
+  }
+  return agent_entry_name;
+}
+
 os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
   assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
 }
@@ -271,11 +322,17 @@ os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
  * The callback is supposed to provide the method that should be protected.
  */
 bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+  sigset_t saved_sig_mask;
+
   assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
   assert(!WatcherThread::watcher_thread()->has_crash_protection(),
       "crash_protection already set?");
 
-  if (sigsetjmp(_jmpbuf, 1) == 0) {
+  // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
+  // since on at least some systems (OS X) siglongjmp will restore the mask
+  // for the process, not the thread
+  pthread_sigmask(0, NULL, &saved_sig_mask);
+  if (sigsetjmp(_jmpbuf, 0) == 0) {
     // make sure we can see in the signal handler that we have crash protection
     // installed
     WatcherThread::watcher_thread()->set_crash_protection(this);
@@ -285,6 +342,7 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
     return true;
   }
   // this happens when we siglongjmp() back
+  pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
   WatcherThread::watcher_thread()->set_crash_protection(NULL);
   return false;
 }

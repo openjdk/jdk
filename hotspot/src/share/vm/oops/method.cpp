@@ -720,11 +720,22 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
 }
 
+bool Method::is_always_compilable() const {
+  // Generated adapters must be compiled
+  if (is_method_handle_intrinsic() && is_synthetic()) {
+    assert(!is_not_c1_compilable(), "sanity check");
+    assert(!is_not_c2_compilable(), "sanity check");
+    return true;
+  }
+
+  return false;
+}
+
 bool Method::is_not_compilable(int comp_level) const {
   if (number_of_breakpoints() > 0)
     return true;
-  if (is_method_handle_intrinsic())
-    return !is_synthetic();  // the generated adapters must be compiled
+  if (is_always_compilable())
+    return false;
   if (comp_level == CompLevel_any)
     return is_not_c1_compilable() || is_not_c2_compilable();
   if (is_c1_compile(comp_level))
@@ -736,6 +747,10 @@ bool Method::is_not_compilable(int comp_level) const {
 
 // call this when compiler finds that this method is not compilable
 void Method::set_not_compilable(int comp_level, bool report, const char* reason) {
+  if (is_always_compilable()) {
+    // Don't mark a method which should be always compilable
+    return;
+  }
   print_made_not_compilable(comp_level, /*is_osr*/ false, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_compilable();

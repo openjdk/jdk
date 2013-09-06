@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "adlc.hpp"
 
-void* Chunk::operator new(size_t requested_size, size_t length) {
+void* Chunk::operator new(size_t requested_size, size_t length) throw() {
   return CHeapObj::operator new(requested_size + length);
 }
 
@@ -163,7 +163,7 @@ bool Arena::contains( const void *ptr ) const {
 //-----------------------------------------------------------------------------
 // CHeapObj
 
-void* CHeapObj::operator new(size_t size){
+void* CHeapObj::operator new(size_t size) throw() {
   return (void *) malloc(size);
 }
 

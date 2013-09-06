@@ -29,6 +29,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
 
+import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Flags;
@@ -52,12 +54,16 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.Annotator;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -90,11 +96,17 @@ public class TypeAnnotations {
      * later processing.
      */
     public static void organizeTypeAnnotationsSignatures(final Symtab syms, final Names names,
-            final Log log, final JCClassDecl tree, Annotate annotate) {
+            final Log log, final Env<AttrContext> env, final JCClassDecl tree, final Annotate annotate) {
         annotate.afterRepeated( new Annotator() {
             @Override
             public void enterAnnotation() {
-                new TypeAnnotationPositions(syms, names, log, true).scan(tree);
+                JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
+
+                try {
+                    new TypeAnnotationPositions(syms, names, log, true).scan(tree);
+                } finally {
+                    log.useSource(oldSource);
+                }
             }
         } );
     }
@@ -906,7 +918,14 @@ public class TypeAnnotations {
                     if (!invocation.typeargs.contains(tree)) {
                         Assert.error("{" + tree + "} is not an argument in the invocation: " + invocation);
                     }
-                    p.type = TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
+                    MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
+                    if (exsym == null) {
+                        Assert.error("could not determine symbol for {" + invocation + "}");
+                    } else if (exsym.isConstructor()) {
+                        p.type = TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
+                    } else {
+                        p.type = TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
+                    }
                     p.pos = invocation.pos;
                     p.type_index = invocation.typeargs.indexOf(tree);
                     return;

@@ -241,9 +241,9 @@ public class Util {
                 first = false;
             }
         } catch (SecurityException exc) {
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         } catch (IOException exc) {
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
