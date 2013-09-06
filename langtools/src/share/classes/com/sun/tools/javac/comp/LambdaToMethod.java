@@ -249,7 +249,7 @@ public class LambdaToMethod extends TreeTranslator {
         MethodType lambdaType = (MethodType) sym.type;
 
         {
-            MethodSymbol owner = (MethodSymbol) localContext.owner;
+            Symbol owner = localContext.owner;
             ListBuffer<Attribute.TypeCompound> ownerTypeAnnos = new ListBuffer<Attribute.TypeCompound>();
             ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<Attribute.TypeCompound>();
 

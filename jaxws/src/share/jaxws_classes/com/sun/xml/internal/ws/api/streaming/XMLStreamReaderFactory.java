@@ -34,13 +34,20 @@ import org.xml.sax.InputSource;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.AccessController;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.sun.xml.internal.ws.resources.StreamingMessages;
 
 /**
  * Factory for {@link XMLStreamReader}.
@@ -61,6 +68,8 @@ public abstract class XMLStreamReaderFactory {
      */
     private static volatile @NotNull XMLStreamReaderFactory theInstance;
 
+    private static final String CLASS_NAME_OF_WSTXINPUTFACTORY = "com.ctc.wstx.stax.WstxInputFactory";
+
     static {
         XMLInputFactory xif = getXMLInputFactory();
         XMLStreamReaderFactory f=null;
@@ -73,7 +82,7 @@ public abstract class XMLStreamReaderFactory {
 
         if(f==null) {
             // is this Woodstox?
-            if (xif.getClass().getName().equals("com.ctc.wstx.stax.WstxInputFactory")) {
+            if (xif.getClass().getName().equals(CLASS_NAME_OF_WSTXINPUTFACTORY)) {
                 f = new Woodstox(xif);
             }
         }
@@ -83,7 +92,9 @@ public abstract class XMLStreamReaderFactory {
         }
 
         theInstance = f;
-        LOGGER.log(Level.FINE, "XMLStreamReaderFactory instance is = {0}", theInstance);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.log(Level.FINE, "XMLStreamReaderFactory instance is = {0}", theInstance);
+        }
     }
 
     private static XMLInputFactory getXMLInputFactory() {
@@ -92,7 +103,9 @@ public abstract class XMLStreamReaderFactory {
             try {
                 xif = (XMLInputFactory)Class.forName("com.ctc.wstx.stax.WstxInputFactory").newInstance();
             } catch (Exception e) {
-                // Ignore and fallback to default XMLInputFactory
+                if (LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.log(Level.WARNING, StreamingMessages.WOODSTOX_CANT_LOAD(CLASS_NAME_OF_WSTXINPUTFACTORY), e);
+                }
             }
         }
         if (xif == null) {
@@ -101,9 +114,9 @@ public abstract class XMLStreamReaderFactory {
         xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
         xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
         xif.setProperty(XMLInputFactory.IS_COALESCING, true);
+
         return xif;
     }
-
 
     /**
      * Overrides the singleton {@link XMLStreamReaderFactory} instance that
@@ -168,7 +181,7 @@ public abstract class XMLStreamReaderFactory {
      * it takes to recycle vs the possible performance gain by doing so.
      *
      * <p>
-     * This method may be invked by multiple threads concurrently.
+     * This method may be invoked by multiple threads concurrently.
      *
      * @param r
      *      The {@link XMLStreamReader} instance that the caller finished using.
@@ -282,11 +295,13 @@ public abstract class XMLStreamReaderFactory {
             return sr;
         }
 
+        @Override
         public void doRecycle(XMLStreamReader r) {
             if(zephyrClass.isInstance(r))
                 pool.set(r);
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
             try {
                 XMLStreamReader xsr = fetch();
@@ -307,6 +322,7 @@ public abstract class XMLStreamReaderFactory {
             }
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
             try {
                 XMLStreamReader xsr = fetch();
@@ -345,7 +361,7 @@ public abstract class XMLStreamReaderFactory {
      * {@link XMLInputFactory} is not required to be thread-safe, but
      * if the create method on this implementation is synchronized,
      * it may run into (see <a href="https://jax-ws.dev.java.net/issues/show_bug.cgi?id=555">
-     * race condition</a>). Hence, using a XMLInputFactory per theread.
+     * race condition</a>). Hence, using a XMLInputFactory per thread.
      */
     public static final class Default extends XMLStreamReaderFactory {
 
@@ -356,6 +372,7 @@ public abstract class XMLStreamReaderFactory {
             }
         };
 
+        @Override
         public XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
             try {
                 return xif.get().createXMLStreamReader(systemId,in);
@@ -364,6 +381,7 @@ public abstract class XMLStreamReaderFactory {
             }
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
             try {
                 return xif.get().createXMLStreamReader(systemId,in);
@@ -372,6 +390,7 @@ public abstract class XMLStreamReaderFactory {
             }
         }
 
+        @Override
         public void doRecycle(XMLStreamReader r) {
             // there's no way to recycle with the default StAX API.
         }
@@ -391,6 +410,7 @@ public abstract class XMLStreamReaderFactory {
             this.xif = xif;
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
             try {
                 return xif.createXMLStreamReader(systemId,in);
@@ -399,6 +419,7 @@ public abstract class XMLStreamReaderFactory {
             }
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
             try {
                 return xif.createXMLStreamReader(systemId,in);
@@ -407,33 +428,182 @@ public abstract class XMLStreamReaderFactory {
             }
         }
 
+        @Override
         public void doRecycle(XMLStreamReader r) {
             // there's no way to recycle with the default StAX API.
         }
     }
 
     /**
-     * Handles Woodstox's XIF but set properties to do the string interning.
+     * Handles Woodstox's XIF, but sets properties to do the string interning, sets various limits, ...
      * Woodstox {@link XMLInputFactory} is thread safe.
      */
     public static final class Woodstox extends NoLock {
+
+        public final static String PROPERTY_MAX_ATTRIBUTES_PER_ELEMENT = "xml.ws.maximum.AttributesPerElement";
+        public final static String PROPERTY_MAX_ATTRIBUTE_SIZE = "xml.ws.maximum.AttributeSize";
+        public final static String PROPERTY_MAX_CHILDREN_PER_ELEMENT = "xml.ws.maximum.ChildrenPerElement";
+        public final static String PROPERTY_MAX_ELEMENT_COUNT = "xml.ws.maximum.ElementCount";
+        public final static String PROPERTY_MAX_ELEMENT_DEPTH = "xml.ws.maximum.ElementDepth";
+        public final static String PROPERTY_MAX_CHARACTERS = "xml.ws.maximum.Characters";
+
+        private static final int DEFAULT_MAX_ATTRIBUTES_PER_ELEMENT = 500;
+        private static final int DEFAULT_MAX_ATTRIBUTE_SIZE = 65536 * 8;
+        private static final int DEFAULT_MAX_CHILDREN_PER_ELEMENT = Integer.MAX_VALUE;
+        private static final int DEFAULT_MAX_ELEMENT_DEPTH = 500;
+        private static final long DEFAULT_MAX_ELEMENT_COUNT = Integer.MAX_VALUE;
+        private static final long DEFAULT_MAX_CHARACTERS = Long.MAX_VALUE;
+
+        /* Woodstox default setting:
+         int mMaxAttributesPerElement = 1000;
+         int mMaxAttributeSize = 65536 * 8;
+         int mMaxChildrenPerElement = Integer.MAX_VALUE;
+         int mMaxElementDepth = 1000;
+         long mMaxElementCount = Long.MAX_VALUE;
+         long mMaxCharacters = Long.MAX_VALUE;
+         */
+
+        private int maxAttributesPerElement = DEFAULT_MAX_ATTRIBUTES_PER_ELEMENT;
+        private int maxAttributeSize = DEFAULT_MAX_ATTRIBUTE_SIZE;
+        private int maxChildrenPerElement = DEFAULT_MAX_CHILDREN_PER_ELEMENT;
+        private int maxElementDepth = DEFAULT_MAX_ELEMENT_DEPTH;
+        private long maxElementCount = DEFAULT_MAX_ELEMENT_COUNT;
+        private long maxCharacters = DEFAULT_MAX_CHARACTERS;
+
+        // Note: this is a copy from com.ctc.wstx.api.WstxInputProperties, to be removed in the future
+        private static final java.lang.String P_MAX_ATTRIBUTES_PER_ELEMENT = "com.ctc.wstx.maxAttributesPerElement";
+        private static final java.lang.String P_MAX_ATTRIBUTE_SIZE = "com.ctc.wstx.maxAttributeSize";
+        private static final java.lang.String P_MAX_CHILDREN_PER_ELEMENT = "com.ctc.wstx.maxChildrenPerElement";
+        private static final java.lang.String P_MAX_ELEMENT_COUNT = "com.ctc.wstx.maxElementCount";
+        private static final java.lang.String P_MAX_ELEMENT_DEPTH = "com.ctc.wstx.maxElementDepth";
+        private static final java.lang.String P_MAX_CHARACTERS = "com.ctc.wstx.maxCharacters";
+        private static final java.lang.String P_INTERN_NSURIS = "org.codehaus.stax2.internNsUris";
+
         public Woodstox(XMLInputFactory xif) {
             super(xif);
-            xif.setProperty("org.codehaus.stax2.internNsUris",true);
+
+            if (xif.isPropertySupported(P_INTERN_NSURIS)) {
+                xif.setProperty(P_INTERN_NSURIS, true);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_INTERN_NSURIS + " is {0}", true);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_ATTRIBUTES_PER_ELEMENT)) {
+                maxAttributesPerElement = Integer.valueOf(buildIntegerValue(
+                    PROPERTY_MAX_ATTRIBUTES_PER_ELEMENT, DEFAULT_MAX_ATTRIBUTES_PER_ELEMENT)
+                );
+                xif.setProperty(P_MAX_ATTRIBUTES_PER_ELEMENT, maxAttributesPerElement);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_ATTRIBUTES_PER_ELEMENT + " is {0}", maxAttributesPerElement);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_ATTRIBUTE_SIZE)) {
+                maxAttributeSize = Integer.valueOf(buildIntegerValue(
+                    PROPERTY_MAX_ATTRIBUTE_SIZE, DEFAULT_MAX_ATTRIBUTE_SIZE)
+                );
+                xif.setProperty(P_MAX_ATTRIBUTE_SIZE, maxAttributeSize);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_ATTRIBUTE_SIZE + " is {0}", maxAttributeSize);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_CHILDREN_PER_ELEMENT)) {
+                maxChildrenPerElement = Integer.valueOf(buildIntegerValue(
+                    PROPERTY_MAX_CHILDREN_PER_ELEMENT, DEFAULT_MAX_CHILDREN_PER_ELEMENT)
+                );
+                xif.setProperty(P_MAX_CHILDREN_PER_ELEMENT, maxChildrenPerElement);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_CHILDREN_PER_ELEMENT + " is {0}", maxChildrenPerElement);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_ELEMENT_DEPTH)) {
+                maxElementDepth = Integer.valueOf(buildIntegerValue(
+                    PROPERTY_MAX_ELEMENT_DEPTH, DEFAULT_MAX_ELEMENT_DEPTH)
+                );
+                xif.setProperty(P_MAX_ELEMENT_DEPTH, maxElementDepth);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_ELEMENT_DEPTH + " is {0}", maxElementDepth);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_ELEMENT_COUNT)) {
+                maxElementCount = Long.valueOf(buildLongValue(
+                    PROPERTY_MAX_ELEMENT_COUNT, DEFAULT_MAX_ELEMENT_COUNT)
+                );
+                xif.setProperty(P_MAX_ELEMENT_COUNT, maxElementCount);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_ELEMENT_COUNT + " is {0}", maxElementCount);
+                }
+            }
+
+            if (xif.isPropertySupported(P_MAX_CHARACTERS)) {
+                maxCharacters = Long.valueOf(buildLongValue(
+                    PROPERTY_MAX_CHARACTERS, DEFAULT_MAX_CHARACTERS)
+                );
+                xif.setProperty(P_MAX_CHARACTERS, maxCharacters);
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.log(Level.FINE, P_MAX_CHARACTERS + " is {0}", maxCharacters);
+                }
+            }
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
             return super.doCreate(systemId, in, rejectDTDs);
         }
 
+        @Override
         public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
             return super.doCreate(systemId, in, rejectDTDs);
         }
     }
 
+    private static int buildIntegerValue(String propertyName, int defaultValue) {
+        String propVal = System.getProperty(propertyName);
+        if (propVal != null && propVal.length() > 0) {
+            try {
+                Integer value = Integer.parseInt(propVal);
+                if (value > 0) {
+                    // return with the value in System property
+                    return value;
+                }
+            } catch (NumberFormatException nfe) {
+                if (LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.log(Level.WARNING, StreamingMessages.INVALID_PROPERTY_VALUE_INTEGER(propertyName, propVal, Integer.toString(defaultValue)), nfe);
+                }
+            }
+        }
+        // return with the default value
+        return defaultValue;
+    }
+
+    private static long buildLongValue(String propertyName, long defaultValue) {
+        String propVal = System.getProperty(propertyName);
+        if (propVal != null && propVal.length() > 0) {
+            try {
+                long value = Long.parseLong(propVal);
+                if (value > 0L) {
+                    // return with the value in System property
+                    return value;
+                }
+            } catch (NumberFormatException nfe) {
+                // defult will be returned
+                if (LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.log(Level.WARNING, StreamingMessages.INVALID_PROPERTY_VALUE_LONG(propertyName, propVal, Long.toString(defaultValue)), nfe);
+                }
+            }
+        }
+        // return with the default value
+        return defaultValue;
+    }
+
     private static Boolean getProperty(final String prop) {
         return AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
+                @Override
                 public Boolean run() {
                     String value = System.getProperty(prop);
                     return value != null ? Boolean.valueOf(value) : Boolean.FALSE;
@@ -441,4 +611,5 @@ public abstract class XMLStreamReaderFactory {
             }
         );
     }
+
 }

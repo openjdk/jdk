@@ -260,6 +260,6 @@ class SolarisEventPort
 
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }
