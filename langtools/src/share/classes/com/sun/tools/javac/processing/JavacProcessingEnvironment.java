@@ -89,7 +89,7 @@ import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
  * deletion without notice.</b>
  */
 public class JavacProcessingEnvironment implements ProcessingEnvironment, Closeable {
-    Options options;
+    private final Options options;
 
     private final boolean printProcessorInfo;
     private final boolean printRounds;

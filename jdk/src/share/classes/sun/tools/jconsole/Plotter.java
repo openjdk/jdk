@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,6 +336,13 @@ public class Plotter extends JComponent
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        int width = getWidth()-rightMargin-leftMargin-10;
+        int height = getHeight()-topMargin-bottomMargin;
+        if (width <= 0 || height <= 0) {
+            // not enough room to paint anything
+            return;
+        }
 
         Color oldColor = g.getColor();
         Font  oldFont  = g.getFont();

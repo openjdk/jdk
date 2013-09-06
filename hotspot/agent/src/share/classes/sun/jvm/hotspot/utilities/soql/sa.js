@@ -35,8 +35,9 @@ sapkg.c1 = sapkg.hotspot.c1;
 sapkg.code = sapkg.hotspot.code;
 sapkg.compiler = sapkg.hotspot.compiler;
 
-// 'debugger' is a JavaScript keyword :-(
-// sapkg.debugger = sapkg.hotspot.debugger;
+// 'debugger' is a JavaScript keyword, but ES5 relaxes the
+// restriction of using keywords as property name
+sapkg.debugger = sapkg.hotspot.debugger;
 
 sapkg.interpreter = sapkg.hotspot.interpreter;
 sapkg.jdi = sapkg.hotspot.jdi;
@@ -116,27 +117,36 @@ function main(globals, jvmarg) {
       return args;
     }
 
+    // Handle __has__ specially to avoid metacircularity problems
+    // when called from __get__.
+    // Calling
+    //   this.__has__(name)
+    // will in turn call
+    //   this.__call__('__has__', name)
+    // which is not handled below
+    function __has__(name) {
+      if (typeof(name) == 'number') {
+        return so["has(int)"](name);
+      } else {
+        if (name == '__wrapped__') {
+          return true;
+        } else if (so["has(java.lang.String)"](name)) {
+          return true;
+        } else if (name.equals('toString')) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
     if (so instanceof sapkg.utilities.soql.ScriptObject) {
       return new JSAdapter() {
-        __getIds__: function() {                  
-          return so.getIds();         
+        __getIds__: function() {
+          return so.getIds();
         },
   
-        __has__ : function(name) {
-          if (typeof(name) == 'number') {
-            return so["has(int)"](name);
-          } else {
-            if (name == '__wrapped__') {
-              return true;
-            } else if (so["has(java.lang.String)"](name)) {
-              return true;
-            } else if (name.equals('toString')) {
-              return true;
-            } else {
-              return false;
-            }
-          }
-        },
+        __has__ : __has__,
   
         __delete__ : function(name) {
           if (typeof(name) == 'number') {
@@ -147,7 +157,8 @@ function main(globals, jvmarg) {
         },
   
         __get__ : function(name) {
-          if (! this.__has__(name)) {
+	      // don't call this.__has__(name); see comments above function __has__
+          if (! __has__.call(this, name)) {
             return undefined;
           }
           if (typeof(name) == 'number') {
@@ -162,7 +173,7 @@ function main(globals, jvmarg) {
                   var args = prepareArgsArray(arguments);
                   var r;
                   try {
-                    r = value.call(args);
+                    r = value.call(Java.to(args, 'java.lang.Object[]'));
                   } catch (e) {
                     println("call to " + name + " failed!");
                     throw e;
@@ -204,6 +215,18 @@ function main(globals, jvmarg) {
   }
 
   // define "writeln" and "write" if not defined
+  if (typeof(println) == 'undefined') {
+    println = function (str) {
+      java.lang.System.out.println(String(str));
+    }
+  }
+
+  if (typeof(print) == 'undefined') {
+    print = function (str) {
+      java.lang.System.out.print(String(str));
+    }
+  }
+
   if (typeof(writeln) == 'undefined') {
     writeln = println;
   }
@@ -235,7 +258,7 @@ function main(globals, jvmarg) {
 
     this.jclasses = function() {
       forEachKlass(function (clazz) {
-        writeln(clazz.getName().asString() + " @" + clazz.getHandle().toString()); 
+        writeln(clazz.getName().asString() + " @" + clazz.getAddress().toString()); 
       });
     }
     registerCommand("classes", "classes", "jclasses");
@@ -490,14 +513,14 @@ function systemLoader() {
 function forEachKlass(callback) {
    var VisitorClass = sapkg.memory.SystemDictionary.ClassVisitor;
    var visitor = new VisitorClass() { visit: callback };
-   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary$ClassVisitor)"](visitor);
+   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary.ClassVisitor)"](visitor);
 }
 
 // iterate system dictionary for each 'Klass' and initiating loader
 function forEachKlassAndLoader(callback) {
    var VisitorClass = sapkg.memory.SystemDictionary.ClassAndLoaderVisitor;
    var visitor = new VisitorClass() { visit: callback };
-   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary$ClassAndLoaderVisitor)"](visitor);
+   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary.ClassAndLoaderVisitor)"](visitor);
 }
 
 // iterate system dictionary for each primitive array klass
@@ -522,7 +545,12 @@ function obj2oop(obj) {
 
 // iterates Java heap for each Oop
 function forEachOop(callback) {
-   sa.objHeap.iterate(new sapkg.oops.HeapVisitor() { doObj: callback });
+   function empty() { }
+   sa.objHeap.iterate(new sapkg.oops.HeapVisitor() {
+       prologue: empty,
+       doObj: callback,
+       epilogue: empty
+   });
 }
 
 // iterates Java heap for each Oop of given 'klass'.
@@ -536,8 +564,14 @@ function forEachOopOfKlass(callback, klass, includeSubtypes) {
    if (includeSubtypes == undefined) {
       includeSubtypes = true;
    }
+
+   function empty() { }
    sa.objHeap.iterateObjectsOfKlass(
-        new sapkg.oops.HeapVisitor() { doObj: callback },
+        new sapkg.oops.HeapVisitor() {
+            prologue: empty,
+            doObj: callback,
+            epilogue: empty
+        },
         klass, includeSubtypes);
 }
 
@@ -746,9 +780,9 @@ while (tmp.itr.hasNext()) {
          // ignore;
          continue;
    } else {
-      // some type names have ':'. replace to make it as a 
+      // some type names have ':', '<', '>', '*', ' '. replace to make it as a
       // JavaScript identifier
-      tmp.name = tmp.name.replace(':', '_').replace('<', '_').replace('>', '_').replace('*', '_').replace(' ', '_');
+      tmp.name = ("" + tmp.name).replace(/[:<>* ]/g, '_');
       eval("function read" + tmp.name + "(addr) {" +
            "   return readVMType('" + tmp.name + "', addr);}"); 
       eval("function print" + tmp.name + "(addr) {" + 
