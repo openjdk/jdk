@@ -69,7 +69,7 @@ public class XShareAuto {
                 "-server", "-Xshare:on", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./sample.jsa", "-version");
             output = new OutputAnalyzer(pb.start());
-            output.shouldContain("Could not allocate metaspace at a compatible address");
+            output.shouldContain("Unable to use shared archive");
             output.shouldHaveExitValue(1);
         }
     }

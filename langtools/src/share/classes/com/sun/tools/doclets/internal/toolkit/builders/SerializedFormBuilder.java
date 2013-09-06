@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 return;
             }
         } catch (Exception e) {
-            throw new DocletAbortException();
+            throw new DocletAbortException(e);
         }
         build(layoutParser.parseXML(NAME), contentTree);
         writer.close();
