@@ -72,7 +72,9 @@ public class LocalHostCookie {
                 }
             }
         } finally {
-            s.stopServer();
+            if (s != null) {
+                s.stopServer();
+            }
         }
     }
 
@@ -96,7 +98,9 @@ public class LocalHostCookie {
         }
 
         public void stopServer() {
-            server.stop(0);
+            if (server != null) {
+                server.stop(0);
+            }
         }
     }
 
