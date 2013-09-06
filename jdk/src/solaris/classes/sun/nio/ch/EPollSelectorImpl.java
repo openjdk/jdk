@@ -196,8 +196,4 @@ class EPollSelectorImpl
         }
         return this;
     }
-
-    static {
-        Util.load();
-    }
 }

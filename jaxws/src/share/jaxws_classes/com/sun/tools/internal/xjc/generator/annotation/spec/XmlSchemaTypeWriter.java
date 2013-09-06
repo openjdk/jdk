@@ -29,6 +29,11 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import com.sun.codemodel.internal.JAnnotationWriter;
 import com.sun.codemodel.internal.JType;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 public interface XmlSchemaTypeWriter
     extends JAnnotationWriter<XmlSchemaType>
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.message.jaxb;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.XMLStreamException2;
 import com.sun.xml.internal.bind.api.Bridge;
+import com.sun.xml.internal.stream.buffer.MutableXMLStreamBuffer;
 import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
 import com.sun.xml.internal.stream.buffer.XMLStreamBufferResult;
 import com.sun.xml.internal.ws.api.message.Header;
@@ -142,16 +143,12 @@ public final class JAXBHeader extends AbstractHeaderImpl {
     }
 
     public XMLStreamReader readHeader() throws XMLStreamException {
-        try {
-            if(infoset==null) {
-                XMLStreamBufferResult sbr = new XMLStreamBufferResult();
-                bridge.marshal(jaxbObject,sbr);
-                infoset = sbr.getXMLStreamBuffer();
-            }
-            return infoset.readAsXMLStreamReader();
-        } catch (JAXBException e) {
-            throw new XMLStreamException2(e);
+        if(infoset==null) {
+            MutableXMLStreamBuffer buffer = new MutableXMLStreamBuffer();
+            writeTo(buffer.createFromXMLStreamWriter());
+            infoset = buffer;
         }
+        return infoset.readAsXMLStreamReader();
     }
 
     public <T> T readAsJAXB(Unmarshaller unmarshaller) throws JAXBException {

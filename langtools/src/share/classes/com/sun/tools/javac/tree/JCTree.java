@@ -645,7 +645,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<Type> targets;
 
         public Type getDescriptorType(Types types) {
-            return types.findDescriptorType(targets.head);
+            return targets.nonEmpty() ? types.findDescriptorType(targets.head) : types.createErrorType(null);
         }
     }
 
@@ -1570,6 +1570,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return NEWARRAY;
+        }
+
+        @Override
+        public List<JCAnnotation> getAnnotations() {
+            return annotations;
+        }
+
+        @Override
+        public List<List<JCAnnotation>> getDimAnnotations() {
+            return dimAnnotations;
         }
     }
 

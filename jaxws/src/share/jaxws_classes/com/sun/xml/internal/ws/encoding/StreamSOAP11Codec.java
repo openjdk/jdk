@@ -44,12 +44,6 @@ import java.util.List;
  * @author Paul.Sandoz@Sun.Com
  */
 final class StreamSOAP11Codec extends StreamSOAPCodec {
-    static final StreamHeaderDecoder SOAP11StreamHeaderDecoder = new StreamHeaderDecoder() {
-        @Override
-        public Header decodeHeader(XMLStreamReader reader, XMLStreamBuffer mark) {
-            return new StreamHeader11(reader, mark);
-        }
-    };
 
     public static final String SOAP11_MIME_TYPE = "text/xml";
     public static final String DEFAULT_SOAP11_CONTENT_TYPE =

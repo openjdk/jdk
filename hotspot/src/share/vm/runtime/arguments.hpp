@@ -118,11 +118,21 @@ class SystemProperty: public CHeapObj<mtInternal> {
 // For use by -agentlib, -agentpath and -Xrun
 class AgentLibrary : public CHeapObj<mtInternal> {
   friend class AgentLibraryList;
+public:
+  // Is this library valid or not. Don't rely on os_lib == NULL as statically
+  // linked lib could have handle of RTLD_DEFAULT which == 0 on some platforms
+  enum AgentState {
+    agent_invalid = 0,
+    agent_valid   = 1
+  };
+
  private:
   char*           _name;
   char*           _options;
   void*           _os_lib;
   bool            _is_absolute_path;
+  bool            _is_static_lib;
+  AgentState      _state;
   AgentLibrary*   _next;
 
  public:
@@ -133,6 +143,11 @@ class AgentLibrary : public CHeapObj<mtInternal> {
   void* os_lib() const                      { return _os_lib; }
   void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
   AgentLibrary* next() const                { return _next; }
+  bool is_static_lib() const                { return _is_static_lib; }
+  void set_static_lib(bool static_lib)      { _is_static_lib = static_lib; }
+  bool valid()                              { return (_state == agent_valid); }
+  void set_valid()                          { _state = agent_valid; }
+  void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
@@ -147,6 +162,8 @@ class AgentLibrary : public CHeapObj<mtInternal> {
     _is_absolute_path = is_absolute_path;
     _os_lib = os_lib;
     _next = NULL;
+    _state = agent_invalid;
+    _is_static_lib = false;
   }
 };
 
@@ -276,6 +293,8 @@ class Arguments : AllStatic {
     { _agentList.add(new AgentLibrary(name, options, absolute_path, NULL)); }
 
   // Late-binding agents not started via arguments
+  static void add_loaded_agent(AgentLibrary *agentLib)
+    { _agentList.add(agentLib); }
   static void add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib)
     { _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib)); }
 
@@ -309,6 +328,7 @@ class Arguments : AllStatic {
   static void set_g1_gc_flags();
   // GC ergonomics
   static void set_use_compressed_oops();
+  static void set_use_compressed_klass_ptrs();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
   // limits the given memory size by the maximum amount of memory this process is

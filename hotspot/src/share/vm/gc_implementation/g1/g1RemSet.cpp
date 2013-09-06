@@ -104,15 +104,25 @@ void CountNonCleanMemRegionClosure::do_MemRegion(MemRegion mr) {
 class ScanRSClosure : public HeapRegionClosure {
   size_t _cards_done, _cards;
   G1CollectedHeap* _g1h;
+
   OopsInHeapRegionClosure* _oc;
+  CodeBlobToOopClosure* _code_root_cl;
+
   G1BlockOffsetSharedArray* _bot_shared;
   CardTableModRefBS *_ct_bs;
-  int _worker_i;
-  int _block_size;
-  bool _try_claimed;
+
+  double _strong_code_root_scan_time_sec;
+  int    _worker_i;
+  int    _block_size;
+  bool   _try_claimed;
+
 public:
-  ScanRSClosure(OopsInHeapRegionClosure* oc, int worker_i) :
+  ScanRSClosure(OopsInHeapRegionClosure* oc,
+                CodeBlobToOopClosure* code_root_cl,
+                int worker_i) :
     _oc(oc),
+    _code_root_cl(code_root_cl),
+    _strong_code_root_scan_time_sec(0.0),
     _cards(0),
     _cards_done(0),
     _worker_i(worker_i),
@@ -160,6 +170,12 @@ public:
                            card_start, card_start + G1BlockOffsetSharedArray::N_words);
   }
 
+  void scan_strong_code_roots(HeapRegion* r) {
+    double scan_start = os::elapsedTime();
+    r->strong_code_roots_do(_code_root_cl);
+    _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
+  }
+
   bool doHeapRegion(HeapRegion* r) {
     assert(r->in_collection_set(), "should only be called on elements of CS.");
     HeapRegionRemSet* hrrs = r->rem_set();
@@ -173,6 +189,7 @@ public:
     //   _try_claimed || r->claim_iter()
     // is true: either we're supposed to work on claimed-but-not-complete
     // regions, or we successfully claimed the region.
+
     HeapRegionRemSetIterator iter(hrrs);
     size_t card_index;
 
@@ -205,30 +222,43 @@ public:
       }
     }
     if (!_try_claimed) {
+      // Scan the strong code root list attached to the current region
+      scan_strong_code_roots(r);
+
       hrrs->set_iter_complete();
     }
     return false;
   }
+
+  double strong_code_root_scan_time_sec() {
+    return _strong_code_root_scan_time_sec;
+  }
+
   size_t cards_done() { return _cards_done;}
   size_t cards_looked_up() { return _cards;}
 };
 
-void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
+void G1RemSet::scanRS(OopsInHeapRegionClosure* oc,
+                      CodeBlobToOopClosure* code_root_cl,
+                      int worker_i) {
   double rs_time_start = os::elapsedTime();
   HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
 
-  ScanRSClosure scanRScl(oc, worker_i);
+  ScanRSClosure scanRScl(oc, code_root_cl, worker_i);
 
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
 
-  double scan_rs_time_sec = os::elapsedTime() - rs_time_start;
+  double scan_rs_time_sec = (os::elapsedTime() - rs_time_start)
+                            - scanRScl.strong_code_root_scan_time_sec();
 
-  assert( _cards_scanned != NULL, "invariant" );
+  assert(_cards_scanned != NULL, "invariant");
   _cards_scanned[worker_i] = scanRScl.cards_done();
 
   _g1p->phase_times()->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
+  _g1p->phase_times()->record_strong_code_root_scan_time(worker_i,
+                                                         scanRScl.strong_code_root_scan_time_sec() * 1000.0);
 }
 
 // Closure used for updating RSets and recording references that
@@ -288,7 +318,8 @@ void G1RemSet::cleanupHRRS() {
 }
 
 void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
-                                             int worker_i) {
+                                           CodeBlobToOopClosure* code_root_cl,
+                                           int worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();
 #endif
@@ -328,7 +359,7 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     _g1p->phase_times()->record_update_rs_time(worker_i, 0.0);
   }
   if (G1UseParallelRSetScanning || (worker_i == 0)) {
-    scanRS(oc, worker_i);
+    scanRS(oc, code_root_cl, worker_i);
   } else {
     _g1p->phase_times()->record_scan_rs_time(worker_i, 0.0);
   }
