@@ -166,11 +166,15 @@ ifeq ($(OS),)
   HOST := $(shell uname -n)
 endif
 
-# If not SunOS, not Linux and not BSD, assume Windows
+# If not SunOS, not Linux not BSD and not AIX, assume Windows
 ifneq ($(OS), Linux)
   ifneq ($(OS), SunOS)
     ifneq ($(OS), bsd)
-      OSNAME=windows
+      ifneq ($(OS), AIX)
+        OSNAME=windows
+      else
+        OSNAME=aix
+      endif
     else
       OSNAME=bsd
     endif
