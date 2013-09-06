@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 package com.sun.org.glassfish.external.statistics.impl;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Map;
 import java.lang.reflect.*;
 import com.sun.org.glassfish.external.statistics.AverageRangeStatistic;
@@ -139,6 +138,8 @@ public final class AverageRangeStatisticImpl extends StatisticImpl implements
 
     // todo: equals implementation
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        checkMethod(method);
+
         Object result;
         try {
             result = method.invoke(this, args);
@@ -147,7 +148,6 @@ public final class AverageRangeStatisticImpl extends StatisticImpl implements
         } catch (Exception e) {
             throw new RuntimeException("unexpected invocation exception: " +
                        e.getMessage());
-        } finally {
         }
         return result;
     }

@@ -35,13 +35,16 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
     // Test count helps identify test case in event of failure.
     int testcount = 0;
 
-    // Base test case template descriptions
+    // Base test case template descriptions;true==annotations in code attribute.
     enum srce  {
         src1("(repeating) type annotations on on field in method body",true),
         src2("(repeating) type annotations on type parameters, bounds and  type arguments", true),
         src3("(repeating) type annotations on type parameters of class, method return value in method", true),
         src4("(repeating) type annotations on field in anonymous class", false),
-        src5("(repeating) type annotations on field in anonymous class", false);
+        src5("(repeating) type annotations on field in anonymous class", false),
+        src6("(repeating) type annotations on void method declaration", false),
+        src7("(repeating) type annotations in use of instanceof", true),
+        src8("(repeating) type annotations in use of instanceof in method", true);
 
         String description;
         Boolean local;
@@ -84,6 +87,12 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                        test( 0, 8, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src1);
                        test( 2, 0, 2, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src5);
                        test( 0, 2, 0, 2, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src5);
+                       test( 0, 0, 2, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src6);
+                       test( 0, 0, 0, 2, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src6);
+                       test( 2, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src7);
+                       test( 0, 2, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src7);
+                       test( 4, 0, 0, 0, As, BDs, ABMix, "CLASS", et, ++testrun, srce.src8);
+                       test( 0, 4, 0, 0, As, BDs, ABMix, "RUNTIME", et, ++testrun, srce.src8);
                        break;
                    case "FIELD":
                        test( 8, 0, 0, 0, As, BDs, ABMix, "CLASS",   et, ++testrun, srce.src1);
@@ -120,18 +129,6 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                 ", Arepeats=" + Arepeats + ", BDrepeats=" + BDrepeats +
                 ", ABmix=" + ABmix + ", retention: " + rtn + ", anno2: " +
                 et2 + ", src=" + source + "\n    " + source.description;
-
-        if(
-// 8005681 - src1,2,3 - skip cases with repeated annotations on new, array, cast.
-            (( source.equals(srce.src1) || source.equals(srce.src2) ||
-              source.equals(srce.src3)) && (ABmix || (Arepeats && BDrepeats)))
- // 8008928 - src4,5 - this change cause crash with t-a on anon class)
-            || (source.equals(srce.src4) || source.equals(srce.src5))
-          ) {
-            System.out.println(testDef +
-                       "\n    8005681-skip repeated annotations on new,array,cast");
-            return;
-        }
 
         println(testDef);
         // Create test source and File.
@@ -178,9 +175,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
         println("Pass");
     }
 
-    //
     // Source for test cases
-    //
     String sourceString(String testname, String retentn, String annot2,
                         Boolean Arepeats, Boolean BDrepeats, Boolean ABmix,
                         srce src) {
@@ -359,6 +354,63 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     hasInnerClass=true;
                     innerClassname="$1";
                 break;
+            case src6: // (repeating)annotations on void method declaration
+                    /*
+                     * class Test95{
+                     *     @A @A @B @B public void test() { };
+                     * }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    _As_ _Bs_ public void test() { }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    hasInnerClass=false;
+                break;
+            case src7: // (repeating) type annotations in use of instanceof
+                    /*
+                     *   class Test10{
+                     *       String data = "test";
+                     *       boolean dataIsString = ( data instanceof @A @B @A @B String);
+                     *   }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    String data = \"test\";\n" +
+                    "    boolean dataIsString = ( data instanceof _As_ _Bs_ String);\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    hasInnerClass=false;
+                break;
+            case src8: // (repeating) type annotations in use of instanceof
+                    /*
+                     *   class Test20{
+                     *       String data = "test";
+                     *       Boolean isString() {
+                     *           if( data instanceof @A @B @A @B String )
+                     *               return true;
+                     *           else
+                     *               return( data instanceof @A @B @A @B String );
+                     *       }
+                     *   }
+                     */
+                source = new String( source +
+                    "// " + src.description + "\n" +
+                    "class "+ testname + "{\n" +
+                    "    String data = \"test\";\n" +
+                    "    Boolean isString() { \n" +
+                    "        if( data instanceof _As_ _Bs_ String )\n" +
+                    "            return true;\n" +
+                    "        else\n" +
+                    "            return( data instanceof _As_ _Bs_ String );\n" +
+                    "    }\n" +
+                    "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
+                    "\n\n";
+                    hasInnerClass=false;
+                break;
+
         }
         return imports + source;
     }

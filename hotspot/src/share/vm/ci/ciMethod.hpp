@@ -177,6 +177,10 @@ class ciMethod : public ciMetadata {
     address bcp = code() + bci;
     return Bytecodes::java_code_at(NULL, bcp);
   }
+  Bytecodes::Code raw_code_at_bci(int bci) {
+    address bcp = code() + bci;
+    return Bytecodes::code_at(NULL, bcp);
+  }
   BCEscapeAnalyzer  *get_bcea();
   ciMethodBlocks    *get_method_blocks();
 

@@ -981,7 +981,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
     if (should_try_gc) {
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_inc_collection_pause);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -1106,7 +1107,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // enough space for the allocation to succeed after the pause.
 
       bool succeeded;
-      result = do_collection_pause(word_size, gc_count_before, &succeeded);
+      result = do_collection_pause(word_size, gc_count_before, &succeeded,
+          GCCause::_g1_humongous_allocation);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         return result;
@@ -2006,10 +2008,12 @@ jint G1CollectedHeap::initialize() {
 
   size_t init_byte_size = collector_policy()->initial_heap_byte_size();
   size_t max_byte_size = collector_policy()->max_heap_byte_size();
+  size_t heap_alignment = collector_policy()->max_alignment();
 
   // Ensure that the sizes are properly aligned.
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
+  Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
 
   _cg1r = new ConcurrentG1Refine(this);
 
@@ -2026,12 +2030,8 @@ jint G1CollectedHeap::initialize() {
   // If this happens then we could end up using a non-optimal
   // compressed oops mode.
 
-  // Since max_byte_size is aligned to the size of a heap region (checked
-  // above).
-  Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
-
   ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size,
-                                                 HeapRegion::GrainBytes);
+                                                 heap_alignment);
 
   // It is important to do this in a way such that concurrent readers can't
   // temporarily think something is in the heap.  (I've actually seen this
@@ -2493,11 +2493,11 @@ void G1CollectedHeap::register_concurrent_cycle_start(jlong start_time) {
 
 void G1CollectedHeap::register_concurrent_cycle_end() {
   if (_concurrent_cycle_started) {
-    _gc_timer_cm->register_gc_end(os::elapsed_counter());
-
     if (_cm->has_aborted()) {
       _gc_tracer_cm->report_concurrent_mode_failure();
     }
+
+    _gc_timer_cm->register_gc_end(os::elapsed_counter());
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
     _concurrent_cycle_started = false;
@@ -3700,14 +3700,15 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
 
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                unsigned int gc_count_before,
-                                               bool* succeeded) {
+                                               bool* succeeded,
+                                               GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
   g1_policy()->record_stop_world_start();
   VM_G1IncCollectionPause op(gc_count_before,
                              word_size,
                              false, /* should_initiate_conc_mark */
                              g1_policy()->max_pause_time_ms(),
-                             GCCause::_g1_inc_collection_pause);
+                             gc_cause);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
