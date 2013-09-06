@@ -40,7 +40,6 @@ public enum HtmlAttr {
     BORDER,
     CELLPADDING,
     CELLSPACING,
-    CHARSET,
     CLASS,
     CLEAR,
     COLS,
