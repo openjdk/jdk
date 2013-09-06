@@ -2382,17 +2382,11 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
-  if (Universe::narrow_klass_base() != NULL) {
-    // heapbased
-    assert(Universe::narrow_klass_shift() != 0, "sanity");
-    sub(dst, src, R30);
-    srdi(dst, dst, Universe::narrow_klass_shift());
-  } else if (Universe::narrow_klass_shift() != 0) {
-    // zerobased
+  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
+  load_const(R0, Universe::narrow_klass_base());
+  sub(dst, src, R0);
+  if (Universe::narrow_klass_shift() != 0) {
     srdi(dst, src, Universe::narrow_klass_shift());
-  } else if (src != dst) {
-    // unscaled
-    mr(dst, src);
   }
 }
 
@@ -2407,18 +2401,14 @@ void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) 
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
-  if (Universe::narrow_klass_base() != NULL) {
-    // heapbased
-    assert(Universe::narrow_klass_shift() != 0, "sanity");
-    sldi(dst, src, Universe::narrow_klass_shift());
-    add(dst, dst, R30);
-  } else if (Universe::narrow_klass_shift() != 0) {
-    // zerobased
-    sldi(dst, src, Universe::narrow_klass_shift());
-  } else if (src != dst) {
-    // unscaled
-    mr(dst, src);
+  Register shifted_src = src;
+  assert(Universe::narrow_klass_base() != NULL, "Base should be initialized");
+  if (Universe::narrow_klass_shift() != 0) {
+    shifted_src = dst;
+    sldi(shifted_src, src, Universe::narrow_klass_shift());
   }
+  load_const(R0, Universe::narrow_klass_base());
+  add(dst, shifted_src, R0);
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -2441,7 +2431,13 @@ void MacroAssembler::load_klass_with_trap_null_check(Register dst, Register src)
 }
 
 void MacroAssembler::reinit_heapbase(Register d, Register tmp) {
-  if (UseCompressedOops || UseCompressedKlassPointers) {
+  if (Universe::heap() != NULL) {
+    if (Universe::narrow_oop_base() == NULL) {
+      Assembler::xorr(R30, R30, R30);
+    } else {
+      load_const(R30, Universe::narrow_ptrs_base(), tmp);
+    }
+  } else {
     load_const(R30, Universe::narrow_ptrs_base_addr(), tmp);
     ld(R30, 0, R30);
   }
