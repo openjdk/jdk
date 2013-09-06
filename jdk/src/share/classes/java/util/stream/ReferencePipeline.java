@@ -170,7 +170,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         if (predicate.test(u))
                             downstream.accept(u);
@@ -264,7 +263,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         try (Stream<? extends R> result = mapper.apply(u)) {
                             // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
@@ -370,7 +368,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         action.accept(u);
                         downstream.accept(u);

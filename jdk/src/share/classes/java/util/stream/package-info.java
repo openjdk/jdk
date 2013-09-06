@@ -64,7 +64,7 @@
  *     operations and terminal (value- or side-effect-producing) operations.
  *     Intermediate operations are always lazy.</li>
  *     <li>Possibly unbounded.  While collections have a finite size, streams
- *     need not.  Short-circuting operations such as {@code limit(n)} or
+ *     need not.  Short-circuiting operations such as {@code limit(n)} or
  *     {@code findFirst()} can allow computations on infinite streams to
  *     complete in finite time.</li>
  *     <li>Consumable. The elements of a stream are only visited once during
@@ -96,13 +96,13 @@
  *
  * <h2><a name="StreamOps">Stream operations and pipelines</a></h2>
  *
- * <p>Stream <a href="package-summary.html#StreamOps">operations</a> are
- * divided into <em>intermediate</em> and <em>terminal</em> operations, and are
- * combined to form <em>stream pipelines</em>.  A stream pipeline consists of a
- * source (such as a {@code Collection}, an array, a generator function, or an
- * I/O channel); followed by zero or more intermediate operations such
- * as {@code Stream.filter} or {@code Stream.map}; and a terminal
- * operation such as {@code Stream.forEach} or {@code Stream.reduce}.
+ * <p>Stream operations are divided into <em>intermediate</em> and
+ * <em>terminal</em> operations, and are combined to form <em>stream
+ * pipelines</em>.  A stream pipeline consists of a source (such as a
+ * {@code Collection}, an array, a generator function, or an I/O channel);
+ * followed by zero or more intermediate operations such as
+ * {@code Stream.filter} or {@code Stream.map}; and a terminal operation such
+ * as {@code Stream.forEach} or {@code Stream.reduce}.
  *
  * <p>Intermediate operations return a new stream.  They are always
  * <em>lazy</em>; executing an intermediate operation such as
@@ -176,9 +176,10 @@
  * do:
  *
  * <pre>{@code
- *     int sumOfWeights = widgets.}<b>{@code parallelStream()}</b>{@code .filter(b -> b.getColor() == RED)
- *                                                .mapToInt(b -> b.getWeight())
- *                                                .sum();
+ *     int sumOfWeights = widgets.}<code><b>parallelStream()</b></code>{@code
+ *                               .filter(b -> b.getColor() == RED)
+ *                               .mapToInt(b -> b.getWeight())
+ *                               .sum();
  * }</pre>
  *
  * <p>The only difference between the serial and parallel versions of this
@@ -485,13 +486,13 @@
  * as it collects together the desired results into a result container such
  * as a {@code Collection}.
  * A {@code collect} operation requires three functions:
- * a factory function to construct new instances of the result container, an
+ * a supplier function to construct new instances of the result container, an
  * accumulator function to incorporate an input element into a result
  * container, and a combining function to merge the contents of one result
  * container into another.  The form of this is very similar to the general
  * form of ordinary reduction:
  * <pre>{@code
- * <R> R collect(Supplier<R> resultFactory,
+ * <R> R collect(Supplier<R> supplier,
  *               BiConsumer<R, ? super T> accumulator,
  *               BiConsumer<R, R> combiner);
  * }</pre>
@@ -525,10 +526,10 @@
  * {@code ArrayList}, and the combiner simply uses {@link java.util.ArrayList#addAll addAll}
  * to copy the strings from one container into the other.
  *
- * <p> The three aspects of {@code collect} -- supplier, accumulator, and combiner --
- * are tightly coupled.  We can use the abstraction of
- * of a {@link java.util.stream.Collector} to capture all three aspects.
- * The above example for collecting strings into a {@code List} can be rewritten
+ * <p>The three aspects of {@code collect} -- supplier, accumulator, and
+ * combiner -- are tightly coupled.  We can use the abstraction of a
+ * {@link java.util.stream.Collector} to capture all three aspects.  The
+ * above example for collecting strings into a {@code List} can be rewritten
  * using a standard {@code Collector} as:
  * <pre>{@code
  *     List<String> strings = stream.map(Object::toString)
@@ -545,7 +546,7 @@
  * <pre>{@code
  *     Collector<Employee, ?, Integer> summingSalaries
  *         = Collectors.summingInt(Employee::getSalary);
- * } </pre>
+ * }</pre>
  *
  * (The {@code ?} for the second type parameter merely indicates that we don't
  * care about the intermediate representation used by this collector.)
@@ -557,14 +558,15 @@
  *     Map<Department, Integer> salariesByDept
  *         = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment,
  *                                                            summingSalaries));
- * } </pre>
+ * }</pre>
  *
  * <p>As with the regular reduction operation, {@code collect()} operations can
- * only be parallelized if appropriate conditions are met.  For any partially accumulated result,
- * combining it with an empty result container must produce an equivalent
- * result.  That is, for a partially accumulated result {@code p} that is the
- * result of any series of accumulator and combiner invocations, {@code p} must
- * be equivalent to {@code combiner.apply(p, supplier.get())}.
+ * only be parallelized if appropriate conditions are met.  For any partially
+ * accumulated result, combining it with an empty result container must
+ * produce an equivalent result.  That is, for a partially accumulated result
+ * {@code p} that is the result of any series of accumulator and combiner
+ * invocations, {@code p} must be equivalent to
+ * {@code combiner.apply(p, supplier.get())}.
  *
  * <p>Further, however the computation is split, it must produce an equivalent
  * result.  For any input elements {@code t1} and {@code t2}, the results
@@ -580,7 +582,7 @@
  *     A a3 = supplier.get();
  *     accumulator.accept(a3, t2);
  *     R r2 = finisher.apply(combiner.apply(a2, a3));  // result with splitting
- * } </pre>
+ * }</pre>
  *
  * <p>Here, equivalence generally means according to {@link java.lang.Object#equals(Object)}.
  * but in some cases equivalence may be relaxed to account for differences in
@@ -596,8 +598,8 @@
  *               .collect(Collectors.groupingBy(Transaction::getBuyer));
  * }</pre>
  * it may actually be counterproductive to perform the operation in parallel.
- * This is because the combining step (merging one {@code Map} into another by key)
- * can be expensive for some {@code Map} implementations.
+ * This is because the combining step (merging one {@code Map} into another by
+ * key) can be expensive for some {@code Map} implementations.
  *
  * <p>Suppose, however, that the result container used in this reduction
  * was a concurrently modifiable collection -- such as a
@@ -605,8 +607,8 @@
  * invocations of the accumulator could actually deposit their results
  * concurrently into the same shared result container, eliminating the need for
  * the combiner to merge distinct result containers. This potentially provides
- * a boost to the parallel execution performance. We call this a <em>concurrent</em>
- * reduction.
+ * a boost to the parallel execution performance. We call this a
+ * <em>concurrent</em> reduction.
  *
  * <p>A {@link java.util.stream.Collector} that supports concurrent reduction is
  * marked with the {@link java.util.stream.Collector.Characteristics#CONCURRENT}
@@ -635,11 +637,11 @@
  * (where {@link java.util.stream.Collectors#groupingByConcurrent} is the
  * concurrent equivalent of {@code groupingBy}).
  *
- * <p>Note that if it is important that the elements for a given key appear in the
- * order they appear in the source, then we cannot use a concurrent reduction,
- * as ordering is one of the casualties of concurrent insertion.  We would then
- * be constrained to implement either a sequential reduction or a merge-based
- * parallel reduction.
+ * <p>Note that if it is important that the elements for a given key appear in
+ * the order they appear in the source, then we cannot use a concurrent
+ * reduction, as ordering is one of the casualties of concurrent insertion.
+ * We would then be constrained to implement either a sequential reduction or
+ * a merge-based parallel reduction.
  *
  * <h3><a name="Associativity">Associativity</a></h3>
  *
@@ -656,8 +658,8 @@
  * So we can evaluate {@code (a op b)} in parallel with {@code (c op d)}, and
  * then invoke {@code op} on the results.
  *
- * <p>Examples of associative operations include numeric addition, min, and max,
- * and string concatenation.
+ * <p>Examples of associative operations include numeric addition, min, and
+ * max, and string concatenation.
  *
  * <h2><a name="StreamSources">Low-level stream construction</a></h2>
  *
@@ -665,48 +667,54 @@
  * {@link java.util.Collection#stream()} or {@link java.util.Arrays#stream(Object[])}
  * to obtain a stream.  How are those stream-bearing methods implemented?
  *
- * <p>The class {@link java.util.stream.StreamSupport} has a number of low-level
- * methods for creating a stream, all using some form of a {@link java.util.Spliterator}.
- * A spliterator is the parallel analogue of an {@link java.util.Iterator}; it
- * describes a (possibly infinite) collection of elements, with support for
- * sequentially advancing, bulk traversal, and splitting off some portion of the
- * input into another spliterator which can be processed in parallel.  At the
- * lowest level, all streams are driven by a spliterator.
+ * <p>The class {@link java.util.stream.StreamSupport} has a number of
+ * low-level methods for creating a stream, all using some form of a
+ * {@link java.util.Spliterator}. A spliterator is the parallel analogue of an
+ * {@link java.util.Iterator}; it describes a (possibly infinite) collection of
+ * elements, with support for sequentially advancing, bulk traversal, and
+ * splitting off some portion of the input into another spliterator which can
+ * be processed in parallel.  At the lowest level, all streams are driven by a
+ * spliterator.
  *
- * <p>There are a number of implementation choices in implementing a spliterator,
- * nearly all of which are tradeoffs between simplicity of implementation and
- * runtime performance of streams using that spliterator.  The simplest, but
- * least performant, way to create a spliterator is to create one from an iterator
- * using {@link java.util.Spliterators#spliteratorUnknownSize(java.util.Iterator, int)}.
+ * <p>There are a number of implementation choices in implementing a
+ * spliterator, nearly all of which are tradeoffs between simplicity of
+ * implementation and runtime performance of streams using that spliterator.
+ * The simplest, but least performant, way to create a spliterator is to
+ * create one from an iterator using
+ * {@link java.util.Spliterators#spliteratorUnknownSize(java.util.Iterator, int)}.
  * While such a spliterator will work, it will likely offer poor parallel
- * performance, since we have lost sizing information (how big is the underlying
- * data set), as well as being constrained to a simplistic splitting algorithm.
+ * performance, since we have lost sizing information (how big is the
+ * underlying data set), as well as being constrained to a simplistic
+ * splitting algorithm.
  *
- * <p>A higher-quality spliterator will provide balanced and known-size splits,
- * accurate sizing information, and a number of other
+ * <p>A higher-quality spliterator will provide balanced and known-size
+ * splits, accurate sizing information, and a number of other
  * {@link java.util.Spliterator#characteristics() characteristics} of the
  * spliterator or data that can be used by implementations to optimize
  * execution.
  *
- * <p>Spliterators for mutable data sources have an additional challenge; timing
- * of binding to the data, since the data could change between the time the
- * spliterator is created and the time the stream pipeline is executed.  Ideally,
- * a spliterator for a stream would report a characteristic of {@code IMMUTABLE}
- * or {@code CONCURRENT}; if not it should be <a href="../Spliterator.html#binding"><em>late-binding</em></a>.
- * If a source cannot directly supply a recommended spliterator, it may
- * indirectly supply a spliterator using a {@code Supplier}, and construct a
- * stream via the {@code Supplier}-accepting versions of
+ * <p>Spliterators for mutable data sources have an additional challenge;
+ * timing of binding to the data, since the data could change between the time
+ * the spliterator is created and the time the stream pipeline is executed.
+ * Ideally, a spliterator for a stream would report a characteristic of
+
+ * {@code IMMUTABLE} or {@code CONCURRENT}; if not it should be
+ * <a href="../Spliterator.html#binding"><em>late-binding</em></a>. If a source
+ * cannot directly supply a recommended spliterator, it may indirectly supply
+ * a spliterator using a {@code Supplier}, and construct a stream via the
+ * {@code Supplier}-accepting versions of
  * {@link java.util.stream.StreamSupport#stream(Supplier, int, boolean) stream()}.
  * The spliterator is obtained from the supplier only after the terminal
  * operation of the stream pipeline commences.
  *
- * <p>These requirements significantly reduce the scope of potential interference
- * between mutations of the stream source and execution of stream pipelines.
- * Streams based on spliterators with the desired characteristics, or those using
- * the Supplier-based factory forms, are immune to modifications of the data
- * source prior to commencement of the terminal operation (provided the behavioral
- * parameters to the stream operations meet the required criteria for non-interference
- * and statelessness).  See <a href="package-summary.html#Non-Interference">Non-Interference</a>
+ * <p>These requirements significantly reduce the scope of potential
+ * interference between mutations of the stream source and execution of stream
+ * pipelines. Streams based on spliterators with the desired characteristics,
+ * or those using the Supplier-based factory forms, are immune to
+ * modifications of the data source prior to commencement of the terminal
+ * operation (provided the behavioral parameters to the stream operations meet
+ * the required criteria for non-interference and statelessness).  See
+ * <a href="package-summary.html#Non-Interference">Non-Interference</a>
  * for more details.
  *
  * @since 1.8

@@ -567,8 +567,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
      * Performs a <a href="package-summary.html#Reduction">reduction</a> on the
-     * elements of this stream, using the provided identity, accumulation
-     * function, and combining functions.  This is equivalent to:
+     * elements of this stream, using the provided identity, accumulation and
+     * combining functions.  This is equivalent to:
      * <pre>{@code
      *     U result = identity;
      *     for (T element : this stream)
@@ -886,7 +886,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      */
     @SafeVarargs
-    @SuppressWarnings("varargs")
+    @SuppressWarnings("varargs") // Creating a stream from an array is safe
     public static<T> Stream<T> of(T... values) {
         return Arrays.stream(values);
     }
