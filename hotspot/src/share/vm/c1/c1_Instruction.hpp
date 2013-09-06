@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ class Instruction: public CompilationResourceObj {
   }
 
  public:
-  void* operator new(size_t size) {
+  void* operator new(size_t size) throw() {
     Compilation* c = Compilation::current();
     void* res = c->arena()->Amalloc(size);
     ((Instruction*)res)->_id = c->get_next_id();
@@ -1611,7 +1611,7 @@ LEAF(BlockBegin, StateSplit)
   friend class SuxAndWeightAdjuster;
 
  public:
-   void* operator new(size_t size) {
+   void* operator new(size_t size) throw() {
     Compilation* c = Compilation::current();
     void* res = c->arena()->Amalloc(size);
     ((BlockBegin*)res)->_id = c->get_next_id();

@@ -284,7 +284,7 @@ public enum TokenType {
 
     @Override
     public String toString() {
-        return name;
+        return getNameOrType();
     }
 
     static {
