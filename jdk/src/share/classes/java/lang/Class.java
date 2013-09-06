@@ -1484,22 +1484,24 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns an array containing {@code Field} objects reflecting all
      * the accessible public fields of the class or interface represented by
-     * this {@code Class} object.  The elements in the array returned are
-     * not sorted and are not in any particular order.  This method returns an
-     * array of length 0 if the class or interface has no accessible public
-     * fields, or if it represents an array class, a primitive type, or void.
+     * this {@code Class} object.
      *
-     * <p> Specifically, if this {@code Class} object represents a class,
-     * this method returns the public fields of this class and of all its
-     * superclasses.  If this {@code Class} object represents an
-     * interface, this method returns the fields of this interface and of all
-     * its superinterfaces.
+     * <p> If this {@code Class} object represents a class or interface with no
+     * no accessible public fields, then this method returns an array of length
+     * 0.
      *
-     * <p> The implicit length field for array class is not reflected by this
-     * method. User code should use the methods of class {@code Array} to
-     * manipulate arrays.
+     * <p> If this {@code Class} object represents a class, then this method
+     * returns the public fields of the class and of all its superclasses.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents an interface, then this
+     * method returns the fields of the interface and of all its
+     * superinterfaces.
+     *
+     * <p> If this {@code Class} object represents an array type, a primitive
+     * type, or void, then this method returns an array of length 0.
+     *
+     * <p> The elements in the array returned are not sorted and are not in any
+     * particular order.
      *
      * @return the array of {@code Field} objects representing the
      *         public fields
@@ -1512,6 +1514,8 @@ public final class Class<T> implements java.io.Serializable,
      *         of this class.
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field[] getFields() throws SecurityException {
@@ -1595,13 +1599,14 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns a {@code Field} object that reflects the specified public
-     * member field of the class or interface represented by this
-     * {@code Class} object. The {@code name} parameter is a
-     * {@code String} specifying the simple name of the desired field.
+     * Returns a {@code Field} object that reflects the specified public member
+     * field of the class or interface represented by this {@code Class}
+     * object. The {@code name} parameter is a {@code String} specifying the
+     * simple name of the desired field.
      *
      * <p> The field to be reflected is determined by the algorithm that
-     * follows.  Let C be the class represented by this object:
+     * follows.  Let C be the class or interface represented by this object:
+     *
      * <OL>
      * <LI> If C declares a public field with the name specified, that is the
      *      field to be reflected.</LI>
@@ -1614,7 +1619,8 @@ public final class Class<T> implements java.io.Serializable,
      *      is thrown.</LI>
      * </OL>
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code length} field of the array type.
      *
      * @param name the field name
      * @return the {@code Field} object of this class specified by
@@ -1631,6 +1637,8 @@ public final class Class<T> implements java.io.Serializable,
      *         of this class.
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field getField(String name)
@@ -1800,12 +1808,15 @@ public final class Class<T> implements java.io.Serializable,
      * declared by the class or interface represented by this
      * {@code Class} object. This includes public, protected, default
      * (package) access, and private fields, but excludes inherited fields.
-     * The elements in the array returned are not sorted and are not in any
-     * particular order.  This method returns an array of length 0 if the class
-     * or interface declares no fields, or if this {@code Class} object
-     * represents a primitive type, an array class, or void.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents a class or interface with no
+     * declared fields, then this method returns an array of length 0.
+     *
+     * <p> If this {@code Class} object represents an array type, a primitive
+     * type, or void, then this method returns an array of length 0.
+     *
+     * <p> The elements in the array returned are not sorted and are not in any
+     * particular order.
      *
      * @return  the array of {@code Field} objects representing all the
      *          declared fields of this class
@@ -1831,6 +1842,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field[] getDeclaredFields() throws SecurityException {
@@ -1935,9 +1948,11 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns a {@code Field} object that reflects the specified declared
      * field of the class or interface represented by this {@code Class}
-     * object. The {@code name} parameter is a {@code String} that
-     * specifies the simple name of the desired field.  Note that this method
-     * will not reflect the {@code length} field of an array class.
+     * object. The {@code name} parameter is a {@code String} that specifies
+     * the simple name of the desired field.
+     *
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code length} field of the array type.
      *
      * @param name the name of the field
      * @return  the {@code Field} object for the specified field in this
@@ -1967,6 +1982,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field getDeclaredField(String name)

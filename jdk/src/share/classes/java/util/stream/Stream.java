@@ -657,7 +657,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      */
-    <R, A> R collect(Collector<? super T, A, ? extends R> collector);
+    <R, A> R collect(Collector<? super T, A, R> collector);
 
     /**
      * Returns the minimum element of this stream according to the provided
@@ -891,7 +891,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * elements of a first {@code Stream} succeeded by all the elements of the
      * second {@code Stream}. The resulting stream is ordered if both
      * of the input streams are ordered, and parallel if either of the input
-     * streams is parallel.
+     * streams is parallel.  When the resulting stream is closed, the close
+     * handlers for both input streams are invoked.
      *
      * @param <T> The type of stream elements
      * @param a the first stream
@@ -906,7 +907,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
         @SuppressWarnings("unchecked")
         Spliterator<T> split = new Streams.ConcatSpliterator.OfRef<>(
                 (Spliterator<T>) a.spliterator(), (Spliterator<T>) b.spliterator());
-        return StreamSupport.stream(split, a.isParallel() || b.isParallel());
+        Stream<T> stream = StreamSupport.stream(split, a.isParallel() || b.isParallel());
+        return stream.onClose(Streams.composedClose(a, b));
     }
 
     /**

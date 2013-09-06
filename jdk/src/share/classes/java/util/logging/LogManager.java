@@ -391,6 +391,9 @@ public class LogManager {
         }
     }
 
+    // LoggerContext maps from AppContext
+    private static WeakHashMap<Object, LoggerContext> contextsMap = null;
+
     // Returns the LoggerContext for the user code (i.e. application or AppContext).
     // Loggers are isolated from each AppContext.
     private LoggerContext getUserContext() {
@@ -399,33 +402,28 @@ public class LogManager {
         SecurityManager sm = System.getSecurityManager();
         JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
         if (sm != null && javaAwtAccess != null) {
+            // for each applet, it has its own LoggerContext isolated from others
             synchronized (javaAwtAccess) {
-                // AppContext.getAppContext() returns the system AppContext if called
-                // from a system thread but Logger.getLogger might be called from
-                // an applet code. Instead, find the AppContext of the applet code
-                // from the execution stack.
-                Object ecx = javaAwtAccess.getExecutionContext();
-                if (ecx == null) {
-                    // fall back to thread group seach of AppContext
-                    ecx = javaAwtAccess.getContext();
-                }
+                // find the AppContext of the applet code
+                // will be null if we are in the main app context.
+                final Object ecx = javaAwtAccess.getAppletContext();
                 if (ecx != null) {
-                    context = (LoggerContext)javaAwtAccess.get(ecx, LoggerContext.class);
+                    if (contextsMap == null) {
+                        contextsMap = new WeakHashMap<>();
+                    }
+                    context = contextsMap.get(ecx);
                     if (context == null) {
-                        if (javaAwtAccess.isMainAppContext()) {
-                            context = userContext;
-                        } else {
-                            // Create a new LoggerContext for the applet.
-                            // The new logger context has its requiresDefaultLoggers
-                            // flag set to true - so that these loggers will be
-                            // lazily added when the context is firt accessed.
-                            context = new LoggerContext(true);
-                        }
-                        javaAwtAccess.put(ecx, LoggerContext.class, context);
+                        // Create a new LoggerContext for the applet.
+                        // The new logger context has its requiresDefaultLoggers
+                        // flag set to true - so that these loggers will be
+                        // lazily added when the context is firt accessed.
+                        context = new LoggerContext(true);
+                        contextsMap.put(ecx, context);
                     }
                 }
             }
         }
+        // for standalone app, return userContext
         return context != null ? context : userContext;
     }
 

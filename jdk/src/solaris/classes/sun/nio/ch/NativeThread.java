@@ -54,7 +54,7 @@ public class NativeThread {
     private static native void init();
 
     static {
-        Util.load();
+        IOUtil.load();
         init();
     }
 

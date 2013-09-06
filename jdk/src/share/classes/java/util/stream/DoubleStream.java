@@ -752,7 +752,8 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * elements of a first {@code DoubleStream} succeeded by all the elements of the
      * second {@code DoubleStream}. The resulting stream is ordered if both
      * of the input streams are ordered, and parallel if either of the input
-     * streams is parallel.
+     * streams is parallel.  When the resulting stream is closed, the close
+     * handlers for both input streams are invoked.
      *
      * @param a the first stream
      * @param b the second stream to concatenate on to end of the first stream
@@ -764,7 +765,8 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
 
         Spliterator.OfDouble split = new Streams.ConcatSpliterator.OfDouble(
                 a.spliterator(), b.spliterator());
-        return StreamSupport.doubleStream(split, a.isParallel() || b.isParallel());
+        DoubleStream stream = StreamSupport.doubleStream(split, a.isParallel() || b.isParallel());
+        return stream.onClose(Streams.composedClose(a, b));
     }
 
     /**
