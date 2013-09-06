@@ -54,7 +54,7 @@
 //
 // Defines all global flags used by the client compiler.
 //
-#define C1_FLAGS(develop, develop_pd, product, product_pd, notproduct)      \
+#define C1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
                                                                             \
   /* Printing */                                                            \
   notproduct(bool, PrintC1Statistics, false,                                \
@@ -333,15 +333,19 @@
           "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
   product(bool, C1UpdateMethodData, trueInTiered,                           \
-          "Update MethodData*s in Tier1-generated code")                  \
+          "Update MethodData*s in Tier1-generated code")                    \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation") \
+                                                                            \
+  diagnostic(bool, C1PatchInvokeDynamic, true,                              \
+             "Patch invokedynamic appendix not known at compile time")      \
+                                                                            \
                                                                             \
 
 
 // Read default values for c1 globals
 
-C1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_NOTPRODUCT_FLAG)
+C1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
 
 #endif // SHARE_VM_C1_C1_GLOBALS_HPP
