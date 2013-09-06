@@ -715,6 +715,7 @@ JVM_handle_bsd_signal(int sig,
   err.report_and_die();
 
   ShouldNotReachHere();
+  return false;
 }
 
 // From solaris_i486.s ported to bsd_i486.s

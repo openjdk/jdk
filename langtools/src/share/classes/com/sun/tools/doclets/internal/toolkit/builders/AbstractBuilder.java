@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public abstract class AbstractBuilder {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
             configuration.root.printError("Unknown element: " + component);
-            throw new DocletAbortException();
+            throw new DocletAbortException(e);
         } catch (InvocationTargetException e) {
             e.getCause().printStackTrace();
         } catch (Exception e) {
@@ -146,7 +146,7 @@ public abstract class AbstractBuilder {
             configuration.root.printError("Exception " +
                     e.getClass().getName() +
                     " thrown while processing element: " + component);
-            throw new DocletAbortException();
+            throw new DocletAbortException(e);
         }
     }
 

@@ -414,30 +414,34 @@ enum CompilationPhase {
                     compiler.getCodeInstaller().verify(bytecode);
                 }
 
-                // should code be dumped to disk - only valid in compile_only
-                // mode?
+                // should code be dumped to disk - only valid in compile_only mode?
                 if (env._dest_dir != null && env._compile_only) {
                     final String fileName = className.replace('.', File.separatorChar) + ".class";
-                    final int index = fileName.lastIndexOf(File.separatorChar);
+                    final int    index    = fileName.lastIndexOf(File.separatorChar);
 
+                    final File dir;
                     if (index != -1) {
-                        final File dir = new File(fileName.substring(0, index));
-                        try {
-                            if (!dir.exists() && !dir.mkdirs()) {
-                                throw new IOException(dir.toString());
-                            }
-                            final File file = new File(env._dest_dir, fileName);
-                            try (final FileOutputStream fos = new FileOutputStream(file)) {
-                                fos.write(bytecode);
-                            }
-                        } catch (final IOException e) {
-                            Compiler.LOG.warning("Skipping class dump for ",
-                                    className,
-                                    ": ",
-                                    ECMAErrors.getMessage(
-                                        "io.error.cant.write",
-                                        dir.toString()));
+                        dir = new File(env._dest_dir, fileName.substring(0, index));
+                    } else {
+                        dir = new File(env._dest_dir);
+                    }
+
+                    try {
+                        if (!dir.exists() && !dir.mkdirs()) {
+                            throw new IOException(dir.toString());
                         }
+                        final File file = new File(env._dest_dir, fileName);
+                        try (final FileOutputStream fos = new FileOutputStream(file)) {
+                            fos.write(bytecode);
+                        }
+                        Compiler.LOG.info("Wrote class to '" + file.getAbsolutePath() + '\'');
+                    } catch (final IOException e) {
+                        Compiler.LOG.warning("Skipping class dump for ",
+                                className,
+                                ": ",
+                                ECMAErrors.getMessage(
+                                    "io.error.cant.write",
+                                    dir.toString()));
                     }
                 }
             }

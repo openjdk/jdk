@@ -140,6 +140,21 @@ public class PropertyListenerManager implements PropertyListener {
         }
     }
 
+    /**
+     * This method can be called to notify __proto__ modification to this object's listeners.
+     *
+     * @param object The ScriptObject whose __proto__ was changed.
+     * @param oldProto old __proto__
+     * @param newProto new __proto__
+     */
+    protected synchronized final void notifyProtoChanged(final ScriptObject object, final ScriptObject oldProto, final ScriptObject newProto) {
+        if (listeners != null) {
+            for (PropertyListener listener : listeners.keySet()) {
+                listener.protoChanged(object, oldProto, newProto);
+            }
+        }
+    }
+
     // PropertyListener methods
 
     @Override
@@ -155,5 +170,10 @@ public class PropertyListenerManager implements PropertyListener {
     @Override
     public final void propertyModified(final ScriptObject object, final Property oldProp, final Property newProp) {
         notifyPropertyModified(object, oldProp, newProp);
+    }
+
+    @Override
+    public final void protoChanged(final ScriptObject object, final ScriptObject oldProto, final ScriptObject newProto) {
+        notifyProtoChanged(object, oldProto, newProto);
     }
 }

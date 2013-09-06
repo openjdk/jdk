@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
@@ -53,6 +54,8 @@ const uint metadata_deallocate_a_lock_chunk = 3;
 size_t const allocation_from_dictionary_limit = 64 * K;
 
 MetaWord* last_allocated = 0;
+
+size_t Metaspace::_class_metaspace_size;
 
 // Used in declarations in SpaceManager and ChunkManager
 enum ChunkIndex {
@@ -261,10 +264,6 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   // count of chunks contained in this VirtualSpace
   uintx _container_count;
 
-  // Convenience functions for logical bottom and end
-  MetaWord* bottom() const { return (MetaWord*) _virtual_space.low(); }
-  MetaWord* end() const { return (MetaWord*) _virtual_space.high(); }
-
   // Convenience functions to access the _virtual_space
   char* low()  const { return virtual_space()->low(); }
   char* high() const { return virtual_space()->high(); }
@@ -283,6 +282,10 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   VirtualSpaceNode(size_t byte_size);
   VirtualSpaceNode(ReservedSpace rs) : _top(NULL), _next(NULL), _rs(rs), _container_count(0) {}
   ~VirtualSpaceNode();
+
+  // Convenience functions for logical bottom and end
+  MetaWord* bottom() const { return (MetaWord*) _virtual_space.low(); }
+  MetaWord* end() const { return (MetaWord*) _virtual_space.high(); }
 
   // address of next available space in _virtual_space;
   // Accessors
@@ -342,7 +345,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 };
 
   // byte_size is the size of the associated virtualspace.
-VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(0), _container_count(0) {
+VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
   // align up to vm allocation granularity
   byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
 
@@ -1313,7 +1316,8 @@ bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
 
   // Class virtual space should always be expanded.  Call GC for the other
   // metadata virtual space.
-  if (vsl == Metaspace::class_space_list()) return true;
+  if (Metaspace::using_class_space() &&
+      (vsl == Metaspace::class_space_list())) return true;
 
   // If this is part of an allocation after a GC, expand
   // unconditionally.
@@ -2257,7 +2261,7 @@ void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
   size_t raw_word_size = get_raw_word_size(word_size);
   size_t min_size = TreeChunk<Metablock, FreeList>::min_size();
   assert(raw_word_size >= min_size,
-    err_msg("Should not deallocate dark matter " SIZE_FORMAT, word_size));
+         err_msg("Should not deallocate dark matter " SIZE_FORMAT "<" SIZE_FORMAT, word_size, min_size));
   block_freelists()->return_block(p, raw_word_size);
 }
 
@@ -2374,7 +2378,7 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   if (result == NULL) {
     result = grow_and_allocate(word_size);
   }
-  if (result > 0) {
+  if (result != 0) {
     inc_used_metrics(word_size);
     assert(result != (MetaWord*) chunks_in_use(MediumIndex),
            "Head of the list is being allocated");
@@ -2476,15 +2480,13 @@ void SpaceManager::mangle_freed_chunks() {
 size_t MetaspaceAux::_allocated_capacity_words[] = {0, 0};
 size_t MetaspaceAux::_allocated_used_words[] = {0, 0};
 
+size_t MetaspaceAux::free_bytes(Metaspace::MetadataType mdtype) {
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  return list == NULL ? 0 : list->free_bytes();
+}
+
 size_t MetaspaceAux::free_bytes() {
-  size_t result = 0;
-  if (Metaspace::class_space_list() != NULL) {
-    result = result + Metaspace::class_space_list()->free_bytes();
-  }
-  if (Metaspace::space_list() != NULL) {
-    result = result + Metaspace::space_list()->free_bytes();
-  }
-  return result;
+  return free_bytes(Metaspace::ClassType) + free_bytes(Metaspace::NonClassType);
 }
 
 void MetaspaceAux::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {
@@ -2549,6 +2551,9 @@ size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
 }
 
 size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
+  if ((mdtype == Metaspace::ClassType) && !Metaspace::using_class_space()) {
+    return 0;
+  }
   // Don't count the space in the freelists.  That space will be
   // added to the capacity calculation as needed.
   size_t capacity = 0;
@@ -2563,18 +2568,18 @@ size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
 }
 
 size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {
-  size_t reserved = (mdtype == Metaspace::ClassType) ?
-                       Metaspace::class_space_list()->virtual_space_total() :
-                       Metaspace::space_list()->virtual_space_total();
-  return reserved * BytesPerWord;
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  return list == NULL ? 0 : list->virtual_space_total();
 }
 
 size_t MetaspaceAux::min_chunk_size() { return Metaspace::first_chunk_word_size(); }
 
 size_t MetaspaceAux::free_chunks_total(Metaspace::MetadataType mdtype) {
-  ChunkManager* chunk = (mdtype == Metaspace::ClassType) ?
-                            Metaspace::class_space_list()->chunk_manager() :
-                            Metaspace::space_list()->chunk_manager();
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  if (list == NULL) {
+    return 0;
+  }
+  ChunkManager* chunk = list->chunk_manager();
   chunk->slow_verify();
   return chunk->free_chunks_total();
 }
@@ -2615,7 +2620,6 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
 
 // This is printed when PrintGCDetails
 void MetaspaceAux::print_on(outputStream* out) {
-  Metaspace::MetadataType ct = Metaspace::ClassType;
   Metaspace::MetadataType nct = Metaspace::NonClassType;
 
   out->print_cr(" Metaspace total "
@@ -2629,12 +2633,15 @@ void MetaspaceAux::print_on(outputStream* out) {
                 allocated_capacity_bytes(nct)/K,
                 allocated_used_bytes(nct)/K,
                 reserved_in_bytes(nct)/K);
-  out->print_cr("  class space    "
-                SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
-                " reserved " SIZE_FORMAT "K",
-                allocated_capacity_bytes(ct)/K,
-                allocated_used_bytes(ct)/K,
-                reserved_in_bytes(ct)/K);
+  if (Metaspace::using_class_space()) {
+    Metaspace::MetadataType ct = Metaspace::ClassType;
+    out->print_cr("  class space    "
+                  SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
+                  " reserved " SIZE_FORMAT "K",
+                  allocated_capacity_bytes(ct)/K,
+                  allocated_used_bytes(ct)/K,
+                  reserved_in_bytes(ct)/K);
+  }
 }
 
 // Print information for class space and data space separately.
@@ -2659,13 +2666,37 @@ void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
   assert(!SafepointSynchronize::is_at_safepoint() || used_and_free == capacity_bytes, "Accounting is wrong");
 }
 
-// Print total fragmentation for class and data metaspaces separately
-void MetaspaceAux::print_waste(outputStream* out) {
-
-  size_t specialized_waste = 0, small_waste = 0, medium_waste = 0;
-  size_t specialized_count = 0, small_count = 0, medium_count = 0, humongous_count = 0;
+// Print total fragmentation for class metaspaces
+void MetaspaceAux::print_class_waste(outputStream* out) {
+  assert(Metaspace::using_class_space(), "class metaspace not used");
   size_t cls_specialized_waste = 0, cls_small_waste = 0, cls_medium_waste = 0;
   size_t cls_specialized_count = 0, cls_small_count = 0, cls_medium_count = 0, cls_humongous_count = 0;
+  ClassLoaderDataGraphMetaspaceIterator iter;
+  while (iter.repeat()) {
+    Metaspace* msp = iter.get_next();
+    if (msp != NULL) {
+      cls_specialized_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(SpecializedIndex);
+      cls_specialized_count += msp->class_vsm()->sum_count_in_chunks_in_use(SpecializedIndex);
+      cls_small_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(SmallIndex);
+      cls_small_count += msp->class_vsm()->sum_count_in_chunks_in_use(SmallIndex);
+      cls_medium_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(MediumIndex);
+      cls_medium_count += msp->class_vsm()->sum_count_in_chunks_in_use(MediumIndex);
+      cls_humongous_count += msp->class_vsm()->sum_count_in_chunks_in_use(HumongousIndex);
+    }
+  }
+  out->print_cr(" class: " SIZE_FORMAT " specialized(s) " SIZE_FORMAT ", "
+                SIZE_FORMAT " small(s) " SIZE_FORMAT ", "
+                SIZE_FORMAT " medium(s) " SIZE_FORMAT ", "
+                "large count " SIZE_FORMAT,
+                cls_specialized_count, cls_specialized_waste,
+                cls_small_count, cls_small_waste,
+                cls_medium_count, cls_medium_waste, cls_humongous_count);
+}
+
+// Print total fragmentation for data and class metaspaces separately
+void MetaspaceAux::print_waste(outputStream* out) {
+  size_t specialized_waste = 0, small_waste = 0, medium_waste = 0;
+  size_t specialized_count = 0, small_count = 0, medium_count = 0, humongous_count = 0;
 
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
@@ -2678,14 +2709,6 @@ void MetaspaceAux::print_waste(outputStream* out) {
       medium_waste += msp->vsm()->sum_waste_in_chunks_in_use(MediumIndex);
       medium_count += msp->vsm()->sum_count_in_chunks_in_use(MediumIndex);
       humongous_count += msp->vsm()->sum_count_in_chunks_in_use(HumongousIndex);
-
-      cls_specialized_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(SpecializedIndex);
-      cls_specialized_count += msp->class_vsm()->sum_count_in_chunks_in_use(SpecializedIndex);
-      cls_small_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(SmallIndex);
-      cls_small_count += msp->class_vsm()->sum_count_in_chunks_in_use(SmallIndex);
-      cls_medium_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(MediumIndex);
-      cls_medium_count += msp->class_vsm()->sum_count_in_chunks_in_use(MediumIndex);
-      cls_humongous_count += msp->class_vsm()->sum_count_in_chunks_in_use(HumongousIndex);
     }
   }
   out->print_cr("Total fragmentation waste (words) doesn't count free space");
@@ -2695,13 +2718,9 @@ void MetaspaceAux::print_waste(outputStream* out) {
                         "large count " SIZE_FORMAT,
              specialized_count, specialized_waste, small_count,
              small_waste, medium_count, medium_waste, humongous_count);
-  out->print_cr(" class: " SIZE_FORMAT " specialized(s) " SIZE_FORMAT ", "
-                           SIZE_FORMAT " small(s) " SIZE_FORMAT ", "
-                           SIZE_FORMAT " medium(s) " SIZE_FORMAT ", "
-                           "large count " SIZE_FORMAT,
-             cls_specialized_count, cls_specialized_waste,
-             cls_small_count, cls_small_waste,
-             cls_medium_count, cls_medium_waste, cls_humongous_count);
+  if (Metaspace::using_class_space()) {
+    print_class_waste(out);
+  }
 }
 
 // Dump global metaspace things from the end of ClassLoaderDataGraph
@@ -2714,7 +2733,9 @@ void MetaspaceAux::dump(outputStream* out) {
 
 void MetaspaceAux::verify_free_chunks() {
   Metaspace::space_list()->chunk_manager()->verify();
-  Metaspace::class_space_list()->chunk_manager()->verify();
+  if (Metaspace::using_class_space()) {
+    Metaspace::class_space_list()->chunk_manager()->verify();
+  }
 }
 
 void MetaspaceAux::verify_capacity() {
@@ -2776,7 +2797,9 @@ Metaspace::Metaspace(Mutex* lock, MetaspaceType type) {
 
 Metaspace::~Metaspace() {
   delete _vsm;
-  delete _class_vsm;
+  if (using_class_space()) {
+    delete _class_vsm;
+  }
 }
 
 VirtualSpaceList* Metaspace::_space_list = NULL;
@@ -2784,9 +2807,123 @@ VirtualSpaceList* Metaspace::_class_space_list = NULL;
 
 #define VIRTUALSPACEMULTIPLIER 2
 
+#ifdef _LP64
+void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address cds_base) {
+  // Figure out the narrow_klass_base and the narrow_klass_shift.  The
+  // narrow_klass_base is the lower of the metaspace base and the cds base
+  // (if cds is enabled).  The narrow_klass_shift depends on the distance
+  // between the lower base and higher address.
+  address lower_base;
+  address higher_address;
+  if (UseSharedSpaces) {
+    higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
+                          (address)(metaspace_base + class_metaspace_size()));
+    lower_base = MIN2(metaspace_base, cds_base);
+  } else {
+    higher_address = metaspace_base + class_metaspace_size();
+    lower_base = metaspace_base;
+  }
+  Universe::set_narrow_klass_base(lower_base);
+  if ((uint64_t)(higher_address - lower_base) < (uint64_t)max_juint) {
+    Universe::set_narrow_klass_shift(0);
+  } else {
+    assert(!UseSharedSpaces, "Cannot shift with UseSharedSpaces");
+    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+  }
+}
+
+// Return TRUE if the specified metaspace_base and cds_base are close enough
+// to work with compressed klass pointers.
+bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base) {
+  assert(cds_base != 0 && UseSharedSpaces, "Only use with CDS");
+  assert(UseCompressedKlassPointers, "Only use with CompressedKlassPtrs");
+  address lower_base = MIN2((address)metaspace_base, cds_base);
+  address higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
+                                (address)(metaspace_base + class_metaspace_size()));
+  return ((uint64_t)(higher_address - lower_base) < (uint64_t)max_juint);
+}
+
+// Try to allocate the metaspace at the requested addr.
+void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base) {
+  assert(using_class_space(), "called improperly");
+  assert(UseCompressedKlassPointers, "Only use with CompressedKlassPtrs");
+  assert(class_metaspace_size() < KlassEncodingMetaspaceMax,
+         "Metaspace size is too big");
+
+  ReservedSpace metaspace_rs = ReservedSpace(class_metaspace_size(),
+                                             os::vm_allocation_granularity(),
+                                             false, requested_addr, 0);
+  if (!metaspace_rs.is_reserved()) {
+    if (UseSharedSpaces) {
+      // Keep trying to allocate the metaspace, increasing the requested_addr
+      // by 1GB each time, until we reach an address that will no longer allow
+      // use of CDS with compressed klass pointers.
+      char *addr = requested_addr;
+      while (!metaspace_rs.is_reserved() && (addr + 1*G > addr) &&
+             can_use_cds_with_metaspace_addr(addr + 1*G, cds_base)) {
+        addr = addr + 1*G;
+        metaspace_rs = ReservedSpace(class_metaspace_size(),
+                                     os::vm_allocation_granularity(), false, addr, 0);
+      }
+    }
+
+    // If no successful allocation then try to allocate the space anywhere.  If
+    // that fails then OOM doom.  At this point we cannot try allocating the
+    // metaspace as if UseCompressedKlassPointers is off because too much
+    // initialization has happened that depends on UseCompressedKlassPointers.
+    // So, UseCompressedKlassPointers cannot be turned off at this point.
+    if (!metaspace_rs.is_reserved()) {
+      metaspace_rs = ReservedSpace(class_metaspace_size(),
+                                   os::vm_allocation_granularity(), false);
+      if (!metaspace_rs.is_reserved()) {
+        vm_exit_during_initialization(err_msg("Could not allocate metaspace: %d bytes",
+                                              class_metaspace_size()));
+      }
+    }
+  }
+
+  // If we got here then the metaspace got allocated.
+  MemTracker::record_virtual_memory_type((address)metaspace_rs.base(), mtClass);
+
+  // Verify that we can use shared spaces.  Otherwise, turn off CDS.
+  if (UseSharedSpaces && !can_use_cds_with_metaspace_addr(metaspace_rs.base(), cds_base)) {
+    FileMapInfo::stop_sharing_and_unmap(
+        "Could not allocate metaspace at a compatible address");
+  }
+
+  set_narrow_klass_base_and_shift((address)metaspace_rs.base(),
+                                  UseSharedSpaces ? (address)cds_base : 0);
+
+  initialize_class_space(metaspace_rs);
+
+  if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
+    gclog_or_tty->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: " SIZE_FORMAT,
+                            Universe::narrow_klass_base(), Universe::narrow_klass_shift());
+    gclog_or_tty->print_cr("Metaspace Size: " SIZE_FORMAT " Address: " PTR_FORMAT " Req Addr: " PTR_FORMAT,
+                           class_metaspace_size(), metaspace_rs.base(), requested_addr);
+  }
+}
+
+// For UseCompressedKlassPointers the class space is reserved above the top of
+// the Java heap.  The argument passed in is at the base of the compressed space.
+void Metaspace::initialize_class_space(ReservedSpace rs) {
+  // The reserved space size may be bigger because of alignment, esp with UseLargePages
+  assert(rs.size() >= ClassMetaspaceSize,
+         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), ClassMetaspaceSize));
+  assert(using_class_space(), "Must be using class space");
+  _class_space_list = new VirtualSpaceList(rs);
+}
+
+#endif
+
 void Metaspace::global_initialize() {
   // Initialize the alignment for shared spaces.
   int max_alignment = os::vm_page_size();
+  size_t cds_total = 0;
+
+  set_class_metaspace_size(align_size_up(ClassMetaspaceSize,
+                                         os::vm_allocation_granularity()));
+
   MetaspaceShared::set_max_alignment(max_alignment);
 
   if (DumpSharedSpaces) {
@@ -2798,15 +2935,31 @@ void Metaspace::global_initialize() {
     // Initialize with the sum of the shared space sizes.  The read-only
     // and read write metaspace chunks will be allocated out of this and the
     // remainder is the misc code and data chunks.
-    size_t total = align_size_up(SharedReadOnlySize + SharedReadWriteSize +
-                                 SharedMiscDataSize + SharedMiscCodeSize,
-                                 os::vm_allocation_granularity());
-    size_t word_size = total/wordSize;
-    _space_list = new VirtualSpaceList(word_size);
+    cds_total = FileMapInfo::shared_spaces_size();
+    _space_list = new VirtualSpaceList(cds_total/wordSize);
+
+#ifdef _LP64
+    // Set the compressed klass pointer base so that decoding of these pointers works
+    // properly when creating the shared archive.
+    assert(UseCompressedOops && UseCompressedKlassPointers,
+      "UseCompressedOops and UseCompressedKlassPointers must be set");
+    Universe::set_narrow_klass_base((address)_space_list->current_virtual_space()->bottom());
+    if (TraceMetavirtualspaceAllocation && Verbose) {
+      gclog_or_tty->print_cr("Setting_narrow_klass_base to Address: " PTR_FORMAT,
+                             _space_list->current_virtual_space()->bottom());
+    }
+
+    // Set the shift to zero.
+    assert(class_metaspace_size() < (uint64_t)(max_juint) - cds_total,
+           "CDS region is too large");
+    Universe::set_narrow_klass_shift(0);
+#endif
+
   } else {
     // If using shared space, open the file that contains the shared space
     // and map in the memory before initializing the rest of metaspace (so
     // the addresses don't conflict)
+    address cds_address = NULL;
     if (UseSharedSpaces) {
       FileMapInfo* mapinfo = new FileMapInfo();
       memset(mapinfo, 0, sizeof(FileMapInfo));
@@ -2821,7 +2974,21 @@ void Metaspace::global_initialize() {
         assert(!mapinfo->is_open() && !UseSharedSpaces,
                "archive file not closed or shared spaces not disabled.");
       }
+      cds_total = FileMapInfo::shared_spaces_size();
+      cds_address = (address)mapinfo->region_base(0);
     }
+
+#ifdef _LP64
+    // If UseCompressedKlassPointers is set then allocate the metaspace area
+    // above the heap and above the CDS area (if it exists).
+    if (using_class_space()) {
+      if (UseSharedSpaces) {
+        allocate_metaspace_compressed_klass_ptrs((char *)(cds_address + cds_total), cds_address);
+      } else {
+        allocate_metaspace_compressed_klass_ptrs((char *)CompressedKlassPointersBase, 0);
+      }
+    }
+#endif
 
     // Initialize these before initializing the VirtualSpaceList
     _first_chunk_word_size = InitialBootClassLoaderMetaspaceSize / BytesPerWord;
@@ -2840,39 +3007,28 @@ void Metaspace::global_initialize() {
   }
 }
 
-// For UseCompressedKlassPointers the class space is reserved as a piece of the
-// Java heap because the compression algorithm is the same for each.  The
-// argument passed in is at the top of the compressed space
-void Metaspace::initialize_class_space(ReservedSpace rs) {
-  // The reserved space size may be bigger because of alignment, esp with UseLargePages
-  assert(rs.size() >= ClassMetaspaceSize,
-         err_msg(SIZE_FORMAT " != " UINTX_FORMAT, rs.size(), ClassMetaspaceSize));
-  _class_space_list = new VirtualSpaceList(rs);
-}
-
-void Metaspace::initialize(Mutex* lock,
-                           MetaspaceType type) {
+void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
 
   assert(space_list() != NULL,
     "Metadata VirtualSpaceList has not been initialized");
 
-  _vsm = new SpaceManager(Metaspace::NonClassType, lock, space_list());
+  _vsm = new SpaceManager(NonClassType, lock, space_list());
   if (_vsm == NULL) {
     return;
   }
   size_t word_size;
   size_t class_word_size;
-  vsm()->get_initial_chunk_sizes(type,
-                                 &word_size,
-                                 &class_word_size);
+  vsm()->get_initial_chunk_sizes(type, &word_size, &class_word_size);
 
-  assert(class_space_list() != NULL,
-    "Class VirtualSpaceList has not been initialized");
+  if (using_class_space()) {
+    assert(class_space_list() != NULL,
+      "Class VirtualSpaceList has not been initialized");
 
-  // Allocate SpaceManager for classes.
-  _class_vsm = new SpaceManager(Metaspace::ClassType, lock, class_space_list());
-  if (_class_vsm == NULL) {
-    return;
+    // Allocate SpaceManager for classes.
+    _class_vsm = new SpaceManager(ClassType, lock, class_space_list());
+    if (_class_vsm == NULL) {
+      return;
+    }
   }
 
   MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
@@ -2888,11 +3044,13 @@ void Metaspace::initialize(Mutex* lock,
   }
 
   // Allocate chunk for class metadata objects
-  Metachunk* class_chunk =
-     class_space_list()->get_initialization_chunk(class_word_size,
-                                                  class_vsm()->medium_chunk_bunch());
-  if (class_chunk != NULL) {
-    class_vsm()->add_chunk(class_chunk, true);
+  if (using_class_space()) {
+    Metachunk* class_chunk =
+       class_space_list()->get_initialization_chunk(class_word_size,
+                                                    class_vsm()->medium_chunk_bunch());
+    if (class_chunk != NULL) {
+      class_vsm()->add_chunk(class_chunk, true);
+    }
   }
 
   _alloc_record_head = NULL;
@@ -2906,7 +3064,8 @@ size_t Metaspace::align_word_size_up(size_t word_size) {
 
 MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
   // DumpSharedSpaces doesn't use class metadata area (yet)
-  if (mdtype == ClassType && !DumpSharedSpaces) {
+  // Also, don't use class_vsm() unless UseCompressedKlassPointers is true.
+  if (mdtype == ClassType && using_class_space()) {
     return  class_vsm()->allocate(word_size);
   } else {
     return  vsm()->allocate(word_size);
@@ -2937,14 +3096,19 @@ char* Metaspace::bottom() const {
 }
 
 size_t Metaspace::used_words_slow(MetadataType mdtype) const {
-  // return vsm()->allocated_used_words();
-  return mdtype == ClassType ? class_vsm()->sum_used_in_chunks_in_use() :
-                               vsm()->sum_used_in_chunks_in_use();  // includes overhead!
+  if (mdtype == ClassType) {
+    return using_class_space() ? class_vsm()->sum_used_in_chunks_in_use() : 0;
+  } else {
+    return vsm()->sum_used_in_chunks_in_use();  // includes overhead!
+  }
 }
 
 size_t Metaspace::free_words(MetadataType mdtype) const {
-  return mdtype == ClassType ? class_vsm()->sum_free_in_chunks_in_use() :
-                               vsm()->sum_free_in_chunks_in_use();
+  if (mdtype == ClassType) {
+    return using_class_space() ? class_vsm()->sum_free_in_chunks_in_use() : 0;
+  } else {
+    return vsm()->sum_free_in_chunks_in_use();
+  }
 }
 
 // Space capacity in the Metaspace.  It includes
@@ -2953,8 +3117,11 @@ size_t Metaspace::free_words(MetadataType mdtype) const {
 // in the space available in the dictionary which
 // is already counted in some chunk.
 size_t Metaspace::capacity_words_slow(MetadataType mdtype) const {
-  return mdtype == ClassType ? class_vsm()->sum_capacity_in_chunks_in_use() :
-                               vsm()->sum_capacity_in_chunks_in_use();
+  if (mdtype == ClassType) {
+    return using_class_space() ? class_vsm()->sum_capacity_in_chunks_in_use() : 0;
+  } else {
+    return vsm()->sum_capacity_in_chunks_in_use();
+  }
 }
 
 size_t Metaspace::used_bytes_slow(MetadataType mdtype) const {
@@ -2977,8 +3144,8 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
 #endif
       return;
     }
-    if (is_class) {
-       class_vsm()->deallocate(ptr, word_size);
+    if (is_class && using_class_space()) {
+      class_vsm()->deallocate(ptr, word_size);
     } else {
       vsm()->deallocate(ptr, word_size);
     }
@@ -2992,7 +3159,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
 #endif
       return;
     }
-    if (is_class) {
+    if (is_class && using_class_space()) {
       class_vsm()->deallocate(ptr, word_size);
     } else {
       vsm()->deallocate(ptr, word_size);
@@ -3101,14 +3268,18 @@ void Metaspace::purge() {
   MutexLockerEx cl(SpaceManager::expand_lock(),
                    Mutex::_no_safepoint_check_flag);
   space_list()->purge();
-  class_space_list()->purge();
+  if (using_class_space()) {
+    class_space_list()->purge();
+  }
 }
 
 void Metaspace::print_on(outputStream* out) const {
   // Print both class virtual space counts and metaspace.
   if (Verbose) {
-      vsm()->print_on(out);
+    vsm()->print_on(out);
+    if (using_class_space()) {
       class_vsm()->print_on(out);
+    }
   }
 }
 
@@ -3122,17 +3293,21 @@ bool Metaspace::contains(const void * ptr) {
   // be needed.  Note, locking this can cause inversion problems with the
   // caller in MetaspaceObj::is_metadata() function.
   return space_list()->contains(ptr) ||
-         class_space_list()->contains(ptr);
+         (using_class_space() && class_space_list()->contains(ptr));
 }
 
 void Metaspace::verify() {
   vsm()->verify();
-  class_vsm()->verify();
+  if (using_class_space()) {
+    class_vsm()->verify();
+  }
 }
 
 void Metaspace::dump(outputStream* const out) const {
   out->print_cr("\nVirtual space manager: " INTPTR_FORMAT, vsm());
   vsm()->dump(out);
-  out->print_cr("\nClass space manager: " INTPTR_FORMAT, class_vsm());
-  class_vsm()->dump(out);
+  if (using_class_space()) {
+    out->print_cr("\nClass space manager: " INTPTR_FORMAT, class_vsm());
+    class_vsm()->dump(out);
+  }
 }

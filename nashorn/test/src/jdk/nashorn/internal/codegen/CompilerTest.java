@@ -35,6 +35,8 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
@@ -58,7 +60,8 @@ public class CompilerTest {
     private Context context;
     private ScriptObject global;
 
-    public CompilerTest() {
+    @BeforeClass
+    public void setupTest() {
         final Options options = new Options("nashorn");
         options.set("anon.functions", true);
         options.set("compile.only", true);
@@ -77,6 +80,12 @@ public class CompilerTest {
         final PrintWriter pw = new PrintWriter(sw);
         this.context = new Context(options, errors, pw, pw, Thread.currentThread().getContextClassLoader());
         this.global = context.createGlobal();
+    }
+
+    @AfterClass
+    public void tearDownTest() {
+        this.context = null;
+        this.global = null;
     }
 
     @Test

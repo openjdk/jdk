@@ -294,7 +294,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(InstanceKlass,               _source_file_name,                             Symbol*)                               \
+  nonstatic_field(InstanceKlass,               _source_file_name_index,                            u2)                               \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       char*)                                 \
   nonstatic_field(InstanceKlass,               _inner_classes,                               Array<jushort>*)                       \
   nonstatic_field(InstanceKlass,               _nonstatic_field_size,                         int)                                   \
@@ -313,7 +313,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(InstanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
   nonstatic_field(InstanceKlass,               _breakpoints,                                  BreakpointInfo*)                       \
-  nonstatic_field(InstanceKlass,               _generic_signature,                            Symbol*)                               \
+  nonstatic_field(InstanceKlass,               _generic_signature_index,                           u2)                               \
   nonstatic_field(InstanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
   nonstatic_field(InstanceKlass,               _methods_cached_itable_indices,                int*)                                  \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
@@ -1096,10 +1096,10 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                                                                                      \
   c2_nonstatic_field(MachCallRuntimeNode,  _name,                  const char*)                                                      \
                                                                                                                                      \
-  c2_nonstatic_field(PhaseCFG,           _num_blocks,              uint)                                                             \
+  c2_nonstatic_field(PhaseCFG,           _number_of_blocks,        uint)                                                             \
   c2_nonstatic_field(PhaseCFG,           _blocks,                  Block_List)                                                       \
   c2_nonstatic_field(PhaseCFG,           _node_to_block_mapping,   Block_Array)                                                      \
-  c2_nonstatic_field(PhaseCFG,           _broot,                   Block*)                                                           \
+  c2_nonstatic_field(PhaseCFG,           _root_block,              Block*)                                                           \
                                                                                                                                      \
   c2_nonstatic_field(PhaseRegAlloc,      _node_regs,               OptoRegPair*)                                                     \
   c2_nonstatic_field(PhaseRegAlloc,      _node_regs_max_index,     uint)                                                             \
