@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 4904082 4917089 6337226
+ * @bug 4904082 4917089 6337226 6378503
  * @summary Tests that integral division and related methods return the proper result and scale.
  * @author Joseph D. Darcy
  */
@@ -47,6 +47,9 @@ public class IntegralDivisionTests {
             {new BigDecimal("400e1"),   new BigDecimal("5"),    new BigDecimal("80e1")},
             {new BigDecimal("400e1"),   new BigDecimal("4.999999999"),  new BigDecimal("8e2")},
             {new BigDecimal("40e2"),    new BigDecimal("5"),    new BigDecimal("8e2")},
+            {BigDecimal.valueOf(1, Integer.MIN_VALUE),
+                BigDecimal.valueOf(1, -(Integer.MAX_VALUE & 0x7fffff00)),
+                BigDecimal.valueOf(1, -256)},
         };
 
         for(BigDecimal [] testCase: moreTestCases) {

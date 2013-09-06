@@ -86,6 +86,9 @@ public final class ScriptEnvironment {
     /** Launch using as fx application */
     public final boolean _fx;
 
+    /** Use single Global instance per jsr223 engine instance. */
+    public final boolean _global_per_engine;
+
     /**
      * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
@@ -127,9 +130,6 @@ public final class ScriptEnvironment {
 
     /** Do not support typed arrays. */
     public final boolean _no_typed_arrays;
-
-    /** Package to which generated class files are added */
-    public final String  _package;
 
     /** Only parse the source code, do not compile */
     public final boolean _parse_only;
@@ -211,12 +211,12 @@ public final class ScriptEnvironment {
             _function_statement = FunctionStatementBehavior.ACCEPT;
         }
         _fx                   = options.getBoolean("fx");
+        _global_per_engine    = options.getBoolean("global.per.engine");
         _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
         _no_typed_arrays      = options.getBoolean("no.typed.arrays");
-        _package              = options.getString("package");
         _parse_only           = options.getBoolean("parse.only");
         _print_ast            = options.getBoolean("print.ast");
         _print_lower_ast      = options.getBoolean("print.lower.ast");

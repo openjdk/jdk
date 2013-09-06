@@ -96,8 +96,14 @@ public class StreamTestDataProvider {
                 list.add(streamDataDescr("DelegatingStream(ArrayList):" + name,
                                          () -> new ArrayList<>(intsAsList).stream()));
                 List<Integer> aList = new ArrayList<>(intsAsList);
-                list.add(collectionDataDescr("ArrayList.Sublist:" + name,
-                                             (ints.length) <= 1 ? aList.subList(0, 0) : aList.subList(1, ints.length / 2)));
+                if (LambdaTestMode.isNormalMode()) {
+                    // Only include sub-lists for normal test execution mode
+                    // This data is serialization-hostile since the state of the
+                    // deserialized sub-list will be out of sync with the
+                    // enclosing list.
+                    list.add(collectionDataDescr("ArrayList.Sublist:" + name,
+                                                 (ints.length) <= 1 ? aList.subList(0, 0) : aList.subList(1, ints.length / 2)));
+                }
                 list.add(collectionDataDescr("LinkedList:" + name, new LinkedList<>(intsAsList)));
                 list.add(collectionDataDescr("HashSet:" + name, new HashSet<>(intsAsList)));
                 list.add(collectionDataDescr("LinkedHashSet:" + name, new LinkedHashSet<>(intsAsList)));
