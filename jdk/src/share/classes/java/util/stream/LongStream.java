@@ -812,7 +812,8 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * elements of a first {@code LongStream} succeeded by all the elements of the
      * second {@code LongStream}. The resulting stream is ordered if both
      * of the input streams are ordered, and parallel if either of the input
-     * streams is parallel.
+     * streams is parallel.  When the resulting stream is closed, the close
+     * handlers for both input streams are invoked.
      *
      * @param a the first stream
      * @param b the second stream to concatenate on to end of the first stream
@@ -824,7 +825,8 @@ public interface LongStream extends BaseStream<Long, LongStream> {
 
         Spliterator.OfLong split = new Streams.ConcatSpliterator.OfLong(
                 a.spliterator(), b.spliterator());
-        return StreamSupport.longStream(split, a.isParallel() || b.isParallel());
+        LongStream stream = StreamSupport.longStream(split, a.isParallel() || b.isParallel());
+        return stream.onClose(Streams.composedClose(a, b));
     }
 
     /**
