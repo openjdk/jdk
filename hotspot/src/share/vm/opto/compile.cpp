@@ -2258,7 +2258,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
     if (block->is_connector() && !Verbose) {
       continue;
     }
-    n = block->_nodes[0];
+    n = block->head();
     if (pcs && n->_idx < pc_limit) {
       tty->print("%3.3x   ", pcs[n->_idx]);
     } else {
@@ -2273,12 +2273,12 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
 
     // For all instructions
     Node *delay = NULL;
-    for (uint j = 0; j < block->_nodes.size(); j++) {
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
       if (VMThread::should_terminate()) {
         cut_short = true;
         break;
       }
-      n = block->_nodes[j];
+      n = block->get_node(j);
       if (valid_bundle_info(n)) {
         Bundle* bundle = node_bundling(n);
         if (bundle->used_in_unconditional_delay()) {

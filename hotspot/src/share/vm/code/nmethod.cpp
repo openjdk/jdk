@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,18 +93,21 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
 #endif
 
 bool nmethod::is_compiled_by_c1() const {
-  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
-  if (is_native_method()) return false;
+  if (compiler() == NULL) {
+    return false;
+  }
   return compiler()->is_c1();
 }
 bool nmethod::is_compiled_by_c2() const {
-  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
-  if (is_native_method()) return false;
+  if (compiler() == NULL) {
+    return false;
+  }
   return compiler()->is_c2();
 }
 bool nmethod::is_compiled_by_shark() const {
-  if (is_native_method()) return false;
-  assert(compiler() != NULL, "must be");
+  if (compiler() == NULL) {
+    return false;
+  }
   return compiler()->is_shark();
 }
 
@@ -800,7 +803,7 @@ nmethod::nmethod(
 }
 #endif // def HAVE_DTRACE_H
 
-void* nmethod::operator new(size_t size, int nmethod_size) throw () {
+void* nmethod::operator new(size_t size, int nmethod_size) throw() {
   // Not critical, may return null if there is too little continuous memory
   return CodeCache::allocate(nmethod_size);
 }
@@ -1401,6 +1404,9 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // nmethods aren't scanned for GC.
     _oops_are_stale = true;
 #endif
+     // the Method may be reclaimed by class unloading now that the
+     // nmethod is in zombie state
+    set_method(NULL);
   } else {
     assert(state == not_entrant, "other cases may need to be handled differently");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ class ParkEvent : public os::PlatformEvent {
     // aligned on 256-byte address boundaries.  This ensures that the least
     // significant byte of a ParkEvent address is always 0.
 
-    void * operator new (size_t sz) ;
+    void * operator new (size_t sz) throw();
     void operator delete (void * a) ;
 
   public:
