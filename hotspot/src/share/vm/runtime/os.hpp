@@ -795,6 +795,14 @@ class os: AllStatic {
 #endif
 
  public:
+#ifndef PLATFORM_PRINT_NATIVE_STACK
+  // No platform-specific code for printing the native stack.
+  static bool platform_print_native_stack(outputStream* st, void* context,
+                                          char *buf, int buf_size) {
+    return false;
+  }
+#endif
+
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
