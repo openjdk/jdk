@@ -29,7 +29,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 /**
- *
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
  *
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */

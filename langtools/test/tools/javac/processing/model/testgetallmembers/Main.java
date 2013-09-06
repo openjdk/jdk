@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 
 import java.io.File;
 import java.util.*;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
@@ -60,7 +59,10 @@ public class Main {
     static Elements elements;
 
     public static void main(String[] args) throws Exception {
-
+        if (haveAltRt()) {
+            System.out.println("Warning: alt-rt.jar detected, test skipped");
+            return;
+        }
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
         fm.setLocation(CLASS_PATH, Collections.<File>emptyList());
@@ -122,5 +124,24 @@ public class Main {
             throw new AssertionError("Too few packages in PLATFORM_CLASS_PATH ;-)");
         if (nestedClasses < 3000)
             throw new AssertionError("Too few nested classes in PLATFORM_CLASS_PATH ;-)");
+    }
+    /*
+     * If -XX:+AggressiveOpts has been used to test, the option currently
+     * instructs the VM to prepend alt-rt.jar onto the bootclasspath. This
+     * overrides the default TreeMap implemation in rt.jar causing symbol
+     * resolution problems (caused by inconsistent inner class), although
+     * alt-rt.jar is being eliminated, we have this sanity check to detect this
+     * case and skip the test.
+     */
+    static boolean haveAltRt() {
+        String bootClassPath = System.getProperty("sun.boot.class.path");
+        for (String cp : bootClassPath.split(File.pathSeparator)) {
+            if (cp.endsWith("alt-rt.jar")) {
+                System.err.println("Warning: detected alt-rt.jar in "
+                        + "sun.boot.class.path");
+                return true;
+            }
+        }
+        return false;
     }
 }

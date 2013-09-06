@@ -73,6 +73,11 @@ final class NativeArrayBuffer extends ScriptObject {
         this(Arrays.copyOfRange(other.buffer, begin, end));
     }
 
+    @Override
+    public String getClassName() {
+        return "ArrayBuffer";
+    }
+
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
     public static Object byteLength(final Object self) {
         return ((NativeArrayBuffer)self).buffer.length;

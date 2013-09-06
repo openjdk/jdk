@@ -29,6 +29,11 @@ import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.annotation.XmlAttribute;
 import com.sun.xml.internal.txw2.annotation.XmlElement;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 @XmlElement("schema")
 public interface Schema
     extends SchemaTop, TypedXmlWriter
@@ -57,16 +62,16 @@ public interface Schema
     public Schema attributeFormDefault(String value);
 
     @XmlAttribute
-    public Schema blockDefault(String value);
-
-    @XmlAttribute
     public Schema blockDefault(String[] value);
 
     @XmlAttribute
-    public Schema finalDefault(String value);
+    public Schema blockDefault(String value);
 
     @XmlAttribute
     public Schema finalDefault(String[] value);
+
+    @XmlAttribute
+    public Schema finalDefault(String value);
 
     @XmlAttribute
     public Schema version(String value);

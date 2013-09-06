@@ -241,9 +241,9 @@ public class Util {
                 first = false;
             }
         } catch (SecurityException exc) {
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         } catch (IOException exc) {
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
@@ -667,16 +667,28 @@ public class Util {
         for (int j = 0; j < methods.length; j++) {
             MethodDoc currentMethod = methods[j];
             if (currentMethod.name().equals("values") &&
-                currentMethod.parameters().length == 0) {
-                currentMethod.setRawCommentText(
-                    configuration.getText("doclet.enum_values_doc", classDoc.name()));
+                    currentMethod.parameters().length == 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(configuration.getText("doclet.enum_values_doc.main", classDoc.name()));
+                sb.append("\n@return ");
+                sb.append(configuration.getText("doclet.enum_values_doc.return"));
+                currentMethod.setRawCommentText(sb.toString());
             } else if (currentMethod.name().equals("valueOf") &&
-                currentMethod.parameters().length == 1) {
+                    currentMethod.parameters().length == 1) {
                 Type paramType = currentMethod.parameters()[0].type();
                 if (paramType != null &&
-                    paramType.qualifiedTypeName().equals(String.class.getName())) {
-                    currentMethod.setRawCommentText(
-                        configuration.getText("doclet.enum_valueof_doc"));
+                        paramType.qualifiedTypeName().equals(String.class.getName())) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(configuration.getText("doclet.enum_valueof_doc.main", classDoc.name()));
+                sb.append("\n@param name ");
+                sb.append(configuration.getText("doclet.enum_valueof_doc.param_name"));
+                sb.append("\n@return ");
+                sb.append(configuration.getText("doclet.enum_valueof_doc.return"));
+                sb.append("\n@throws IllegalArgumentException ");
+                sb.append(configuration.getText("doclet.enum_valueof_doc.throws_ila"));
+                sb.append("\n@throws NullPointerException ");
+                sb.append(configuration.getText("doclet.enum_valueof_doc.throws_npe"));
+                currentMethod.setRawCommentText(sb.toString());
                 }
             }
         }

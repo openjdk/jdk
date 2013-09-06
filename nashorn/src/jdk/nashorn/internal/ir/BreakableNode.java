@@ -33,6 +33,14 @@ import jdk.nashorn.internal.codegen.Label;
  * a {@code break} statement
  */
 public interface BreakableNode extends LexicalContextNode {
+    /**
+     * Ensure that any labels in this breakable node are unique so
+     * that new jumps won't go to old parts of the tree. Used for
+     * example for cloning finally blocks
+     *
+     * @param lc the lexical context
+     * @return node after labels have been made unique
+     */
     public abstract Node ensureUniqueLabels(final LexicalContext lc);
 
     /**

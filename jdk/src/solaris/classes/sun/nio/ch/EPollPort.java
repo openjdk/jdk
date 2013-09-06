@@ -318,6 +318,6 @@ final class EPollPort
     private static native void close0(int fd);
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

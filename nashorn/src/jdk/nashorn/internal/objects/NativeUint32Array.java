@@ -127,6 +127,11 @@ public final class NativeUint32Array extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Uint32Array";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }

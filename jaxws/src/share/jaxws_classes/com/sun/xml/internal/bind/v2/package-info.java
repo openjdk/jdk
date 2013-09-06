@@ -180,7 +180,3 @@
  * @ArchitectureDocument
  */
 package com.sun.xml.internal.bind.v2;
-
-import javax.xml.bind.JAXBContext;
-
-import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;

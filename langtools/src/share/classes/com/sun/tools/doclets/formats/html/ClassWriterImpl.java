@@ -610,7 +610,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             subDiv.addContent(div);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new DocletAbortException();
+            throw new DocletAbortException(e);
         }
     }
 
