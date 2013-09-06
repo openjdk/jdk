@@ -318,6 +318,7 @@ class EPollArrayWrapper {
     }
 
     static {
+        IOUtil.load();
         init();
     }
 

@@ -389,6 +389,7 @@ public enum Option {
 
     XPREFER("-Xprefer:", "opt.prefer", EXTENDED, BASIC, ONEOF, "source", "newer"),
 
+    // see enum PkgInfo
     XPKGINFO("-Xpkginfo:", "opt.pkginfo", EXTENDED, BASIC, ONEOF, "always", "legacy", "nonempty"),
 
     /* -O is a no-op, accepted for backward compatibility. */
@@ -686,7 +687,28 @@ public enum Option {
 
     // For -XpkgInfo:value
     public enum PkgInfo {
-        ALWAYS, LEGACY, NONEMPTY;
+        /**
+         * Always generate package-info.class for every package-info.java file.
+         * The file may be empty if there annotations with a RetentionPolicy
+         * of CLASS or RUNTIME.  This option may be useful in conjunction with
+         * build systems (such as Ant) that expect javac to generate at least
+         * one .class file for every .java file.
+         */
+        ALWAYS,
+        /**
+         * Generate a package-info.class file if package-info.java contains
+         * annotations. The file may be empty if all the annotations have
+         * a RetentionPolicy of SOURCE.
+         * This value is just for backwards compatibility with earlier behavior.
+         * Either of the other two values are to be preferred to using this one.
+         */
+        LEGACY,
+        /**
+         * Generate a package-info.class file if and only if there are annotations
+         * in package-info.java to be written into it.
+         */
+        NONEMPTY;
+
         public static PkgInfo get(Options options) {
             String v = options.get(XPKGINFO);
             return (v == null

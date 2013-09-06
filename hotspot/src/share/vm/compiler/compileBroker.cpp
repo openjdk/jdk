@@ -1718,7 +1718,7 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print_cr(s.as_string());
+  tty->print(s.as_string());
 }
 
 // ------------------------------------------------------------------

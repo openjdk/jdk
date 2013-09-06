@@ -33,7 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
- * 7067045 7014640 7189363 8007395 8013252 8013254 8012646
+ * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647
  */
 
 import java.util.regex.*;
@@ -146,6 +146,7 @@ public class RegExTest {
         linebreakTest();
         branchTest();
         groupCurlyNotFoundSuppTest();
+        groupCurlyBackoffTest();
         patternAsPredicate();
         if (failure) {
             throw new
@@ -3997,6 +3998,15 @@ public class RegExTest {
             }
         }
         report("GroupCurly NotFoundSupp");
+    }
+
+    // This test is for 8023647
+    private static void groupCurlyBackoffTest() throws Exception {
+        if (!"abc1c".matches("(\\w)+1\\1") ||
+            "abc11".matches("(\\w)+1\\1")) {
+            failCount++;
+        }
+        report("GroupCurly backoff");
     }
 
     // This test is for 8012646

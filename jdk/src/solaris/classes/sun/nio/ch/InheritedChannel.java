@@ -235,6 +235,6 @@ class InheritedChannel {
     private static native int peerPort0(int fd);
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

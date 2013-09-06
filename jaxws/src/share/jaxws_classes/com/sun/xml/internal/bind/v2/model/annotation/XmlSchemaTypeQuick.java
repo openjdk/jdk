@@ -28,6 +28,11 @@ package com.sun.xml.internal.bind.v2.model.annotation;
 import java.lang.annotation.Annotation;
 import javax.xml.bind.annotation.XmlSchemaType;
 
+
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 final class XmlSchemaTypeQuick
     extends Quick
     implements XmlSchemaType

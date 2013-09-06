@@ -46,6 +46,8 @@
 # include <setjmp.h>
 #endif
 
+class AgentLibrary;
+
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
 // dependent code.
@@ -328,8 +330,8 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, char* addr = NULL,
-                bool executable = false);
+  static char*  reserve_memory_special(size_t size, size_t alignment,
+                                       char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
@@ -537,6 +539,17 @@ class os: AllStatic {
   // Unload library
   static void  dll_unload(void *lib);
 
+  // Return the handle of this process
+  static void* get_default_process_handle();
+
+  // Check for static linked agent library
+  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+                                 size_t syms_len);
+
+  // Find agent entry point
+  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+                                   const char *syms[], size_t syms_len);
+
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
@@ -725,10 +738,6 @@ class os: AllStatic {
   // Hook for os specific jvm options that we don't want to abort on seeing
   static bool obsolete_option(const JavaVMOption *option);
 
-  // Read file line by line. If line is longer than bsize,
-  // rest of line is skipped. Returns number of bytes read or -1 on EOF
-  static int get_line_chars(int fd, char *buf, const size_t bsize);
-
   // Extensions
 #include "runtime/os_ext.hpp"
 
@@ -805,6 +814,11 @@ class os: AllStatic {
   // (for Unix, that stimulus is a signal, for Windows, an external
   // ResumeThread call)
   static void pause();
+
+  // Builds a platform dependent Agent_OnLoad_<libname> function name
+  // which is used to find statically linked in agents.
+  static char*  build_agent_function_name(const char *sym, const char *cname,
+                                          bool is_absolute_path);
 
   class SuspendedThreadTaskContext {
   public:

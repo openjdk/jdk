@@ -53,7 +53,15 @@ public interface MethodTree extends Tree {
     Tree getReturnType();
     List<? extends TypeParameterTree> getTypeParameters();
     List<? extends VariableTree> getParameters();
+
+    /**
+     * Return an explicit receiver parameter ("this" parameter).
+     *
+     * @return an explicit receiver parameter ("this" parameter)
+     * @since 1.8
+     */
     VariableTree getReceiverParameter();
+
     List<? extends ExpressionTree> getThrows();
     BlockTree getBody();
     Tree getDefaultValue(); // for annotation types
