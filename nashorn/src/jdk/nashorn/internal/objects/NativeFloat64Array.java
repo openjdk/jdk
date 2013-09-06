@@ -155,6 +155,11 @@ public final class NativeFloat64Array extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Float64Array";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }

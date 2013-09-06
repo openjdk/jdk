@@ -346,7 +346,7 @@ class Universe: AllStatic {
   };
   static NARROW_OOP_MODE narrow_oop_mode();
   static const char* narrow_oop_mode_to_string(NARROW_OOP_MODE mode);
-  static char*    preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
+  static char*    preferred_heap_base(size_t heap_size, size_t alignment, NARROW_OOP_MODE mode);
   static char*    preferred_metaspace_base(size_t heap_size, NARROW_OOP_MODE mode);
   static address  narrow_oop_base()                       { return  _narrow_oop._base; }
   static bool  is_narrow_oop_base(void* addr)             { return (narrow_oop_base() == (address)addr); }

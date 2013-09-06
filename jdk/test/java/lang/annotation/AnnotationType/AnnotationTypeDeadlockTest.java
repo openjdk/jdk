@@ -28,6 +28,9 @@
  */
 
 import java.lang.annotation.Retention;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,17 +69,6 @@ public class AnnotationTypeDeadlockTest {
         }
     }
 
-    static void dumpState(Task task) {
-        System.err.println(
-            "Task[" + task.getName() + "].state: " +
-            task.getState() + " ..."
-        );
-        for (StackTraceElement ste : task.getStackTrace()) {
-            System.err.println("\tat " + ste);
-        }
-        System.err.println();
-    }
-
     public static void main(String[] args) throws Exception {
         CountDownLatch prepareLatch = new CountDownLatch(2);
         AtomicInteger goLatch = new AtomicInteger(1);
@@ -88,18 +80,22 @@ public class AnnotationTypeDeadlockTest {
         prepareLatch.await();
         // let them go
         goLatch.set(0);
-        // attempt to join them
-        taskA.join(5000L);
-        taskB.join(5000L);
-
-        if (taskA.isAlive() || taskB.isAlive()) {
-            dumpState(taskA);
-            dumpState(taskB);
-            throw new IllegalStateException(
-                taskA.getState() == Thread.State.BLOCKED &&
-                taskB.getState() == Thread.State.BLOCKED
-                ? "deadlock detected"
-                : "unexpected condition");
+        // obtain ThreadMXBean
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        // wait for threads to finish or dead-lock
+        while (taskA.isAlive() || taskB.isAlive()) {
+            // attempt to join threads
+            taskA.join(500L);
+            taskB.join(500L);
+            // detect dead-lock
+            long[] deadlockedIds = threadBean.findMonitorDeadlockedThreads();
+            if (deadlockedIds != null && deadlockedIds.length > 0) {
+                StringBuilder sb = new StringBuilder("deadlock detected:\n\n");
+                for (ThreadInfo ti : threadBean.getThreadInfo(deadlockedIds, Integer.MAX_VALUE)) {
+                    sb.append(ti);
+                }
+                throw new IllegalStateException(sb.toString());
+            }
         }
     }
 }

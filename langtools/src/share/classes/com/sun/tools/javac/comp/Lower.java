@@ -2735,9 +2735,9 @@ public class Lower extends TreeTranslator {
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
                     if (TreeInfo.isInitialConstructor(tree)) {
                         final Name pName = proxyName(l.head.name);
-                        m.extraParams =
-                            m.extraParams.append((VarSymbol)
-                                                 (proxies.lookup(pName).sym));
+                        m.capturedLocals =
+                            m.capturedLocals.append((VarSymbol)
+                                                    (proxies.lookup(pName).sym));
                         added = added.prepend(
                           initField(tree.body.pos, pName));
                     }

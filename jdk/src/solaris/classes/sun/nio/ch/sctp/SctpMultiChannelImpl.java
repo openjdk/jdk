@@ -995,7 +995,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     static {
-        Util.load();   /* loads nio & net native libraries */
+        IOUtil.load();   /* loads nio & net native libraries */
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,12 @@ MemTrackWorker::~MemTrackWorker() {
   }
 }
 
-void* MemTrackWorker::operator new(size_t size) {
+void* MemTrackWorker::operator new(size_t size) throw() {
   assert(false, "use nothrow version");
   return NULL;
 }
 
-void* MemTrackWorker::operator new(size_t size, const std::nothrow_t& nothrow_constant) {
+void* MemTrackWorker::operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
   return allocate(size, false, mtNMT);
 }
 

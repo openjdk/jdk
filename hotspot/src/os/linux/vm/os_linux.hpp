@@ -32,6 +32,7 @@ typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
 
 class Linux {
   friend class os;
+  friend class TestReserveMemorySpecial;
 
   // For signal-chaining
 #define MAXSIGNUM 32
@@ -92,7 +93,20 @@ class Linux {
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
 
+  static size_t find_large_page_size();
+  static size_t setup_large_page_size();
+
+  static bool setup_large_page_type(size_t page_size);
+  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
+
+  static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);
+  static char* reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t alignment, char* req_addr, bool exec);
+
+  static bool release_memory_special_shm(char* base, size_t bytes);
+  static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
   static void print_full_memory_info(outputStream* st);
   static void print_distro_info(outputStream* st);
@@ -221,6 +235,7 @@ private:
   typedef int (*numa_available_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
+  typedef void (*numa_set_bind_policy_func_t)(int policy);
 
   static sched_getcpu_func_t _sched_getcpu;
   static numa_node_to_cpus_func_t _numa_node_to_cpus;
@@ -228,6 +243,7 @@ private:
   static numa_available_func_t _numa_available;
   static numa_tonode_memory_func_t _numa_tonode_memory;
   static numa_interleave_memory_func_t _numa_interleave_memory;
+  static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static unsigned long* _numa_all_nodes;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
@@ -236,6 +252,7 @@ private:
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
+  static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static int sched_getcpu_syscall(void);
 public:
@@ -251,6 +268,11 @@ public:
   static void numa_interleave_memory(void *start, size_t size) {
     if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
+    }
+  }
+  static void numa_set_bind_policy(int policy) {
+    if (_numa_set_bind_policy != NULL) {
+      _numa_set_bind_policy(policy);
     }
   }
   static int get_node_by_cpu(int cpu_id);
