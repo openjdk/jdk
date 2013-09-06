@@ -113,6 +113,6 @@ class EPoll {
         throws IOException;
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

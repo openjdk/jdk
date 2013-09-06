@@ -1933,6 +1933,9 @@ class CommandLineFlags {
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests.")                         \
                                                                             \
+  notproduct(bool, VerboseInternalVMTests, false,                           \
+          "Turn on logging for internal VM tests.")                         \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \
@@ -3511,6 +3514,8 @@ class CommandLineFlags {
           "Temporary flag for transition to AbstractMethodError wrapped "   \
           "in InvocationTargetException. See 6531596")                      \
                                                                             \
+  develop(bool, VerifyLambdaBytecodes, false,                               \
+          "Force verification of jdk 8 lambda metafactory bytecodes.")      \
                                                                             \
   develop(intx, FastSuperclassLimit, 8,                                     \
           "Depth of hardwired instanceof accelerator array")                \
@@ -3682,14 +3687,8 @@ class CommandLineFlags {
   develop(bool, TraceDefaultMethods, false,                                 \
           "Trace the default method processing steps")                      \
                                                                             \
-  develop(bool, ParseAllGenericSignatures, false,                           \
-          "Parse all generic signatures while classloading")                \
-                                                                            \
   develop(bool, VerifyGenericSignatures, false,                             \
           "Abort VM on erroneous or inconsistent generic signatures")       \
-                                                                            \
-  product(bool, ParseGenericDefaults, false,                                \
-          "Parse generic signatures for default method handling")           \
                                                                             \
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \

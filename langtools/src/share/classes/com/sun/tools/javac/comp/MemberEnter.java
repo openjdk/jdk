@@ -677,8 +677,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (tree.init != null) {
             v.flags_field |= HASINIT;
             if ((v.flags_field & FINAL) != 0 &&
-                    !tree.init.hasTag(NEWCLASS) &&
-                    !tree.init.hasTag(LAMBDA)) {
+                needsLazyConstValue(tree.init)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree.init);
@@ -697,6 +696,59 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void checkType(JCTree tree, Type type, String diag) {
         if (!tree.type.isErroneous() && !types.isSameType(tree.type, type)) {
             log.error(tree, diag, type, tree.type);
+        }
+    }
+
+    public boolean needsLazyConstValue(JCTree tree) {
+        InitTreeVisitor initTreeVisitor = new InitTreeVisitor();
+        tree.accept(initTreeVisitor);
+        return initTreeVisitor.result;
+    }
+
+    /** Visitor class for expressions which might be constant expressions.
+     */
+    static class InitTreeVisitor extends JCTree.Visitor {
+
+        private boolean result = true;
+
+        @Override
+        public void visitTree(JCTree tree) {}
+
+        @Override
+        public void visitNewClass(JCNewClass that) {
+            result = false;
+        }
+
+        @Override
+        public void visitLambda(JCLambda that) {
+            result = false;
+        }
+
+        @Override
+        public void visitReference(JCMemberReference that) {
+            result = false;
+        }
+
+        @Override
+        public void visitSelect(JCFieldAccess tree) {
+            tree.selected.accept(this);
+        }
+
+        @Override
+        public void visitConditional(JCConditional tree) {
+            tree.cond.accept(this);
+            tree.truepart.accept(this);
+            tree.falsepart.accept(this);
+        }
+
+        @Override
+        public void visitParens(JCParens tree) {
+            tree.expr.accept(this);
+        }
+
+        @Override
+        public void visitTypeCast(JCTypeCast tree) {
+            tree.expr.accept(this);
         }
     }
 
@@ -1089,7 +1141,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
         }
         if (allowTypeAnnos) {
-            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, tree, annotate);
+            TypeAnnotations.organizeTypeAnnotationsSignatures(syms, names, log, env, tree, annotate);
         }
     }
 

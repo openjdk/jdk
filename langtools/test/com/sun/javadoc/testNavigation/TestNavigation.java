@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@
  * @author   jamieh
  * @library  ../lib/
  * @build    JavadocTester
- * @build    TestNavagation
- * @run main TestNavagation
+ * @build    TestNavigation
+ * @run main TestNavigation
  */
 
-public class TestNavagation extends JavadocTester {
+public class TestNavigation extends JavadocTester {
 
     //Test information.
     private static final String BUG_ID = "4131628-4664607";
@@ -71,7 +71,7 @@ public class TestNavagation extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String[] args) {
-        TestNavagation tester = new TestNavagation();
+        TestNavigation tester = new TestNavigation();
         run(tester, ARGS, TEST, NEGATED_TEST);
         tester.printSummary();
     }

@@ -92,12 +92,15 @@ public class XsiTypeLoader extends Loader {
                     return defaultBeanInfo;
 
                 beanInfo = context.getJAXBContext().getGlobalType(type);
-                if(beanInfo==null) {
-                    String nearest = context.getJAXBContext().getNearestTypeName(type);
-                    if(nearest!=null)
-                        reportError(Messages.UNRECOGNIZED_TYPE_NAME_MAYBE.format(type,nearest),true);
-                    else
-                        reportError(Messages.UNRECOGNIZED_TYPE_NAME.format(type),true);
+                if(beanInfo==null) { // let's report an error
+                    if (context.parent.hasEventHandler() // is somebody listening?
+                            && context.shouldErrorBeReported()) { // should we report error?
+                        String nearest = context.getJAXBContext().getNearestTypeName(type);
+                        if(nearest!=null)
+                            reportError(Messages.UNRECOGNIZED_TYPE_NAME_MAYBE.format(type,nearest),true);
+                        else
+                            reportError(Messages.UNRECOGNIZED_TYPE_NAME.format(type),true);
+                    }
                 }
                 // TODO: resurrect the following check
         //                    else

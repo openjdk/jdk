@@ -53,6 +53,7 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
 
  public:
   // Constructor
+  ReservedSpace();
   ReservedSpace(size_t size);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL,
