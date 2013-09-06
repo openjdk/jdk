@@ -49,7 +49,6 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import javax.lang.model.type.TypeKind;
 
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
@@ -3830,15 +3829,26 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
-        /* special case of try without catchers and with finally emtpy.
-         * Don't give it a try, translate only the body.
-         */
         if (tree.resources.isEmpty()) {
+            /* special case of try without catchers and with finally emtpy.
+             * Don't give it a try, translate only the body.
+             */
             if (tree.catchers.isEmpty() &&
                 tree.finalizer.getStatements().isEmpty()) {
                 result = translate(tree.body);
             } else {
-                super.visitTry(tree);
+                /* also if the body is empty we only need to generate the finalizer
+                 * provided that it's not empty.
+                 */
+                if (tree.body.getStatements().isEmpty()) {
+                    if (tree.finalizer.getStatements().isEmpty()) {
+                        result = translate(tree.body);
+                    } else {
+                        result = translate(tree.finalizer);
+                    }
+                } else {
+                    super.visitTry(tree);
+                }
             }
         } else {
             result = makeTwrTry(tree);
