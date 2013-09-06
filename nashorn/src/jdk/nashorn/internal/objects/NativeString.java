@@ -1058,9 +1058,8 @@ public final class NativeString extends ScriptObject {
     public static Object trim(final Object self) {
 
         final String str = checkObjectToString(self);
-        final int len = str.length();
         int start = 0;
-        int end   = len - 1;
+        int end   = str.length() - 1;
 
         while (start <= end && ScriptRuntime.isJSWhitespace(str.charAt(start))) {
             start++;
@@ -1069,7 +1068,45 @@ public final class NativeString extends ScriptObject {
             end--;
         }
 
-        return start == 0 && end + 1 == len ? str : str.substring(start, end + 1);
+        return str.substring(start, end + 1);
+    }
+
+    /**
+     * Nashorn extension: String.prototype.trimLeft ( )
+     * @param self self reference
+     * @return string trimmed left from whitespace
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object trimLeft(final Object self) {
+
+        final String str = checkObjectToString(self);
+        int start = 0;
+        int end   = str.length() - 1;
+
+        while (start <= end && ScriptRuntime.isJSWhitespace(str.charAt(start))) {
+            start++;
+        }
+
+        return str.substring(start, end + 1);
+    }
+
+    /**
+     * Nashorn extension: String.prototype.trimRight ( )
+     * @param self self reference
+     * @return string trimmed right from whitespace
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    public static Object trimRight(final Object self) {
+
+        final String str = checkObjectToString(self);
+        int start = 0;
+        int end   = str.length() - 1;
+
+        while (end >= start && ScriptRuntime.isJSWhitespace(str.charAt(end))) {
+            end--;
+        }
+
+        return str.substring(start, end + 1);
     }
 
     private static Object newObj(final Object self, final CharSequence str) {

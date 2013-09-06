@@ -60,7 +60,7 @@ class SparseArrayData extends ArrayData {
 
     @Override
     public ArrayData copy() {
-        return new SparseArrayData(underlying.copy(), length(), new TreeMap<Long, Object>(sparseMap));
+        return new SparseArrayData(underlying.copy(), length(), new TreeMap<>(sparseMap));
     }
 
     @Override

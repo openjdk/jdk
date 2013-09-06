@@ -35,10 +35,6 @@
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
 
-// Optimization - Graph Style
-
-
-//-----------------------------------------------------------------------------
 void Block_Array::grow( uint i ) {
   assert(i >= Max(), "must be an overflow");
   debug_only(_limit = i+1);
@@ -54,7 +50,6 @@ void Block_Array::grow( uint i ) {
   Copy::zero_to_bytes( &_blocks[old], (_size-old)*sizeof(Block*) );
 }
 
-//=============================================================================
 void Block_List::remove(uint i) {
   assert(i < _cnt, "index out of bounds");
   Copy::conjoint_words_to_lower((HeapWord*)&_blocks[i+1], (HeapWord*)&_blocks[i], ((_cnt-i-1)*sizeof(Block*)));
@@ -75,8 +70,6 @@ void Block_List::print() {
   tty->print("size = %d\n", size());
 }
 #endif
-
-//=============================================================================
 
 uint Block::code_alignment() {
   // Check for Root block
@@ -113,7 +106,6 @@ uint Block::compute_loop_alignment() {
   return unit_sz; // no particular alignment
 }
 
-//-----------------------------------------------------------------------------
 // Compute the size of first 'inst_cnt' instructions in this block.
 // Return the number of instructions left to compute if the block has
 // less then 'inst_cnt' instructions. Stop, and return 0 if sum_size
@@ -138,7 +130,6 @@ uint Block::compute_first_inst_size(uint& sum_size, uint inst_cnt,
   return inst_cnt;
 }
 
-//-----------------------------------------------------------------------------
 uint Block::find_node( const Node *n ) const {
   for( uint i = 0; i < _nodes.size(); i++ ) {
     if( _nodes[i] == n )
@@ -153,7 +144,6 @@ void Block::find_remove( const Node *n ) {
   _nodes.remove(find_node(n));
 }
 
-//------------------------------is_Empty---------------------------------------
 // Return empty status of a block.  Empty blocks contain only the head, other
 // ideal nodes, and an optional trailing goto.
 int Block::is_Empty() const {
@@ -192,7 +182,6 @@ int Block::is_Empty() const {
   return not_empty;
 }
 
-//------------------------------has_uncommon_code------------------------------
 // Return true if the block's code implies that it is likely to be
 // executed infrequently.  Check to see if the block ends in a Halt or
 // a low probability call.
@@ -218,7 +207,6 @@ bool Block::has_uncommon_code() const {
   return op == Op_Halt;
 }
 
-//------------------------------is_uncommon------------------------------------
 // True if block is low enough frequency or guarded by a test which
 // mostly does not go here.
 bool Block::is_uncommon(PhaseCFG* cfg) const {
@@ -271,7 +259,6 @@ bool Block::is_uncommon(PhaseCFG* cfg) const {
   return false;
 }
 
-//------------------------------dump-------------------------------------------
 #ifndef PRODUCT
 void Block::dump_bidx(const Block* orig, outputStream* st) const {
   if (_pre_order) st->print("B%d",_pre_order);
@@ -364,13 +351,12 @@ void Block::dump(const PhaseCFG* cfg) const {
 }
 #endif
 
-//=============================================================================
-//------------------------------PhaseCFG---------------------------------------
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _block_arena(arena)
-, _node_to_block_mapping(arena)
 , _root(root)
+, _matcher(matcher)
+, _node_to_block_mapping(arena)
 , _node_latency(NULL)
 #ifndef PRODUCT
 , _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
@@ -390,11 +376,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
-  _num_blocks = build_cfg();
-  _broot = get_block_for_node(_root);
+  _number_of_blocks = build_cfg();
+  _root_block = get_block_for_node(_root);
 }
 
-//------------------------------build_cfg--------------------------------------
 // Build a proper looking CFG.  Make every block begin with either a StartNode
 // or a RegionNode.  Make every block end with either a Goto, If or Return.
 // The RootNode both starts and ends it's own block.  Do this with a recursive
@@ -496,13 +481,12 @@ uint PhaseCFG::build_cfg() {
   return sum;
 }
 
-//------------------------------insert_goto_at---------------------------------
 // Inserts a goto & corresponding basic block between
 // block[block_no] and its succ_no'th successor block
 void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // get block with block_no
-  assert(block_no < _num_blocks, "illegal block number");
-  Block* in  = _blocks[block_no];
+  assert(block_no < number_of_blocks(), "illegal block number");
+  Block* in  = get_block(block_no);
   // get successor block succ_no
   assert(succ_no < in->_num_succs, "illegal successor number");
   Block* out = in->_succs[succ_no];
@@ -537,11 +521,9 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // Set the frequency of the new block
   block->_freq = freq;
   // add new basic block to basic block list
-  _blocks.insert(block_no + 1, block);
-  _num_blocks++;
+  add_block_at(block_no + 1, block);
 }
 
-//------------------------------no_flip_branch---------------------------------
 // Does this block end in a multiway branch that cannot have the default case
 // flipped for another case?
 static bool no_flip_branch( Block *b ) {
@@ -560,7 +542,6 @@ static bool no_flip_branch( Block *b ) {
   return false;
 }
 
-//------------------------------convert_NeverBranch_to_Goto--------------------
 // Check for NeverBranch at block end.  This needs to become a GOTO to the
 // true target.  NeverBranch are treated as a conditional branch that always
 // goes the same direction for most of the optimizer and are used to give a
@@ -598,7 +579,6 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
     dead->_nodes[k]->del_req(j);
 }
 
-//------------------------------move_to_next-----------------------------------
 // Helper function to move block bx to the slot following b_index. Return
 // true if the move is successful, otherwise false
 bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
@@ -606,20 +586,22 @@ bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
 
   // Return false if bx is already scheduled.
   uint bx_index = bx->_pre_order;
-  if ((bx_index <= b_index) && (_blocks[bx_index] == bx)) {
+  if ((bx_index <= b_index) && (get_block(bx_index) == bx)) {
     return false;
   }
 
   // Find the current index of block bx on the block list
   bx_index = b_index + 1;
-  while( bx_index < _num_blocks && _blocks[bx_index] != bx ) bx_index++;
-  assert(_blocks[bx_index] == bx, "block not found");
+  while (bx_index < number_of_blocks() && get_block(bx_index) != bx) {
+    bx_index++;
+  }
+  assert(get_block(bx_index) == bx, "block not found");
 
   // If the previous block conditionally falls into bx, return false,
   // because moving bx will create an extra jump.
   for(uint k = 1; k < bx->num_preds(); k++ ) {
     Block* pred = get_block_for_node(bx->pred(k));
-    if (pred == _blocks[bx_index-1]) {
+    if (pred == get_block(bx_index - 1)) {
       if (pred->_num_succs != 1) {
         return false;
       }
@@ -632,7 +614,6 @@ bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
   return true;
 }
 
-//------------------------------move_to_end------------------------------------
 // Move empty and uncommon blocks to the end.
 void PhaseCFG::move_to_end(Block *b, uint i) {
   int e = b->is_Empty();
@@ -650,31 +631,31 @@ void PhaseCFG::move_to_end(Block *b, uint i) {
   _blocks.push(b);
 }
 
-//---------------------------set_loop_alignment--------------------------------
 // Set loop alignment for every block
 void PhaseCFG::set_loop_alignment() {
-  uint last = _num_blocks;
-  assert( _blocks[0] == _broot, "" );
+  uint last = number_of_blocks();
+  assert(get_block(0) == get_root_block(), "");
 
-  for (uint i = 1; i < last; i++ ) {
-    Block *b = _blocks[i];
-    if (b->head()->is_Loop()) {
-      b->set_loop_alignment(b);
+  for (uint i = 1; i < last; i++) {
+    Block* block = get_block(i);
+    if (block->head()->is_Loop()) {
+      block->set_loop_alignment(block);
     }
   }
 }
 
-//-----------------------------remove_empty------------------------------------
 // Make empty basic blocks to be "connector" blocks, Move uncommon blocks
 // to the end.
-void PhaseCFG::remove_empty() {
+void PhaseCFG::remove_empty_blocks() {
   // Move uncommon blocks to the end
-  uint last = _num_blocks;
-  assert( _blocks[0] == _broot, "" );
+  uint last = number_of_blocks();
+  assert(get_block(0) == get_root_block(), "");
 
   for (uint i = 1; i < last; i++) {
-    Block *b = _blocks[i];
-    if (b->is_connector()) break;
+    Block* block = get_block(i);
+    if (block->is_connector()) {
+      break;
+    }
 
     // Check for NeverBranch at block end.  This needs to become a GOTO to the
     // true target.  NeverBranch are treated as a conditional branch that
@@ -682,124 +663,127 @@ void PhaseCFG::remove_empty() {
     // to give a fake exit path to infinite loops.  At this late stage they
     // need to turn into Goto's so that when you enter the infinite loop you
     // indeed hang.
-    if( b->_nodes[b->end_idx()]->Opcode() == Op_NeverBranch )
-      convert_NeverBranch_to_Goto(b);
+    if (block->_nodes[block->end_idx()]->Opcode() == Op_NeverBranch) {
+      convert_NeverBranch_to_Goto(block);
+    }
 
     // Look for uncommon blocks and move to end.
     if (!C->do_freq_based_layout()) {
-      if (b->is_uncommon(this)) {
-        move_to_end(b, i);
+      if (block->is_uncommon(this)) {
+        move_to_end(block, i);
         last--;                   // No longer check for being uncommon!
-        if( no_flip_branch(b) ) { // Fall-thru case must follow?
-          b = _blocks[i];         // Find the fall-thru block
-          move_to_end(b, i);
+        if (no_flip_branch(block)) { // Fall-thru case must follow?
+          // Find the fall-thru block
+          block = get_block(i);
+          move_to_end(block, i);
           last--;
         }
-        i--;                      // backup block counter post-increment
+        // backup block counter post-increment
+        i--;
       }
     }
   }
 
   // Move empty blocks to the end
-  last = _num_blocks;
+  last = number_of_blocks();
   for (uint i = 1; i < last; i++) {
-    Block *b = _blocks[i];
-    if (b->is_Empty() != Block::not_empty) {
-      move_to_end(b, i);
+    Block* block = get_block(i);
+    if (block->is_Empty() != Block::not_empty) {
+      move_to_end(block, i);
       last--;
       i--;
     }
   } // End of for all blocks
 }
 
-//-----------------------------fixup_flow--------------------------------------
 // Fix up the final control flow for basic blocks.
 void PhaseCFG::fixup_flow() {
   // Fixup final control flow for the blocks.  Remove jump-to-next
   // block.  If neither arm of a IF follows the conditional branch, we
   // have to add a second jump after the conditional.  We place the
   // TRUE branch target in succs[0] for both GOTOs and IFs.
-  for (uint i=0; i < _num_blocks; i++) {
-    Block *b = _blocks[i];
-    b->_pre_order = i;          // turn pre-order into block-index
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* block = get_block(i);
+    block->_pre_order = i;          // turn pre-order into block-index
 
     // Connector blocks need no further processing.
-    if (b->is_connector()) {
-      assert((i+1) == _num_blocks || _blocks[i+1]->is_connector(),
-             "All connector blocks should sink to the end");
+    if (block->is_connector()) {
+      assert((i+1) == number_of_blocks() || get_block(i + 1)->is_connector(), "All connector blocks should sink to the end");
       continue;
     }
-    assert(b->is_Empty() != Block::completely_empty,
-           "Empty blocks should be connectors");
+    assert(block->is_Empty() != Block::completely_empty, "Empty blocks should be connectors");
 
-    Block *bnext = (i < _num_blocks-1) ? _blocks[i+1] : NULL;
-    Block *bs0 = b->non_connector_successor(0);
+    Block* bnext = (i < number_of_blocks() - 1) ? get_block(i + 1) : NULL;
+    Block* bs0 = block->non_connector_successor(0);
 
     // Check for multi-way branches where I cannot negate the test to
     // exchange the true and false targets.
-    if( no_flip_branch( b ) ) {
+    if (no_flip_branch(block)) {
       // Find fall through case - if must fall into its target
-      int branch_idx = b->_nodes.size() - b->_num_succs;
-      for (uint j2 = 0; j2 < b->_num_succs; j2++) {
-        const ProjNode* p = b->_nodes[branch_idx + j2]->as_Proj();
+      int branch_idx = block->_nodes.size() - block->_num_succs;
+      for (uint j2 = 0; j2 < block->_num_succs; j2++) {
+        const ProjNode* p = block->_nodes[branch_idx + j2]->as_Proj();
         if (p->_con == 0) {
           // successor j2 is fall through case
-          if (b->non_connector_successor(j2) != bnext) {
+          if (block->non_connector_successor(j2) != bnext) {
             // but it is not the next block => insert a goto
             insert_goto_at(i, j2);
           }
           // Put taken branch in slot 0
-          if( j2 == 0 && b->_num_succs == 2) {
+          if (j2 == 0 && block->_num_succs == 2) {
             // Flip targets in succs map
-            Block *tbs0 = b->_succs[0];
-            Block *tbs1 = b->_succs[1];
-            b->_succs.map( 0, tbs1 );
-            b->_succs.map( 1, tbs0 );
+            Block *tbs0 = block->_succs[0];
+            Block *tbs1 = block->_succs[1];
+            block->_succs.map(0, tbs1);
+            block->_succs.map(1, tbs0);
           }
           break;
         }
       }
-      // Remove all CatchProjs
-      for (uint j1 = 0; j1 < b->_num_succs; j1++) b->_nodes.pop();
 
-    } else if (b->_num_succs == 1) {
+      // Remove all CatchProjs
+      for (uint j = 0; j < block->_num_succs; j++) {
+        block->_nodes.pop();
+      }
+
+    } else if (block->_num_succs == 1) {
       // Block ends in a Goto?
       if (bnext == bs0) {
         // We fall into next block; remove the Goto
-        b->_nodes.pop();
+        block->_nodes.pop();
       }
 
-    } else if( b->_num_succs == 2 ) { // Block ends in a If?
+    } else if(block->_num_succs == 2) { // Block ends in a If?
       // Get opcode of 1st projection (matches _succs[0])
       // Note: Since this basic block has 2 exits, the last 2 nodes must
       //       be projections (in any order), the 3rd last node must be
       //       the IfNode (we have excluded other 2-way exits such as
       //       CatchNodes already).
-      MachNode *iff   = b->_nodes[b->_nodes.size()-3]->as_Mach();
-      ProjNode *proj0 = b->_nodes[b->_nodes.size()-2]->as_Proj();
-      ProjNode *proj1 = b->_nodes[b->_nodes.size()-1]->as_Proj();
+      MachNode* iff   = block->_nodes[block->_nodes.size() - 3]->as_Mach();
+      ProjNode* proj0 = block->_nodes[block->_nodes.size() - 2]->as_Proj();
+      ProjNode* proj1 = block->_nodes[block->_nodes.size() - 1]->as_Proj();
 
       // Assert that proj0 and succs[0] match up. Similarly for proj1 and succs[1].
-      assert(proj0->raw_out(0) == b->_succs[0]->head(), "Mismatch successor 0");
-      assert(proj1->raw_out(0) == b->_succs[1]->head(), "Mismatch successor 1");
+      assert(proj0->raw_out(0) == block->_succs[0]->head(), "Mismatch successor 0");
+      assert(proj1->raw_out(0) == block->_succs[1]->head(), "Mismatch successor 1");
 
-      Block *bs1 = b->non_connector_successor(1);
+      Block* bs1 = block->non_connector_successor(1);
 
       // Check for neither successor block following the current
       // block ending in a conditional. If so, move one of the
       // successors after the current one, provided that the
       // successor was previously unscheduled, but moveable
       // (i.e., all paths to it involve a branch).
-      if( !C->do_freq_based_layout() && bnext != bs0 && bnext != bs1 ) {
+      if (!C->do_freq_based_layout() && bnext != bs0 && bnext != bs1) {
         // Choose the more common successor based on the probability
         // of the conditional branch.
-        Block *bx = bs0;
-        Block *by = bs1;
+        Block* bx = bs0;
+        Block* by = bs1;
 
         // _prob is the probability of taking the true path. Make
         // p the probability of taking successor #1.
         float p = iff->as_MachIf()->_prob;
-        if( proj0->Opcode() == Op_IfTrue ) {
+        if (proj0->Opcode() == Op_IfTrue) {
           p = 1.0 - p;
         }
 
@@ -826,14 +810,16 @@ void PhaseCFG::fixup_flow() {
       // succs[1].
       if (bnext == bs0) {
         // Fall-thru case in succs[0], so flip targets in succs map
-        Block *tbs0 = b->_succs[0];
-        Block *tbs1 = b->_succs[1];
-        b->_succs.map( 0, tbs1 );
-        b->_succs.map( 1, tbs0 );
+        Block* tbs0 = block->_succs[0];
+        Block* tbs1 = block->_succs[1];
+        block->_succs.map(0, tbs1);
+        block->_succs.map(1, tbs0);
         // Flip projection for each target
-        { ProjNode *tmp = proj0; proj0 = proj1; proj1 = tmp; }
+        ProjNode* tmp = proj0;
+        proj0 = proj1;
+        proj1 = tmp;
 
-      } else if( bnext != bs1 ) {
+      } else if(bnext != bs1) {
         // Need a double-branch
         // The existing conditional branch need not change.
         // Add a unconditional branch to the false target.
@@ -843,12 +829,12 @@ void PhaseCFG::fixup_flow() {
       }
 
       // Make sure we TRUE branch to the target
-      if( proj0->Opcode() == Op_IfFalse ) {
+      if (proj0->Opcode() == Op_IfFalse) {
         iff->as_MachIf()->negate();
       }
 
-      b->_nodes.pop();          // Remove IfFalse & IfTrue projections
-      b->_nodes.pop();
+      block->_nodes.pop();          // Remove IfFalse & IfTrue projections
+      block->_nodes.pop();
 
     } else {
       // Multi-exit block, e.g. a switch statement
@@ -858,7 +844,6 @@ void PhaseCFG::fixup_flow() {
 }
 
 
-//------------------------------dump-------------------------------------------
 #ifndef PRODUCT
 void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
   const Node *x = end->is_block_proj();
@@ -884,10 +869,11 @@ void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
 }
 
 void PhaseCFG::dump( ) const {
-  tty->print("\n--- CFG --- %d BBs\n",_num_blocks);
+  tty->print("\n--- CFG --- %d BBs\n", number_of_blocks());
   if (_blocks.size()) {        // Did we do basic-block layout?
-    for (uint i = 0; i < _num_blocks; i++) {
-      _blocks[i]->dump(this);
+    for (uint i = 0; i < number_of_blocks(); i++) {
+      const Block* block = get_block(i);
+      block->dump(this);
     }
   } else {                      // Else do it with a DFS
     VectorSet visited(_block_arena);
@@ -896,27 +882,26 @@ void PhaseCFG::dump( ) const {
 }
 
 void PhaseCFG::dump_headers() {
-  for( uint i = 0; i < _num_blocks; i++ ) {
-    if (_blocks[i]) {
-      _blocks[i]->dump_head(this);
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* block = get_block(i);
+    if (block != NULL) {
+      block->dump_head(this);
     }
   }
 }
 
-void PhaseCFG::verify( ) const {
+void PhaseCFG::verify() const {
 #ifdef ASSERT
   // Verify sane CFG
-  for (uint i = 0; i < _num_blocks; i++) {
-    Block *b = _blocks[i];
-    uint cnt = b->_nodes.size();
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* block = get_block(i);
+    uint cnt = block->_nodes.size();
     uint j;
     for (j = 0; j < cnt; j++)  {
-      Node *n = b->_nodes[j];
-      assert(get_block_for_node(n) == b, "");
-      if (j >= 1 && n->is_Mach() &&
-          n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-        assert(j == 1 || b->_nodes[j-1]->is_Phi(),
-               "CreateEx must be first instruction in block");
+      Node *n = block->_nodes[j];
+      assert(get_block_for_node(n) == block, "");
+      if (j >= 1 && n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+        assert(j == 1 || block->_nodes[j-1]->is_Phi(), "CreateEx must be first instruction in block");
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -926,8 +911,7 @@ void PhaseCFG::verify( ) const {
           // Uses must follow their definition if they are at the same block.
           // Mostly done to check that MachSpillCopy nodes are placed correctly
           // when CreateEx node is moved in build_ifg_physical().
-          if (get_block_for_node(def) == b &&
-              !(b->head()->is_Loop() && n->is_Phi()) &&
+          if (get_block_for_node(def) == block && !(block->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {
             bool is_loop = false;
@@ -939,29 +923,29 @@ void PhaseCFG::verify( ) const {
                 }
               }
             }
-            assert(is_loop || b->find_node(def) < j, "uses must follow definitions");
+            assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
           }
         }
       }
     }
 
-    j = b->end_idx();
-    Node *bp = (Node*)b->_nodes[b->_nodes.size()-1]->is_block_proj();
-    assert( bp, "last instruction must be a block proj" );
-    assert( bp == b->_nodes[j], "wrong number of successors for this block" );
+    j = block->end_idx();
+    Node* bp = (Node*)block->_nodes[block->_nodes.size() - 1]->is_block_proj();
+    assert(bp, "last instruction must be a block proj");
+    assert(bp == block->_nodes[j], "wrong number of successors for this block");
     if (bp->is_Catch()) {
-      while (b->_nodes[--j]->is_MachProj()) ;
-      assert(b->_nodes[j]->is_MachCall(), "CatchProj must follow call");
+      while (block->_nodes[--j]->is_MachProj()) {
+        ;
+      }
+      assert(block->_nodes[j]->is_MachCall(), "CatchProj must follow call");
     } else if (bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If) {
-      assert(b->_num_succs == 2, "Conditional branch must have two targets");
+      assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
 #endif
 }
 #endif
 
-//=============================================================================
-//------------------------------UnionFind--------------------------------------
 UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_ARRAY(uint,max)) {
   Copy::zero_to_bytes( _indices, sizeof(uint)*max );
 }
@@ -986,7 +970,6 @@ void UnionFind::reset( uint max ) {
   for( uint i=0; i<max; i++ ) map(i,i);
 }
 
-//------------------------------Find_compress----------------------------------
 // Straight out of Tarjan's union-find algorithm
 uint UnionFind::Find_compress( uint idx ) {
   uint cur  = idx;
@@ -1006,7 +989,6 @@ uint UnionFind::Find_compress( uint idx ) {
   return idx;
 }
 
-//------------------------------Find_const-------------------------------------
 // Like Find above, but no path compress, so bad asymptotic behavior
 uint UnionFind::Find_const( uint idx ) const {
   if( idx == 0 ) return idx;    // Ignore the zero idx
@@ -1021,7 +1003,6 @@ uint UnionFind::Find_const( uint idx ) const {
   return next;
 }
 
-//------------------------------Union------------------------------------------
 // union 2 sets together.
 void UnionFind::Union( uint idx1, uint idx2 ) {
   uint src = Find(idx1);
@@ -1070,9 +1051,6 @@ void CFGEdge::dump( ) const {
 }
 #endif
 
-//=============================================================================
-
-//------------------------------edge_order-------------------------------------
 // Comparison function for edges
 static int edge_order(CFGEdge **e0, CFGEdge **e1) {
   float freq0 = (*e0)->freq();
@@ -1087,7 +1065,6 @@ static int edge_order(CFGEdge **e0, CFGEdge **e1) {
   return dist1 - dist0;
 }
 
-//------------------------------trace_frequency_order--------------------------
 // Comparison function for edges
 extern "C" int trace_frequency_order(const void *p0, const void *p1) {
   Trace *tr0 = *(Trace **) p0;
@@ -1113,17 +1090,15 @@ extern "C" int trace_frequency_order(const void *p0, const void *p1) {
   return diff;
 }
 
-//------------------------------find_edges-------------------------------------
 // Find edges of interest, i.e, those which can fall through. Presumes that
 // edges which don't fall through are of low frequency and can be generally
 // ignored.  Initialize the list of traces.
-void PhaseBlockLayout::find_edges()
-{
+void PhaseBlockLayout::find_edges() {
   // Walk the blocks, creating edges and Traces
   uint i;
   Trace *tr = NULL;
-  for (i = 0; i < _cfg._num_blocks; i++) {
-    Block *b = _cfg._blocks[i];
+  for (i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* b = _cfg.get_block(i);
     tr = new Trace(b, next, prev);
     traces[tr->id()] = tr;
 
@@ -1147,7 +1122,7 @@ void PhaseBlockLayout::find_edges()
       if (n->num_preds() != 1) break;
 
       i++;
-      assert(n = _cfg._blocks[i], "expecting next block");
+      assert(n = _cfg.get_block(i), "expecting next block");
       tr->append(n);
       uf->map(n->_pre_order, tr->id());
       traces[n->_pre_order] = NULL;
@@ -1171,8 +1146,8 @@ void PhaseBlockLayout::find_edges()
   }
 
   // Group connector blocks into one trace
-  for (i++; i < _cfg._num_blocks; i++) {
-    Block *b = _cfg._blocks[i];
+  for (i++; i < _cfg.number_of_blocks(); i++) {
+    Block *b = _cfg.get_block(i);
     assert(b->is_connector(), "connector blocks at the end");
     tr->append(b);
     uf->map(b->_pre_order, tr->id());
@@ -1180,10 +1155,8 @@ void PhaseBlockLayout::find_edges()
   }
 }
 
-//------------------------------union_traces----------------------------------
 // Union two traces together in uf, and null out the trace in the list
-void PhaseBlockLayout::union_traces(Trace* updated_trace, Trace* old_trace)
-{
+void PhaseBlockLayout::union_traces(Trace* updated_trace, Trace* old_trace) {
   uint old_id = old_trace->id();
   uint updated_id = updated_trace->id();
 
@@ -1207,10 +1180,8 @@ void PhaseBlockLayout::union_traces(Trace* updated_trace, Trace* old_trace)
   traces[hi_id] = NULL;
 }
 
-//------------------------------grow_traces-------------------------------------
 // Append traces together via the most frequently executed edges
-void PhaseBlockLayout::grow_traces()
-{
+void PhaseBlockLayout::grow_traces() {
   // Order the edges, and drive the growth of Traces via the most
   // frequently executed edges.
   edges->sort(edge_order);
@@ -1252,11 +1223,9 @@ void PhaseBlockLayout::grow_traces()
   }
 }
 
-//------------------------------merge_traces-----------------------------------
 // Embed one trace into another, if the fork or join points are sufficiently
 // balanced.
-void PhaseBlockLayout::merge_traces(bool fall_thru_only)
-{
+void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
   // Walk the edge list a another time, looking at unprocessed edges.
   // Fold in diamonds
   for (int i = 0; i < edges->length(); i++) {
@@ -1310,7 +1279,7 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only)
         src_trace->insert_after(src_block, targ_trace);
         union_traces(src_trace, targ_trace);
       } else if (src_at_tail) {
-        if (src_trace != trace(_cfg._broot)) {
+        if (src_trace != trace(_cfg.get_root_block())) {
           e->set_state(CFGEdge::connected);
           targ_trace->insert_before(targ_block, src_trace);
           union_traces(targ_trace, src_trace);
@@ -1319,7 +1288,7 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only)
     } else if (e->state() == CFGEdge::open) {
       // Append traces, even without a fall-thru connection.
       // But leave root entry at the beginning of the block list.
-      if (targ_trace != trace(_cfg._broot)) {
+      if (targ_trace != trace(_cfg.get_root_block())) {
         e->set_state(CFGEdge::connected);
         src_trace->append(targ_trace);
         union_traces(src_trace, targ_trace);
@@ -1328,11 +1297,9 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only)
   }
 }
 
-//----------------------------reorder_traces-----------------------------------
 // Order the sequence of the traces in some desirable way, and fixup the
 // jumps at the end of each block.
-void PhaseBlockLayout::reorder_traces(int count)
-{
+void PhaseBlockLayout::reorder_traces(int count) {
   ResourceArea *area = Thread::current()->resource_area();
   Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
   Block_List worklist;
@@ -1347,15 +1314,14 @@ void PhaseBlockLayout::reorder_traces(int count)
   }
 
   // The entry block should be first on the new trace list.
-  Trace *tr = trace(_cfg._broot);
+  Trace *tr = trace(_cfg.get_root_block());
   assert(tr == new_traces[0], "entry trace misplaced");
 
   // Sort the new trace list by frequency
   qsort(new_traces + 1, new_count - 1, sizeof(new_traces[0]), trace_frequency_order);
 
   // Patch up the successor blocks
-  _cfg._blocks.reset();
-  _cfg._num_blocks = 0;
+  _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
     Trace *tr = new_traces[i];
     if (tr != NULL) {
@@ -1364,17 +1330,15 @@ void PhaseBlockLayout::reorder_traces(int count)
   }
 }
 
-//------------------------------PhaseBlockLayout-------------------------------
 // Order basic blocks based on frequency
-PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg) :
-  Phase(BlockLayout),
-  _cfg(cfg)
-{
+PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
+: Phase(BlockLayout)
+, _cfg(cfg) {
   ResourceMark rm;
   ResourceArea *area = Thread::current()->resource_area();
 
   // List of traces
-  int size = _cfg._num_blocks + 1;
+  int size = _cfg.number_of_blocks() + 1;
   traces = NEW_ARENA_ARRAY(area, Trace *, size);
   memset(traces, 0, size*sizeof(Trace*));
   next = NEW_ARENA_ARRAY(area, Block *, size);
@@ -1407,11 +1371,10 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg) :
   // Re-order all the remaining traces by frequency
   reorder_traces(size);
 
-  assert(_cfg._num_blocks >= (uint) (size - 1), "number of blocks can not shrink");
+  assert(_cfg.number_of_blocks() >= (uint) (size - 1), "number of blocks can not shrink");
 }
 
 
-//------------------------------backedge---------------------------------------
 // Edge e completes a loop in a trace. If the target block is head of the
 // loop, rotate the loop block so that the loop ends in a conditional branch.
 bool Trace::backedge(CFGEdge *e) {
@@ -1463,14 +1426,12 @@ bool Trace::backedge(CFGEdge *e) {
   return loop_rotated;
 }
 
-//------------------------------fixup_blocks-----------------------------------
 // push blocks onto the CFG list
 // ensure that blocks have the correct two-way branch sense
 void Trace::fixup_blocks(PhaseCFG &cfg) {
   Block *last = last_block();
   for (Block *b = first_block(); b != NULL; b = next(b)) {
-    cfg._blocks.push(b);
-    cfg._num_blocks++;
+    cfg.add_block(b);
     if (!b->is_connector()) {
       int nfallthru = b->num_fall_throughs();
       if (b != last) {

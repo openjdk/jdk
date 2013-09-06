@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -70,7 +71,18 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  */
 @ScriptClass("Object")
 public final class NativeObject {
-    private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
+    private static final Object TO_STRING = new Object();
+
+    private static InvokeByName getTO_STRING() {
+        return Global.instance().getInvokeByName(TO_STRING,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("toString", ScriptObject.class);
+                    }
+                });
+    }
+
     private static final MethodType MIRROR_GETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class);
     private static final MethodType MIRROR_SETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class, Object.class);
 
@@ -101,8 +113,37 @@ public final class NativeObject {
         } else if (obj instanceof ScriptObjectMirror) {
             return ((ScriptObjectMirror)obj).getProto();
         } else {
+            final JSType type = JSType.of(obj);
+            if (type == JSType.OBJECT) {
+                // host (Java) objects have null __proto__
+                return null;
+            }
+
+            // must be some JS primitive
             throw notAnObject(obj);
         }
+    }
+
+    /**
+     * Nashorn extension: Object.setPrototypeOf ( O, proto )
+     * Also found in ES6 draft specification.
+     *
+     * @param  self self reference
+     * @param  obj object to set prototype for
+     * @param  proto prototype object to be used
+     * @return object whose prototype is set
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
+        if (obj instanceof ScriptObject) {
+            ((ScriptObject)obj).setProtoCheck(proto);
+            return obj;
+        } else if (obj instanceof ScriptObjectMirror) {
+            ((ScriptObjectMirror)obj).setProto(proto);
+            return obj;
+        }
+
+        throw notAnObject(obj);
     }
 
     /**
@@ -165,7 +206,7 @@ public final class NativeObject {
         // FIXME: should we create a proper object with correct number of
         // properties?
         final ScriptObject newObj = Global.newEmptyInstance();
-        newObj.setProtoCheck(proto);
+        newObj.setProto((ScriptObject)proto);
         if (props != UNDEFINED) {
             NativeObject.defineProperties(self, newObj, props);
         }
@@ -402,12 +443,13 @@ public final class NativeObject {
     public static Object toLocaleString(final Object self) {
         final Object obj = JSType.toScriptObject(self);
         if (obj instanceof ScriptObject) {
+            final InvokeByName toStringInvoker = getTO_STRING();
             final ScriptObject sobj = (ScriptObject)self;
             try {
-                final Object toString = TO_STRING.getGetter().invokeExact(sobj);
+                final Object toString = toStringInvoker.getGetter().invokeExact(sobj);
 
                 if (Bootstrap.isCallable(toString)) {
-                    return TO_STRING.getInvoker().invokeExact(toString, sobj);
+                    return toStringInvoker.getInvoker().invokeExact(toString, sobj);
                 }
             } catch (final RuntimeException | Error e) {
                 throw e;
@@ -627,15 +669,43 @@ public final class NativeObject {
 
         final List<AccessorProperty> properties = new ArrayList<>(propertyNames.size() + methodNames.size());
         for(final String methodName: methodNames) {
-            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE,
-                    getBoundBeanMethodGetter(source, getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source)),
-                    null));
+            final MethodHandle method;
+            try {
+                method = getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source);
+            } catch(final IllegalAccessError e) {
+                // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                continue;
+            }
+            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE, getBoundBeanMethodGetter(source,
+                    method), null));
         }
         for(final String propertyName: propertyNames) {
+            MethodHandle getter;
+            if(readablePropertyNames.contains(propertyName)) {
+                try {
+                    getter = getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    getter = Lookup.EMPTY_GETTER;
+                }
+            } else {
+                getter = Lookup.EMPTY_GETTER;
+            }
             final boolean isWritable = writablePropertyNames.contains(propertyName);
-            properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE,
-                    readablePropertyNames.contains(propertyName) ? getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source) : Lookup.EMPTY_GETTER,
-                    isWritable ? getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source) : Lookup.EMPTY_SETTER));
+            MethodHandle setter;
+            if(isWritable) {
+                try {
+                    setter = getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    setter = Lookup.EMPTY_SETTER;
+                }
+            } else {
+                setter = Lookup.EMPTY_SETTER;
+            }
+            if(getter != Lookup.EMPTY_GETTER || setter != Lookup.EMPTY_SETTER) {
+                properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE, getter, setter));
+            }
         }
 
         targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));

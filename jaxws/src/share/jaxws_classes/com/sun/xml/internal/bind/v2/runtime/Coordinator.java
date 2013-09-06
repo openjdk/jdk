@@ -94,74 +94,36 @@ public abstract class Coordinator implements ErrorHandler, ValidationEventHandle
         return adapters.containsKey(type);
     }
 
+    // this much is necessary to avoid calling get and set twice when we push.
+    private static final ThreadLocal<Coordinator> activeTable = new ThreadLocal<Coordinator>();
+
     /**
      * The {@link Coordinator} in charge before this {@link Coordinator}.
      */
-    private Object old;
-
-    /**
-     * A 'pointer' to a {@link Coordinator} that keeps track of the currently active {@link Coordinator}.
-     * Having this improves the runtime performance.
-     */
-    private Object[] table;
-
-    /**
-     * When we set {@link #table} to null, record who did it.
-     * This is for trouble-shooting a possible concurrency issue reported at:
-     * http://forums.java.net/jive/thread.jspa?threadID=15132
-     */
-    public Exception guyWhoSetTheTableToNull;
-
-    /**
-     * Associates this {@link Coordinator} with the current thread.
-     * Should be called at the very beginning of the episode.
-     */
-    protected final void setThreadAffinity() {
-        table = activeTable.get();
-        assert table!=null;
-    }
-
-    /**
-     * Dis-associate this {@link Coordinator} with the current thread.
-     * Sohuld be called at the end of the episode to avoid memory leak.
-     */
-    protected final void resetThreadAffinity() {
-        if (activeTable != null) {
-            activeTable.remove();
-        }
-        if(debugTableNPE)
-            guyWhoSetTheTableToNull = new Exception(); // remember that we set it to null
-        table = null;
-    }
+    private Coordinator old;
 
     /**
      * Called whenever an execution flow enters the realm of this {@link Coordinator}.
      */
     protected final void pushCoordinator() {
-        old = table[0];
-        table[0] = this;
+        old = activeTable.get();
+        activeTable.set(this);
     }
 
     /**
      * Called whenever an execution flow exits the realm of this {@link Coordinator}.
      */
     protected final void popCoordinator() {
-        assert table[0]==this;
-        table[0] = old;
+        if (old != null)
+            activeTable.set(old);
+        else
+            activeTable.remove();
         old = null; // avoid memory leak
     }
 
     public static Coordinator _getInstance() {
-        return (Coordinator) activeTable.get()[0];
+        return activeTable.get();
     }
-
-    // this much is necessary to avoid calling get and set twice when we push.
-    private static final ThreadLocal<Object[]> activeTable = new ThreadLocal<Object[]>() {
-        @Override
-        public Object[] initialValue() {
-            return new Object[1];
-        }
-    };
 
 //
 //
@@ -205,15 +167,6 @@ public abstract class Coordinator implements ErrorHandler, ValidationEventHandle
             // bail-out of the parse with a SAX exception, but convert it into
             // an UnmarshalException back in in the AbstractUnmarshaller
             throw saxException;
-        }
-    }
-
-    public static boolean debugTableNPE;
-
-    static {
-        try {
-            debugTableNPE = Boolean.getBoolean(Coordinator.class.getName()+".debugTableNPE");
-        } catch (SecurityException t) {
         }
     }
 }
