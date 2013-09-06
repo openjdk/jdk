@@ -750,6 +750,6 @@ public class WindowsAsynchronousFileChannelImpl
     private static native void close0(long handle);
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

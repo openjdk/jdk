@@ -69,11 +69,11 @@ else
         # Run the makefile with an arbitraty SPEC using -p -q (quiet dry-run and dump rules) to find
         # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
         all_phony_targets=$(filter-out $(global_targets) bundles-only, $(strip $(shell \
-            $(MAKE) -p -q -f common/makefiles/Main.gmk SPEC=$(firstword $(SPEC)) | \
+            $(MAKE) -p -q -f common/makefiles/Main.gmk FRC SPEC=$(firstword $(SPEC)) | \
             grep ^.PHONY: | head -n 1 | cut -d " " -f 2-)))
 
         $(all_phony_targets):
-		$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) \
+		@$(foreach spec,$(SPEC),($(MAKE) -f NewMakefile.gmk SPEC=$(spec) \
 			$(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $@) &&) true
 
         .PHONY: $(all_phony_targets)
@@ -98,6 +98,7 @@ help:
 	$(info .                         # corba and jdk)
 	$(info .  make all               # Compile everything, all repos and images)
 	$(info .  make images            # Create complete j2sdk and j2re images)
+	$(info .  make docs              # Create javadocs)
 	$(info .  make overlay-images    # Create limited images for sparc 64 bit platforms)
 	$(info .  make profiles          # Create complete j2re compact profile images)
 	$(info .  make bootcycle-images  # Build images twice, second time with newly build JDK)
@@ -109,7 +110,7 @@ help:
 	$(info .  make test              # Run tests, default is all tests (see TEST below))
 	$(info )
 	$(info Targets for specific components)
-	$(info (Component is any of langtools, corba, jaxp, jaxws, hotspot, jdk, images or overlay-images))
+	$(info (Component is any of langtools, corba, jaxp, jaxws, hotspot, jdk, nashorn, images, overlay-images, docs or test))
 	$(info .  make <component>       # Build <component> and everything it depends on. )
 	$(info .  make <component>-only  # Build <component> only, without dependencies. This)
 	$(info .                         # is faster but can result in incorrect build results!)

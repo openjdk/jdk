@@ -539,7 +539,7 @@ public abstract class Configuration {
                 initProfiles();
                 initProfilePackages();
             } catch (Exception e) {
-                throw new DocletAbortException();
+                throw new DocletAbortException(e);
             }
         }
         setSpecificDocletOptions(root.options());
