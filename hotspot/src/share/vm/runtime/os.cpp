@@ -1485,44 +1485,6 @@ bool os::is_server_class_machine() {
   return result;
 }
 
-// Read file line by line, if line is longer than bsize,
-// skip rest of line.
-int os::get_line_chars(int fd, char* buf, const size_t bsize){
-  size_t sz, i = 0;
-
-  // read until EOF, EOL or buf is full
-  while ((sz = (int) read(fd, &buf[i], 1)) == 1 && i < (bsize-2) && buf[i] != '\n') {
-     ++i;
-  }
-
-  if (buf[i] == '\n') {
-    // EOL reached so ignore EOL character and return
-
-    buf[i] = 0;
-    return (int) i;
-  }
-
-  buf[i+1] = 0;
-
-  if (sz != 1) {
-    // EOF reached. if we read chars before EOF return them and
-    // return EOF on next call otherwise return EOF
-
-    return (i == 0) ? -1 : (int) i;
-  }
-
-  // line is longer than size of buf, skip to EOL
-  char ch;
-  while (read(fd, &ch, 1) == 1 && ch != '\n') {
-    // Do nothing
-  }
-
-  // return initial part of line that fits in buf.
-  // If we reached EOF, it will be returned on next call.
-
-  return (int) i;
-}
-
 void os::SuspendedThreadTask::run() {
   assert(Threads_lock->owned_by_self() || (_thread == VMThread::vm_thread()), "must have threads lock to call this");
   internal_do_task();

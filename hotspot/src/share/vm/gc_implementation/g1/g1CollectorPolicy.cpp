@@ -168,7 +168,15 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // Set up the region size and associated fields. Given that the
   // policy is created before the heap, we have to set this up here,
   // so it's done as soon as possible.
-  HeapRegion::setup_heap_region_size(Arguments::min_heap_size());
+
+  // It would have been natural to pass initial_heap_byte_size() and
+  // max_heap_byte_size() to setup_heap_region_size() but those have
+  // not been set up at this point since they should be aligned with
+  // the region size. So, there is a circular dependency here. We base
+  // the region size on the heap size, but the heap size should be
+  // aligned with the region size. To get around this we use the
+  // unaligned values for the heap.
+  HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
   HeapRegionRemSet::setup_remset_size();
 
   G1ErgoVerbose::initialize();
