@@ -1554,18 +1554,22 @@ bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
     return false;
   }
 
-  // rewrite sourc file name index:
+  // rewrite source file name index:
   u2 source_file_name_idx = scratch_class->source_file_name_index();
   if (source_file_name_idx != 0) {
     u2 new_source_file_name_idx = find_new_index(source_file_name_idx);
-    scratch_class->set_source_file_name_index(new_source_file_name_idx);
+    if (new_source_file_name_idx != 0) {
+      scratch_class->set_source_file_name_index(new_source_file_name_idx);
+    }
   }
 
   // rewrite class generic signature index:
   u2 generic_signature_index = scratch_class->generic_signature_index();
   if (generic_signature_index != 0) {
     u2 new_generic_signature_index = find_new_index(generic_signature_index);
-    scratch_class->set_generic_signature_index(new_generic_signature_index);
+    if (new_generic_signature_index != 0) {
+      scratch_class->set_generic_signature_index(new_generic_signature_index);
+    }
   }
 
   return true;
@@ -1737,7 +1741,10 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
 
     for (int i = 0; i < len; i++) {
       const u2 cp_index = elem[i].name_cp_index;
-      elem[i].name_cp_index = find_new_index(cp_index);
+      const u2 new_cp_index = find_new_index(cp_index);
+      if (new_cp_index != 0) {
+        elem[i].name_cp_index = new_cp_index;
+      }
     }
   }
 } // end rewrite_cp_refs_in_method()

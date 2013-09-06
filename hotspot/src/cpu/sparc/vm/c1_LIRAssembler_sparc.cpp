@@ -520,7 +520,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
 void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo *info) {
   // Allocate a new index in table to hold the object once it's been patched
   int oop_index = __ oop_recorder()->allocate_oop_index(NULL);
-  PatchingStub* patch = new PatchingStub(_masm, PatchingStub::load_mirror_id, oop_index);
+  PatchingStub* patch = new PatchingStub(_masm, patching_id(info), oop_index);
 
   AddressLiteral addrlit(NULL, oop_Relocation::spec(oop_index));
   assert(addrlit.rspec().type() == relocInfo::oop_type, "must be an oop reloc");

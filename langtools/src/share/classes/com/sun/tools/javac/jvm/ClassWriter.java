@@ -657,6 +657,14 @@ public class ClassWriter extends ClassFile {
                 databuf.appendChar(pool.put(s.name));
                 databuf.appendChar(flags);
             }
+            // Now write the captured locals
+            for (VarSymbol s : m.capturedLocals) {
+                final int flags =
+                    ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
+                    ((int) m.flags() & SYNTHETIC);
+                databuf.appendChar(pool.put(s.name));
+                databuf.appendChar(flags);
+            }
             endAttr(attrIndex);
             return 1;
         } else

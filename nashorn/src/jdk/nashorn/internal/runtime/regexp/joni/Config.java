@@ -29,7 +29,6 @@ public interface Config {
     final int INTERNAL_ENC_CASE_FOLD_MULTI_CHAR = (1<<30);
     final int ENC_CASE_FOLD_MIN = INTERNAL_ENC_CASE_FOLD_MULTI_CHAR;
     final int ENC_CASE_FOLD_DEFAULT = ENC_CASE_FOLD_MIN;
-    final boolean USE_CRNL_AS_LINE_TERMINATOR = false;
 
     final boolean USE_MONOMANIAC_CHECK_CAPTURES_IN_ENDLESS_REPEAT = true; /* /(?:()|())*\2/ */
     final boolean USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE = true;     /* /\n$/ =~ "\n" */

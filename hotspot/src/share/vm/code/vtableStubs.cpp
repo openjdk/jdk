@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 static int num_vtable_chunks = 0;
 
 
-void* VtableStub::operator new(size_t size, int code_size) {
+void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert(size == sizeof(VtableStub), "mismatched size");
   num_vtable_chunks++;
   // compute real VtableStub size (rounded to nearest word)

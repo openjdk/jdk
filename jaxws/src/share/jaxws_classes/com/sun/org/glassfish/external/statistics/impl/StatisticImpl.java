@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 
 package com.sun.org.glassfish.external.statistics.impl;
 import com.sun.org.glassfish.external.statistics.Statistic;
-import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -133,4 +133,13 @@ public abstract class StatisticImpl implements Statistic {
     protected static boolean isValidString(String str) {
         return (str!=null && str.length()>0);
     }
+
+    protected void checkMethod(Method method) {
+        if (method == null || method.getDeclaringClass() == null
+                || !Statistic.class.isAssignableFrom(method.getDeclaringClass())
+                || Modifier.isStatic(method.getModifiers())) {
+            throw new RuntimeException("Invalid method on invoke");
+        }
+    }
+
 }

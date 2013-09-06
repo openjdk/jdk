@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ package com.sun.tools.doclets.internal.toolkit.util;
 public class DocletAbortException extends RuntimeException {
     private static final long serialVersionUID = -9131058909576418984L;
 
-    public DocletAbortException() {
+    public DocletAbortException(String message) {
+        super(message);
+    }
+
+    public DocletAbortException(Throwable cause) {
+        super(cause);
     }
 }

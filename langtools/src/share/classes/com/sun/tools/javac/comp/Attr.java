@@ -1063,9 +1063,7 @@ public class Attr extends JCTree.Visitor {
 
             if (tree.init != null) {
                 if ((v.flags_field & FINAL) != 0 &&
-                        !tree.init.hasTag(NEWCLASS) &&
-                        !tree.init.hasTag(LAMBDA) &&
-                        !tree.init.hasTag(REFERENCE)) {
+                    memberEnter.needsLazyConstValue(tree.init)) {
                     // In this case, `v' is final.  Ensure that it's initializer is
                     // evaluated.
                     v.getConstValue(); // ensure initializer is evaluated

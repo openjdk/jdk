@@ -90,6 +90,12 @@
 #include "classfile_constants.h"
 #include "opcodes.in_out"
 
+#ifdef __APPLE__
+/* use setjmp/longjmp versions that do not save/restore the signal mask */
+#define setjmp _setjmp
+#define longjmp _longjmp
+#endif
+
 #define MAX_ARRAY_DIMENSIONS 255
 /* align byte code */
 #ifndef ALIGN_UP

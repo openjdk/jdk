@@ -72,7 +72,7 @@ public class StringContent extends Content {
      */
     @Override
     public void addContent(Content content) {
-        throw new DocletAbortException();
+        throw new DocletAbortException("not supported");
     }
 
     /**
