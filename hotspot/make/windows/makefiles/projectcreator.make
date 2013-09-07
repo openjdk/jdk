@@ -92,6 +92,10 @@ ProjectCreatorIDEOptions = \
         -disablePch        getThread_windows_$(Platform_arch).cpp \
         -disablePch_compiler2     opcodes.cpp
 
+!if "$(BUILD_WIN_SA)" != "1"
+BUILD_VM_DEF_FLAG=-nosa
+!endif
+
 # Common options for the IDE builds for c1, and c2
 ProjectCreatorIDEOptions=\
         $(ProjectCreatorIDEOptions) \
@@ -104,7 +108,7 @@ ProjectCreatorIDEOptions=\
         -jdkTargetRoot $(HOTSPOTJDKDIST) \
         -define ALIGN_STACK_FRAMES \
         -define VM_LITTLE_ENDIAN \
-        -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	set JAVA_HOME=$(HOTSPOTJDKDIST)	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh $(LD_VER)" \
+        -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	set JAVA_HOME=$(HOTSPOTJDKDIST)	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh $(BUILD_VM_DEF_FLAG) $(LD_VER)" \
         -ignoreFile jsig.c \
         -ignoreFile jvmtiEnvRecommended.cpp \
         -ignoreFile jvmtiEnvStub.cpp \

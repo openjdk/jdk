@@ -141,7 +141,7 @@ public abstract class Matcher extends IntHolder {
                                     continue retry;
                                 }
                             }
-                        } else if (!EncodingHelper.isNewLine(chars, p, end) && (!Config.USE_CRNL_AS_LINE_TERMINATOR || !EncodingHelper.isCrnl(chars, p, end))) {
+                        } else if (!EncodingHelper.isNewLine(chars, p, end)) {
                             //if () break;
                             // goto retry_gate;
                             pprev = p;
@@ -226,7 +226,7 @@ public abstract class Matcher extends IntHolder {
                                     continue retry;
                                 }
                             }
-                        } else if (!EncodingHelper.isNewLine(chars, p, end) && (!Config.USE_CRNL_AS_LINE_TERMINATOR || !EncodingHelper.isCrnl(chars, p, end))) {
+                        } else if (!EncodingHelper.isNewLine(chars, p, end)) {
                             p = EncodingHelper.prevCharHead(adjrange, p);
                             if (p == -1) return false;
                             continue retry;
@@ -330,12 +330,6 @@ public abstract class Matcher extends IntHolder {
                 maxSemiEnd = end;
                 if (EncodingHelper.isNewLine(chars, preEnd, end)) {
                     minSemiEnd = preEnd;
-                    if (Config.USE_CRNL_AS_LINE_TERMINATOR) {
-                        preEnd = EncodingHelper.stepBack(str, preEnd, 1);
-                        if (preEnd != -1 && EncodingHelper.isCrnl(chars, preEnd, end)) {
-                            minSemiEnd = preEnd;
-                        }
-                    }
                     if (minSemiEnd > str && start <= minSemiEnd) {
                         // !goto end_buf;!
                         if (endBuf(start, range, minSemiEnd, maxSemiEnd)) return -1; // mismatch_no_msa;

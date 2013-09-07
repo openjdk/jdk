@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class SDDocumentImpl extends SDDocumentSource implements SDDocument {
     private static final QName SCHEMA_IMPORT_QNAME = new QName(NS_XSD, "import");
     private static final QName SCHEMA_REDEFINE_QNAME = new QName(NS_XSD, "redefine");
     private static final String VERSION_COMMENT =
-        " Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is "+RuntimeVersion.VERSION+". ";
+        " Published by JAX-WS RI (http://jax-ws.java.net). RI's version is "+RuntimeVersion.VERSION+". ";
 
     private final QName rootName;
     private final SDDocumentSource source;

@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -95,8 +96,17 @@ public final class NativeDate extends ScriptObject {
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
 
-    private static final InvokeByName TO_ISO_STRING = new InvokeByName("toISOString", ScriptObject.class, Object.class,
-            Object.class);
+    private static final Object TO_ISO_STRING = new Object();
+
+    private static InvokeByName getTO_ISO_STRING() {
+        return Global.instance().getInvokeByName(TO_ISO_STRING,
+                new Callable<InvokeByName>() {
+                    @Override
+                    public InvokeByName call() {
+                        return new InvokeByName("toISOString", ScriptObject.class, Object.class, Object.class);
+                    }
+                });
+    }
 
     private double time;
     private final TimeZone timezone;
@@ -861,9 +871,10 @@ public final class NativeDate extends ScriptObject {
         }
 
         try {
-            final Object func = TO_ISO_STRING.getGetter().invokeExact(sobj);
+            final InvokeByName toIsoString = getTO_ISO_STRING();
+            final Object func = toIsoString.getGetter().invokeExact(sobj);
             if (Bootstrap.isCallable(func)) {
-                return TO_ISO_STRING.getInvoker().invokeExact(func, sobj, key);
+                return toIsoString.getInvoker().invokeExact(func, sobj, key);
             }
             throw typeError("not.a.function", ScriptRuntime.safeToString(func));
         } catch (final RuntimeException | Error e) {

@@ -208,7 +208,7 @@ sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
 # jdk_io
 
 # 7160013
-java/io/File/MaxPathLength.java                                 windows-all
+#java/io/File/MaxPathLength.java                                 windows-all
 
 ############################################################################
 
@@ -335,12 +335,6 @@ com/sun/jdi/SuspendThreadTest.java                              generic-all
 
 # Filed 6653793
 com/sun/jdi/RedefineCrossEvent.java                             generic-all
-
-# Filed 6987312
-com/sun/jdi/DoubleAgentTest.java                                generic-all
-
-# Filed 7020857
-com/sun/jdi/FieldWatchpoints.java                               generic-all
 
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
