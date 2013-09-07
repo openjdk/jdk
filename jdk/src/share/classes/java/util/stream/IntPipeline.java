@@ -349,8 +349,8 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final IntStream peek(IntConsumer consumer) {
-        Objects.requireNonNull(consumer);
+    public final IntStream peek(IntConsumer action) {
+        Objects.requireNonNull(action);
         return new StatelessOp<Integer>(this, StreamShape.INT_VALUE,
                                         0) {
             @Override
@@ -358,7 +358,7 @@ abstract class IntPipeline<E_IN>
                 return new Sink.ChainedInt<Integer>(sink) {
                     @Override
                     public void accept(int t) {
-                        consumer.accept(t);
+                        action.accept(t);
                         downstream.accept(t);
                     }
                 };
@@ -473,14 +473,14 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> resultFactory,
+    public final <R> R collect(Supplier<R> supplier,
                                ObjIntConsumer<R> accumulator,
                                BiConsumer<R, R> combiner) {
         BinaryOperator<R> operator = (left, right) -> {
             combiner.accept(left, right);
             return left;
         };
-        return evaluate(ReduceOps.makeInt(resultFactory, accumulator, operator));
+        return evaluate(ReduceOps.makeInt(supplier, accumulator, operator));
     }
 
     @Override
