@@ -24,347 +24,484 @@
  */
 
 /**
- * <h1>java.util.stream</h1>
- *
- * Classes to support functional-style operations on streams of values, as in the following:
+ * Classes to support functional-style operations on streams of elements, such
+ * as map-reduce transformations on collections.  For example:
  *
  * <pre>{@code
- *     int sumOfWeights = blocks.stream().filter(b -> b.getColor() == RED)
- *                                       .mapToInt(b -> b.getWeight())
- *                                       .sum();
+ *     int sum = widgets.stream()
+ *                      .filter(b -> b.getColor() == RED)
+ *                      .mapToInt(b -> b.getWeight())
+ *                      .sum();
  * }</pre>
  *
- * <p>Here we use {@code blocks}, which might be a {@code Collection}, as a source for a stream,
- * and then perform a filter-map-reduce ({@code sum()} is an example of a <a href="package-summary.html#Reduction">reduction</a>
- * operation) on the stream to obtain the sum of the weights of the red blocks.
+ * <p>Here we use {@code widgets}, a {@code Collection<Widget>},
+ * as a source for a stream, and then perform a filter-map-reduce on the stream
+ * to obtain the sum of the weights of the red widgets.  (Summation is an
+ * example of a <a href="package-summary.html#Reduction">reduction</a>
+ * operation.)
  *
- * <p>The key abstraction used in this approach is {@link java.util.stream.Stream}, as well as its primitive
- * specializations {@link java.util.stream.IntStream}, {@link java.util.stream.LongStream},
- * and {@link java.util.stream.DoubleStream}.  Streams differ from Collections in several ways:
+ * <p>The key abstraction introduced in this package is <em>stream</em>.  The
+ * classes {@link java.util.stream.Stream}, {@link java.util.stream.IntStream},
+ * {@link java.util.stream.LongStream}, and {@link java.util.stream.DoubleStream}
+ * are streams over objects and the primitive {@code int}, {@code long} and
+ * {@code double} types.  Streams differ from collections in several ways:
  *
  * <ul>
- *     <li>No storage.  A stream is not a data structure that stores elements; instead, they
- *     carry values from a source (which could be a data structure, a generator, an IO channel, etc)
- *     through a pipeline of computational operations.</li>
- *     <li>Functional in nature.  An operation on a stream produces a result, but does not modify
- *     its underlying data source.  For example, filtering a {@code Stream} produces a new {@code Stream},
- *     rather than removing elements from the underlying source.</li>
- *     <li>Laziness-seeking.  Many stream operations, such as filtering, mapping, or duplicate removal,
- *     can be implemented lazily, exposing opportunities for optimization.  (For example, "find the first
- *     {@code String} matching a pattern" need not examine all the input strings.)  Stream operations
- *     are divided into intermediate ({@code Stream}-producing) operations and terminal (value-producing)
- *     operations; all intermediate operations are lazy.</li>
- *     <li>Possibly unbounded.  While collections have a finite size, streams need not.  Operations
- *     such as {@code limit(n)} or {@code findFirst()} can allow computations on infinite streams
- *     to complete in finite time.</li>
+ *     <li>No storage.  A stream is not a data structure that stores elements;
+ *     instead, it conveys elements from a source such as a data structure,
+ *     an array, a generator function, or an I/O channel, through a pipeline of
+ *     computational operations.</li>
+ *     <li>Functional in nature.  An operation on a stream produces a result,
+ *     but does not modify its source.  For example, filtering a {@code Stream}
+ *     obtained from a collection produces a new {@code Stream} without the
+ *     filtered elements, rather than removing elements from the source
+ *     collection.</li>
+ *     <li>Laziness-seeking.  Many stream operations, such as filtering, mapping,
+ *     or duplicate removal, can be implemented lazily, exposing opportunities
+ *     for optimization.  For example, "find the first {@code String} with
+ *     three consecutive vowels" need not examine all the input strings.
+ *     Stream operations are divided into intermediate ({@code Stream}-producing)
+ *     operations and terminal (value- or side-effect-producing) operations.
+ *     Intermediate operations are always lazy.</li>
+ *     <li>Possibly unbounded.  While collections have a finite size, streams
+ *     need not.  Short-circuting operations such as {@code limit(n)} or
+ *     {@code findFirst()} can allow computations on infinite streams to
+ *     complete in finite time.</li>
+ *     <li>Consumable. The elements of a stream are only visited once during
+ *     the life of a stream. Like an {@link java.util.Iterator}, a new stream
+ *     must be generated to revisit the same elements of the source.
+ *     </li>
  * </ul>
  *
- * <h2><a name="StreamPipelines">Stream pipelines</a></h2>
+ * Streams can be obtained in a number of ways. Some examples include:
+ * <ul>
+ *     <li>From a {@link java.util.Collection} via the {@code stream()} and
+ *     {@code parallelStream()} methods;</li>
+ *     <li>From an array via {@link java.util.Arrays#stream(Object[])};</li>
+ *     <li>From static factory methods on the stream classes, such as
+ *     {@link java.util.stream.Stream#of(Object[])},
+ *     {@link java.util.stream.IntStream#range(int, int)}
+ *     or {@link java.util.stream.Stream#iterate(Object, UnaryOperator)};</li>
+ *     <li>The lines of a file can be obtained from {@link java.io.BufferedReader#lines()};</li>
+ *     <li>Streams of file paths can be obtained from methods in {@link java.nio.file.Files};</li>
+ *     <li>Streams of random numbers can be obtained from {@link java.util.Random#ints()};</li>
+ *     <li>Numerous other stream-bearing methods in the JDK, including
+ *     {@link java.util.BitSet#stream()},
+ *     {@link java.util.regex.Pattern#splitAsStream(java.lang.CharSequence)},
+ *     and {@link java.util.jar.JarFile#stream()}.</li>
+ * </ul>
  *
- * <p>Streams are used to create <em>pipelines</em> of <a href="package-summary.html#StreamOps">operations</a>.  A
- * complete stream pipeline has several components: a source (which may be a {@code Collection},
- * an array, a generator function, or an IO channel); zero or more <em>intermediate operations</em>
- * such as {@code Stream.filter} or {@code Stream.map}; and a <em>terminal operation</em> such
- * as {@code Stream.forEach} or {@code java.util.stream.Stream.reduce}.  Stream operations may take as parameters
- * <em>function values</em> (which are often lambda expressions, but could be method references
- * or objects) which parameterize the behavior of the operation, such as a {@code Predicate}
- * passed to the {@code Stream#filter} method.
+ * <p>Additional stream sources can be provided by third-party libraries using
+ * <a href="package-summary.html#StreamSources">these techniques</a>.
  *
- * <p>Intermediate operations return a new {@code Stream}.  They are lazy; executing an
- * intermediate operation such as {@link java.util.stream.Stream#filter Stream.filter} does
- * not actually perform any filtering, instead creating a new {@code Stream} that, when
- * traversed, contains the elements of the initial {@code Stream} that match the
- * given {@code Predicate}.  Consuming elements from the  stream source does not
- * begin until the terminal operation is executed.
+ * <h2><a name="StreamOps">Stream operations and pipelines</a></h2>
  *
- * <p>Terminal operations consume the {@code Stream} and produce a result or a side-effect.
- * After a terminal operation is performed, the stream can no longer be used and you must
- * return to the data source, or select a new data source, to get a new stream. For example,
- * obtaining the sum of weights of all red blocks, and then of all blue blocks, requires a
- * filter-map-reduce on two different streams:
- * <pre>{@code
- *     int sumOfRedWeights  = blocks.stream().filter(b -> b.getColor() == RED)
- *                                           .mapToInt(b -> b.getWeight())
- *                                           .sum();
- *     int sumOfBlueWeights = blocks.stream().filter(b -> b.getColor() == BLUE)
- *                                           .mapToInt(b -> b.getWeight())
- *                                           .sum();
- * }</pre>
+ * <p>Stream <a href="package-summary.html#StreamOps">operations</a> are
+ * divided into <em>intermediate</em> and <em>terminal</em> operations, and are
+ * combined to form <em>stream pipelines</em>.  A stream pipeline consists of a
+ * source (such as a {@code Collection}, an array, a generator function, or an
+ * I/O channel); followed by zero or more intermediate operations such
+ * as {@code Stream.filter} or {@code Stream.map}; and a terminal
+ * operation such as {@code Stream.forEach} or {@code Stream.reduce}.
  *
- * <p>However, there are other techniques that allow you to obtain both results in a single
- * pass if multiple traversal is impractical or inefficient.  TODO provide link
+ * <p>Intermediate operations return a new stream.  They are always
+ * <em>lazy</em>; executing an intermediate operation such as
+ * {@code filter()} does not actually perform any filtering, but instead
+ * creates a new stream that, when traversed, contains the elements of
+ * the initial stream that match the given predicate.  Traversal
+ * of the pipeline source does not begin until the terminal operation of the
+ * pipeline is executed.
  *
- * <h3><a name="StreamOps">Stream operations</a></h3>
+ * <p>Terminal operations, such as {@code Stream.forEach} or
+ * {@code IntStream.sum}, may traverse the stream to produce a result or a
+ * side-effect. After the terminal operation is performed, the stream pipeline
+ * is considered consumed, and can no longer be used; if you need to traverse
+ * the same data source again, you must return to the data source to get a new
+ * stream.  In almost all cases, terminal operations are <em>eager</em>,
+ * completing their traversal of the data source and processing of the pipeline
+ * before returning.  Only the terminal operations {@code iterator()} and
+ * {@code spliterator()} are not; these are provided as an "escape hatch" to enable
+ * arbitrary client-controlled pipeline traversals in the event that the
+ * existing operations are not sufficient to the task.
  *
- * <p>Intermediate stream operation (such as {@code filter} or {@code sorted}) always produce a
- * new {@code Stream}, and are always<em>lazy</em>.  Executing a lazy operations does not
- * trigger processing of the stream contents; all processing is deferred until the terminal
- * operation commences.  Processing streams lazily allows for significant efficiencies; in a
- * pipeline such as the filter-map-sum example above, filtering, mapping, and addition can be
- * fused into a single pass, with minimal intermediate state.  Laziness also enables us to avoid
- * examining all the data when it is not necessary; for operations such as "find the first
- * string longer than 1000 characters", one need not examine all the input strings, just enough
- * to find one that has the desired characteristics.  (This behavior becomes even more important
- * when the input stream is infinite and not merely large.)
+ * <p> Processing streams lazily allows for significant efficiencies; in a
+ * pipeline such as the filter-map-sum example above, filtering, mapping, and
+ * summing can be fused into a single pass on the data, with minimal
+ * intermediate state. Laziness also allows avoiding examining all the data
+ * when it is not necessary; for operations such as "find the first string
+ * longer than 1000 characters", it is only necessary to examine just enough
+ * strings to find one that has the desired characteristics without examining
+ * all of the strings available from the source. (This behavior becomes even
+ * more important when the input stream is infinite and not merely large.)
  *
- * <p>Intermediate operations are further divided into <em>stateless</em> and <em>stateful</em>
- * operations.  Stateless operations retain no state from previously seen values when processing
- * a new value; examples of stateless intermediate operations include {@code filter} and
- * {@code map}.  Stateful operations may incorporate state from previously seen elements in
- * processing new values; examples of stateful intermediate operations include {@code distinct}
- * and {@code sorted}.  Stateful operations may need to process the entire input before
- * producing a result; for example, one cannot produce any results from sorting a stream until
- * one has seen all elements of the stream.  As a result, under parallel computation, some
- * pipelines containing stateful intermediate operations have to be executed in multiple passes.
- * Pipelines containing exclusively stateless intermediate operations can be processed in a
- * single pass, whether sequential or parallel.
+ * <p>Intermediate operations are further divided into <em>stateless</em>
+ * and <em>stateful</em> operations. Stateless operations, such as {@code filter}
+ * and {@code map}, retain no state from previously seen element when processing
+ * a new element -- each element can be processed
+ * independently of operations on other elements.  Stateful operations, such as
+ * {@code distinct} and {@code sorted}, may incorporate state from previously
+ * seen elements when processing new elements.
  *
- * <p>Further, some operations are deemed <em>short-circuiting</em> operations.  An intermediate
- * operation is short-circuiting if, when presented with infinite input, it may produce a
- * finite stream as a result.  A terminal operation is short-circuiting if, when presented with
- * infinite input, it may terminate in finite time.  (Having a short-circuiting operation is a
- * necessary, but not sufficient, condition for the processing of an infinite stream to
- * terminate normally in finite time.)
+ * <p>Stateful operations may need to process the entire input
+ * before producing a result.  For example, one cannot produce any results from
+ * sorting a stream until one has seen all elements of the stream.  As a result,
+ * under parallel computation, some pipelines containing stateful intermediate
+ * operations may require multiple passes on the data or may need to buffer
+ * significant data.  Pipelines containing exclusively stateless intermediate
+ * operations can be processed in a single pass, whether sequential or parallel,
+ * with minimal data buffering.
  *
- * Terminal operations (such as {@code forEach} or {@code findFirst}) are always eager
- * (they execute completely before returning), and produce a non-{@code Stream} result, such
- * as a primitive value or a {@code Collection}, or have side-effects.
+ * <p>Further, some operations are deemed <em>short-circuiting</em> operations.
+ * An intermediate operation is short-circuiting if, when presented with
+ * infinite input, it may produce a finite stream as a result.  A terminal
+ * operation is short-circuiting if, when presented with infinite input, it may
+ * terminate in finite time.  Having a short-circuiting operation in the pipeline
+ * is a necessary, but not sufficient, condition for the processing of an infinite
+ * stream to terminate normally in finite time.
  *
  * <h3>Parallelism</h3>
  *
- * <p>By recasting aggregate operations as a pipeline of operations on a stream of values, many
- * aggregate operations can be more easily parallelized.  A {@code Stream} can execute either
- * in serial or in parallel.  When streams are created, they are either created as sequential
- * or parallel streams; the parallel-ness of streams can also be switched by the
- * {@link java.util.stream Stream#sequential()} and {@link java.util.stream.Stream#parallel()}
- * operations.  The {@code Stream} implementations in the JDK create serial streams unless
- * parallelism is explicitly requested.  For example, {@code Collection} has methods
+ * <p>Processing elements with an explicit {@code for-}loop is inherently serial.
+ * Streams facilitate parallel execution by reframing the computation as a pipeline of
+ * aggregate operations, rather than as imperative operations on each individual
+ * element.  All streams operations can execute either in serial or in parallel.
+ * The stream implementations in the JDK create serial streams unless parallelism is
+ * explicitly requested.  For example, {@code Collection} has methods
  * {@link java.util.Collection#stream} and {@link java.util.Collection#parallelStream},
- * which produce sequential and parallel streams respectively; other stream-bearing methods
- * such as {@link java.util.stream.IntStream#range(int, int)} produce sequential
- * streams but these can be efficiently parallelized by calling {@code parallel()} on the
- * result. The set of operations on serial and parallel streams is identical. To execute the
- * "sum of weights of blocks" query in parallel, we would do:
+ * which produce sequential and parallel streams respectively; other
+ * stream-bearing methods such as {@link java.util.stream.IntStream#range(int, int)}
+ * produce sequential streams but these streams can be efficiently parallelized by
+ * invoking their {@link java.util.stream.BaseStream#parallel()} method.
+ * To execute the prior "sum of weights of widgets" query in parallel, we would
+ * do:
  *
  * <pre>{@code
- *     int sumOfWeights = blocks.parallelStream().filter(b -> b.getColor() == RED)
- *                                               .mapToInt(b -> b.getWeight())
- *                                               .sum();
+ *     int sumOfWeights = widgets.}<b>{@code parallelStream()}</b>{@code .filter(b -> b.getColor() == RED)
+ *                                                .mapToInt(b -> b.getWeight())
+ *                                                .sum();
  * }</pre>
  *
- * <p>The only difference between the serial and parallel versions of this example code is
- * the creation of the initial {@code Stream}.  Whether a {@code Stream} will execute in serial
- * or parallel can be determined by the {@code Stream#isParallel} method.  When the terminal
- * operation is initiated, the entire stream pipeline is either executed sequentially or in
- * parallel, determined by the last operation that affected the stream's serial-parallel
- * orientation (which could be the stream source, or the {@code sequential()} or
- * {@code parallel()} methods.)
+ * <p>The only difference between the serial and parallel versions of this
+ * example is the creation of the initial stream, using "{@code parallelStream()}"
+ * instead of "{@code stream()}".  When the terminal operation is initiated,
+ * the stream pipeline is executed sequentially or in parallel depending on the
+ * orientation of the stream on which it is invoked.  Whether a stream will execute in serial or
+ * parallel can be determined with the {@code isParallel()} method, and the
+ * orientation of a stream can be modified with the
+ * {@link java.util.stream.BaseStream#sequential()} and
+ * {@link java.util.stream.BaseStream#parallel()} operations.  When the terminal
+ * operation is initiated, the stream pipeline is executed sequentially or in
+ * parallel depending on the mode of the stream on which it is invoked.
  *
- * <p>In order for the results of parallel operations to be deterministic and consistent with
- * their serial equivalent, the function values passed into the various stream operations should
- * be <a href="#NonInteference"><em>stateless</em></a>.
+ * <p>Except for operations identified as explicitly nondeterministic, such
+ * as {@code findAny()}, whether a stream executes sequentially or in parallel
+ * should not change the result of the computation.
  *
- * <h3><a name="Ordering">Ordering</a></h3>
- *
- * <p>Streams may or may not have an <em>encounter order</em>.  An encounter
- * order specifies the order in which elements are provided by the stream to the
- * operations pipeline.  Whether or not there is an encounter order depends on
- * the source, the intermediate  operations, and the terminal operation.
- * Certain stream sources (such as {@code List} or arrays) are intrinsically
- * ordered, whereas others (such as {@code HashSet}) are not.  Some intermediate
- * operations may impose an encounter order on an otherwise unordered stream,
- * such as {@link java.util.stream.Stream#sorted()}, and others may render an
- * ordered stream unordered (such as {@link java.util.stream.Stream#unordered()}).
- * Some terminal operations may ignore encounter order, such as
- * {@link java.util.stream.Stream#forEach}.
- *
- * <p>If a Stream is ordered, most operations are constrained to operate on the
- * elements in their encounter order; if the source of a stream is a {@code List}
- * containing {@code [1, 2, 3]}, then the result of executing {@code map(x -> x*2)}
- * must be {@code [2, 4, 6]}.  However, if the source has no defined encounter
- * order, than any of the six permutations of the values {@code [2, 4, 6]} would
- * be a valid result. Many operations can still be efficiently parallelized even
- * under ordering constraints.
- *
- * <p>For sequential streams, ordering is only relevant to the determinism
- * of operations performed repeatedly on the same source.  (An {@code ArrayList}
- * is constrained to iterate elements in order; a {@code HashSet} is not, and
- * repeated iteration might produce a different order.)
- *
- * <p>For parallel streams, relaxing the ordering constraint can enable
- * optimized implementation for some operations.  For example, duplicate
- * filtration on an ordered stream must completely process the first partition
- * before it can return any elements from a subsequent partition, even if those
- * elements are available earlier.  On the other hand, without the constraint of
- * ordering, duplicate filtration can be done more efficiently by using
- * a shared {@code ConcurrentHashSet}.  There will be cases where the stream
- * is structurally ordered (the source is ordered and the intermediate
- * operations are order-preserving), but the user does not particularly care
- * about the encounter order.  In some cases, explicitly de-ordering the stream
- * with the {@link java.util.stream.Stream#unordered()} method may result in
- * improved parallel performance for some stateful or terminal operations.
+ * <p>Most stream operations accept parameters that describe user-specified
+ * behavior, which are often lambda expressions.  To preserve correct behavior,
+ * these <em>behavioral parameters</em> must be <em>non-interfering</em>, and in
+ * most cases must be <em>stateless</em>.  Such parameters are always instances
+ * of a <a href="../function/package-summary.html">functional interface</a> such
+ * as {@link java.util.function.Function}, and are often lambda expressions or
+ * method references.
  *
  * <h3><a name="Non-Interference">Non-interference</a></h3>
  *
- * The {@code java.util.stream} package enables you to execute possibly-parallel
- * bulk-data operations over a variety of data sources, including even non-thread-safe
- * collections such as {@code ArrayList}.  This is possible only if we can
- * prevent <em>interference</em> with the data source during the execution of a
- * stream pipeline.  (Execution begins when the terminal operation is invoked, and ends
- * when the terminal operation completes.)  For most data sources, preventing interference
- * means ensuring that the data source is <em>not modified at all</em> during the execution
- * of the stream pipeline.  (Some data sources, such as concurrent collections, are
- * specifically designed to handle concurrent modification.)
+ * Streams enable you to execute possibly-parallel aggregate operations over a
+ * variety of data sources, including even non-thread-safe collections such as
+ * {@code ArrayList}. This is possible only if we can prevent
+ * <em>interference</em> with the data source during the execution of a stream
+ * pipeline.  Except for the escape-hatch operations {@code iterator()} and
+ * {@code spliterator()}, execution begins when the terminal operation is
+ * invoked, and ends when the terminal operation completes.  For most data
+ * sources, preventing interference means ensuring that the data source is
+ * <em>not modified at all</em> during the execution of the stream pipeline.
+ * The notable exception to this are streams whose sources are concurrent
+ * collections, which are specifically designed to handle concurrent modification.
  *
- * <p>Accordingly, lambda expressions (or other objects implementing the appropriate functional
- * interface) passed to stream methods should never modify the stream's data source.  An
- * implementation is said to <em>interfere</em> with the data source if it modifies, or causes
- * to be modified, the stream's data source.  The need for non-interference applies to all
- * pipelines, not just parallel ones.  Unless the stream source is concurrent, modifying a
- * stream's data source during execution of a stream pipeline can cause exceptions, incorrect
- * answers, or nonconformant results.
+ * <p>Accordingly, behavioral parameters passed to stream methods should never
+ * modify the stream's data source.  An implementation is said to
+ * <em>interfere</em> with the data source if it modifies, or causes to be
+ * modified, the stream's data source.  The need for non-interference applies
+ * to all pipelines, not just parallel ones.  Unless the stream source is
+ * concurrent, modifying a stream's data source during execution of a stream
+ * pipeline can cause exceptions, incorrect answers, or nonconformant behavior.
  *
- * <p>Further, results may be nondeterministic or incorrect if the lambda expressions passed to
- * stream operations are <em>stateful</em>.  A stateful lambda (or other object implementing the
- * appropriate functional interface) is one whose result depends on any state which might change
- * during the execution of the stream pipeline.  An example of a stateful lambda is:
+ * <p>Results may be nondeterministic or incorrect if the behavioral
+ * parameters of stream operations are <em>stateful</em>.  A stateful lambda
+ * (or other object implementing the appropriate functional interface) is one
+ * whose result depends on any state which might change during the execution
+ * of the stream pipeline.  An example of a stateful lambda is:
+ *
  * <pre>{@code
  *     Set<Integer> seen = Collections.synchronizedSet(new HashSet<>());
  *     stream.parallel().map(e -> { if (seen.add(e)) return 0; else return e; })...
  * }</pre>
- * Here, if the mapping operation is performed in parallel, the results for the same input
- * could vary from run to run, due to thread scheduling differences, whereas, with a stateless
- * lambda expression the results would always be the same.
+ *
+ * Here, if the mapping operation is performed in parallel, the results for the
+ * same input could vary from run to run, due to thread scheduling differences,
+ * whereas, with a stateless lambda expression the results would always be the
+ * same.
+ *
+ * For well-behaved stream sources, the source can be modified before the
+ * terminal operation commences and those modifications will be reflected in
+ * the covered elements.  For example, consider the following code:
+ *
+ * <pre>{@code
+ *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
+ *     Stream<String> sl = l.stream();
+ *     l.add("three");
+ *     String s = sl.collect(joining(" "));
+ * }</pre>
+ *
+ * First a list is created consisting of two strings: "one"; and "two". Then a
+ * stream is created from that list. Next the list is modified by adding a third
+ * string: "three". Finally the elements of the stream are collected and joined
+ * together. Since the list was modified before the terminal {@code collect}
+ * operation commenced the result will be a string of "one two three". All the
+ * streams returned from JDK collections, and most other JDK classes,
+ * are well-behaved in this manner; for streams generated by other libraries, see
+ * <a href="package-summary.html#StreamSources">Low-level stream
+ * construction</a> for requirements for building well-behaved streams.
+ *
+ * <p>Some streams, particularly those whose stream sources are concurrent, can
+ * tolerate concurrent modification during execution of a stream pipeline.
+ * However, in no case -- even if the stream source is concurrent -- should
+ * behavioral parameters to stream operations modify the stream source.  Modifying
+ * the stream source from within the stream source may cause pipeline execution
+ * to fail to terminate, produce inaccurate results, or throw exceptions.
+ * The following example shows inappropriate interference with the source:
+ * <pre>{@code
+ *     // Don't do this!
+ *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
+ *     Stream<String> sl = l.stream();
+ *     String s = sl.peek(s -> l.add("BAD LAMBDA")).collect(joining(" "));
+ * }</pre>
  *
  * <h3>Side-effects</h3>
  *
+ * Side-effects in behavioral parameters to stream operations are, in general,
+ * discouraged, as they can often lead to unwitting violations of the
+ * statelessness requirement, as well as other thread-safety hazards.  Many
+ * computations where one might be tempted to use side effects can be more
+ * safely and efficiently expressed without side-effects, such as using
+ * <a href="package-summary.html#Reduction">reduction</a> instead of mutable
+ * accumulators. However, side-effects such as using {@code println()} for debugging
+ * purposes are usually harmless.  A small number of stream operations, such as
+ * {@code forEach()} and {@code peek()}, can operate only via side-effects;
+ * these should be used with care.
+ *
+ * <p>As an example of how to transform a stream pipeline that inappropriately
+ * uses side-effects to one that does not, the following code searches a stream
+ * of strings for those matching a given regular expression, and puts the
+ * matches in a list.
+ *
+ * <pre>{@code
+ *     ArrayList<String> results = new ArrayList<>();
+ *     stream.filter(s -> pattern.matcher(s).matches())
+ *           .forEach(s -> results.add(s));  // Unnecessary use of side-effects!
+ * }</pre>
+ *
+ * This code unnecessarily uses side-effects.  If executed in parallel, the
+ * non-thread-safety of {@code ArrayList} would cause incorrect results, and
+ * adding needed synchronization would cause contention, undermining the
+ * benefit of parallelism.  Furthermore, using side-effects here is completely
+ * unnecessary; the {@code forEach()} can simply be replaced with a reduction
+ * operation that is safer, more efficient, and more amenable to
+ * parallelization:
+ *
+ * <pre>{@code
+ *     List<String>results =
+ *         stream.filter(s -> pattern.matcher(s).matches())
+ *               .collect(Collectors.toList());  // No side-effects!
+ * }</pre>
+ *
+ * <h3><a name="Ordering">Ordering</a></h3>
+ *
+ * <p>Streams may or may not have a defined <em>encounter order</em>.  Whether
+ * or not a stream has an encounter order depends on the source and the
+ * intermediate operations.  Certain stream sources (such as {@code List} or
+ * arrays) are intrinsically ordered, whereas others (such as {@code HashSet})
+ * are not.  Some intermediate operations, such as {@code sorted()}, may impose
+ * an encounter order on an otherwise unordered stream, and others may render an
+ * ordered stream unordered, such as {@link java.util.stream.BaseStream#unordered()}.
+ * Further, some terminal operations may ignore encounter order, such as
+ * {@code forEach()}.
+ *
+ * <p>If a stream is ordered, most operations are constrained to operate on the
+ * elements in their encounter order; if the source of a stream is a {@code List}
+ * containing {@code [1, 2, 3]}, then the result of executing {@code map(x -> x*2)}
+ * must be {@code [2, 4, 6]}.  However, if the source has no defined encounter
+ * order, then any permutation of the values {@code [2, 4, 6]} would be a valid
+ * result.
+ *
+ * <p>For sequential streams, the presence or absence of an encounter order does
+ * not affect performance, only determinism.  If a stream is ordered, repeated
+ * execution of identical stream pipelines on an identical source will produce
+ * an identical result; if it is not ordered, repeated execution might produce
+ * different results.
+ *
+ * <p>For parallel streams, relaxing the ordering constraint can sometimes enable
+ * more efficient execution.  Certain aggregate operations,
+ * such as filtering duplicates ({@code distinct()}) or grouped reductions
+ * ({@code Collectors.groupingBy()}) can be implemented more efficiently if ordering of elements
+ * is not relevant.  Similarly, operations that are intrinsically tied to encounter order,
+ * such as {@code limit()}, may require
+ * buffering to ensure proper ordering, undermining the benefit of parallelism.
+ * In cases where the stream has an encounter order, but the user does not
+ * particularly <em>care</em> about that encounter order, explicitly de-ordering
+ * the stream with {@link java.util.stream.BaseStream#unordered() unordered()} may
+ * improve parallel performance for some stateful or terminal operations.
+ * However, most stream pipelines, such as the "sum of weight of blocks" example
+ * above, still parallelize efficiently even under ordering constraints.
+ *
  * <h2><a name="Reduction">Reduction operations</a></h2>
  *
- * A <em>reduction</em> operation takes a stream of elements and processes them in a way
- * that reduces to a single value or summary description, such as finding the sum or maximum
- * of a set of numbers.  (In more complex scenarios, the reduction operation might need to
- * extract data from the elements before reducing that data to a single value, such as
- * finding the sum of weights of a set of blocks.  This would require extracting the weight
- * from each block before summing up the weights.)
+ * A <em>reduction</em> operation (also called a <em>fold</em>) takes a sequence
+ * of input elements and combines them into a single summary result by repeated
+ * application of a combining operation, such as finding the sum or maximum of
+ * a set of numbers, or accumulating elements into a list.  The streams classes have
+ * multiple forms of general reduction operations, called
+ * {@link java.util.stream.Stream#reduce(java.util.function.BinaryOperator) reduce()}
+ * and {@link java.util.stream.Stream#collect(java.util.stream.Collector) collect()},
+ * as well as multiple specialized reduction forms such as
+ * {@link java.util.stream.IntStream#sum() sum()}, {@link java.util.stream.IntStream#max() max()},
+ * or {@link java.util.stream.IntStream#count() count()}.
  *
- * <p>Of course, such operations can be readily implemented as simple sequential loops, as in:
+ * <p>Of course, such operations can be readily implemented as simple sequential
+ * loops, as in:
  * <pre>{@code
  *    int sum = 0;
  *    for (int x : numbers) {
  *       sum += x;
  *    }
  * }</pre>
- * However, there may be a significant advantage to preferring a {@link java.util.stream.Stream#reduce reduce operation}
- * over a mutative accumulation such as the above -- a properly constructed reduce operation is
- * inherently parallelizable so long as the
- * {@link java.util.function.BinaryOperator reduction operaterator}
- * has the right characteristics. Specifically the operator must be
- * <a href="#Associativity">associative</a>.  For example, given a
- * stream of numbers for which we want to find the sum, we can write:
+ * However, there are good reasons to prefer a reduce operation
+ * over a mutative accumulation such as the above.  Not only is a reduction
+ * "more abstract" -- it operates on the stream as a whole rather than individual
+ * elements -- but a properly constructed reduce operation is inherently
+ * parallelizable, so long as the function(s) used to process the elements
+ * are <a href="package-summary.html#Associativity">associative</a> and
+ * <a href="package-summary.html#NonInterfering">stateless</a>.
+ * For example, given a stream of numbers for which we want to find the sum, we
+ * can write:
  * <pre>{@code
- *    int sum = numbers.reduce(0, (x,y) -> x+y);
+ *    int sum = numbers.stream().reduce(0, (x,y) -> x+y);
  * }</pre>
- * or more succinctly:
+ * or:
  * <pre>{@code
- *    int sum = numbers.reduce(0, Integer::sum);
- * }</pre>
- *
- * <p>(The primitive specializations of {@link java.util.stream.Stream}, such as
- * {@link java.util.stream.IntStream}, even have convenience methods for common reductions,
- * such as {@link java.util.stream.IntStream#sum() sum} and {@link java.util.stream.IntStream#max() max},
- * which are implemented as simple wrappers around reduce.)
- *
- * <p>Reduction parallellizes well since the implementation of {@code reduce} can operate on
- * subsets of the stream in parallel, and then combine the intermediate results to get the final
- * correct answer.  Even if you were to use a parallelizable form of the
- * {@link java.util.stream.Stream#forEach(Consumer) forEach()} method
- * in place of the original for-each loop above, you would still have to provide thread-safe
- * updates to the shared accumulating variable {@code sum}, and the required synchronization
- * would likely eliminate any performance gain from parallelism. Using a {@code reduce} method
- * instead removes all of the burden of parallelizing the reduction operation, and the library
- * can provide an efficient parallel implementation with no additional synchronization needed.
- *
- * <p>The "blocks" examples shown earlier shows how reduction combines with other operations
- * to replace for loops with bulk operations.  If {@code blocks} is a collection of {@code Block}
- * objects, which have a {@code getWeight} method, we can find the heaviest block with:
- * <pre>{@code
- *     OptionalInt heaviest = blocks.stream()
- *                                  .mapToInt(Block::getWeight)
- *                                  .reduce(Integer::max);
+ *    int sum = numbers.stream().reduce(0, Integer::sum);
  * }</pre>
  *
- * <p>In its more general form, a {@code reduce} operation on elements of type {@code <T>}
- * yielding a result of type {@code <U>} requires three parameters:
+ * <p>These reduction operations can run safely in parallel with almost no
+ * modification:
+ * <pre>{@code
+ *    int sum = numbers.parallelStream().reduce(0, Integer::sum);
+ * }</pre>
+ *
+ * <p>Reduction parallellizes well because the implementation
+ * can operate on subsets of the data in parallel, and then combine the
+ * intermediate results to get the final correct answer.  (Even if the language
+ * had a "parallel for-each" construct, the mutative accumulation approach would
+ * still required the developer to provide
+ * thread-safe updates to the shared accumulating variable {@code sum}, and
+ * the required synchronization would then likely eliminate any performance gain from
+ * parallelism.)  Using {@code reduce()} instead removes all of the
+ * burden of parallelizing the reduction operation, and the library can provide
+ * an efficient parallel implementation with no additional synchronization
+ * required.
+ *
+ * <p>The "widgets" examples shown earlier shows how reduction combines with
+ * other operations to replace for loops with bulk operations.  If {@code widgets}
+ * is a collection of {@code Widget} objects, which have a {@code getWeight} method,
+ * we can find the heaviest widget with:
+ * <pre>{@code
+ *     OptionalInt heaviest = widgets.parallelStream()
+ *                                   .mapToInt(Widget::getWeight)
+ *                                   .max();
+ * }</pre>
+ *
+ * <p>In its more general form, a {@code reduce} operation on elements of type
+ * {@code <T>} yielding a result of type {@code <U>} requires three parameters:
  * <pre>{@code
  * <U> U reduce(U identity,
- *              BiFunction<U, ? super T, U> accumlator,
+ *              BiFunction<U, ? super T, U> accumulator,
  *              BinaryOperator<U> combiner);
  * }</pre>
- * Here, the <em>identity</em> element is both an initial seed for the reduction, and a default
- * result if there are no elements. The <em>accumulator</em> function takes a partial result and
- * the next element, and produce a new partial result. The <em>combiner</em> function combines
- * the partial results of two accumulators to produce a new partial result, and eventually the
- * final result.
+ * Here, the <em>identity</em> element is both an initial seed value for the reduction
+ * and a default result if there are no input elements. The <em>accumulator</em>
+ * function takes a partial result and the next element, and produces a new
+ * partial result. The <em>combiner</em> function combines two partial results
+ * to produce a new partial result.  (The combiner is necessary in parallel
+ * reductions, where the input is partitioned, a partial accumulation computed
+ * for each partition, and then the partial results are combined to produce a
+ * final result.)
  *
- * <p>This form is a generalization of the two-argument form, and is also a generalization of
- * the map-reduce construct illustrated above.  If we wanted to re-cast the simple {@code sum}
- * example using the more general form, {@code 0} would be the identity element, while
- * {@code Integer::sum} would be both the accumulator and combiner. For the sum-of-weights
- * example, this could be re-cast as:
+ * <p>More formally, the {@code identity} value must be an <em>identity</em> for
+ * the combiner function. This means that for all {@code u},
+ * {@code combiner.apply(identity, u)} is equal to {@code u}. Additionally, the
+ * {@code combiner} function must be <a href="package-summary.html#Associativity">associative</a> and
+ * must be compatible with the {@code accumulator} function: for all {@code u}
+ * and {@code t}, {@code combiner.apply(u, accumulator.apply(identity, t))} must
+ * be {@code equals()} to {@code accumulator.apply(u, t)}.
+ *
+ * <p>The three-argument form is a generalization of the two-argument form,
+ * incorporating a mapping step into the accumulation step.  We could
+ * re-cast the simple sum-of-weights example using the more general form as
+ * follows:
  * <pre>{@code
- *     int sumOfWeights = blocks.stream().reduce(0,
- *                                               (sum, b) -> sum + b.getWeight())
- *                                               Integer::sum);
+ *     int sumOfWeights = widgets.stream()
+ *                               .reduce(0,
+ *                                       (sum, b) -> sum + b.getWeight())
+ *                                       Integer::sum);
  * }</pre>
- * though the map-reduce form is more readable and generally preferable.  The generalized form
- * is provided for cases where significant work can be optimized away by combining mapping and
- * reducing into a single function.
+ * though the explicit map-reduce form is more readable and therefore should
+ * usually be preferred. The generalized form is provided for cases where
+ * significant work can be optimized away by combining mapping and reducing
+ * into a single function.
  *
- * <p>More formally, the {@code identity} value must be an <em>identity</em> for the combiner
- * function. This means that for all {@code u}, {@code combiner.apply(identity, u)} is equal
- * to {@code u}. Additionally, the {@code combiner} function must be
- * <a href="#Associativity">associative</a> and must be compatible with the {@code accumulator}
- * function; for all {@code u} and {@code t}, the following must hold:
- * <pre>{@code
- *     combiner.apply(u, accumulator.apply(identity, t)) == accumulator.apply(u, t)
- * }</pre>
+ * <h3><a name="MutableReduction">Mutable reduction</a></h3>
  *
- * <h3><a name="MutableReduction">Mutable Reduction</a></h3>
- *
- * A <em>mutable</em> reduction operation is similar to an ordinary reduction, in that it reduces
- * a stream of values to a single value, but instead of producing a distinct single-valued result, it
- * mutates a general <em>result container</em>, such as a {@code Collection} or {@code StringBuilder},
+ * A <em>mutable reduction operation</em> accumulates input elements into a
+ * mutable result container, such as a {@code Collection} or {@code StringBuilder},
  * as it processes the elements in the stream.
  *
- * <p>For example, if we wanted to take a stream of strings and concatenate them into a single
- * long string, we <em>could</em> achieve this with ordinary reduction:
+ * <p>If we wanted to take a stream of strings and concatenate them into a
+ * single long string, we <em>could</em> achieve this with ordinary reduction:
  * <pre>{@code
  *     String concatenated = strings.reduce("", String::concat)
  * }</pre>
  *
- * We would get the desired result, and it would even work in parallel.  However, we might not
- * be happy about the performance!  Such an implementation would do a great deal of string
- * copying, and the run time would be <em>O(n^2)</em> in the number of elements.  A more
- * performant approach would be to accumulate the results into a {@link java.lang.StringBuilder}, which
- * is a mutable container for accumulating strings.  We can use the same technique to
+ * <p>We would get the desired result, and it would even work in parallel.  However,
+ * we might not be happy about the performance!  Such an implementation would do
+ * a great deal of string copying, and the run time would be <em>O(n^2)</em> in
+ * the number of characters.  A more performant approach would be to accumulate
+ * the results into a {@link java.lang.StringBuilder}, which is a mutable
+ * container for accumulating strings.  We can use the same technique to
  * parallelize mutable reduction as we do with ordinary reduction.
  *
- * <p>The mutable reduction operation is called {@link java.util.stream.Stream#collect(Collector) collect()}, as it
- * collects together the desired results into a result container such as {@code StringBuilder}.
- * A {@code collect} operation requires three things: a factory function which will construct
- * new instances of the result container, an accumulating function that will update a result
- * container by incorporating a new element, and a combining function that can take two
- * result containers and merge their contents.  The form of this is very similar to the general
+ * <p>The mutable reduction operation is called
+ * {@link java.util.stream.Stream#collect(Collector) collect()},
+ * as it collects together the desired results into a result container such
+ * as a {@code Collection}.
+ * A {@code collect} operation requires three functions:
+ * a factory function to construct new instances of the result container, an
+ * accumulator function to incorporate an input element into a result
+ * container, and a combining function to merge the contents of one result
+ * container into another.  The form of this is very similar to the general
  * form of ordinary reduction:
  * <pre>{@code
  * <R> R collect(Supplier<R> resultFactory,
  *               BiConsumer<R, ? super T> accumulator,
  *               BiConsumer<R, R> combiner);
  * }</pre>
- * As with {@code reduce()}, the benefit of expressing {@code collect} in this abstract way is
- * that it is directly amenable to parallelization: we can accumulate partial results in parallel
- * and then combine them.  For example, to collect the String representations of the elements
- * in a stream into an {@code ArrayList}, we could write the obvious sequential for-each form:
+ * <p>As with {@code reduce()}, a benefit of expressing {@code collect} in this
+ * abstract way is that it is directly amenable to parallelization: we can
+ * accumulate partial results in parallel and then combine them, so long as the
+ * accumulation and combining functions satisfy the appropriate requirements.
+ * For example, to collect the String representations of the elements in a
+ * stream into an {@code ArrayList}, we could write the obvious sequential
+ * for-each form:
  * <pre>{@code
  *     ArrayList<String> strings = new ArrayList<>();
  *     for (T element : stream) {
@@ -377,92 +514,107 @@
  *                                                (c, e) -> c.add(e.toString()),
  *                                                (c1, c2) -> c1.addAll(c2));
  * }</pre>
- * or, noting that we have buried a mapping operation inside the accumulator function, more
- * succinctly as:
+ * or, pulling the mapping operation out of the accumulator function, we could
+ * express it more succinctly as:
  * <pre>{@code
- *     ArrayList<String> strings = stream.map(Object::toString)
- *                                       .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+ *     List<String> strings = stream.map(Object::toString)
+ *                                  .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
  * }</pre>
- * Here, our supplier is just the {@link java.util.ArrayList#ArrayList() ArrayList constructor}, the
- * accumulator adds the stringified element to an {@code ArrayList}, and the combiner simply
- * uses {@link java.util.ArrayList#addAll addAll} to copy the strings from one container into the other.
+ * Here, our supplier is just the {@link java.util.ArrayList#ArrayList()
+ * ArrayList constructor}, the accumulator adds the stringified element to an
+ * {@code ArrayList}, and the combiner simply uses {@link java.util.ArrayList#addAll addAll}
+ * to copy the strings from one container into the other.
  *
- * <p>As with the regular reduction operation, the ability to parallelize only comes if an
- * <a href="package-summary.html#Associativity">associativity</a> condition is met. The {@code combiner} is associative
- * if for result containers {@code r1}, {@code r2}, and {@code r3}:
+ * <p> The three aspects of {@code collect} -- supplier, accumulator, and combiner --
+ * are tightly coupled.  We can use the abstraction of
+ * of a {@link java.util.stream.Collector} to capture all three aspects.
+ * The above example for collecting strings into a {@code List} can be rewritten
+ * using a standard {@code Collector} as:
  * <pre>{@code
- *    combiner.accept(r1, r2);
- *    combiner.accept(r1, r3);
- * }</pre>
- * is equivalent to
- * <pre>{@code
- *    combiner.accept(r2, r3);
- *    combiner.accept(r1, r2);
- * }</pre>
- * where equivalence means that {@code r1} is left in the same state (according to the meaning
- * of {@link java.lang.Object#equals equals} for the element types). Similarly, the {@code resultFactory}
- * must act as an <em>identity</em> with respect to the {@code combiner} so that for any result
- * container {@code r}:
- * <pre>{@code
- *     combiner.accept(r, resultFactory.get());
- * }</pre>
- * does not modify the state of {@code r} (again according to the meaning of
- * {@link java.lang.Object#equals equals}). Finally, the {@code accumulator} and {@code combiner} must be
- * compatible such that for a result container {@code r} and element {@code t}:
- * <pre>{@code
- *    r2 = resultFactory.get();
- *    accumulator.accept(r2, t);
- *    combiner.accept(r, r2);
- * }</pre>
- * is equivalent to:
- * <pre>{@code
- *    accumulator.accept(r,t);
- * }</pre>
- * where equivalence means that {@code r} is left in the same state (again according to the
- * meaning of {@link java.lang.Object#equals equals}).
- *
- * <p> The three aspects of {@code collect}: supplier, accumulator, and combiner, are often very
- * tightly coupled, and it is convenient to introduce the notion of a {@link java.util.stream.Collector} as
- * being an object that embodies all three aspects. There is a {@link java.util.stream.Stream#collect(Collector) collect}
- * method that simply takes a {@code Collector} and returns the resulting container.
- * The above example for collecting strings into a {@code List} can be rewritten using a
- * standard {@code Collector} as:
- * <pre>{@code
- *     ArrayList<String> strings = stream.map(Object::toString)
- *                                       .collect(Collectors.toList());
+ *     List<String> strings = stream.map(Object::toString)
+ *                                  .collect(Collectors.toList());
  * }</pre>
  *
- * <h3><a name="ConcurrentReduction">Reduction, Concurrency, and Ordering</a></h3>
+ * <p>Packaging mutable reductions into a Collector has another advantage:
+ * composability.  The class {@link java.util.stream.Collectors} contains a
+ * number of predefined factories for collectors, including combinators
+ * that transform one collector into another.  For example, suppose we have a
+ * collector that computes the sum of the salaries of a stream of
+ * employees, as follows:
  *
- * With some complex reduction operations, for example a collect that produces a
- * {@code Map}, such as:
+ * <pre>{@code
+ *     Collector<Employee, ?, Integer> summingSalaries
+ *         = Collectors.summingInt(Employee::getSalary);
+ * } </pre>
+ *
+ * (The {@code ?} for the second type parameter merely indicates that we don't
+ * care about the intermediate representation used by this collector.)
+ * If we wanted to create a collector to tabulate the sum of salaries by
+ * department, we could reuse {@code summingSalaries} using
+ * {@link java.util.stream.Collectors#groupingBy(java.util.function.Function, java.util.stream.Collector) groupingBy}:
+ *
+ * <pre>{@code
+ *     Map<Department, Integer> salariesByDept
+ *         = employees.stream().collect(Collectors.groupingBy(Employee::getDepartment,
+ *                                                            summingSalaries));
+ * } </pre>
+ *
+ * <p>As with the regular reduction operation, {@code collect()} operations can
+ * only be parallelized if appropriate conditions are met.  For any partially accumulated result,
+ * combining it with an empty result container must produce an equivalent
+ * result.  That is, for a partially accumulated result {@code p} that is the
+ * result of any series of accumulator and combiner invocations, {@code p} must
+ * be equivalent to {@code combiner.apply(p, supplier.get())}.
+ *
+ * <p>Further, however the computation is split, it must produce an equivalent
+ * result.  For any input elements {@code t1} and {@code t2}, the results
+ * {@code r1} and {@code r2} in the computation below must be equivalent:
+ * <pre>{@code
+ *     A a1 = supplier.get();
+ *     accumulator.accept(a1, t1);
+ *     accumulator.accept(a1, t2);
+ *     R r1 = finisher.apply(a1);  // result without splitting
+ *
+ *     A a2 = supplier.get();
+ *     accumulator.accept(a2, t1);
+ *     A a3 = supplier.get();
+ *     accumulator.accept(a3, t2);
+ *     R r2 = finisher.apply(combiner.apply(a2, a3));  // result with splitting
+ * } </pre>
+ *
+ * <p>Here, equivalence generally means according to {@link java.lang.Object#equals(Object)}.
+ * but in some cases equivalence may be relaxed to account for differences in
+ * order.
+ *
+ * <h3><a name="ConcurrentReduction">Reduction, concurrency, and ordering</a></h3>
+ *
+ * With some complex reduction operations, for example a {@code collect()} that
+ * produces a {@code Map}, such as:
  * <pre>{@code
  *     Map<Buyer, List<Transaction>> salesByBuyer
  *         = txns.parallelStream()
  *               .collect(Collectors.groupingBy(Transaction::getBuyer));
  * }</pre>
- * (where {@link java.util.stream.Collectors#groupingBy} is a utility function
- * that returns a {@link java.util.stream.Collector} for grouping sets of elements based on some key)
  * it may actually be counterproductive to perform the operation in parallel.
  * This is because the combining step (merging one {@code Map} into another by key)
  * can be expensive for some {@code Map} implementations.
  *
  * <p>Suppose, however, that the result container used in this reduction
  * was a concurrently modifiable collection -- such as a
- * {@link java.util.concurrent.ConcurrentHashMap ConcurrentHashMap}. In that case,
- * the parallel invocations of the accumulator could actually deposit their results
- * concurrently into the same shared result container, eliminating the need for the combiner to
- * merge distinct result containers. This potentially provides a boost
- * to the parallel execution performance. We call this a <em>concurrent</em> reduction.
+ * {@link java.util.concurrent.ConcurrentHashMap}. In that case, the parallel
+ * invocations of the accumulator could actually deposit their results
+ * concurrently into the same shared result container, eliminating the need for
+ * the combiner to merge distinct result containers. This potentially provides
+ * a boost to the parallel execution performance. We call this a <em>concurrent</em>
+ * reduction.
  *
- * <p>A {@link java.util.stream.Collector} that supports concurrent reduction is marked with the
- * {@link java.util.stream.Collector.Characteristics#CONCURRENT} characteristic.
- * Having a concurrent collector is a necessary condition for performing a
- * concurrent reduction, but that alone is not sufficient. If you imagine multiple
- * accumulators depositing results into a shared container, the order in which
- * results are deposited is non-deterministic. Consequently, a concurrent reduction
- * is only possible if ordering is not important for the stream being processed.
- * The {@link java.util.stream.Stream#collect(Collector)}
+ * <p>A {@link java.util.stream.Collector} that supports concurrent reduction is
+ * marked with the {@link java.util.stream.Collector.Characteristics#CONCURRENT}
+ * characteristic.  However, a concurrent collection also has a downside.  If
+ * multiple threads are depositing results concurrently into a shared container,
+ * the order in which results are deposited is non-deterministic. Consequently,
+ * a concurrent reduction is only possible if ordering is not important for the
+ * stream being processed. The {@link java.util.stream.Stream#collect(Collector)}
  * implementation will only perform a concurrent reduction if
  * <ul>
  * <li>The stream is parallel;</li>
@@ -472,15 +624,16 @@
  * <li>Either the stream is unordered, or the collector has the
  * {@link java.util.stream.Collector.Characteristics#UNORDERED} characteristic.
  * </ul>
- * For example:
+ * You can ensure the stream is unordered by using the
+ * {@link java.util.stream.BaseStream#unordered()} method.  For example:
  * <pre>{@code
  *     Map<Buyer, List<Transaction>> salesByBuyer
  *         = txns.parallelStream()
  *               .unordered()
  *               .collect(groupingByConcurrent(Transaction::getBuyer));
  * }</pre>
- * (where {@link java.util.stream.Collectors#groupingByConcurrent} is the concurrent companion
- * to {@code groupingBy}).
+ * (where {@link java.util.stream.Collectors#groupingByConcurrent} is the
+ * concurrent equivalent of {@code groupingBy}).
  *
  * <p>Note that if it is important that the elements for a given key appear in the
  * order they appear in the source, then we cannot use a concurrent reduction,
@@ -488,79 +641,77 @@
  * be constrained to implement either a sequential reduction or a merge-based
  * parallel reduction.
  *
- * <h2><a name="Associativity">Associativity</a></h2>
+ * <h3><a name="Associativity">Associativity</a></h3>
  *
- * An operator or function {@code op} is <em>associative</em> if the following holds:
+ * An operator or function {@code op} is <em>associative</em> if the following
+ * holds:
  * <pre>{@code
  *     (a op b) op c == a op (b op c)
  * }</pre>
- * The importance of this to parallel evaluation can be seen if we expand this to four terms:
+ * The importance of this to parallel evaluation can be seen if we expand this
+ * to four terms:
  * <pre>{@code
  *     a op b op c op d == (a op b) op (c op d)
  * }</pre>
- * So we can evaluate {@code (a op b)} in parallel with {@code (c op d)} and then invoke {@code op} on
- * the results.
- * TODO what does associative mean for mutative combining functions?
- * FIXME: we described mutative associativity above.
+ * So we can evaluate {@code (a op b)} in parallel with {@code (c op d)}, and
+ * then invoke {@code op} on the results.
  *
- * <h2><a name="StreamSources">Stream sources</a></h2>
- * TODO where does this section go?
+ * <p>Examples of associative operations include numeric addition, min, and max,
+ * and string concatenation.
  *
- * XXX - change to section to stream construction gradually introducing more
- *       complex ways to construct
- *     - construction from Collection
- *     - construction from Iterator
- *     - construction from array
- *     - construction from generators
- *     - construction from spliterator
+ * <h2><a name="StreamSources">Low-level stream construction</a></h2>
  *
- * XXX - the following is quite low-level but important aspect of stream constriction
+ * So far, all the stream examples have used methods like
+ * {@link java.util.Collection#stream()} or {@link java.util.Arrays#stream(Object[])}
+ * to obtain a stream.  How are those stream-bearing methods implemented?
  *
- * <p>A pipeline is initially constructed from a spliterator (see {@link java.util.Spliterator}) supplied by a stream source.
- * The spliterator covers elements of the source and provides element traversal operations
- * for a possibly-parallel computation.  See methods on {@link java.util.stream.Streams} for construction
- * of pipelines using spliterators.
+ * <p>The class {@link java.util.stream.StreamSupport} has a number of low-level
+ * methods for creating a stream, all using some form of a {@link java.util.Spliterator}.
+ * A spliterator is the parallel analogue of an {@link java.util.Iterator}; it
+ * describes a (possibly infinite) collection of elements, with support for
+ * sequentially advancing, bulk traversal, and splitting off some portion of the
+ * input into another spliterator which can be processed in parallel.  At the
+ * lowest level, all streams are driven by a spliterator.
  *
- * <p>A source may directly supply a spliterator.  If so, the spliterator is traversed, split, or queried
- * for estimated size after, and never before, the terminal operation commences. It is strongly recommended
- * that the spliterator report a characteristic of {@code IMMUTABLE} or {@code CONCURRENT}, or be
- * <em>late-binding</em> and not bind to the elements it covers until traversed, split or queried for
- * estimated size.
+ * <p>There are a number of implementation choices in implementing a spliterator,
+ * nearly all of which are tradeoffs between simplicity of implementation and
+ * runtime performance of streams using that spliterator.  The simplest, but
+ * least performant, way to create a spliterator is to create one from an iterator
+ * using {@link java.util.Spliterators#spliteratorUnknownSize(java.util.Iterator, int)}.
+ * While such a spliterator will work, it will likely offer poor parallel
+ * performance, since we have lost sizing information (how big is the underlying
+ * data set), as well as being constrained to a simplistic splitting algorithm.
  *
- * <p>If a source cannot directly supply a recommended spliterator then it may indirectly supply a spliterator
- * using a {@code Supplier}.  The spliterator is obtained from the supplier after, and never before, the terminal
+ * <p>A higher-quality spliterator will provide balanced and known-size splits,
+ * accurate sizing information, and a number of other
+ * {@link java.util.Spliterator#characteristics() characteristics} of the
+ * spliterator or data that can be used by implementations to optimize
+ * execution.
+ *
+ * <p>Spliterators for mutable data sources have an additional challenge; timing
+ * of binding to the data, since the data could change between the time the
+ * spliterator is created and the time the stream pipeline is executed.  Ideally,
+ * a spliterator for a stream would report a characteristic of {@code IMMUTABLE}
+ * or {@code CONCURRENT}; if not it should be <a href="../Spliterator.html#binding"><em>late-binding</em></a>.
+ * If a source cannot directly supply a recommended spliterator, it may
+ * indirectly supply a spliterator using a {@code Supplier}, and construct a
+ * stream via the {@code Supplier}-accepting versions of
+ * {@link java.util.stream.StreamSupport#stream(Supplier, int, boolean) stream()}.
+ * The spliterator is obtained from the supplier only after the terminal
  * operation of the stream pipeline commences.
  *
- * <p>Such requirements significantly reduce the scope of potential interference to the interval starting
- * with the commencing of the terminal operation and ending with the producing a result or side-effect.  See
- * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
- * more details.
+ * <p>These requirements significantly reduce the scope of potential interference
+ * between mutations of the stream source and execution of stream pipelines.
+ * Streams based on spliterators with the desired characteristics, or those using
+ * the Supplier-based factory forms, are immune to modifications of the data
+ * source prior to commencement of the terminal operation (provided the behavioral
+ * parameters to the stream operations meet the required criteria for non-interference
+ * and statelessness).  See <a href="package-summary.html#Non-Interference">Non-Interference</a>
+ * for more details.
  *
- * XXX - move the following to the non-interference section
- *
- * <p>A source can be modified before the terminal operation commences and those modifications will be reflected in
- * the covered elements.  Afterwards, and depending on the properties of the source, further modifications
- * might not be reflected and the throwing of a {@code ConcurrentModificationException} may occur.
- *
- * <p>For example, consider the following code:
- * <pre>{@code
- *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
- *     Stream<String> sl = l.stream();
- *     l.add("three");
- *     String s = sl.collect(joining(" "));
- * }</pre>
- * First a list is created consisting of two strings: "one"; and "two". Then a stream is created from that list.
- * Next the list is modified by adding a third string: "three".  Finally the elements of the stream are collected
- * and joined together.  Since the list was modified before the terminal {@code collect} operation commenced
- * the result will be a string of "one two three". However, if the list is modified after the terminal operation
- * commences, as in:
- * <pre>{@code
- *     List<String> l = new ArrayList(Arrays.asList("one", "two"));
- *     Stream<String> sl = l.stream();
- *     String s = sl.peek(s -> l.add("BAD LAMBDA")).collect(joining(" "));
- * }</pre>
- * then a {@code ConcurrentModificationException} will be thrown since the {@code peek} operation will attempt
- * to add the string "BAD LAMBDA" to the list after the terminal operation has commenced.
+ * @since 1.8
  */
-
 package java.util.stream;
+
+import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;

@@ -313,8 +313,8 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    public final DoubleStream peek(DoubleConsumer consumer) {
-        Objects.requireNonNull(consumer);
+    public final DoubleStream peek(DoubleConsumer action) {
+        Objects.requireNonNull(action);
         return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
                                        0) {
             @Override
@@ -322,7 +322,7 @@ abstract class DoublePipeline<E_IN>
                 return new Sink.ChainedDouble<Double>(sink) {
                     @Override
                     public void accept(double t) {
-                        consumer.accept(t);
+                        action.accept(t);
                         downstream.accept(t);
                     }
                 };
@@ -436,14 +436,14 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> resultFactory,
+    public final <R> R collect(Supplier<R> supplier,
                                ObjDoubleConsumer<R> accumulator,
                                BiConsumer<R, R> combiner) {
         BinaryOperator<R> operator = (left, right) -> {
             combiner.accept(left, right);
             return left;
         };
-        return evaluate(ReduceOps.makeDouble(resultFactory, accumulator, operator));
+        return evaluate(ReduceOps.makeDouble(supplier, accumulator, operator));
     }
 
     @Override

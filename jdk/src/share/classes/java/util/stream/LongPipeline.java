@@ -330,8 +330,8 @@ abstract class LongPipeline<E_IN>
     }
 
     @Override
-    public final LongStream peek(LongConsumer consumer) {
-        Objects.requireNonNull(consumer);
+    public final LongStream peek(LongConsumer action) {
+        Objects.requireNonNull(action);
         return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
                                      0) {
             @Override
@@ -339,7 +339,7 @@ abstract class LongPipeline<E_IN>
                 return new Sink.ChainedLong<Long>(sink) {
                     @Override
                     public void accept(long t) {
-                        consumer.accept(t);
+                        action.accept(t);
                         downstream.accept(t);
                     }
                 };
@@ -455,14 +455,14 @@ abstract class LongPipeline<E_IN>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> resultFactory,
+    public final <R> R collect(Supplier<R> supplier,
                                ObjLongConsumer<R> accumulator,
                                BiConsumer<R, R> combiner) {
         BinaryOperator<R> operator = (left, right) -> {
             combiner.accept(left, right);
             return left;
         };
-        return evaluate(ReduceOps.makeLong(resultFactory, accumulator, operator));
+        return evaluate(ReduceOps.makeLong(supplier, accumulator, operator));
     }
 
     @Override
