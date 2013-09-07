@@ -110,6 +110,7 @@
                                            void* ucontext,
                                            bool isInJava) {
     ShouldNotCallThis();
+    return false;
   }
 
   // These routines are only used on cpu architectures that

@@ -456,9 +456,9 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree META(String httpEquiv, String content, String charSet) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.META);
+        String contentCharset = content + "; charset=" + charSet;
         htmltree.addAttr(HtmlAttr.HTTP_EQUIV, nullCheck(httpEquiv));
-        htmltree.addAttr(HtmlAttr.CONTENT, nullCheck(content));
-        htmltree.addAttr(HtmlAttr.CHARSET, nullCheck(charSet));
+        htmltree.addAttr(HtmlAttr.CONTENT, contentCharset);
         return htmltree;
     }
 

@@ -1257,6 +1257,9 @@ private:
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
+  // Accumulator for strong code roots memory size
+  size_t _total_strong_code_roots_bytes;
+
   static double perc(size_t val, size_t total) {
     if (total == 0) {
       return 0.0;

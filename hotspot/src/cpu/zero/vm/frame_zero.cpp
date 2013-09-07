@@ -116,6 +116,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
 bool frame::safe_for_sender(JavaThread *thread) {
   ShouldNotCallThis();
+  return false;
 }
 
 void frame::pd_gc_epilog() {
@@ -123,6 +124,7 @@ void frame::pd_gc_epilog() {
 
 bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
   ShouldNotCallThis();
+  return false;
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result,
@@ -184,9 +186,8 @@ BasicType frame::interpreter_frame_result(oop* oop_result,
 int frame::frame_size(RegisterMap* map) const {
 #ifdef PRODUCT
   ShouldNotCallThis();
-#else
-  return 0; // make javaVFrame::print_value work
 #endif // PRODUCT
+  return 0; // make javaVFrame::print_value work
 }
 
 intptr_t* frame::interpreter_frame_tos_at(jint offset) const {

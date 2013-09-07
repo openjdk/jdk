@@ -28,12 +28,12 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Locale;
-import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * Representation for ECMAScript types - this maps directly to the ECMA script standard
@@ -63,47 +63,49 @@ public enum JSType {
     /** Max value for an uint32 in JavaScript */
     public static final long MAX_UINT = 0xFFFF_FFFFL;
 
+    private static final MethodHandles.Lookup myLookup = MethodHandles.lookup();
+
     /** JavaScript compliant conversion function from Object to boolean */
-    public static final Call TO_BOOLEAN = staticCall(JSType.class, "toBoolean", boolean.class, Object.class);
+    public static final Call TO_BOOLEAN = staticCall(myLookup, JSType.class, "toBoolean", boolean.class, Object.class);
 
     /** JavaScript compliant conversion function from number to boolean */
-    public static final Call TO_BOOLEAN_D = staticCall(JSType.class, "toBoolean", boolean.class, double.class);
+    public static final Call TO_BOOLEAN_D = staticCall(myLookup, JSType.class, "toBoolean", boolean.class, double.class);
 
     /** JavaScript compliant conversion function from Object to integer */
-    public static final Call TO_INTEGER = staticCall(JSType.class, "toInteger", int.class, Object.class);
+    public static final Call TO_INTEGER = staticCall(myLookup, JSType.class, "toInteger", int.class, Object.class);
 
     /** JavaScript compliant conversion function from Object to long */
-    public static final Call TO_LONG = staticCall(JSType.class, "toLong", long.class, Object.class);
+    public static final Call TO_LONG = staticCall(myLookup, JSType.class, "toLong", long.class, Object.class);
 
     /** JavaScript compliant conversion function from Object to number */
-    public static final Call TO_NUMBER = staticCall(JSType.class, "toNumber", double.class, Object.class);
+    public static final Call TO_NUMBER = staticCall(myLookup, JSType.class, "toNumber", double.class, Object.class);
 
     /** JavaScript compliant conversion function from Object to int32 */
-    public static final Call TO_INT32 = staticCall(JSType.class, "toInt32", int.class, Object.class);
+    public static final Call TO_INT32 = staticCall(myLookup, JSType.class, "toInt32", int.class, Object.class);
 
     /** JavaScript compliant conversion function from double to int32 */
-    public static final Call TO_INT32_D = staticCall(JSType.class, "toInt32", int.class, double.class);
+    public static final Call TO_INT32_D = staticCall(myLookup, JSType.class, "toInt32", int.class, double.class);
 
     /** JavaScript compliant conversion function from Object to uint32 */
-    public static final Call TO_UINT32 = staticCall(JSType.class, "toUint32", long.class, Object.class);
+    public static final Call TO_UINT32 = staticCall(myLookup, JSType.class, "toUint32", long.class, Object.class);
 
     /** JavaScript compliant conversion function from number to uint32 */
-    public static final Call TO_UINT32_D = staticCall(JSType.class, "toUint32", long.class, double.class);
+    public static final Call TO_UINT32_D = staticCall(myLookup, JSType.class, "toUint32", long.class, double.class);
 
     /** JavaScript compliant conversion function from Object to int64 */
-    public static final Call TO_INT64 = staticCall(JSType.class, "toInt64", long.class, Object.class);
+    public static final Call TO_INT64 = staticCall(myLookup, JSType.class, "toInt64", long.class, Object.class);
 
     /** JavaScript compliant conversion function from number to int64 */
-    public static final Call TO_INT64_D = staticCall(JSType.class, "toInt64", long.class, double.class);
+    public static final Call TO_INT64_D = staticCall(myLookup, JSType.class, "toInt64", long.class, double.class);
 
     /** JavaScript compliant conversion function from Object to String */
-    public static final Call TO_STRING = staticCall(JSType.class, "toString", String.class, Object.class);
+    public static final Call TO_STRING = staticCall(myLookup, JSType.class, "toString", String.class, Object.class);
 
     /** JavaScript compliant conversion function from number to String */
-    public static final Call TO_STRING_D = staticCall(JSType.class, "toString", String.class, double.class);
+    public static final Call TO_STRING_D = staticCall(myLookup, JSType.class, "toString", String.class, double.class);
 
     /** JavaScript compliant conversion function from Object to primitive */
-    public static final Call TO_PRIMITIVE = staticCall(JSType.class, "toPrimitive", Object.class,  Object.class);
+    public static final Call TO_PRIMITIVE = staticCall(myLookup, JSType.class, "toPrimitive", Object.class,  Object.class);
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -145,20 +147,8 @@ public enum JSType {
             return JSType.STRING;
         }
 
-        if (obj instanceof ScriptObject) {
-            return (obj instanceof ScriptFunction) ? JSType.FUNCTION : JSType.OBJECT;
-        }
-
-        if (obj instanceof StaticClass) {
+        if (Bootstrap.isCallable(obj)) {
             return JSType.FUNCTION;
-        }
-
-        if (BeansLinker.isDynamicMethod(obj)) {
-            return JSType.FUNCTION;
-        }
-
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).isFunction()? JSType.FUNCTION : JSType.OBJECT;
         }
 
         return JSType.OBJECT;

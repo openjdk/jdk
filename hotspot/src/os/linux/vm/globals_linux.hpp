@@ -40,6 +40,9 @@
   product(bool, UseHugeTLBFS, false,                                    \
           "Use MAP_HUGETLB for large pages")                            \
                                                                         \
+  product(bool, UseTransparentHugePages, false,                         \
+          "Use MADV_HUGEPAGE for large pages")                          \
+                                                                        \
   product(bool, LoadExecStackDllInVMThread, true,                       \
           "Load DLLs with executable-stack attribute in the VM Thread") \
                                                                         \
