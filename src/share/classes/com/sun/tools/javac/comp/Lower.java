@@ -3829,30 +3829,32 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
-        if (tree.resources.isEmpty()) {
-            /* special case of try without catchers and with finally emtpy.
-             * Don't give it a try, translate only the body.
-             */
-            if (tree.catchers.isEmpty() &&
-                tree.finalizer.getStatements().isEmpty()) {
-                result = translate(tree.body);
-            } else {
-                /* also if the body is empty we only need to generate the finalizer
-                 * provided that it's not empty.
-                 */
-                if (tree.body.getStatements().isEmpty()) {
-                    if (tree.finalizer.getStatements().isEmpty()) {
-                        result = translate(tree.body);
-                    } else {
-                        result = translate(tree.finalizer);
-                    }
-                } else {
-                    super.visitTry(tree);
-                }
-            }
-        } else {
+        if (tree.resources.nonEmpty()) {
             result = makeTwrTry(tree);
+            return;
         }
+
+        boolean hasBody = tree.body.getStatements().nonEmpty();
+        boolean hasCatchers = tree.catchers.nonEmpty();
+        boolean hasFinally = tree.finalizer != null &&
+                tree.finalizer.getStatements().nonEmpty();
+
+        if (!hasCatchers && !hasFinally) {
+            result = translate(tree.body);
+            return;
+        }
+
+        if (!hasBody) {
+            if (hasFinally) {
+                result = translate(tree.finalizer);
+            } else {
+                result = translate(tree.body);
+            }
+            return;
+        }
+
+        // no optimizations possible
+        super.visitTry(tree);
     }
 
 /**************************************************************************
