@@ -145,6 +145,14 @@ abstract class Handshaker {
     /* True if it's OK to start a new SSL session */
     boolean             enableNewSession;
 
+    // Whether local cipher suites preference should be honored during
+    // handshaking?
+    //
+    // Note that in this provider, this option only applies to server side.
+    // Local cipher suites preference is always honored in client side in
+    // this provider.
+    boolean preferLocalCipherSuites = false;
+
     // Temporary storage for the individual keys. Set by
     // calculateConnectionKeys() and cleared once the ciphers are
     // activated.
@@ -463,6 +471,13 @@ abstract class Handshaker {
     }
 
     /**
+     * Sets the cipher suites preference.
+     */
+    void setUseCipherSuitesOrder(boolean on) {
+        this.preferLocalCipherSuites = on;
+    }
+
+    /**
      * Prior to handshaking, activate the handshake and initialize the version,
      * input stream and output stream.
      */
@@ -533,7 +548,9 @@ abstract class Handshaker {
     }
 
     /**
-     * Check if the given ciphersuite is enabled and available.
+     * Check if the given ciphersuite is enabled and available within the
+     * current active cipher suites.
+     *
      * Does not check if the required server certificates are available.
      */
     boolean isNegotiable(CipherSuite s) {
@@ -541,7 +558,17 @@ abstract class Handshaker {
             activeCipherSuites = getActiveCipherSuites();
         }
 
-        return activeCipherSuites.contains(s) && s.isNegotiable();
+        return isNegotiable(activeCipherSuites, s);
+    }
+
+    /**
+     * Check if the given ciphersuite is enabled and available within the
+     * proposed cipher suite list.
+     *
+     * Does not check if the required server certificates are available.
+     */
+    final static boolean isNegotiable(CipherSuiteList proposed, CipherSuite s) {
+        return proposed.contains(s) && s.isNegotiable();
     }
 
     /**
