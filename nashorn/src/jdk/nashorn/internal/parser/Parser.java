@@ -2060,7 +2060,7 @@ loop:
         case FLOATING:
             return getLiteral();
         default:
-            return getIdentifierName();
+            return getIdentifierName().setIsPropertyName();
         }
     }
 
