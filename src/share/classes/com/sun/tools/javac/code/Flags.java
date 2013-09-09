@@ -97,7 +97,6 @@ public class Flags {
     public static final int MANDATED     = 1<<15;
 
     public static final int StandardFlags = 0x0fff;
-    public static final int ModifierFlags = StandardFlags & ~INTERFACE;
 
     // Because the following access flags are overloaded with other
     // bit positions, we translate them when reading and writing class
@@ -287,7 +286,9 @@ public class Flags {
                                 SYNCHRONIZED | FINAL | STRICTFP;
     public static final long
         ExtendedStandardFlags       = (long)StandardFlags | DEFAULT,
+        ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT,
         InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
+        AnnotationTypeElementMask   = FINAL | ABSTRACT | PUBLIC | STRICTFP,
         LocalVarFlags               = FINAL | PARAMETER;
 
 
