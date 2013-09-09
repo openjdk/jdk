@@ -2418,9 +2418,17 @@ public class Attr extends JCTree.Visitor {
             preFlow(that);
             flow.analyzeLambda(env, that, make, isSpeculativeRound);
 
-            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext, isSpeculativeRound);
+            checkLambdaCompatible(that, lambdaType, resultInfo.checkContext);
 
             if (!isSpeculativeRound) {
+                //add thrown types as bounds to the thrown types free variables if needed:
+                if (resultInfo.checkContext.inferenceContext().free(lambdaType.getThrownTypes())) {
+                    List<Type> inferredThrownTypes = flow.analyzeLambdaThrownTypes(env, that, make);
+                    List<Type> thrownTypes = resultInfo.checkContext.inferenceContext().asFree(lambdaType.getThrownTypes());
+
+                    chk.unhandled(inferredThrownTypes, thrownTypes);
+                }
+
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType, currentTarget);
             }
             result = check(that, currentTarget, VAL, resultInfo);
@@ -2587,10 +2595,9 @@ public class Attr extends JCTree.Visitor {
         * Lambda compatibility. Check that given return types, thrown types, parameter types
         * are compatible with the expected functional interface descriptor. This means that:
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
-        * types must be compatible with the return type of the expected descriptor;
-        * (iii) finish inference of thrown types if required.
+        * types must be compatible with the return type of the expected descriptor.
         */
-        private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext, boolean speculativeAttr) {
+        private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
             Type returnType = checkContext.inferenceContext().asFree(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
@@ -2606,11 +2613,6 @@ public class Attr extends JCTree.Visitor {
             List<Type> argTypes = checkContext.inferenceContext().asFree(descriptor.getParameterTypes());
             if (!types.isSameTypes(argTypes, TreeInfo.types(tree.params))) {
                 checkContext.report(tree, diags.fragment("incompatible.arg.types.in.lambda"));
-            }
-
-            if (!speculativeAttr) {
-                List<Type> thrownTypes = checkContext.inferenceContext().asFree(descriptor.getThrownTypes());
-                chk.unhandled(tree.inferredThrownTypes == null ? List.<Type>nil() : tree.inferredThrownTypes, thrownTypes);
             }
         }
 

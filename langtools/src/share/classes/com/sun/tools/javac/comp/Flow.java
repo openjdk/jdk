@@ -224,11 +224,27 @@ public class Flow {
         }
         try {
             new AliveAnalyzer().analyzeTree(env, that, make);
-            new LambdaFlowAnalyzer().analyzeTree(env, that, make);
         } finally {
             if (!speculative) {
                 log.popDiagnosticHandler(diagHandler);
             }
+        }
+    }
+
+    public List<Type> analyzeLambdaThrownTypes(Env<AttrContext> env, JCLambda that, TreeMaker make) {
+        //we need to disable diagnostics temporarily; the problem is that if
+        //a lambda expression contains e.g. an unreachable statement, an error
+        //message will be reported and will cause compilation to skip the flow analyis
+        //step - if we suppress diagnostics, we won't stop at Attr for flow-analysis
+        //related errors, which will allow for more errors to be detected
+        Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+        try {
+            new AssignAnalyzer().analyzeTree(env, that, make);
+            LambdaFlowAnalyzer flowAnalyzer = new LambdaFlowAnalyzer();
+            flowAnalyzer.analyzeTree(env, that, make);
+            return flowAnalyzer.inferredThrownTypes;
+        } finally {
+            log.popDiagnosticHandler(diagHandler);
         }
     }
 
@@ -1318,26 +1334,34 @@ public class Flow {
      * Specialized pass that performs inference of thrown types for lambdas.
      */
     class LambdaFlowAnalyzer extends FlowAnalyzer {
+        List<Type> inferredThrownTypes;
+        boolean inLambda;
         @Override
         public void visitLambda(JCLambda tree) {
-            if (tree.type != null &&
-                    tree.type.isErroneous()) {
+            if ((tree.type != null &&
+                    tree.type.isErroneous()) || inLambda) {
                 return;
             }
             List<Type> prevCaught = caught;
             List<Type> prevThrown = thrown;
             ListBuffer<FlowPendingExit> prevPending = pendingExits;
+            inLambda = true;
             try {
                 pendingExits = ListBuffer.lb();
                 caught = List.of(syms.throwableType);
                 thrown = List.nil();
                 scan(tree.body);
-                tree.inferredThrownTypes = thrown;
+                inferredThrownTypes = thrown;
             } finally {
                 pendingExits = prevPending;
                 caught = prevCaught;
                 thrown = prevThrown;
+                inLambda = false;
             }
+        }
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            //skip
         }
     }
 
