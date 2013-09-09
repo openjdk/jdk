@@ -1050,6 +1050,7 @@ public class Check {
     long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
         long mask;
         long implicit = 0;
+
         switch (sym.kind) {
         case VAR:
             if (sym.owner.kind != TYP)
@@ -1070,7 +1071,10 @@ public class Check {
                 } else
                     mask = ConstructorFlags;
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
-                if ((flags & (DEFAULT | STATIC)) != 0) {
+                if ((sym.owner.flags_field & ANNOTATION) != 0) {
+                    mask = AnnotationTypeElementMask;
+                    implicit = PUBLIC | ABSTRACT;
+                } else if ((flags & (DEFAULT | STATIC)) != 0) {
                     mask = InterfaceMethodMask;
                     implicit = PUBLIC;
                     if ((flags & DEFAULT) != 0) {
@@ -1079,8 +1083,7 @@ public class Check {
                 } else {
                     mask = implicit = InterfaceMethodFlags;
                 }
-            }
-            else {
+            } else {
                 mask = MethodFlags;
             }
             // Imply STRICTFP if owner has STRICTFP set.
