@@ -98,9 +98,9 @@ public abstract class Symbol implements Element {
     // <editor-fold defaultstate="collapsed" desc="annotations">
 
     /** The attributes of this symbol are contained in this
-     * Annotations. The Annotations instance is NOT immutable.
+     * SymbolMetadata. The SymbolMetadata instance is NOT immutable.
      */
-    protected Annotations annotations;
+    protected SymbolMetadata annotations;
 
     /** An accessor method for the attributes of this symbol.
      *  Attributes of class symbols should be accessed through the accessor
@@ -217,19 +217,19 @@ public abstract class Symbol implements Element {
     public void setTypeAttributes(List<Attribute.TypeCompound> a) {
         if (annotations != null || a.nonEmpty()) {
             if (annotations == null)
-                annotations = new Annotations(this);
+                annotations = new SymbolMetadata(this);
             annotations.setTypeAttributes(a);
         }
     }
 
-    private Annotations initedAnnos() {
+    private SymbolMetadata initedAnnos() {
         if (annotations == null)
-            annotations = new Annotations(this);
+            annotations = new SymbolMetadata(this);
         return annotations;
     }
 
     /** This method is intended for debugging only. */
-    public Annotations getAnnotations() {
+    public SymbolMetadata getAnnotations() {
         return annotations;
     }
 
@@ -852,7 +852,7 @@ public abstract class Symbol implements Element {
         private void mergeAttributes() {
             if (annotations == null &&
                 package_info.annotations != null) {
-                annotations = new Annotations(this);
+                annotations = new SymbolMetadata(this);
                 annotations.setAttributes(package_info.annotations);
             }
         }
