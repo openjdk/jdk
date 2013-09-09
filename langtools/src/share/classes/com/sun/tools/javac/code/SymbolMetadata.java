@@ -57,7 +57,7 @@ import static com.sun.tools.javac.code.Kinds.PCK;
  * later. You can reset to IN_PROGRESS. While IN_PROGRESS you can set the list
  * of attributes (and this moves out of the IN_PROGRESS state).
  *
- * "unnamed" this Annotations contains some attributes, possibly the final set.
+ * "unnamed" this SymbolMetadata contains some attributes, possibly the final set.
  * While in this state you can only prepend or append to the attributes not set
  * it directly. You can also move back to the IN_PROGRESS state using reset().
  *
@@ -65,7 +65,7 @@ import static com.sun.tools.javac.code.Kinds.PCK;
  * on this, you do so at your own risk. This code and its internal interfaces
  * are subject to change or deletion without notice.</b>
  */
-public class Annotations {
+public class SymbolMetadata {
 
     private static final List<Attribute.Compound> DECL_NOT_STARTED = List.of(null);
     private static final List<Attribute.Compound> DECL_IN_PROGRESS = List.of(null);
@@ -94,11 +94,11 @@ public class Annotations {
     private List<Attribute.TypeCompound> clinit_type_attributes = List.<Attribute.TypeCompound>nil();
 
     /*
-     * The Symbol this Annotations instance belongs to
+     * The Symbol this SymbolMetadata instance belongs to
      */
     private final Symbol sym;
 
-    public Annotations(Symbol sym) {
+    public SymbolMetadata(Symbol sym) {
         this.sym = sym;
     }
 
@@ -147,7 +147,7 @@ public class Annotations {
         clinit_type_attributes = a;
     }
 
-    public void setAttributes(Annotations other) {
+    public void setAttributes(SymbolMetadata other) {
         if (other == null) {
             throw new NullPointerException();
         }
@@ -221,7 +221,7 @@ public class Annotations {
         return buf.reverse();
     }
 
-    public Annotations reset() {
+    public SymbolMetadata reset() {
         attributes = DECL_IN_PROGRESS;
         return this;
     }
@@ -240,7 +240,7 @@ public class Annotations {
         return attributes == DECL_IN_PROGRESS;
     }
 
-    public Annotations append(List<Attribute.Compound> l) {
+    public SymbolMetadata append(List<Attribute.Compound> l) {
         attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
@@ -253,7 +253,7 @@ public class Annotations {
         return this;
     }
 
-    public Annotations appendUniqueTypes(List<Attribute.TypeCompound> l) {
+    public SymbolMetadata appendUniqueTypes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
             ; // no-op
         } else if (type_attributes.isEmpty()) {
@@ -269,7 +269,7 @@ public class Annotations {
         return this;
     }
 
-    public Annotations appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
+    public SymbolMetadata appendInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
             ; // no-op
         } else if (init_type_attributes.isEmpty()) {
@@ -280,7 +280,7 @@ public class Annotations {
         return this;
     }
 
-    public Annotations appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+    public SymbolMetadata appendClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
         if (l.isEmpty()) {
             ; // no-op
         } else if (clinit_type_attributes.isEmpty()) {
@@ -291,7 +291,7 @@ public class Annotations {
         return this;
     }
 
-    public Annotations prepend(List<Attribute.Compound> l) {
+    public SymbolMetadata prepend(List<Attribute.Compound> l) {
         attributes = filterDeclSentinels(attributes);
 
         if (l.isEmpty()) {
@@ -367,7 +367,7 @@ public class Annotations {
 
                 type_attributes = result.reverse();
 
-                Assert.check(Annotations.this.getTypePlaceholders().isEmpty());
+                Assert.check(SymbolMetadata.this.getTypePlaceholders().isEmpty());
             } else {
                 Assert.check(!pendingCompletion());
 
@@ -391,7 +391,7 @@ public class Annotations {
 
                 attributes = result.reverse();
 
-                Assert.check(Annotations.this.getPlaceholders().isEmpty());
+                Assert.check(SymbolMetadata.this.getPlaceholders().isEmpty());
             }
         } finally {
             log.useSource(oldSource);
