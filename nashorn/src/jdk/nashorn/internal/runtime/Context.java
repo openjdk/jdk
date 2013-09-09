@@ -573,7 +573,7 @@ public final class Context {
         setGlobalTrusted(newGlobal);
 
         final Object[] wrapped = args == null? ScriptRuntime.EMPTY_ARRAY :  ScriptObjectMirror.wrapArray(args, oldGlobal);
-        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped));
+        newGlobal.put("arguments", ((GlobalObject)newGlobal).wrapAsObject(wrapped), env._strict);
 
         try {
             // wrap objects from newGlobal's world as mirrors - but if result
