@@ -120,9 +120,6 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /** objects proto. */
     private ScriptObject proto;
 
-    /** Context of the object, lazily cached. */
-    private Context context;
-
     /** Object flags. */
     private int flags;
 
@@ -1043,40 +1040,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
-     * Return true if the script object context is strict
-     * @return true if strict context
-     */
-    public final boolean isStrictContext() {
-        return getContext()._strict;
-    }
-
-    /**
-     * Checks if this object belongs to the given context
-     * @param ctx context to check against
-     * @return true if this object belongs to the given context
-     */
-    public final boolean isOfContext(final Context ctx) {
-        return context == ctx;
-    }
-
-    /**
      * Return the current context from the object's map.
      * @return Current context.
      */
-    protected final Context getContext() {
-        if (context == null) {
-            context = Context.fromClass(getClass());
-        }
-        return context;
-    }
-
-    /**
-     * Set the current context.
-     * @param ctx context instance to set
-     */
-    protected final void setContext(final Context ctx) {
-        ctx.getClass();
-        this.context = ctx;
+    protected Context getContext() {
+        return Context.fromClass(getClass());
     }
 
     /**
@@ -1482,9 +1450,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     /**
      * Clears the properties from a ScriptObject
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
+     *
+     * @param strict strict mode or not
      */
-    public void clear() {
-        final boolean strict = isStrictContext();
+    public void clear(final boolean strict) {
         final Iterator<String> iter = propertyIterator();
         while (iter.hasNext()) {
             delete(iter.next(), strict);
@@ -1568,11 +1537,12 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      *
      * @param key property key
      * @param value property value
+     * @param strict strict mode or not
      * @return oldValue if property with same key existed already
      */
-    public Object put(final Object key, final Object value) {
+    public Object put(final Object key, final Object value, final boolean strict) {
         final Object oldValue = get(key);
-        set(key, value, isStrictContext());
+        set(key, value, strict);
         return oldValue;
     }
 
@@ -1582,9 +1552,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
      * @param otherMap a {@literal <key,value>} map of properties to add
+     * @param strict strict mode or not
      */
-    public void putAll(final Map<?, ?> otherMap) {
-        final boolean strict = isStrictContext();
+    public void putAll(final Map<?, ?> otherMap, final boolean strict) {
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
             set(entry.getKey(), entry.getValue(), strict);
         }
@@ -1595,23 +1565,13 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * (java.util.Map-like method to help ScriptObjectMirror implementation)
      *
      * @param key the key of the property
+     * @param strict strict mode or not
      * @return the oldValue of the removed property
      */
-    public Object remove(final Object key) {
+    public Object remove(final Object key, final boolean strict) {
         final Object oldValue = get(key);
-        delete(key, isStrictContext());
+        delete(key, strict);
         return oldValue;
-    }
-
-    /**
-     * Delete a property from the ScriptObject.
-     * (to help ScriptObjectMirror implementation)
-     *
-     * @param key the key of the property
-     * @return if the delete was successful or not
-     */
-    public boolean delete(final Object key) {
-        return delete(key, isStrictContext());
     }
 
     /**
@@ -2333,11 +2293,9 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
            return;
        }
 
-       final boolean isStrict = isStrictContext();
-
        if (newLength > arrayLength) {
            setArray(getArray().ensure(newLength - 1));
-            if (getArray().canDelete(arrayLength, (newLength - 1), isStrict)) {
+            if (getArray().canDelete(arrayLength, (newLength - 1), false)) {
                setArray(getArray().delete(arrayLength, (newLength - 1)));
            }
            return;

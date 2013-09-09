@@ -315,7 +315,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             final ScriptObjectMirror mirror = (ScriptObjectMirror)thiz;
             realSelf = mirror.getScriptObject();
             realGlobal = mirror.getHomeGlobal();
-            if (! realGlobal.isOfContext(nashornContext)) {
+            if (! isOfContext(realGlobal, nashornContext)) {
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
         } else if (thiz instanceof ScriptObject) {
@@ -326,7 +326,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
             }
 
-            if (! realGlobal.isOfContext(nashornContext)) {
+            if (! isOfContext(realGlobal, nashornContext)) {
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
         }
@@ -394,7 +394,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     // Retrieve nashorn Global object from a given ScriptObjectMirror
     private ScriptObject globalFromMirror(final ScriptObjectMirror mirror) {
         ScriptObject sobj = mirror.getScriptObject();
-        if (sobj instanceof GlobalObject && sobj.isOfContext(nashornContext)) {
+        if (sobj instanceof GlobalObject && isOfContext(sobj, nashornContext)) {
             return sobj;
         }
 
@@ -470,7 +470,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         ScriptObjectMirror selfMirror = null;
         if (selfObject instanceof ScriptObjectMirror) {
             selfMirror = (ScriptObjectMirror)selfObject;
-            if (! selfMirror.getHomeGlobal().isOfContext(nashornContext)) {
+            if (! isOfContext(selfMirror.getHomeGlobal(), nashornContext)) {
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
         } else if (selfObject instanceof ScriptObject) {
@@ -481,7 +481,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
             }
 
-            if (! oldGlobal.isOfContext(nashornContext)) {
+            if (! isOfContext(oldGlobal, nashornContext)) {
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
 
@@ -616,5 +616,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
         }
         return true;
+    }
+
+    private static boolean isOfContext(final ScriptObject global, final Context context) {
+        assert global instanceof GlobalObject: "Not a Global object";
+        return ((GlobalObject)global).isOfContext(context);
     }
 }

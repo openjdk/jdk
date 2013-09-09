@@ -412,6 +412,14 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
+    // context to which this global belongs to
+    private final Context context;
+
+    @Override
+    protected Context getContext() {
+        return context;
+    }
+
     // performs initialization checks for Global constructor and returns the
     // PropertyMap, if everything is fine.
     private static PropertyMap checkAndGetMap(final Context context) {
@@ -439,7 +447,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
      */
     public Global(final Context context) {
         super(checkAndGetMap(context));
-        this.setContext(context);
+        this.context = context;
         this.setIsScope();
 
         final int cacheSize = context.getEnv()._class_cache_size;
@@ -480,6 +488,16 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
     }
 
     // GlobalObject interface implementation
+
+    @Override
+    public boolean isOfContext(final Context context) {
+        return this.context == context;
+    }
+
+    @Override
+    public boolean isStrictContext() {
+        return context.getEnv()._strict;
+    }
 
     @Override
     public void initBuiltinObjects() {
@@ -1765,7 +1783,7 @@ public final class Global extends ScriptObject implements GlobalObject, Scope {
             // do not fill $ENV if we have a security manager around
             // Retrieve current state of ENV variables.
             final ScriptObject env = newObject();
-            env.putAll(System.getenv());
+            env.putAll(System.getenv(), scriptEnv._strict);
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
         } else {
             addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
