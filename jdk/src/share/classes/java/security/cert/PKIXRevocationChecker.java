@@ -103,6 +103,9 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private Map<X509Certificate, byte[]> ocspResponses = Collections.emptyMap();
     private Set<Option> options = Collections.emptySet();
 
+    /**
+     * Default constructor.
+     */
     protected PKIXRevocationChecker() {}
 
     /**
