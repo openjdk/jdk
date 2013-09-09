@@ -352,35 +352,6 @@ public final class ScriptRuntime {
     }
 
     /**
-     * Check that the target function is associated with current Context. And also make sure that 'self', if
-     * ScriptObject, is from current context.
-     *
-     * Call a function given self and args. If the number of the arguments is known in advance, you can likely achieve
-     * better performance by {@link Bootstrap#createDynamicInvoker(String, Class, Class...) creating a dynamic invoker}
-     * for operation {@code "dyn:call"}, then using its {@link MethodHandle#invokeExact(Object...)} method instead.
-     *
-     * @param target ScriptFunction object.
-     * @param self   Receiver in call.
-     * @param args   Call arguments.
-     * @return Call result.
-     */
-    public static Object checkAndApply(final ScriptFunction target, final Object self, final Object... args) {
-        final ScriptObject global = Context.getGlobalTrusted();
-        assert (global instanceof GlobalObject): "No current global set";
-
-        if (target.getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'target' function is not from current Context");
-        }
-
-        if (self instanceof ScriptObject && ((ScriptObject)self).getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'self' object is not from current Context");
-        }
-
-        // all in order - call real 'apply'
-        return apply(target, self, args);
-    }
-
-    /**
      * Call a function given self and args. If the number of the arguments is known in advance, you can likely achieve
      * better performance by {@link Bootstrap#createDynamicInvoker(String, Class, Class...) creating a dynamic invoker}
      * for operation {@code "dyn:call"}, then using its {@link MethodHandle#invokeExact(Object...)} method instead.
@@ -398,28 +369,6 @@ public final class ScriptRuntime {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
-    }
-
-    /**
-     * Check that the target function is associated with current Context.
-     * And also make sure that 'self', if ScriptObject, is from current context.
-     *
-     * Call a function as a constructor given args.
-     *
-     * @param target ScriptFunction object.
-     * @param args   Call arguments.
-     * @return Constructor call result.
-     */
-    public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
-        final ScriptObject global = Context.getGlobalTrusted();
-        assert (global instanceof GlobalObject): "No current global set";
-
-        if (target.getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'target' function is not from current Context");
-        }
-
-        // all in order - call real 'construct'
-        return construct(target, args);
     }
 
     /**
@@ -520,9 +469,12 @@ public final class ScriptRuntime {
             throw typeError(global, "cant.apply.with.to.null");
         }
 
-        final ScriptObject withObject = new WithObject(scope, JSType.toScriptObject(global, expression));
+        final Object wrappedExpr = JSType.toScriptObject(global, expression);
+        if (wrappedExpr instanceof ScriptObject) {
+            return new WithObject(scope, (ScriptObject)wrappedExpr);
+        }
 
-        return withObject;
+        throw typeError(global, "cant.apply.with.to.non.scriptobject");
     }
 
     /**
@@ -534,7 +486,7 @@ public final class ScriptRuntime {
      */
     public static ScriptObject closeWith(final ScriptObject scope) {
         if (scope instanceof WithObject) {
-            return scope.getProto();
+            return ((WithObject)scope).getParentScope();
         }
         return scope;
     }

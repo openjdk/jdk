@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -62,6 +63,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
 
     private final ScriptObject sobj;
     private final ScriptObject global;
+    private final boolean strict;
 
     @Override
     public boolean equals(final Object other) {
@@ -101,7 +103,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             final Object val = functionName == null? sobj : sobj.get(functionName);
             if (val instanceof ScriptFunction) {
                 final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-                return wrap(ScriptRuntime.checkAndApply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+                return wrap(ScriptRuntime.apply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
             } else if (val instanceof ScriptObjectMirror && ((ScriptObjectMirror)val).isFunction()) {
                 return ((ScriptObjectMirror)val).call(null, args);
             }
@@ -131,7 +133,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
             final Object val = functionName == null? sobj : sobj.get(functionName);
             if (val instanceof ScriptFunction) {
                 final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
-                return wrap(ScriptRuntime.checkAndConstruct((ScriptFunction)val, unwrapArray(modArgs, global)), global);
+                return wrap(ScriptRuntime.construct((ScriptFunction)val, unwrapArray(modArgs, global)), global);
             } else if (val instanceof ScriptObjectMirror && ((ScriptObjectMirror)val).isFunction()) {
                 return ((ScriptObjectMirror)val).newObject(null, args);
             }
@@ -197,7 +199,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public void setSlot(final int index, final Object value) {
         inGlobal(new Callable<Void>() {
             @Override public Void call() {
-                sobj.set(index, unwrap(value, global), global.isStrictContext());
+                sobj.set(index, unwrap(value, global), strict);
                 return null;
             }
         });
@@ -209,7 +211,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public void clear() {
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                sobj.clear();
+                sobj.clear(strict);
                 return null;
             }
         });
@@ -292,7 +294,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
                 final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
-                return translateUndefined(wrap(sobj.put(key, unwrap(modValue, global)), global));
+                return translateUndefined(wrap(sobj.put(key, unwrap(modValue, global), strict), global));
             }
         });
     }
@@ -303,7 +305,6 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
         final boolean globalChanged = (oldGlobal != global);
         inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                final boolean strict = global.isStrictContext();
                 for (final Map.Entry<? extends String, ? extends Object> entry : map.entrySet()) {
                     final Object value = entry.getValue();
                     final Object modValue = globalChanged? wrap(value, oldGlobal) : value;
@@ -318,7 +319,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public Object remove(final Object key) {
         return inGlobal(new Callable<Object>() {
             @Override public Object call() {
-                return wrap(sobj.remove(unwrap(key, global)), global);
+                return wrap(sobj.remove(unwrap(key, global), strict), global);
             }
         });
     }
@@ -333,7 +334,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
     public boolean delete(final Object key) {
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return sobj.delete(unwrap(key, global));
+                return sobj.delete(unwrap(key, global), strict);
             }
         });
     }
@@ -637,10 +638,11 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
 
     ScriptObjectMirror(final ScriptObject sobj, final ScriptObject global) {
         assert sobj != null : "ScriptObjectMirror on null!";
-        assert global != null : "null global for ScriptObjectMirror!";
+        assert global instanceof GlobalObject : "global is not a GlobalObject";
 
         this.sobj = sobj;
         this.global = global;
+        this.strict = ((GlobalObject)global).isStrictContext();
     }
 
     // accessors for script engine
