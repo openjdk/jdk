@@ -1596,7 +1596,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCVariableDecl> params;
         public JCTree body;
         public boolean canCompleteNormally = true;
-        public List<Type> inferredThrownTypes;
         public ParameterKind paramKind;
 
         public JCLambda(List<JCVariableDecl> params,
