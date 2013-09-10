@@ -307,7 +307,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
         if (sProf.lcmsPf != NULL) {
             // register the disposer record
             sProf.lcmsPf->pf = pf;
-            Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sProf.j);
+            Disposer_AddRecord(env, disposerRef, LCMS_freeProfile, sProf.j);
         } else {
             cmsCloseProfile(pf);
         }
