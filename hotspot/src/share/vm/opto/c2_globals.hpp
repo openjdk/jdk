@@ -448,6 +448,9 @@
   product(bool, EliminateAutoBox, true,                                     \
           "Control optimizations for autobox elimination")                  \
                                                                             \
+  experimental(bool, UseImplicitStableValues, false,                        \
+          "Mark well-known stable fields as such (e.g. String.value)")      \
+                                                                            \
   product(intx, AutoBoxCacheMax, 128,                                       \
           "Sets max value cached by the java.lang.Integer autobox cache")   \
                                                                             \
