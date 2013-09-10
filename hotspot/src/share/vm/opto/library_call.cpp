@@ -1280,6 +1280,11 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
 
+  // String.value field is known to be @Stable.
+  if (UseImplicitStableValues) {
+    target = cast_array_to_stable(target, target_type);
+  }
+
   IdealKit kit(this, false, true);
 #define __ kit.
   Node* zero             = __ ConI(0);

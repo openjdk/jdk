@@ -836,6 +836,9 @@ class GraphKit : public Phase {
   // Insert a loop predicate into the graph
   void add_predicate(int nargs = 0);
   void add_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+
+  // Produce new array node of stable type
+  Node* cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type);
 };
 
 // Helper class to support building of control flow branches. Upon
