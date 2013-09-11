@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8006124 8009684 8015663
+ * @bug      8006124 8009684 8015663 8015496
  * @summary  Test javadoc options support for profiles.
  * @author   Evgeniya Stepanova
  * @library  ../lib/
@@ -35,6 +35,7 @@ public class TestProfilesConfiguration extends JavadocTester {
     //Test information.
     private static final String BUG_ID = "8006124-8009684";
     private static final String PROFILE_CONFIGURATION_BUG_ID = BUG_ID + "-3";
+    private static final String NODEPR_NOPKGS_BUG_ID = BUG_ID + "-4";
     //Javadoc arguments.
     private static final String[] ARGS3 = new String[]{
         "-d", PROFILE_CONFIGURATION_BUG_ID, "-sourcepath", SRC_DIR, "-nocomment",
@@ -42,6 +43,30 @@ public class TestProfilesConfiguration extends JavadocTester {
         "-doctitle", "Simple doctitle", "-use", "pkg3", "pkg1", "pkg2", "pkg4",
         "pkg5", "-packagesheader", "Simple packages header","pkgDeprecated"
     };
+    private static final String[] ARGS4 = new String[]{
+        "-d", NODEPR_NOPKGS_BUG_ID, "-sourcepath", SRC_DIR, "-nocomment", "-nodeprecated",
+        "-keywords", "-Xprofilespath", SRC_DIR + FS + "profile-rtjar-includes-nopkgs.txt",
+        "-doctitle", "Simple doctitle", "-use", "-packagesheader", "Simple packages header",
+        "pkg1", "pkg2", "pkg3", "pkg4", "pkg5", "pkgDeprecated"
+    };
+    private static final String[][] NODEPR_NOPKGS_TEST = {
+        {NODEPR_NOPKGS_BUG_ID + FS + "overview-summary.html",
+            "<ul>" + NL + "<li><a href=\"compact2-summary.html\" target=\"classFrame\">" +
+            "compact2</a></li>" + NL + "<li><a href=\"compact3-summary.html\" target=\"" +
+            "classFrame\">compact3</a></li>" + NL + "</ul>"
+        },
+        {NODEPR_NOPKGS_BUG_ID + FS + "profile-overview-frame.html",
+            "<ul title=\"Profiles\">" + NL + "<li><a href=\"compact2-frame.html\" target=\"packageListFrame\">" +
+            "compact2</a></li>" + NL + "<li><a href=\"compact3-frame.html\" target=\"" +
+            "packageListFrame\">compact3</a></li>" + NL + "</ul>"
+        }
+    };
+    private static final String[][] NODEPR_NOPKGS_NEGATED_TEST = {
+        {NODEPR_NOPKGS_BUG_ID + FS + "overview-summary.html",
+            "compact1"
+        }
+    };
+
     private static final String[][] PROFILES_CONFIGURATION_TEST = {
         //-use option test string fo profile view page
         {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html","<li>Use</li>"
@@ -57,6 +82,12 @@ public class TestProfilesConfiguration extends JavadocTester {
         //-keywords option test string for profiles
         {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
             "<meta name=\"keywords\" content=\"compact1 profile\">"
+        },
+        //Deprecated information on a package
+        {PROFILE_CONFIGURATION_BUG_ID + FS + "compact1-summary.html",
+            "<h3><a href=\"pkgDeprecated/compact1-package-summary.html\" target=\"" +
+            "classFrame\">pkgDeprecated</a></h3>" + NL + "<div class=\"deprecatedContent\">" +
+            "<span class=\"strong\">Deprecated.</span></div>"
         }
     };
     private static final String[][] PROFILES_CONFIGURATION_NEGATED_TEST = {
@@ -75,6 +106,8 @@ public class TestProfilesConfiguration extends JavadocTester {
         TestProfilesConfiguration tester = new TestProfilesConfiguration();
         run(tester, ARGS3, PROFILES_CONFIGURATION_TEST,
         PROFILES_CONFIGURATION_NEGATED_TEST);
+        run(tester, ARGS4, NODEPR_NOPKGS_TEST,
+        NODEPR_NOPKGS_NEGATED_TEST);
         tester.printSummary();
     }
 
