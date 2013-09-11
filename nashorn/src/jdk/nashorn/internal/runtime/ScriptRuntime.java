@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
@@ -190,8 +191,8 @@ public final class ScriptRuntime {
         case FUNCTION:
             if (self instanceof ScriptObject) {
                 className = ((ScriptObject)self).getClassName();
-            } else if (self instanceof ScriptObjectMirror) {
-                className = ((ScriptObjectMirror)self).getClassName();
+            } else if (self instanceof JSObject) {
+                className = ((JSObject)self).getClassName();
             } else {
                 className = self.getClass().getName();
             }
@@ -245,8 +246,8 @@ public final class ScriptRuntime {
             return new RangeIterator(Array.getLength(obj));
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).keySet().iterator();
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).keySet().iterator();
         }
 
         if (obj instanceof List) {
@@ -323,8 +324,8 @@ public final class ScriptRuntime {
             };
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).values().iterator();
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).values().iterator();
         }
 
         if (obj instanceof Map) {
@@ -571,8 +572,8 @@ public final class ScriptRuntime {
                 throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
-            } else if (obj instanceof ScriptObjectMirror) {
-                obj = ((ScriptObjectMirror)obj).getMember(property.toString());
+            } else if (obj instanceof JSObject) {
+                obj = ((JSObject)obj).getMember(property.toString());
             } else {
                 obj = UNDEFINED;
             }
@@ -622,6 +623,11 @@ public final class ScriptRuntime {
 
         if (JSType.isPrimitive(obj)) {
             return ((ScriptObject) JSType.toScriptObject(obj)).delete(property, Boolean.TRUE.equals(strict));
+        }
+
+        if (obj instanceof JSObject) {
+            ((JSObject)obj).removeMember(Objects.toString(property));
+            return true;
         }
 
         // if object is not reference type, vacuously delete is successful.
@@ -815,6 +821,10 @@ public final class ScriptRuntime {
                 return ((ScriptObject)obj).has(property);
             }
 
+            if (obj instanceof JSObject) {
+                return ((JSObject)obj).hasMember(Objects.toString(property));
+            }
+
             return false;
         }
 
@@ -841,11 +851,13 @@ public final class ScriptRuntime {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
         }
 
-        if (clazz instanceof ScriptObjectMirror) {
-            if (obj instanceof ScriptObjectMirror) {
-                return ((ScriptObjectMirror)clazz).isInstance((ScriptObjectMirror)obj);
-            }
-            return false;
+        if (clazz instanceof JSObject) {
+            return ((JSObject)clazz).isInstance(obj);
+        }
+
+        // provide for reverse hook
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).isInstanceOf(clazz);
         }
 
         throw typeError("instanceof.on.non.object");

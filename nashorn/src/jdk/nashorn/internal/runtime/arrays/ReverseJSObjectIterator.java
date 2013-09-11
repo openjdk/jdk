@@ -25,17 +25,17 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * Reverse iterator over a ScriptObjectMirror
  */
-final class ReverseScriptObjectMirrorIterator extends ScriptObjectMirrorIterator {
+final class ReverseJSObjectIterator extends JSObjectIterator {
 
-    ReverseScriptObjectMirrorIterator(final ScriptObjectMirror obj, final boolean includeUndefined) {
+    ReverseJSObjectIterator(final JSObject obj, final boolean includeUndefined) {
         super(obj, includeUndefined);
-        this.index = JSType.toUint32(obj.containsKey("length")? obj.getMember("length") : 0) - 1;
+        this.index = JSType.toUint32(obj.hasMember("length")? obj.getMember("length") : 0) - 1;
     }
 
     @Override
