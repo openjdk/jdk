@@ -245,14 +245,26 @@ public class Logger {
         // In order to finish the initialization of the global logger, we
         // will therefore call LogManager.getLogManager() here.
         //
-        // Care must be taken *not* to call Logger.getGlobal() in
-        // LogManager static initializers in order to avoid such
-        // deadlocks.
-        //
-        if (global != null && global.manager == null) {
-            // Complete initialization of the global Logger.
-            global.manager = LogManager.getLogManager();
-        }
+        // To prevent race conditions we also need to call
+        // LogManager.getLogManager() unconditionally here.
+        // Indeed we cannot rely on the observed value of global.manager,
+        // because global.manager will become not null somewhere during
+        // the initialization of LogManager.
+        // If two threads are calling getGlobal() concurrently, one thread
+        // will see global.manager null and call LogManager.getLogManager(),
+        // but the other thread could come in at a time when global.manager
+        // is already set although ensureLogManagerInitialized is not finished
+        // yet...
+        // Calling LogManager.getLogManager() unconditionally will fix that.
+
+        LogManager.getLogManager();
+
+        // Now the global LogManager should be initialized,
+        // and the global logger should have been added to
+        // it, unless we were called within the constructor of a LogManager
+        // subclass installed as LogManager, in which case global.manager
+        // would still be null, and global will be lazily initialized later on.
+
         return global;
     }
 
@@ -298,11 +310,11 @@ public class Logger {
      *             no corresponding resource can be found.
      */
     protected Logger(String name, String resourceBundleName) {
-        this(name, resourceBundleName, null);
+        this(name, resourceBundleName, null, LogManager.getLogManager());
     }
 
-    Logger(String name, String resourceBundleName, Class<?> caller) {
-        this.manager = LogManager.getLogManager();
+    Logger(String name, String resourceBundleName, Class<?> caller, LogManager manager) {
+        this.manager = manager;
         setupResourceInfo(resourceBundleName, caller);
         this.name = name;
         levelValue = Level.INFO.intValue();
@@ -332,8 +344,8 @@ public class Logger {
         levelValue = Level.INFO.intValue();
     }
 
-    // It is called from the LogManager.<clinit> to complete
-    // initialization of the global Logger.
+    // It is called from LoggerContext.addLocalLogger() when the logger
+    // is actually added to a LogManager.
     void setLogManager(LogManager manager) {
         this.manager = manager;
     }
@@ -558,7 +570,7 @@ public class Logger {
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();
         Logger result = new Logger(null, resourceBundleName,
-                                   Reflection.getCallerClass());
+                                   Reflection.getCallerClass(), manager);
         result.anonymous = true;
         Logger root = manager.getLogger("");
         result.doSetParent(root);
@@ -1798,7 +1810,7 @@ public class Logger {
         if (parent == null) {
             throw new NullPointerException();
         }
-        manager.checkPermission();
+        checkPermission();
         doSetParent(parent);
     }
 
