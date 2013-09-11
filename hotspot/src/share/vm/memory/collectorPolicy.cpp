@@ -145,6 +145,30 @@ void CollectorPolicy::cleared_all_soft_refs() {
   _all_soft_refs_clear = true;
 }
 
+size_t CollectorPolicy::compute_max_alignment() {
+  // The card marking array and the offset arrays for old generations are
+  // committed in os pages as well. Make sure they are entirely full (to
+  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
+  // byte entry and the os page size is 4096, the maximum heap size should
+  // be 512*4096 = 2MB aligned.
+
+  // There is only the GenRemSet in Hotspot and only the GenRemSet::CardTable
+  // is supported.
+  // Requirements of any new remembered set implementations must be added here.
+  size_t alignment = GenRemSet::max_alignment_constraint(GenRemSet::CardTable);
+
+  // Parallel GC does its own alignment of the generations to avoid requiring a
+  // large page (256M on some platforms) for the permanent generation.  The
+  // other collectors should also be updated to do their own alignment and then
+  // this use of lcm() should be removed.
+  if (UseLargePages && !UseParallelGC) {
+      // in presence of large pages we have to make sure that our
+      // alignment is large page aware
+      alignment = lcm(os::large_page_size(), alignment);
+  }
+
+  return alignment;
+}
 
 // GenCollectorPolicy methods.
 
@@ -173,29 +197,6 @@ void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                         init_survivor_size,
                                         max_gc_pause_sec,
                                         GCTimeRatio);
-}
-
-size_t GenCollectorPolicy::compute_max_alignment() {
-  // The card marking array and the offset arrays for old generations are
-  // committed in os pages as well. Make sure they are entirely full (to
-  // avoid partial page problems), e.g. if 512 bytes heap corresponds to 1
-  // byte entry and the os page size is 4096, the maximum heap size should
-  // be 512*4096 = 2MB aligned.
-  size_t alignment = GenRemSet::max_alignment_constraint(rem_set_name());
-
-  // Parallel GC does its own alignment of the generations to avoid requiring a
-  // large page (256M on some platforms) for the permanent generation.  The
-  // other collectors should also be updated to do their own alignment and then
-  // this use of lcm() should be removed.
-  if (UseLargePages && !UseParallelGC) {
-      // in presence of large pages we have to make sure that our
-      // alignment is large page aware
-      alignment = lcm(os::large_page_size(), alignment);
-  }
-
-  assert(alignment >= min_alignment(), "Must be");
-
-  return alignment;
 }
 
 void GenCollectorPolicy::initialize_flags() {

@@ -28,6 +28,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -54,6 +55,8 @@
 #endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
@@ -90,6 +93,7 @@ char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
+size_t Arguments::_conservative_max_heap_alignment = 0;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -1391,10 +1395,17 @@ bool verify_object_alignment() {
   return true;
 }
 
-inline uintx max_heap_for_compressed_oops() {
+uintx Arguments::max_heap_for_compressed_oops() {
   // Avoid sign flip.
   assert(OopEncodingHeapMax > (uint64_t)os::vm_page_size(), "Unusual page size");
-  LP64_ONLY(return OopEncodingHeapMax - os::vm_page_size());
+  // We need to fit both the NULL page and the heap into the memory budget, while
+  // keeping alignment constraints of the heap. To guarantee the latter, as the
+  // NULL page is located before the heap, we pad the NULL page to the conservative
+  // maximum alignment that the GC may ever impose upon the heap.
+  size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
+    Arguments::conservative_max_heap_alignment());
+
+  LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1475,6 +1486,23 @@ void Arguments::set_use_compressed_klass_ptrs() {
 #endif // !ZERO
 }
 
+void Arguments::set_conservative_max_heap_alignment() {
+  // The conservative maximum required alignment for the heap is the maximum of
+  // the alignments imposed by several sources: any requirements from the heap
+  // itself, the collector policy and the maximum page size we may run the VM
+  // with.
+  size_t heap_alignment = GenCollectedHeap::conservative_max_heap_alignment();
+#if INCLUDE_ALL_GCS
+  if (UseParallelGC) {
+    heap_alignment = ParallelScavengeHeap::conservative_max_heap_alignment();
+  } else if (UseG1GC) {
+    heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
+  }
+#endif // INCLUDE_ALL_GCS
+  _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
+    CollectorPolicy::compute_max_alignment());
+}
+
 void Arguments::set_ergonomics_flags() {
 
   if (os::is_server_class_machine()) {
@@ -1502,6 +1530,8 @@ void Arguments::set_ergonomics_flags() {
       no_shared_spaces();
     }
   }
+
+  set_conservative_max_heap_alignment();
 
 #ifndef ZERO
 #ifdef _LP64
@@ -3505,6 +3535,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
   no_shared_spaces();
 #endif // INCLUDE_CDS
+
+  return JNI_OK;
+}
+
+jint Arguments::apply_ergo() {
 
   // Set flags based on ergonomics.
   set_ergonomics_flags();
