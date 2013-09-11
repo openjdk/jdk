@@ -51,7 +51,7 @@ const bool metaspace_slow_verify = false;
 // Parameters for stress mode testing
 const uint metadata_deallocate_a_lot_block = 10;
 const uint metadata_deallocate_a_lock_chunk = 3;
-size_t const allocation_from_dictionary_limit = 64 * K;
+size_t const allocation_from_dictionary_limit = 4 * K;
 
 MetaWord* last_allocated = 0;
 
@@ -227,6 +227,10 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
 class BlockFreelist VALUE_OBJ_CLASS_SPEC {
   BlockTreeDictionary* _dictionary;
   static Metablock* initialize_free_chunk(MetaWord* p, size_t word_size);
+
+  // Only allocate and split from freelist if the size of the allocation
+  // is at least 1/4th the size of the available block.
+  const static int WasteMultiplier = 4;
 
   // Accessors
   BlockTreeDictionary* dictionary() const { return _dictionary; }
@@ -623,6 +627,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 
   // Add chunk to the list of chunks in use
   void add_chunk(Metachunk* v, bool make_current);
+  void retire_current_chunk();
 
   Mutex* lock() const { return _lock; }
 
@@ -807,12 +812,25 @@ MetaWord* BlockFreelist::get_block(size_t word_size) {
   }
 
   Metablock* free_block =
-    dictionary()->get_chunk(word_size, FreeBlockDictionary<Metablock>::exactly);
+    dictionary()->get_chunk(word_size, FreeBlockDictionary<Metablock>::atLeast);
   if (free_block == NULL) {
     return NULL;
   }
 
-  return (MetaWord*) free_block;
+  const size_t block_size = free_block->size();
+  if (block_size > WasteMultiplier * word_size) {
+    return_block((MetaWord*)free_block, block_size);
+    return NULL;
+  }
+
+  MetaWord* new_block = (MetaWord*)free_block;
+  assert(block_size >= word_size, "Incorrect size of block from freelist");
+  const size_t unused = block_size - word_size;
+  if (unused >= TreeChunk<Metablock, FreeList>::min_size()) {
+    return_block(new_block + word_size, unused);
+  }
+
+  return new_block;
 }
 
 void BlockFreelist::print_on(outputStream* st) const {
@@ -2278,6 +2296,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   ChunkIndex index = ChunkManager::list_index(new_chunk->word_size());
 
   if (index != HumongousIndex) {
+    retire_current_chunk();
     set_current_chunk(new_chunk);
     new_chunk->set_next(chunks_in_use(index));
     set_chunks_in_use(index, new_chunk);
@@ -2309,6 +2328,16 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
     new_chunk->print_on(gclog_or_tty);
     if (vs_list() != NULL) {
       vs_list()->chunk_manager()->locked_print_free_chunks(tty);
+    }
+  }
+}
+
+void SpaceManager::retire_current_chunk() {
+  if (current_chunk() != NULL) {
+    size_t remaining_words = current_chunk()->free_word_size();
+    if (remaining_words >= TreeChunk<Metablock, FreeList>::min_size()) {
+      block_freelists()->return_block(current_chunk()->allocate(remaining_words), remaining_words);
+      inc_used_metrics(remaining_words);
     }
   }
 }
