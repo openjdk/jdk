@@ -421,7 +421,7 @@
   product(bool, UseDivMod, true,                                            \
           "Use combined DivMod instruction if available")                   \
                                                                             \
-  product(intx, MinJumpTableSize, 18,                                       \
+  product_pd(intx, MinJumpTableSize,                                        \
           "Minimum number of targets in a generated jump table")            \
                                                                             \
   product(intx, MaxJumpTableSize, 65000,                                    \
