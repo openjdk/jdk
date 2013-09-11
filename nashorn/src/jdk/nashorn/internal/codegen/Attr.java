@@ -886,10 +886,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     @Override
     public Node leaveDECINC(final UnaryNode unaryNode) {
         // @see assignOffset
-        final UnaryNode newUnaryNode = unaryNode.setRHS(ensureAssignmentSlots(unaryNode.rhs()));
         final Type type = arithType();
-        newType(newUnaryNode.rhs().getSymbol(), type);
-        return end(ensureSymbol(type, newUnaryNode));
+        newType(unaryNode.rhs().getSymbol(), type);
+        return end(ensureSymbol(type, unaryNode));
     }
 
     @Override
@@ -1575,39 +1574,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     /**
-     * In an assignment, recursively make sure that there are slots for
-     * everything that has to be laid out as temporary storage, which is the
-     * case if we are assign-op:ing a BaseNode subclass. This has to be
-     * recursive to handle things like multi dimensional arrays as lhs
-     *
-     * see NASHORN-258
-     *
-     * @param assignmentDest the destination node of the assignment, e.g. lhs for binary nodes
-     */
-    private Expression ensureAssignmentSlots(final Expression assignmentDest) {
-        final LexicalContext attrLexicalContext = lc;
-        return (Expression)assignmentDest.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-            @Override
-            public Node leaveIndexNode(final IndexNode indexNode) {
-                assert indexNode.getSymbol().isTemp();
-                final Expression index = indexNode.getIndex();
-                //only temps can be set as needing slots. the others will self resolve
-                //it is illegal to take a scope var and force it to be a slot, that breaks
-                Symbol indexSymbol = index.getSymbol();
-                if (indexSymbol.isTemp() && !indexSymbol.isConstant() && !indexSymbol.hasSlot()) {
-                    if(indexSymbol.isShared()) {
-                        indexSymbol = temporarySymbols.createUnshared(indexSymbol);
-                    }
-                    indexSymbol.setNeedsSlot(true);
-                    attrLexicalContext.getCurrentBlock().putSymbol(attrLexicalContext, indexSymbol);
-                    return indexNode.setIndex(index.setSymbol(attrLexicalContext, indexSymbol));
-                }
-                return indexNode;
-            }
-        });
-    }
-
-    /**
      * Return the type that arithmetic ops should use. Until we have implemented better type
      * analysis (range based) or overflow checks that are fast enough for int arithmetic,
      * this is the number type
@@ -1704,7 +1670,7 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         newType(lhs.getSymbol(), destType); //may not narrow if dest is already wider than destType
 //        ensureSymbol(destType, binaryNode); //for OP= nodes, the node can carry a narrower types than its lhs rhs. This is perfectly fine
 
-        return end(ensureSymbol(destType, ensureAssignmentSlots(binaryNode)));
+        return end(ensureSymbol(destType, binaryNode));
     }
 
     private Expression ensureSymbol(final Type type, final Expression expr) {
