@@ -26,21 +26,21 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import java.util.NoSuchElementException;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * Iterator over a ScriptObjectMirror
  */
-class ScriptObjectMirrorIterator extends ArrayLikeIterator<Object> {
+class JSObjectIterator extends ArrayLikeIterator<Object> {
 
-    protected final ScriptObjectMirror obj;
+    protected final JSObject obj;
     private final long length;
 
-    ScriptObjectMirrorIterator(final ScriptObjectMirror obj, final boolean includeUndefined) {
+    JSObjectIterator(final JSObject obj, final boolean includeUndefined) {
         super(includeUndefined);
         this.obj    = obj;
-        this.length = JSType.toUint32(obj.containsKey("length")? obj.getMember("length") : 0);
+        this.length = JSType.toUint32(obj.hasMember("length")? obj.getMember("length") : 0);
         this.index  = 0;
     }
 
@@ -60,7 +60,7 @@ class ScriptObjectMirrorIterator extends ArrayLikeIterator<Object> {
         }
 
         while (indexInArray()) {
-            if (obj.containsKey(index) || includeUndefined) {
+            if (obj.hasSlot((int)index) || includeUndefined) {
                 break;
             }
             bumpIndex();
@@ -72,7 +72,7 @@ class ScriptObjectMirrorIterator extends ArrayLikeIterator<Object> {
     @Override
     public Object next() {
         if (indexInArray()) {
-            return obj.get(bumpIndex());
+            return obj.getSlot((int)bumpIndex());
         }
 
         throw new NoSuchElementException();
