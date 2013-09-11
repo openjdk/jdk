@@ -494,7 +494,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
         if (selfMirror != null) {
             try {
-                return ScriptObjectMirror.translateUndefined(selfMirror.call(name, args));
+                return ScriptObjectMirror.translateUndefined(selfMirror.callMember(name, args));
             } catch (final Exception e) {
                 final Throwable cause = e.getCause();
                 if (cause instanceof NoSuchMethodException) {
