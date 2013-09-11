@@ -28,6 +28,7 @@ package jdk.nashorn.api.scripting;
 import java.nio.IntBuffer;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -46,7 +47,7 @@ import org.testng.annotations.Test;
  */
 public class PluggableJSObjectTest {
     public static class MapWrapperObject extends JSObject {
-        private final HashMap<String, Object> map = new HashMap<>();
+        private final HashMap<String, Object> map = new LinkedHashMap<>();
 
         public HashMap<String, Object> getMap() {
             return map;
