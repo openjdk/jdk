@@ -3920,8 +3920,6 @@ jint os::init_2(void) {
 #endif
   }
 
-  os::large_page_init();
-
   // Setup Windows Exceptions
 
   // for debugging float code generation bugs
