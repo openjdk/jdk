@@ -30,4 +30,7 @@ FILES_java = \
         sun/util/resources/LocaleNamesBundle.java \
         sun/util/resources/TimeZoneNamesBundle.java \
         sun/util/resources/TimeZoneNames.java \
-        sun/util/resources/en/TimeZoneNames_en.java
+        sun/util/resources/en/TimeZoneNames_en.java \
+        sun/util/resources/en/TimeZoneNames_en_CA.java \
+        sun/util/resources/en/TimeZoneNames_en_GB.java \
+        sun/util/resources/en/TimeZoneNames_en_IE.java
