@@ -40,11 +40,22 @@ public interface Template {
     public static class Behavior {
         /* Looks for expandable keys.  An expandable key can take the form:
          *   #{MAJOR}
+         *   #{MAJOR.}
          *   #{MAJOR.MINOR}
-         *   where MAJOR can be IDENTIFIER or IDENTIFIER[NUMERIC_INDEX]
-         *   and MINOR can be an identifier
+         * where MAJOR can be IDENTIFIER or IDENTIFIER[NUMERIC_INDEX]
+         * and MINOR can be an identifier.
+         *
+         * The ability to have an empty minor is provided on the
+         * assumption that some tests that can be written with this
+         * will find it useful to make a distinction akin to
+         * distinguishing F from F(), where F is a function pointer,
+         * and also cases of #{FOO.#{BAR}}, where BAR expands to an
+         * empty string.
+         *
+         * However, this being a general-purpose framework, the exact
+         * use is left up to the test writers.
          */
-        private static final Pattern pattern = Pattern.compile("#\\{([A-Z_][A-Z0-9_]*(?:\\[\\d+\\])?)(?:\\.([A-Z_][A-Z0-9_]*))?\\}");
+        private static final Pattern pattern = Pattern.compile("#\\{([A-Z_][A-Z0-9_]*(?:\\[\\d+\\])?)(?:\\.([A-Z0-9_]*))?\\}");
 
         public static String expandTemplate(String template, final Map<String, Template> vars) {
             return expandTemplate(template, new MapResolver(vars));
