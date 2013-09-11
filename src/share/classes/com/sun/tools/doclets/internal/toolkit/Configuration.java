@@ -396,6 +396,9 @@ public abstract class Configuration {
             interimResults.put(p, new ArrayList<PackageDoc>());
 
         for (PackageDoc pkg: packages) {
+            if (nodeprecated && Util.isDeprecated(pkg)) {
+                continue;
+            }
             // the getProfile method takes a type name, not a package name,
             // but isn't particularly fussy about the simple name -- so just use *
             int i = profiles.getProfile(pkg.name().replace(".", "/") + "/*");
@@ -409,12 +412,17 @@ public abstract class Configuration {
         // Build the profilePackages structure used by the doclet
         profilePackages = new HashMap<String,PackageDoc[]>();
         List<PackageDoc> prev = Collections.<PackageDoc>emptyList();
+        int size;
         for (Map.Entry<Profile,List<PackageDoc>> e: interimResults.entrySet()) {
             Profile p = e.getKey();
             List<PackageDoc> pkgs =  e.getValue();
             pkgs.addAll(prev); // each profile contains all lower profiles
             Collections.sort(pkgs);
-            profilePackages.put(p.name, pkgs.toArray(new PackageDoc[pkgs.size()]));
+            size = pkgs.size();
+            // For a profile, if there are no packages to be documented, do not add
+            // it to profilePackages map.
+            if (size > 0)
+                profilePackages.put(p.name, pkgs.toArray(new PackageDoc[pkgs.size()]));
             prev = pkgs;
         }
 
@@ -716,6 +724,17 @@ public abstract class Configuration {
             }
         }
         return true;
+    }
+
+    /**
+     * Check the validity of the given profile. Return false if there are no
+     * valid packages to be documented for the profile.
+     *
+     * @param profileName the profile that needs to be validated.
+     * @return true if the profile has valid packages to be documented.
+     */
+    public boolean shouldDocumentProfile(String profileName) {
+        return profilePackages.containsKey(profileName);
     }
 
     /**
