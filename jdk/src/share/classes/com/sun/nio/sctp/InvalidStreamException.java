@@ -40,6 +40,9 @@ public class InvalidStreamException extends IllegalArgumentException {
 
     /**
      * Constructs an instance of this class with the specified detailed message.
+     *
+     * @param  msg
+     *         The String that contains a detailed message
      */
     public InvalidStreamException(String msg) {
         super(msg);
