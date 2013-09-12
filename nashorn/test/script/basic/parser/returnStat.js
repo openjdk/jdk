@@ -22,12 +22,14 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check 'return' statement.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("(function() { return })");
+printParse("(function() { return res })");
+printParse("(function() { return foo() })");

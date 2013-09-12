@@ -22,12 +22,13 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests for parenthesis expressions.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("(2) + (1) + 4");
+printParse("3 + (7) << (5)");

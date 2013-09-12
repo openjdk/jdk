@@ -1,0 +1,71 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "LabeledStatement",
+            "label": {
+                "type": "Identifier",
+                "name": "begin"
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "ForStatement",
+                        "init": null,
+                        "test": null,
+                        "update": null,
+                        "body": {
+                            "type": "BlockStatement",
+                            "body": [
+                                {
+                                    "type": "BreakStatement",
+                                    "label": {
+                                        "type": "Identifier",
+                                        "name": "begin"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "LabeledStatement",
+            "label": {
+                "type": "Identifier",
+                "name": "begin"
+            },
+            "body": {
+                "type": "BlockStatement",
+                "body": [
+                    {
+                        "type": "WhileStatement",
+                        "test": {
+                            "type": "Literal",
+                            "value": true
+                        },
+                        "body": {
+                            "type": "BlockStatement",
+                            "body": [
+                                {
+                                    "type": "BreakStatement",
+                                    "label": {
+                                        "type": "Identifier",
+                                        "name": "begin"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

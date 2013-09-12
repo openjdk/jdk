@@ -22,12 +22,16 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests for loop statements.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("while(true) { print('hello') }")
+printParse("do { print('hello') } while(true)")
+printParse("for (i in obj) { print(obj[i]) }")
+printParse("for each (i in obj) { print(i) }")
+printParse("for (i = 0; i < 10; i++) { print(i) }")

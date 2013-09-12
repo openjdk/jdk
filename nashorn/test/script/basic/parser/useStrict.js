@@ -22,12 +22,13 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check if statement.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("'use strict'");
+printParse("function f() { 'use strict' }");

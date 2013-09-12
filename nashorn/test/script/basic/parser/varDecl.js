@@ -22,12 +22,18 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check variable declarations.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+// no initialization
+printParse("var a");
+printParse("var a, b");
+
+// init single, multiple
+printParse("var a = 'hello'");
+printParse("var a = 1, b = 2, c = 3");
