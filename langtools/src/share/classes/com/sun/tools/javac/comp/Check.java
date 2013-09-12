@@ -3340,7 +3340,9 @@ public class Check {
                     (e.sym.flags() & CLASH) == 0 &&
                     sym.kind == e.sym.kind &&
                     sym.name != names.error &&
-                    (sym.kind != MTH || types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
+                    (sym.kind != MTH ||
+                     types.hasSameArgs(sym.type, e.sym.type) ||
+                     types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS)) {
                     varargsDuplicateError(pos, sym, e.sym);
                     return true;
