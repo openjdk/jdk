@@ -518,7 +518,7 @@ class Parse : public GraphKit {
 
   // loading from a constant field or the constant pool
   // returns false if push failed (non-perm field constants only, not ldcs)
-  bool push_constant(ciConstant con, bool require_constant = false, bool is_autobox_cache = false);
+  bool push_constant(ciConstant con, bool require_constant = false, bool is_autobox_cache = false, const Type* basic_type = NULL);
 
   // implementation of object creation bytecodes
   void emit_guard_for_new(ciInstanceKlass* klass);

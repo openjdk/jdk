@@ -240,6 +240,14 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
     return (access_flags() & JVM_ACC_FIELD_INTERNAL) != 0;
   }
 
+  bool is_stable() const {
+    return (access_flags() & JVM_ACC_FIELD_STABLE) != 0;
+  }
+  void set_stable(bool z) {
+    if (z) _shorts[access_flags_offset] |=  JVM_ACC_FIELD_STABLE;
+    else   _shorts[access_flags_offset] &= ~JVM_ACC_FIELD_STABLE;
+  }
+
   Symbol* lookup_symbol(int symbol_index) const {
     assert(is_internal(), "only internal fields");
     return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
