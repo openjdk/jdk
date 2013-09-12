@@ -43,6 +43,14 @@ if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     AC_MSG_RESULT([alsa pulse])
 fi
 
+if test "x$OPENJDK_TARGET_OS" = xaix; then
+    AC_MSG_CHECKING([what is not needed on AIX?])
+    ALSA_NOT_NEEDED=yes
+    PULSE_NOT_NEEDED=yes
+    AC_MSG_RESULT([alsa pulse])
+fi
+
+
 if test "x$OPENJDK_TARGET_OS" = xwindows; then
     AC_MSG_CHECKING([what is not needed on Windows?])
     CUPS_NOT_NEEDED=yes    
