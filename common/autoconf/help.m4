@@ -38,7 +38,7 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -46,8 +46,6 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -63,8 +61,6 @@ cygwin_help() {
         PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
     make)
         PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
-    * )
-       break ;;
     esac
 }
 
@@ -86,8 +82,6 @@ apt_help() {
         PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
-    * )
-       break ;;
     esac
 }
 
@@ -109,8 +103,6 @@ yum_help() {
         PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    * )
-       break ;;
     esac
 }
 

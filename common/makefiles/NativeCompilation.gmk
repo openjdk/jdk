@@ -495,7 +495,7 @@ define SetupNativeCompilation
         # Generating a static library, ie object file archive.
         $$($1_TARGET) : $$($1_EXPECTED_OBJS) $$($1_RES)
 	        $$(call ARCHIVING_MSG,$$($1_LIBRARY))
-	        $(AR) $$($1_AR_FLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
+	        $(AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
 			$$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
     endif
 

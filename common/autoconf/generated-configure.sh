@@ -710,7 +710,6 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
-TARGET_BITS_FLAG
 JT_HOME
 JTREGEXE
 LIPO
@@ -752,6 +751,7 @@ ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
 POTENTIAL_CXX
 TOOLS_DIR_CXX
+COMPILER_TARGET_BITS_FLAG
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -3450,8 +3450,6 @@ cygwin_help() {
         PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
     make)
         PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
-    * )
-       break ;;
     esac
 }
 
@@ -3473,8 +3471,6 @@ apt_help() {
         PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
-    * )
-       break ;;
     esac
 }
 
@@ -3496,8 +3492,6 @@ yum_help() {
         PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    * )
-       break ;;
     esac
 }
 
@@ -3826,7 +3820,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1378403883
+DATE_WHEN_GENERATED=1379014108
 
 ###############################################################################
 #
@@ -6745,6 +6739,11 @@ test -n "$target_alias" &&
       VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
       ;;
+    *aix*)
+      VAR_OS=aix
+      VAR_OS_API=posix
+      VAR_OS_ENV=aix
+      ;;
     *)
       as_fn_error $? "unsupported operating system $build_os" "$LINENO" 5
       ;;
@@ -6852,6 +6851,11 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_OS=windows
       VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
+      ;;
+    *aix*)
+      VAR_OS=aix
+      VAR_OS_API=posix
+      VAR_OS_ENV=aix
       ;;
     *)
       as_fn_error $? "unsupported operating system $host_os" "$LINENO" 5
@@ -15749,7 +15753,7 @@ if test "x$BOOT_JDK_FOUND" = xno; then
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -15757,8 +15761,6 @@ if test "x$BOOT_JDK_FOUND" = xno; then
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -19177,6 +19179,9 @@ elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   COMPILER_CHECK_LIST="cl"
 elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
   COMPILER_CHECK_LIST="cc gcc"
+elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+  # Do not probe for cc on AIX.
+  COMPILER_CHECK_LIST="xlc_r"
 else
   COMPILER_CHECK_LIST="gcc cc"
 fi
@@ -19300,7 +19305,7 @@ done
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -19308,8 +19313,6 @@ done
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -19584,9 +19587,12 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting CC to \"$new_complete\"" >&6;}
     fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CC" >&5
-$as_echo_n "checking resolved symbolic links for CC... " >&6; }
   TEST_COMPILER="$CC"
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CC" >&5
+$as_echo_n "checking resolved symbolic links for CC... " >&6; }
 
     if test "x$OPENJDK_BUILD_OS" != xwindows; then
         # Follow a chain of symbolic links. Use readlink
@@ -19635,8 +19641,9 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
         fi
     fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
 $as_echo "$TEST_COMPILER" >&6; }
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if CC is disguised ccache" >&5
 $as_echo_n "checking if CC is disguised ccache... " >&6; }
 
@@ -20100,6 +20107,15 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        as_fn_error $? "Failed to detect the compiler version of $COMPILER ...." "$LINENO" 5
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \(0-90-9\.0-90-9*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
@@ -20741,6 +20757,14 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+# Option used to tell the compiler whether to create 32- or 64-bit executables
+# Notice that CC contains the full compiler path at this point.
+case $CC in
+  *xlc_r) COMPILER_TARGET_BITS_FLAG="-q";;
+  *)      COMPILER_TARGET_BITS_FLAG="-m";;
+esac
+
+
 ### Locate C++ compiler (CXX)
 
 if test "x$CXX" != x; then
@@ -20749,6 +20773,9 @@ elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   COMPILER_CHECK_LIST="cl"
 elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
   COMPILER_CHECK_LIST="CC g++"
+elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+  # Do not probe for CC on AIX .
+  COMPILER_CHECK_LIST="xlC_r"
 else
   COMPILER_CHECK_LIST="g++ CC"
 fi
@@ -20872,7 +20899,7 @@ done
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -20880,8 +20907,6 @@ done
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -21156,9 +21181,12 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting CXX to \"$new_complete\"" >&6;}
     fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CXX" >&5
-$as_echo_n "checking resolved symbolic links for CXX... " >&6; }
   TEST_COMPILER="$CXX"
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CXX" >&5
+$as_echo_n "checking resolved symbolic links for CXX... " >&6; }
 
     if test "x$OPENJDK_BUILD_OS" != xwindows; then
         # Follow a chain of symbolic links. Use readlink
@@ -21207,8 +21235,9 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
         fi
     fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
 $as_echo "$TEST_COMPILER" >&6; }
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if CXX is disguised ccache" >&5
 $as_echo_n "checking if CXX is disguised ccache... " >&6; }
 
@@ -21672,6 +21701,15 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        as_fn_error $? "Failed to detect the compiler version of $COMPILER ...." "$LINENO" 5
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \(0-90-9\.0-90-9*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
@@ -22877,6 +22915,8 @@ $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     ARFLAGS="-r"
+elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    ARFLAGS="-X64"
 else
     ARFLAGS=""
 fi
@@ -28852,21 +28892,23 @@ done
 # is made at runtime.)
 #
 
-if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-  # Always specify -m flags on Solaris
+if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then
+  # Always specify -m flag on Solaris
+  # And -q on AIX because otherwise the compiler produces 32-bit objects by default
 
   # keep track of c/cxx flags that we added outselves...
   #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
 elif test "x$COMPILE_TYPE" = xreduced; then
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
@@ -28874,16 +28916,17 @@ elif test "x$COMPILE_TYPE" = xreduced; then
 
   # keep track of c/cxx flags that we added outselves...
   #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
   fi
 fi
@@ -28949,20 +28992,83 @@ _ACEOF
 
 
 
-if test "x$SIZEOF_INT_P" != "x$ac_cv_sizeof_int_p"; then
-  # Workaround autoconf bug, see http://lists.gnu.org/archive/html/autoconf/2010-07/msg00004.html
-  SIZEOF_INT_P="$ac_cv_sizeof_int_p"
-fi
-
-if test "x$SIZEOF_INT_P" = x; then
+# AC_CHECK_SIZEOF defines 'ac_cv_sizeof_int_p' to hold the number of bytes used by an 'int*'
+if test "x$ac_cv_sizeof_int_p" = x; then
     # The test failed, lets stick to the assumed value.
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&5
 $as_echo "$as_me: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&2;}
 else
-    TESTED_TARGET_CPU_BITS=`expr 8 \* $SIZEOF_INT_P`
+    TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
     if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+        # This situation may happen on 64-bit platforms where the compiler by default only generates 32-bit objects
+        # Let's try to implicitely set the compilers target architecture and retry the test
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&5
+$as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
+$as_echo "$as_me: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
+
+  # keep track of c/cxx flags that we added outselves...
+  #   to prevent emitting warning...
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
+
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+
+        # We have to unset 'ac_cv_sizeof_int_p' first, otherwise AC_CHECK_SIZEOF will use the previously cached value!
+        unset ac_cv_sizeof_int_p
+	# And we have to undef the definition of SIZEOF_INT_P in confdefs.h by the previous invocation of AC_CHECK_SIZEOF
+	cat >>confdefs.h <<_ACEOF
+#undef SIZEOF_INT_P
+_ACEOF
+
+        # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of int *" >&5
+$as_echo_n "checking size of int *... " >&6; }
+if ${ac_cv_sizeof_int_p+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (int *))" "ac_cv_sizeof_int_p"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_int_p" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (int *)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_int_p=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_int_p" >&5
+$as_echo "$ac_cv_sizeof_int_p" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_INT_P $ac_cv_sizeof_int_p
+_ACEOF
+
+
+
+        TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
+
+        if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
+            as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+        fi
     fi
 fi
 
@@ -29275,6 +29381,29 @@ else
         POST_STRIP_CMD="$STRIP -x"
         POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
     fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+        COMPILER_NAME=xlc
+        PICFLAG="-qpic=large"
+        LIBRARY_PREFIX=lib
+        SHARED_LIBRARY='lib$1.so'
+        STATIC_LIBRARY='lib$1.a'
+        SHARED_LIBRARY_FLAGS="-qmkshrobj"
+        SHARED_LIBRARY_SUFFIX='.so'
+        STATIC_LIBRARY_SUFFIX='.a'
+        OBJ_SUFFIX='.o'
+        EXE_SUFFIX=''
+        SET_SHARED_LIBRARY_NAME=''
+        SET_SHARED_LIBRARY_MAPFILE=''
+        C_FLAG_REORDER=''
+        CXX_FLAG_REORDER=''
+        SET_SHARED_LIBRARY_ORIGIN=''
+        SET_EXECUTABLE_ORIGIN=""
+        CFLAGS_JDK=""
+        CXXFLAGS_JDK=""
+        CFLAGS_JDKLIB_EXTRA=''
+        POST_STRIP_CMD="$STRIP -X32_64"
+        POST_MCS_CMD=""
+    fi
     if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # If it is not gcc, then assume it is the MS Visual Studio compiler
         COMPILER_NAME=cl
@@ -29457,8 +29586,26 @@ case $COMPILER_TYPE in
             ;;
         esac
 
-    CFLAGS_DEBUG_SYMBOLS="-g -xs"
-    CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+        CFLAGS_DEBUG_SYMBOLS="-g -xs"
+        CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+        ;;
+      xlc )
+        C_FLAG_DEPS="-qmakedep=gcc -MF"
+        CXX_FLAG_DEPS="-qmakedep=gcc -MF"
+        C_O_FLAG_HIGHEST="-O3"
+        C_O_FLAG_HI="-O3 -qstrict"
+        C_O_FLAG_NORM="-O2"
+        C_O_FLAG_NONE=""
+        CXX_O_FLAG_HIGHEST="-O3"
+        CXX_O_FLAG_HI="-O3 -qstrict"
+        CXX_O_FLAG_NORM="-O2"
+        CXX_O_FLAG_NONE=""
+        CFLAGS_DEBUG_SYMBOLS="-g"
+        CXXFLAGS_DEBUG_SYMBOLS="-g"
+        LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
+        CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+        CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+        ;;
     esac
     ;;
   CL )
@@ -29582,6 +29729,13 @@ case $COMPILER_NAME in
           LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
           LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
           ;;
+      xlc )
+          CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+          CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+
+          LDFLAGS_JDK="$LDFLAGS_JDK"
+          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK"
+          ;;
       cl )
           CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
                -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
@@ -29650,6 +29804,9 @@ if test "x$OPENJDK_TARGET_OS" = xwindows; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
+fi
+if test "x$OPENJDK_TARGET_OS" = xaix; then
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DAIX -DPPC64"
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -29783,10 +29940,10 @@ fi
   # ZERO_ARCHFLAG tells the compiler which mode to build for
   case "${OPENJDK_TARGET_CPU}" in
     s390)
-      ZERO_ARCHFLAG="-m31"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
       ;;
     *)
-      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
@@ -29859,15 +30016,15 @@ $as_echo "$supports" >&6; }
 
 
 
-  # Check that the compiler supports -mX flags
+  # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"" >&5
-$as_echo_n "checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS -m${OPENJDK_TARGET_CPU_BITS}"
+  CFLAGS="$CFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -29895,7 +30052,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG -m${OPENJDK_TARGET_CPU_BITS}"
+  CXXFLAGS="$CXXFLAG ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -30049,6 +30206,16 @@ $as_echo_n "checking what is not needed on Solaris?... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
 $as_echo "alsa pulse" >&6; }
 fi
+
+if test "x$OPENJDK_TARGET_OS" = xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on AIX?" >&5
+$as_echo_n "checking what is not needed on AIX?... " >&6; }
+    ALSA_NOT_NEEDED=yes
+    PULSE_NOT_NEEDED=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
+$as_echo "alsa pulse" >&6; }
+fi
+
 
 if test "x$OPENJDK_TARGET_OS" = xwindows; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on Windows?" >&5
@@ -30860,7 +31027,7 @@ if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -30868,8 +31035,6 @@ if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -30953,7 +31118,7 @@ if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -30961,8 +31126,6 @@ if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -31205,7 +31368,7 @@ $as_echo "$CUPS_FOUND" >&6; }
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -31213,8 +31376,6 @@ $as_echo "$CUPS_FOUND" >&6; }
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -31828,7 +31989,7 @@ $as_echo "$FREETYPE2_FOUND" >&6; }
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -31836,8 +31997,6 @@ $as_echo "$FREETYPE2_FOUND" >&6; }
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -32200,7 +32359,7 @@ done
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -32208,8 +32367,6 @@ done
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -33073,6 +33230,9 @@ $as_echo_n "checking for number of cores... " >&6; }
         # Looks like a MacOSX system
         NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print $5}'`
         FOUND_CORES=yes
+    elif test "x$OPENJDK_BUILD_OS" = xaix ; then
+        NUM_CORES=`/usr/sbin/prtconf | grep "^Number Of Processors" | awk '{ print $4 }'`
+        FOUND_CORES=yes
     elif test -n "$NUMBER_OF_PROCESSORS"; then
         # On windows, look in the env
         NUM_CORES=$NUMBER_OF_PROCESSORS
@@ -33118,8 +33278,8 @@ $as_echo_n "checking for memory size... " >&6; }
         MEMORY_SIZE=`expr $MEMORY_SIZE / 1024`
         FOUND_MEM=yes
     elif test -x /usr/sbin/prtconf; then
-        # Looks like a Solaris system
-        MEMORY_SIZE=`/usr/sbin/prtconf | grep "Memory size" | awk '{ print $3 }'`
+        # Looks like a Solaris or AIX system
+        MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
         FOUND_MEM=yes
     elif test -x /usr/sbin/system_profiler; then
         # Looks like a MacOSX system
@@ -35013,7 +35173,7 @@ if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; the
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-    yum)
+	yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -35021,8 +35181,6 @@ if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; the
                 pkgutil_help $MISSING_DEPENDENCY ;;
 	pkgadd)
                 pkgadd_help  $MISSING_DEPENDENCY ;;
-    * )
-      break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then

@@ -44,6 +44,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*@<:@ ,\t@:>@$COMPILER_NAME@<:@ ,\t@:>@\(@<:@1-9@:>@\.@<:@0-9@:>@@<:@0-9@:>@*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_ERROR([Failed to detect the compiler version of $COMPILER ....])
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \([0-9][0-9]\.[0-9][0-9]*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86
@@ -137,10 +146,14 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
   fi
   BASIC_FIXUP_EXECUTABLE($1)
-  AC_MSG_CHECKING([resolved symbolic links for $1])
   TEST_COMPILER="[$]$1"
-  BASIC_REMOVE_SYMBOLIC_LINKS(TEST_COMPILER)
-  AC_MSG_RESULT([$TEST_COMPILER])
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    AC_MSG_CHECKING([resolved symbolic links for $1])
+    BASIC_REMOVE_SYMBOLIC_LINKS(TEST_COMPILER)
+    AC_MSG_RESULT([$TEST_COMPILER])
+  fi
   AC_MSG_CHECKING([if $1 is disguised ccache])
 
   COMPILER_BASENAME=`$BASENAME "$TEST_COMPILER"`
@@ -250,6 +263,9 @@ elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   COMPILER_CHECK_LIST="cl"
 elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
   COMPILER_CHECK_LIST="cc gcc"
+elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+  # Do not probe for cc on AIX.
+  COMPILER_CHECK_LIST="xlc_r"
 else
   COMPILER_CHECK_LIST="gcc cc"
 fi
@@ -257,6 +273,14 @@ fi
 TOOLCHAIN_FIND_COMPILER([CC],[C],[$COMPILER_CHECK_LIST])
 # Now that we have resolved CC ourself, let autoconf have its go at it
 AC_PROG_CC([$CC])
+
+# Option used to tell the compiler whether to create 32- or 64-bit executables
+# Notice that CC contains the full compiler path at this point.
+case $CC in
+  *xlc_r) COMPILER_TARGET_BITS_FLAG="-q";;
+  *)      COMPILER_TARGET_BITS_FLAG="-m";;
+esac
+AC_SUBST(COMPILER_TARGET_BITS_FLAG)
 
 ### Locate C++ compiler (CXX)
 
@@ -266,6 +290,9 @@ elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   COMPILER_CHECK_LIST="cl"
 elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
   COMPILER_CHECK_LIST="CC g++"
+elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+  # Do not probe for CC on AIX .
+  COMPILER_CHECK_LIST="xlC_r"
 else
   COMPILER_CHECK_LIST="g++ CC"
 fi
@@ -307,6 +334,8 @@ if test "x$OPENJDK_TARGET_OS" != xwindows; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     ARFLAGS="-r"
+elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    ARFLAGS="-X64"
 else
     ARFLAGS=""
 fi
@@ -371,7 +400,7 @@ AS_IF([test "x$OPENJDK_TARGET_OS" = xwindows], [
     ])
 
     # The version variables used to create RC_FLAGS may be overridden
-    # in a custom configure script, or possibly the command line.  
+    # in a custom configure script, or possibly the command line.
     # Let those variables be expanded at make time in spec.gmk.
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
@@ -550,6 +579,29 @@ else
         POST_STRIP_CMD="$STRIP -x"
         POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
     fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+        COMPILER_NAME=xlc
+        PICFLAG="-qpic=large"
+        LIBRARY_PREFIX=lib
+        SHARED_LIBRARY='lib[$]1.so'
+        STATIC_LIBRARY='lib[$]1.a'
+        SHARED_LIBRARY_FLAGS="-qmkshrobj"
+        SHARED_LIBRARY_SUFFIX='.so'
+        STATIC_LIBRARY_SUFFIX='.a'
+        OBJ_SUFFIX='.o'
+        EXE_SUFFIX=''
+        SET_SHARED_LIBRARY_NAME=''
+        SET_SHARED_LIBRARY_MAPFILE=''
+        C_FLAG_REORDER=''
+        CXX_FLAG_REORDER=''
+        SET_SHARED_LIBRARY_ORIGIN=''
+        SET_EXECUTABLE_ORIGIN=""
+        CFLAGS_JDK=""
+        CXXFLAGS_JDK=""
+        CFLAGS_JDKLIB_EXTRA=''
+        POST_STRIP_CMD="$STRIP -X32_64"
+        POST_MCS_CMD=""
+    fi
     if test "x$OPENJDK_TARGET_OS" = xwindows; then
         # If it is not gcc, then assume it is the MS Visual Studio compiler
         COMPILER_NAME=cl
@@ -723,8 +775,26 @@ case $COMPILER_TYPE in
             ;;
         esac
 
-    CFLAGS_DEBUG_SYMBOLS="-g -xs"
-    CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+        CFLAGS_DEBUG_SYMBOLS="-g -xs"
+        CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+        ;;
+      xlc )
+        C_FLAG_DEPS="-qmakedep=gcc -MF"
+        CXX_FLAG_DEPS="-qmakedep=gcc -MF"
+        C_O_FLAG_HIGHEST="-O3"
+        C_O_FLAG_HI="-O3 -qstrict"
+        C_O_FLAG_NORM="-O2"
+        C_O_FLAG_NONE=""
+        CXX_O_FLAG_HIGHEST="-O3"
+        CXX_O_FLAG_HI="-O3 -qstrict"
+        CXX_O_FLAG_NORM="-O2"
+        CXX_O_FLAG_NONE=""
+        CFLAGS_DEBUG_SYMBOLS="-g"
+        CXXFLAGS_DEBUG_SYMBOLS="-g"
+        LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
+        CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+        CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+        ;;
     esac
     ;;
   CL )
@@ -835,6 +905,13 @@ case $COMPILER_NAME in
           LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
           LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
           ;;
+      xlc )
+          CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+          CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+
+          LDFLAGS_JDK="$LDFLAGS_JDK"
+          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK"
+          ;;
       cl )
           CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
                -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
@@ -903,6 +980,9 @@ if test "x$OPENJDK_TARGET_OS" = xwindows; then
 fi
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
+fi
+if test "x$OPENJDK_TARGET_OS" = xaix; then
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DAIX -DPPC64"
 fi
 if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -1073,17 +1153,17 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC],
   # ZERO_ARCHFLAG tells the compiler which mode to build for
   case "${OPENJDK_TARGET_CPU}" in
     s390)
-      ZERO_ARCHFLAG="-m31"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
       ;;
     *)
-      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
   TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([$ZERO_ARCHFLAG], [], [ZERO_ARCHFLAG=""])
   AC_SUBST(ZERO_ARCHFLAG)
 
-  # Check that the compiler supports -mX flags
+  # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
-  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([-m${OPENJDK_TARGET_CPU_BITS}],
+  TOOLCHAIN_COMPILER_CHECK_ARGUMENTS([${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
     [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
