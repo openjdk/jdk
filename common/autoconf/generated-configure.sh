@@ -1031,6 +1031,7 @@ with_override_corba
 with_override_jaxp
 with_override_jaxws
 with_override_hotspot
+with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_msvcr_dll
@@ -1784,6 +1785,7 @@ Optional Packages:
   --with-override-jaxp    use this jaxp dir for the build
   --with-override-jaxws   use this jaxws dir for the build
   --with-override-hotspot use this hotspot dir for the build
+  --with-override-nashorn use this nashorn dir for the build
   --with-override-jdk     use this jdk dir for the build
   --with-import-hotspot   import hotspot binaries from this jdk image or
                           hotspot build dist dir instead of building from
@@ -3818,7 +3820,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1378914658
+DATE_WHEN_GENERATED=1378975246
 
 ###############################################################################
 #
@@ -16102,6 +16104,10 @@ if test "x$with_add_source_root" != x; then
        test -f $with_add_source_root/hotspot/make/Makefile; then
         as_fn_error $? "Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
+    if test -f $with_add_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_add_source_root/nashorn/make/Makefile; then
+        as_fn_error $? "Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources." "$LINENO" 5
+    fi
     if test -f $with_add_source_root/jdk/makefiles/Makefile || \
        test -f $with_add_source_root/jdk/make/Makefile; then
         as_fn_error $? "Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources." "$LINENO" 5
@@ -16136,6 +16142,10 @@ if test "x$with_override_source_root" != x; then
     if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
        test -f $with_override_source_root/hotspot/make/Makefile; then
         as_fn_error $? "Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override." "$LINENO" 5
+    fi
+    if test -f $with_override_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_override_source_root/nashorn/make/Makefile; then
+        as_fn_error $? "Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
     if test -f $with_override_source_root/jdk/makefiles/Makefile || \
        test -f $with_override_source_root/jdk/make/Makefile; then
@@ -16195,6 +16205,13 @@ fi
 # Check whether --with-override-hotspot was given.
 if test "${with_override_hotspot+set}" = set; then :
   withval=$with_override_hotspot;
+fi
+
+
+
+# Check whether --with-override-nashorn was given.
+if test "${with_override_nashorn+set}" = set; then :
+  withval=$with_override_nashorn;
 fi
 
 
@@ -16276,7 +16293,7 @@ if test "x$with_override_nashorn" != x; then
     cd "$with_override_nashorn"
     NASHORN_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+    if ! test -f $NASHORN_TOPDIR/makefiles/Makefile; then
         as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
