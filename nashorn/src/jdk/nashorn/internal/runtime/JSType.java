@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Locale;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
@@ -40,25 +39,28 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  */
 public enum JSType {
     /** The undefined type */
-    UNDEFINED,
+    UNDEFINED("undefined"),
 
     /** The null type */
-    NULL,
+    NULL("object"),
 
     /** The boolean type */
-    BOOLEAN,
+    BOOLEAN("boolean"),
 
     /** The number type */
-    NUMBER,
+    NUMBER("number"),
 
     /** The string type */
-    STRING,
+    STRING("string"),
 
     /** The object type */
-    OBJECT,
+    OBJECT("object"),
 
     /** The function type */
-    FUNCTION;
+    FUNCTION("function");
+
+    /** The type name as returned by ECMAScript "typeof" operator*/
+    private final String typeName;
 
     /** Max value for an uint32 in JavaScript */
     public static final long MAX_UINT = 0xFFFF_FFFFL;
@@ -110,13 +112,21 @@ public enum JSType {
     private static final double INT32_LIMIT = 4294967296.0;
 
     /**
+     * Constructor
+     *
+     * @param typeName the type name
+     */
+    private JSType(final String typeName) {
+        this.typeName = typeName;
+    }
+
+    /**
      * The external type name as returned by ECMAScript "typeof" operator
      *
      * @return type name for this type
      */
     public final String typeName() {
-        // For NULL, "object" has to be returned!
-        return ((this == NULL) ? OBJECT : this).name().toLowerCase(Locale.ENGLISH);
+        return this.typeName;
     }
 
     /**
@@ -127,31 +137,32 @@ public enum JSType {
      * @return the JSType for the object
      */
     public static JSType of(final Object obj) {
-        if (obj == ScriptRuntime.UNDEFINED) {
-            return JSType.UNDEFINED;
-        }
-
+        // Order of these statements is tuned for performance (see JDK-8024476)
         if (obj == null) {
             return JSType.NULL;
+        }
+
+        if (obj instanceof ScriptObject) {
+            return (obj instanceof ScriptFunction) ? JSType.FUNCTION : JSType.OBJECT;
         }
 
         if (obj instanceof Boolean) {
             return JSType.BOOLEAN;
         }
 
-        if (obj instanceof Number) {
-            return JSType.NUMBER;
-        }
-
         if (obj instanceof String || obj instanceof ConsString) {
             return JSType.STRING;
         }
 
-        if (Bootstrap.isCallable(obj)) {
-            return JSType.FUNCTION;
+        if (obj instanceof Number) {
+            return JSType.NUMBER;
         }
 
-        return JSType.OBJECT;
+        if (obj == ScriptRuntime.UNDEFINED) {
+            return JSType.UNDEFINED;
+        }
+
+        return Bootstrap.isCallable(obj) ? JSType.FUNCTION : JSType.OBJECT;
     }
 
     /**
