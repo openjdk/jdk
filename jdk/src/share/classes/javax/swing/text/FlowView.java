@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -794,6 +794,22 @@ public abstract class FlowView extends BoxView {
             v.setParent(this);
             super.forwardUpdateToView(v, e, a, f);
             v.setParent(parent);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        protected void forwardUpdate(DocumentEvent.ElementChange ec,
+                                          DocumentEvent e, Shape a, ViewFactory f) {
+            calculateUpdateIndexes(e);
+            // Send update event to all views followed by the changed place.
+            lastUpdateIndex = Math.max((getViewCount() - 1), 0);
+            for (int i = firstUpdateIndex; i <= lastUpdateIndex; i++) {
+                View v = getView(i);
+                if (v != null) {
+                    Shape childAlloc = getChildAllocation(i, a);
+                    forwardUpdateToView(v, e, childAlloc, f);
+                }
+            }
         }
 
         // The following methods don't do anything useful, they
