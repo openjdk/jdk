@@ -292,11 +292,16 @@ class MetaspaceAux : AllStatic {
   static size_t free_bytes();
   static size_t free_bytes(Metaspace::MetadataType mdtype);
 
-  // Total capacity in all Metaspaces
   static size_t reserved_bytes(Metaspace::MetadataType mdtype);
   static size_t reserved_bytes() {
     return reserved_bytes(Metaspace::ClassType) +
            reserved_bytes(Metaspace::NonClassType);
+  }
+
+  static size_t committed_bytes(Metaspace::MetadataType mdtype);
+  static size_t committed_bytes() {
+    return committed_bytes(Metaspace::ClassType) +
+           committed_bytes(Metaspace::NonClassType);
   }
 
   static size_t min_chunk_size_words();
