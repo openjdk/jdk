@@ -453,6 +453,42 @@ size_t VirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
 }
 
+size_t VirtualSpace::actual_committed_size() const {
+  // Special VirtualSpaces commit all reserved space up front.
+  if (special()) {
+    return reserved_size();
+  }
+
+  size_t committed_low    = pointer_delta(_lower_high,  _low_boundary,         sizeof(char));
+  size_t committed_middle = pointer_delta(_middle_high, _lower_high_boundary,  sizeof(char));
+  size_t committed_high   = pointer_delta(_upper_high,  _middle_high_boundary, sizeof(char));
+
+#ifdef ASSERT
+  size_t lower  = pointer_delta(_lower_high_boundary,  _low_boundary,         sizeof(char));
+  size_t middle = pointer_delta(_middle_high_boundary, _lower_high_boundary,  sizeof(char));
+  size_t upper  = pointer_delta(_upper_high_boundary,  _middle_high_boundary, sizeof(char));
+
+  if (committed_high > 0) {
+    assert(committed_low == lower, "Must be");
+    assert(committed_middle == middle, "Must be");
+  }
+
+  if (committed_middle > 0) {
+    assert(committed_low == lower, "Must be");
+  }
+  if (committed_middle < middle) {
+    assert(committed_high == 0, "Must be");
+  }
+
+  if (committed_low < lower) {
+    assert(committed_high == 0, "Must be");
+    assert(committed_middle == 0, "Must be");
+  }
+#endif
+
+  return committed_low + committed_middle + committed_high;
+}
+
 
 bool VirtualSpace::contains(const void* p) const {
   return low() <= (const char*) p && (const char*) p < high();
@@ -908,6 +944,109 @@ class TestReservedSpace : AllStatic {
 
 void TestReservedSpace_test() {
   TestReservedSpace::test_reserved_space();
+}
+
+#define assert_equals(actual, expected)     \
+  assert(actual == expected,                \
+    err_msg("Got " SIZE_FORMAT " expected " \
+      SIZE_FORMAT, actual, expected));
+
+#define assert_ge(value1, value2)                  \
+  assert(value1 >= value2,                         \
+    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
+      #value2 "': " SIZE_FORMAT, value1, value2));
+
+#define assert_lt(value1, value2)                  \
+  assert(value1 < value2,                          \
+    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
+      #value2 "': " SIZE_FORMAT, value1, value2));
+
+
+class TestVirtualSpace : AllStatic {
+ public:
+  static void test_virtual_space_actual_committed_space(size_t reserve_size, size_t commit_size) {
+    size_t granularity = os::vm_allocation_granularity();
+    size_t reserve_size_aligned = align_size_up(reserve_size, granularity);
+
+    ReservedSpace reserved(reserve_size_aligned);
+
+    assert(reserved.is_reserved(), "Must be");
+
+    VirtualSpace vs;
+    bool initialized = vs.initialize(reserved, 0);
+    assert(initialized, "Failed to initialize VirtualSpace");
+
+    vs.expand_by(commit_size, false);
+
+    if (vs.special()) {
+      assert_equals(vs.actual_committed_size(), reserve_size_aligned);
+    } else {
+      assert_ge(vs.actual_committed_size(), commit_size);
+      // Approximate the commit granularity.
+      size_t commit_granularity = UseLargePages ? os::large_page_size() : os::vm_page_size();
+      assert_lt(vs.actual_committed_size(), commit_size + commit_granularity);
+    }
+
+    reserved.release();
+  }
+
+  static void test_virtual_space_actual_committed_space_one_large_page() {
+    if (!UseLargePages) {
+      return;
+    }
+
+    size_t large_page_size = os::large_page_size();
+
+    ReservedSpace reserved(large_page_size, large_page_size, true, false);
+
+    assert(reserved.is_reserved(), "Must be");
+
+    VirtualSpace vs;
+    bool initialized = vs.initialize(reserved, 0);
+    assert(initialized, "Failed to initialize VirtualSpace");
+
+    vs.expand_by(large_page_size, false);
+
+    assert_equals(vs.actual_committed_size(), large_page_size);
+
+    reserved.release();
+  }
+
+  static void test_virtual_space_actual_committed_space() {
+    test_virtual_space_actual_committed_space(4 * K, 0);
+    test_virtual_space_actual_committed_space(4 * K, 4 * K);
+    test_virtual_space_actual_committed_space(8 * K, 0);
+    test_virtual_space_actual_committed_space(8 * K, 4 * K);
+    test_virtual_space_actual_committed_space(8 * K, 8 * K);
+    test_virtual_space_actual_committed_space(12 * K, 0);
+    test_virtual_space_actual_committed_space(12 * K, 4 * K);
+    test_virtual_space_actual_committed_space(12 * K, 8 * K);
+    test_virtual_space_actual_committed_space(12 * K, 12 * K);
+    test_virtual_space_actual_committed_space(64 * K, 0);
+    test_virtual_space_actual_committed_space(64 * K, 32 * K);
+    test_virtual_space_actual_committed_space(64 * K, 64 * K);
+    test_virtual_space_actual_committed_space(2 * M, 0);
+    test_virtual_space_actual_committed_space(2 * M, 4 * K);
+    test_virtual_space_actual_committed_space(2 * M, 64 * K);
+    test_virtual_space_actual_committed_space(2 * M, 1 * M);
+    test_virtual_space_actual_committed_space(2 * M, 2 * M);
+    test_virtual_space_actual_committed_space(10 * M, 0);
+    test_virtual_space_actual_committed_space(10 * M, 4 * K);
+    test_virtual_space_actual_committed_space(10 * M, 8 * K);
+    test_virtual_space_actual_committed_space(10 * M, 1 * M);
+    test_virtual_space_actual_committed_space(10 * M, 2 * M);
+    test_virtual_space_actual_committed_space(10 * M, 5 * M);
+    test_virtual_space_actual_committed_space(10 * M, 10 * M);
+  }
+
+  static void test_virtual_space() {
+    test_virtual_space_actual_committed_space();
+    test_virtual_space_actual_committed_space_one_large_page();
+  }
+};
+
+void TestVirtualSpace_test() {
+  TestVirtualSpace::test_virtual_space();
 }
 
 #endif // PRODUCT
