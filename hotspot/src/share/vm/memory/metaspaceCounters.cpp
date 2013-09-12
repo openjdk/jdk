@@ -71,7 +71,7 @@ size_t MetaspaceCounters::calculate_capacity() {
   //   2) unused space at the end of each Metachunk
   //   3) space in the freelist
   size_t total_capacity = MetaspaceAux::allocated_capacity_bytes()
-    + MetaspaceAux::free_bytes() + MetaspaceAux::free_chunks_total_in_bytes();
+    + MetaspaceAux::free_bytes() + MetaspaceAux::free_chunks_total_bytes();
   return total_capacity;
 }
 
@@ -79,9 +79,9 @@ void MetaspaceCounters::initialize_performance_counters() {
   if (UsePerfData) {
     assert(_perf_counters == NULL, "Should only be initialized once");
 
-    size_t min_capacity = MetaspaceAux::min_chunk_size();
+    size_t min_capacity = MetaspaceAux::min_chunk_size_bytes();
     size_t capacity = calculate_capacity();
-    size_t max_capacity = MetaspaceAux::reserved_in_bytes();
+    size_t max_capacity = MetaspaceAux::reserved_bytes();
     size_t used = MetaspaceAux::allocated_used_bytes();
 
     _perf_counters = new MetaspacePerfCounters("metaspace", min_capacity, capacity, max_capacity, used);
@@ -93,7 +93,7 @@ void MetaspaceCounters::update_performance_counters() {
     assert(_perf_counters != NULL, "Should be initialized");
 
     size_t capacity = calculate_capacity();
-    size_t max_capacity = MetaspaceAux::reserved_in_bytes();
+    size_t max_capacity = MetaspaceAux::reserved_bytes();
     size_t used = MetaspaceAux::allocated_used_bytes();
 
     _perf_counters->update(capacity, max_capacity, used);
@@ -105,7 +105,7 @@ MetaspacePerfCounters* CompressedClassSpaceCounters::_perf_counters = NULL;
 size_t CompressedClassSpaceCounters::calculate_capacity() {
     return MetaspaceAux::allocated_capacity_bytes(_class_type) +
            MetaspaceAux::free_bytes(_class_type) +
-           MetaspaceAux::free_chunks_total_in_bytes(_class_type);
+           MetaspaceAux::free_chunks_total_bytes(_class_type);
 }
 
 void CompressedClassSpaceCounters::update_performance_counters() {
@@ -113,7 +113,7 @@ void CompressedClassSpaceCounters::update_performance_counters() {
     assert(_perf_counters != NULL, "Should be initialized");
 
     size_t capacity = calculate_capacity();
-    size_t max_capacity = MetaspaceAux::reserved_in_bytes(_class_type);
+    size_t max_capacity = MetaspaceAux::reserved_bytes(_class_type);
     size_t used = MetaspaceAux::allocated_used_bytes(_class_type);
 
     _perf_counters->update(capacity, max_capacity, used);
@@ -126,9 +126,9 @@ void CompressedClassSpaceCounters::initialize_performance_counters() {
     const char* ns = "compressedclassspace";
 
     if (UseCompressedClassPointers) {
-      size_t min_capacity = MetaspaceAux::min_chunk_size();
+      size_t min_capacity = MetaspaceAux::min_chunk_size_bytes();
       size_t capacity = calculate_capacity();
-      size_t max_capacity = MetaspaceAux::reserved_in_bytes(_class_type);
+      size_t max_capacity = MetaspaceAux::reserved_bytes(_class_type);
       size_t used = MetaspaceAux::allocated_used_bytes(_class_type);
 
       _perf_counters = new MetaspacePerfCounters(ns, min_capacity, capacity, max_capacity, used);

@@ -177,8 +177,8 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
   void return_chunks(ChunkIndex index, Metachunk* chunks);
 
   // Total of the space in the free chunks list
-  size_t free_chunks_total();
-  size_t free_chunks_total_in_bytes();
+  size_t free_chunks_total_words();
+  size_t free_chunks_total_bytes();
 
   // Number of chunks in the free chunks list
   size_t free_chunks_count();
@@ -1080,12 +1080,12 @@ size_t VirtualSpaceList::used_words_sum() {
     // Sum used region [bottom, top) in each virtualspace
     allocated_by_vs += vsl->used_words_in_vs();
   }
-  assert(allocated_by_vs >= chunk_manager()->free_chunks_total(),
+  assert(allocated_by_vs >= chunk_manager()->free_chunks_total_words(),
     err_msg("Total in free chunks " SIZE_FORMAT
             " greater than total from virtual_spaces " SIZE_FORMAT,
-            allocated_by_vs, chunk_manager()->free_chunks_total()));
+            allocated_by_vs, chunk_manager()->free_chunks_total_words()));
   size_t used =
-    allocated_by_vs - chunk_manager()->free_chunks_total();
+    allocated_by_vs - chunk_manager()->free_chunks_total_words();
   return used;
 }
 
@@ -1526,7 +1526,7 @@ void Metadebug::deallocate_chunk_a_lot(SpaceManager* sm,
                                sm->sum_count_in_chunks_in_use());
         dummy_chunk->print_on(gclog_or_tty);
         gclog_or_tty->print_cr("  Free chunks total %d  count %d",
-                               vsl->chunk_manager()->free_chunks_total(),
+                               vsl->chunk_manager()->free_chunks_total_words(),
                                vsl->chunk_manager()->free_chunks_count());
       }
     }
@@ -1583,12 +1583,12 @@ bool Metadebug::test_metadata_failure() {
 
 // ChunkManager methods
 
-size_t ChunkManager::free_chunks_total() {
+size_t ChunkManager::free_chunks_total_words() {
   return _free_chunks_total;
 }
 
-size_t ChunkManager::free_chunks_total_in_bytes() {
-  return free_chunks_total() * BytesPerWord;
+size_t ChunkManager::free_chunks_total_bytes() {
+  return free_chunks_total_words() * BytesPerWord;
 }
 
 size_t ChunkManager::free_chunks_count() {
@@ -2567,13 +2567,13 @@ size_t MetaspaceAux::used_bytes_slow(Metaspace::MetadataType mdtype) {
   return used * BytesPerWord;
 }
 
-size_t MetaspaceAux::free_in_bytes(Metaspace::MetadataType mdtype) {
+size_t MetaspaceAux::free_bytes_slow(Metaspace::MetadataType mdtype) {
   size_t free = 0;
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
     Metaspace* msp = iter.get_next();
     if (msp != NULL) {
-      free += msp->free_words(mdtype);
+      free += msp->free_words_slow(mdtype);
     }
   }
   return free * BytesPerWord;
@@ -2596,34 +2596,51 @@ size_t MetaspaceAux::capacity_bytes_slow(Metaspace::MetadataType mdtype) {
   return capacity * BytesPerWord;
 }
 
-size_t MetaspaceAux::reserved_in_bytes(Metaspace::MetadataType mdtype) {
-  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
-  return list == NULL ? 0 : list->virtual_space_total();
+size_t MetaspaceAux::capacity_bytes_slow() {
+#ifdef PRODUCT
+  // Use allocated_capacity_bytes() in PRODUCT instead of this function.
+  guarantee(false, "Should not call capacity_bytes_slow() in the PRODUCT");
+#endif
+  size_t class_capacity = capacity_bytes_slow(Metaspace::ClassType);
+  size_t non_class_capacity = capacity_bytes_slow(Metaspace::NonClassType);
+  assert(allocated_capacity_bytes() == class_capacity + non_class_capacity,
+      err_msg("bad accounting: allocated_capacity_bytes() " SIZE_FORMAT
+        " class_capacity + non_class_capacity " SIZE_FORMAT
+        " class_capacity " SIZE_FORMAT " non_class_capacity " SIZE_FORMAT,
+        allocated_capacity_bytes(), class_capacity + non_class_capacity,
+        class_capacity, non_class_capacity));
+
+  return class_capacity + non_class_capacity;
 }
 
-size_t MetaspaceAux::min_chunk_size() { return Metaspace::first_chunk_word_size(); }
+size_t MetaspaceAux::reserved_bytes(Metaspace::MetadataType mdtype) {
+  VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
+  return list == NULL ? 0 : list->virtual_space_total() * BytesPerWord;
+}
 
-size_t MetaspaceAux::free_chunks_total(Metaspace::MetadataType mdtype) {
+size_t MetaspaceAux::min_chunk_size_words() { return Metaspace::first_chunk_word_size(); }
+
+size_t MetaspaceAux::free_chunks_total_words(Metaspace::MetadataType mdtype) {
   VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
   if (list == NULL) {
     return 0;
   }
   ChunkManager* chunk = list->chunk_manager();
   chunk->slow_verify();
-  return chunk->free_chunks_total();
+  return chunk->free_chunks_total_words();
 }
 
-size_t MetaspaceAux::free_chunks_total_in_bytes(Metaspace::MetadataType mdtype) {
-  return free_chunks_total(mdtype) * BytesPerWord;
+size_t MetaspaceAux::free_chunks_total_bytes(Metaspace::MetadataType mdtype) {
+  return free_chunks_total_words(mdtype) * BytesPerWord;
 }
 
-size_t MetaspaceAux::free_chunks_total() {
-  return free_chunks_total(Metaspace::ClassType) +
-         free_chunks_total(Metaspace::NonClassType);
+size_t MetaspaceAux::free_chunks_total_words() {
+  return free_chunks_total_words(Metaspace::ClassType) +
+         free_chunks_total_words(Metaspace::NonClassType);
 }
 
-size_t MetaspaceAux::free_chunks_total_in_bytes() {
-  return free_chunks_total() * BytesPerWord;
+size_t MetaspaceAux::free_chunks_total_bytes() {
+  return free_chunks_total_words() * BytesPerWord;
 }
 
 void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
@@ -2634,14 +2651,14 @@ void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
                         "("  SIZE_FORMAT ")",
                         prev_metadata_used,
                         allocated_used_bytes(),
-                        reserved_in_bytes());
+                        reserved_bytes());
   } else {
     gclog_or_tty->print(" "  SIZE_FORMAT "K"
                         "->" SIZE_FORMAT "K"
                         "("  SIZE_FORMAT "K)",
-                        prev_metadata_used / K,
-                        allocated_used_bytes() / K,
-                        reserved_in_bytes()/ K);
+                        prev_metadata_used/K,
+                        allocated_used_bytes()/K,
+                        reserved_bytes()/K);
   }
 
   gclog_or_tty->print("]");
@@ -2654,14 +2671,14 @@ void MetaspaceAux::print_on(outputStream* out) {
   out->print_cr(" Metaspace total "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
-                allocated_capacity_bytes()/K, allocated_used_bytes()/K, reserved_in_bytes()/K);
+                allocated_capacity_bytes()/K, allocated_used_bytes()/K, reserved_bytes()/K);
 
   out->print_cr("  data space     "
                 SIZE_FORMAT "K, used " SIZE_FORMAT "K,"
                 " reserved " SIZE_FORMAT "K",
                 allocated_capacity_bytes(nct)/K,
                 allocated_used_bytes(nct)/K,
-                reserved_in_bytes(nct)/K);
+                reserved_bytes(nct)/K);
   if (Metaspace::using_class_space()) {
     Metaspace::MetadataType ct = Metaspace::ClassType;
     out->print_cr("  class space    "
@@ -2669,17 +2686,17 @@ void MetaspaceAux::print_on(outputStream* out) {
                   " reserved " SIZE_FORMAT "K",
                   allocated_capacity_bytes(ct)/K,
                   allocated_used_bytes(ct)/K,
-                  reserved_in_bytes(ct)/K);
+                  reserved_bytes(ct)/K);
   }
 }
 
 // Print information for class space and data space separately.
 // This is almost the same as above.
 void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
-  size_t free_chunks_capacity_bytes = free_chunks_total_in_bytes(mdtype);
+  size_t free_chunks_capacity_bytes = free_chunks_total_bytes(mdtype);
   size_t capacity_bytes = capacity_bytes_slow(mdtype);
   size_t used_bytes = used_bytes_slow(mdtype);
-  size_t free_bytes = free_in_bytes(mdtype);
+  size_t free_bytes = free_bytes_slow(mdtype);
   size_t used_and_free = used_bytes + free_bytes +
                            free_chunks_capacity_bytes;
   out->print_cr("  Chunk accounting: used in chunks " SIZE_FORMAT
@@ -3132,7 +3149,7 @@ size_t Metaspace::used_words_slow(MetadataType mdtype) const {
   }
 }
 
-size_t Metaspace::free_words(MetadataType mdtype) const {
+size_t Metaspace::free_words_slow(MetadataType mdtype) const {
   if (mdtype == ClassType) {
     return using_class_space() ? class_vsm()->sum_free_in_chunks_in_use() : 0;
   } else {
