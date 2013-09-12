@@ -3755,7 +3755,7 @@ frame %{
   // automatically biased by the preserve_stack_slots field above.
   c_calling_convention %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of C & interpreter return values
