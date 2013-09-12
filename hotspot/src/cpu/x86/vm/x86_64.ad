@@ -2941,7 +2941,7 @@ frame
   c_calling_convention
   %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of compiled Java return values.  Same as C for now.

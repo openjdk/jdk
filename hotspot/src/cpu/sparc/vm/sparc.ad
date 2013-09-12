@@ -3218,7 +3218,7 @@ frame %{
   // C.
   c_calling_convention %{
     // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, length);
+    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
   %}
 
   // Location of native (C/C++) and interpreter return values.  This is specified to
@@ -9118,7 +9118,7 @@ instruct branch_short(label labl) %{
   size(4);
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl\t! short branch" %}
-  ins_encode %{ 
+  ins_encode %{
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");
     __ ba_short(*L);
