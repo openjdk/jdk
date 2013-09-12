@@ -1239,7 +1239,8 @@ public abstract class Toolkit {
     }
 
     /**
-     * Emits an audio beep.
+     * Emits an audio beep depending on native system settings and hardware
+     * capabilities.
      * @since     JDK1.1
      */
     public abstract void beep();
