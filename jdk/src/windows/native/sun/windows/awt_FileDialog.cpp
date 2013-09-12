@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ AwtFileDialog::Initialize(JNIEnv *env, jstring filterDescription)
     int length = env->GetStringLength(filterDescription);
     DASSERT(length + 1 < MAX_FILTER_STRING);
     LPCTSTR tmp = JNU_GetStringPlatformChars(env, filterDescription, NULL);
-    _tcscpy(s_fileFilterString, tmp);
+    _tcscpy_s(s_fileFilterString, MAX_FILTER_STRING, tmp);
     JNU_ReleaseStringPlatformChars(env, filterDescription, tmp);
 
     //AdditionalString should be terminated by two NULL characters (Windows
@@ -353,7 +353,7 @@ AwtFileDialog::Show(void *p)
         if (!result) {
             dlgerr = ::CommDlgExtendedError();
             if (dlgerr == FNERR_INVALIDFILENAME) {
-                _tcscpy(fileBuffer, TEXT(""));
+                _tcscpy_s(fileBuffer, bufferLimit, TEXT(""));
                 if (mode == java_awt_FileDialog_LOAD) {
                     result = AwtFileDialog::GetOpenFileName(&ofn);
                 } else {
