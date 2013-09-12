@@ -22,12 +22,24 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check primary expressions.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("this");
+printParse("foo");
+printParse("null");
+printParse("true");
+printParse("false");
+printParse("33");
+printParse("3.14");
+printParse("(10 + 3)*2");
+printParse("({})");
+printParse("({ x: 3 })");
+printParse("[]");
+printParse("[,,]");
+printParse("[4, 5, 5]");

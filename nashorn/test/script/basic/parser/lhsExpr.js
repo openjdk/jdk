@@ -22,12 +22,26 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check left-hand-side expressions
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("a[3]");
+printParse("a[b]");
+printParse("a['foo']");
+printParse("obj.foo");
+printParse("obj.foo.bar");
+printParse("new Type");
+printParse("new Type()");
+printParse("new Type(a, 'hello')");
+printParse("new obj.Type");
+printParse("new obj.Type()");
+printParse("new obj.Type(a, 'hello')");
+printParse("foo()")
+printParse("obj.foo()");
+printParse("foo(a,b)");
+printParse("obj.foo(a, b)");

@@ -264,6 +264,13 @@ grant codeBase "file:/${basedir}/test/script/basic/*" {
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
+grant codeBase "file:/${basedir}/test/script/basic/parser/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
 grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
     permission java.util.PropertyPermission "java.security.policy", "read";
 };

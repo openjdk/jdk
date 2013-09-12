@@ -22,12 +22,14 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests for switch statement.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("switch (key) {}");
+printParse("switch (key) { case 2: hello(); break; }");
+printParse("switch (key) { case 4: hello(); break; case 2: world(); break; default: break }");
