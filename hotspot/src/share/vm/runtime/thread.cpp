@@ -333,6 +333,8 @@ Thread::~Thread() {
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
+  EVENT_THREAD_DESTRUCT(this);
+
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is

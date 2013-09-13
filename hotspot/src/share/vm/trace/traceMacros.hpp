@@ -26,6 +26,7 @@
 #define SHARE_VM_TRACE_TRACE_MACRO_HPP
 
 #define EVENT_THREAD_EXIT(thread)
+#define EVENT_THREAD_DESTRUCT(thread)
 
 #define TRACE_INIT_ID(k)
 #define TRACE_DATA TraceThreadData
