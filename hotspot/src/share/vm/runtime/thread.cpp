@@ -3714,7 +3714,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 
-    // First check to see if agent is statcally linked into executable
+    // First check to see if agent is statically linked into executable
     if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
       library = agent->os_lib();
     } else if (agent->is_absolute_path()) {
