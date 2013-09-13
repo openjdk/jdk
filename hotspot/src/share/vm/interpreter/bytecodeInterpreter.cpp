@@ -345,7 +345,9 @@
           nmethod*  osr_nmethod;                                                                    \
           OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
           if (osr_nmethod != NULL && osr_nmethod->osr_entry_bci() != InvalidOSREntryBci) {          \
-            intptr_t* buf = SharedRuntime::OSR_migration_begin(THREAD);                             \
+            intptr_t* buf;                                                                          \
+            /* Call OSR migration with last java frame only, no checks. */                          \
+            CALL_VM_NAKED_LJF(buf=SharedRuntime::OSR_migration_begin(THREAD));                      \
             istate->set_msg(do_osr);                                                                \
             istate->set_osr_buf((address)buf);                                                      \
             istate->set_osr_entry(osr_nmethod->osr_entry());                                        \
@@ -418,13 +420,17 @@
         CACHE_CP();     \
         CACHE_LOCALS();
 
-// Call the VM don't check for pending exceptions
-#define CALL_VM_NOCHECK(func)                                      \
+// Call the VM with last java frame only.
+#define CALL_VM_NAKED_LJF(func)                                    \
         DECACHE_STATE();                                           \
         SET_LAST_JAVA_FRAME();                                     \
         func;                                                      \
         RESET_LAST_JAVA_FRAME();                                   \
-        CACHE_STATE();                                             \
+        CACHE_STATE();
+
+// Call the VM. Don't check for pending exceptions.
+#define CALL_VM_NOCHECK(func)                                      \
+        CALL_VM_NAKED_LJF(func)                                    \
         if (THREAD->pop_frame_pending() &&                         \
             !THREAD->pop_frame_in_process()) {                     \
           goto handle_Pop_Frame;                                   \
@@ -2702,7 +2708,7 @@ run:
         tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), except_oop());
         tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
         tty->print_cr(" at bci %d, continuing at %d for thread " INTPTR_FORMAT,
-                      pc - (intptr_t)METHOD->code_base(),
+                      istate->bcp() - (intptr_t)METHOD->code_base(),
                       continuation_bci, THREAD);
       }
       // for AbortVMOnException flag
@@ -2715,7 +2721,7 @@ run:
       tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), except_oop());
       tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
       tty->print_cr(" at bci %d, unwinding for thread " INTPTR_FORMAT,
-                    pc  - (intptr_t) METHOD->code_base(),
+                    istate->bcp() - (intptr_t)METHOD->code_base(),
                     THREAD);
     }
     // for AbortVMOnException flag
