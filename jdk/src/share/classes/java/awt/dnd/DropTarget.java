@@ -351,6 +351,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void dragEnter(DropTargetDragEvent dtde) {
+        isDraggingInside = true;
+
         if (!active) return;
 
         if (dtListener != null) {
@@ -421,6 +423,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void dragExit(DropTargetEvent dte) {
+        isDraggingInside = false;
+
         if (!active) return;
 
         if (dtListener != null && active) dtListener.dragExit(dte);
@@ -444,6 +448,8 @@ public class DropTarget implements DropTargetListener, Serializable {
      * @see #isActive
      */
     public synchronized void drop(DropTargetDropEvent dtde) {
+        isDraggingInside = false;
+
         clearAutoscroll();
 
         if (dtListener != null && active)
@@ -533,6 +539,12 @@ public class DropTarget implements DropTargetListener, Serializable {
             ((DropTargetPeer)nativePeer).removeDropTarget(this);
 
         componentPeer = nativePeer = null;
+
+        synchronized (this) {
+            if (isDraggingInside) {
+                dragExit(new DropTargetEvent(getDropTargetContext()));
+            }
+        }
     }
 
     /**
@@ -855,4 +867,9 @@ public class DropTarget implements DropTargetListener, Serializable {
      */
 
     private transient FlavorMap flavorMap;
+
+    /*
+     * If the dragging is currently inside this drop target
+     */
+    private transient boolean isDraggingInside;
 }
