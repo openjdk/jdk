@@ -737,9 +737,7 @@ class SpaceManager : public CHeapObj<mtClass> {
     // MinChunkSize is a placeholder for the real minimum size JJJ
     size_t byte_size = word_size * BytesPerWord;
 
-    size_t byte_size_with_overhead = byte_size + Metablock::overhead();
-
-    size_t raw_bytes_size = MAX2(byte_size_with_overhead,
+    size_t raw_bytes_size = MAX2(byte_size,
                                  Metablock::min_block_byte_size());
     raw_bytes_size = ARENA_ALIGN(raw_bytes_size);
     size_t raw_word_size = raw_bytes_size / BytesPerWord;
