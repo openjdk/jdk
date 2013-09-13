@@ -118,11 +118,14 @@ public class UniqueMacAddressesTest {
         NetworkInterface netIf = null;
         while (nis.hasMoreElements()) {
             netIf = (NetworkInterface) nis.nextElement();
-            macAddr = netIf.getHardwareAddress();
-            if (macAddr != null) {
-                System.out
-                        .println("Adding NetworkInterface " + netIf.getName());
-                networkInterfaceList.add(netIf);
+            if (netIf.isUp()) {
+                macAddr = netIf.getHardwareAddress();
+                if (macAddr != null) {
+                    System.out.println("Adding NetworkInterface "
+                            + netIf.getName() + " with mac address "
+                            + createMacAddressString(netIf));
+                    networkInterfaceList.add(netIf);
+                }
             }
         }
     }
