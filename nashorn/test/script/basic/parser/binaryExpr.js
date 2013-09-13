@@ -22,12 +22,33 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check binary operators.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("a * b")
+printParse("a / b");
+printParse("a % b");
+printParse("a + b");
+printParse("a - b");
+printParse("a << b");
+printParse("a >> b");
+printParse("a >>> b");
+printParse("a < b");
+printParse("a > b");
+printParse("a <= b");
+printParse("a >= b");
+printParse("a instanceof b");
+printParse("a == b");
+printParse("a != b");
+printParse("a === b");
+printParse("a !== b");
+printParse("a & b");
+printParse("a ^ b");
+printParse("a | b");
+printParse("a && b");
+printParse("a || b");

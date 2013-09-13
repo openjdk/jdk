@@ -22,12 +22,25 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * JDK-8024619: JDBC java.sql.DriverManager is not usable from JS script
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+var DriverManager = Java.type("java.sql.DriverManager");
+var e = DriverManager.getDrivers();
+
+var driverFound = false;
+// check for Nashorn SQL driver
+while (e.hasMoreElements()) {
+    var driver = e.nextElement();
+    if (driver.acceptsURL("jdbc:nashorn:")) {
+        driverFound = true;
+        break;
+    }
+}
+
+if (! driverFound) {
+    fail("Nashorn JDBC Driver not found!");
+}

@@ -22,12 +22,22 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check unary operators.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("x++");
+printParse("x--");
+printParse("delete x");
+printParse("void x");
+printParse("typeof x");
+printParse("++x");
+printParse("--x");
+printParse("+x");
+printParse("-x");
+printParse("~x");
+printParse("!x");

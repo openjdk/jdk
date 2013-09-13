@@ -22,12 +22,16 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests for throw statement.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("throw err");
+printParse("throw 'wrong'");
+printParse("throw new TypeError");
+printParse("throw new TypeError('not an array')");
+printParse("throw { msg: 'wrong!' }");

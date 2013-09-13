@@ -22,12 +22,17 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check try..catch statements.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("try { } catch (e) { }");
+printParse("try { } catch (e) { } finally {}");
+printParse("try { } finally {}");
+printParse("try { } catch (e) { handle() }");
+printParse("try { that() } catch (e) { handle() } finally { clean() }");
+printParse("try { that() } catch (e if e instanceof TypeError) { handle() } catch (e) { rest() }");
