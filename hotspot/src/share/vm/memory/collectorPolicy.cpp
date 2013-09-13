@@ -47,6 +47,11 @@
 
 // CollectorPolicy methods.
 
+// Align down. If the aligning result in 0, return 'alignment'.
+static size_t restricted_align_down(size_t size, size_t alignment) {
+  return MAX2(alignment, align_size_down_(size, alignment));
+}
+
 void CollectorPolicy::initialize_flags() {
   assert(max_alignment() >= min_alignment(),
       err_msg("max_alignment: " SIZE_FORMAT " less than min_alignment: " SIZE_FORMAT,
@@ -59,18 +64,24 @@ void CollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Incompatible initial and maximum heap sizes specified");
   }
 
-  if (MetaspaceSize > MaxMetaspaceSize) {
-    MaxMetaspaceSize = MetaspaceSize;
-  }
-  MetaspaceSize = MAX2(min_alignment(), align_size_down_(MetaspaceSize, min_alignment()));
-  // Don't increase Metaspace size limit above specified.
-  MaxMetaspaceSize = align_size_down(MaxMetaspaceSize, max_alignment());
-  if (MetaspaceSize > MaxMetaspaceSize) {
-    MetaspaceSize = MaxMetaspaceSize;
+  if (!is_size_aligned(MaxMetaspaceSize, max_alignment())) {
+    FLAG_SET_ERGO(uintx, MaxMetaspaceSize,
+        restricted_align_down(MaxMetaspaceSize, max_alignment()));
   }
 
-  MinMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MinMetaspaceExpansion, min_alignment()));
-  MaxMetaspaceExpansion = MAX2(min_alignment(), align_size_down_(MaxMetaspaceExpansion, min_alignment()));
+  if (MetaspaceSize > MaxMetaspaceSize) {
+    FLAG_SET_ERGO(uintx, MetaspaceSize, MaxMetaspaceSize);
+  }
+
+  if (!is_size_aligned(MetaspaceSize, min_alignment())) {
+    FLAG_SET_ERGO(uintx, MetaspaceSize,
+        restricted_align_down(MetaspaceSize, min_alignment()));
+  }
+
+  assert(MetaspaceSize <= MaxMetaspaceSize, "Must be");
+
+  MinMetaspaceExpansion = restricted_align_down(MinMetaspaceExpansion, min_alignment());
+  MaxMetaspaceExpansion = restricted_align_down(MaxMetaspaceExpansion, min_alignment());
 
   MinHeapDeltaBytes = align_size_up(MinHeapDeltaBytes, min_alignment());
 
