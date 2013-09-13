@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,7 @@ public class ParallelWorldClassLoader extends ClassLoader implements Closeable {
             throw new ClassNotFoundException("Loaded outside a jar "+url);
         url = url.substring(4); // cut off jar:
         url = url.substring(0,url.lastIndexOf('!'));    // cut off everything after '!'
+        url = url.replaceAll(" ", "%20"); // support white spaces in path
         return new URL(url);
     }
 }

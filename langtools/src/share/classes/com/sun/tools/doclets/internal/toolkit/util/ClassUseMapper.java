@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,7 @@ public class ClassUseMapper {
         } else if (doc instanceof Parameter) {
             annotations = ((Parameter) doc).annotations();
         } else {
-            throw new DocletAbortException();
+            throw new DocletAbortException("should not happen");
         }
         for (int i = 0; i < annotations.length; i++) {
             AnnotationTypeDoc annotationDoc = annotations[i].annotationType();

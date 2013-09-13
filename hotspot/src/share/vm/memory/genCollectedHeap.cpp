@@ -95,13 +95,13 @@ jint GenCollectedHeap::initialize() {
   guarantee(HeapWordSize == wordSize, "HeapWordSize must equal wordSize");
 
   // The heap must be at least as aligned as generations.
-  size_t alignment = Generation::GenGrain;
+  size_t gen_alignment = Generation::GenGrain;
 
   _gen_specs = gen_policy()->generations();
 
   // Make sure the sizes are all aligned.
   for (i = 0; i < _n_gens; i++) {
-    _gen_specs[i]->align(alignment);
+    _gen_specs[i]->align(gen_alignment);
   }
 
   // Allocate space for the heap.
@@ -109,9 +109,11 @@ jint GenCollectedHeap::initialize() {
   char* heap_address;
   size_t total_reserved = 0;
   int n_covered_regions = 0;
-  ReservedSpace heap_rs(0);
+  ReservedSpace heap_rs;
 
-  heap_address = allocate(alignment, &total_reserved,
+  size_t heap_alignment = collector_policy()->max_alignment();
+
+  heap_address = allocate(heap_alignment, &total_reserved,
                           &n_covered_regions, &heap_rs);
 
   if (!heap_rs.is_reserved()) {
@@ -168,6 +170,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
   const size_t pageSize = UseLargePages ?
       os::large_page_size() : os::vm_page_size();
 
+  assert(alignment % pageSize == 0, "Must be");
+
   for (int i = 0; i < _n_gens; i++) {
     total_reserved += _gen_specs[i]->max_size();
     if (total_reserved < _gen_specs[i]->max_size()) {
@@ -175,24 +179,17 @@ char* GenCollectedHeap::allocate(size_t alignment,
     }
     n_covered_regions += _gen_specs[i]->n_covered_regions();
   }
-  assert(total_reserved % pageSize == 0,
-         err_msg("Gen size; total_reserved=" SIZE_FORMAT ", pageSize="
-                 SIZE_FORMAT, total_reserved, pageSize));
+  assert(total_reserved % alignment == 0,
+         err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
+                 SIZE_FORMAT, total_reserved, alignment));
 
   // Needed until the cardtable is fixed to have the right number
   // of covered regions.
   n_covered_regions += 2;
 
-  if (UseLargePages) {
-    assert(total_reserved != 0, "total_reserved cannot be 0");
-    total_reserved = round_to(total_reserved, os::large_page_size());
-    if (total_reserved < os::large_page_size()) {
-      vm_exit_during_initialization(overflow_msg);
-    }
-  }
+  *_total_reserved = total_reserved;
+  *_n_covered_regions = n_covered_regions;
 
-      *_total_reserved = total_reserved;
-      *_n_covered_regions = n_covered_regions;
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();
 }
@@ -1211,6 +1208,7 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   }
 
   MetaspaceCounters::update_performance_counters();
+  CompressedClassSpaceCounters::update_performance_counters();
 
   always_do_update_barrier = UseConcMarkSweepGC;
 };

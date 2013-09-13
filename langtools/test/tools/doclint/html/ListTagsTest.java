@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006251 8013405
+ * @bug 8006251 8013405 8022173
  * @summary test list tags
  * @library ..
  * @build DocLintTester
@@ -15,6 +15,7 @@ public class ListTagsTest {
      *  <ol> <li value="1"> abc </ol>
      *  <ol> <li value> bad </ol>
      *  <ol> <li value="a"> bad </ol>
+     *  <ol type="a"> <li> bad </ol>
      *  <ul> <li> abc </ul>
      */
     public void supportedTags() { }

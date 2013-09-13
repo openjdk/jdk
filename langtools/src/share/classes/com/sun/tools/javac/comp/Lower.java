@@ -356,22 +356,44 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
+        if (!c.isLocal()) {
+            return null;
+        }
+        Symbol currentOwner = c.owner;
+        while ((currentOwner.owner.kind & TYP) != 0 && currentOwner.isLocal()) {
+            currentOwner = currentOwner.owner;
+        }
+        if ((currentOwner.owner.kind & (VAR | MTH)) != 0 && c.isSubClass(currentOwner, types)) {
+            return (ClassSymbol)currentOwner;
+        }
+        return null;
+    }
+
     /** Return the variables accessed from within a local class, which
      *  are declared in the local class' owner.
      *  (in reverse order of first access).
      */
     List<VarSymbol> freevars(ClassSymbol c)  {
+        List<VarSymbol> fvs = freevarCache.get(c);
+        if (fvs != null) {
+            return fvs;
+        }
         if ((c.owner.kind & (VAR | MTH)) != 0) {
-            List<VarSymbol> fvs = freevarCache.get(c);
-            if (fvs == null) {
-                FreeVarCollector collector = new FreeVarCollector(c);
-                collector.scan(classDef(c));
-                fvs = collector.fvs;
-                freevarCache.put(c, fvs);
-            }
+            FreeVarCollector collector = new FreeVarCollector(c);
+            collector.scan(classDef(c));
+            fvs = collector.fvs;
+            freevarCache.put(c, fvs);
             return fvs;
         } else {
-            return List.nil();
+            ClassSymbol owner = ownerToCopyFreeVarsFrom(c);
+            if (owner != null) {
+                fvs = freevarCache.get(owner);
+                freevarCache.put(c, fvs);
+                return fvs;
+            } else {
+                return List.nil();
+            }
         }
     }
 
@@ -1046,7 +1068,7 @@ public class Lower extends TreeTranslator {
     boolean needsPrivateAccess(Symbol sym) {
         if ((sym.flags() & PRIVATE) == 0 || sym.owner == currentClass) {
             return false;
-        } else if (sym.name == names.init && (sym.owner.owner.kind & (VAR | MTH)) != 0) {
+        } else if (sym.name == names.init && sym.owner.isLocal()) {
             // private constructor in local class: relax protection
             sym.flags_field &= ~PRIVATE;
             return false;
@@ -2448,6 +2470,7 @@ public class Lower extends TreeTranslator {
         tree.name = Convert.shortName(currentClass.flatName());
 
         // Add this$n and free variables proxy definitions to class.
+
         for (List<JCVariableDecl> l = fvdefs; l.nonEmpty(); l = l.tail) {
             tree.defs = tree.defs.prepend(l.head);
             enterSynthetic(tree.pos(), l.head.sym, currentClass.members());
@@ -2670,8 +2693,7 @@ public class Lower extends TreeTranslator {
     //where
     private void visitMethodDefInternal(JCMethodDecl tree) {
         if (tree.name == names.init &&
-            (currentClass.isInner() ||
-             (currentClass.owner.kind & (VAR | MTH)) != 0)) {
+            (currentClass.isInner() || currentClass.isLocal())) {
             // We are seeing a constructor of an inner class.
             MethodSymbol m = tree.sym;
 
@@ -2713,9 +2735,9 @@ public class Lower extends TreeTranslator {
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
                     if (TreeInfo.isInitialConstructor(tree)) {
                         final Name pName = proxyName(l.head.name);
-                        m.extraParams =
-                            m.extraParams.append((VarSymbol)
-                                                 (proxies.lookup(pName).sym));
+                        m.capturedLocals =
+                            m.capturedLocals.append((VarSymbol)
+                                                    (proxies.lookup(pName).sym));
                         added = added.prepend(
                           initField(tree.body.pos, pName));
                     }
@@ -2818,7 +2840,7 @@ public class Lower extends TreeTranslator {
 
         // If created class is local, add free variables after
         // explicit constructor arguments.
-        if ((c.owner.kind & (VAR | MTH)) != 0) {
+        if (c.isLocal()) {
             tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
         }
 
@@ -2837,7 +2859,7 @@ public class Lower extends TreeTranslator {
             if (tree.encl != null) {
                 thisArg = attr.makeNullCheck(translate(tree.encl));
                 thisArg.type = tree.encl.type;
-            } else if ((c.owner.kind & (MTH | VAR)) != 0) {
+            } else if (c.isLocal()) {
                 // local class
                 thisArg = makeThis(tree.pos(), c.type.getEnclosingType().tsym);
             } else {
@@ -2966,7 +2988,7 @@ public class Lower extends TreeTranslator {
             // If we are calling a constructor of a local class, add
             // free variables after explicit constructor arguments.
             ClassSymbol c = (ClassSymbol)constructor.owner;
-            if ((c.owner.kind & (VAR | MTH)) != 0) {
+            if (c.isLocal()) {
                 tree.args = tree.args.appendList(loadFreevars(tree.pos(), freevars(c)));
             }
 
@@ -2994,7 +3016,7 @@ public class Lower extends TreeTranslator {
                         makeNullCheck(translate(((JCFieldAccess) tree.meth).selected));
                     tree.meth = make.Ident(constructor);
                     ((JCIdent) tree.meth).name = methName;
-                } else if ((c.owner.kind & (MTH | VAR)) != 0 || methName == names._this){
+                } else if (c.isLocal() || methName == names._this){
                     // local class or this() call
                     thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
                 } else {
@@ -3436,7 +3458,7 @@ public class Lower extends TreeTranslator {
                                            eType,
                                            List.<Type>nil());
             VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
-                                            types.erasure(iterator.type.getReturnType()),
+                                            types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
 
              JCStatement init = make.

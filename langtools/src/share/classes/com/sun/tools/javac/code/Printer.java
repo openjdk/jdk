@@ -27,8 +27,6 @@ package com.sun.tools.javac.code;
 
 import java.util.Locale;
 
-import javax.lang.model.type.TypeKind;
-
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.code.Type.AnnotatedType;
 import com.sun.tools.javac.code.Type.ArrayType;
@@ -191,7 +189,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     void printBaseElementType(Type t, StringBuilder sb, Locale locale) {
         Type arrel = t;
-        while (arrel.getKind() == TypeKind.ARRAY) {
+        while (arrel.hasTag(TypeTag.ARRAY)) {
             arrel = arrel.unannotatedType();
             arrel = ((ArrayType) arrel).elemtype;
         }
@@ -200,7 +198,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     void printBrackets(Type t, StringBuilder sb, Locale locale) {
         Type arrel = t;
-        while (arrel.getKind() == TypeKind.ARRAY) {
+        while (arrel.hasTag(TypeTag.ARRAY)) {
             if (arrel.isAnnotated()) {
                 sb.append(' ');
                 sb.append(arrel.getAnnotationMirrors());
@@ -264,12 +262,12 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
     public String visitAnnotatedType(AnnotatedType t, Locale locale) {
         if (t.typeAnnotations != null &&
                 t.typeAnnotations.nonEmpty()) {
-            if (t.underlyingType.getKind() == TypeKind.ARRAY) {
+            if (t.underlyingType.hasTag(TypeTag.ARRAY)) {
                 StringBuilder res = new StringBuilder();
                 printBaseElementType(t, res, locale);
                 printBrackets(t, res, locale);
                 return res.toString();
-            } else if (t.underlyingType.getKind() == TypeKind.DECLARED &&
+            } else if (t.underlyingType.hasTag(TypeTag.CLASS) &&
                     t.underlyingType.getEnclosingType() != Type.noType) {
                 return visit(t.underlyingType.getEnclosingType(), locale) +
                         ". " +
@@ -348,7 +346,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
                 args = args.tail;
                 buf.append(',');
             }
-            if (args.head.unannotatedType().getKind() == TypeKind.ARRAY) {
+            if (args.head.unannotatedType().hasTag(TypeTag.ARRAY)) {
                 buf.append(visit(((ArrayType) args.head.unannotatedType()).elemtype, locale));
                 if (args.head.getAnnotationMirrors().nonEmpty()) {
                     buf.append(' ');

@@ -30,9 +30,6 @@
 #include "opto/machnode.hpp"
 
 
-
-//=============================================================================
-//------------------------------PhaseLive--------------------------------------
 // Compute live-in/live-out.  We use a totally incremental algorithm.  The LIVE
 // problem is monotonic.  The steady-state solution looks like this: pull a
 // block from the worklist.  It has a set of delta's - values which are newly
@@ -53,9 +50,9 @@ void PhaseLive::compute(uint maxlrg) {
 
   // Init the sparse live arrays.  This data is live on exit from here!
   // The _live info is the live-out info.
-  _live = (IndexSet*)_arena->Amalloc(sizeof(IndexSet)*_cfg._num_blocks);
+  _live = (IndexSet*)_arena->Amalloc(sizeof(IndexSet) * _cfg.number_of_blocks());
   uint i;
-  for( i=0; i<_cfg._num_blocks; i++ ) {
+  for (i = 0; i < _cfg.number_of_blocks(); i++) {
     _live[i].initialize(_maxlrg);
   }
 
@@ -65,14 +62,14 @@ void PhaseLive::compute(uint maxlrg) {
   // Does the memory used by _defs and _deltas get reclaimed?  Does it matter?  TT
 
   // Array of values defined locally in blocks
-  _defs = NEW_RESOURCE_ARRAY(IndexSet,_cfg._num_blocks);
-  for( i=0; i<_cfg._num_blocks; i++ ) {
+  _defs = NEW_RESOURCE_ARRAY(IndexSet,_cfg.number_of_blocks());
+  for (i = 0; i < _cfg.number_of_blocks(); i++) {
     _defs[i].initialize(_maxlrg);
   }
 
   // Array of delta-set pointers, indexed by block pre_order-1.
-  _deltas = NEW_RESOURCE_ARRAY(IndexSet*,_cfg._num_blocks);
-  memset( _deltas, 0, sizeof(IndexSet*)* _cfg._num_blocks);
+  _deltas = NEW_RESOURCE_ARRAY(IndexSet*,_cfg.number_of_blocks());
+  memset( _deltas, 0, sizeof(IndexSet*)* _cfg.number_of_blocks());
 
   _free_IndexSet = NULL;
 
@@ -80,31 +77,32 @@ void PhaseLive::compute(uint maxlrg) {
   VectorSet first_pass(Thread::current()->resource_area());
 
   // Outer loop: must compute local live-in sets and push into predecessors.
-  uint iters = _cfg._num_blocks;        // stat counters
-  for( uint j=_cfg._num_blocks; j>0; j-- ) {
-    Block *b = _cfg._blocks[j-1];
+  for (uint j = _cfg.number_of_blocks(); j > 0; j--) {
+    Block* block = _cfg.get_block(j - 1);
 
     // Compute the local live-in set.  Start with any new live-out bits.
-    IndexSet *use = getset( b );
-    IndexSet *def = &_defs[b->_pre_order-1];
+    IndexSet* use = getset(block);
+    IndexSet* def = &_defs[block->_pre_order-1];
     DEBUG_ONLY(IndexSet *def_outside = getfreeset();)
     uint i;
-    for( i=b->_nodes.size(); i>1; i-- ) {
-      Node *n = b->_nodes[i-1];
-      if( n->is_Phi() ) break;
+    for (i = block->_nodes.size(); i > 1; i--) {
+      Node* n = block->_nodes[i-1];
+      if (n->is_Phi()) {
+        break;
+      }
 
       uint r = _names[n->_idx];
       assert(!def_outside->member(r), "Use of external LRG overlaps the same LRG defined in this block");
       def->insert( r );
       use->remove( r );
       uint cnt = n->req();
-      for( uint k=1; k<cnt; k++ ) {
+      for (uint k = 1; k < cnt; k++) {
         Node *nk = n->in(k);
         uint nkidx = nk->_idx;
-        if (_cfg.get_block_for_node(nk) != b) {
+        if (_cfg.get_block_for_node(nk) != block) {
           uint u = _names[nkidx];
-          use->insert( u );
-          DEBUG_ONLY(def_outside->insert( u );)
+          use->insert(u);
+          DEBUG_ONLY(def_outside->insert(u);)
         }
       }
     }
@@ -113,41 +111,38 @@ void PhaseLive::compute(uint maxlrg) {
     _free_IndexSet = def_outside;     // Drop onto free list
 #endif
     // Remove anything defined by Phis and the block start instruction
-    for( uint k=i; k>0; k-- ) {
-      uint r = _names[b->_nodes[k-1]->_idx];
-      def->insert( r );
-      use->remove( r );
+    for (uint k = i; k > 0; k--) {
+      uint r = _names[block->_nodes[k - 1]->_idx];
+      def->insert(r);
+      use->remove(r);
     }
 
     // Push these live-in things to predecessors
-    for( uint l=1; l<b->num_preds(); l++ ) {
-      Block *p = _cfg.get_block_for_node(b->pred(l));
-      add_liveout( p, use, first_pass );
+    for (uint l = 1; l < block->num_preds(); l++) {
+      Block* p = _cfg.get_block_for_node(block->pred(l));
+      add_liveout(p, use, first_pass);
 
       // PhiNode uses go in the live-out set of prior blocks.
-      for( uint k=i; k>0; k-- )
-        add_liveout( p, _names[b->_nodes[k-1]->in(l)->_idx], first_pass );
+      for (uint k = i; k > 0; k--) {
+        add_liveout(p, _names[block->_nodes[k-1]->in(l)->_idx], first_pass);
+      }
     }
-    freeset( b );
-    first_pass.set(b->_pre_order);
+    freeset(block);
+    first_pass.set(block->_pre_order);
 
     // Inner loop: blocks that picked up new live-out values to be propagated
-    while( _worklist->size() ) {
-        // !!!!!
-// #ifdef ASSERT
-      iters++;
-// #endif
-      Block *b = _worklist->pop();
-      IndexSet *delta = getset(b);
+    while (_worklist->size()) {
+      Block* block = _worklist->pop();
+      IndexSet *delta = getset(block);
       assert( delta->count(), "missing delta set" );
 
       // Add new-live-in to predecessors live-out sets
-      for (uint l = 1; l < b->num_preds(); l++) {
-        Block* block = _cfg.get_block_for_node(b->pred(l));
-        add_liveout(block, delta, first_pass);
+      for (uint l = 1; l < block->num_preds(); l++) {
+        Block* predecessor = _cfg.get_block_for_node(block->pred(l));
+        add_liveout(predecessor, delta, first_pass);
       }
 
-      freeset(b);
+      freeset(block);
     } // End of while-worklist-not-empty
 
   } // End of for-all-blocks-outer-loop
@@ -155,7 +150,7 @@ void PhaseLive::compute(uint maxlrg) {
   // We explicitly clear all of the IndexSets which we are about to release.
   // This allows us to recycle their internal memory into IndexSet's free list.
 
-  for( i=0; i<_cfg._num_blocks; i++ ) {
+  for (i = 0; i < _cfg.number_of_blocks(); i++) {
     _defs[i].clear();
     if (_deltas[i]) {
       // Is this always true?
@@ -171,13 +166,11 @@ void PhaseLive::compute(uint maxlrg) {
 
 }
 
-//------------------------------stats------------------------------------------
 #ifndef PRODUCT
 void PhaseLive::stats(uint iters) const {
 }
 #endif
 
-//------------------------------getset-----------------------------------------
 // Get an IndexSet for a block.  Return existing one, if any.  Make a new
 // empty one if a prior one does not exist.
 IndexSet *PhaseLive::getset( Block *p ) {
@@ -188,7 +181,6 @@ IndexSet *PhaseLive::getset( Block *p ) {
   return delta;                 // Return set of new live-out items
 }
 
-//------------------------------getfreeset-------------------------------------
 // Pull from free list, or allocate.  Internal allocation on the returned set
 // is always from thread local storage.
 IndexSet *PhaseLive::getfreeset( ) {
@@ -207,7 +199,6 @@ IndexSet *PhaseLive::getfreeset( ) {
   return f;
 }
 
-//------------------------------freeset----------------------------------------
 // Free an IndexSet from a block.
 void PhaseLive::freeset( const Block *p ) {
   IndexSet *f = _deltas[p->_pre_order-1];
@@ -216,7 +207,6 @@ void PhaseLive::freeset( const Block *p ) {
   _deltas[p->_pre_order-1] = NULL;
 }
 
-//------------------------------add_liveout------------------------------------
 // Add a live-out value to a given blocks live-out set.  If it is new, then
 // also add it to the delta set and stick the block on the worklist.
 void PhaseLive::add_liveout( Block *p, uint r, VectorSet &first_pass ) {
@@ -233,8 +223,6 @@ void PhaseLive::add_liveout( Block *p, uint r, VectorSet &first_pass ) {
   }
 }
 
-
-//------------------------------add_liveout------------------------------------
 // Add a vector of live-out values to a given blocks live-out set.
 void PhaseLive::add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass ) {
   IndexSet *live = &_live[p->_pre_order-1];
@@ -262,7 +250,6 @@ void PhaseLive::add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass ) {
 }
 
 #ifndef PRODUCT
-//------------------------------dump-------------------------------------------
 // Dump the live-out set for a block
 void PhaseLive::dump( const Block *b ) const {
   tty->print("Block %d: ",b->_pre_order);
@@ -275,18 +262,19 @@ void PhaseLive::dump( const Block *b ) const {
   tty->print("\n");
 }
 
-//------------------------------verify_base_ptrs-------------------------------
 // Verify that base pointers and derived pointers are still sane.
 void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
 #ifdef ASSERT
   Unique_Node_List worklist(a);
-  for( uint i = 0; i < _cfg._num_blocks; i++ ) {
-    Block *b = _cfg._blocks[i];
-    for( uint j = b->end_idx() + 1; j > 1; j-- ) {
-      Node *n = b->_nodes[j-1];
-      if( n->is_Phi() ) break;
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
+    for (uint j = block->end_idx() + 1; j > 1; j--) {
+      Node* n = block->_nodes[j-1];
+      if (n->is_Phi()) {
+        break;
+      }
       // Found a safepoint?
-      if( n->is_MachSafePoint() ) {
+      if (n->is_MachSafePoint()) {
         MachSafePointNode *sfpt = n->as_MachSafePoint();
         JVMState* jvms = sfpt->jvms();
         if (jvms != NULL) {
@@ -358,7 +346,6 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
 #endif
 }
 
-//------------------------------verify-------------------------------------
 // Verify that graphs and base pointers are still sane.
 void PhaseChaitin::verify( ResourceArea *a, bool verify_ifg ) const {
 #ifdef ASSERT

@@ -25,29 +25,27 @@
 
 package com.sun.tools.internal.xjc.reader.internalizer;
 
-import java.io.IOException;
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import com.sun.istack.internal.SAXParseException2;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 /**
  * XMLFilter that finds references to other schema files from
  * SAX events.
- *
+ * <p/>
  * This implementation is a base implementation for typical case
  * where we just need to look for a particular attribute which
  * contains an URL to another schema file.
  *
- * @author
- *  Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
 
@@ -61,12 +59,9 @@ public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
      * IF the given element contains a reference to an external resource,
      * return its URL.
      *
-     * @param nsURI
-     *      Namespace URI of the current element
-     * @param localName
-     *      Local name of the current element
-     * @return
-     *      It's OK to return a relative URL.
+     * @param nsURI     Namespace URI of the current element
+     * @param localName Local name of the current element
+     * @return It's OK to return a relative URL.
      */
     protected abstract String findExternalResource(String nsURI, String localName, Attributes atts);
 
@@ -83,16 +78,21 @@ public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
             // absolutize URL.
             String lsi = locator.getSystemId();
             String ref;
-            if (lsi.startsWith("jar:")) {
-                int bangIdx = lsi.indexOf('!');
-                if (bangIdx > 0) {
-                    ref = lsi.substring(0, bangIdx + 1)
-                            + new URI(lsi.substring(bangIdx + 1)).resolve(new URI(relativeRef)).toString();
+            URI relRefURI = new URI(relativeRef);
+            if (relRefURI.isAbsolute())
+                ref = relativeRef;
+            else {
+                if (lsi.startsWith("jar:")) {
+                    int bangIdx = lsi.indexOf('!');
+                    if (bangIdx > 0) {
+                        ref = lsi.substring(0, bangIdx + 1)
+                                + new URI(lsi.substring(bangIdx + 1)).resolve(new URI(relativeRef)).toString();
+                    } else {
+                        ref = relativeRef;
+                    }
                 } else {
-                    ref = relativeRef;
+                    ref = new URI(lsi).resolve(new URI(relativeRef)).toString();
                 }
-            } else {
-                ref = new URI(lsi).resolve(new URI(relativeRef)).toString();
             }
 
             // then parse this schema as well,
@@ -121,6 +121,7 @@ public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
             throw spe;
         }
     }
+
     private Locator locator;
 
     @Override
@@ -128,4 +129,4 @@ public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
         super.setDocumentLocator(locator);
         this.locator = locator;
     }
-};
+}

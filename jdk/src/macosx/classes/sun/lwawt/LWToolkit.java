@@ -38,6 +38,7 @@ import java.util.*;
 import sun.awt.*;
 import sun.lwawt.macosx.*;
 import sun.print.*;
+import sun.security.util.SecurityConstants;
 
 public abstract class LWToolkit extends SunToolkit implements Runnable {
 
@@ -502,7 +503,7 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     public Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkSystemClipboardAccess();
+            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
         }
 
         synchronized (this) {

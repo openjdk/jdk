@@ -27,6 +27,7 @@ jdk_lang = \
     sun/invoke \
     sun/misc \
     sun/reflect \
+    jdk/lambda \
     vm
 
 jdk_util = \
@@ -133,7 +134,6 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/asm \
-    jdk/lambda \
     com/sun/jndi \
     com/sun/corba \
     lib/testlibrary \
@@ -212,3 +212,341 @@ jdk_desktop = \
     :jdk_swing \
     :jdk_sound \
     :jdk_imageio
+
+###############################################################################
+# Profile-based Test Group Definitions
+#
+# These groups define the tests that cover the different possible runtimes:
+# - compact1, compact2, compact3, full JRE, JDK
+#
+# In addition they support testing of the minimal VM on compact1 and compact2.
+# Essentially this defines groups based around the specified API's and VM 
+# services available in the runtime.
+#
+# The groups are defined hierarchically in two forms:
+# - The need_xxx groups list all the tests that have a dependency on
+# a specific profile. This is either because it tests a feature in
+# that profile, or the test infrastructure uses a feature in that
+# profile.
+# - The primary groups are defined in terms of the other primary groups
+# combined with the needs_xxx groups (including and excluding them as
+# appropriate). For example the jre can run all tests from compact3, plus
+# those from needs_jre, but excluding those from need_jdk.
+#
+# The bottom group defines all the actual tests to be considered, simply
+# by listing the top-level test directories.
+
+# Full JDK can run all tests
+#
+jdk = \
+  :jre \
+  :needs_jdk
+
+# Tests that require a full JDK to execute. Either they test a feature
+# only in the JDK or they use tools that are only in the JDK. The latter
+# can be resolved in some cases by using tools from the compile-jdk.
+#
+needs_jdk = \
+  :jdk_jdi \
+  com/sun/tools \
+  demo \
+  sun/security/tools/jarsigner \
+  sun/rmi/rmic \
+  sun/tools \
+  sun/jvmstat \
+  tools \
+  com/sun/jmx/remote/NotificationMarshalVersions/TestSerializationMismatch.java \
+  java/io/Serializable/serialver \
+  java/lang/invoke/lambda/LambdaAccessControlDoPrivilegedTest.java \
+  java/lang/invoke/lambda/LambdaAccessControlTest.java \
+  java/lang/System/MacEncoding/TestFileEncoding.java \
+  java/net/URLClassLoader/closetest/GetResourceAsStream.java \
+  java/util/Collections/EmptyIterator.java \
+  java/util/concurrent/locks/Lock/TimedAcquireLeak.java \
+  java/util/jar/Manifest/CreateManifest.java \
+  java/util/jar/JarInputStream/ExtraFileInMetaInf.java \
+  java/util/logging/AnonLoggerWeakRefLeak.sh \
+  java/util/logging/LoggerWeakRefLeak.sh \
+  java/util/zip/3GBZipFiles.sh \
+  jdk/lambda/FDTest.java \
+  jdk/lambda/separate/Compiler.java \
+  sun/management/jdp/JdpTest.sh \
+  sun/management/jmxremote/bootstrap/JvmstatCountersTest.java \
+  sun/management/jmxremote/bootstrap/LocalManagementTest.sh \
+  sun/misc/JarIndex/metaInfFilenames/Basic.java \
+  sun/misc/JarIndex/JarIndexMergeForClassLoaderTest.java \
+  sun/reflect/CallerSensitive/CallerSensitiveFinder.java \
+  sun/reflect/CallerSensitive/MissingCallerSensitive.java \
+  sun/security/util/Resources/NewNamesFormat.java \
+  vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java
+
+# JRE adds further tests to compact3
+#
+jre = \
+  :compact3 \
+  :needs_jre \
+ -:needs_jdk
+
+# Tests that require the full JRE
+#
+needs_jre = \
+  :needs_charsets \
+  :jdk_desktop \
+  com/sun/corba \
+  com/sun/jndi/cosnaming \
+  sun/net/ftp \
+  sun/net/www/protocol/ftp \
+  sun/security/tools/policytool \
+  java/net/URI/URItoURLTest.java \
+  java/net/URL/URIToURLTest.java \
+  java/net/URLConnection/HandleContentTypeWithAttrs.java \
+  java/security/Security/ClassLoaderDeadlock/ClassLoaderDeadlock.sh \
+  java/security/Security/ClassLoaderDeadlock/Deadlock.sh \
+  java/util/logging/Listeners.java \
+  java/util/logging/ListenersWithSM.java \
+  java/util/ResourceBundle/Control/Bug6530694.java \
+  java/text/Bidi/BidiConformance.java \
+  java/text/Bidi/BidiEmbeddingTest.java \
+  java/text/Bidi/Bug6665028.java \
+  java/text/Bidi/Bug7042148.java \
+  java/text/Bidi/Bug7051769.java \
+  javax/crypto/Cipher/CipherStreamClose.java \
+  javax/management/monitor/AttributeArbitraryDataTypeTest.java \
+  jdk/lambda/vm/InterfaceAccessFlagsTest.java \
+  sun/misc/URLClassPath/ClassnameCharTest.java
+
+# Tests dependent on the optional charsets.jar
+# These are isolated for easy exclusions
+#
+needs_charsets = \
+  java/io/OutputStreamWriter/TestWrite.java \
+  java/nio/charset/RemovingSunIO/SunioAlias.java \
+  java/nio/charset/coders/Check.java \
+  java/nio/charset/Charset/CharsetContainmentTest.java \
+  java/nio/charset/Charset/Contains.java \
+  java/nio/charset/Charset/NIOCharsetAvailabilityTest.java \
+  java/nio/charset/Charset/RegisteredCharsets.java \
+  java/nio/charset/CharsetEncoder/Flush.java \
+  java/nio/charset/coders/CheckSJISMappingProp.sh \
+  java/nio/charset/coders/ResetISO2022JP.java \
+  java/util/Locale/InternationalBAT.java \
+  java/util/Locale/LocaleProviders.sh \
+  java/util/Calendar/CldrFormatNamesTest.java \
+  java/util/TimeZone/CLDRDisplayNamesTest.java \
+  java/util/zip/ZipCoding.java \
+  sun/nio/cs/EucJpLinux0212.java \
+  sun/nio/cs/EUCJPUnderflowDecodeTest.java \
+  sun/nio/cs/EuroConverter.java \
+  sun/nio/cs/JISAutoDetectTest.java \
+  sun/nio/cs/OLD/TestIBMDB.java \
+  sun/nio/cs/SJISCanEncode.java \
+  sun/nio/cs/Test6254467.java \
+  sun/nio/cs/TestCompoundTest.java \
+  sun/nio/cs/TestCp834_SBCS.java \
+  sun/nio/cs/TestEUC_TW.java \
+  sun/nio/cs/TestISO2022CNDecoder.java \
+  sun/nio/cs/TestISO2022JPEncoder.java \
+  sun/nio/cs/TestISO2022JPSubBytes.java \
+  sun/nio/cs/TestIllegalSJIS.java \
+  sun/nio/cs/TestJIS0208Decoder.java \
+  sun/nio/cs/TestJIS0212Decoder.java \
+  sun/nio/cs/TestMiscEUC_JP.java \
+  sun/nio/cs/TestSJIS0213_SM.java \
+  sun/nio/cs/BufferUnderflowEUCTWTest.java \
+  sun/nio/cs/CheckCaseInsensitiveEncAliases.java \
+  sun/nio/cs/CheckHistoricalNames.java \
+  sun/nio/cs/EucJpLinuxDecoderRecoveryTest.java \
+  sun/nio/cs/HWKatakanaMS932EncodeTest.java \
+  sun/nio/cs/ISCIITest.java \
+  sun/nio/cs/LatinCharReplacementTWTest.java \
+  sun/nio/cs/NIOJISAutoDetectTest.java \
+  sun/nio/cs/StreamEncoderClose.java \
+  sun/nio/cs/SurrogateGB18030Test.java \
+  sun/nio/cs/SurrogateTestEUCTW.java \
+  sun/nio/cs/SurrogateTestHKSCS.java \
+  sun/nio/cs/TestConverterDroppedCharacters.java \
+  sun/nio/cs/TestCp93xSISO.java \
+  sun/nio/cs/TestIBM1364.java \
+  sun/nio/cs/TestIBMBugs.java \
+  sun/nio/cs/TestIllegalISO2022Esc.java \
+  sun/nio/cs/TestISO2022JP.java \
+  sun/nio/cs/TestMS5022X.java \
+  sun/nio/cs/TestSJIS0213.java \
+  sun/nio/cs/TestTrailingEscapesISO2022JP.java \
+  sun/nio/cs/TestUni2HKSCS.java \
+  sun/nio/cs/ZeroedByteArrayEUCTWTest.java
+
+# Compact 3 adds further tests to compact2
+#
+compact3 = \
+  :compact2 \
+  :needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+
+# Tests that require compact3 API's
+#
+needs_compact3 = \
+  :jdk_instrument \
+  :jdk_jmx \
+  :jdk_management \
+  :jdk_sctp \
+  com/sun/jndi \
+  com/sun/org/apache/xml/internal/security \
+  com/sun/security/auth \
+  com/sun/security/sasl \
+  com/sun/security/jgss \
+  com/sun/tracing \
+  java/util/prefs \
+  javax/naming \
+  javax/security \
+  javax/smartcardio \
+  javax/sql/rowset \
+  javax/xml/crypto \
+  sun/security/acl \
+  sun/security/jgss \
+  sun/security/krb5 \
+  java/lang/System/MacEncoding/TestFileEncoding.java \
+  java/nio/channels/AsynchronousSocketChannel/Leaky.java \
+  java/security/PermissionCollection/Concurrent.java \
+  java/security/Principal/Implies.java \
+  java/security/cert/GetInstance.java \
+  java/util/logging/DrainFindDeadlockTest.java \
+  java/util/logging/LoggingMXBeanTest.java \
+  sun/net/www/http/KeepAliveCache/B5045306.java \
+  sun/security/provider/PolicyFile/Alias.java \
+  sun/security/provider/PolicyFile/Comparator.java \
+  sun/security/provider/PolicyFile/SelfWildcard.java \
+  sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java \
+  sun/security/util/Oid/OidFormat.java \
+  sun/security/util/Resources/Format.java \
+  sun/security/util/Resources/NewNamesFormat.java
+
+# Compact 2 adds full VM tests
+compact2 = \
+  :compact2_minimal \
+  :compact1 \
+  :needs_full_vm_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact2 API's and a full VM
+#  
+needs_full_vm_compact2 =
+
+# Minimal VM on Compact 2 adds in some compact2 tests
+#
+compact2_minimal = \
+  :compact1_minimal \
+  :needs_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact2 API's
+#
+needs_compact2 = \
+  :jdk_rmi \
+  :jdk_time \
+  com/sun/org/apache \
+  com/sun/net/httpserver \
+  java/sql \
+  javax/sql \
+  javax/xml \
+  jdk/lambda \
+  sun/net/www/http \
+  sun/net/www/protocol/http \
+  java/io/BufferedReader/Lines.java  \
+  java/lang/reflect/DefaultStaticTest/DefaultStaticInvokeTest.java \
+  java/lang/CharSequence/DefaultTest.java  \
+  java/lang/IntegralPrimitiveToString.java  \
+  java/lang/PrimitiveSumMinMaxTest.java  \
+  java/lang/String/StringJoinTest.java  \
+  java/lang/Thread/StopThrowable.java  \
+  java/net/Authenticator/Deadlock.java \
+  java/net/CookieHandler/LocalHostCookie.java \
+  java/net/CookieHandler/CookieManagerTest.java \
+  java/net/CookieHandler/EmptyCookieHeader.java \
+  java/net/HttpCookie/IllegalCookieNameTest.java \
+  java/net/HttpURLConnection/UnmodifiableMaps.java \
+  java/net/HttpURLPermission/URLTest.java \
+  java/net/ResponseCache/Test.java \
+  java/net/URLClassLoader/ClassLoad.java \
+  java/net/URLClassLoader/closetest/CloseTest.java \
+  java/nio/Buffer/Chars.java  \
+  java/nio/file/Files/StreamTest.java  \
+  java/security/BasicPermission/Wildcard.java \
+  java/util/Arrays/ParallelPrefix.java  \
+  java/util/Arrays/SetAllTest.java  \
+  java/util/BitSet/BitSetStreamTest.java  \
+  java/util/Collection/CollectionDefaults.java  \
+  java/util/Collection/ListDefaults.java  \
+  java/util/Collections/CheckedIdentityMap.java  \
+  java/util/Collections/CheckedMapBash.java  \
+  java/util/Collections/CheckedSetBash.java  \
+  java/util/Collections/EmptyCollectionSerialization.java  \
+  java/util/Collections/EmptyNavigableMap.java  \
+  java/util/Collections/EmptyNavigableSet.java  \
+  java/util/Collections/UnmodifiableMapEntrySet.java  \
+  java/util/Comparator/BasicTest.java  \
+  java/util/Comparator/TypeTest.java  \
+  java/util/Iterator/IteratorDefaults.java  \
+  java/util/Iterator/PrimitiveIteratorDefaults.java  \
+  java/util/Map/BasicSerialization.java  \
+  java/util/Map/Defaults.java  \
+  java/util/Map/EntryComparators.java  \
+  java/util/Optional/Basic.java  \
+  java/util/Optional/BasicDouble.java  \
+  java/util/Optional/BasicInt.java  \
+  java/util/Optional/BasicLong.java  \
+  java/util/Random/RandomStreamTest.java  \
+  java/util/ResourceBundle/Bug6359330.java  \
+  java/util/Spliterator/SpliteratorCharacteristics.java  \
+  java/util/Spliterator/SpliteratorCollisions.java  \
+  java/util/Spliterator/SpliteratorLateBindingFailFastTest.java  \
+  java/util/Spliterator/SpliteratorTraversingAndSplittingTest.java  \
+  java/util/StringJoiner/MergeTest.java  \
+  java/util/StringJoiner/StringJoinerTest.java  \
+  java/util/concurrent/atomic/AtomicReferenceTest.java  \
+  java/util/function/BinaryOperator/BasicTest.java  \
+  java/util/logging/LoggerSupplierAPIsTest.java  \
+  java/util/zip/ZipFile/StreamZipEntriesTest.java \
+  java/util/zip/ZipFile/DeleteTempJar.java \
+  javax/crypto/Cipher/CipherStreamClose.java \
+  sun/misc/URLClassPath/ClassnameCharTest.java \
+  sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/HttpsCreateSockTest.java \
+  sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/HttpsSocketFacTest.java 
+
+# Compact 1 adds full VM tests
+#
+compact1 = \
+  :compact1_minimal \
+  :needs_full_vm_compact1 \
+ -:needs_compact2 \
+ -:needs_full_vm_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk
+
+# Tests that require compact1 API's and a full VM
+#
+needs_full_vm_compact1 =
+
+# All tests that run on the most minimal configuration: Minimal VM on Compact 1
+compact1_minimal = \
+  com \
+  java \
+  javax \
+  jdk \
+  lib \
+  sample \
+  sun \
+  vm \
+ -:needs_full_vm_compact1 \
+ -:needs_full_vm_compact2 \
+ -:needs_compact2 \
+ -:needs_compact3 \
+ -:needs_jre \
+ -:needs_jdk

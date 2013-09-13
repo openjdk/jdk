@@ -73,6 +73,7 @@ public class FileKey {
     private static native void initIDs();
 
     static {
+        IOUtil.load();
         initIDs();
     }
 }

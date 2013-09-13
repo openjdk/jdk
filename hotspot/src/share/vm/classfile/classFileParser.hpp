@@ -62,8 +62,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool       _synthetic_flag;
   int        _sde_length;
   char*      _sde_buffer;
-  Symbol*    _sourcefile;
-  Symbol*    _generic_signature;
+  u2         _sourcefile_index;
+  u2         _generic_signature_index;
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
@@ -81,16 +81,16 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   Array<AnnotationArray*>* _fields_type_annotations;
   InstanceKlass*   _klass;  // InstanceKlass once created.
 
-  void set_class_synthetic_flag(bool x)           { _synthetic_flag = x; }
-  void set_class_sourcefile(Symbol* x)            { _sourcefile = x; }
-  void set_class_generic_signature(Symbol* x)     { _generic_signature = x; }
-  void set_class_sde_buffer(char* x, int len)     { _sde_buffer = x; _sde_length = len; }
+  void set_class_synthetic_flag(bool x)        { _synthetic_flag = x; }
+  void set_class_sourcefile_index(u2 x)        { _sourcefile_index = x; }
+  void set_class_generic_signature_index(u2 x) { _generic_signature_index = x; }
+  void set_class_sde_buffer(char* x, int len)  { _sde_buffer = x; _sde_length = len; }
 
   void init_parsed_class_attributes(ClassLoaderData* loader_data) {
     _loader_data = loader_data;
     _synthetic_flag = false;
-    _sourcefile = NULL;
-    _generic_signature = NULL;
+    _sourcefile_index = 0;
+    _generic_signature_index = 0;
     _sde_buffer = NULL;
     _sde_length = 0;
     // initialize the other flags too:

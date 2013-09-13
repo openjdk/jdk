@@ -70,8 +70,9 @@ public class StringContent extends Content {
      *                              DocletAbortException because it
      *                              is not supported.
      */
+    @Override
     public void addContent(Content content) {
-        throw new DocletAbortException();
+        throw new DocletAbortException("not supported");
     }
 
     /**
@@ -80,6 +81,7 @@ public class StringContent extends Content {
      *
      * @param strContent string content to be added
      */
+    @Override
     public void addContent(String strContent) {
         appendChars(strContent);
     }
@@ -87,10 +89,12 @@ public class StringContent extends Content {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEmpty() {
         return (stringContent.length() == 0);
     }
 
+    @Override
     public int charCount() {
         return RawHtml.charCount(stringContent.toString());
     }
@@ -98,6 +102,7 @@ public class StringContent extends Content {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString() {
         return stringContent.toString();
     }

@@ -25,8 +25,16 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -95,7 +103,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.classdoc = classdoc;
         if (mapper.classToPackageAnnotations.containsKey(classdoc.qualifiedName()))
-                pkgToPackageAnnotations = new HashSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
+                pkgToPackageAnnotations = new TreeSet<PackageDoc>(mapper.classToPackageAnnotations.get(classdoc.qualifiedName()));
         configuration.currentcd = classdoc;
         this.pkgSet = new TreeSet<PackageDoc>();
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
@@ -210,7 +218,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             configuration.standardmessage.
                 error("doclet.exception_encountered",
                       exc.toString(), path.getPath());
-            throw new DocletAbortException();
+            throw new DocletAbortException(exc);
         }
     }
 
