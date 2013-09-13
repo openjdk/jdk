@@ -1395,8 +1395,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   ClassLoaderData* loader_data = the_class->class_loader_data();
   ConstantPool* merge_cp_oop =
     ConstantPool::allocate(loader_data,
-                                  merge_cp_length,
-                                  THREAD);
+                           merge_cp_length,
+                           CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
   MergeCPCleaner cp_cleaner(loader_data, merge_cp_oop);
 
   HandleMark hm(THREAD);  // make sure handles are cleared before
@@ -1472,7 +1472,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
       // Replace the new constant pool with a shrunken copy of the
       // merged constant pool
-      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length,
+                            CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
       // The new constant pool replaces scratch_cp so have cleaner clean it up.
       // It can't be cleaned up while there are handles to it.
       cp_cleaner.add_scratch_cp(scratch_cp());
@@ -1502,7 +1503,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     // merged constant pool so now the rewritten bytecodes have
     // valid references; the previous new constant pool will get
     // GCed.
-    set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+    set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length,
+                          CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
     // The new constant pool replaces scratch_cp so have cleaner clean it up.
     // It can't be cleaned up while there are handles to it.
     cp_cleaner.add_scratch_cp(scratch_cp());
@@ -2496,8 +2498,8 @@ void VM_RedefineClasses::set_new_constant_pool(
   // scratch_cp is a merged constant pool and has enough space for a
   // worst case merge situation. We want to associate the minimum
   // sized constant pool with the klass to save space.
-  constantPoolHandle smaller_cp(THREAD,
-          ConstantPool::allocate(loader_data, scratch_cp_length, THREAD));
+  ConstantPool* cp = ConstantPool::allocate(loader_data, scratch_cp_length, CHECK);
+  constantPoolHandle smaller_cp(THREAD, cp);
 
   // preserve version() value in the smaller copy
   int version = scratch_cp->version();
@@ -2509,6 +2511,11 @@ void VM_RedefineClasses::set_new_constant_pool(
   smaller_cp->set_pool_holder(scratch_class());
 
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    // Exception is handled in the caller
+    loader_data->add_to_deallocate_list(smaller_cp());
+    return;
+  }
   scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
