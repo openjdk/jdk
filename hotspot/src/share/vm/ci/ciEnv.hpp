@@ -400,6 +400,7 @@ public:
   static ciInstanceKlass* unloaded_ciinstance_klass() {
     return _unloaded_ciinstance_klass;
   }
+  ciInstance* unloaded_ciinstance();
 
   ciKlass*  find_system_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,

@@ -384,6 +384,7 @@ protected:
   void add_req( Node *n ); // Append a NEW required input
   void add_req_batch( Node* n, uint m ); // Append m NEW required inputs (all n).
   void del_req( uint idx ); // Delete required edge & compact
+  void del_req_ordered( uint idx ); // Delete required edge & compact with preserved order
   void ins_req( uint i, Node *n ); // Insert a NEW required input
   void set_req( uint i, Node *n ) {
     assert( is_not_dead(n), "can not use dead node");
