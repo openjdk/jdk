@@ -236,6 +236,10 @@ public final class Context {
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
+    /*package-private*/ ClassLoader getSharedLoader() {
+        return sharedLoader;
+    }
+
     private static AccessControlContext createNoPermAccCtxt() {
         return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, new Permissions()) });
     }
@@ -254,7 +258,7 @@ public final class Context {
         sharedLoader = AccessController.doPrivileged(new PrivilegedAction<StructureLoader>() {
             @Override
             public StructureLoader run() {
-                return new StructureLoader(myLoader, null);
+                return new StructureLoader(myLoader);
             }
         }, CREATE_LOADER_ACC_CTXT);
     }
@@ -599,7 +603,7 @@ public final class Context {
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
     public static Class<?> forStructureClass(final String fullName) throws ClassNotFoundException {
-        if (System.getSecurityManager() != null && !NashornLoader.isStructureClass(fullName)) {
+        if (System.getSecurityManager() != null && !StructureLoader.isStructureClass(fullName)) {
             throw new ClassNotFoundException(fullName);
         }
         return Class.forName(fullName, true, sharedLoader);
@@ -792,12 +796,11 @@ public final class Context {
     static Context fromClass(final Class<?> clazz) {
         final ClassLoader loader = clazz.getClassLoader();
 
-        Context context = null;
-        if (loader instanceof NashornLoader) {
-            context = ((NashornLoader)loader).getContext();
+        if (loader instanceof ScriptLoader) {
+            return ((ScriptLoader)loader).getContext();
         }
 
-        return (context != null) ? context : Context.getContextTrusted();
+        return Context.getContextTrusted();
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
@@ -899,7 +902,7 @@ public final class Context {
              new PrivilegedAction<ScriptLoader>() {
                 @Override
                 public ScriptLoader run() {
-                    return new ScriptLoader(sharedLoader, Context.this);
+                    return new ScriptLoader(appLoader, Context.this);
                 }
              }, CREATE_LOADER_ACC_CTXT);
     }
