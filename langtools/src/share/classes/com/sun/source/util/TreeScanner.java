@@ -285,6 +285,10 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         R r = scan(node.getType(), p);
         r = scanAndReduce(node.getDimensions(), p, r);
         r = scanAndReduce(node.getInitializers(), p, r);
+        r = scanAndReduce(node.getAnnotations(), p, r);
+        for (Iterable< ? extends Tree> dimAnno : node.getDimAnnotations()) {
+            r = scanAndReduce(dimAnno, p, r);
+        }
         return r;
     }
 

@@ -510,6 +510,11 @@ void AwtFont::LoadMetrics(JNIEnv *env, jobject fontMetrics)
     jobject font = env->GetObjectField(fontMetrics, AwtFont::fontID);
     AwtFont* awtFont = AwtFont::GetFont(env, font);
 
+    if (!awtFont) {
+        /* failed to get font */
+        return;
+    }
+
     HDC hDC = ::GetDC(0);
     DASSERT(hDC != NULL);
 

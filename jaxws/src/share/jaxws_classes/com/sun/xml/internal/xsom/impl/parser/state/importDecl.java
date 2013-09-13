@@ -78,9 +78,16 @@ class importDecl extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 4:
             {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
             }
             break;
         case 8:
@@ -109,7 +116,7 @@ class importDecl extends NGCCHandler {
         case 2:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 498, null,AnnotationContext.SCHEMA);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 340, null,AnnotationContext.SCHEMA);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -118,16 +125,9 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
-        case 4:
+        case 0:
             {
-                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
             }
             break;
         default:
@@ -144,9 +144,16 @@ class importDecl extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 4:
             {
-                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
             }
             break;
         case 8:
@@ -161,6 +168,12 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 1:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("import"))) {
@@ -173,22 +186,9 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
-        case 2:
+        case 0:
             {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 4:
-            {
-                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-                }
+                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -205,9 +205,15 @@ class importDecl extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 4:
             {
-                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
+                if(($__uri.equals("") && $__local.equals("schemaLocation"))) {
+                    $_ngcc_current_state = 6;
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
+                }
             }
             break;
         case 8:
@@ -227,15 +233,9 @@ class importDecl extends NGCCHandler {
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 4:
+        case 0:
             {
-                if(($__uri.equals("") && $__local.equals("schemaLocation"))) {
-                    $_ngcc_current_state = 6;
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
-                }
+                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -262,20 +262,15 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
-        case 0:
+        case 4:
             {
-                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 2;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 8:
             {
                 $_ngcc_current_state = 4;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
@@ -289,10 +284,15 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
-        case 4:
+        case 2:
             {
-                $_ngcc_current_state = 2;
+                $_ngcc_current_state = 1;
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -306,9 +306,16 @@ class importDecl extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 0:
+        case 4:
             {
-                revertToParentFromText(this, super._cookie, $value);
+                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendText(super._cookie, $value);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendText(super._cookie, $value);
+                }
             }
             break;
         case 8:
@@ -323,10 +330,10 @@ class importDecl extends NGCCHandler {
                 }
             }
             break;
-        case 6:
+        case 10:
             {
-                schemaLocation = $value;
-                $_ngcc_current_state = 5;
+                ns = $value;
+                $_ngcc_current_state = 9;
             }
             break;
         case 2:
@@ -335,22 +342,15 @@ class importDecl extends NGCCHandler {
                 $runtime.sendText(super._cookie, $value);
             }
             break;
-        case 4:
+        case 0:
             {
-                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendText(super._cookie, $value);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendText(super._cookie, $value);
-                }
+                revertToParentFromText(this, super._cookie, $value);
             }
             break;
-        case 10:
+        case 6:
             {
-                ns = $value;
-                $_ngcc_current_state = 9;
+                schemaLocation = $value;
+                $_ngcc_current_state = 5;
             }
             break;
         }
@@ -358,7 +358,7 @@ class importDecl extends NGCCHandler {
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 498:
+        case 340:
             {
                 $_ngcc_current_state = 1;
             }

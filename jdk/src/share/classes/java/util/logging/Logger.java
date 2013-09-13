@@ -457,13 +457,15 @@ public class Logger {
      *                          of the subsystem, such as java.net
      *                          or javax.swing
      * @param   resourceBundleName  name of ResourceBundle to be used for localizing
-     *                          messages for this logger. May be <CODE>null</CODE> if none of
-     *                          the messages require localization.
+     *                          messages for this logger. May be {@code null}
+     *                          if none of the messages require localization.
      * @return a suitable Logger
      * @throws MissingResourceException if the resourceBundleName is non-null and
      *             no corresponding resource can be found.
      * @throws IllegalArgumentException if the Logger already exists and uses
-     *             a different resource bundle name.
+     *             a different resource bundle name; or if
+     *             {@code resourceBundleName} is {@code null} but the named
+     *             logger has a resource bundle set.
      * @throws NullPointerException if the name is null.
      */
 
@@ -1731,10 +1733,6 @@ public class Logger {
     // Synchronized to prevent races in setting the fields.
     private synchronized void setupResourceInfo(String name,
                                                 Class<?> callersClass) {
-        if (name == null) {
-            return;
-        }
-
         if (resourceBundleName != null) {
             // this Logger already has a ResourceBundle
 
@@ -1746,6 +1744,10 @@ public class Logger {
             // cannot change ResourceBundles once they are set
             throw new IllegalArgumentException(
                 resourceBundleName + " != " + name);
+        }
+
+        if (name == null) {
+            return;
         }
 
         setCallersClassLoaderRef(callersClass);

@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.AllPermission;
 import java.security.CodeSigner;
@@ -33,7 +34,6 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
-
 import jdk.internal.dynalink.beans.StaticClass;
 
 /**
@@ -46,13 +46,21 @@ import jdk.internal.dynalink.beans.StaticClass;
 @SuppressWarnings("javadoc")
 final class JavaAdapterClassLoader {
     private static final ProtectionDomain GENERATED_PROTECTION_DOMAIN = createGeneratedProtectionDomain();
+    private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
 
     private final String className;
-    private final byte[] classBytes;
+    private volatile byte[] classBytes;
 
     JavaAdapterClassLoader(String className, byte[] classBytes) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
+    }
+
+    /**
+     * clear classBytes after loading class.
+     */
+    void clearClassBytes() {
+       this.classBytes = null;
     }
 
     /**
@@ -70,7 +78,7 @@ final class JavaAdapterClassLoader {
                     throw new AssertionError(e); // cannot happen
                 }
             }
-        });
+        }, CREATE_LOADER_ACC_CTXT);
     }
 
     // Note that the adapter class is created in the protection domain of the class/interface being
@@ -103,10 +111,10 @@ final class JavaAdapterClassLoader {
             @Override
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
+                    assert classBytes != null : "what? already cleared .class bytes!!";
                     return defineClass(name, classBytes, 0, classBytes.length, GENERATED_PROTECTION_DOMAIN);
-                } else {
-                    throw new ClassNotFoundException(name);
                 }
+                throw new ClassNotFoundException(name);
             }
         };
     }

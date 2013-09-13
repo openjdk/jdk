@@ -90,7 +90,7 @@ public class BasicTest {
         Thing[] things = new Thing[intValues.length];
         for (int i=0; i<intValues.length; i++)
             things[i] = new Thing(intValues[i], 0L, 0.0, null);
-        Comparator<Thing> comp = Comparator.comparing(new ToIntFunction<Thing>() {
+        Comparator<Thing> comp = Comparator.comparingInt(new ToIntFunction<Thing>() {
             @Override
             public int applyAsInt(Thing thing) {
                 return thing.getIntField();
@@ -104,7 +104,7 @@ public class BasicTest {
         Thing[] things = new Thing[longValues.length];
         for (int i=0; i<longValues.length; i++)
             things[i] = new Thing(0, longValues[i], 0.0, null);
-        Comparator<Thing> comp = Comparator.comparing(new ToLongFunction<Thing>() {
+        Comparator<Thing> comp = Comparator.comparingLong(new ToLongFunction<Thing>() {
             @Override
             public long applyAsLong(Thing thing) {
                 return thing.getLongField();
@@ -118,7 +118,7 @@ public class BasicTest {
         Thing[] things = new Thing[doubleValues.length];
         for (int i=0; i<doubleValues.length; i++)
             things[i] = new Thing(0, 0L, doubleValues[i], null);
-        Comparator<Thing> comp = Comparator.comparing(new ToDoubleFunction<Thing>() {
+        Comparator<Thing> comp = Comparator.comparingDouble(new ToDoubleFunction<Thing>() {
             @Override
             public double applyAsDouble(Thing thing) {
                 return thing.getDoubleField();
@@ -211,8 +211,8 @@ public class BasicTest {
     };
 
     public void testComparatorDefaultMethods() {
-        Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName);
-        Comparator<People> cmp2 = Comparator.comparing((Function<People, String>) People::getLastName);
+        Comparator<People> cmp = Comparator.comparing(People::getFirstName);
+        Comparator<People> cmp2 = Comparator.comparing(People::getLastName);
         // reverseOrder
         assertComparison(cmp.reversed(), people[1], people[0]);
         // thenComparing(Comparator)
@@ -222,20 +222,20 @@ public class BasicTest {
         assertComparison(cmp.thenComparing(People::getLastName), people[0], people[1]);
         assertComparison(cmp.thenComparing(People::getLastName), people[4], people[0]);
         // thenComparing(ToIntFunction)
-        assertComparison(cmp.thenComparing(People::getAge), people[0], people[1]);
-        assertComparison(cmp.thenComparing(People::getAge), people[1], people[5]);
+        assertComparison(cmp.thenComparingInt(People::getAge), people[0], people[1]);
+        assertComparison(cmp.thenComparingInt(People::getAge), people[1], people[5]);
         // thenComparing(ToLongFunction)
-        assertComparison(cmp.thenComparing(People::getAgeAsLong), people[0], people[1]);
-        assertComparison(cmp.thenComparing(People::getAgeAsLong), people[1], people[5]);
+        assertComparison(cmp.thenComparingLong(People::getAgeAsLong), people[0], people[1]);
+        assertComparison(cmp.thenComparingLong(People::getAgeAsLong), people[1], people[5]);
         // thenComparing(ToDoubleFunction)
-        assertComparison(cmp.thenComparing(People::getAgeAsDouble), people[0], people[1]);
-        assertComparison(cmp.thenComparing(People::getAgeAsDouble), people[1], people[5]);
+        assertComparison(cmp.thenComparingDouble(People::getAgeAsDouble), people[0], people[1]);
+        assertComparison(cmp.thenComparingDouble(People::getAgeAsDouble), people[1], people[5]);
     }
 
 
     public void testNullsFirst() {
         Comparator<String> strcmp = Comparator.nullsFirst(Comparator.naturalOrder());
-        Comparator<People> cmp = Comparator.<People, String>comparing(People::getLastName, strcmp)
+        Comparator<People> cmp = Comparator.comparing(People::getLastName, strcmp)
                                            .thenComparing(People::getFirstName, strcmp);
         // Mary.null vs Mary.Cook - solve by last name
         assertComparison(cmp, people[6], people[5]);
@@ -243,7 +243,7 @@ public class BasicTest {
         assertComparison(cmp, people[7], people[6]);
 
         // More than one thenComparing
-        strcmp = Comparator.nullsFirst(Comparator.comparing((ToIntFunction<String>) String::length)
+        strcmp = Comparator.nullsFirst(Comparator.comparingInt(String::length)
                                                  .thenComparing(String.CASE_INSENSITIVE_ORDER));
         assertComparison(strcmp, null, "abc");
         assertComparison(strcmp, "ab", "abc");
@@ -273,7 +273,7 @@ public class BasicTest {
 
     public void testNullsLast() {
         Comparator<String> strcmp = Comparator.nullsLast(Comparator.naturalOrder());
-        Comparator<People> cmp = Comparator.<People, String>comparing(People::getLastName, strcmp)
+        Comparator<People> cmp = Comparator.comparing(People::getLastName, strcmp)
                                            .thenComparing(People::getFirstName, strcmp);
         // Mary.null vs Mary.Cook - solve by last name
         assertComparison(cmp, people[5], people[6]);
@@ -281,7 +281,7 @@ public class BasicTest {
         assertComparison(cmp, people[7], people[6]);
 
         // More than one thenComparing
-        strcmp = Comparator.nullsLast(Comparator.comparing((ToIntFunction<String>) String::length)
+        strcmp = Comparator.nullsLast(Comparator.comparingInt(String::length)
                                                 .thenComparing(String.CASE_INSENSITIVE_ORDER));
         assertComparison(strcmp, "abc", null);
         assertComparison(strcmp, "ab", "abc");
@@ -341,28 +341,28 @@ public class BasicTest {
         } catch (NullPointerException npe) {}
 
         try {
-            Comparator<People> cmp = Comparator.comparing((Function<People, String>) null, Comparator.<String>naturalOrder());
+            Comparator<People> cmp = Comparator.comparing(null, Comparator.<String>naturalOrder());
             fail("comparing(null, cmp) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName, null);
+            Comparator<People> cmp = Comparator.comparing(People::getFirstName, null);
             fail("comparing(f, null) should throw NPE");
         } catch (NullPointerException npe) {}
 
         try {
-            Comparator<People> cmp = Comparator.comparing((Function<People, String>) null);
+            Comparator<People> cmp = Comparator.comparing(null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparator.comparing((ToIntFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparingInt(null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparator.comparing((ToLongFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparingLong(null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparator.comparing((ToDoubleFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparingDouble(null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
     }

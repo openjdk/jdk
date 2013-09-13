@@ -194,9 +194,7 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
         return decode(soapVersion, reader, attachmentSet);
     }
 
-    public static final Message decode(SOAPVersion soapVersion, XMLStreamReader reader,
-            @NotNull AttachmentSet attachmentSet) {
-
+    public static final Message decode(SOAPVersion soapVersion, XMLStreamReader reader, @NotNull AttachmentSet attachmentSet) {
         // Move to soap:Envelope and verify
         if(reader.getEventType()!=XMLStreamConstants.START_ELEMENT)
             XMLStreamReaderUtil.nextElementContent(reader);
@@ -205,61 +203,7 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
             throw new VersionMismatchException(soapVersion, soapVersion.nsUri, reader.getNamespaceURI());
         }
         XMLStreamReaderUtil.verifyTag(reader, soapVersion.nsUri, SOAP_ENVELOPE);
-
-        TagInfoset envelopeTag = new TagInfoset(reader);
-
-        // Collect namespaces on soap:Envelope
-        Map<String,String> namespaces = new HashMap<String,String>();
-        for(int i=0; i< reader.getNamespaceCount();i++){
-                namespaces.put(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
-        }
-
-        // Move to next element
-        XMLStreamReaderUtil.nextElementContent(reader);
-        XMLStreamReaderUtil.verifyReaderState(reader,
-                javax.xml.stream.XMLStreamConstants.START_ELEMENT);
-
-        HeaderList headers = null;
-        TagInfoset headerTag = null;
-
-        if (reader.getLocalName().equals(SOAP_HEADER)
-                && reader.getNamespaceURI().equals(soapVersion.nsUri)) {
-            headerTag = new TagInfoset(reader);
-
-            // Collect namespaces on soap:Header
-            for(int i=0; i< reader.getNamespaceCount();i++){
-                namespaces.put(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
-            }
-            // skip <soap:Header>
-            XMLStreamReaderUtil.nextElementContent(reader);
-
-            // If SOAP header blocks are present (i.e. not <soap:Header/>)
-            if (reader.getEventType() == XMLStreamConstants.START_ELEMENT) {
-                headers = new HeaderList(soapVersion);
-
-                try {
-                    // Cache SOAP header blocks
-                    StreamHeaderDecoder headerDecoder = SOAPVersion.SOAP_11.equals(soapVersion) ? StreamSOAP11Codec.SOAP11StreamHeaderDecoder : StreamSOAP12Codec.SOAP12StreamHeaderDecoder;
-                    cacheHeaders(reader, namespaces, headers, headerDecoder);
-                } catch (XMLStreamException e) {
-                    // TODO need to throw more meaningful exception
-                    throw new WebServiceException(e);
-                }
-            }
-
-            // Move to soap:Body
-            XMLStreamReaderUtil.nextElementContent(reader);
-        }
-
-        // Verify that <soap:Body> is present
-        XMLStreamReaderUtil.verifyTag(reader, soapVersion.nsUri, SOAP_BODY);
-        TagInfoset bodyTag = new TagInfoset(reader);
-
-        String bodyPrologue = XMLStreamReaderUtil.nextWhiteSpaceContent(reader);
-        return new StreamMessage(envelopeTag,headerTag,attachmentSet,headers,bodyPrologue,bodyTag,null,reader,soapVersion);
-        // when there's no payload,
-        // it's tempting to use EmptyMessageImpl, but it doesn't preserve the infoset
-        // of <envelope>,<header>, and <body>, so we need to stick to StreamMessage.
+        return new StreamMessage(soapVersion, reader, attachmentSet);
     }
 
     public void decode(ReadableByteChannel in, String contentType, Packet packet ) {
@@ -268,56 +212,6 @@ public abstract class StreamSOAPCodec implements com.sun.xml.internal.ws.api.pip
 
     public final StreamSOAPCodec copy() {
         return this;
-    }
-
-    private static XMLStreamBuffer cacheHeaders(XMLStreamReader reader,
-            Map<String, String> namespaces, HeaderList headers,
-            StreamHeaderDecoder headerDecoder) throws XMLStreamException {
-        MutableXMLStreamBuffer buffer = createXMLStreamBuffer();
-        StreamReaderBufferCreator creator = new StreamReaderBufferCreator();
-        creator.setXMLStreamBuffer(buffer);
-
-        // Reader is positioned at the first header block
-        while(reader.getEventType() == javax.xml.stream.XMLStreamConstants.START_ELEMENT) {
-            Map<String,String> headerBlockNamespaces = namespaces;
-
-            // Collect namespaces on SOAP header block
-            if (reader.getNamespaceCount() > 0) {
-                headerBlockNamespaces = new HashMap<String,String>(namespaces);
-                for (int i = 0; i < reader.getNamespaceCount(); i++) {
-                    headerBlockNamespaces.put(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
-                }
-            }
-
-            // Mark
-            XMLStreamBuffer mark = new XMLStreamBufferMark(headerBlockNamespaces, creator);
-            // Create Header
-            headers.add(headerDecoder.decodeHeader(reader, mark));
-
-
-            // Cache the header block
-            // After caching Reader will be positioned at next header block or
-            // the end of the </soap:header>
-            creator.createElementFragment(reader, false);
-            if (reader.getEventType() != XMLStreamConstants.START_ELEMENT &&
-                    reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
-                XMLStreamReaderUtil.nextElementContent(reader);
-            }
-        }
-
-        return buffer;
-    }
-
-    protected interface StreamHeaderDecoder {
-        public Header decodeHeader(XMLStreamReader reader, XMLStreamBuffer mark);
-    }
-
-    private static MutableXMLStreamBuffer createXMLStreamBuffer() {
-        // TODO: Decode should own one MutableXMLStreamBuffer for reuse
-        // since it is more efficient. ISSUE: possible issue with
-        // lifetime of information in the buffer if accessed beyond
-        // the pipe line.
-        return new MutableXMLStreamBuffer();
     }
 
     public void decode(InputStream in, String contentType, Packet packet, AttachmentSet att ) throws IOException {

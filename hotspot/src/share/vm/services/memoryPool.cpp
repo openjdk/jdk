@@ -268,11 +268,11 @@ MemoryUsage MetaspacePool::get_memory_usage() {
 }
 
 size_t MetaspacePool::used_in_bytes() {
-  return MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType);
+  return MetaspaceAux::allocated_used_bytes();
 }
 
 size_t MetaspacePool::capacity_in_bytes() const {
-  return MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType);
+  return MetaspaceAux::allocated_capacity_bytes();
 }
 
 size_t MetaspacePool::calculate_max_size() const {

@@ -29,6 +29,11 @@ import javax.xml.bind.annotation.XmlElementRef;
 import com.sun.codemodel.internal.JAnnotationWriter;
 import com.sun.codemodel.internal.JType;
 
+/**
+ * <p><b>
+ *     Auto-generated, do not edit.
+ * </b></p>
+ */
 public interface XmlElementRefWriter
     extends JAnnotationWriter<XmlElementRef>
 {

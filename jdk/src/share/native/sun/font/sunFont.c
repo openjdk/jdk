@@ -71,13 +71,17 @@ JNIEXPORT jlong JNICALL Java_sun_font_NullFontScaler_getGlyphImage
 void initLCDGammaTables();
 
 /* placeholder for extern variable */
+static int initialisedFontIDs = 0;
 FontManagerNativeIDs sunFontIDs;
 
-JNIEXPORT void JNICALL
-Java_sun_font_SunFontManager_initIDs
-    (JNIEnv *env, jclass cls) {
+static void initFontIDs(JNIEnv *env) {
 
-     jclass tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
+     jclass tmpClass;
+
+     if (initialisedFontIDs) {
+        return;
+     }
+     tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
      sunFontIDs.ttReadBlockMID =
          (*env)->GetMethodID(env, tmpClass, "readBlock",
                              "(Ljava/nio/ByteBuffer;II)I");
@@ -173,9 +177,20 @@ Java_sun_font_SunFontManager_initIDs
          (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z");
 
      initLCDGammaTables();
+
+     initialisedFontIDs = 1;
 }
 
-JNIEXPORT FontManagerNativeIDs getSunFontIDs() {
+JNIEXPORT void JNICALL
+Java_sun_font_SunFontManager_initIDs
+    (JNIEnv *env, jclass cls) {
+
+    initFontIDs(env);
+}
+
+JNIEXPORT FontManagerNativeIDs getSunFontIDs(JNIEnv *env) {
+
+    initFontIDs(env);
     return sunFontIDs;
 }
 

@@ -1144,7 +1144,7 @@ function contains(array, code) {
     } else {
         for (var index in array) {
             var it = array[index];
-            if (func(it, index, array)) {
+            if (func(it, String(index), array)) {
                 return true;
             }
         }
@@ -1244,7 +1244,7 @@ function filter(array, code) {
         var result = new Array();
         for (var index in array) {
             var it = array[index];
-            if (func(it, index, array, result)) {
+            if (func(it, String(index), array, result)) {
                 result[result.length] = it;
             }
         }
@@ -1317,7 +1317,7 @@ function map(array, code) {
         var result = new Array();
         for (var index in array) {
             var it = array[index];
-            result[result.length] = func(it, index, array, result);
+            result[result.length] = func(it, String(index), array, result);
         }
         return result;
     }

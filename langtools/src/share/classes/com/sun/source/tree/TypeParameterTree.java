@@ -36,6 +36,8 @@ import javax.lang.model.element.Name;
  *   <em>name</em>
  *
  *   <em>name</em> extends <em>bounds</em>
+ *
+ *   <em>annotations</em> <em>name</em>
  * </pre>
  *
  * @jls section 4.4
@@ -48,5 +50,17 @@ import javax.lang.model.element.Name;
 public interface TypeParameterTree extends Tree {
     Name getName();
     List<? extends Tree> getBounds();
+
+    /**
+     * Return annotations on the type parameter declaration.
+     *
+     * Annotations need Target meta-annotations of
+     * {@link java.lang.annotation.ElementType#TYPE_PARAMETER} or
+     * {@link java.lang.annotation.ElementType#TYPE_USE}
+     * to appear in this position.
+     *
+     * @return annotations on the type parameter declaration
+     * @since 1.8
+     */
     List<? extends AnnotationTree> getAnnotations();
 }

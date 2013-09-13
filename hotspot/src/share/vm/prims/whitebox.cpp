@@ -128,7 +128,7 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
 WB_END
 #endif // INCLUDE_ALL_GCS
 
-#ifdef INCLUDE_NMT
+#if INCLUDE_NMT
 // Alloc memory using the test memory type so that we can use that to see if
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
@@ -181,6 +181,10 @@ WB_ENTRY(jboolean, WB_NMTWaitForDataMerge(JNIEnv* env))
   return MemTracker::wbtest_wait_for_data_merge();
 WB_END
 
+WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
+  return MemTracker::tracking_level() == MemTracker::NMT_detail;
+WB_END
+
 #endif // INCLUDE_NMT
 
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
@@ -196,12 +200,22 @@ WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
   VMThread::execute(&op);
 WB_END
 
-WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   MutexLockerEx mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   int result = 0;
-  nmethod* code = mh->code();
+  nmethod* code;
+  if (is_osr) {
+    int bci = InvocationEntryBci;
+    while ((code = mh->lookup_osr_nmethod_for(bci, CompLevel_none, false)) != NULL) {
+      code->mark_for_deoptimization();
+      ++result;
+      bci = code->osr_entry_bci() + 1;
+    }
+  } else {
+    code = mh->code();
+  }
   if (code != NULL) {
     code->mark_for_deoptimization();
     ++result;
@@ -214,22 +228,26 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method))
   return result;
 WB_END
 
-WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   MutexLockerEx mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* code = mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   if (code == NULL) {
     return JNI_FALSE;
   }
   return (code->is_alive() && !code->is_marked_for_deoptimization());
 WB_END
 
-WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level))
+WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   MutexLockerEx mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  return CompilationPolicy::can_be_compiled(mh, comp_level);
+  if (is_osr) {
+    return CompilationPolicy::can_be_osr_compiled(mh, comp_level);
+  } else {
+    return CompilationPolicy::can_be_compiled(mh, comp_level);
+  }
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
@@ -239,18 +257,28 @@ WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobje
   return mh->queued_for_compilation();
 WB_END
 
-WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* code = mh->code();
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
   return (code != NULL ? code->comp_level() : CompLevel_none);
 WB_END
 
-
-WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level))
+WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  mh->set_not_compilable(comp_level, true /* report */, "WhiteBox");
+  if (is_osr) {
+    mh->set_not_osr_compilable(comp_level, true /* report */, "WhiteBox");
+  } else {
+    mh->set_not_compilable(comp_level, true /* report */, "WhiteBox");
+  }
+WB_END
+
+WB_ENTRY(jint, WB_GetMethodEntryBci(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
+  return (code != NULL && code->is_osr_method() ? code->osr_entry_bci() : InvocationEntryBci);
 WB_END
 
 WB_ENTRY(jboolean, WB_TestSetDontInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
@@ -261,11 +289,14 @@ WB_ENTRY(jboolean, WB_TestSetDontInlineMethod(JNIEnv* env, jobject o, jobject me
   return result;
 WB_END
 
-WB_ENTRY(jint, WB_GetCompileQueuesSize(JNIEnv* env, jobject o))
-  return CompileBroker::queue_size(CompLevel_full_optimization) /* C2 */ +
-         CompileBroker::queue_size(CompLevel_full_profile) /* C1 */;
+WB_ENTRY(jint, WB_GetCompileQueueSize(JNIEnv* env, jobject o, jint comp_level))
+  if (comp_level == CompLevel_any) {
+    return CompileBroker::queue_size(CompLevel_full_optimization) /* C2 */ +
+        CompileBroker::queue_size(CompLevel_full_profile) /* C1 */;
+  } else {
+    return CompileBroker::queue_size(comp_level);
+  }
 WB_END
-
 
 WB_ENTRY(jboolean, WB_TestSetForceInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -275,10 +306,10 @@ WB_ENTRY(jboolean, WB_TestSetForceInlineMethod(JNIEnv* env, jobject o, jobject m
   return result;
 WB_END
 
-WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level))
+WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level, jint bci))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level, mh, mh->invocation_count(), "WhiteBox", THREAD);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), "WhiteBox", THREAD);
   MutexLockerEx mu(Compile_lock);
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
@@ -323,7 +354,6 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
   jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
   return (StringTable::lookup(name, len) != NULL);
 WB_END
-
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
@@ -413,7 +443,7 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
 #endif // INCLUDE_ALL_GCS
-#ifdef INCLUDE_NMT
+#if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
   {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
@@ -421,33 +451,35 @@ static JNINativeMethod methods[] = {
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
   {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
+  {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
-  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;)I",
+  {CC"deoptimizeMethod",   CC"(Ljava/lang/reflect/Executable;Z)I",
                                                       (void*)&WB_DeoptimizeMethod  },
-  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Executable;)Z",
+  {CC"isMethodCompiled",   CC"(Ljava/lang/reflect/Executable;Z)Z",
                                                       (void*)&WB_IsMethodCompiled  },
-  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Executable;I)Z",
+  {CC"isMethodCompilable", CC"(Ljava/lang/reflect/Executable;IZ)Z",
                                                       (void*)&WB_IsMethodCompilable},
   {CC"isMethodQueuedForCompilation",
       CC"(Ljava/lang/reflect/Executable;)Z",          (void*)&WB_IsMethodQueuedForCompilation},
   {CC"makeMethodNotCompilable",
-      CC"(Ljava/lang/reflect/Executable;I)V",         (void*)&WB_MakeMethodNotCompilable},
+      CC"(Ljava/lang/reflect/Executable;IZ)V",        (void*)&WB_MakeMethodNotCompilable},
   {CC"testSetDontInlineMethod",
       CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetDontInlineMethod},
   {CC"getMethodCompilationLevel",
-      CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodCompilationLevel},
-  {CC"getCompileQueuesSize",
-      CC"()I",                                        (void*)&WB_GetCompileQueuesSize},
+      CC"(Ljava/lang/reflect/Executable;Z)I",         (void*)&WB_GetMethodCompilationLevel},
+  {CC"getMethodEntryBci",
+      CC"(Ljava/lang/reflect/Executable;)I",          (void*)&WB_GetMethodEntryBci},
+  {CC"getCompileQueueSize",
+      CC"(I)I",                                       (void*)&WB_GetCompileQueueSize},
   {CC"testSetForceInlineMethod",
       CC"(Ljava/lang/reflect/Executable;Z)Z",         (void*)&WB_TestSetForceInlineMethod},
   {CC"enqueueMethodForCompilation",
-      CC"(Ljava/lang/reflect/Executable;I)Z",         (void*)&WB_EnqueueMethodForCompilation},
+      CC"(Ljava/lang/reflect/Executable;II)Z",        (void*)&WB_EnqueueMethodForCompilation},
   {CC"clearMethodState",
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
-
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
 };
 
