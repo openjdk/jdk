@@ -170,6 +170,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         if (predicate.test(u))
                             downstream.accept(u);
@@ -263,11 +264,13 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        Stream<? extends R> result = mapper.apply(u);
-                        if (result != null)
-                            result.sequential().forEach(downstream);
+                        try (Stream<? extends R> result = mapper.apply(u)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(downstream);
+                        }
                     }
                 };
             }
@@ -291,10 +294,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT u) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        IntStream result = mapper.apply(u);
-                        if (result != null)
-                            result.sequential().forEach(downstreamAsInt);
+                        try (IntStream result = mapper.apply(u)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(downstreamAsInt);
+                        }
                     }
                 };
             }
@@ -318,10 +322,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT u) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        DoubleStream result = mapper.apply(u);
-                        if (result != null)
-                            result.sequential().forEach(downstreamAsDouble);
+                        try (DoubleStream result = mapper.apply(u)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(downstreamAsDouble);
+                        }
                     }
                 };
             }
@@ -345,10 +350,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT u) {
-                        // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
-                        LongStream result = mapper.apply(u);
-                        if (result != null)
-                            result.sequential().forEach(downstreamAsLong);
+                        try (LongStream result = mapper.apply(u)) {
+                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            if (result != null)
+                                result.sequential().forEach(downstreamAsLong);
+                        }
                     }
                 };
             }
@@ -356,16 +362,17 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final Stream<P_OUT> peek(Consumer<? super P_OUT> tee) {
-        Objects.requireNonNull(tee);
+    public final Stream<P_OUT> peek(Consumer<? super P_OUT> action) {
+        Objects.requireNonNull(action);
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
                                      0) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
-                        tee.accept(u);
+                        action.accept(u);
                         downstream.accept(u);
                     }
                 };
@@ -493,7 +500,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     @SuppressWarnings("unchecked")
-    public final <R, A> R collect(Collector<? super P_OUT, A, ? extends R> collector) {
+    public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
@@ -511,10 +518,10 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> resultFactory,
+    public final <R> R collect(Supplier<R> supplier,
                                BiConsumer<R, ? super P_OUT> accumulator,
                                BiConsumer<R, R> combiner) {
-        return evaluate(ReduceOps.makeRef(resultFactory, accumulator, combiner));
+        return evaluate(ReduceOps.makeRef(supplier, accumulator, combiner));
     }
 
     @Override

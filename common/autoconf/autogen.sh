@@ -44,19 +44,13 @@ fi
 custom_hook=$custom_script_dir/custom-hook.m4
 
 AUTOCONF="`which autoconf 2> /dev/null | grep -v '^no autoconf in'`"
-AUTOCONF_267="`which autoconf-2.67 2> /dev/null | grep -v '^no autoconf-2.67 in'`"
 
 echo "Autoconf found: ${AUTOCONF}"
-echo "Autoconf-2.67 found: ${AUTOCONF_267}"
 
 if test "x${AUTOCONF}" = x; then
   echo You need autoconf installed to be able to regenerate the configure script
   echo Error: Cannot find autoconf 1>&2
   exit 1
-fi
-
-if test "x${AUTOCONF_267}" != x; then
-  AUTOCONF=${AUTOCONF_267};
 fi
 
 echo Generating generated-configure.sh with ${AUTOCONF}

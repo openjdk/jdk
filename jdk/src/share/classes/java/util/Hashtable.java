@@ -168,68 +168,6 @@ public class Hashtable<K,V>
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = 1421746759512286392L;
 
-    private static class Holder {
-            // Unsafe mechanics
-        /**
-         *
-         */
-        static final sun.misc.Unsafe UNSAFE;
-
-        /**
-         * Offset of "final" hashSeed field we must set in
-         * readObject() method.
-         */
-        static final long HASHSEED_OFFSET;
-
-        static final boolean USE_HASHSEED;
-
-        static {
-            String hashSeedProp = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction(
-                        "jdk.map.useRandomSeed"));
-            boolean localBool = (null != hashSeedProp)
-                    ? Boolean.parseBoolean(hashSeedProp) : false;
-            USE_HASHSEED = localBool;
-
-            if (USE_HASHSEED) {
-                try {
-                    UNSAFE = sun.misc.Unsafe.getUnsafe();
-                    HASHSEED_OFFSET = UNSAFE.objectFieldOffset(
-                        Hashtable.class.getDeclaredField("hashSeed"));
-                } catch (NoSuchFieldException | SecurityException e) {
-                    throw new InternalError("Failed to record hashSeed offset", e);
-                }
-            } else {
-                UNSAFE = null;
-                HASHSEED_OFFSET = 0;
-            }
-        }
-    }
-
-    /**
-     * A randomizing value associated with this instance that is applied to
-     * hash code of keys to make hash collisions harder to find.
-     *
-     * Non-final so it can be set lazily, but be sure not to set more than once.
-     */
-    transient final int hashSeed;
-
-    /**
-     * Return an initial value for the hashSeed, or 0 if the random seed is not
-     * enabled.
-     */
-    final int initHashSeed() {
-        if (sun.misc.VM.isBooted() && Holder.USE_HASHSEED) {
-            int seed = ThreadLocalRandom.current().nextInt();
-            return (seed != 0) ? seed : 1;
-        }
-        return 0;
-    }
-
-    private int hash(Object k) {
-        return hashSeed ^ k.hashCode();
-    }
-
     /**
      * Constructs a new, empty hashtable with the specified initial
      * capacity and the specified load factor.
@@ -251,7 +189,6 @@ public class Hashtable<K,V>
         this.loadFactor = loadFactor;
         table = new Entry<?,?>[initialCapacity];
         threshold = (int)Math.min(initialCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
-        hashSeed = initHashSeed();
     }
 
     /**
@@ -395,7 +332,7 @@ public class Hashtable<K,V>
      */
     public synchronized boolean containsKey(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -423,7 +360,7 @@ public class Hashtable<K,V>
     @SuppressWarnings("unchecked")
     public synchronized V get(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -488,7 +425,7 @@ public class Hashtable<K,V>
             rehash();
 
             tab = table;
-            hash = hash(key);
+            hash = key.hashCode();
             index = (hash & 0x7FFFFFFF) % tab.length;
         }
 
@@ -524,7 +461,7 @@ public class Hashtable<K,V>
 
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> entry = (Entry<K,V>)tab[index];
@@ -551,7 +488,7 @@ public class Hashtable<K,V>
      */
     public synchronized V remove(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -760,7 +697,7 @@ public class Hashtable<K,V>
             Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
             Object key = entry.getKey();
             Entry<?,?>[] tab = table;
-            int hash = hash(key);
+            int hash = key.hashCode();
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             for (Entry<?,?> e = tab[index]; e != null; e = e.next)
@@ -775,7 +712,7 @@ public class Hashtable<K,V>
             Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
             Object key = entry.getKey();
             Entry<?,?>[] tab = table;
-            int hash = hash(key);
+            int hash = key.hashCode();
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             @SuppressWarnings("unchecked")
@@ -975,7 +912,7 @@ public class Hashtable<K,V>
 
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> entry = (Entry<K,V>)tab[index];
@@ -998,7 +935,7 @@ public class Hashtable<K,V>
         Objects.requireNonNull(value);
 
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1021,7 +958,7 @@ public class Hashtable<K,V>
     @Override
     public synchronized boolean replace(K key, V oldValue, V newValue) {
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1041,7 +978,7 @@ public class Hashtable<K,V>
     @Override
     public synchronized V replace(K key, V value) {
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1060,7 +997,7 @@ public class Hashtable<K,V>
         Objects.requireNonNull(mappingFunction);
 
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1084,7 +1021,7 @@ public class Hashtable<K,V>
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1113,7 +1050,7 @@ public class Hashtable<K,V>
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1148,7 +1085,7 @@ public class Hashtable<K,V>
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -1228,13 +1165,6 @@ public class Hashtable<K,V>
         // Read in the length, threshold, and loadfactor
         s.defaultReadObject();
 
-        // set hashMask
-        if (Holder.USE_HASHSEED) {
-            int seed = ThreadLocalRandom.current().nextInt();
-            Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
-                                         (seed != 0) ? seed : 1);
-        }
-
         // Read the original length of the array and number of elements
         int origlength = s.readInt();
         int elements = s.readInt();
@@ -1282,7 +1212,7 @@ public class Hashtable<K,V>
         }
         // Makes sure the key is not already in the hashtable.
         // This should not happen in deserialized version.
-        int hash = hash(key);
+        int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -1347,7 +1277,7 @@ public class Hashtable<K,V>
         }
 
         public int hashCode() {
-            return (Objects.hashCode(key) ^ Objects.hashCode(value));
+            return hash ^ Objects.hashCode(value);
         }
 
         public String toString() {

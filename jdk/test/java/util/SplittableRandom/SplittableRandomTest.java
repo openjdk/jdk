@@ -25,8 +25,10 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.SplittableRandom;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -273,6 +275,53 @@ public class SplittableRandomTest {
     }
 
     /**
+     * nextDouble(bound) throws IllegalArgumentException
+     */
+    public void testNextDoubleBadBound() {
+        SplittableRandom sr = new SplittableRandom();
+        executeAndCatchIAE(() -> sr.nextDouble(0.0));
+        executeAndCatchIAE(() -> sr.nextDouble(-0.0));
+        executeAndCatchIAE(() -> sr.nextDouble(+0.0));
+        executeAndCatchIAE(() -> sr.nextDouble(-1.0));
+        executeAndCatchIAE(() -> sr.nextDouble(Double.NaN));
+        executeAndCatchIAE(() -> sr.nextDouble(Double.NEGATIVE_INFINITY));
+
+        // Returns Double.MAX_VALUE
+//        executeAndCatchIAE(() -> r.nextDouble(Double.POSITIVE_INFINITY));
+    }
+
+    /**
+     * nextDouble(origin, bound) throws IllegalArgumentException
+     */
+    public void testNextDoubleBadOriginBound() {
+        testDoubleBadOriginBound(new SplittableRandom()::nextDouble);
+    }
+
+    // An arbitrary finite double value
+    static final double FINITE = Math.PI;
+
+    void testDoubleBadOriginBound(BiConsumer<Double, Double> bi) {
+        executeAndCatchIAE(() -> bi.accept(17.0, 2.0));
+        executeAndCatchIAE(() -> bi.accept(0.0, 0.0));
+        executeAndCatchIAE(() -> bi.accept(Double.NaN, FINITE));
+        executeAndCatchIAE(() -> bi.accept(FINITE, Double.NaN));
+        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY));
+
+        // Returns NaN
+//        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, FINITE));
+//        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY));
+
+        executeAndCatchIAE(() -> bi.accept(FINITE, Double.NEGATIVE_INFINITY));
+
+        // Returns Double.MAX_VALUE
+//        executeAndCatchIAE(() -> bi.accept(FINITE, Double.POSITIVE_INFINITY));
+
+        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
+        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, FINITE));
+        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
+    }
+
+    /**
      * nextDouble(least, bound) returns least <= value < bound;
      * repeated calls produce at least two distinct results
      */
@@ -318,8 +367,8 @@ public class SplittableRandomTest {
         executeAndCatchIAE(() -> r.ints(10, 42, 42));
         executeAndCatchIAE(() -> r.longs(-1L, -1L));
         executeAndCatchIAE(() -> r.longs(10, 1L, -2L));
-        executeAndCatchIAE(() -> r.doubles(0.0, 0.0));
-        executeAndCatchIAE(() -> r.doubles(10, .5, .4));
+
+        testDoubleBadOriginBound((o, b) -> r.doubles(10, o, b));
     }
 
     private void executeAndCatchIAE(Runnable r) {

@@ -55,7 +55,7 @@ public abstract class Content {
             write(out, true);
         } catch (IOException e) {
             // cannot happen from StringWriter
-            throw new DocletAbortException();
+            throw new DocletAbortException(e);
         }
         return out.toString();
     }

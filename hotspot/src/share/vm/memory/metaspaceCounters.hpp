@@ -25,31 +25,27 @@
 #ifndef SHARE_VM_MEMORY_METASPACECOUNTERS_HPP
 #define SHARE_VM_MEMORY_METASPACECOUNTERS_HPP
 
-#include "runtime/perfData.hpp"
+#include "memory/metaspace.hpp"
 
-class MetaspaceCounters: public CHeapObj<mtClass> {
-  friend class VMStructs;
-  PerfVariable*      _capacity;
-  PerfVariable*      _used;
-  PerfVariable*      _max_capacity;
-  static MetaspaceCounters* _metaspace_counters;
-  void initialize(size_t min_capacity,
-                  size_t max_capacity,
-                  size_t curr_capacity,
-                  size_t used);
-  size_t calc_total_capacity();
+class MetaspacePerfCounters;
+
+class MetaspaceCounters: public AllStatic {
+  static MetaspacePerfCounters* _perf_counters;
+  static size_t calculate_capacity();
+
  public:
-  MetaspaceCounters();
-  ~MetaspaceCounters();
-
-  void update_capacity();
-  void update_used();
-  void update_max_capacity();
-
-  void update_all();
-
   static void initialize_performance_counters();
   static void update_performance_counters();
-
 };
+
+class CompressedClassSpaceCounters: public AllStatic {
+  static MetaspacePerfCounters* _perf_counters;
+  static size_t calculate_capacity();
+  static const Metaspace::MetadataType _class_type = Metaspace::ClassType;
+
+ public:
+  static void initialize_performance_counters();
+  static void update_performance_counters();
+};
+
 #endif // SHARE_VM_MEMORY_METASPACECOUNTERS_HPP

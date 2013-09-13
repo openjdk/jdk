@@ -1,5 +1,5 @@
 8 8 true undefined
-[object Object] [object Object] [object Object]
+[object ArrayBuffer] [object ArrayBuffer] [object Int8Array]
 0 8 8 1
 0 8 8 1
 0 8 8 1

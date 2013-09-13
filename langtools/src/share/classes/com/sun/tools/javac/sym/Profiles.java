@@ -148,7 +148,7 @@ public abstract class Profiles {
             }
         }
 
-        final static Map<String, Package> packages = new TreeMap<String, Package>();
+        final Map<String, Package> packages = new TreeMap<String, Package>();
 
         final int maxProfile = 4;  // Three compact profiles plus full JRE
 

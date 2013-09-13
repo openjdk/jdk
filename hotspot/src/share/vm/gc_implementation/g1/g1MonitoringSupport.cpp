@@ -262,6 +262,7 @@ void G1MonitoringSupport::update_sizes() {
     old_collection_counters()->update_all();
     young_collection_counters()->update_all();
     MetaspaceCounters::update_performance_counters();
+    CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 

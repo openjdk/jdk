@@ -64,6 +64,7 @@ package java.time.zone;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -145,7 +146,7 @@ public final class ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
+    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
                 new ConcurrentHashMap<Integer, ZoneOffsetTransition[]>();
     /**
      * The zero-length long array.
@@ -315,8 +316,74 @@ public final class ZoneRules implements Serializable {
     }
 
     /**
-     * Uses a serialization delegate.
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.zone.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre style="font-size:1.0em">{@code
      *
+     *   out.writeByte(1);  // identifies a ZoneRules
+     *   out.writeInt(standardTransitions.length);
+     *   for (long trans : standardTransitions) {
+     *       Ser.writeEpochSec(trans, out);
+     *   }
+     *   for (ZoneOffset offset : standardOffsets) {
+     *       Ser.writeOffset(offset, out);
+     *   }
+     *   out.writeInt(savingsInstantTransitions.length);
+     *   for (long trans : savingsInstantTransitions) {
+     *       Ser.writeEpochSec(trans, out);
+     *   }
+     *   for (ZoneOffset offset : wallOffsets) {
+     *       Ser.writeOffset(offset, out);
+     *   }
+     *   out.writeByte(lastRules.length);
+     *   for (ZoneOffsetTransitionRule rule : lastRules) {
+     *       rule.writeExternal(out);
+     *   }
+     * }
+     * </pre>
+     * <p>
+     * Epoch second values used for offsets are encoded in a variable
+     * length form to make the common cases put fewer bytes in the stream.
+     * <pre style="font-size:1.0em">{@code
+     *
+     *  static void writeEpochSec(long epochSec, DataOutput out) throws IOException {
+     *     if (epochSec >= -4575744000L && epochSec < 10413792000L && epochSec % 900 == 0) {  // quarter hours between 1825 and 2300
+     *         int store = (int) ((epochSec + 4575744000L) / 900);
+     *         out.writeByte((store >>> 16) & 255);
+     *         out.writeByte((store >>> 8) & 255);
+     *         out.writeByte(store & 255);
+     *      } else {
+     *          out.writeByte(255);
+     *          out.writeLong(epochSec);
+     *      }
+     *  }
+     * }
+     * </pre>
+     * <p>
+     * ZoneOffset values are encoded in a variable length form so the
+     * common cases put fewer bytes in the stream.
+     * <pre style="font-size:1.0em">{@code
+     *
+     *  static void writeOffset(ZoneOffset offset, DataOutput out) throws IOException {
+     *     final int offsetSecs = offset.getTotalSeconds();
+     *     int offsetByte = offsetSecs % 900 == 0 ? offsetSecs / 900 : 127;  // compress to -72 to +72
+     *     out.writeByte(offsetByte);
+     *     if (offsetByte == 127) {
+     *         out.writeInt(offsetSecs);
+     *     }
+     * }
+     *}
+     * </pre>
      * @return the replacing object, not null
      */
     private Object writeReplace() {
