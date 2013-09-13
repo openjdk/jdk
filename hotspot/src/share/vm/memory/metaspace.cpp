@@ -2366,10 +2366,10 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
                                              grow_chunks_by_words,
                                              medium_chunk_bunch());
 
-  if (TraceMetadataHumongousAllocation &&
+  if (TraceMetadataHumongousAllocation && next != NULL &&
       SpaceManager::is_humongous(next->word_size())) {
-    gclog_or_tty->print_cr("  new humongous chunk word size " PTR_FORMAT,
-                           next->word_size());
+    gclog_or_tty->print_cr("  new humongous chunk word size "
+                           PTR_FORMAT, next->word_size());
   }
 
   return next;
@@ -2487,14 +2487,15 @@ void SpaceManager::dump(outputStream* const out) const {
          curr = curr->next()) {
       out->print("%d) ", i++);
       curr->print_on(out);
-      if (TraceMetadataChunkAllocation && Verbose) {
-        block_freelists()->print_on(out);
-      }
       curr_total += curr->word_size();
       used += curr->used_word_size();
       capacity += curr->capacity_word_size();
       waste += curr->free_word_size() + curr->overhead();;
     }
+  }
+
+  if (TraceMetadataChunkAllocation && Verbose) {
+    block_freelists()->print_on(out);
   }
 
   size_t free = current_chunk() == NULL ? 0 : current_chunk()->free_word_size();
