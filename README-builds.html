@@ -154,7 +154,7 @@
                     </code>
                 </blockquote>
                 Once you have all the repositories, keep in mind that each
-                repository is it's own independent repository.
+                repository is its own independent repository.
                 You can also re-run <code>./get_source.sh</code> anytime to
                 pull over all the latest changesets in all the repositories.
                 This set of nested repositories has been given the term
@@ -239,6 +239,14 @@
                             </td>
                             <td>
                                 source code for the OpenJDK Corba functionality
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                nashorn
+                            </td>
+                            <td>
+                                source code for the OpenJDK JavaScript implementation
                             </td>
                         </tr>
                     </tbody>
@@ -386,7 +394,7 @@
                         <code>--with-boot-jdk</code>.
                     </li>
                     <li>
-                        Insure that GNU make, the Bootstrap JDK,
+                        Ensure that GNU make, the Bootstrap JDK,
                         and the compilers are all
                         in your PATH environment variable
                     </li>
@@ -1202,19 +1210,18 @@
             <blockquote>
 
                 <p>
-                    <b>Q:</b> The <code>configure</code> file looks horrible! 
+                    <b>Q:</b> The <code>generated-configure.sh</code> file looks horrible! 
                     How are you going to edit it?
                     <br>
-                    <b>A:</b> The <code>configure</code> file is generated (think
+                    <b>A:</b> The <code>generated-configure.sh</code> file is generated (think
                     "compiled") by the autoconf tools. The source code is
-                    in <code>configure.ac</code> various .m4 files in common/autoconf,
-                    which are
-                    much more readable.
+                    in <code>configure.ac</code> and various .m4 files in common/autoconf,
+                    which are much more readable.
                 </p>
 
                 <p>
                     <b>Q:</b> 
-                    Why is the <code>configure</code> file checked in, 
+                    Why is the <code>generated-configure.sh</code> file checked in, 
                     if it is generated?
                     <br>
                     <b>A:</b> 
@@ -1229,13 +1236,29 @@
                 <p>
                     <b>Q:</b>
                     Do you require a specific version of autoconf for regenerating
-                    <code>configure</code>?
+                    <code>generated-configure.sh</code>?
                     <br>
                     <b>A:</b>
-                    Currently, no, but this will likely be the case when things have 
-                    settled down a bit more. (The reason for this is to avoid
-                    large spurious changes in <code>configure</code> 
-                    in commits that made small changes to <code>configure.ac</code>).
+                    Yes, version 2.69 is required and should be easy
+                    enough to aquire on all supported operating
+                    systems.  The reason for this is to avoid
+                    large spurious changes in <code>generated-configure.sh</code>.
+                </p>
+
+                <p>
+                    <b>Q:</b>
+                    How do you regenerate <code>generated-configure.sh</code>
+                    after making changes to the input files?
+                    <br>
+                    <b>A:</b>
+                    Regnerating <code>generated-configure.sh</code>
+                    should always be done using the
+                    script <code>common/autoconf/autogen.sh</code> to
+                    ensure that the correct files get updated. This
+                    script should also be run after mercurial tries to
+                    merge <code>generated-configure.sh</code> as a
+                    merge of the generated file is not guaranteed to
+                    be correct.
                 </p>
 
                 <p>
@@ -1307,9 +1330,9 @@
                     you will need to modify the makefiles. But for normal file
                     additions or removals, no changes are needed. There are certan
                     exceptions for some native libraries where the source files are spread
-                    over many directories which also contain courses for other
+                    over many directories which also contain sources for other
                     libraries. In these cases it was simply easier to create include lists
-                    rather thane excludes.
+                    rather than excludes.
                 </p>
 
                 <p>
@@ -1327,14 +1350,14 @@
                 <p>
                     <b>Q:</b> 
                     <code>configure</code> provides OpenJDK-specific features such as
-                    <code>--enable-jigsaw</code> or <code>--with-builddeps-server</code>
-                    that are not described in this document. What about those?
+                    <code>--with-builddeps-server</code> that are not
+                    described in this document. What about those? 
                     <br>
                     <b>A:</b>
                     Try them out if you like! But be aware that most of these are 
                     experimental features. 
                     Many of them don't do anything at all at the moment; the option 
-                    is just a placeholder. Other depends on
+                    is just a placeholder. Others depend on
                     pieces of code or infrastructure that is currently 
                     not ready for prime time.
                 </p>
@@ -1386,24 +1409,6 @@
                 </p>
 
                 <p>
-                    <b>Q:</b> What is @GenerateNativeHeaders?
-                    <br>
-                    <b>A:</b> 
-                    To speed up compilation, we added a flag to javac which makes it 
-                    do the job of javah as well, as a by-product; that is, generating
-                    native .h header files. These files are only generated 
-                    if a class contains native methods. However, sometimes 
-                    a class contains no native method,
-                    but still contains constants that native code needs to use. 
-                    The new GenerateNativeHeaders annotation tells javac to
-                    force generation of a
-                    header file in these cases. (We don't want to generate 
-                    native headers for all classes that contains constants 
-                    but no native methods, since
-                    that would slow down the compilation process needlessly.)
-                </p>
-
-                <p>
                     <b>Q:</b> 
                     Is anything able to use the results of the new build's default make target?
                     <br>
@@ -1429,10 +1434,9 @@
                     What should I do?
                     <br>
                     <b>A:</b>
-                    It might very well be that we have missed to add support for
+                    It might very well be that we have neglected to add support for
                     an option that was actually used from outside the build system.
-                    Email us and we will
-                    add support for it!
+                    Email us and we will add support for it!
                 </p>
 
             </blockquote>

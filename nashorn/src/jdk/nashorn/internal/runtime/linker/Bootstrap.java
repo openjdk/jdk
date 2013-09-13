@@ -36,6 +36,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -61,13 +62,17 @@ public final class Bootstrap {
     static {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
         factory.setPrioritizedLinkers(new NashornLinker(), new NashornPrimitiveLinker(), new NashornStaticClassLinker(),
-                new BoundDynamicMethodLinker(), new JSObjectLinker(), new ReflectionCheckLinker());
+                new BoundDynamicMethodLinker(), new JavaSuperAdapterLinker(), new JSObjectLinker(), new ReflectionCheckLinker());
         factory.setFallbackLinkers(new BeansLinker(), new NashornBottomLinker());
         factory.setSyncOnRelink(true);
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", -1);
         if (relinkThreshold > -1) {
             factory.setUnstableRelinkThreshold(relinkThreshold);
         }
+
+        // Linkers for any additional language runtimes deployed alongside Nashorn will be picked up by the factory.
+        factory.setClassLoader(Bootstrap.class.getClassLoader());
+
         dynamicLinker = factory.createLinker();
     }
 
@@ -84,7 +89,8 @@ public final class Bootstrap {
         return obj instanceof ScriptFunction ||
             ((obj instanceof ScriptObjectMirror) && ((ScriptObjectMirror)obj).isFunction()) ||
             isDynamicMethod(obj) ||
-            isFunctionalInterfaceObject(obj);
+            isFunctionalInterfaceObject(obj) ||
+            obj instanceof StaticClass;
     }
 
     /**
@@ -255,6 +261,16 @@ public final class Bootstrap {
      */
     public static Object bindDynamicMethod(Object dynamicMethod, Object boundThis) {
         return new BoundDynamicMethod(dynamicMethod, boundThis);
+    }
+
+    /**
+     * Creates a super-adapter for an adapter, that is, an adapter to the adapter that allows invocation of superclass
+     * methods on it.
+     * @param adapter the original adapter
+     * @return a new adapter that can be used to invoke super methods on the original adapter.
+     */
+    public static Object createSuperAdapter(final Object adapter) {
+        return new JavaSuperAdapter(adapter);
     }
 
     /**

@@ -75,19 +75,19 @@ public class InstanceKlass extends Klass {
     javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
     constants            = new MetadataField(type.getAddressField("_constants"), 0);
     classLoaderData      = type.getAddressField("_class_loader_data");
-    sourceFileName       = type.getAddressField("_source_file_name");
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = type.getAddressField("_inner_classes");
+    sourceFileNameIndex  = new CIntField(type.getCIntegerField("_source_file_name_index"), 0);
     nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), 0);
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), 0);
-    staticOopFieldCount   = new CIntField(type.getCIntegerField("_static_oop_field_count"), 0);
+    staticOopFieldCount  = new CIntField(type.getCIntegerField("_static_oop_field_count"), 0);
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), 0);
     isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), 0);
     initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
     vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), 0);
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
     breakpoints          = type.getAddressField("_breakpoints");
-    genericSignature     = type.getAddressField("_generic_signature");
+    genericSignatureIndex = new CIntField(type.getCIntegerField("_generic_signature_index"), 0);
     majorVersion         = new CIntField(type.getCIntegerField("_major_version"), 0);
     minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), 0);
     headerSize           = Oop.alignObjectOffset(type.getSize());
@@ -134,9 +134,9 @@ public class InstanceKlass extends Klass {
   private static CIntField javaFieldsCount;
   private static MetadataField constants;
   private static AddressField  classLoaderData;
-  private static AddressField  sourceFileName;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
+  private static CIntField sourceFileNameIndex;
   private static CIntField nonstaticFieldSize;
   private static CIntField staticFieldSize;
   private static CIntField staticOopFieldCount;
@@ -146,7 +146,7 @@ public class InstanceKlass extends Klass {
   private static CIntField vtableLen;
   private static CIntField itableLen;
   private static AddressField breakpoints;
-  private static AddressField  genericSignature;
+  private static CIntField genericSignatureIndex;
   private static CIntField majorVersion;
   private static CIntField minorVersion;
 
@@ -346,7 +346,7 @@ public class InstanceKlass extends Klass {
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public ClassLoaderData getClassLoaderData() { return                ClassLoaderData.instantiateWrapperFor(classLoaderData.getValue(getAddress())); }
   public Oop       getClassLoader()         { return                getClassLoaderData().getClassLoader(); }
-  public Symbol    getSourceFileName()      { return getSymbol(sourceFileName); }
+  public Symbol    getSourceFileName()      { return                getConstants().getSymbolAt(sourceFileNameIndex.getValue(this)); }
   public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getAddress())); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
@@ -354,7 +354,7 @@ public class InstanceKlass extends Klass {
   public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getVtableLen()           { return                vtableLen.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
-  public Symbol    getGenericSignature()    { return getSymbol(genericSignature); }
+  public Symbol    getGenericSignature()    { return                getConstants().getSymbolAt(genericSignatureIndex.getValue(this)); }
   public long      majorVersion()           { return                majorVersion.getValue(this); }
   public long      minorVersion()           { return                minorVersion.getValue(this); }
 

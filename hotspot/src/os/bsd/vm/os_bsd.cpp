@@ -642,13 +642,14 @@ objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NU
 #endif
 
 #ifdef __APPLE__
-static uint64_t locate_unique_thread_id() {
+static uint64_t locate_unique_thread_id(mach_port_t mach_thread_port) {
   // Additional thread_id used to correlate threads in SA
   thread_identifier_info_data_t     m_ident_info;
   mach_msg_type_number_t            count = THREAD_IDENTIFIER_INFO_COUNT;
 
-  thread_info(::mach_thread_self(), THREAD_IDENTIFIER_INFO,
+  thread_info(mach_thread_port, THREAD_IDENTIFIER_INFO,
               (thread_info_t) &m_ident_info, &count);
+
   return m_ident_info.thread_id;
 }
 #endif
@@ -679,9 +680,14 @@ static void *java_start(Thread *thread) {
   }
 
 #ifdef __APPLE__
-  // thread_id is mach thread on macos
-  osthread->set_thread_id(::mach_thread_self());
-  osthread->set_unique_thread_id(locate_unique_thread_id());
+  // thread_id is mach thread on macos, which pthreads graciously caches and provides for us
+  mach_port_t thread_id = ::pthread_mach_thread_np(::pthread_self());
+  guarantee(thread_id != 0, "thread id missing from pthreads");
+  osthread->set_thread_id(thread_id);
+
+  uint64_t unique_thread_id = locate_unique_thread_id(thread_id);
+  guarantee(unique_thread_id != 0, "unique thread id was not found");
+  osthread->set_unique_thread_id(unique_thread_id);
 #else
   // thread_id is pthread_id on BSD
   osthread->set_thread_id(::pthread_self());
@@ -843,8 +849,14 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   // Store pthread info into the OSThread
 #ifdef __APPLE__
-  osthread->set_thread_id(::mach_thread_self());
-  osthread->set_unique_thread_id(locate_unique_thread_id());
+  // thread_id is mach thread on macos, which pthreads graciously caches and provides for us
+  mach_port_t thread_id = ::pthread_mach_thread_np(::pthread_self());
+  guarantee(thread_id != 0, "just checking");
+  osthread->set_thread_id(thread_id);
+
+  uint64_t unique_thread_id = locate_unique_thread_id(thread_id);
+  guarantee(unique_thread_id != 0, "just checking");
+  osthread->set_unique_thread_id(unique_thread_id);
 #else
   osthread->set_thread_id(::pthread_self());
 #endif
@@ -1115,7 +1127,7 @@ size_t os::lasterror(char *buf, size_t len) {
 
 intx os::current_thread_id() {
 #ifdef __APPLE__
-  return (intx)::mach_thread_self();
+  return (intx)::pthread_mach_thread_np(::pthread_self());
 #else
   return (intx)::pthread_self();
 #endif
@@ -2313,7 +2325,9 @@ void os::large_page_init() {
 }
 
 
-char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
+char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+  fatal("This code is not used or maintained.");
+
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseSHM, "only for SHM large pages");
@@ -3275,11 +3289,15 @@ void os::Bsd::install_signal_handlers() {
     // and if UserSignalHandler is installed all bets are off
     if (CheckJNICalls) {
       if (libjsig_is_loaded) {
-        tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
       if (AllowUserSignalHandlers) {
-        tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
     }
@@ -4736,3 +4754,8 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   return n;
 }
 
+#ifndef PRODUCT
+void TestReserveMemorySpecial_test() {
+  // No tests available for this platform
+}
+#endif

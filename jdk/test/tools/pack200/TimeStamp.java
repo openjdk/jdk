@@ -88,6 +88,7 @@ public class TimeStamp {
         unpackNative(packFile, pstFile);
         verifyJar(goldenFile, pstFile);
         pstFile.delete();
+        Utils.cleanup();
     }
 
     static void unpackNative(File packFile, File outFile) {
@@ -149,7 +150,6 @@ public class TimeStamp {
             Utils.close(jf1);
             Utils.close(jf2);
         }
-        Utils.cleanup();
         if (errors > 0) {
             throw new RuntimeException("FAIL:" + errors + " error(s) encounted");
         }

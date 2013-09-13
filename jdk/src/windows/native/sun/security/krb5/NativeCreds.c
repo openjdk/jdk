@@ -367,11 +367,12 @@ JNIEXPORT void JNICALL JNI_OnUnload(
 /*
  * Class:     sun_security_krb5_Credentials
  * Method:    acquireDefaultNativeCreds
- * Signature: ()Lsun/security/krb5/Credentials;
+ * Signature: ([I])Lsun/security/krb5/Credentials;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativeCreds(
         JNIEnv *env,
-        jclass krbcredsClass) {
+        jclass krbcredsClass,
+        jintArray jetypes) {
 
     KERB_QUERY_TKT_CACHE_REQUEST CacheRequest;
     PKERB_RETRIEVE_TKT_RESPONSE TktCacheResponse = NULL;
@@ -387,8 +388,11 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
     jobject ticketFlags, startTime, endTime, krbCreds = NULL;
     jobject authTime, renewTillTime, hostAddresses = NULL;
     KERB_EXTERNAL_TICKET *msticket;
-    int ignore_cache = 0;
+    int found_in_cache = 0;
     FILETIME Now, EndTime, LocalEndTime;
+
+    int i, netypes;
+    jint *etypes = NULL;
 
     while (TRUE) {
 
@@ -456,31 +460,33 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
         // got the native MS TGT
         msticket = &(TktCacheResponse->Ticket);
 
+        netypes = (*env)->GetArrayLength(env, jetypes);
+        etypes = (jint *) (*env)->GetIntArrayElements(env, jetypes, NULL);
+
         // check TGT validity
-        switch (msticket->SessionKey.KeyType) {
-            case KERB_ETYPE_DES_CBC_CRC:
-            case KERB_ETYPE_DES_CBC_MD5:
-            case KERB_ETYPE_NULL:
-            case KERB_ETYPE_RC4_HMAC_NT:
-                GetSystemTimeAsFileTime(&Now);
-                EndTime.dwLowDateTime = msticket->EndTime.LowPart;
-                EndTime.dwHighDateTime = msticket->EndTime.HighPart;
-                FileTimeToLocalFileTime(&EndTime, &LocalEndTime);
-                if (CompareFileTime(&Now, &LocalEndTime) >= 0) {
-                    ignore_cache = 1;
-                }
-                if (msticket->TicketFlags & KERB_TICKET_FLAGS_invalid) {
-                    ignore_cache = 1;
-                }
-                break;
-            case KERB_ETYPE_RC4_MD4:
-            default:
-                // not supported
-                ignore_cache = 1;
-                break;
+        if (native_debug) {
+            printf("LSA: TICKET SessionKey KeyType is %d\n", msticket->SessionKey.KeyType);
         }
 
-        if (ignore_cache) {
+        if ((msticket->TicketFlags & KERB_TICKET_FLAGS_invalid) == 0) {
+            GetSystemTimeAsFileTime(&Now);
+            EndTime.dwLowDateTime = msticket->EndTime.LowPart;
+            EndTime.dwHighDateTime = msticket->EndTime.HighPart;
+            FileTimeToLocalFileTime(&EndTime, &LocalEndTime);
+            if (CompareFileTime(&Now, &LocalEndTime) < 0) {
+                for (i=0; i<netypes; i++) {
+                    if (etypes[i] == msticket->SessionKey.KeyType) {
+                        found_in_cache = 1;
+                        if (native_debug) {
+                            printf("LSA: Valid etype found: %d\n", etypes[i]);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!found_in_cache) {
             if (native_debug) {
                 printf("LSA: MS TGT in cache is invalid/not supported; request new ticket\n");
             }
@@ -494,34 +500,41 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             }
 
             pTicketRequest->MessageType = KerbRetrieveEncodedTicketMessage;
-            pTicketRequest->EncryptionType = KERB_ETYPE_DES_CBC_MD5;
             pTicketRequest->CacheOptions = KERB_RETRIEVE_TICKET_DONT_USE_CACHE;
 
-            Status = LsaCallAuthenticationPackage(
-                        LogonHandle,
-                        PackageId,
-                        pTicketRequest,
-                        requestSize,
-                        &pTicketResponse,
-                        &responseSize,
-                        &SubStatus
-                        );
+            for (i=0; i<netypes; i++) {
+                pTicketRequest->EncryptionType = etypes[i];
+                Status = LsaCallAuthenticationPackage(
+                            LogonHandle,
+                            PackageId,
+                            pTicketRequest,
+                            requestSize,
+                            &pTicketResponse,
+                            &responseSize,
+                            &SubStatus
+                            );
 
-            if (native_debug) {
-                printf("LSA: Response size is %d\n", responseSize);
-            }
-
-            if (!LSA_SUCCESS(Status) || !LSA_SUCCESS(SubStatus)) {
-                if (!LSA_SUCCESS(Status)) {
-                    ShowNTError("LsaCallAuthenticationPackage", Status);
-                } else {
-                    ShowNTError("Protocol status", SubStatus);
+                if (native_debug) {
+                    printf("LSA: Response size is %d for %d\n", responseSize, etypes[i]);
                 }
+
+                if (!LSA_SUCCESS(Status) || !LSA_SUCCESS(SubStatus)) {
+                    if (!LSA_SUCCESS(Status)) {
+                        ShowNTError("LsaCallAuthenticationPackage", Status);
+                    } else {
+                        ShowNTError("Protocol status", SubStatus);
+                    }
+                    continue;
+                }
+
+                // got the native MS Kerberos TGT
+                msticket = &(pTicketResponse->Ticket);
                 break;
             }
+        }
 
-            // got the native MS Kerberos TGT
-            msticket = &(pTicketResponse->Ticket);
+        if (etypes != NULL) {
+            (*env)->ReleaseIntArrayElements(env, jetypes, etypes, 0);
         }
 
         /*
@@ -644,7 +657,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                 hostAddresses);
 
         break;
-    } // end of WHILE
+    } // end of WHILE. This WHILE will never loop.
 
     // clean up resources
     if (TktCacheResponse != NULL) {

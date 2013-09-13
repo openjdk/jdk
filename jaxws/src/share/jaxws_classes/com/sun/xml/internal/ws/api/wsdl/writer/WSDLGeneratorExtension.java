@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.xml.internal.ws.api.server.WSEndpoint;
  * <p/>
  * The JAX-WS WSDLGenerator uses TXW to serialize the WSDL out to XML.
  * More information about TXW can be located at
- * <a href="http://txw.dev.java.net">http://txw.dev.java.net</a>.
+ * <a href="http://txw.java.net">http://txw.java.net</a>.
  */
 public abstract class WSDLGeneratorExtension {
     /**

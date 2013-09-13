@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006251
+ * @bug 8006251 8022173
  * @summary test other tags
  * @library ..
  * @build DocLintTester
@@ -14,6 +14,7 @@ public class OtherTagsTest {
      *  <frame>
      *  <frameset> </frameset>
      *  <head> </head>
+     *  <hr width="50%">
      *  <link>
      *  <meta>
      *  <noframes> </noframes>

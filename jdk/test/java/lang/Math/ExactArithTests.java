@@ -132,7 +132,56 @@ public class ExactArithTests {
                 fail("FAIL: int Math.multiplyExact(" + x + " * " + y + ")" + "; Unexpected exception: " + ex);
             }
         }
+        try {
+            // Test incrementExact
+            int inc = Math.incrementExact(x);
+            long inc2 = (long) x + 1L;
+            if ((int) inc2 != inc2) {
+                fail("FAIL: int Math.incrementExact(" + x + ") = " + inc + "; expected Arithmetic exception");
+            } else if (inc != inc2) {
+                fail("FAIL: long Math.incrementExact(" + x + ") = " + inc + "; expected: " + inc2);
+            }
+        } catch (ArithmeticException ex) {
+            long inc2 = (long) x + 1L;
+            if ((int) inc2 == inc2) {
+                fail("FAIL: int Math.incrementExact(" + x + ")" + "; Unexpected exception: " + ex);
 
+            }
+        }
+
+        try {
+            // Test decrementExact
+            int dec = Math.decrementExact(x);
+            long dec2 = (long) x - 1L;
+            if ((int) dec2 != dec2) {
+                fail("FAIL: int Math.decrementExact(" + x + ") = " + dec + "; expected Arithmetic exception");
+            } else if (dec != dec2) {
+                fail("FAIL: long Math.decrementExact(" + x + ") = " + dec + "; expected: " + dec2);
+            }
+        } catch (ArithmeticException ex) {
+            long dec2 = (long) x - 1L;
+            if ((int) dec2 == dec2) {
+                fail("FAIL: int Math.decrementExact(" + x + ")" + "; Unexpected exception: " + ex);
+
+            }
+        }
+
+        try {
+            // Test negateExact
+            int neg = Math.negateExact(x);
+            long neg2 = -((long)x) ;
+            if ((int) neg2 != neg2) {
+                fail("FAIL: int Math.negateExact(" + x + ") = " + neg + "; expected Arithmetic exception");
+            } else if (neg != neg2) {
+                fail("FAIL: long Math.negateExact(" + x + ") = " + neg + "; expected: " + neg2);
+            }
+        } catch (ArithmeticException ex) {
+            long neg2 = (long) x - 1L;
+            if ((int) neg2 == neg2) {
+                fail("FAIL: int Math.negateExact(" + x + ")" + "; Unexpected exception: " + ex);
+
+            }
+        }
     }
 
     /**
@@ -221,6 +270,39 @@ public class ExactArithTests {
         } catch (ArithmeticException ex) {
             if (inLongRange(resultBig)) {
                 fail("FAIL: long Math.multiplyExact(" + x + " * " + y + ")" + "; Unexpected exception: " + ex);
+            }
+        }
+
+        try {
+            // Test incrementExact
+            resultBig = xBig.add(BigInteger.ONE);
+            long inc = Math.incrementExact(x);
+            checkResult("long Math.incrementExact", x, 1L, inc, resultBig);
+        } catch (ArithmeticException ex) {
+            if (inLongRange(resultBig)) {
+                fail("FAIL: long Math.incrementExact(" + x + "); Unexpected exception: " + ex);
+            }
+        }
+
+        try {
+            // Test decrementExact
+            resultBig = xBig.subtract(BigInteger.ONE);
+            long dec = Math.decrementExact(x);
+            checkResult("long Math.decrementExact", x, 1L, dec, resultBig);
+        } catch (ArithmeticException ex) {
+            if (inLongRange(resultBig)) {
+                fail("FAIL: long Math.decrementExact(" + x + "); Unexpected exception: " + ex);
+            }
+        }
+
+        try {
+            // Test negateExact
+            resultBig = xBig.negate();
+            long dec = Math.negateExact(x);
+            checkResult("long Math.negateExact", x, 0L, dec, resultBig);
+        } catch (ArithmeticException ex) {
+            if (inLongRange(resultBig)) {
+                fail("FAIL: long Math.negateExact(" + x + "); Unexpected exception: " + ex);
             }
         }
 
