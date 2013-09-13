@@ -592,7 +592,7 @@ static const char* make_log_name(const char* log_name, const char* force_directo
 
 void defaultStream::init_log() {
   // %%% Need a MutexLocker?
-  const char* log_name = LogFile != NULL ? LogFile : "hotspot.log";
+  const char* log_name = LogFile != NULL ? LogFile : "hotspot_pid%p.log";
   const char* try_name = make_log_name(log_name, NULL);
   fileStream* file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
   if (!file->is_open()) {
@@ -603,14 +603,15 @@ void defaultStream::init_log() {
     // Note:  This feature is for maintainer use only.  No need for L10N.
     jio_print(warnbuf);
     FREE_C_HEAP_ARRAY(char, try_name, mtInternal);
-    try_name = make_log_name("hs_pid%p.log", os::get_temp_directory());
+    try_name = make_log_name(log_name, os::get_temp_directory());
     jio_snprintf(warnbuf, sizeof(warnbuf),
                  "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
     jio_print(warnbuf);
     delete file;
     file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
-    FREE_C_HEAP_ARRAY(char, try_name, mtInternal);
   }
+  FREE_C_HEAP_ARRAY(char, try_name, mtInternal);
+
   if (file->is_open()) {
     _log_file = file;
     xmlStream* xs = new(ResourceObj::C_HEAP, mtInternal) xmlStream(file);
