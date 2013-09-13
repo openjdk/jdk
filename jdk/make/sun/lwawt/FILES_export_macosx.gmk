@@ -141,7 +141,6 @@ FILES_export = \
         sun/lwawt/macosx/CMenuBar.java \
         sun/lwawt/macosx/CMenuComponent.java \
         sun/lwawt/macosx/CMenuItem.java \
-        sun/lwawt/macosx/CMouseInfoPeer.java \
         sun/lwawt/macosx/CPlatformView.java \
         sun/lwawt/macosx/CPlatformWindow.java \
         sun/lwawt/macosx/CWarningWindow.java \

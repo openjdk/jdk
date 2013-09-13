@@ -303,11 +303,6 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
-    protected MouseInfoPeer createMouseInfoPeerImpl() {
-        return new CMouseInfoPeer();
-    }
-
-    @Override
     protected int getScreenHeight() {
         return GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration().getBounds().height;

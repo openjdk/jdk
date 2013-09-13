@@ -387,7 +387,7 @@ AWT_ASSERT_APPKIT_THREAD;
         [rolloverTrackingArea release];
     }
 
-    int options = (NSTrackingActiveInActiveApp | NSTrackingMouseEnteredAndExited |
+    int options = (NSTrackingActiveAlways | NSTrackingMouseEnteredAndExited |
                    NSTrackingMouseMoved | NSTrackingEnabledDuringMouseDrag);
 
     rolloverTrackingArea = [[NSTrackingArea alloc] initWithRect:[self visibleRect]
