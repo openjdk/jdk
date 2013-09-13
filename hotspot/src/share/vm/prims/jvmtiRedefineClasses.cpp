@@ -1072,8 +1072,17 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     res = merge_cp_and_rewrite(the_class, scratch_class, THREAD);
-    if (res != JVMTI_ERROR_NONE) {
-      return res;
+    if (HAS_PENDING_EXCEPTION) {
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("merge_cp_and_rewrite exception: '%s'", ex_name->as_C_string()));
+      CLEAR_PENDING_EXCEPTION;
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        return JVMTI_ERROR_OUT_OF_MEMORY;
+      } else {
+        return JVMTI_ERROR_INTERNAL;
+      }
     }
 
     if (VerifyMergedCPBytecodes) {
@@ -1105,6 +1114,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("Rewriter::rewrite or link_methods exception: '%s'", ex_name->as_C_string()));
       CLEAR_PENDING_EXCEPTION;
       if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
