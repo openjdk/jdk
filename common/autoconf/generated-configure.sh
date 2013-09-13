@@ -3806,7 +3806,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1378980507
+DATE_WHEN_GENERATED=1379070243
 
 ###############################################################################
 #
@@ -33186,6 +33186,7 @@ fi
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
 CONFIG_STATUS="$OUTPUT_ROOT/config.status"
+
 # Create the actual output files. Now the main work of configure is done.
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -34466,6 +34467,11 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+# Try to move the config.log file to the output directory.
+if test -e ./config.log; then
+  $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
+fi
 
 # Make the compare script executable
 $CHMOD +x $OUTPUT_ROOT/compare.sh
