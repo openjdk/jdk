@@ -881,9 +881,9 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
   if (!is_available(chunk_word_size)) {
     if (TraceMetadataChunkAllocation) {
-      tty->print("VirtualSpaceNode::take_from_committed() not available %d words ", chunk_word_size);
+      gclog_or_tty->print("VirtualSpaceNode::take_from_committed() not available %d words ", chunk_word_size);
       // Dump some information about the virtual space that is nearly full
-      print_on(tty);
+      print_on(gclog_or_tty);
     }
     return NULL;
   }
@@ -904,7 +904,7 @@ bool VirtualSpaceNode::expand_by(size_t words, bool pre_touch) {
   if (TraceMetavirtualspaceAllocation && !result) {
     gclog_or_tty->print_cr("VirtualSpaceNode::expand_by() failed "
                            "for byte size " SIZE_FORMAT, bytes);
-    virtual_space()->print();
+    virtual_space()->print_on(gclog_or_tty);
   }
   return result;
 }
@@ -1173,7 +1173,7 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
 #endif
   if (TraceMetavirtualspaceAllocation && Verbose) {
     VirtualSpaceNode* vsl = current_virtual_space();
-    vsl->print_on(tty);
+    vsl->print_on(gclog_or_tty);
   }
 }
 
@@ -1733,9 +1733,9 @@ void ChunkManager::chunk_freelist_deallocate(Metachunk* chunk) {
   assert_lock_strong(SpaceManager::expand_lock());
   slow_locked_verify();
   if (TraceMetadataChunkAllocation) {
-    tty->print_cr("ChunkManager::chunk_freelist_deallocate: chunk "
-                  PTR_FORMAT "  size " SIZE_FORMAT,
-                  chunk, chunk->word_size());
+    gclog_or_tty->print_cr("ChunkManager::chunk_freelist_deallocate: chunk "
+                           PTR_FORMAT "  size " SIZE_FORMAT,
+                           chunk, chunk->word_size());
   }
   free_chunks_put(chunk);
 }
@@ -1764,9 +1764,9 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     dec_free_chunks_total(chunk->capacity_word_size());
 
     if (TraceMetadataChunkAllocation && Verbose) {
-      tty->print_cr("ChunkManager::free_chunks_get: free_list "
-                    PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
-                    free_list, chunk, chunk->word_size());
+      gclog_or_tty->print_cr("ChunkManager::free_chunks_get: free_list "
+                             PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
+                             free_list, chunk, chunk->word_size());
     }
   } else {
     chunk = humongous_dictionary()->get_chunk(
@@ -1776,10 +1776,10 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     if (chunk != NULL) {
       if (TraceMetadataHumongousAllocation) {
         size_t waste = chunk->word_size() - word_size;
-        tty->print_cr("Free list allocate humongous chunk size " SIZE_FORMAT
-                      " for requested size " SIZE_FORMAT
-                      " waste " SIZE_FORMAT,
-                      chunk->word_size(), word_size, waste);
+        gclog_or_tty->print_cr("Free list allocate humongous chunk size "
+                               SIZE_FORMAT " for requested size " SIZE_FORMAT
+                               " waste " SIZE_FORMAT,
+                               chunk->word_size(), word_size, waste);
       }
       // Chunk is being removed from the chunks free list.
       dec_free_chunks_total(chunk->capacity_word_size());
@@ -1821,10 +1821,10 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
     } else {
       list_count = humongous_dictionary()->total_count();
     }
-    tty->print("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk "
-               PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
-               this, chunk, chunk->word_size(), list_count);
-    locked_print_free_chunks(tty);
+    gclog_or_tty->print("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk "
+                        PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
+                        this, chunk, chunk->word_size(), list_count);
+    locked_print_free_chunks(gclog_or_tty);
   }
 
   return chunk;
@@ -2344,7 +2344,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
                         sum_count_in_chunks_in_use());
     new_chunk->print_on(gclog_or_tty);
     if (vs_list() != NULL) {
-      vs_list()->chunk_manager()->locked_print_free_chunks(tty);
+      vs_list()->chunk_manager()->locked_print_free_chunks(gclog_or_tty);
     }
   }
 }

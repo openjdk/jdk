@@ -203,7 +203,8 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   void check_for_contiguity() PRODUCT_RETURN;
 
   // Debugging
-  void print() PRODUCT_RETURN;
+  void print_on(outputStream* out) PRODUCT_RETURN;
+  void print();
 };
 
 #endif // SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
