@@ -22,12 +22,15 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check assignment e xyzpressions.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("obj = {}");
+printParse("p = { x: 10, y: 2 }");
+printParse("p = { 'x': 10, 'y': 2 }");
+printParse("p = { get x() { return xValue }, get y() { return yValue } }");

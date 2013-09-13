@@ -22,12 +22,38 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * JDK-8024512: Regex /[^\[]/ doesn't match
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+print("[M]".match(/(\[[^\[]*\])/));
+print("[[]".match(/(\[[^\[]*\])/));
+
+print("[M]".match(/(\[[^\[^]*\])/));
+print("[[]".match(/(\[[^\[^]*\])/));
+print("[^]".match(/(\[[^\[^]*\])/));
+
+print("[M]".match(/(\[[^\[]\])/));
+print("[[]".match(/(\[[^\[]\])/));
+
+print("[M]".match(/(\[[^\[^]\])/));
+print("[[]".match(/(\[[^\[^]\])/));
+print("[^]".match(/(\[[^\[^]\])/));
+
+print("M".match(/[^\[]/));
+print("[".match(/[^\[]/));
+print("^".match(/[^\[]/));
+
+// Repeat above without escaping inner square bracket
+print("[M]".match(/(\[[^[]\])/));
+print("[[]".match(/(\[[^[]\])/));
+
+print("[M]".match(/(\[[^[^]\])/));
+print("[[]".match(/(\[[^[^]\])/));
+print("[^]".match(/(\[[^[^]\])/));
+
+print("M".match(/[^[]/));
+print("[".match(/[^[]/));
+print("^".match(/[^[]/));

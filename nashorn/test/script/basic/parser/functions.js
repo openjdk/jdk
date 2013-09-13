@@ -22,12 +22,18 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
+ * Tests to check 'function' statements and expressions.
  *
  * @test
  * @run
  */
 
-load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+load(__DIR__ + "util.js");
+
+printParse("function hello() { print('hello') }")
+printParse("function hello(a) { print(a) }")
+printParse("function hello(a, b) { print(a, b) }")
+printParse("var hello = function() { print('hello') };")
+printParse("var hello = function hello() { print('hello') };")
+printParse("(function(){})")
+printParse("function test() { 'use strict' }");

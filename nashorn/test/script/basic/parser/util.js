@@ -22,12 +22,12 @@
  */
 
 /**
- * NASHORN-737 : NodeVisitor methods with LabeledNode parameters never called
- *
- * @test
- * @run
+ * @subtest
  */
 
+// utilitity for parser tests
+
 load("nashorn:parser.js");
-var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast, null, "    "));
+function printParse(code) {
+    print(JSON.stringify(parse(code), null, '    '));
+}
