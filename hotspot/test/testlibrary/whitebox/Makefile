@@ -1,5 +1,5 @@
-# 
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -8,7 +8,7 @@
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# FITNESS FOR A PARTICULAR PURPOSE.	See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
 #
@@ -19,27 +19,45 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-# 
-
 #
-# 
-
-#
-# Master Hotspot version file.  These values may be overridden by a control
-# workspace build.  This file format must remain compatible with both
-# GNU Makefile and Microsoft nmake formats.
 #
 
-# Don't put quotes (fail windows build).
-HOTSPOT_VM_COPYRIGHT=Copyright 2013
+ifneq "x$(ALT_BOOTDIR)" "x"
+	BOOTDIR := $(ALT_BOOTDIR)
+endif
 
-HS_MAJOR_VER=25
-HS_MINOR_VER=0
-HS_BUILD_NUMBER=50
+ifeq "x$(BOOTDIR)" "x"
+	JDK_HOME := $(shell dirname $(shell which java))/..
+else
+	JDK_HOME := $(BOOTDIR)
+endif
 
-JDK_MAJOR_VER=1
-JDK_MINOR_VER=8
-JDK_MICRO_VER=0
+SRC_DIR = ./
+BUILD_DIR = build
+OUTPUT_DIR = $(BUILD_DIR)/classes
 
-# Previous (bootdir) JDK version
-JDK_PREVIOUS_VERSION=1.7.0
+JAVAC = $(JDK_HOME)/bin/javac
+JAR = $(JDK_HOME)/bin/jar
+
+SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
+
+.PHONY: filelist clean cleantmp
+
+all: wb.jar cleantmp
+
+wb.jar: filelist
+	@mkdir -p $(OUTPUT_DIR)
+	$(JAVAC) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(OUTPUT_DIR) @filelist
+	$(JAR) cf wb.jar -C $(OUTPUT_DIR) .
+	@rm -rf $(OUTPUT_DIR)
+
+filelist: $(SRC_FILES)
+	@rm -f $@
+	@echo $(SRC_FILES) > $@
+
+clean: cleantmp
+	@rm -rf wb.jar
+
+cleantmp:
+	@rm -rf filelist
+	@rm -rf $(BUILD_DIR)
