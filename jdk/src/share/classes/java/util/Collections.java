@@ -3900,6 +3900,7 @@ public class Collections {
                 return batchRemove(c, true);
             }
             private boolean batchRemove(Collection<?> c, boolean complement) {
+                Objects.requireNonNull(c);
                 boolean modified = false;
                 Iterator<Map.Entry<K,V>> it = iterator();
                 while (it.hasNext()) {

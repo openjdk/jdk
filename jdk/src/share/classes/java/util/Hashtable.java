@@ -957,6 +957,8 @@ public class Hashtable<K,V>
 
     @Override
     public synchronized boolean replace(K key, V oldValue, V newValue) {
+        Objects.requireNonNull(oldValue);
+        Objects.requireNonNull(newValue);
         Entry<?,?> tab[] = table;
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
@@ -977,6 +979,7 @@ public class Hashtable<K,V>
 
     @Override
     public synchronized V replace(K key, V value) {
+        Objects.requireNonNull(value);
         Entry<?,?> tab[] = table;
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
