@@ -48,7 +48,7 @@ public class TestVerifyDuringStartup {
                                              "-XX:+VerifyDuringStartup",
                                              "-version"});
 
-    System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
+    System.out.print("Testing:\n" + JDKToolFinder.getCurrentJDKTool("java"));
     for (int i = 0; i < vmOpts.size(); i += 1) {
       System.out.print(" " + vmOpts.get(i));
     }
