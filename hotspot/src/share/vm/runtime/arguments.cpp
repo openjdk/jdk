@@ -3337,6 +3337,33 @@ static char* get_shared_archive_path() {
   return shared_archive_path;
 }
 
+#ifndef PRODUCT
+// Determine whether LogVMOutput should be implicitly turned on.
+static bool use_vm_log() {
+  if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
+      PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
+      PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
+      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
+    return true;
+  }
+
+#ifdef COMPILER1
+  if (PrintC1Statistics) {
+    return true;
+  }
+#endif // COMPILER1
+
+#ifdef COMPILER2
+  if (PrintOptoAssembly || PrintOptoStatistics) {
+    return true;
+  }
+#endif // COMPILER2
+
+  return false;
+}
+#endif // PRODUCT
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* args) {
@@ -3630,7 +3657,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       NmethodSweepFraction = 1;
     }
   }
-#endif
+
+  if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
+    if (use_vm_log()) {
+      LogVMOutput = true;
+    }
+  }
+#endif // PRODUCT
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags(tty);
