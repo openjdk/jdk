@@ -1590,10 +1590,22 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
   for (int i = methods->length() - 1; i >= 0; i--) {
     methodHandle method(THREAD, methods->at(i));
     methodHandle new_method;
-    rewrite_cp_refs_in_method(method, &new_method, CHECK_false);
+    rewrite_cp_refs_in_method(method, &new_method, THREAD);
     if (!new_method.is_null()) {
       // the method has been replaced so save the new method version
+      // even in the case of an exception.  original method is on the
+      // deallocation list.
       methods->at_put(i, new_method());
+    }
+    if (HAS_PENDING_EXCEPTION) {
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("rewrite_cp_refs_in_method exception: '%s'", ex_name->as_C_string()));
+      // Need to clear pending exception here as the super caller sets
+      // the JVMTI_ERROR_INTERNAL if the returned value is false.
+      CLEAR_PENDING_EXCEPTION;
+      return false;
     }
   }
 
@@ -1674,10 +1686,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
               Pause_No_Safepoint_Verifier pnsv(&nsv);
 
               // ldc is 2 bytes and ldc_w is 3 bytes
-              m = rc.insert_space_at(bci, 3, inst_buffer, THREAD);
-              if (m.is_null() || HAS_PENDING_EXCEPTION) {
-                guarantee(false, "insert_space_at() failed");
-              }
+              m = rc.insert_space_at(bci, 3, inst_buffer, CHECK);
             }
 
             // return the new method so that the caller can update
