@@ -1213,6 +1213,7 @@ public class CommandProcessor {
                 }
                 HotSpotTypeDataBase db = (HotSpotTypeDataBase)agent.getTypeDataBase();
                 if (t.countTokens() == 1) {
+                    String name = t.nextToken();
                     out.println("intConstant " + name + " " + db.lookupIntConstant(name));
                 } else if (t.countTokens() == 0) {
                     Iterator i = db.getIntConstants();
@@ -1235,6 +1236,7 @@ public class CommandProcessor {
                 }
                 HotSpotTypeDataBase db = (HotSpotTypeDataBase)agent.getTypeDataBase();
                 if (t.countTokens() == 1) {
+                    String name = t.nextToken();
                     out.println("longConstant " + name + " " + db.lookupLongConstant(name));
                 } else if (t.countTokens() == 0) {
                     Iterator i = db.getLongConstants();
