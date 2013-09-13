@@ -754,16 +754,19 @@ void VirtualSpace::check_for_contiguity() {
   assert(high() <= upper_high(), "upper high");
 }
 
-void VirtualSpace::print() {
-  tty->print   ("Virtual space:");
-  if (special()) tty->print(" (pinned in memory)");
-  tty->cr();
-  tty->print_cr(" - committed: " SIZE_FORMAT, committed_size());
-  tty->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  tty->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
-  tty->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
+void VirtualSpace::print_on(outputStream* out) {
+  out->print   ("Virtual space:");
+  if (special()) out->print(" (pinned in memory)");
+  out->cr();
+  out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
+  out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
+  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
+  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
 }
 
+void VirtualSpace::print() {
+  print_on(tty);
+}
 
 /////////////// Unit tests ///////////////
 
