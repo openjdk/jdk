@@ -235,6 +235,7 @@ private:
   typedef int (*numa_available_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
+  typedef void (*numa_set_bind_policy_func_t)(int policy);
 
   static sched_getcpu_func_t _sched_getcpu;
   static numa_node_to_cpus_func_t _numa_node_to_cpus;
@@ -242,6 +243,7 @@ private:
   static numa_available_func_t _numa_available;
   static numa_tonode_memory_func_t _numa_tonode_memory;
   static numa_interleave_memory_func_t _numa_interleave_memory;
+  static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static unsigned long* _numa_all_nodes;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
@@ -250,6 +252,7 @@ private:
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
+  static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static int sched_getcpu_syscall(void);
 public:
@@ -265,6 +268,11 @@ public:
   static void numa_interleave_memory(void *start, size_t size) {
     if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
+    }
+  }
+  static void numa_set_bind_policy(int policy) {
+    if (_numa_set_bind_policy != NULL) {
+      _numa_set_bind_policy(policy);
     }
   }
   static int get_node_by_cpu(int cpu_id);

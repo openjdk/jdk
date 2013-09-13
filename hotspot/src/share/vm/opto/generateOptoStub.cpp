@@ -61,6 +61,7 @@ void GraphKit::gen_stub(address C_function,
   JVMState* jvms = new (C) JVMState(0);
   jvms->set_bci(InvocationEntryBci);
   jvms->set_monoff(max_map);
+  jvms->set_scloff(max_map);
   jvms->set_endoff(max_map);
   {
     SafePointNode *map = new (C) SafePointNode( max_map, jvms );

@@ -189,12 +189,14 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _holder = CURRENT_ENV->get_instance_klass(fd->field_holder());
 
   // Check to see if the field is constant.
-  if (_holder->is_initialized() && this->is_final()) {
+  bool is_final = this->is_final();
+  bool is_stable = FoldStableValues && this->is_stable();
+  if (_holder->is_initialized() && (is_final || is_stable)) {
     if (!this->is_static()) {
       // A field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in
       // java.lang.invoke and sun.invoke packages and subpackages).
-      if (trust_final_non_static_fields(_holder)) {
+      if (is_stable || trust_final_non_static_fields(_holder)) {
         _is_constant = true;
         return;
       }
@@ -227,7 +229,6 @@ void ciField::initialize_from(fieldDescriptor* fd) {
 
     Handle mirror = k->java_mirror();
 
-    _is_constant = true;
     switch(type()->basic_type()) {
     case T_BYTE:
       _constant_value = ciConstant(type()->basic_type(), mirror->byte_field(_offset));
@@ -272,6 +273,12 @@ void ciField::initialize_from(fieldDescriptor* fd) {
           assert(_constant_value.as_object() == CURRENT_ENV->get_object(o), "check interning");
         }
       }
+    }
+    if (is_stable && _constant_value.is_null_or_zero()) {
+      // It is not a constant after all; treat it as uninitialized.
+      _is_constant = false;
+    } else {
+      _is_constant = true;
     }
   } else {
     _is_constant = false;
@@ -373,8 +380,11 @@ void ciField::print() {
   tty->print(" signature=");
   _signature->print_symbol();
   tty->print(" offset=%d type=", _offset);
-  if (_type != NULL) _type->print_name();
-  else               tty->print("(reference)");
+  if (_type != NULL)
+    _type->print_name();
+  else
+    tty->print("(reference)");
+  tty->print(" flags=%04x", flags().as_int());
   tty->print(" is_constant=%s", bool_to_str(_is_constant));
   if (_is_constant && is_static()) {
     tty->print(" constant_value=");

@@ -301,7 +301,7 @@ int PhaseChaitin::clone_projs(Block* b, uint idx, Node* orig, Node* copy, uint& 
       // Copy kill projections after the cloned node
       Node* kills = proj->clone();
       kills->set_req(0, copy);
-      b->_nodes.insert(idx++, kills);
+      b->insert_node(kills, idx++);
       _cfg.map_node_to_block(kills, b);
       new_lrg(kills, max_lrg_id++);
     }
@@ -682,11 +682,11 @@ void PhaseChaitin::de_ssa() {
   uint lr_counter = 1;
   for( uint i = 0; i < _cfg.number_of_blocks(); i++ ) {
     Block* block = _cfg.get_block(i);
-    uint cnt = block->_nodes.size();
+    uint cnt = block->number_of_nodes();
 
     // Handle all the normal Nodes in the block
     for( uint j = 0; j < cnt; j++ ) {
-      Node *n = block->_nodes[j];
+      Node *n = block->get_node(j);
       // Pre-color to the zero live range, or pick virtual register
       const RegMask &rm = n->out_RegMask();
       _lrg_map.map(n->_idx, rm.is_NotEmpty() ? lr_counter++ : 0);
@@ -710,8 +710,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
     Block* block = _cfg.get_block(i);
 
     // For all instructions
-    for (uint j = 1; j < block->_nodes.size(); j++) {
-      Node* n = block->_nodes[j];
+    for (uint j = 1; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
       uint input_edge_start =1; // Skip control most nodes
       if (n->is_Mach()) {
         input_edge_start = n->as_Mach()->oper_input_base();
@@ -1604,7 +1604,7 @@ void PhaseChaitin::fixup_spills() {
     // For all instructions in block
     uint last_inst = block->end_idx();
     for (uint j = 1; j <= last_inst; j++) {
-      Node* n = block->_nodes[j];
+      Node* n = block->get_node(j);
 
       // Dead instruction???
       assert( n->outcnt() != 0 ||// Nothing dead after post alloc
@@ -1641,7 +1641,7 @@ void PhaseChaitin::fixup_spills() {
             assert( cisc->oper_input_base() == 2, "Only adding one edge");
             cisc->ins_req(1,src);         // Requires a memory edge
           }
-          block->_nodes.map(j,cisc);          // Insert into basic block
+          block->map_node(cisc, j);          // Insert into basic block
           n->subsume_by(cisc, C); // Correct graph
           //
           ++_used_cisc_instructions;
@@ -1698,7 +1698,7 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
       // (where top() node is placed).
       base->init_req(0, _cfg.get_root_node());
       Block *startb = _cfg.get_block_for_node(C->top());
-      startb->_nodes.insert(startb->find_node(C->top()), base );
+      startb->insert_node(base, startb->find_node(C->top()));
       _cfg.map_node_to_block(base, startb);
       assert(_lrg_map.live_range_id(base) == 0, "should not have LRG yet");
     }
@@ -1743,9 +1743,9 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
   // Search the current block for an existing base-Phi
   Block *b = _cfg.get_block_for_node(derived);
   for( i = 1; i <= b->end_idx(); i++ ) {// Search for matching Phi
-    Node *phi = b->_nodes[i];
+    Node *phi = b->get_node(i);
     if( !phi->is_Phi() ) {      // Found end of Phis with no match?
-      b->_nodes.insert( i, base ); // Must insert created Phi here as base
+      b->insert_node(base,  i); // Must insert created Phi here as base
       _cfg.map_node_to_block(base, b);
       new_lrg(base,maxlrg++);
       break;
@@ -1786,7 +1786,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
     IndexSet liveout(_live->live(block));
 
     for (uint j = block->end_idx() + 1; j > 1; j--) {
-      Node* n = block->_nodes[j - 1];
+      Node* n = block->get_node(j - 1);
 
       // Pre-split compares of loop-phis.  Loop-phis form a cycle we would
       // like to see in the same register.  Compare uses the loop-phi and so
@@ -1979,8 +1979,8 @@ void PhaseChaitin::dump(const Block *b) const {
   b->dump_head(&_cfg);
 
   // For all instructions
-  for( uint j = 0; j < b->_nodes.size(); j++ )
-    dump(b->_nodes[j]);
+  for( uint j = 0; j < b->number_of_nodes(); j++ )
+    dump(b->get_node(j));
   // Print live-out info at end of block
   if( _live ) {
     tty->print("Liveout: ");
@@ -2271,8 +2271,8 @@ void PhaseChaitin::dump_lrg( uint lidx, bool defs_only ) const {
     int dump_once = 0;
 
     // For all instructions
-    for( uint j = 0; j < block->_nodes.size(); j++ ) {
-      Node *n = block->_nodes[j];
+    for( uint j = 0; j < block->number_of_nodes(); j++ ) {
+      Node *n = block->get_node(j);
       if (_lrg_map.find_const(n) == lidx) {
         if (!dump_once++) {
           tty->cr();

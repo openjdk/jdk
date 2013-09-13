@@ -1787,6 +1787,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_LambdaForm_Hidden;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_invoke_Stable_signature):
+    if (_location != _in_field)   break;  // only allow for fields
+    if (!privileged)              break;  // only allow in privileged code
+    return _field_Stable;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_misc_Contended_signature):
     if (_location != _in_field && _location != _in_class)          break;  // only allow for fields and classes
     if (!EnableContended || (RestrictContended && !privileged))    break;  // honor privileges
@@ -1799,6 +1803,8 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
     f->set_contended_group(contended_group());
+  if (is_stable())
+    f->set_stable(true);
 }
 
 ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {

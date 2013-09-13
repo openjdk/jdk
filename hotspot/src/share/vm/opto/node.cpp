@@ -773,6 +773,21 @@ void Node::del_req( uint idx ) {
   _in[_cnt] = NULL;       // NULL out emptied slot
 }
 
+//------------------------------del_req_ordered--------------------------------
+// Delete the required edge and compact the edge array with preserved order
+void Node::del_req_ordered( uint idx ) {
+  assert( idx < _cnt, "oob");
+  assert( !VerifyHashTableKeys || _hash_lock == 0,
+          "remove node from hash table before modifying it");
+  // First remove corresponding def-use edge
+  Node *n = in(idx);
+  if (n != NULL) n->del_out((Node *)this);
+  if (idx < _cnt - 1) { // Not last edge ?
+    Copy::conjoint_words_to_lower((HeapWord*)&_in[idx+1], (HeapWord*)&_in[idx], ((_cnt-idx-1)*sizeof(Node*)));
+  }
+  _in[--_cnt] = NULL;   // NULL out emptied slot
+}
+
 //------------------------------ins_req----------------------------------------
 // Insert a new required input at the end
 void Node::ins_req( uint idx, Node *n ) {
