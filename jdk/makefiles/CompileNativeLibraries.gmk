@@ -211,6 +211,7 @@ ifneq ($(OPENJDK_TARGET_OS),macosx)
 	LIBJAVA_EXCLUDE_FILES += java_props_macosx.c
 else
 	BUILD_LIBJAVA_java_props_md.c_CFLAGS:=-x objective-c
+        BUILD_LIBJAVA_java_props_macosx.c_CFLAGS:=-x objective-c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS),windows)
@@ -252,6 +253,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA,\
 		LDFLAGS_SUFFIX_linux:=$(LIBDL) $(BUILD_LIBFDLIBM),\
 		LDFLAGS_SUFFIX_macosx:=-L$(JDK_OUTPUTDIR)/objs/ -lfdlibm \
                                          -framework CoreFoundation \
+                                         -framework Foundation \
                                          -framework Security -framework SystemConfiguration, \
 		LDFLAGS_SUFFIX_windows:=-export:winFileHandleOpen -export:handleLseek \
 					jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
