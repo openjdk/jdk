@@ -709,7 +709,6 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
-TARGET_BITS_FLAG
 JT_HOME
 JTREGEXE
 LIPO
@@ -3806,7 +3805,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1379070243
+DATE_WHEN_GENERATED=1379077060
 
 ###############################################################################
 #
@@ -28398,35 +28397,41 @@ done
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
   # Always specify -m flags on Solaris
 
-  # keep track of c/cxx flags that we added outselves...
-  #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  # When we add flags to the "official" CFLAGS etc, we need to
+  # keep track of these additions in ADDED_CFLAGS etc. These
+  # will later be checked to make sure only controlled additions
+  # have been made to CFLAGS etc.
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
 elif test "x$COMPILE_TYPE" = xreduced; then
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
     # Specify -m if running reduced on other Posix platforms
 
-  # keep track of c/cxx flags that we added outselves...
-  #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  # When we add flags to the "official" CFLAGS etc, we need to
+  # keep track of these additions in ADDED_CFLAGS etc. These
+  # will later be checked to make sure only controlled additions
+  # have been made to CFLAGS etc.
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
   fi
 fi
