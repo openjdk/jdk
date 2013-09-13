@@ -29,6 +29,7 @@ import com.sun.jmx.mbeanserver.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Describes a constructor exposed by an MBean.  Instances of this
@@ -203,11 +204,7 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
        quite long and yet the same between constructors.  Likewise for
        the descriptor.  */
     public int hashCode() {
-        int hash = getName().hashCode();
-        MBeanParameterInfo[] sig = fastGetSignature();
-        for (int i = 0; i < sig.length; i++)
-            hash ^= sig[i].hashCode();
-        return hash;
+        return Objects.hash(getName()) ^ Arrays.hashCode(fastGetSignature());
     }
 
     private static MBeanParameterInfo[] constructorSignature(Constructor<?> cn) {
