@@ -602,7 +602,7 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   }
 }
 
-static intptr_t non_oop_bits = 0;
+intptr_t Universe::_non_oop_bits = 0;
 
 void* Universe::non_oop_word() {
   // Neither the high bits nor the low bits of this value is allowed
@@ -616,11 +616,11 @@ void* Universe::non_oop_word() {
   // Using the OS-supplied non-memory-address word (usually 0 or -1)
   // will take care of the high bits, however many there are.
 
-  if (non_oop_bits == 0) {
-    non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
+  if (_non_oop_bits == 0) {
+    _non_oop_bits = (intptr_t)os::non_memory_address_word() | 1;
   }
 
-  return (void*)non_oop_bits;
+  return (void*)_non_oop_bits;
 }
 
 jint universe_init() {

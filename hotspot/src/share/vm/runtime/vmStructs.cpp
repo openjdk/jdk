@@ -330,11 +330,13 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Klass,                       _java_mirror,                                  oop)                                   \
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
+  nonstatic_field(Klass,                       _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
-  nonstatic_field(Klass,                       _subklass,                                     Klass*)                                \
+  nonstatic_field(Klass,                       _prototype_header,                             markOop)                               \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
+  nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
   nonstatic_field(MethodData,           _size,                                         int)                                   \
   nonstatic_field(MethodData,           _method,                                       Method*)                               \
   nonstatic_field(MethodData,           _data_size,                                    int)                                   \
@@ -342,10 +344,15 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(MethodData,           _nof_decompiles,                               uint)                                  \
   nonstatic_field(MethodData,           _nof_overflow_recompiles,                      uint)                                  \
   nonstatic_field(MethodData,           _nof_overflow_traps,                           uint)                                  \
+  nonstatic_field(MethodData,           _trap_hist._array[0],                          u1)                                    \
   nonstatic_field(MethodData,           _eflags,                                       intx)                                  \
   nonstatic_field(MethodData,           _arg_local,                                    intx)                                  \
   nonstatic_field(MethodData,           _arg_stack,                                    intx)                                  \
   nonstatic_field(MethodData,           _arg_returned,                                 intx)                                  \
+  nonstatic_field(DataLayout,           _header._struct._tag,                          u1)                                    \
+  nonstatic_field(DataLayout,           _header._struct._flags,                        u1)                                    \
+  nonstatic_field(DataLayout,           _header._struct._bci,                          u2)                                    \
+  nonstatic_field(DataLayout,           _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,       _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(MethodCounters,       _interpreter_throwout_count,                   u2)                                    \
   nonstatic_field(MethodCounters,       _number_of_breakpoints,                        u2)                                    \
@@ -357,6 +364,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Method,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,               _vtable_index,                                 int)                                   \
   nonstatic_field(Method,               _method_size,                                  u2)                                    \
+  nonstatic_field(Method,               _intrinsic_id,                                 u1)                                    \
   nonproduct_nonstatic_field(Method,    _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,      _code,                                         nmethod*)                              \
   nonstatic_field(Method,               _i2i_entry,                                    address)                               \
@@ -443,11 +451,18 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
      static_field(Universe,                    _bootstrapping,                                bool)                                  \
      static_field(Universe,                    _fully_initialized,                            bool)                                  \
      static_field(Universe,                    _verify_count,                                 int)                                   \
+     static_field(Universe,                    _non_oop_bits,                                 intptr_t)                              \
      static_field(Universe,                    _narrow_oop._base,                             address)                               \
      static_field(Universe,                    _narrow_oop._shift,                            int)                                   \
      static_field(Universe,                    _narrow_oop._use_implicit_null_checks,         bool)                                  \
      static_field(Universe,                    _narrow_klass._base,                           address)                               \
      static_field(Universe,                    _narrow_klass._shift,                          int)                                   \
+                                                                                                                                     \
+  /******/                                                                                                                           \
+  /* os */                                                                                                                           \
+  /******/                                                                                                                           \
+                                                                                                                                     \
+     static_field(os,                          _polling_page,                                 address)                               \
                                                                                                                                      \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
@@ -456,6 +471,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
                                                                                                                                      \
   nonstatic_field(BarrierSet,                  _max_covered_regions,                          int)                                   \
+  nonstatic_field(BarrierSet,                  _kind,                                         BarrierSet::Name)                      \
   nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
   nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
                                                                                                                                      \
@@ -495,6 +511,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(CollectedHeap,               _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
+  nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
   nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
   nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
   nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
@@ -505,7 +522,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _next_gen,                                     Generation*)                           \
-  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                   \
+  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
   nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   EdenSpace*)                            \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
@@ -552,6 +569,11 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _fast_refill_waste,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _slow_refill_waste,                            unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
   nonstatic_field(VirtualSpace,                _high_boundary,                                char*)                                 \
   nonstatic_field(VirtualSpace,                _low,                                          char*)                                 \
@@ -713,6 +735,13 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                                                                                      \
   static_field(ClassLoaderDataGraph,           _head,                                         ClassLoaderData*)                      \
                                                                                                                                      \
+  /**********/                                                                                                                       \
+  /* Arrays */                                                                                                                       \
+  /**********/                                                                                                                       \
+                                                                                                                                     \
+  nonstatic_field(Array<Klass*>,               _length,                                       int)                                   \
+  nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
+                                                                                                                                     \
   /*******************/                                                                                                              \
   /* GrowableArrays  */                                                                                                              \
   /*******************/                                                                                                              \
@@ -720,7 +749,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(GenericGrowableArray,        _len,                                          int)                                   \
   nonstatic_field(GenericGrowableArray,        _max,                                          int)                                   \
   nonstatic_field(GenericGrowableArray,        _arena,                                        Arena*)                                \
-  nonstatic_field(GrowableArray<int>,               _data,                                         int*) \
+  nonstatic_field(GrowableArray<int>,          _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
@@ -763,7 +792,20 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /* StubRoutines (NOTE: incomplete) */                                                                                              \
   /***********************************/                                                                                              \
                                                                                                                                      \
+     static_field(StubRoutines,                _verify_oop_count,                             jint)                                  \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
+     static_field(StubRoutines,                _aescrypt_encryptBlock,                        address)                               \
+     static_field(StubRoutines,                _aescrypt_decryptBlock,                        address)                               \
+     static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,          address)                               \
+     static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,          address)                               \
+     static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
+     static_field(StubRoutines,                _crc_table_adr,                                address)                               \
+                                                                                                                                     \
+  /*****************/                                                                                                                \
+  /* SharedRuntime */                                                                                                                \
+  /*****************/                                                                                                                \
+                                                                                                                                     \
+     static_field(SharedRuntime,               _ic_miss_blob,                                 RuntimeStub*)                          \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -853,6 +895,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
    volatile_nonstatic_field(Thread,            _suspend_flags,                                uint32_t)                              \
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
+  nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
   nonstatic_field(Thread,                      _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
@@ -866,6 +909,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
+  volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   nonstatic_field(JavaThread,                  _is_compiling,                                 bool)                                  \
   nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
@@ -875,6 +919,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
+  nonstatic_field(JavaThread,                  _satb_mark_queue,                              ObjPtrQueue)                           \
+  nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
                                                                                                                                      \
@@ -1187,7 +1233,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   unchecked_nonstatic_field(Array<int>,            _data,                                     sizeof(int))                           \
   unchecked_nonstatic_field(Array<u1>,             _data,                                     sizeof(u1))                            \
   unchecked_nonstatic_field(Array<u2>,             _data,                                     sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>, _data,                                     sizeof(Method*))                \
+  unchecked_nonstatic_field(Array<Method*>,        _data,                                     sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,         _data,                                     sizeof(Klass*))                        \
                                                                                                                                      \
   /*********************************/                                                                                                \
@@ -1203,7 +1249,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
                                                                                                                                      \
-  nonstatic_field(CompileTask,                 _method,                                      Method*)                         \
+  nonstatic_field(CompileTask,                 _method,                                      Method*)                                \
   nonstatic_field(CompileTask,                 _osr_bci,                                     int)                                    \
   nonstatic_field(CompileTask,                 _comp_level,                                  int)                                    \
   nonstatic_field(CompileTask,                 _compile_id,                                  uint)                                   \
@@ -1217,7 +1263,11 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                                                                                      \
   nonstatic_field(vframeArrayElement,          _frame,                                       frame)                                  \
   nonstatic_field(vframeArrayElement,          _bci,                                         int)                                    \
-  nonstatic_field(vframeArrayElement,          _method,                                      Method*)                         \
+  nonstatic_field(vframeArrayElement,          _method,                                      Method*)                                \
+                                                                                                                                     \
+  nonstatic_field(PtrQueue,                    _active,                                      bool)                                   \
+  nonstatic_field(PtrQueue,                    _buf,                                         void**)                                 \
+  nonstatic_field(PtrQueue,                    _index,                                       size_t)                                 \
                                                                                                                                      \
   nonstatic_field(AccessFlags,                 _flags,                                       jint)                                   \
   nonstatic_field(elapsedTimer,                _counter,                                     jlong)                                  \
@@ -1363,7 +1413,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /* MetadataOopDesc hierarchy (NOTE: some missing) */                    \
   /**************************************************/                    \
                                                                           \
-  declare_toplevel_type(CompiledICHolder)                          \
+  declare_toplevel_type(CompiledICHolder)                                 \
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
@@ -1374,17 +1424,20 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
-    declare_type(ConstantPool, Metadata)                           \
-    declare_type(ConstantPoolCache, MetaspaceObj)                  \
-    declare_type(MethodData, Metadata)                             \
-    declare_type(Method, Metadata)                                 \
-    declare_type(MethodCounters, MetaspaceObj)                     \
-    declare_type(ConstMethod, MetaspaceObj)                        \
+    declare_type(ConstantPool, Metadata)                                  \
+    declare_type(ConstantPoolCache, MetaspaceObj)                         \
+    declare_type(MethodData, Metadata)                                    \
+    declare_type(Method, Metadata)                                        \
+    declare_type(MethodCounters, MetaspaceObj)                            \
+    declare_type(ConstMethod, MetaspaceObj)                               \
+                                                                          \
+  declare_toplevel_type(vtableEntry)                                      \
                                                                           \
            declare_toplevel_type(Symbol)                                  \
            declare_toplevel_type(Symbol*)                                 \
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
+  declare_toplevel_type(DataLayout)                                       \
   declare_toplevel_type(nmethodBucket)                                    \
                                                                           \
   /********/                                                              \
@@ -1432,6 +1485,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
            declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
+  declare_toplevel_type(BarrierSet::Name)                                 \
   declare_toplevel_type(GenRemSet)                                        \
            declare_type(CardTableRS,                  GenRemSet)          \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
@@ -1450,6 +1504,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
   declare_toplevel_type(WaterMark)                                        \
+  declare_toplevel_type(ObjPtrQueue)                                      \
+  declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
   /* Pointers to Garbage Collection types */                              \
                                                                           \
@@ -2068,6 +2124,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(StubQueue*)                                       \
   declare_toplevel_type(Thread*)                                          \
   declare_toplevel_type(Universe)                                         \
+  declare_toplevel_type(os)                                               \
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \
   declare_toplevel_type(Annotations*)                                     \
@@ -2075,6 +2132,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /***************/                                                       \
   /* Miscellaneous types */                                               \
   /***************/                                                       \
+                                                                          \
+  declare_toplevel_type(PtrQueue)                                         \
                                                                           \
   /* freelist */                                                          \
   declare_toplevel_type(FreeChunk*)                                       \
@@ -2106,6 +2165,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   /* Useful globals */                                                    \
   /******************/                                                    \
                                                                           \
+  declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
                                                                           \
   /**************/                                                        \
   /* Stack bias */                                                        \
@@ -2122,6 +2182,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(BytesPerWord)                                          \
   declare_constant(BytesPerLong)                                          \
                                                                           \
+  declare_constant(LogKlassAlignmentInBytes)                              \
+                                                                          \
   /********************************************/                          \
   /* Generation and Space Hierarchy Constants */                          \
   /********************************************/                          \
@@ -2130,6 +2192,9 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
+  declare_constant(BarrierSet::CardTableExtension)                        \
+  declare_constant(BarrierSet::G1SATBCT)                                  \
+  declare_constant(BarrierSet::G1SATBCTLogging)                           \
   declare_constant(BarrierSet::Other)                                     \
                                                                           \
   declare_constant(BlockOffsetSharedArray::LogN)                          \
@@ -2248,8 +2313,11 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(Klass::_primary_super_limit)                           \
   declare_constant(Klass::_lh_instance_slow_path_bit)                     \
   declare_constant(Klass::_lh_log2_element_size_shift)                    \
+  declare_constant(Klass::_lh_log2_element_size_mask)                     \
   declare_constant(Klass::_lh_element_type_shift)                         \
+  declare_constant(Klass::_lh_element_type_mask)                          \
   declare_constant(Klass::_lh_header_size_shift)                          \
+  declare_constant(Klass::_lh_header_size_mask)                           \
   declare_constant(Klass::_lh_array_tag_shift)                            \
   declare_constant(Klass::_lh_array_tag_type_value)                       \
   declare_constant(Klass::_lh_array_tag_obj_value)                        \
@@ -2267,6 +2335,12 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(ConstMethod::_has_parameter_annotations)               \
   declare_constant(ConstMethod::_has_default_annotations)                 \
   declare_constant(ConstMethod::_has_type_annotations)                    \
+                                                                          \
+  /**************/                                                        \
+  /* DataLayout */                                                        \
+  /**************/                                                        \
+                                                                          \
+  declare_constant(DataLayout::cell_size)                                 \
                                                                           \
   /*************************************/                                 \
   /* InstanceKlass enum                */                                 \
@@ -2402,6 +2476,13 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \
                                                                           \
+  declare_constant(Deoptimization::Action_none)                           \
+  declare_constant(Deoptimization::Action_maybe_recompile)                \
+  declare_constant(Deoptimization::Action_reinterpret)                    \
+  declare_constant(Deoptimization::Action_make_not_entrant)               \
+  declare_constant(Deoptimization::Action_make_not_compilable)            \
+  declare_constant(Deoptimization::Action_LIMIT)                          \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
@@ -2468,6 +2549,16 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(vmSymbols::FIRST_SID)                                  \
   declare_constant(vmSymbols::SID_LIMIT)                                  \
                                                                           \
+  /****************/                                                      \
+  /* vmIntrinsics */                                                      \
+  /****************/                                                      \
+                                                                          \
+  declare_constant(vmIntrinsics::_invokeBasic)                            \
+  declare_constant(vmIntrinsics::_linkToVirtual)                          \
+  declare_constant(vmIntrinsics::_linkToStatic)                           \
+  declare_constant(vmIntrinsics::_linkToSpecial)                          \
+  declare_constant(vmIntrinsics::_linkToInterface)                        \
+                                                                          \
   /********************************/                                      \
   /* Calling convention constants */                                      \
   /********************************/                                      \
@@ -2515,6 +2606,8 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(markOopDesc::biased_lock_bit_in_place)                 \
   declare_constant(markOopDesc::age_mask)                                 \
   declare_constant(markOopDesc::age_mask_in_place)                        \
+  declare_constant(markOopDesc::epoch_mask)                               \
+  declare_constant(markOopDesc::epoch_mask_in_place)                      \
   declare_constant(markOopDesc::hash_mask)                                \
   declare_constant(markOopDesc::hash_mask_in_place)                       \
   declare_constant(markOopDesc::biased_lock_alignment)                    \
