@@ -1745,6 +1745,11 @@ public class LambdaToMethod extends TreeTranslator {
                         // Just erase the type var
                         ret = new VarSymbol(sym.flags(), name,
                                 types.erasure(sym.type), sym.owner);
+
+                        /* this information should also be kept for LVT generation at Gen
+                         * a Symbol with pos < startPos won't be tracked.
+                         */
+                        ((VarSymbol)ret).pos = ((VarSymbol)sym).pos;
                         break;
                     case CAPTURED_VAR:
                         ret = new VarSymbol(SYNTHETIC | FINAL, name, types.erasure(sym.type), translatedSym) {
