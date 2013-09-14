@@ -1028,15 +1028,6 @@ $(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar : $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.ja
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-    $(eval $(call SetupArchive,BUILD_JOBJC_JAR,,\
-		SRCS:=$(JDK_OUTPUTDIR)/jobjc_classes,\
-		JAR:=$(IMAGES_OUTPUTDIR)/lib/JObjC.jar, \
-		JARINDEX:=true))
-endif
-
-##########################################################################################
-
 ifndef OPENJDK
     $(eval $(call SetupArchive,BUILD_ALT_RT_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/altclasses_classes,\

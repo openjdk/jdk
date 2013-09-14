@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,30 +451,7 @@ final class P11RSACipher extends CipherSpi {
     // see JCE spec
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
-        if (algorithm.equals("TlsRsaPremasterSecret")) {
-            // the instance variable "session" has been initialized for
-            // decrypt mode, so use a local variable instead.
-            Session s = null;
-            try {
-                s = token.getObjSession();
-                long keyType = CKK_GENERIC_SECRET;
-                CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                    new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                    new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-                };
-                attributes = token.getAttributes
-                    (O_IMPORT, CKO_SECRET_KEY, keyType, attributes);
-                long keyID = token.p11.C_UnwrapKey(s.id(),
-                        new CK_MECHANISM(mechanism), p11Key.keyID, wrappedKey,
-                        attributes);
-                return P11Key.secretKey(s, keyID, algorithm, 48 << 3,
-                        attributes);
-            } catch (PKCS11Exception e) {
-                throw new InvalidKeyException("unwrap() failed", e);
-            } finally {
-                token.releaseSession(s);
-            }
-        }
+
         // XXX implement unwrap using C_Unwrap() for all keys
         implInit(Cipher.DECRYPT_MODE, p11Key);
         if (wrappedKey.length > maxInputSize) {
