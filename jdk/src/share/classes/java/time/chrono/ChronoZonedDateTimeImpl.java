@@ -185,7 +185,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
      */
     @SuppressWarnings("unchecked")
     private ChronoZonedDateTimeImpl<D> create(Instant instant, ZoneId zone) {
-        return (ChronoZonedDateTimeImpl<D>)ofInstant(toLocalDate().getChronology(), instant, zone);
+        return (ChronoZonedDateTimeImpl<D>)ofInstant(getChronology(), instant, zone);
     }
 
     /**
@@ -200,9 +200,9 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     static <R extends ChronoLocalDate> ChronoZonedDateTimeImpl<R> ensureValid(Chronology chrono, Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoZonedDateTimeImpl<R> other = (ChronoZonedDateTimeImpl<R>) temporal;
-        if (chrono.equals(other.toLocalDate().getChronology()) == false) {
+        if (chrono.equals(other.getChronology()) == false) {
             throw new ClassCastException("Chronology mismatch, required: " + chrono.getId()
-                    + ", actual: " + other.toLocalDate().getChronology().getId());
+                    + ", actual: " + other.getChronology().getId());
         }
         return other;
     }
@@ -293,7 +293,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
             }
             return ofBest(dateTime.with(field, newValue), zone, offset);
         }
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), field.adjustInto(this, newValue));
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), field.adjustInto(this, newValue));
     }
 
     //-----------------------------------------------------------------------
@@ -302,7 +302,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         if (unit instanceof ChronoUnit) {
             return with(dateTime.plus(amountToAdd, unit));
         }
-        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), unit.addTo(this, amountToAdd));   /// TODO: Generics replacement Risk!
+        return ChronoZonedDateTimeImpl.ensureValid(getChronology(), unit.addTo(this, amountToAdd));   /// TODO: Generics replacement Risk!
     }
 
     //-----------------------------------------------------------------------
@@ -310,7 +310,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
-        ChronoZonedDateTime<D> end = (ChronoZonedDateTime<D>) toLocalDate().getChronology().zonedDateTime(endExclusive);
+        ChronoZonedDateTime<D> end = (ChronoZonedDateTime<D>) getChronology().zonedDateTime(endExclusive);
         if (unit instanceof ChronoUnit) {
             end = end.withZoneSameInstant(offset);
             return dateTime.until(end.toLocalDateTime(), unit);

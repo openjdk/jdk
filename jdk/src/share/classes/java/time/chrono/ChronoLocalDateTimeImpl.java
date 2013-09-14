@@ -186,9 +186,9 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     static <R extends ChronoLocalDate> ChronoLocalDateTimeImpl<R> ensureValid(Chronology chrono, Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoLocalDateTimeImpl<R> other = (ChronoLocalDateTimeImpl<R>) temporal;
-        if (chrono.equals(other.toLocalDate().getChronology()) == false) {
+        if (chrono.equals(other.getChronology()) == false) {
             throw new ClassCastException("Chronology mismatch, required: " + chrono.getId()
-                    + ", actual: " + other.toLocalDate().getChronology().getId());
+                    + ", actual: " + other.getChronology().getId());
         }
         return other;
     }
@@ -371,7 +371,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     public long until(Temporal endExclusive, TemporalUnit unit) {
         Objects.requireNonNull(endExclusive, "endExclusive");
         @SuppressWarnings("unchecked")
-        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) toLocalDate().getChronology().localDateTime(endExclusive);
+        ChronoLocalDateTime<D> end = (ChronoLocalDateTime<D>) getChronology().localDateTime(endExclusive);
         if (unit instanceof ChronoUnit) {
             if (unit.isTimeBased()) {
                 long amount = end.getLong(EPOCH_DAY) - date.getLong(EPOCH_DAY);
