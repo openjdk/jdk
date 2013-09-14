@@ -372,22 +372,10 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * {@inheritDoc}
-     * @throws DateTimeException {@inheritDoc}
-     * @throws ArithmeticException {@inheritDoc}
-     */
     @Override
-    public long until(Temporal endDateTime, TemporalUnit unit) {
-        Objects.requireNonNull(endDateTime, "endDateTime");
-        Objects.requireNonNull(unit, "unit");
-        if (endDateTime instanceof ChronoLocalDate == false) {
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        ChronoLocalDate end = (ChronoLocalDate) endDateTime;
-        if (getChronology().equals(end.getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
-        }
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        Objects.requireNonNull(endExclusive, "endExclusive");
+        ChronoLocalDate end = getChronology().date(endExclusive);
         if (unit instanceof ChronoUnit) {
             switch ((ChronoUnit) unit) {
                 case DAYS: return daysUntil(end);
@@ -401,7 +389,8 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endDateTime);
+        Objects.requireNonNull(unit, "unit");
+        return unit.between(this, end);
     }
 
     private long daysUntil(ChronoLocalDate end) {

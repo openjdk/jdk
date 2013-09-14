@@ -84,6 +84,7 @@ import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -1800,7 +1801,7 @@ public class TCKInstant extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
         Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
         Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
         long amount = i1.until(i2, unit);
@@ -1808,25 +1809,46 @@ public class TCKInstant extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
         Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
         Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
         long amount = i2.until(i1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(long seconds1, int nanos1, long seconds2, long nanos2, TemporalUnit unit, long expected) {
+        Instant i1 = Instant.ofEpochSecond(seconds1, nanos1);
+        Instant i2 = Instant.ofEpochSecond(seconds2, nanos2);
+        long amount = unit.between(i1, i2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        Instant start = Instant.ofEpochSecond(12, 3000);
+        OffsetDateTime end = start.plusSeconds(2).atOffset(ZoneOffset.ofHours(2));
+        assertEquals(start.until(end, SECONDS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        Instant start = Instant.ofEpochSecond(12, 3000);
+        start.until(LocalTime.of(11, 30), SECONDS);
+    }
+
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+    public void test_until_TemporalUnit_unsupportedUnit() {
         TEST_12345_123456789.until(TEST_12345_123456789, MONTHS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_12345_123456789.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_12345_123456789.until(TEST_12345_123456789, null);
     }
 

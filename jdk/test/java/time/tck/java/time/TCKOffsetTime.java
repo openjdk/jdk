@@ -1069,49 +1069,61 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     // until(Temporal, TemporalUnit)
     //-----------------------------------------------------------------------
     @DataProvider(name="periodUntilUnit")
-    Object[][] data_periodUntilUnit() {
+    Object[][] data_untilUnit() {
         return new Object[][] {
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(13, 1, 1), ZoneOffset.ofHours(1)), HALF_DAYS, 1},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), HOURS, 1},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MINUTES, 60},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), SECONDS, 3600},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MILLIS, 3600*1000},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), MICROS, 3600*1000*1000L},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1)), NANOS, 3600*1000*1000L*1000},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(13, 1, 1, 0, OFFSET_PONE), HALF_DAYS, 1},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), HOURS, 1},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), MINUTES, 60},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), SECONDS, 3600},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), MILLIS, 3600*1000},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), MICROS, 3600*1000*1000L},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(2, 1, 1, 0, OFFSET_PONE), NANOS, 3600*1000*1000L*1000},
 
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(14, 1, 1), ZoneOffset.ofHours(2)), HALF_DAYS, 1},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), HOURS, 1},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MINUTES, 60},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), SECONDS, 3600},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MILLIS, 3600*1000},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), MICROS, 3600*1000*1000L},
-            {OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1)), OffsetTime.of(LocalTime.of(3, 1, 1), ZoneOffset.ofHours(2)), NANOS, 3600*1000*1000L*1000},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(14, 1, 1, 0, OFFSET_PTWO), HALF_DAYS, 1},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), HOURS, 1},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), MINUTES, 60},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), SECONDS, 3600},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), MILLIS, 3600*1000},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), MICROS, 3600*1000*1000L},
+                {OffsetTime.of(1, 1, 1, 0, OFFSET_PONE), OffsetTime.of(3, 1, 1, 0, OFFSET_PTWO), NANOS, 3600*1000*1000L*1000},
         };
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
         long amount = offsetTime1.until(offsetTime2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
         long amount = offsetTime2.until(offsetTime1, unit);
         assertEquals(amount, -expected);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
-    public void test_periodUntil_InvalidType() {
-        OffsetTime offsetTime = OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1));
-        OffsetDateTime offsetDateTime = offsetTime.atDate(LocalDate.of(1980, 2, 10));
-        offsetTime.until(offsetDateTime, SECONDS);
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(OffsetTime offsetTime1, OffsetTime offsetTime2, TemporalUnit unit, long expected) {
+        long amount = unit.between(offsetTime1, offsetTime2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        OffsetTime offsetTime = OffsetTime.of(1, 1, 1, 0, OFFSET_PONE);
+        OffsetDateTime offsetDateTime = offsetTime.plusSeconds(3).atDate(LocalDate.of(1980, 2, 10));
+        assertEquals(offsetTime.until(offsetDateTime, SECONDS), 3);
     }
 
     @Test(expectedExceptions=DateTimeException.class)
-    public void test_periodUntil_InvalidTemporalUnit() {
-        OffsetTime offsetTime1 = OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.ofHours(1));
-        OffsetTime offsetTime2 = OffsetTime.of(LocalTime.of(2, 1, 1), ZoneOffset.ofHours(1));
+    public void test_until_invalidType() {
+        OffsetTime offsetTime = OffsetTime.of(1, 1, 1, 0, OFFSET_PONE);
+        offsetTime.until(LocalDate.of(1980, 2, 10), SECONDS);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidTemporalUnit() {
+        OffsetTime offsetTime1 = OffsetTime.of(1, 1, 1, 0, OFFSET_PONE);
+        OffsetTime offsetTime2 = OffsetTime.of(2, 1, 1, 0, OFFSET_PONE);
         offsetTime1.until(offsetTime2, MONTHS);
     }
 

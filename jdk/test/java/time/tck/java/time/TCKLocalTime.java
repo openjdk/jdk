@@ -1971,29 +1971,48 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
         long amount = time1.until(time2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
         long amount = time2.until(time1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(LocalTime time1, LocalTime time2, TemporalUnit unit, long expected) {
+        long amount = unit.between(time1, time2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        LocalTime start = LocalTime.of(11, 30);
+        LocalDateTime end = start.plusSeconds(2).atDate(LocalDate.of(2010, 6, 30));
+        assertEquals(start.until(end, SECONDS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        LocalTime start = LocalTime.of(11, 30);
+        start.until(LocalDate.of(2010, 6, 30), SECONDS);
+    }
+
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+    public void test_until_TemporalUnit_unsupportedUnit() {
         TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, DAYS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_12_30_40_987654321.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_12_30_40_987654321.until(TEST_12_30_40_987654321, null);
     }
 

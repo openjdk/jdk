@@ -166,6 +166,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
         if (temporal instanceof ChronoZonedDateTime) {
             return (ChronoZonedDateTime<?>) temporal;
         }
+        Objects.requireNonNull(temporal, "temporal");
         Chronology chrono = temporal.query(TemporalQuery.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoZonedDateTime from TemporalAccessor: " + temporal.getClass());
