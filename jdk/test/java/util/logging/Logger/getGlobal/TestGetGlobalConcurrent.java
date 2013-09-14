@@ -22,17 +22,18 @@
  */
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @test
- * @bug 7184195
- * @summary checks that java.util.logging.Logger.getGlobal().info() logs without configuration
+ * @bug 7184195 8021003
+ * @summary Test that the global logger can log with no configuration when accessed from multiple threads.
  * @build TestGetGlobalConcurrent testgetglobal.HandlerImpl testgetglobal.LogManagerImpl1 testgetglobal.LogManagerImpl2 testgetglobal.LogManagerImpl3 testgetglobal.BadLogManagerImpl testgetglobal.DummyLogManagerImpl
  * @run main/othervm/timeout=10 TestGetGlobalConcurrent
  * @run main/othervm/timeout=10/policy=policy -Djava.security.manager TestGetGlobalConcurrent
- * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl TestGetGlobalConcurrent
+ * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
+ * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
  * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
  * @run main/othervm/timeout=10/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
  * @run main/othervm/timeout=10 -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
@@ -69,7 +70,6 @@ public class TestGetGlobalConcurrent {
              // initialize the LogManager - and thus this message should appear.
         Logger.global.info(messages[i+1]); // Now that the LogManager is
              // initialized, this message should appear too.
-
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, i, i+2));
         if (!testgetglobal.HandlerImpl.received.containsAll(expected)) {
             fail(new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected));
@@ -82,7 +82,6 @@ public class TestGetGlobalConcurrent {
              // initialize the LogManager - and thus this message should appear.
         Logger.global.info(messages[i+1]); // Now that the LogManager is
              // initialized, this message should appear too.
-
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, i, i+2));
         if (!testgetglobal.HandlerImpl.received.containsAll(expected)) {
             fail(new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected));
@@ -96,7 +95,6 @@ public class TestGetGlobalConcurrent {
              // initialize the LogManager - and thus this message should appear.
         Logger.global.info(messages[i+1]); // Now that the LogManager is
              // initialized, this message should appear too.
-
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, i, i+2));
         if (!testgetglobal.HandlerImpl.received.containsAll(expected)) {
             fail(new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected));
@@ -150,7 +148,16 @@ public class TestGetGlobalConcurrent {
         public void run() { test4(); }
     }
 
+    static String description = "Unknown";
+
     public static void main(String... args) throws Exception {
+
+        final String manager = System.getProperty("java.util.logging.manager", null);
+
+        description = "TestGetGlobalConcurrent"
+            + (System.getSecurityManager() == null ? " " :
+               " -Djava.security.manager ")
+            + (manager == null ? "" : "-Djava.util.logging.manager=" + manager);
 
         final Thread t1 = new Thread(new WaitAndRun(new Run1()), "test1");
         final Thread t2 = new Thread(new WaitAndRun(new Run2()), "test2");
@@ -169,14 +176,13 @@ public class TestGetGlobalConcurrent {
 
         final List<String> expected = Arrays.asList(Arrays.copyOfRange(messages, 1, 3));
         if (!testgetglobal.HandlerImpl.received.containsAll(expected)) {
-            throw new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected);
+            fail(new Error("Unexpected message list: "+testgetglobal.HandlerImpl.received+" vs "+ expected));
         }
-
 
         t1.join(); t2.join(); t3.join(); t4.join();
 
         if (failed != null) {
-             throw new Error("Test failed.", failed);
+             throw new Error("Test failed: "+description, failed);
         }
 
         System.out.println("Test passed");

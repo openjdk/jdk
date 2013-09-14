@@ -31,6 +31,7 @@
  * @compile/fail/ref=TestMissingElement.ref -proc:only -XprintRounds -XDrawDiagnostics -processor TestMissingElement InvalidSource.java
  */
 
+import java.io.PrintWriter;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -38,7 +39,18 @@ import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import static javax.tools.Diagnostic.Kind.*;
 
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.Log;
+
 public class TestMissingElement extends JavacTestingAbstractProcessor {
+    private PrintWriter out;
+
+    @Override
+    public void init(ProcessingEnvironment env) {
+        super.init(env);
+        out = ((JavacProcessingEnvironment) env).getContext().get(Log.outKey);
+    }
+
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement te: ElementFilter.typesIn(roundEnv.getRootElements())) {
@@ -70,13 +82,13 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
     }
 
     private void checkInterfaces(TypeElement te, String expect) {
-        System.err.println("check interfaces: " + te + " -- " + expect);
+        out.println("check interfaces: " + te + " -- " + expect);
         String found = asString(te.getInterfaces(), ", ");
         checkEqual("interfaces", te, found, expect);
     }
 
     private void checkSupertype(TypeElement te, String expect) {
-        System.err.println("check supertype: " + te + " -- " + expect);
+        out.println("check supertype: " + te + " -- " + expect);
         String found = asString(te.getSuperclass());
         checkEqual("supertype", te, found, expect);
     }
@@ -85,7 +97,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
         if (found.equals(expect)) {
 //            messager.printMessage(NOTE, "expected " + label + " found: " + expect, te);
         } else {
-            System.err.println("unexpected " + label + ": " + te + "\n"
+            out.println("unexpected " + label + ": " + te + "\n"
                     + " found: " + found + "\n"
                     + "expect: " + expect);
             messager.printMessage(ERROR, "unexpected " + label + " found: " + found + "; expected: " + expect, te);

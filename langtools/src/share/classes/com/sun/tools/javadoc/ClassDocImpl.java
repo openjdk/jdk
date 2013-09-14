@@ -289,7 +289,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
     }
 
     public boolean isFunctionalInterface() {
-        return env.types.isFunctionalInterface(tsym);
+        return env.types.isFunctionalInterface(tsym) && env.source.allowLambda();
     }
 
     /**

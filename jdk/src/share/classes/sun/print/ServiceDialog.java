@@ -46,6 +46,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
@@ -119,8 +120,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
     private AppearancePanel pnlAppearance;
 
     private boolean isAWT = false;
-
-
     static {
         initResource();
     }
@@ -801,9 +800,32 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     if (dialog != null) {
                         dialog.show();
                     } else {
-                        // REMIND: may want to notify the user why we're
-                        //         disabling the button
-                        btnProperties.setEnabled(false);
+                        DocumentPropertiesUI docPropertiesUI = null;
+                        try {
+                            docPropertiesUI =
+                                (DocumentPropertiesUI)uiFactory.getUI
+                                (DocumentPropertiesUI.DOCUMENTPROPERTIES_ROLE,
+                                 DocumentPropertiesUI.DOCPROPERTIESCLASSNAME);
+                        } catch (Exception ex) {
+                        }
+                        if (docPropertiesUI != null) {
+                            PrinterJobWrapper wrapper = (PrinterJobWrapper)
+                                asCurrent.get(PrinterJobWrapper.class);
+                            if (wrapper == null) {
+                                return; // should not happen, defensive only.
+                            }
+                            PrinterJob job = wrapper.getPrinterJob();
+                            if (job == null) {
+                                return;  // should not happen, defensive only.
+                            }
+                            PrintRequestAttributeSet newAttrs =
+                               docPropertiesUI.showDocumentProperties
+                               (job, ServiceDialog.this, psCurrent, asCurrent);
+                            if (newAttrs != null) {
+                                asCurrent.addAll(newAttrs);
+                                updatePanels();
+                            }
+                        }
                     }
                 }
             }

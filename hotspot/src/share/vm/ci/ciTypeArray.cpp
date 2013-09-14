@@ -39,5 +39,10 @@
 jchar ciTypeArray::char_at(int index) {
   VM_ENTRY_MARK;
   assert(index >= 0 && index < length(), "out of range");
-  return get_typeArrayOop()->char_at(index);
+  jchar c = get_typeArrayOop()->char_at(index);
+#ifdef ASSERT
+  jchar d = element_value(index).as_char();
+  assert(c == d, "");
+#endif //ASSERT
+  return c;
 }

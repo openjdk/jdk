@@ -143,8 +143,6 @@ ifeq ($(PLATFORM), windows)
     _CYGWIN_VER := $(SYSTEM_UNAME)
     CYGWIN_VER  :=$(call GetVersion,$(_CYGWIN_VER))
   endif
-  DXSDK_VER := $(shell $(EGREP) DIRECT3D_VERSION $(DXSDK_INCLUDE_PATH)/d3d9.h 2>&1 | \
-    $(EGREP) "\#define" | $(NAWK) '{print $$3}')
 endif
 
 # Get the version numbers of what we are using
@@ -1299,51 +1297,6 @@ sane-unzip_version:
 	    "      The version of unzip found was '$(UNZIP_VER)'. \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
-
-######################################################
-# Check for windows DirectX sdk directory
-######################################################
-sane-dxsdk:
-ifeq ($(PLATFORM), windows)
-	@if [ ! -r $(DXSDK_INCLUDE_PATH)/d3d9.h  ]; then \
-	$(ECHO) "ERROR: You do not have access to a valid DirectX SDK Include dir.\n" \
-	  "      The value of DXSDK_INCLUDE_PATH must point a valid DX SDK dir.\n" \
-	  "      Please check your access to \n" \
-	  "          $(DXSDK_INCLUDE_PATH) \n" \
-	  "      and/or check your value of ALT_DXSDK_PATH or ALT_DXSDK_INCLUDE_PATH.\n" \
-	  "      Microsoft DirectX 9 SDK (Summer 2004 Update or newer) can be downloaded from the following location:\n" \
-	  "          http://msdn.microsoft.com/library/default.asp?url=/downloads/list/directx.asp\n" \
-	  "      Or  http://www.microsoft.com/directx\n" \
-	  "" >> $(ERROR_FILE) ; \
-	else \
-	  if [ ! "$(DXSDK_VER)" = "$(REQUIRED_DXSDK_VER)" ]; then \
-	  $(ECHO) "ERROR: The DirectX SDK must be version $(REQUIRED_DXSDK_VER).\n" \
-	    "      $(YOU_ARE_USING) DirectX SDK version: $(DXSDK_VER)\n" \
-	    "      The DirectX SDK was obtained from the following location: \n" \
-	    "          $(DXSDK_PATH) \n" \
-	    "      Please change your DirectX SDK. \n" \
-	    "      Microsoft DirectX 9 SDK (Summer 2004 Update or newer) can be downloaded from the following location:\n" \
-	    "          http://msdn.microsoft.com/library/default.asp?url=/downloads/list/directx.asp\n" \
-	    "      Or  http://www.microsoft.com/directx\n" \
-	    "" >> $(ERROR_FILE) ; \
-	  else \
-	    if [ -r $(DXSDK_INCLUDE_PATH)/basetsd.h ]; then \
-              if [ `$(EGREP) -c __int3264 $(DXSDK_INCLUDE_PATH)/basetsd.h` -ne 0 ]; then \
-	      $(ECHO) "WARNING: The DirectX SDK Include directory contains a newer basetsd.h,\n" \
-		"      which may indicate that you're using an incorrect version of DirectX SDK.\n" \
-		"      This may result in a build failure.\n" \
-		"      The DirectX SDK Include dir was obtained from the following location:\n" \
-		" 	  $(DXSDK_INCLUDE_PATH) \n" \
-		"      Please change your DirectX SDK to version 9 (Summer 2004 Update or newer).\n" \
-	        "      Microsoft DirectX 9 SDK can be downloaded from the following location:\n" \
-	        "          http://msdn.microsoft.com/library/default.asp?url=/downloads/list/directx.asp\n" \
-		"      Or  http://www.microsoft.com/directx\n" \
-		"" >> $(WARNING_FILE) ; \
-	      fi \
-	    fi \
-	  fi \
-	fi
-endif
 
 ######################################################
 # Check the linker version(s)
