@@ -315,7 +315,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(InstanceKlass,               _breakpoints,                                  BreakpointInfo*)                       \
   nonstatic_field(InstanceKlass,               _generic_signature_index,                           u2)                               \
   nonstatic_field(InstanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
-  nonstatic_field(InstanceKlass,               _methods_cached_itable_indices,                int*)                                  \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
   nonstatic_field(InstanceKlass,               _dependencies,                                 nmethodBucket*)                        \
