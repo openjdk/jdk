@@ -639,8 +639,8 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
     // reachable but are in the CFG so add them here.
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
       Block* block = C->cfg()->get_block(i);
-      for (uint s = 0; s < block->_nodes.size(); s++) {
-        nodeStack.push(block->_nodes[s]);
+      for (uint s = 0; s < block->number_of_nodes(); s++) {
+        nodeStack.push(block->get_node(s));
       }
     }
   }
@@ -713,9 +713,9 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
       tail(SUCCESSORS_ELEMENT);
 
       head(NODES_ELEMENT);
-      for (uint s = 0; s < block->_nodes.size(); s++) {
+      for (uint s = 0; s < block->number_of_nodes(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, get_node_id(block->_nodes[s]));
+        print_attr(NODE_ID_PROPERTY, get_node_id(block->get_node(s)));
         end_elem();
       }
       tail(NODES_ELEMENT);

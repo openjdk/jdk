@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,7 @@ public:
   // Because JVMState objects live over the entire lifetime of the
   // Compile object, they are allocated into the comp_arena, which
   // does not get resource marked or reset during the compile process
-  void *operator new( size_t x, Compile* C ) { return C->comp_arena()->Amalloc(x); }
+  void *operator new( size_t x, Compile* C ) throw() { return C->comp_arena()->Amalloc(x); }
   void operator delete( void * ) { } // fast deallocation
 
   // Create a new JVMState, ready for abstract interpretation.
@@ -449,13 +449,16 @@ public:
 // at a safepoint.
 
 class SafePointScalarObjectNode: public TypeNode {
-  uint _first_index; // First input edge index of a SafePoint node where
+  uint _first_index; // First input edge relative index of a SafePoint node where
                      // states of the scalarized object fields are collected.
+                     // It is relative to the last (youngest) jvms->_scloff.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
   DEBUG_ONLY(AllocateNode* _alloc;)
 
   virtual uint hash() const ; // { return NO_HASH; }
   virtual uint cmp( const Node &n ) const;
+
+  uint first_index() const { return _first_index; }
 
 public:
   SafePointScalarObjectNode(const TypeOopPtr* tp,
@@ -469,7 +472,10 @@ public:
   virtual const RegMask &out_RegMask() const;
   virtual uint           match_edge(uint idx) const;
 
-  uint first_index() const { return _first_index; }
+  uint first_index(JVMState* jvms) const {
+    assert(jvms != NULL, "missed JVMS");
+    return jvms->scloff() + _first_index;
+  }
   uint n_fields()    const { return _n_fields; }
 
 #ifdef ASSERT
@@ -485,7 +491,7 @@ public:
   // corresponds appropriately to "this" in "new_call".  Assumes that
   // "sosn_map" is a map, specific to the translation of "s" to "new_call",
   // mapping old SafePointScalarObjectNodes to new, to avoid multiple copies.
-  SafePointScalarObjectNode* clone(int jvms_adj, Dict* sosn_map) const;
+  SafePointScalarObjectNode* clone(Dict* sosn_map) const;
 
 #ifndef PRODUCT
   virtual void              dump_spec(outputStream *st) const;
