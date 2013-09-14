@@ -104,7 +104,7 @@ public final class JapaneseEra
     static final sun.util.calendar.Era[] ERA_CONFIG;
 
     /**
-     * The singleton instance for the 'Meiji' era (1868-09-08 - 1912-07-29)
+     * The singleton instance for the 'Meiji' era (1868-01-01 - 1912-07-29)
      * which has the value -1.
      */
     public static final JapaneseEra MEIJI = new JapaneseEra(-1, LocalDate.of(1868, 1, 1));
