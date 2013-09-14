@@ -1532,7 +1532,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
              *  parameters from baseInit.
              */
             initParams = List.nil();
-            VarSymbol param = new VarSymbol(0, make.paramName(0), argtypes.head, init);
+            VarSymbol param = new VarSymbol(PARAMETER, make.paramName(0), argtypes.head, init);
             initParams = initParams.append(param);
             argTypesList = argTypesList.tail;
         }
@@ -1541,7 +1541,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             initParams = (initParams == null) ? List.<VarSymbol>nil() : initParams;
             List<VarSymbol> baseInitParams = baseInit.params;
             while (baseInitParams.nonEmpty() && argTypesList.nonEmpty()) {
-                VarSymbol param = new VarSymbol(baseInitParams.head.flags(),
+                VarSymbol param = new VarSymbol(baseInitParams.head.flags() | PARAMETER,
                         baseInitParams.head.name, argTypesList.head, init);
                 initParams = initParams.append(param);
                 baseInitParams = baseInitParams.tail;

@@ -310,7 +310,7 @@ public class TransTypes extends TreeTranslator {
             Type.MethodType mType = (Type.MethodType)bridgeType;
             List<Type> argTypes = mType.argtypes;
             while (implParams.nonEmpty() && argTypes.nonEmpty()) {
-                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC,
+                VarSymbol param = new VarSymbol(implParams.head.flags() | SYNTHETIC | PARAMETER,
                         implParams.head.name, argTypes.head, bridge);
                 param.setAttributes(implParams.head);
                 bridgeParams = bridgeParams.append(param);
