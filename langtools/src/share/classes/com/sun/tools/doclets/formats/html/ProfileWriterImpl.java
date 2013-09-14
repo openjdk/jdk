@@ -138,6 +138,7 @@ public class ProfileWriterImpl extends HtmlDocletWriter
                     "classFrame", new StringContent(pkg.name()), profile.name);
         Content heading = HtmlTree.HEADING(HtmlTag.H3, pkgName);
         HtmlTree li = HtmlTree.LI(HtmlStyle.blockList, heading);
+        addPackageDeprecationInfo(li, pkg);
         return li;
     }
 
@@ -172,6 +173,30 @@ public class ProfileWriterImpl extends HtmlDocletWriter
     public void printDocument(Content contentTree) throws IOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(profile),
                 true, contentTree);
+    }
+
+    /**
+     * Add the profile package deprecation information to the documentation tree.
+     *
+     * @param li the content tree to which the deprecation information will be added
+     * @param pkg the PackageDoc that is added
+     */
+    public void addPackageDeprecationInfo(Content li, PackageDoc pkg) {
+        Tag[] deprs;
+        if (Util.isDeprecated(pkg)) {
+            deprs = pkg.tags("deprecated");
+            HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
+            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.strong, deprecatedPhrase);
+            deprDiv.addContent(deprPhrase);
+            if (deprs.length > 0) {
+                Tag[] commentTags = deprs[0].inlineTags();
+                if (commentTags.length > 0) {
+                    addInlineDeprecatedComment(pkg, deprs[0], deprDiv);
+                }
+            }
+            li.addContent(deprDiv);
+        }
     }
 
     /**

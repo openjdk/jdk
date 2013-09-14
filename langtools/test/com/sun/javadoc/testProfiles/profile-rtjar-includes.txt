@@ -1,5 +1,6 @@
 PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
-    pkg2 
+    pkg2 \
+    pkgDeprecated
 
 PROFILE_1_RTJAR_INCLUDE_TYPES := \
     pkg3/Class1Pkg3.class

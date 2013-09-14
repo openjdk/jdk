@@ -101,6 +101,10 @@ if test "x$with_add_source_root" != x; then
        test -f $with_add_source_root/hotspot/make/Makefile; then
         AC_MSG_ERROR([Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources.])
     fi
+    if test -f $with_add_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_add_source_root/nashorn/make/Makefile; then
+        AC_MSG_ERROR([Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources.])
+    fi
     if test -f $with_add_source_root/jdk/makefiles/Makefile || \
        test -f $with_add_source_root/jdk/make/Makefile; then
         AC_MSG_ERROR([Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources.])
@@ -135,6 +139,10 @@ if test "x$with_override_source_root" != x; then
     if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
        test -f $with_override_source_root/hotspot/make/Makefile; then
         AC_MSG_ERROR([Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override.])
+    fi
+    if test -f $with_override_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_override_source_root/nashorn/make/Makefile; then
+        AC_MSG_ERROR([Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/jdk/makefiles/Makefile || \
        test -f $with_override_source_root/jdk/make/Makefile; then
@@ -176,6 +184,9 @@ AC_ARG_WITH(override-jaxws, [AS_HELP_STRING([--with-override-jaxws],
 
 AC_ARG_WITH(override-hotspot, [AS_HELP_STRING([--with-override-hotspot],
 	[use this hotspot dir for the build])])
+
+AC_ARG_WITH(override-nashorn, [AS_HELP_STRING([--with-override-nashorn],
+	[use this nashorn dir for the build])])
 
 AC_ARG_WITH(override-jdk, [AS_HELP_STRING([--with-override-jdk],
 	[use this jdk dir for the build])])
@@ -241,7 +252,7 @@ if test "x$with_override_nashorn" != x; then
     cd "$with_override_nashorn"
     NASHORN_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+    if ! test -f $NASHORN_TOPDIR/makefiles/Makefile; then
         AC_MSG_ERROR([You have to override nashorn with a full nashorn repo!])
     fi
     AC_MSG_CHECKING([if nashorn should be overridden])
