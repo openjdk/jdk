@@ -1085,94 +1085,23 @@ abstract class Handshaker {
                 clnt_random.random_bytes, svr_random.random_bytes,
                 prfHashAlg, prfHashLength, prfBlockSize);
 
-        SecretKey masterSecret;
         try {
             KeyGenerator kg = JsseJce.getKeyGenerator(masterAlg);
             kg.init(spec);
-            masterSecret = kg.generateKey();
-        } catch (GeneralSecurityException e) {
+            return kg.generateKey();
+        } catch (InvalidAlgorithmParameterException |
+                NoSuchAlgorithmException iae) {
+            // unlikely to happen, otherwise, must be a provider exception
+            //
             // For RSA premaster secrets, do not signal a protocol error
             // due to the Bleichenbacher attack. See comments further down.
-            if (!preMasterSecret.getAlgorithm().equals(
-                    "TlsRsaPremasterSecret")) {
-                throw new ProviderException(e);
-            }
-
             if (debug != null && Debug.isOn("handshake")) {
                 System.out.println("RSA master secret generation error:");
-                e.printStackTrace(System.out);
+                iae.printStackTrace(System.out);
             }
+            throw new ProviderException(iae);
 
-            if (requestedVersion != null) {
-                preMasterSecret =
-                    RSAClientKeyExchange.generateDummySecret(requestedVersion);
-            } else {
-                preMasterSecret =
-                    RSAClientKeyExchange.generateDummySecret(protocolVersion);
-            }
-
-            // recursive call with new premaster secret
-            return calculateMasterSecret(preMasterSecret, null);
         }
-
-        // if no version check requested (client side handshake), or version
-        // information is not available (not an RSA premaster secret),
-        // return master secret immediately.
-        if ((requestedVersion == null) ||
-                !(masterSecret instanceof TlsMasterSecret)) {
-            return masterSecret;
-        }
-
-        // we have checked the ClientKeyExchange message when reading TLS
-        // record, the following check is necessary to ensure that
-        // JCE provider does not ignore the checking, or the previous
-        // checking process bypassed the premaster secret version checking.
-        TlsMasterSecret tlsKey = (TlsMasterSecret)masterSecret;
-        int major = tlsKey.getMajorVersion();
-        int minor = tlsKey.getMinorVersion();
-        if ((major < 0) || (minor < 0)) {
-            return masterSecret;
-        }
-
-        // check if the premaster secret version is ok
-        // the specification says that it must be the maximum version supported
-        // by the client from its ClientHello message. However, many
-        // implementations send the negotiated version, so accept both
-        // for SSL v3.0 and TLS v1.0.
-        // NOTE that we may be comparing two unsupported version numbers, which
-        // is why we cannot use object reference equality in this special case.
-        ProtocolVersion premasterVersion =
-                                    ProtocolVersion.valueOf(major, minor);
-        boolean versionMismatch = (premasterVersion.v != requestedVersion.v);
-
-        /*
-         * we never checked the client_version in server side
-         * for TLS v1.0 and SSL v3.0. For compatibility, we
-         * maintain this behavior.
-         */
-        if (versionMismatch && requestedVersion.v <= ProtocolVersion.TLS10.v) {
-            versionMismatch = (premasterVersion.v != protocolVersion.v);
-        }
-
-        if (versionMismatch == false) {
-            // check passed, return key
-            return masterSecret;
-        }
-
-        // Due to the Bleichenbacher attack, do not signal a protocol error.
-        // Generate a random premaster secret and continue with the handshake,
-        // which will fail when verifying the finished messages.
-        // For more information, see comments in PreMasterSecret.
-        if (debug != null && Debug.isOn("handshake")) {
-            System.out.println("RSA PreMasterSecret version error: expected"
-                + protocolVersion + " or " + requestedVersion + ", decrypted: "
-                + premasterVersion);
-        }
-        preMasterSecret =
-            RSAClientKeyExchange.generateDummySecret(requestedVersion);
-
-        // recursive call with new premaster secret
-        return calculateMasterSecret(preMasterSecret, null);
     }
 
     /*
