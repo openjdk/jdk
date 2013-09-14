@@ -2546,7 +2546,7 @@ public class Resolve {
                     @Override
                     Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
                         if (sym.kind >= AMBIGUOUS) {
-                            if (sym.kind == HIDDEN) {
+                            if (sym.kind != WRONG_MTH && sym.kind != WRONG_MTHS) {
                                 sym = super.access(env, pos, location, sym);
                             } else {
                                 final JCDiagnostic details = sym.kind == WRONG_MTH ?
