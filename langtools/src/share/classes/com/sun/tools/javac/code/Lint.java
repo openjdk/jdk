@@ -33,9 +33,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
-import static com.sun.tools.javac.code.Flags.*;
-
-
 /**
  * A class for handling -Xlint suboptions and @SuppresssWarnings.
  *
@@ -81,7 +78,6 @@ public class Lint
         return l;
     }
 
-
     private final AugmentVisitor augmentor;
 
     private final EnumSet<LintCategory> values;
@@ -89,7 +85,6 @@ public class Lint
 
     private static final Map<String, LintCategory> map =
             new java.util.concurrent.ConcurrentHashMap<String, LintCategory>(20);
-
 
     protected Lint(Context context) {
         // initialize values according to the lint options
