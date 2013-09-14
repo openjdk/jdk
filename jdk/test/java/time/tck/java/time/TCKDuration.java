@@ -77,6 +77,7 @@ import java.io.DataOutputStream;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
@@ -843,10 +844,17 @@ public class TCKDuration extends AbstractTCKTest {
         assertEquals(Duration.between(end, start), Duration.between(start, end).negated());
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void factory_between_TemporalTemporal_mixedTypes() {
         Instant start = Instant.ofEpochSecond(1);
         ZonedDateTime end = Instant.ofEpochSecond(4).atZone(ZoneOffset.UTC);
+        assertEquals(Duration.between(start, end), Duration.ofSeconds(3));
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void factory_between_TemporalTemporal_invalidMixedTypes() {
+        Instant start = Instant.ofEpochSecond(1);
+        LocalDate end = LocalDate.of(2010, 6, 20);
         Duration.between(start, end);
     }
 

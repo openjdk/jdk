@@ -65,10 +65,8 @@ import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static java.time.temporal.ChronoUnit.CENTURIES;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.DECADES;
-import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MILLENNIA;
 import static java.time.temporal.ChronoUnit.MONTHS;
-import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -90,8 +88,8 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.chrono.IsoEra;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -229,17 +227,17 @@ public class TCKYear extends AbstractDateTimeTest {
 
     //-----------------------------------------------------------------------
     @Test
-    public void test_factory_CalendricalObject() {
+    public void test_from_TemporalAccessor() {
         assertEquals(Year.from(LocalDate.of(2007, 7, 15)), Year.of(2007));
     }
 
     @Test(expectedExceptions=DateTimeException.class)
-    public void test_factory_CalendricalObject_invalid_noDerive() {
+    public void test_from_TemporalAccessor_invalid_noDerive() {
         Year.from(LocalTime.of(12, 30));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void test_factory_CalendricalObject_null() {
+    public void test_from_TemporalAccessor_null() {
         Year.from((TemporalAccessor) null);
     }
 
@@ -597,13 +595,13 @@ public class TCKYear extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups={"tck"}, dataProvider="plus_long_TemporalUnit")
+    @Test(dataProvider="plus_long_TemporalUnit")
     public void test_plus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.plus(amount, unit), expectedYear);
         } else {
             try {
-                Year result = base.plus(amount, unit);
+                base.plus(amount, unit);
                 fail();
             } catch (Exception ex) {
                 assertTrue(expectedEx.isInstance(ex));
@@ -729,7 +727,7 @@ public class TCKYear extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups={"tck"}, dataProvider="minus_long_TemporalUnit")
+    @Test(dataProvider="minus_long_TemporalUnit")
     public void test_minus_long_TemporalUnit(Year base, long amount, TemporalUnit unit, Year expectedYear, Class expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.minus(amount, unit), expectedYear);
@@ -788,7 +786,7 @@ public class TCKYear extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // with(TemporalField, long)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_with() {
         Year base = Year.of(5);
         Year result = base.with(ChronoField.ERA, 0);
@@ -923,29 +921,48 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(Year year1, Year year2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(Year year1, Year year2, TemporalUnit unit, long expected) {
         long amount = year1.until(year2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(Year year1, Year year2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(Year year1, Year year2, TemporalUnit unit, long expected) {
         long amount = year2.until(year1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(Year year1, Year year2, TemporalUnit unit, long expected) {
+        long amount = unit.between(year1, year2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        Year start = Year.of(2010);
+        YearMonth end = start.plusYears(2).atMonth(Month.APRIL);
+        assertEquals(start.until(end, YEARS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        Year start = Year.of(2010);
+        start.until(LocalTime.of(11, 30), YEARS);
+    }
+
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
-    public void test_periodUntil_TemporalUnit_unsupportedUnit() {
+    public void test_until_TemporalUnit_unsupportedUnit() {
         TEST_2008.until(TEST_2008, MONTHS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_2008.until(null, DAYS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_2008.until(TEST_2008, null);
     }
 

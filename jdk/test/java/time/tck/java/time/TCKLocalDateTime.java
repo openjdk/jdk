@@ -2895,24 +2895,43 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
         long amount = dt1.until(dt2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
-    public void test_periodUntil_TemporalUnit_negated(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+    public void test_until_TemporalUnit_negated(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
         long amount = dt2.until(dt1, unit);
         assertEquals(amount, -expected);
     }
 
+    @Test(dataProvider="periodUntilUnit")
+    public void test_until_TemporalUnit_between(LocalDateTime dt1, LocalDateTime dt2, TemporalUnit unit, long expected) {
+        long amount = unit.between(dt1, dt2);
+        assertEquals(amount, expected);
+    }
+
+    @Test
+    public void test_until_convertedType() {
+        LocalDateTime start = LocalDateTime.of(2010, 6, 30, 2, 30);
+        OffsetDateTime end = start.plusDays(2).atOffset(OFFSET_PONE);
+        assertEquals(start.until(end, DAYS), 2);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_until_invalidType() {
+        LocalDateTime start = LocalDateTime.of(2010, 6, 30, 2, 30);
+        start.until(LocalTime.of(11, 30), DAYS);
+    }
+
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullEnd() {
+    public void test_until_TemporalUnit_nullEnd() {
         TEST_2007_07_15_12_30_40_987654321.until(null, HOURS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void test_periodUntil_TemporalUnit_nullUnit() {
+    public void test_until_TemporalUnit_nullUnit() {
         TEST_2007_07_15_12_30_40_987654321.until(TEST_2007_07_15_12_30_40_987654321, null);
     }
 

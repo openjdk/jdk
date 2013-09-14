@@ -291,6 +291,7 @@ public interface ChronoLocalDate
         if (temporal instanceof ChronoLocalDate) {
             return (ChronoLocalDate) temporal;
         }
+        Objects.requireNonNull(temporal, "temporal");
         Chronology chrono = temporal.query(TemporalQuery.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDate from TemporalAccessor: " + temporal.getClass());
@@ -560,8 +561,8 @@ public interface ChronoLocalDate
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date.
      * The result will be negative if the end is before the start.
-     * The {@code Temporal} passed to this method must be a
-     * {@code ChronoLocalDate} in the same chronology.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code ChronoLocalDate} using {@link Chronology#date(TemporalAccessor)}.
      * The calculation returns a whole number, representing the number of
      * complete units between the two dates.
      * For example, the amount in days between two dates can be calculated
@@ -585,20 +586,22 @@ public interface ChronoLocalDate
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
+     * passing {@code this} as the first argument and the converted input temporal as
      * the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endDate  the end date, which must be a {@code ChronoLocalDate}
-     *  in the same chronology, not null
+     * @param endExclusive  the end date, exclusive, which is converted to a
+     *  {@code ChronoLocalDate} in the same chronology, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this date and the end date
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to a {@code ChronoLocalDate}
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc
-    long until(Temporal endDate, TemporalUnit unit);
+    long until(Temporal endExclusive, TemporalUnit unit);
 
     /**
      * Calculates the period between this date and another date as a {@code ChronoPeriod}.

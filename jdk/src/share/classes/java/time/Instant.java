@@ -362,6 +362,10 @@ public final class Instant
      * @throws DateTimeException if unable to convert to an {@code Instant}
      */
     public static Instant from(TemporalAccessor temporal) {
+        if (temporal instanceof Instant) {
+            return (Instant) temporal;
+        }
+        Objects.requireNonNull(temporal, "temporal");
         long instantSecs = temporal.getLong(INSTANT_SECONDS);
         int nanoOfSecond = temporal.get(NANO_OF_SECOND);
         return Instant.ofEpochSecond(instantSecs, nanoOfSecond);
@@ -1091,7 +1095,8 @@ public final class Instant
      * The result will be negative if the end is before the start.
      * The calculation returns a whole number, representing the number of
      * complete units between the two instants.
-     * The {@code Temporal} passed to this method must be an {@code Instant}.
+     * The {@code Temporal} passed to this method is converted to a
+     * {@code Instant} using {@link #from(TemporalAccessor)}.
      * For example, the amount in days between two dates can be calculated
      * using {@code startInstant.until(endInstant, SECONDS)}.
      * <p>
@@ -1112,25 +1117,22 @@ public final class Instant
      * <p>
      * If the unit is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.between(Temporal, Temporal)}
-     * passing {@code this} as the first argument and the input temporal as
-     * the second argument.
+     * passing {@code this} as the first argument and the converted input temporal
+     * as the second argument.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endInstant  the end date, which must be an {@code Instant}, not null
+     * @param endExclusive  the end date, exclusive, which is converted to an {@code Instant}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this instant and the end instant
-     * @throws DateTimeException if the amount cannot be calculated
+     * @throws DateTimeException if the amount cannot be calculated, or the end
+     *  temporal cannot be converted to an {@code Instant}
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long until(Temporal endInstant, TemporalUnit unit) {
-        if (endInstant instanceof Instant == false) {
-            Objects.requireNonNull(endInstant, "endInstant");
-            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
-        }
-        Instant end = (Instant) endInstant;
+    public long until(Temporal endExclusive, TemporalUnit unit) {
+        Instant end = Instant.from(endExclusive);
         if (unit instanceof ChronoUnit) {
             ChronoUnit f = (ChronoUnit) unit;
             switch (f) {
@@ -1145,7 +1147,7 @@ public final class Instant
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
-        return unit.between(this, endInstant);
+        return unit.between(this, end);
     }
 
     private long nanosUntil(Instant end) {
