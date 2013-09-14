@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,8 +296,8 @@ class CodeBuffer: public StackObj {
   // CodeBuffers must be allocated on the stack except for a single
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
-  void* operator new(size_t size) { return ResourceObj::operator new(size); }
-  void  operator delete(void* p)  { ShouldNotCallThis(); }
+  void* operator new(size_t size) throw() { return ResourceObj::operator new(size); }
+  void  operator delete(void* p)          { ShouldNotCallThis(); }
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
