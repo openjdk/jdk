@@ -345,6 +345,13 @@ public class TCKChronoZonedDateTime {
     }
 
     //-----------------------------------------------------------------------
+    @Test(dataProvider="calendars")
+    public void test_getChronology(Chronology chrono) {
+        ChronoZonedDateTime test = chrono.zonedDateTime(ZonedDateTime.of(2010, 6, 30, 11, 30, 0, 0, ZoneOffset.UTC));
+        assertEquals(test.getChronology(), chrono);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * FixedAdjusted returns a fixed Temporal in all adjustments.
      * Construct an adjuster with the Temporal that should be returned from adjust.
