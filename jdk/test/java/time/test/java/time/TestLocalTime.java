@@ -61,7 +61,9 @@ package test.java.time;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
+import java.time.Clock;
 import java.time.LocalTime;
 
 import org.testng.annotations.Test;
@@ -174,6 +176,25 @@ public class TestLocalTime extends AbstractTest {
             LocalTime test2 = LocalTime.of(i, 0);
             assertSame(test1, test2);
         }
+    }
+
+    //-----------------------------------------------------------------------
+    // now()
+    //-----------------------------------------------------------------------
+    @Test
+    public void now() {
+        // Warmup the TimeZone data so the following test does not include
+        // one-time initialization
+        LocalTime expected = LocalTime.now(Clock.systemDefaultZone());
+
+        expected = LocalTime.now(Clock.systemDefaultZone());
+        LocalTime test = LocalTime.now();
+        long diff = test.toNanoOfDay() - expected.toNanoOfDay();
+        if (diff < 0) {
+            // Adjust if for rollover around midnight
+            diff +=  24 * 60 * 60 * 1_000_000_000L; // Nanos Per Day
+        }
+        assertTrue(diff < 500000000);  // less than 0.5 secs
     }
 
 }
