@@ -28,6 +28,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"
+#include "interpreter/bytecodeInterpreterProfiling.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
@@ -142,19 +143,20 @@
  * is no entry point to do the transition to vm so we just
  * do it by hand here.
  */
-#define VM_JAVA_ERROR_NO_JUMP(name, msg)                                          \
+#define VM_JAVA_ERROR_NO_JUMP(name, msg, note_a_trap)                             \
     DECACHE_STATE();                                                              \
     SET_LAST_JAVA_FRAME();                                                        \
     {                                                                             \
+       InterpreterRuntime::note_a_trap(THREAD, istate->method(), BCI());          \
        ThreadInVMfromJava trans(THREAD);                                          \
        Exceptions::_throw_msg(THREAD, __FILE__, __LINE__, name, msg);             \
     }                                                                             \
     RESET_LAST_JAVA_FRAME();                                                      \
     CACHE_STATE();
 
-// Normal throw of a java error
-#define VM_JAVA_ERROR(name, msg)                                                  \
-    VM_JAVA_ERROR_NO_JUMP(name, msg)                                              \
+// Normal throw of a java error.
+#define VM_JAVA_ERROR(name, msg, note_a_trap)                                     \
+    VM_JAVA_ERROR_NO_JUMP(name, msg, note_a_trap)                                 \
     goto handle_exception;
 
 #ifdef PRODUCT
@@ -340,9 +342,25 @@
       if (UseLoopCounter) {                                                                         \
         bool do_OSR = UseOnStackReplacement;                                                        \
         mcs->backedge_counter()->increment();                                                       \
-        if (do_OSR) do_OSR = mcs->backedge_counter()->reached_InvocationLimit();                    \
+        if (ProfileInterpreter) {                                                                   \
+          BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);                                   \
+          /* Check for overflow against MDO count. */                                               \
+          do_OSR = do_OSR                                                                           \
+            && (mdo_last_branch_taken_count >= (uint)InvocationCounter::InterpreterBackwardBranchLimit)\
+            /* When ProfileInterpreter is on, the backedge_count comes     */                       \
+            /* from the methodDataOop, which value does not get reset on   */                       \
+            /* the call to frequency_counter_overflow(). To avoid          */                       \
+            /* excessive calls to the overflow routine while the method is */                       \
+            /* being compiled, add a second test to make sure the overflow */                       \
+            /* function is called only once every overflow_frequency.      */                       \
+            && (!(mdo_last_branch_taken_count & 1023));                                             \
+        } else {                                                                                    \
+          /* check for overflow of backedge counter */                                              \
+          do_OSR = do_OSR                                                                           \
+            && mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter());         \
+        }                                                                                           \
         if (do_OSR) {                                                                               \
-          nmethod*  osr_nmethod;                                                                    \
+          nmethod* osr_nmethod;                                                                     \
           OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
           if (osr_nmethod != NULL && osr_nmethod->osr_entry_bci() != InvalidOSREntryBci) {          \
             intptr_t* buf;                                                                          \
@@ -355,7 +373,6 @@
           }                                                                                         \
         }                                                                                           \
       }  /* UseCompiler ... */                                                                      \
-      mcs->invocation_counter()->increment();                                                       \
       SAFEPOINT;                                                                                    \
     }
 
@@ -388,17 +405,21 @@
 #undef CACHE_FRAME
 #define CACHE_FRAME()
 
+// BCI() returns the current bytecode-index.
+#undef  BCI
+#define BCI()           ((int)(intptr_t)(pc - (intptr_t)istate->method()->code_base()))
+
 /*
  * CHECK_NULL - Macro for throwing a NullPointerException if the object
  * passed is a null ref.
  * On some architectures/platforms it should be possible to do this implicitly
  */
 #undef CHECK_NULL
-#define CHECK_NULL(obj_)                                                 \
-    if ((obj_) == NULL) {                                                \
-        VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "");  \
-    }                                                                    \
-    VERIFY_OOP(obj_)
+#define CHECK_NULL(obj_)                                                                       \
+        if ((obj_) == NULL) {                                                                  \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap); \
+        }                                                                                      \
+        VERIFY_OOP(obj_)
 
 #define VMdoubleConstZero() 0.0
 #define VMdoubleConstOne() 1.0
@@ -635,9 +656,16 @@ BytecodeInterpreter::run(interpreterState istate) {
          topOfStack < istate->stack_base(),
          "Stack top out of range");
 
+#ifdef CC_INTERP_PROFILE
+  // MethodData's last branch taken count.
+  uint mdo_last_branch_taken_count = 0;
+#else
+  const uint mdo_last_branch_taken_count = 0;
+#endif
+
   switch (istate->msg()) {
     case initialize: {
-      if (initialized++) ShouldNotReachHere(); // Only one initialize call
+      if (initialized++) ShouldNotReachHere(); // Only one initialize call.
       _compiling = (UseCompiler || CountCompiledCalls);
 #ifdef VM_JVMTI
       _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
@@ -656,15 +684,12 @@ BytecodeInterpreter::run(interpreterState istate) {
           METHOD->increment_interpreter_invocation_count(THREAD);
         }
         mcs->invocation_counter()->increment();
-        if (mcs->invocation_counter()->reached_InvocationLimit()) {
-            CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);
-
-            // We no longer retry on a counter overflow
-
-            // istate->set_msg(retry_method);
-            // THREAD->clr_do_not_unlock();
-            // return;
+        if (mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter())) {
+          CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);
+          // We no longer retry on a counter overflow.
         }
+        // Get or create profile data. Check for pending (async) exceptions.
+        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
         SAFEPOINT;
       }
 
@@ -686,8 +711,7 @@ BytecodeInterpreter::run(interpreterState istate) {
       }
 #endif // HACK
 
-
-      // lock method if synchronized
+      // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
         // oop rcvr = locals[0].j.r;
         oop rcvr;
@@ -697,7 +721,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           rcvr = LOCALS_OBJECT(0);
           VERIFY_OOP(rcvr);
         }
-        // The initial monitor is ours for the taking
+        // The initial monitor is ours for the taking.
         // Monitor not filled in frame manager any longer as this caused race condition with biased locking.
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
@@ -803,6 +827,12 @@ BytecodeInterpreter::run(interpreterState istate) {
       // clear the message so we don't confuse ourselves later
       assert(THREAD->pop_frame_in_process(), "wrong frame pop state");
       istate->set_msg(no_request);
+      if (_compiling) {
+        // Set MDX back to the ProfileData of the invoke bytecode that will be
+        // restarted.
+        SET_MDX(NULL);
+        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
+      }
       THREAD->clr_pop_frame_in_process();
       goto run;
     }
@@ -836,6 +866,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       if (THREAD->has_pending_exception()) goto handle_exception;
       // Update the pc by the saved amount of the invoke bytecode size
       UPDATE_PC(istate->bcp_advance());
+
+      if (_compiling) {
+        // Get or create profile data. Check for pending (async) exceptions.
+        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
+      }
       goto run;
     }
 
@@ -843,6 +878,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       // Returned from an opcode that will reexecute. Deopt was
       // a result of a PopFrame request.
       //
+
+      if (_compiling) {
+        // Get or create profile data. Check for pending (async) exceptions.
+        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
+      }
       goto run;
     }
 
@@ -865,6 +905,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       }
       UPDATE_PC(Bytecodes::length_at(METHOD, pc));
       if (THREAD->has_pending_exception()) goto handle_exception;
+
+      if (_compiling) {
+        // Get or create profile data. Check for pending (async) exceptions.
+        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
+      }
       goto run;
     }
     case got_monitors: {
@@ -1115,6 +1160,11 @@ run:
           uint16_t reg = Bytes::get_Java_u2(pc + 2);
 
           opcode = pc[1];
+
+          // Wide and it's sub-bytecode are counted as separate instructions. If we
+          // don't account for this here, the bytecode trace skips the next bytecode.
+          DO_UPDATE_INSTRUCTION_COUNT(opcode);
+
           switch(opcode) {
               case Bytecodes::_aload:
                   VERIFY_OOP(LOCALS_OBJECT(reg));
@@ -1158,10 +1208,13 @@ run:
                   UPDATE_PC_AND_CONTINUE(6);
               }
               case Bytecodes::_ret:
+                  // Profile ret.
+                  BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(reg))));
+                  // Now, update the pc.
                   pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(reg));
                   UPDATE_PC_AND_CONTINUE(0);
               default:
-                  VM_JAVA_ERROR(vmSymbols::java_lang_InternalError(), "undefined opcode");
+                  VM_JAVA_ERROR(vmSymbols::java_lang_InternalError(), "undefined opcode", note_no_trap);
           }
       }
 
@@ -1242,7 +1295,7 @@ run:
       CASE(_i##opcname):                                                \
           if (test && (STACK_INT(-1) == 0)) {                           \
               VM_JAVA_ERROR(vmSymbols::java_lang_ArithmeticException(), \
-                            "/ by zero");                               \
+                            "/ by zero", note_div0Check_trap);          \
           }                                                             \
           SET_STACK_INT(VMint##opname(STACK_INT(-2),                    \
                                       STACK_INT(-1)),                   \
@@ -1254,7 +1307,7 @@ run:
             jlong l1 = STACK_LONG(-1);                                  \
             if (VMlongEqz(l1)) {                                        \
               VM_JAVA_ERROR(vmSymbols::java_lang_ArithmeticException(), \
-                            "/ by long zero");                          \
+                            "/ by long zero", note_div0Check_trap);     \
             }                                                           \
           }                                                             \
           /* First long at (-1,-2) next long at (-3,-4) */              \
@@ -1467,17 +1520,23 @@ run:
 
 #define COMPARISON_OP(name, comparison)                                      \
       CASE(_if_icmp##name): {                                                \
-          int skip = (STACK_INT(-2) comparison STACK_INT(-1))                \
+          const bool cmp = (STACK_INT(-2) comparison STACK_INT(-1));         \
+          int skip = cmp                                                     \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
+          /* Profile branch. */                                              \
+          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
       }                                                                      \
       CASE(_if##name): {                                                     \
-          int skip = (STACK_INT(-1) comparison 0)                            \
+          const bool cmp = (STACK_INT(-1) comparison 0);                     \
+          int skip = cmp                                                     \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
+          /* Profile branch. */                                              \
+          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1486,9 +1545,12 @@ run:
 #define COMPARISON_OP2(name, comparison)                                     \
       COMPARISON_OP(name, comparison)                                        \
       CASE(_if_acmp##name): {                                                \
-          int skip = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1))          \
+          const bool cmp = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1));   \
+          int skip = cmp                                                     \
                        ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;            \
           address branch_pc = pc;                                            \
+          /* Profile branch. */                                              \
+          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1496,9 +1558,12 @@ run:
 
 #define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
-          int skip = (!(STACK_OBJECT(-1) == NULL))                           \
+          const bool cmp = (!(STACK_OBJECT(-1) == NULL));                    \
+          int skip = cmp                                                     \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
+          /* Profile branch. */                                              \
+          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1506,9 +1571,12 @@ run:
 
 #define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
-          int skip = ((STACK_OBJECT(-1) == NULL))                            \
+          const bool cmp = ((STACK_OBJECT(-1) == NULL));                     \
+          int skip = cmp                                                     \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
+          /* Profile branch. */                                              \
+          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1531,30 +1599,42 @@ run:
           int32_t  high = Bytes::get_Java_u4((address)&lpc[2]);
           int32_t  skip;
           key -= low;
-          skip = ((uint32_t) key > (uint32_t)(high - low))
-                      ? Bytes::get_Java_u4((address)&lpc[0])
-                      : Bytes::get_Java_u4((address)&lpc[key + 3]);
-          // Does this really need a full backedge check (osr?)
+          if (((uint32_t) key > (uint32_t)(high - low))) {
+            key = -1;
+            skip = Bytes::get_Java_u4((address)&lpc[0]);
+          } else {
+            skip = Bytes::get_Java_u4((address)&lpc[key + 3]);
+          }
+          // Profile switch.
+          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/key);
+          // Does this really need a full backedge check (osr)?
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
           DO_BACKEDGE_CHECKS(skip, branch_pc);
           CONTINUE;
       }
 
-      /* Goto pc whose table entry matches specified key */
+      /* Goto pc whose table entry matches specified key. */
 
       CASE(_lookupswitch): {
           jint* lpc  = (jint*)VMalignWordUp(pc+1);
           int32_t  key  = STACK_INT(-1);
           int32_t  skip = Bytes::get_Java_u4((address) lpc); /* default amount */
+          // Remember index.
+          int      index = -1;
+          int      newindex = 0;
           int32_t  npairs = Bytes::get_Java_u4((address) &lpc[1]);
           while (--npairs >= 0) {
-              lpc += 2;
-              if (key == (int32_t)Bytes::get_Java_u4((address)lpc)) {
-                  skip = Bytes::get_Java_u4((address)&lpc[1]);
-                  break;
-              }
+            lpc += 2;
+            if (key == (int32_t)Bytes::get_Java_u4((address)lpc)) {
+              skip = Bytes::get_Java_u4((address)&lpc[1]);
+              index = newindex;
+              break;
+            }
+            newindex += 1;
           }
+          // Profile switch.
+          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/index);
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
           DO_BACKEDGE_CHECKS(skip, branch_pc);
@@ -1639,7 +1719,7 @@ run:
       if ((uint32_t)index >= (uint32_t)arrObj->length()) {                     \
           sprintf(message, "%d", index);                                       \
           VM_JAVA_ERROR(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), \
-                        message);                                              \
+                        message, note_rangeCheck_trap);                        \
       }
 
       /* 32-bit loads. These handle conversion from < 32-bit types */
@@ -1713,15 +1793,22 @@ run:
           // arrObj, index are set
           if (rhsObject != NULL) {
             /* Check assignability of rhsObject into arrObj */
-            Klass* rhsKlassOop = rhsObject->klass(); // EBX (subclass)
-            Klass* elemKlassOop = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
+            Klass* rhsKlass = rhsObject->klass(); // EBX (subclass)
+            Klass* elemKlass = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
             // Check for compatibilty. This check must not GC!!
             // Seems way more expensive now that we must dispatch
             //
-            if (rhsKlassOop != elemKlassOop && !rhsKlassOop->is_subtype_of(elemKlassOop)) { // ebx->is...
-              VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
+            if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
+              // Decrement counter if subtype check failed.
+              BI_PROFILE_SUBTYPECHECK_FAILED(rhsKlass);
+              VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "", note_arrayCheck_trap);
             }
+            // Profile checkcast with null_seen and receiver.
+            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, rhsKlass);
+          } else {
+            // Profile checkcast with null_seen and receiver.
+            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           ((objArrayOopDesc *) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
@@ -2119,10 +2206,14 @@ run:
             if (UseTLAB) {
               result = (oop) THREAD->tlab().allocate(obj_size);
             }
+            // Disable non-TLAB-based fast-path, because profiling requires that all
+            // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
+            // returns NULL.
+#ifndef CC_INTERP_PROFILE
             if (result == NULL) {
               need_zero = true;
               // Try allocate in shared eden
-        retry:
+            retry:
               HeapWord* compare_to = *Universe::heap()->top_addr();
               HeapWord* new_top = compare_to + obj_size;
               if (new_top <= *Universe::heap()->end_addr()) {
@@ -2132,6 +2223,7 @@ run:
                 result = (oop) compare_to;
               }
             }
+#endif
             if (result != NULL) {
               // Initialize object (if nonzero size and need) and then the header
               if (need_zero ) {
@@ -2187,61 +2279,63 @@ run:
           if (STACK_OBJECT(-1) != NULL) {
             VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
-            if (ProfileInterpreter) {
-              // needs Profile_checkcast QQQ
-              ShouldNotReachHere();
-            }
             // Constant pool may have actual klass or unresolved klass. If it is
-            // unresolved we must resolve it
+            // unresolved we must resolve it.
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
             Klass* klassOf = (Klass*) METHOD->constants()->slot_at(index).get_klass();
-            Klass* objKlassOop = STACK_OBJECT(-1)->klass(); //ebx
+            Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
             // Check for compatibilty. This check must not GC!!
-            // Seems way more expensive now that we must dispatch
+            // Seems way more expensive now that we must dispatch.
             //
-            if (objKlassOop != klassOf &&
-                !objKlassOop->is_subtype_of(klassOf)) {
+            if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
+              // Decrement counter at checkcast.
+              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
               ResourceMark rm(THREAD);
-              const char* objName = objKlassOop->external_name();
+              const char* objName = objKlass->external_name();
               const char* klassName = klassOf->external_name();
               char* message = SharedRuntime::generate_class_cast_message(
                 objName, klassName);
-              VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message);
+              VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message, note_classCheck_trap);
             }
+            // Profile checkcast with null_seen and receiver.
+            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, objKlass);
           } else {
-            if (UncommonNullCast) {
-//              istate->method()->set_null_cast_seen();
-// [RGV] Not sure what to do here!
-
-            }
+            // Profile checkcast with null_seen and receiver.
+            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
       CASE(_instanceof):
           if (STACK_OBJECT(-1) == NULL) {
             SET_STACK_INT(0, -1);
+            // Profile instanceof with null_seen and receiver.
+            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/true, NULL);
           } else {
             VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
             // Constant pool may have actual klass or unresolved klass. If it is
-            // unresolved we must resolve it
+            // unresolved we must resolve it.
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
             Klass* klassOf = (Klass*) METHOD->constants()->slot_at(index).get_klass();
-            Klass* objKlassOop = STACK_OBJECT(-1)->klass();
+            Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
             // Check for compatibilty. This check must not GC!!
-            // Seems way more expensive now that we must dispatch
+            // Seems way more expensive now that we must dispatch.
             //
-            if ( objKlassOop == klassOf || objKlassOop->is_subtype_of(klassOf)) {
+            if ( objKlass == klassOf || objKlass->is_subtype_of(klassOf)) {
               SET_STACK_INT(1, -1);
             } else {
               SET_STACK_INT(0, -1);
+              // Decrement counter at checkcast.
+              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
             }
+            // Profile instanceof with null_seen and receiver.
+            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/false, objKlass);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
@@ -2384,6 +2478,9 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(5);
 
+        // Invokedynamic has got a call counter, just like an invokestatic -> increment!
+        BI_PROFILE_UPDATE_CALL();
+
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2416,6 +2513,9 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(3);
 
+        // Invokehandle has got a call counter, just like a final call -> increment!
+        BI_PROFILE_UPDATE_FINALCALL();
+
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2443,14 +2543,18 @@ run:
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
             callee = cache->f2_as_vfinal_method();
+            // Profile 'special case of invokeinterface' final call.
+            BI_PROFILE_UPDATE_FINALCALL();
           } else {
-            // get receiver
+            // Get receiver.
             int parms = cache->parameter_size();
-            // Same comments as invokevirtual apply here
-            VERIFY_OOP(STACK_OBJECT(-parms));
-            InstanceKlass* rcvrKlass = (InstanceKlass*)
-                                 STACK_OBJECT(-parms)->klass();
+            // Same comments as invokevirtual apply here.
+            oop rcvr = STACK_OBJECT(-parms);
+            VERIFY_OOP(rcvr);
+            InstanceKlass* rcvrKlass = (InstanceKlass*)rcvr->klass();
             callee = (Method*) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
+            // Profile 'special case of invokeinterface' virtual call.
+            BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
           }
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
@@ -2481,14 +2585,17 @@ run:
         // interface.  The link resolver checks this but only for the first
         // time this interface is called.
         if (i == int2->itable_length()) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "");
+          VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "", note_no_trap);
         }
         int mindex = cache->f2_as_index();
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
         if (callee == NULL) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_AbstractMethodError(), "");
+          VM_JAVA_ERROR(vmSymbols::java_lang_AbstractMethodError(), "", note_no_trap);
         }
+
+        // Profile virtual call.
+        BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
 
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
@@ -2521,8 +2628,11 @@ run:
           Method* callee;
           if ((Bytecodes::Code)opcode == Bytecodes::_invokevirtual) {
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-            if (cache->is_vfinal()) callee = cache->f2_as_vfinal_method();
-            else {
+            if (cache->is_vfinal()) {
+              callee = cache->f2_as_vfinal_method();
+              // Profile final call.
+              BI_PROFILE_UPDATE_FINALCALL();
+            } else {
               // get receiver
               int parms = cache->parameter_size();
               // this works but needs a resourcemark and seems to create a vtable on every call:
@@ -2531,8 +2641,9 @@ run:
               // this fails with an assert
               // InstanceKlass* rcvrKlass = InstanceKlass::cast(STACK_OBJECT(-parms)->klass());
               // but this works
-              VERIFY_OOP(STACK_OBJECT(-parms));
-              InstanceKlass* rcvrKlass = (InstanceKlass*) STACK_OBJECT(-parms)->klass();
+              oop rcvr = STACK_OBJECT(-parms);
+              VERIFY_OOP(rcvr);
+              InstanceKlass* rcvrKlass = (InstanceKlass*)rcvr->klass();
               /*
                 Executing this code in java.lang.String:
                     public String(char value[]) {
@@ -2550,12 +2661,17 @@ run:
 
               */
               callee = (Method*) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
+              // Profile virtual call.
+              BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
               CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             }
             callee = cache->f1_as_method();
+
+            // Profile call.
+            BI_PROFILE_UPDATE_CALL();
           }
 
           istate->set_callee(callee);
@@ -2607,6 +2723,8 @@ run:
       CASE(_goto):
       {
           int16_t offset = (int16_t)Bytes::get_Java_u2(pc + 1);
+          // Profile jump.
+          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2623,6 +2741,8 @@ run:
       CASE(_goto_w):
       {
           int32_t offset = Bytes::get_Java_u4(pc + 1);
+          // Profile jump.
+          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2632,6 +2752,9 @@ run:
       /* return from a jsr or jsr_w */
 
       CASE(_ret): {
+          // Profile ret.
+          BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(pc[1]))));
+          // Now, update the pc.
           pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(pc[1]));
           UPDATE_PC_AND_CONTINUE(0);
       }
@@ -2713,6 +2836,9 @@ run:
       }
       // for AbortVMOnException flag
       NOT_PRODUCT(Exceptions::debug_check_abort(except_oop));
+
+      // Update profiling data.
+      BI_PROFILE_ALIGN_TO_CURRENT_BCI();
       goto run;
     }
     if (TraceExceptions) {
@@ -2920,7 +3046,7 @@ run:
           oop rcvr = base->obj();
           if (rcvr == NULL) {
             if (!suppress_error) {
-              VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "");
+              VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap);
               illegal_state_oop = THREAD->pending_exception();
               THREAD->clear_pending_exception();
             }
@@ -3008,9 +3134,9 @@ run:
     // A pending exception that was pending prior to a possible popping frame
     // overrides the popping frame.
     //
-    assert(!suppress_error || suppress_error && illegal_state_oop() == NULL, "Error was not suppressed");
+    assert(!suppress_error || (suppress_error && illegal_state_oop() == NULL), "Error was not suppressed");
     if (illegal_state_oop() != NULL || original_exception() != NULL) {
-      // inform the frame manager we have no result
+      // Inform the frame manager we have no result.
       istate->set_msg(throwing_exception);
       if (illegal_state_oop() != NULL)
         THREAD->set_pending_exception(illegal_state_oop(), NULL, 0);
