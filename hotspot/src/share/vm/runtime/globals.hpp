@@ -2727,6 +2727,11 @@ class CommandLineFlags {
   product_pd(bool, ProfileInterpreter,                                      \
            "Profile at the bytecode level during interpretation")           \
                                                                             \
+  develop(bool, TraceProfileInterpreter, false,                             \
+          "Trace profiling at the bytecode level during interpretation. "   \
+          "This outputs the profiling information collected to improve "    \
+          "jit compilation.")                                               \
+                                                                            \
   develop_pd(bool, ProfileTraps,                                            \
           "Profile deoptimization traps at the bytecode level")             \
                                                                             \

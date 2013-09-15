@@ -244,6 +244,11 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   return mdp;
 }
 
+#ifdef CC_INTERP
+DataLayout* RetData::advance(MethodData *md, int bci) {
+  return (DataLayout*) md->bci_to_dp(bci);
+}
+#endif // CC_INTERP
 
 #ifndef PRODUCT
 void RetData::print_data_on(outputStream* st) {
