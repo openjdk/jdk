@@ -5037,6 +5037,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif
 #include "utilities/quickSort.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_VM_STRUCTS
 #include "runtime/vmStructs.hpp"
 #endif
@@ -5060,6 +5061,7 @@ void execute_internal_vm_tests() {
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
     run_unit_test(AltHashing::test_alt_hash());
+    run_unit_test(test_loggc_filename());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
