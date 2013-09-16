@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS_VAR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CALLEE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EXCEPTION_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.ITERATOR_PREFIX;
@@ -172,7 +173,9 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL);
             if (functionNode.needsArguments()) {
                 initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | IS_ALWAYS_DEFINED);
-                addLocalDef(ARGUMENTS.symbolName());
+                final String argumentsName = ARGUMENTS_VAR.symbolName();
+                newType(defineSymbol(body, argumentsName, IS_VAR | IS_ALWAYS_DEFINED), Type.typeFor(ARGUMENTS_VAR.type()));
+                addLocalDef(argumentsName);
             }
         }
 
@@ -491,30 +494,29 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
             objectifySymbols(body);
         }
 
+        List<VarNode> syntheticInitializers = null;
+
         if (body.getFlag(Block.NEEDS_SELF_SYMBOL)) {
-            final IdentNode callee = compilerConstant(CALLEE);
-            VarNode selfInit =
-                new VarNode(
-                    newFunctionNode.getLineNumber(),
-                    newFunctionNode.getToken(),
-                    newFunctionNode.getFinish(),
-                    newFunctionNode.getIdent(),
-                    callee);
+            syntheticInitializers = new ArrayList<>(2);
+            LOG.info("Accepting self symbol init for ", newFunctionNode.getName());
+            // "var fn = :callee"
+            syntheticInitializers.add(createSyntheticInitializer(newFunctionNode.getIdent(), CALLEE, newFunctionNode));
+        }
 
-            LOG.info("Accepting self symbol init ", selfInit, " for ", newFunctionNode.getName());
+        if(newFunctionNode.needsArguments()) {
+            if(syntheticInitializers == null) {
+                syntheticInitializers = new ArrayList<>(1);
+            }
+            // "var arguments = :arguments"
+            syntheticInitializers.add(createSyntheticInitializer(createImplicitIdentifier(ARGUMENTS_VAR.symbolName()),
+                    ARGUMENTS, newFunctionNode));
+        }
 
-            final List<Statement> newStatements = new ArrayList<>();
-            assert callee.getSymbol() != null && callee.getSymbol().hasSlot();
-
-            final IdentNode name       = selfInit.getName();
-            final Symbol    nameSymbol = body.getExistingSymbol(name.getName());
-
-            assert nameSymbol != null;
-
-            selfInit = selfInit.setName((IdentNode)name.setSymbol(lc, nameSymbol));
-
-            newStatements.add(selfInit);
-            newStatements.addAll(body.getStatements());
+        if(syntheticInitializers != null) {
+            final List<Statement> stmts = body.getStatements();
+            final List<Statement> newStatements = new ArrayList<>(stmts.size() + syntheticInitializers.size());
+            newStatements.addAll(syntheticInitializers);
+            newStatements.addAll(stmts);
             newFunctionNode = newFunctionNode.setBody(lc, body.setStatements(lc, newStatements));
         }
 
@@ -531,6 +533,28 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
         end(newFunctionNode, false);
 
         return newFunctionNode;
+    }
+
+    /**
+     * Creates a synthetic initializer for a variable (a var statement that doesn't occur in the source code). Typically
+     * used to create assignmnent of {@code :callee} to the function name symbol in self-referential function
+     * expressions as well as for assignment of {@code :arguments} to {@code arguments}.
+     *
+     * @param name the ident node identifying the variable to initialize
+     * @param initConstant the compiler constant it is initialized to
+     * @param fn the function node the assignment is for
+     * @return a var node with the appropriate assignment
+     */
+    private VarNode createSyntheticInitializer(final IdentNode name, final CompilerConstants initConstant, final FunctionNode fn) {
+        final IdentNode init = compilerConstant(initConstant);
+        assert init.getSymbol() != null && init.getSymbol().hasSlot();
+
+        VarNode synthVar = new VarNode(fn.getLineNumber(), fn.getToken(), fn.getFinish(), name, init);
+
+        final Symbol nameSymbol = fn.getBody().getExistingSymbol(name.getName());
+        assert nameSymbol != null;
+
+        return synthVar.setName((IdentNode)name.setSymbol(lc, nameSymbol));
     }
 
     @Override
@@ -974,15 +998,18 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     }
 
     private IdentNode compilerConstant(CompilerConstants cc) {
-        final FunctionNode functionNode = lc.getCurrentFunction();
-        return (IdentNode)
-            new IdentNode(
-                functionNode.getToken(),
-                functionNode.getFinish(),
-                cc.symbolName()).
-                setSymbol(
-                    lc,
-                    functionNode.compilerConstant(cc));
+        return (IdentNode)createImplicitIdentifier(cc.symbolName()).setSymbol(lc, lc.getCurrentFunction().compilerConstant(cc));
+    }
+
+    /**
+     * Creates an ident node for an implicit identifier within the function (one not declared in the script source
+     * code). These identifiers are defined with function's token and finish.
+     * @param name the name of the identifier
+     * @return an ident node representing the implicit identifier.
+     */
+    private IdentNode createImplicitIdentifier(final String name) {
+        final FunctionNode fn = lc.getCurrentFunction();
+        return new IdentNode(fn.getToken(), fn.getFinish(), name);
     }
 
     @Override
