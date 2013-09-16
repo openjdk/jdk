@@ -28,10 +28,14 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Array;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
+import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -860,6 +864,53 @@ public enum JSType {
     }
 
     /**
+     * Script object to Java array conversion.
+     *
+     * @param obj script object to be converted to Java array
+     * @param componentType component type of the destination array required
+     * @return converted Java array
+     */
+    public static Object toJavaArray(final Object obj, final Class<?> componentType) {
+        if (obj instanceof ScriptObject) {
+            return convertArray(((ScriptObject)obj).getArray().asObjectArray(), componentType);
+        } else if (obj instanceof JSObject) {
+            final ArrayLikeIterator itr = ArrayLikeIterator.arrayLikeIterator(obj);
+            final int len = (int) itr.getLength();
+            final Object[] res = new Object[len];
+            int idx = 0;
+            while (itr.hasNext()) {
+                res[idx++] = itr.next();
+            }
+            return convertArray(res, componentType);
+        } else {
+            throw new IllegalArgumentException("not a script object");
+        }
+    }
+
+    /**
+     * Java array to java array conversion - but using type conversions implemented by linker.
+     *
+     * @param src source array
+     * @param componentType component type of the destination array required
+     * @return converted Java array
+     */
+    public static Object convertArray(final Object[] src, final Class<?> componentType) {
+        final int l = src.length;
+        final Object dst = Array.newInstance(componentType, l);
+        final MethodHandle converter = Bootstrap.getLinkerServices().getTypeConverter(Object.class, componentType);
+        try {
+            for (int i = 0; i < src.length; i++) {
+                Array.set(dst, i, invoke(converter, src[i]));
+            }
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+        return dst;
+    }
+
+    /**
      * Check if an object is null or undefined
      *
      * @param obj object to check
@@ -964,4 +1015,13 @@ public enum JSType {
         return Double.NaN;
     }
 
+    private static Object invoke(final MethodHandle mh, final Object arg) {
+        try {
+            return mh.invoke(arg);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
 }
