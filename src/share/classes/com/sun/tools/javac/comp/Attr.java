@@ -748,19 +748,11 @@ public class Attr extends JCTree.Visitor {
      *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
-                                      JCTree.JCExpression initializer,
+                                      JCVariableDecl variable,
                                       Type type) {
 
-        /*  When this env was created, it didn't have the correct lint nor had
-         *  annotations has been processed.
-         *  But now at this phase we have already processed annotations and the
-         *  correct lint must have been set in chk, so we should use that one to
-         *  attribute the initializer.
-         */
-        Lint prevLint = env.info.lint;
-        env.info.lint = chk.getLint();
-
-        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+        DiagnosticPosition prevLintPos
+                = deferredLintHandler.setPos(variable.pos());
 
         try {
             // Use null as symbol to not attach the type annotation to any symbol.
@@ -768,17 +760,16 @@ public class Attr extends JCTree.Visitor {
             // to the symbol.
             // This prevents having multiple type annotations, just because of
             // lazy constant value evaluation.
-            memberEnter.typeAnnotate(initializer, env, null);
+            memberEnter.typeAnnotate(variable.init, env, null, variable.pos());
             annotate.flush();
-            Type itype = attribExpr(initializer, env, type);
+            Type itype = attribExpr(variable.init, env, type);
             if (itype.constValue() != null) {
                 return coerce(itype, type).constValue();
             } else {
                 return null;
             }
         } finally {
-            env.info.lint = prevLint;
-            log.useSource(prevSource);
+            deferredLintHandler.setPos(prevLintPos);
         }
     }
 
@@ -1012,7 +1003,7 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 // Attribute all type annotations in the body
-                memberEnter.typeAnnotate(tree.body, localEnv, m);
+                memberEnter.typeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
                 // Attribute method body.
@@ -1042,7 +1033,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             if (tree.init != null) {
                 // Field initializer expression need to be entered.
-                memberEnter.typeAnnotate(tree.init, env, tree.sym);
+                memberEnter.typeAnnotate(tree.init, env, tree.sym, tree.pos());
                 annotate.flush();
             }
         }
@@ -1056,18 +1047,16 @@ public class Attr extends JCTree.Visitor {
                 ((JCLambda)env.tree).paramKind == JCLambda.ParameterKind.IMPLICIT &&
                 (tree.sym.flags() & PARAMETER) != 0;
         chk.validate(tree.vartype, env, !isImplicitLambdaParameter);
-        deferredLintHandler.flush(tree.pos());
 
         try {
+            v.getConstValue(); // ensure compile-time constant initializer is evaluated
+            deferredLintHandler.flush(tree.pos());
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
-                if ((v.flags_field & FINAL) != 0 &&
-                    memberEnter.needsLazyConstValue(tree.init)) {
-                    // In this case, `v' is final.  Ensure that it's initializer is
-                    // evaluated.
-                    v.getConstValue(); // ensure initializer is evaluated
-                } else {
+                if ((v.flags_field & FINAL) == 0 ||
+                    !memberEnter.needsLazyConstValue(tree.init)) {
+                    // Not a compile-time constant
                     // Attribute initializer in a new environment
                     // with the declared variable as owner.
                     // Check that initializer conforms to variable's declared type.
@@ -1106,7 +1095,7 @@ public class Attr extends JCTree.Visitor {
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
 
             // Attribute all type annotations in the block
-            memberEnter.typeAnnotate(tree, localEnv, localEnv.info.scope.owner);
+            memberEnter.typeAnnotate(tree, localEnv, localEnv.info.scope.owner, null);
             annotate.flush();
 
             {
@@ -4209,6 +4198,7 @@ public class Attr extends JCTree.Visitor {
             ResultInfo prevReturnRes = env.info.returnResult;
 
             try {
+                deferredLintHandler.flush(env.tree);
                 env.info.returnResult = null;
                 // java.lang.Enum may not be subclassed by a non-enum
                 if (st.tsym == syms.enumSym &&
