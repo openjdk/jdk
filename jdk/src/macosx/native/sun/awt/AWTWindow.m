@@ -350,7 +350,7 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void) dealloc {
 AWT_ASSERT_APPKIT_THREAD;
 
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     [self.javaPlatformWindow setJObject:nil withEnv:env];
 
     self.nsWindow = nil;
