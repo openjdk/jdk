@@ -106,7 +106,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     public JLightweightFrame() {
         super();
         copyBufferEnabled = "true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("jlf.copyBufferEnabled", "true")));
+            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
 
         add(rootPane, BorderLayout.CENTER);
         setFocusTraversalPolicy(new LayoutFocusTraversalPolicy());
@@ -250,6 +250,11 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         };
         contentPane.setLayout(new BorderLayout());
         contentPane.add(component);
+        if ("true".equals(AccessController.
+            doPrivileged(new GetPropertyAction("swing.jlf.contentPaneTransparent", "false"))))
+        {
+            contentPane.setOpaque(false);
+        }
         setContentPane(contentPane);
 
         contentPane.addContainerListener(new ContainerListener() {
