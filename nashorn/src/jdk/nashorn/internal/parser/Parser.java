@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.parser;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
 import static jdk.nashorn.internal.codegen.CompilerConstants.FUNCTION_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
@@ -115,6 +114,8 @@ import jdk.nashorn.internal.runtime.Timing;
  * Builds the IR.
  */
 public class Parser extends AbstractParser {
+    private static final String ARGUMENTS_NAME = CompilerConstants.ARGUMENTS_VAR.symbolName();
+
     /** Current script environment. */
     private final ScriptEnvironment env;
 
@@ -511,11 +512,17 @@ loop:
      * @param ident Referenced property.
      */
     private void detectSpecialProperty(final IdentNode ident) {
-        final String name = ident.getName();
-
-        if (ARGUMENTS.symbolName().equals(name)) {
+        if (isArguments(ident)) {
             lc.setFlag(lc.getCurrentFunction(), FunctionNode.USES_ARGUMENTS);
         }
+    }
+
+    private static boolean isArguments(final String name) {
+        return ARGUMENTS_NAME.equals(name);
+    }
+
+    private static boolean isArguments(final IdentNode ident) {
+        return isArguments(ident.getName());
     }
 
     /**
@@ -2449,7 +2456,7 @@ loop:
             } else if (env._function_statement == ScriptEnvironment.FunctionStatementBehavior.WARNING) {
                 warning(JSErrorType.SYNTAX_ERROR, AbstractParser.message("no.func.decl.here.warn"), functionToken);
             }
-            if (ARGUMENTS.symbolName().equals(name.getName())) {
+            if (isArguments(name)) {
                 lc.setFlag(lc.getCurrentFunction(), FunctionNode.DEFINES_ARGUMENTS);
             }
         }
@@ -2468,7 +2475,7 @@ loop:
                 final IdentNode parameter = parameters.get(i);
                 String parameterName = parameter.getName();
 
-                if (ARGUMENTS.symbolName().equals(parameterName)) {
+                if (isArguments(parameterName)) {
                     functionNode = functionNode.setFlag(lc, FunctionNode.DEFINES_ARGUMENTS);
                 }
 
@@ -2486,7 +2493,7 @@ loop:
                 parametersSet.add(parameterName);
             }
         } else if (arity == 1) {
-            if (ARGUMENTS.symbolName().equals(parameters.get(0).getName())) {
+            if (isArguments(parameters.get(0))) {
                 functionNode = functionNode.setFlag(lc, FunctionNode.DEFINES_ARGUMENTS);
             }
         }
