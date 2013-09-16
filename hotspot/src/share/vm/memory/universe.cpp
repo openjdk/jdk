@@ -881,7 +881,7 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   bool use_large_pages = UseLargePages && is_size_aligned(alignment, os::large_page_size());
   assert(!UseLargePages
-      || UseParallelOldGC
+      || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
 
   char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
