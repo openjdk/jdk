@@ -2169,23 +2169,49 @@ void os::print_os_info(outputStream* st) {
 }
 
 // Try to identify popular distros.
-// Most Linux distributions have /etc/XXX-release file, which contains
-// the OS version string. Some have more than one /etc/XXX-release file
-// (e.g. Mandrake has both /etc/mandrake-release and /etc/redhat-release.),
-// so the order is important.
+// Most Linux distributions have a /etc/XXX-release file, which contains
+// the OS version string. Newer Linux distributions have a /etc/lsb-release
+// file that also contains the OS version string. Some have more than one
+// /etc/XXX-release file (e.g. Mandrake has both /etc/mandrake-release and
+// /etc/redhat-release.), so the order is important.
+// Any Linux that is based on Redhat (i.e. Oracle, Mandrake, Sun JDS...) have
+// their own specific XXX-release file as well as a redhat-release file.
+// Because of this the XXX-release file needs to be searched for before the
+// redhat-release file.
+// Since Red Hat has a lsb-release file that is not very descriptive the
+// search for redhat-release needs to be before lsb-release.
+// Since the lsb-release file is the new standard it needs to be searched
+// before the older style release files.
+// Searching system-release (Red Hat) and os-release (other Linuxes) are a
+// next to last resort.  The os-release file is a new standard that contains
+// distribution information and the system-release file seems to be an old
+// standard that has been replaced by the lsb-release and os-release files.
+// Searching for the debian_version file is the last resort.  It contains
+// an informative string like "6.0.6" or "wheezy/sid". Because of this
+// "Debian " is printed before the contents of the debian_version file.
 void os::Linux::print_distro_info(outputStream* st) {
-  if (!_print_ascii_file("/etc/mandrake-release", st) &&
-      !_print_ascii_file("/etc/sun-release", st) &&
-      !_print_ascii_file("/etc/redhat-release", st) &&
-      !_print_ascii_file("/etc/SuSE-release", st) &&
-      !_print_ascii_file("/etc/turbolinux-release", st) &&
-      !_print_ascii_file("/etc/gentoo-release", st) &&
-      !_print_ascii_file("/etc/debian_version", st) &&
-      !_print_ascii_file("/etc/ltib-release", st) &&
-      !_print_ascii_file("/etc/angstrom-version", st)) {
-      st->print("Linux");
-  }
-  st->cr();
+   if (!_print_ascii_file("/etc/oracle-release", st) &&
+       !_print_ascii_file("/etc/mandriva-release", st) &&
+       !_print_ascii_file("/etc/mandrake-release", st) &&
+       !_print_ascii_file("/etc/sun-release", st) &&
+       !_print_ascii_file("/etc/redhat-release", st) &&
+       !_print_ascii_file("/etc/lsb-release", st) &&
+       !_print_ascii_file("/etc/SuSE-release", st) &&
+       !_print_ascii_file("/etc/turbolinux-release", st) &&
+       !_print_ascii_file("/etc/gentoo-release", st) &&
+       !_print_ascii_file("/etc/ltib-release", st) &&
+       !_print_ascii_file("/etc/angstrom-version", st) &&
+       !_print_ascii_file("/etc/system-release", st) &&
+       !_print_ascii_file("/etc/os-release", st)) {
+
+       if (file_exists("/etc/debian_version")) {
+         st->print("Debian ");
+         _print_ascii_file("/etc/debian_version", st);
+       } else {
+         st->print("Linux");
+       }
+   }
+   st->cr();
 }
 
 void os::Linux::print_libversion_info(outputStream* st) {
