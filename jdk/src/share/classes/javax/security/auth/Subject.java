@@ -1186,7 +1186,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         public boolean removeAll(Collection<?> c) {
-
+            Objects.requireNonNull(c);
             boolean modified = false;
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
@@ -1222,7 +1222,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         public boolean retainAll(Collection<?> c) {
-
+            Objects.requireNonNull(c);
             boolean modified = false;
             boolean retain = false;
             final Iterator<E> e = iterator();

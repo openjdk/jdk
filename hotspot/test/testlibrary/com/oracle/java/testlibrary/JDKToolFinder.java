@@ -27,24 +27,43 @@ import java.io.File;
 
 public final class JDKToolFinder {
 
-  private JDKToolFinder() {
-  }
-
-  /**
-   * Returns the full path to an executable in jdk/bin based on System property
-   * test.jdk (set by jtreg test suite)
-   *
-   * @return Full path to an executable in jdk/bin
-   */
-  public static String getJDKTool(String tool) {
-    String binPath = System.getProperty("test.jdk");
-    if (binPath == null) {
-      throw new RuntimeException("System property 'test.jdk' not set. This property is normally set by jtreg. "
-          + "When running test separately, set this property using '-Dtest.jdk=/path/to/jdk'.");
+    private JDKToolFinder() {
     }
 
-    binPath += File.separatorChar + "bin" + File.separatorChar + tool;
+    /**
+     * Returns the full path to an executable in jdk/bin based on System
+     * property {@code compile.jdk} (set by jtreg test suite)
+     *
+     * @return Full path to an executable in jdk/bin
+     */
+    public static String getJDKTool(String tool) {
+        String binPath = System.getProperty("compile.jdk");
+        if (binPath == null) {
+            throw new RuntimeException("System property 'compile.jdk' not set. "
+                    + "This property is normally set by jtreg. "
+                    + "When running test separately, set this property using "
+                    + "'-Dcompile.jdk=/path/to/jdk'.");
+        }
+        binPath += File.separatorChar + "bin" + File.separatorChar + tool;
 
-    return binPath;
-  }
+        return binPath;
+    }
+    /**
+     * Returns the full path to an executable in &lt;current jdk&gt;/bin based
+     * on System property {@code test.jdk} (set by jtreg test suite)
+     *
+     * @return Full path to an executable in jdk/bin
+     */
+    public static String getCurrentJDKTool(String tool) {
+        String binPath = System.getProperty("test.jdk");
+        if (binPath == null) {
+            throw new RuntimeException("System property 'test.jdk' not set. "
+                + "This property is normally set by jtreg. "
+                + "When running test separately, set this property using "
+                + "'-Dtest.jdk=/path/to/jdk'.");
+        }
+        binPath += File.separatorChar + "bin" + File.separatorChar + tool;
+
+        return binPath;
+    }
 }

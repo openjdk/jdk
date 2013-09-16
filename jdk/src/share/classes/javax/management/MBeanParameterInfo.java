@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.util.Objects;
 
 /**
  * Describes an argument of an operation exposed by an MBean.
@@ -143,6 +144,6 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
     }
 
     public int hashCode() {
-        return getName().hashCode() ^ getType().hashCode();
+        return Objects.hash(getName(), getType());
     }
 }

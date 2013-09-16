@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that re-abstraction works properly
  * @compile/fail/ref=Neg03.out -XDrawDiagnostics Neg03.java
  */

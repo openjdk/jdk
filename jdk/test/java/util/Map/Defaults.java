@@ -155,7 +155,7 @@ public class Defaults {
         assertThrows(
             () -> { map.replaceAll((k,v) -> null); },
             NullPointerException.class,
-            description);
+            description + " should not allow replacement with null value");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
@@ -194,6 +194,15 @@ public class Defaults {
         assertSame(map.get(null), EXTRA_VALUE);
     }
 
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=nonNull values=nonNull")
+    public void testReplaceKVNoNulls(String description, Map<IntegerEnum, String> map) {
+        assertTrue(map.containsKey(FIRST_KEY), "expected key missing");
+        assertSame(map.get(FIRST_KEY), FIRST_VALUE, "found wrong value");
+        assertThrows( () -> {map.replace(FIRST_KEY, null);}, NullPointerException.class, description + ": should throw NPE");
+        assertSame(map.replace(FIRST_KEY, EXTRA_VALUE), FIRST_VALUE, description + ": replaced wrong value");
+        assertSame(map.get(FIRST_KEY), EXTRA_VALUE, "found wrong value");
+    }
+
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
     public void testReplaceKV(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(KEYS[1]));
@@ -222,6 +231,16 @@ public class Defaults {
         assertSame(map.get(null), EXTRA_VALUE);
         assertTrue(map.replace(null, EXTRA_VALUE, EXTRA_VALUE));
         assertSame(map.get(null), EXTRA_VALUE);
+    }
+
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=nonNull values=nonNull")
+    public void testReplaceKVVNoNulls(String description, Map<IntegerEnum, String> map) {
+        assertTrue(map.containsKey(FIRST_KEY), "expected key missing");
+        assertSame(map.get(FIRST_KEY), FIRST_VALUE, "found wrong value");
+        assertThrows( () -> {map.replace(FIRST_KEY, FIRST_VALUE, null);}, NullPointerException.class, description + ": should throw NPE");
+        assertThrows( () -> {if (!map.replace(FIRST_KEY, null, EXTRA_VALUE)) throw new NullPointerException("default returns false rather than throwing");}, NullPointerException.class,  description + ": should throw NPE");
+        assertTrue(map.replace(FIRST_KEY, FIRST_VALUE, EXTRA_VALUE), description + ": replaced wrong value");
+        assertSame(map.get(FIRST_KEY), EXTRA_VALUE, "found wrong value");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
@@ -470,6 +489,9 @@ public class Defaults {
             VALUES[each] = String.valueOf(each);
         }
     }
+
+    private static final IntegerEnum FIRST_KEY = KEYS[0];
+    private static final String FIRST_VALUE = VALUES[0];
     private static final IntegerEnum EXTRA_KEY = IntegerEnum.EXTRA_KEY;
     private static final String EXTRA_VALUE = String.valueOf(TEST_SIZE);
 
@@ -583,6 +605,8 @@ public class Defaults {
         return Arrays.asList(
                 // null key hostile
                 new Object[]{"EnumMap", makeMap(() -> new EnumMap(IntegerEnum.class), false, nulls)},
+                new Object[]{"TreeMap", makeMap(TreeMap::new, false, nulls)},
+                new Object[]{"ExtendsAbstractMap(TreeMap)", makeMap(() -> {return new ExtendsAbstractMap(new TreeMap());}, false, nulls)},
                 new Object[]{"Collections.synchronizedMap(EnumMap)", Collections.synchronizedMap(makeMap(() -> new EnumMap(IntegerEnum.class), false, nulls))}
                 );
     }
@@ -591,10 +615,11 @@ public class Defaults {
         return Arrays.asList(
             // null key and value hostile
             new Object[]{"Hashtable", makeMap(Hashtable::new, false, false)},
-            new Object[]{"TreeMap", makeMap(TreeMap::new, false, false)},
             new Object[]{"ConcurrentHashMap", makeMap(ConcurrentHashMap::new, false, false)},
             new Object[]{"ConcurrentSkipListMap", makeMap(ConcurrentSkipListMap::new, false, false)},
+            new Object[]{"Collections.synchronizedMap(ConcurrentHashMap)", Collections.synchronizedMap(makeMap(ConcurrentHashMap::new, false, false))},
             new Object[]{"Collections.checkedMap(ConcurrentHashMap)", Collections.checkedMap(makeMap(ConcurrentHashMap::new, false, false), IntegerEnum.class, String.class)},
+            new Object[]{"ExtendsAbstractMap(ConcurrentHashMap)", makeMap(() -> {return new ExtendsAbstractMap(new ConcurrentHashMap());}, false, false)},
             new Object[]{"ImplementsConcurrentMap", makeMap(ImplementsConcurrentMap::new, false, false)}
             );
     }
@@ -641,18 +666,17 @@ public class Defaults {
     }
 
     public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable, String message) {
-        Throwable result;
+        Throwable thrown;
         try {
             thrower.run();
-            result = null;
+            thrown = null;
         } catch (Throwable caught) {
-            result = caught;
+            thrown = caught;
         }
 
-        assertInstance(result, throwable,
-            (null != message)
-            ? message
-            : "Failed to throw " + throwable.getCanonicalName());
+        assertInstance(thrown, throwable,
+            ((null != message) ? message : "") +
+            " Failed to throw " + throwable.getCanonicalName());
     }
 
     public static <T extends Throwable> void assertThrows(Class<T> throwable, String message, Thrower<T>... throwers) {
@@ -661,11 +685,11 @@ public class Defaults {
         }
     }
 
-    public static <T> void assertInstance(T actual, Class<? extends T> expected) {
+    public static void assertInstance(Object actual, Class<?> expected) {
         assertInstance(expected.isInstance(actual), null);
     }
 
-    public static <T> void assertInstance(T actual, Class<? extends T> expected, String message) {
+    public static void assertInstance(Object actual, Class<?> expected, String message) {
         assertTrue(expected.isInstance(actual), message);
     }
 

@@ -17,8 +17,8 @@ class TargetType66 {
     void g(SAM2 s2) { }
 
     void test() {
-        g(x->{ String s = x; }); //g(SAM1)
-        g(x->{ Integer i = x; }); //g(SAM2)
+        g(x->{ String s = x; }); //ambiguous
+        g(x->{ Integer i = x; }); //ambiguous
         g(x->{ Object o = x; }); //ambiguous
         g(x->{ Character c = x; }); //error: inapplicable methods
         g(x->{ Character c = ""; }); //error: incompatible types

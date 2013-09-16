@@ -124,6 +124,11 @@ public class DocEnv {
     private boolean silent = false;
 
     /**
+     * The source language version.
+     */
+    protected Source source;
+
+    /**
      * Constructor
      *
      * @param context      Context for this javadoc instance.
@@ -144,6 +149,7 @@ public class DocEnv {
 
         // Default.  Should normally be reset with setLocale.
         this.doclocale = new DocLocale(this, "", breakiterator);
+        source = Source.instance(context);
     }
 
     public void setSilent(boolean silent) {

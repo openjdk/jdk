@@ -230,7 +230,7 @@ public interface Comparator<T> {
      * @param  keyComparator the {@code Comparator} used to compare the sort key
      * @return a lexicographic-order comparator composed of this comparator
      *         and then comparing on the key extracted by the keyExtractor function
-     * @throws NullPointerException if the argument is null.
+     * @throws NullPointerException if either argument is null.
      * @see #comparing(Function, Comparator)
      * @see #thenComparing(Comparator)
      * @since 1.8

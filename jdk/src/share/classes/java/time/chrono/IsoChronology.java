@@ -61,6 +61,8 @@
  */
 package java.time.chrono;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
@@ -563,4 +565,29 @@ public final class IsoChronology extends Chronology implements Serializable {
         return field.range();
     }
 
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(1);     // identifies a Chronology
+     *  out.writeUTF(getId());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    @Override
+    Object writeReplace() {
+        return super.writeReplace();
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
 }
