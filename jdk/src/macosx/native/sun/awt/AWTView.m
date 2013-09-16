@@ -126,7 +126,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     self.cglLayer = nil;
 
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteGlobalRef(env, m_cPlatformView);
     m_cPlatformView = NULL;
 
