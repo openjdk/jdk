@@ -148,7 +148,7 @@ public class Check {
         sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
                 enforceMandatoryWarnings, "sunapi", null);
 
-        deferredLintHandler = DeferredLintHandler.immediateHandler;
+        deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
     /** Switch: generics enabled?
@@ -215,20 +215,6 @@ public class Check {
     Lint setLint(Lint newLint) {
         Lint prev = lint;
         lint = newLint;
-        return prev;
-    }
-
-    /*  This idiom should be used only in cases when it is needed to set the lint
-     *  of an environment that has been created in a phase previous to annotations
-     *  processing.
-     */
-    Lint getLint() {
-        return lint;
-    }
-
-    DeferredLintHandler setDeferredLintHandler(DeferredLintHandler newDeferredLintHandler) {
-        DeferredLintHandler prev = deferredLintHandler;
-        deferredLintHandler = newDeferredLintHandler;
         return prev;
     }
 
@@ -582,14 +568,19 @@ public class Check {
     /** Check for redundant casts (i.e. where source type is a subtype of target type)
      * The problem should only be reported for non-292 cast
      */
-    public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
-        if (!tree.type.isErroneous() &&
-                (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+    public void checkRedundantCast(Env<AttrContext> env, final JCTypeCast tree) {
+        if (!tree.type.isErroneous()
                 && types.isSameType(tree.expr.type, tree.clazz.type)
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
-            log.warning(Lint.LintCategory.CAST,
-                    tree.pos(), "redundant.cast", tree.expr.type);
+            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                @Override
+                public void report() {
+                    if (lint.isEnabled(Lint.LintCategory.CAST))
+                        log.warning(Lint.LintCategory.CAST,
+                                tree.pos(), "redundant.cast", tree.expr.type);
+                }
+            });
         }
     }
     //where

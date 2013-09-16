@@ -46,6 +46,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -1167,11 +1168,11 @@ public abstract class Symbol implements Element {
 
         public void setLazyConstValue(final Env<AttrContext> env,
                                       final Attr attr,
-                                      final JCTree.JCExpression initializer)
+                                      final JCVariableDecl variable)
         {
             setData(new Callable<Object>() {
                 public Object call() {
-                    return attr.attribLazyConstantValue(env, initializer, type);
+                    return attr.attribLazyConstantValue(env, variable, type);
                 }
             });
         }
