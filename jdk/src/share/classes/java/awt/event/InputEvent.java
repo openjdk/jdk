@@ -33,6 +33,7 @@ import java.util.Arrays;
 
 import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
+import sun.security.util.SecurityConstants;
 
 /**
  * The root event class for all component-level input events.
@@ -350,7 +351,7 @@ public abstract class InputEvent extends ComponentEvent {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {
-                    sm.checkSystemClipboardAccess();
+                    sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
                     b = true;
                 } catch (SecurityException se) {
                     if (logger.isLoggable(PlatformLogger.Level.FINE)) {

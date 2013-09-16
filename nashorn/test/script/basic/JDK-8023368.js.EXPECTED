@@ -4,15 +4,15 @@ hello
 Func.prototype.func
 hello
 [object Object]
-obj.__proto__.func @ 57
+obj.__proto__.func @ 55
 344
 [object Object]
-obj.__proto__.func @ 57
+obj.__proto__.func @ 55
 344
 [object Object]
-obj.__proto__.func @ 57
+obj.__proto__.func @ 55
 344
 new object.toString
-obj.__proto__.func @ 57
+obj.__proto__.func @ 55
 344
 new object.toString

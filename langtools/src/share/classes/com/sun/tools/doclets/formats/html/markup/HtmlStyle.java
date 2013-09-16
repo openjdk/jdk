@@ -68,6 +68,7 @@ public enum HtmlStyle {
     packageSummary,
     rowColor,
     serializedFormContainer,
+    skipNav,
     sourceContainer,
     sourceLineNo,
     strong,

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8006694
+ * @bug 7192246 8006694
  * @summary Automatic test for checking correctness of default super/this resolution
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library ../../lib
