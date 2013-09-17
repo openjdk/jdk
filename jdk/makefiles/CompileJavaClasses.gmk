@@ -149,6 +149,15 @@ ifneq ($(OPENJDK_TARGET_OS),macosx)
              sun/tools/attach/BsdVirtualMachine.java
 endif
 
+ifneq ($(OPENJDK_TARGET_OS),aix)
+    EXFILES+=sun/nio/ch/AixAsynchronousChannelProvider.java \
+             sun/nio/ch/AixPollPort.java \
+             sun/nio/fs/AixFileStore.java \
+             sun/nio/fs/AixFileSystem.java \
+             sun/nio/fs/AixFileSystemProvider.java \
+             sun/nio/fs/AixNativeDispatcher.java
+endif
+
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXFILES+=sun/text/resources/BreakIteratorRules.java \

@@ -88,7 +88,7 @@ ifneq ($(COMPILE_TYPE),cross)
 
     # use -m32/-m64 only if the compiler supports it
     ifeq ($(COMPILER_SUPPORTS_TARGET_BITS_FLAG),true)
-    MEMORY_MODEL_FLAG="-m$*"
+    MEMORY_MODEL_FLAG="$(COMPILER_TARGET_BITS_FLAG)$*"
     endif
 
     # Compile the C code into an executable.
