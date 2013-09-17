@@ -3055,7 +3055,7 @@ public class Types {
     /**
      * Does t have the same bounds for quantified variables as s?
      */
-    boolean hasSameBounds(ForAll t, ForAll s) {
+    public boolean hasSameBounds(ForAll t, ForAll s) {
         List<Type> l1 = t.tvars;
         List<Type> l2 = s.tvars;
         while (l1.nonEmpty() && l2.nonEmpty() &&

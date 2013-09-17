@@ -28,6 +28,7 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Types.UniqueType;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -181,6 +182,8 @@ public class Code {
 
     final MethodSymbol meth;
 
+    final LVTRanges lvtRanges;
+
     /** Construct a code object, given the settings of the fatcode,
      *  debugging info switches and the CharacterRangeTable.
      */
@@ -193,7 +196,8 @@ public class Code {
                 CRTable crt,
                 Symtab syms,
                 Types types,
-                Pool pool) {
+                Pool pool,
+                LVTRanges lvtRanges) {
         this.meth = meth;
         this.fatcode = fatcode;
         this.lineMap = lineMap;
@@ -215,6 +219,7 @@ public class Code {
         state = new State();
         lvar = new LocalVar[20];
         this.pool = pool;
+        this.lvtRanges = lvtRanges;
     }
 
 
@@ -305,9 +310,19 @@ public class Code {
 
     /** The current output code pointer.
      */
-    public int curPc() {
-        if (pendingJumps != null) resolvePending();
-        if (pendingStatPos != Position.NOPOS) markStatBegin();
+    public int curCP() {
+        /*
+         * This method has side-effects because calling it can indirectly provoke
+         *  extra code generation, like goto instructions, depending on the context
+         *  where it's called.
+         *  Use with care or even better avoid using it.
+         */
+        if (pendingJumps != null) {
+            resolvePending();
+        }
+        if (pendingStatPos != Position.NOPOS) {
+            markStatBegin();
+        }
         fixedPc = true;
         return cp;
     }
@@ -1175,7 +1190,7 @@ public class Code {
     /** Declare an entry point; return current code pointer
      */
     public int entryPoint() {
-        int pc = curPc();
+        int pc = curCP();
         alive = true;
         pendingStackMap = needStackMap;
         return pc;
@@ -1185,7 +1200,7 @@ public class Code {
      *  return current code pointer
      */
     public int entryPoint(State state) {
-        int pc = curPc();
+        int pc = curCP();
         alive = true;
         this.state = state.dup();
         Assert.check(state.stacksize <= max_stack);
@@ -1198,7 +1213,7 @@ public class Code {
      *  return current code pointer
      */
     public int entryPoint(State state, Type pushed) {
-        int pc = curPc();
+        int pc = curCP();
         alive = true;
         this.state = state.dup();
         Assert.check(state.stacksize <= max_stack);
@@ -1238,7 +1253,7 @@ public class Code {
 
     /** Emit a stack map entry.  */
     public void emitStackMap() {
-        int pc = curPc();
+        int pc = curCP();
         if (!needStackMap) return;
 
 
@@ -1482,6 +1497,9 @@ public class Code {
                 chain.pc + 3 == target && target == cp && !fixedPc) {
                 // If goto the next instruction, the jump is not needed:
                 // compact the code.
+                if (varDebugInfo) {
+                    adjustAliveRanges(cp, -3);
+                }
                 cp = cp - 3;
                 target = target - 3;
                 if (chain.next == null) {
@@ -1781,8 +1799,7 @@ public class Code {
                     sym = sym.clone(sym.owner);
                     sym.type = newtype;
                     LocalVar newlv = lvar[i] = new LocalVar(sym);
-                    // should the following be initialized to cp?
-                    newlv.start_pc = lv.start_pc;
+                    newlv.aliveRanges = lv.aliveRanges;
                 }
             }
         }
@@ -1870,8 +1887,36 @@ public class Code {
     static class LocalVar {
         final VarSymbol sym;
         final char reg;
-        char start_pc = Character.MAX_VALUE;
-        char length = Character.MAX_VALUE;
+
+        class Range {
+            char start_pc = Character.MAX_VALUE;
+            char length = Character.MAX_VALUE;
+
+            Range() {}
+
+            Range(char start) {
+                this.start_pc = start;
+            }
+
+            Range(char start, char length) {
+                this.start_pc = start;
+                this.length = length;
+            }
+
+            boolean closed() {
+                return start_pc != Character.MAX_VALUE && length != Character.MAX_VALUE;
+            }
+
+            @Override
+            public String toString() {
+                int currentStartPC = start_pc;
+                int currentLength = length;
+                return "startpc = " + currentStartPC + " length " + currentLength;
+            }
+        }
+
+        java.util.List<Range> aliveRanges = new java.util.ArrayList<>();
+
         LocalVar(VarSymbol v) {
             this.sym = v;
             this.reg = (char)v.adr;
@@ -1879,9 +1924,78 @@ public class Code {
         public LocalVar dup() {
             return new LocalVar(sym);
         }
-        public String toString() {
-            return "" + sym + " in register " + ((int)reg) + " starts at pc=" + ((int)start_pc) + " length=" + ((int)length);
+
+        Range firstRange() {
+            return aliveRanges.isEmpty() ? null : aliveRanges.get(0);
         }
+
+        Range lastRange() {
+            return aliveRanges.isEmpty() ? null : aliveRanges.get(aliveRanges.size() - 1);
+        }
+
+        @Override
+        public String toString() {
+            if (aliveRanges == null) {
+                return "empty local var";
+            }
+            StringBuilder sb = new StringBuilder().append(sym)
+                    .append(" in register ").append((int)reg).append(" \n");
+            for (Range r : aliveRanges) {
+                sb.append(" starts at pc=").append(Integer.toString(((int)r.start_pc)))
+                    .append(" length=").append(Integer.toString(((int)r.length)))
+                    .append("\n");
+            }
+            return sb.toString();
+        }
+
+        public void openRange(char start) {
+            if (!hasOpenRange()) {
+                aliveRanges.add(new Range(start));
+            }
+        }
+
+        public void closeRange(char end) {
+            if (isLastRangeInitialized()) {
+                Range range = lastRange();
+                if (range != null) {
+                    if (range.length == Character.MAX_VALUE) {
+                        range.length = end;
+                    }
+                }
+            } else {
+                if (!aliveRanges.isEmpty()) {
+                    aliveRanges.remove(aliveRanges.size() - 1);
+                }
+            }
+        }
+
+        public boolean hasOpenRange() {
+            if (aliveRanges.isEmpty()) {
+                return false;
+            }
+            Range range = lastRange();
+            return range.length == Character.MAX_VALUE;
+        }
+
+        public boolean isLastRangeInitialized() {
+            if (aliveRanges.isEmpty()) {
+                return false;
+            }
+            Range range = lastRange();
+            return range.start_pc != Character.MAX_VALUE;
+        }
+
+        public Range getWidestRange() {
+            if (aliveRanges.isEmpty()) {
+                return new Range();
+            } else {
+                Range firstRange = firstRange();
+                Range lastRange = lastRange();
+                char length = (char)(lastRange.length + (lastRange.start_pc - firstRange.start_pc));
+                return new Range(firstRange.start_pc, length);
+            }
+         }
+
     };
 
     /** Local variables, indexed by register. */
@@ -1892,9 +2006,58 @@ public class Code {
         int adr = v.adr;
         lvar = ArrayUtils.ensureCapacity(lvar, adr+1);
         Assert.checkNull(lvar[adr]);
-        if (pendingJumps != null) resolvePending();
+        if (pendingJumps != null) {
+            resolvePending();
+        }
         lvar[adr] = new LocalVar(v);
         state.defined.excl(adr);
+    }
+
+
+    public void closeAliveRanges(JCTree tree) {
+        closeAliveRanges(tree, cp);
+    }
+
+    public void closeAliveRanges(JCTree tree, int closingCP) {
+        List<VarSymbol> locals = lvtRanges.getVars(meth, tree);
+        for (LocalVar localVar: lvar) {
+            for (VarSymbol aliveLocal : locals) {
+                if (localVar == null) {
+                    return;
+                }
+                if (localVar.sym == aliveLocal && localVar.lastRange() != null) {
+                    char length = (char)(closingCP - localVar.lastRange().start_pc);
+                    if (length > 0 && length < Character.MAX_VALUE) {
+                        localVar.closeRange(length);
+                    }
+                }
+            }
+        }
+    }
+
+    void adjustAliveRanges(int oldCP, int delta) {
+        for (LocalVar localVar: lvar) {
+            if (localVar == null) {
+                return;
+            }
+            for (LocalVar.Range range: localVar.aliveRanges) {
+                if (range.closed() && range.start_pc + range.length >= oldCP) {
+                    range.length += delta;
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculates the size of the LocalVariableTable.
+     */
+    public int getLVTSize() {
+        int result = varBufferSize;
+        for (int i = 0; i < varBufferSize; i++) {
+            LocalVar var = varBuffer[i];
+            result += var.aliveRanges.size() - 1;
+        }
+        return result;
     }
 
     /** Set the current variable defined state. */
@@ -1922,8 +2085,7 @@ public class Code {
         } else {
             state.defined.incl(adr);
             if (cp < Character.MAX_VALUE) {
-                if (v.start_pc == Character.MAX_VALUE)
-                    v.start_pc = (char)cp;
+                v.openRange((char)cp);
             }
         }
     }
@@ -1933,15 +2095,15 @@ public class Code {
         state.defined.excl(adr);
         if (adr < lvar.length &&
             lvar[adr] != null &&
-            lvar[adr].start_pc != Character.MAX_VALUE) {
+            lvar[adr].isLastRangeInitialized()) {
             LocalVar v = lvar[adr];
-            char length = (char)(curPc() - v.start_pc);
+            char length = (char)(curCP() - v.lastRange().start_pc);
             if (length > 0 && length < Character.MAX_VALUE) {
                 lvar[adr] = v.dup();
-                v.length = length;
+                v.closeRange(length);
                 putVar(v);
             } else {
-                v.start_pc = Character.MAX_VALUE;
+                v.lastRange().start_pc = Character.MAX_VALUE;
             }
         }
     }
@@ -1951,10 +2113,10 @@ public class Code {
         LocalVar v = lvar[adr];
         if (v != null) {
             lvar[adr] = null;
-            if (v.start_pc != Character.MAX_VALUE) {
-                char length = (char)(curPc() - v.start_pc);
+            if (v.isLastRangeInitialized()) {
+                char length = (char)(curCP() - v.lastRange().start_pc);
                 if (length < Character.MAX_VALUE) {
-                    v.length = length;
+                    v.closeRange(length);
                     putVar(v);
                     fillLocalVarPosition(v);
                 }
@@ -1968,8 +2130,9 @@ public class Code {
             return;
         for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
             TypeAnnotationPosition p = ta.position;
-            p.lvarOffset = new int[] { (int)lv.start_pc };
-            p.lvarLength = new int[] { (int)lv.length };
+            LocalVar.Range widestRange = lv.getWidestRange();
+            p.lvarOffset = new int[] { (int)widestRange.start_pc };
+            p.lvarLength = new int[] { (int)widestRange.length };
             p.lvarIndex = new int[] { (int)lv.reg };
             p.isValidOffset = true;
         }
