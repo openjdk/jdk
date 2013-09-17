@@ -205,13 +205,20 @@ public class HtmlDoclet extends AbstractDoclet {
      * {@inheritDoc}
      */
     protected void generateProfileFiles() throws Exception {
-        if (configuration.showProfiles) {
+        if (configuration.showProfiles && configuration.profilePackages.size() > 0) {
             ProfileIndexFrameWriter.generate(configuration);
             Profile prevProfile = null, nextProfile;
+            String profileName;
             for (int i = 1; i < configuration.profiles.getProfileCount(); i++) {
-                ProfilePackageIndexFrameWriter.generate(configuration, Profile.lookup(i).name);
+                profileName = Profile.lookup(i).name;
+                // Generate profile package pages only if there are any packages
+                // in a profile to be documented. The profilePackages map will not
+                // contain an entry for the profile if there are no packages to be documented.
+                if (!configuration.shouldDocumentProfile(profileName))
+                    continue;
+                ProfilePackageIndexFrameWriter.generate(configuration, profileName);
                 PackageDoc[] packages = configuration.profilePackages.get(
-                        Profile.lookup(i).name);
+                        profileName);
                 PackageDoc prev = null, next;
                 for (int j = 0; j < packages.length; j++) {
                     // if -nodeprecated option is set and the package is marked as

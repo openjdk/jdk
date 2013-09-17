@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338
+ * @bug      4494033 7028815 7052425 8007338 8023608
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib/
@@ -72,7 +72,46 @@ public class TestStylesheet extends JavadocTester {
             "    overflow:hidden;" + NL +
             "    padding:0px;" + NL +
             "    margin:0px;" + NL +
-            "    white-space:pre;" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".overviewSummary caption span, .packageSummary caption span, " +
+            ".contentContainer ul.blockList li.blockList caption span, " +
+            ".summary caption span, .classUseContainer caption span, " +
+            ".constantValuesContainer caption span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/titlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".contentContainer ul.blockList li.blockList caption " +
+            "span.activeTableTab span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/activetitlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".contentContainer ul.blockList li.blockList caption span.tableTab span {" + NL +
+            "    white-space:nowrap;" + NL +
+            "    padding-top:8px;" + NL +
+            "    padding-left:8px;" + NL +
+            "    display:inline-block;" + NL +
+            "    float:left;" + NL +
+            "    background-image:url(resources/titlebar.gif);" + NL +
+            "}"},
+        {BUG_ID + FS + "stylesheet.css",
+            ".contentContainer ul.blockList li.blockList caption span.tableTab, " +
+            ".contentContainer ul.blockList li.blockList caption span.activeTableTab {" + NL +
+            "    padding-top:0px;" + NL +
+            "    padding-left:0px;" + NL +
+            "    background-image:none;" + NL +
+            "    float:none;" + NL +
+            "    display:inline-block;" + NL +
             "}"},
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.

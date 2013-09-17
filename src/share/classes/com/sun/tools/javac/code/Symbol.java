@@ -46,6 +46,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -98,9 +99,9 @@ public abstract class Symbol implements Element {
     // <editor-fold defaultstate="collapsed" desc="annotations">
 
     /** The attributes of this symbol are contained in this
-     * Annotations. The Annotations instance is NOT immutable.
+     * SymbolMetadata. The SymbolMetadata instance is NOT immutable.
      */
-    protected Annotations annotations;
+    protected SymbolMetadata annotations;
 
     /** An accessor method for the attributes of this symbol.
      *  Attributes of class symbols should be accessed through the accessor
@@ -217,19 +218,19 @@ public abstract class Symbol implements Element {
     public void setTypeAttributes(List<Attribute.TypeCompound> a) {
         if (annotations != null || a.nonEmpty()) {
             if (annotations == null)
-                annotations = new Annotations(this);
+                annotations = new SymbolMetadata(this);
             annotations.setTypeAttributes(a);
         }
     }
 
-    private Annotations initedAnnos() {
+    private SymbolMetadata initedAnnos() {
         if (annotations == null)
-            annotations = new Annotations(this);
+            annotations = new SymbolMetadata(this);
         return annotations;
     }
 
     /** This method is intended for debugging only. */
-    public Annotations getAnnotations() {
+    public SymbolMetadata getAnnotations() {
         return annotations;
     }
 
@@ -852,7 +853,7 @@ public abstract class Symbol implements Element {
         private void mergeAttributes() {
             if (annotations == null &&
                 package_info.annotations != null) {
-                annotations = new Annotations(this);
+                annotations = new SymbolMetadata(this);
                 annotations.setAttributes(package_info.annotations);
             }
         }
@@ -1167,11 +1168,11 @@ public abstract class Symbol implements Element {
 
         public void setLazyConstValue(final Env<AttrContext> env,
                                       final Attr attr,
-                                      final JCTree.JCExpression initializer)
+                                      final JCVariableDecl variable)
         {
             setData(new Callable<Object>() {
                 public Object call() {
-                    return attr.attribLazyConstantValue(env, initializer, type);
+                    return attr.attribLazyConstantValue(env, variable, type);
                 }
             });
         }
