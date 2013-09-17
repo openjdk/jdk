@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,11 @@ import java.math.BigInteger;
 
 public interface RSAPublicKey extends java.security.PublicKey, RSAKey
 {
+    /**
+     * The type fingerprint that is set to indicate
+     * serialization compatibility with a previous
+     * version of the type.
+     */
     static final long serialVersionUID = -8727434096241101194L;
 
     /**
