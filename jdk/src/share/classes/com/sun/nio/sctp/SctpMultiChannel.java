@@ -63,7 +63,7 @@ import java.nio.channels.SelectionKey;
  * {@link #setOption(SctpSocketOption,Object,Association) setOption} method. An
  * {@code SctpMultiChannel} supports the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -394,6 +394,9 @@ public abstract class SctpMultiChannel
      * Returns all of the remote addresses to which the given association on
      * this channel's socket is connected.
      *
+     * @param  association
+     *         The association
+     *
      * @return  All of the remote addresses for the given association, or
      *          an empty {@code Set} if the association has been shutdown
      *
@@ -431,6 +434,9 @@ public abstract class SctpMultiChannel
      * ignored if given. However, if the option is association specific then the
      * association must be given.
      *
+     * @param  <T>
+     *         The type of the socket option value
+     *
      * @param  name
      *         The socket option
      *
@@ -463,6 +469,9 @@ public abstract class SctpMultiChannel
      * therefore the {@code association} parameter is not applicable and will be
      * ignored if given. However, if the option is association specific then the
      * association must be given.
+     *
+     * @param   <T>
+     *          The type of the socket option value
      *
      * @param   name
      *          The socket option
@@ -566,6 +575,9 @@ public abstract class SctpMultiChannel
      * will not stall other threads from receiving. A handler should not invoke
      * the {@code receive} method of this channel, if it does an
      * {@link IllegalReceiveException} will be thrown.
+     *
+     * @param  <T>
+     *         The type of the attachment
      *
      * @param  buffer
      *         The buffer into which bytes are to be transferred
@@ -673,7 +685,7 @@ public abstract class SctpMultiChannel
      *          there was insufficient room for the message in the underlying
      *          output buffer
      *
-     * @throws  InvalidStreamExcepton
+     * @throws  InvalidStreamException
      *          If {@code streamNumber} is negative, or if an association already
      *          exists and {@code streamNumber} is greater than the maximum number
      *          of outgoing streams

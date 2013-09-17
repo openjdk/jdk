@@ -26,14 +26,16 @@
 package sun.misc;
 
 public interface JavaAWTAccess {
-    public Object getContext();
-    public Object getExecutionContext();
 
-    public Object get(Object context, Object key);
-    public void put(Object context, Object key, Object value);
-    public void remove(Object context, Object key);
+    // Returns the AppContext used for applet logging isolation, or null if
+    // no isolation is required.
+    // If there's no applet, or if the caller is a stand alone application,
+    // or running in the main app context, returns null.
+    // Otherwise, returns the AppContext of the calling applet.
+    public Object getAppletContext();
 
-    // convenience methods whose context is the object returned by getContext()
+    // convenience methods to cache objects in the current thread group's
+    // AppContext
     public Object get(Object key);
     public void put(Object key, Object value);
     public void remove(Object key);

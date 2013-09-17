@@ -28,8 +28,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Stack;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,28 +44,30 @@ import static org.testng.Assert.fail;
 import java.lang.reflect.Constructor;
 import java.util.ConcurrentModificationException;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * @test
- * @bug 8023367
- * @library testlibrary
- * @build CollectionAsserts CollectionSupplier
- * @run testng ListDefaults
  * @summary Unit tests for extension methods on List
+ * @bug 8023367
+ * @library ../Collection/testlibrary
+ * @build CollectionAsserts CollectionSupplier ExtendsAbstractList
+ * @run testng ListDefaults
  */
 public class ListDefaults {
 
-    private static final String[] LIST_CLASSES = {
-        "java.util.ArrayList",
-        "java.util.LinkedList",
-        "java.util.Vector",
-        "java.util.concurrent.CopyOnWriteArrayList"
-    };
+    private static final Supplier<?>[] LIST_CLASSES = {
+        java.util.ArrayList::new,
+        java.util.LinkedList::new,
+        java.util.Vector::new,
+        java.util.concurrent.CopyOnWriteArrayList::new,
+        ExtendsAbstractList::new
+     };
 
-    private static final String[] LIST_CME_CLASSES = {
-        "java.util.ArrayList",
-        "java.util.Vector"
-    };
+    private static final Supplier<?>[] LIST_CME_CLASSES = {
+        java.util.ArrayList::new,
+        java.util.Vector::new
+     };
 
     private static final Predicate<Integer> pEven = x -> 0 == x % 2;
     private static final Predicate<Integer> pOdd = x -> 1 == x % 2;
@@ -139,13 +139,9 @@ public class ListDefaults {
 
     @Test
     public void testForEach() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
-            final List<Integer> list = ((List<Integer>) test.collection);
-        }
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
 
             try {
@@ -182,10 +178,9 @@ public class ListDefaults {
 
     @Test
     public void testRemoveIf() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CLASSES, SIZE);
-
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
 
             try {
@@ -201,7 +196,7 @@ public class ListDefaults {
         }
 
         for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
             list.removeIf(pOdd);
             for (int i : list) {
@@ -217,7 +212,7 @@ public class ListDefaults {
         }
 
         for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
             final List<Integer> listCopy = new ArrayList<>(list);
             if (original.size() > SUBLIST_SIZE) {
@@ -274,9 +269,9 @@ public class ListDefaults {
     @Test
     public void testReplaceAll() throws Exception {
         final int scale = 3;
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
 
             try {
@@ -329,9 +324,9 @@ public class ListDefaults {
 
     @Test
     public void testSort() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
-            final List<Integer> original = ((List<Integer>) test.original);
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
             CollectionSupplier.shuffle(list);
             list.sort(Integer::compare);
@@ -378,17 +373,15 @@ public class ListDefaults {
             }
 
             @SuppressWarnings("unchecked")
-            final Class<? extends List<AtomicInteger>> type =
-                    (Class<? extends List<AtomicInteger>>) Class.forName(test.className);
-            final Constructor<? extends List<AtomicInteger>> defaultConstructor = type.getConstructor();
+            final Constructor<? extends List<?>> defaultConstructor = ((Class<? extends List<?>>)test.collection.getClass()).getConstructor();
             final List<AtomicInteger> incomparables = (List<AtomicInteger>) defaultConstructor.newInstance();
 
-            for (int i=0; i < test.original.size(); i++) {
+            for (int i=0; i < test.expected.size(); i++) {
                 incomparables.add(new AtomicInteger(i));
             }
             CollectionSupplier.shuffle(incomparables);
             incomparables.sort(ATOMIC_INTEGER_COMPARATOR);
-            for (int i=0; i < test.original.size(); i++) {
+            for (int i=0; i < test.expected.size(); i++) {
                 assertEquals(i, incomparables.get(i).intValue());
             }
 
@@ -427,9 +420,10 @@ public class ListDefaults {
 
     @Test
     public void testForEachThrowsCME() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CME_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CME_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
             final List<Integer> list = ((List<Integer>) test.collection);
+
             if (list.size() <= 1) {
                 continue;
             }
@@ -448,9 +442,11 @@ public class ListDefaults {
 
     @Test
     public void testRemoveIfThrowsCME() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CME_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CME_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
+            final List<Integer> original = ((List<Integer>) test.expected);
             final List<Integer> list = ((List<Integer>) test.collection);
+
             if (list.size() <= 1) {
                 continue;
             }
@@ -469,9 +465,10 @@ public class ListDefaults {
 
     @Test
     public void testReplaceAllThrowsCME() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CME_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CME_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
             final List<Integer> list = ((List<Integer>) test.collection);
+
             if (list.size() <= 1) {
                 continue;
             }
@@ -490,9 +487,10 @@ public class ListDefaults {
 
     @Test
     public void testSortThrowsCME() throws Exception {
-        final CollectionSupplier supplier = new CollectionSupplier(LIST_CME_CLASSES, SIZE);
-        for (final CollectionSupplier.TestCase test : supplier.get()) {
+        final CollectionSupplier<List<Integer>> supplier = new CollectionSupplier((Supplier<List<Integer>>[])LIST_CME_CLASSES, SIZE);
+        for (final CollectionSupplier.TestCase<List<Integer>> test : supplier.get()) {
             final List<Integer> list = ((List<Integer>) test.collection);
+
             if (list.size() <= 1) {
                 continue;
             }
@@ -520,6 +518,7 @@ public class ListDefaults {
         cases.add(new Object[] { new LinkedList<>(Arrays.asList(DATA)) });
         cases.add(new Object[] { new Vector<>(Arrays.asList(DATA)) });
         cases.add(new Object[] { new CopyOnWriteArrayList<>(Arrays.asList(DATA)) });
+        cases.add(new Object[] { new ExtendsAbstractList<>(Arrays.asList(DATA)) });
         return cases.toArray(new Object[0][cases.size()]);
     }
 
