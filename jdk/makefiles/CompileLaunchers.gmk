@@ -106,6 +106,10 @@ define SetupLauncher
         $1_LDFLAGS_SUFFIX += -pthread
     endif
 
+    ifeq ($(OPENJDK_TARGET_OS), aix)
+	$1_LDFLAGS_SUFFIX += -L$(JDK_OUTPUTDIR)/objs -ljli_static
+    endif
+
     ifeq ($(USE_EXTERNAL_LIBZ), true)
         $1_LDFLAGS_SUFFIX += -lz
     endif
@@ -193,7 +197,7 @@ define SetupLauncher
 
     BUILD_LAUNCHERS += $$(BUILD_LAUNCHER_$1)
 
-    ifeq ($(OPENJDK_TARGET_OS),macosx)
+    ifneq (,$(filter $(OPENJDK_TARGET_OS), macosx aix))
         $$(BUILD_LAUNCHER_$1) : $(JDK_OUTPUTDIR)/objs/libjli_static.a
     endif
 
