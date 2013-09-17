@@ -150,6 +150,8 @@ class klassVtable : public ResourceObj {
 //      from_compiled_code_entry_point -> nmethod entry point
 //      from_interpreter_entry_point   -> i2cadapter
 class vtableEntry VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
+
  public:
   // size in words
   static int size() {
