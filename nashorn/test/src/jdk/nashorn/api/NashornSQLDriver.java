@@ -23,59 +23,57 @@
  * questions.
  */
 
-package jdk.nashorn.internal.runtime.arrays;
+package jdk.nashorn.api;
 
-import java.util.NoSuchElementException;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.internal.runtime.JSType;
+import java.sql.*;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
- * Iterator over a ScriptObjectMirror
+ * A dummy SQL driver for testing purpose.
  */
-class ScriptObjectMirrorIterator extends ArrayLikeIterator<Object> {
-
-    protected final ScriptObjectMirror obj;
-    private final long length;
-
-    ScriptObjectMirrorIterator(final ScriptObjectMirror obj, final boolean includeUndefined) {
-        super(includeUndefined);
-        this.obj    = obj;
-        this.length = JSType.toUint32(obj.containsKey("length")? obj.getMember("length") : 0);
-        this.index  = 0;
-    }
-
-    protected boolean indexInArray() {
-        return index < length;
+public final class NashornSQLDriver implements Driver {
+    static {
+        try {
+            DriverManager.registerDriver(new NashornSQLDriver(), null);
+        } catch (SQLException se) {
+            throw new RuntimeException(se);
+        }
     }
 
     @Override
-    public long getLength() {
-        return length;
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:nashorn:");
     }
 
     @Override
-    public boolean hasNext() {
-        if (length == 0L) {
-            return false; //return empty string if toUint32(length) == 0
-        }
-
-        while (indexInArray()) {
-            if (obj.containsKey(index) || includeUndefined) {
-                break;
-            }
-            bumpIndex();
-        }
-
-        return indexInArray();
+    public Connection connect(String url, Properties info) {
+        throw new UnsupportedOperationException("I am a dummy!!");
     }
 
     @Override
-    public Object next() {
-        if (indexInArray()) {
-            return obj.get(bumpIndex());
-        }
+    public int getMajorVersion() {
+        return -1;
+    }
 
-        throw new NoSuchElementException();
+    @Override
+    public int getMinorVersion() {
+        return -1;
+    }
+
+    @Override
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
+        return new DriverPropertyInfo[0];
+    }
+
+    @Override
+    public boolean jdbcCompliant() {
+        // no way!
+        return false;
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        throw new SQLFeatureNotSupportedException();
     }
 }
-
