@@ -231,19 +231,23 @@ class fdStream : public outputStream {
   void flush() {};
 };
 
-class rotatingFileStream : public fileStream {
+class gcLogFileStream : public fileStream {
  protected:
-  char*  _file_name;
+  const char*  _file_name;
   jlong  _bytes_written;
-  uintx  _cur_file_num;             // current logfile rotation number, from 0 to MaxGCLogFileNumbers-1
+  uintx  _cur_file_num;             // current logfile rotation number, from 0 to NumberOfGCLogFiles-1
  public:
-  rotatingFileStream(const char* file_name);
-  rotatingFileStream(const char* file_name, const char* opentype);
-  rotatingFileStream(FILE* file) : fileStream(file) {}
-  ~rotatingFileStream();
+  gcLogFileStream(const char* file_name);
+  ~gcLogFileStream();
   virtual void write(const char* c, size_t len);
   virtual void rotate_log();
+  void dump_loggc_header();
 };
+
+#ifndef PRODUCT
+// unit test for checking -Xloggc:<filename> parsing result
+void test_loggc_filename();
+#endif
 
 void ostream_init();
 void ostream_init_log();
