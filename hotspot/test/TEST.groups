@@ -72,18 +72,7 @@ needs_jdk = \
   runtime/7194254/Test7194254.java \
   runtime/jsig/Test8017498.sh \
   runtime/Metaspace/FragmentMetaspace.java \
-  runtime/NMT/BaselineWithParameter.java \
-  runtime/NMT/JcmdScale.java \
-  runtime/NMT/JcmdWithNMTDisabled.java \
-  runtime/NMT/MallocTestType.java \
   runtime/NMT/ReleaseCommittedMemory.java \
-  runtime/NMT/ShutdownTwice.java \
-  runtime/NMT/SummaryAfterShutdown.java \
-  runtime/NMT/SummarySanityCheck.java \
-  runtime/NMT/ThreadedMallocTestType.java \
-  runtime/NMT/ThreadedVirtualAllocTestType.java \
-  runtime/NMT/VirtualAllocTestType.java \
-  runtime/RedefineObject/TestRedefineObject.java \
   serviceability/attach/AttachWithStalePidFile.java
 
 # JRE adds further tests to compact3
