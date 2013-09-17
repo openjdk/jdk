@@ -61,10 +61,15 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkPerfCounters(String ns) throws Exception {
-        for (PerfCounter counter : countersInNamespace(ns)) {
-            String msg = "Expected " + counter.getName() + " to be larger than 0";
-            assertGT(counter.longValue(), 0L, msg);
-        }
+        long minCapacity = getMinCapacity(ns);
+        long maxCapacity = getMaxCapacity(ns);
+        long capacity = getCapacity(ns);
+        long used = getUsed(ns);
+
+        assertGTE(minCapacity, 0L);
+        assertGTE(used, minCapacity);
+        assertGTE(capacity, used);
+        assertGTE(maxCapacity, capacity);
     }
 
     private static void checkEmptyPerfCounters(String ns) throws Exception {
@@ -75,12 +80,10 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkUsedIncreasesWhenLoadingClass(String ns) throws Exception {
-        PerfCounter used = PerfCounters.findByName(ns + ".used");
-
-        long before = used.longValue();
+        long before = getUsed(ns);
         fooClass = compileAndLoad("Foo", "public class Foo { }");
         System.gc();
-        long after = used.longValue();
+        long after = getUsed(ns);
 
         assertGT(after, before);
     }
@@ -100,5 +103,21 @@ public class TestMetaspacePerfCounters {
 
     private static boolean isUsingCompressedClassPointers() {
         return Platform.is64bit() && InputArguments.contains("-XX:+UseCompressedClassPointers");
+    }
+
+    private static long getMinCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".minCapacity").longValue();
+    }
+
+    private static long getCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".capacity").longValue();
+    }
+
+    private static long getMaxCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".maxCapacity").longValue();
+    }
+
+    private static long getUsed(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".used").longValue();
     }
 }

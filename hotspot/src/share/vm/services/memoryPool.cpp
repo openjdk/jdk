@@ -260,10 +260,10 @@ MemoryUsage CodeHeapPool::get_memory_usage() {
 }
 
 MetaspacePool::MetaspacePool() :
-  MemoryPool("Metaspace", NonHeap, capacity_in_bytes(), calculate_max_size(), true, false) { }
+  MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  size_t committed = MetaspaceAux::committed_bytes();
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }
 
@@ -271,26 +271,19 @@ size_t MetaspacePool::used_in_bytes() {
   return MetaspaceAux::allocated_used_bytes();
 }
 
-size_t MetaspacePool::capacity_in_bytes() const {
-  return MetaspaceAux::allocated_capacity_bytes();
-}
-
 size_t MetaspacePool::calculate_max_size() const {
-  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize : max_uintx;
+  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize :
+                                             MemoryUsage::undefined_size();
 }
 
 CompressedKlassSpacePool::CompressedKlassSpacePool() :
-  MemoryPool("Compressed Class Space", NonHeap, capacity_in_bytes(), CompressedClassSpaceSize, true, false) { }
+  MemoryPool("Compressed Class Space", NonHeap, 0, CompressedClassSpaceSize, true, false) { }
 
 size_t CompressedKlassSpacePool::used_in_bytes() {
   return MetaspaceAux::allocated_used_bytes(Metaspace::ClassType);
 }
 
-size_t CompressedKlassSpacePool::capacity_in_bytes() const {
-  return MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
-}
-
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  size_t committed = MetaspaceAux::committed_bytes(Metaspace::ClassType);
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }
