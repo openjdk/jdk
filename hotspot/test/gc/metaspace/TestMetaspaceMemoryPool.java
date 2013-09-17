@@ -22,18 +22,15 @@
  */
 
 import java.util.List;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryManagerMXBean;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
-
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ManagementFactory;
+import java.lang.management.*;
+import com.oracle.java.testlibrary.*;
+import static com.oracle.java.testlibrary.Asserts.*;
 
 /* @test TestMetaspaceMemoryPool
  * @bug 8000754
  * @summary Tests that a MemoryPoolMXBeans is created for metaspace and that a
  *          MemoryManagerMXBean is created.
+ * @library /testlibrary
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops TestMetaspaceMemoryPool
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:MaxMetaspaceSize=60m TestMetaspaceMemoryPool
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers TestMetaspaceMemoryPool
@@ -42,33 +39,16 @@ import java.lang.management.ManagementFactory;
 public class TestMetaspaceMemoryPool {
     public static void main(String[] args) {
         verifyThatMetaspaceMemoryManagerExists();
-        verifyMemoryPool(getMemoryPool("Metaspace"), isFlagDefined("MaxMetaspaceSize"));
 
-        if (runsOn64bit()) {
-            if (usesCompressedOops()) {
+        boolean isMetaspaceMaxDefined = InputArguments.containsPrefix("-XX:MaxMetaspaceSize");
+        verifyMemoryPool(getMemoryPool("Metaspace"), isMetaspaceMaxDefined);
+
+        if (Platform.is64bit()) {
+            if (InputArguments.contains("-XX:+UseCompressedOops")) {
                 MemoryPoolMXBean cksPool = getMemoryPool("Compressed Class Space");
                 verifyMemoryPool(cksPool, true);
             }
         }
-    }
-
-    private static boolean runsOn64bit() {
-        return !System.getProperty("sun.arch.data.model").equals("32");
-    }
-
-    private static boolean usesCompressedOops() {
-        return isFlagDefined("+UseCompressedOops");
-    }
-
-    private static boolean isFlagDefined(String name) {
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> args = runtimeMxBean.getInputArguments();
-        for (String arg : args) {
-            if (arg.startsWith("-XX:" + name)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void verifyThatMetaspaceMemoryManagerExists() {
@@ -95,32 +75,19 @@ public class TestMetaspaceMemoryPool {
 
     private static void verifyMemoryPool(MemoryPoolMXBean pool, boolean isMaxDefined) {
         MemoryUsage mu = pool.getUsage();
-        assertDefined(mu.getInit(), "init");
-        assertDefined(mu.getUsed(), "used");
-        assertDefined(mu.getCommitted(), "committed");
+        long init = mu.getInit();
+        long used = mu.getUsed();
+        long committed = mu.getCommitted();
+        long max = mu.getMax();
+
+        assertGTE(init, 0L);
+        assertGTE(used, init);
+        assertGTE(committed, used);
 
         if (isMaxDefined) {
-            assertDefined(mu.getMax(), "max");
+            assertGTE(max, committed);
         } else {
-            assertUndefined(mu.getMax(), "max");
-        }
-    }
-
-    private static void assertDefined(long value, String name) {
-        assertTrue(value != -1, "Expected " + name + " to be defined");
-    }
-
-    private static void assertUndefined(long value, String name) {
-        assertEquals(value, -1, "Expected " + name + " to be undefined");
-    }
-
-    private static void assertEquals(long actual, long expected, String msg) {
-        assertTrue(actual == expected, msg);
-    }
-
-    private static void assertTrue(boolean condition, String msg) {
-        if (!condition) {
-            throw new RuntimeException(msg);
+            assertEQ(max, -1L);
         }
     }
 }
