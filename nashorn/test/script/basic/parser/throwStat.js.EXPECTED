@@ -1,0 +1,85 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ThrowStatement",
+            "argument": {
+                "type": "Identifier",
+                "name": "err"
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ThrowStatement",
+            "argument": {
+                "type": "Literal",
+                "value": "wrong"
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ThrowStatement",
+            "argument": {
+                "type": "NewExpression",
+                "callee": {
+                    "type": "Identifier",
+                    "name": "TypeError"
+                },
+                "arguments": []
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ThrowStatement",
+            "argument": {
+                "type": "NewExpression",
+                "callee": {
+                    "type": "Identifier",
+                    "name": "TypeError"
+                },
+                "arguments": [
+                    {
+                        "type": "Literal",
+                        "value": "not an array"
+                    }
+                ]
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ThrowStatement",
+            "argument": {
+                "type": "ObjectExpression",
+                "properties": [
+                    {
+                        "key": {
+                            "type": "Identifier",
+                            "name": "msg"
+                        },
+                        "value": {
+                            "type": "Literal",
+                            "value": "wrong!"
+                        },
+                        "kind": "init"
+                    }
+                ]
+            }
+        }
+    ]
+}
