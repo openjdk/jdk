@@ -72,6 +72,8 @@ class ProfileData;
 //
 // Overlay for generic profiling data.
 class DataLayout VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
+
 private:
   // Every data layout begins with a header.  This header
   // contains a tag, which is used to indicate the size/layout

@@ -91,7 +91,7 @@ void PhaseLive::compute(uint maxlrg) {
         break;
       }
 
-      uint r = _names[n->_idx];
+      uint r = _names.at(n->_idx);
       assert(!def_outside->member(r), "Use of external LRG overlaps the same LRG defined in this block");
       def->insert( r );
       use->remove( r );
@@ -100,7 +100,7 @@ void PhaseLive::compute(uint maxlrg) {
         Node *nk = n->in(k);
         uint nkidx = nk->_idx;
         if (_cfg.get_block_for_node(nk) != block) {
-          uint u = _names[nkidx];
+          uint u = _names.at(nkidx);
           use->insert(u);
           DEBUG_ONLY(def_outside->insert(u);)
         }
@@ -112,7 +112,7 @@ void PhaseLive::compute(uint maxlrg) {
 #endif
     // Remove anything defined by Phis and the block start instruction
     for (uint k = i; k > 0; k--) {
-      uint r = _names[block->get_node(k - 1)->_idx];
+      uint r = _names.at(block->get_node(k - 1)->_idx);
       def->insert(r);
       use->remove(r);
     }
@@ -124,7 +124,7 @@ void PhaseLive::compute(uint maxlrg) {
 
       // PhiNode uses go in the live-out set of prior blocks.
       for (uint k = i; k > 0; k--) {
-        add_liveout(p, _names[block->get_node(k-1)->in(l)->_idx], first_pass);
+        add_liveout(p, _names.at(block->get_node(k-1)->in(l)->_idx), first_pass);
       }
     }
     freeset(block);
@@ -256,7 +256,7 @@ void PhaseLive::dump( const Block *b ) const {
   tty->print("LiveOut: ");  _live[b->_pre_order-1].dump();
   uint cnt = b->number_of_nodes();
   for( uint i=0; i<cnt; i++ ) {
-    tty->print("L%d/", _names[b->get_node(i)->_idx] );
+    tty->print("L%d/", _names.at(b->get_node(i)->_idx));
     b->get_node(i)->dump();
   }
   tty->print("\n");
