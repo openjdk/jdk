@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,19 @@
 
 package sun.java2d.cmm;
 
-import java.awt.color.ICC_Profile;
+import java.awt.color.CMMException;
 
-/* Pluggable CMM interface */
+public class Profile {
+    private final long nativePtr;
 
-public interface PCMM {
+    protected Profile(long ptr) {
+        nativePtr = ptr;
+    }
 
-    /* methods invoked from ICC_Profile */
-    public Profile loadProfile(byte[] data);
-    public void freeProfile(Profile p);
-    public int  getProfileSize(Profile p);
-    public void getProfileData(Profile p, byte[] data);
-    public void getTagData(Profile p, int tagSignature, byte[] data);
-    public int getTagSize(Profile p, int tagSignature);
-    public void setTagData(Profile p, int tagSignature, byte[] data);
-
-    /* methods for creating ColorTransforms */
-    public ColorTransform createTransform(ICC_Profile profile, int renderType,
-                                          int transformType);
-
-    public ColorTransform createTransform(ColorTransform[] transforms);
+    protected final long getNativePtr() {
+        if (nativePtr == 0L) {
+            throw new CMMException("Invalid profile: ptr is null");
+        }
+        return nativePtr;
+    }
 }

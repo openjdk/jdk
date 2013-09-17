@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,38 @@
  * questions.
  */
 
-package sun.java2d.cmm;
+package sun.print;
 
-import java.awt.color.ICC_Profile;
+import java.awt.print.PrinterJob;
+import javax.print.attribute.PrintRequestAttribute;
 
-/* Pluggable CMM interface */
+public class PrinterJobWrapper implements PrintRequestAttribute {
 
-public interface PCMM {
+    private static final long serialVersionUID = -8792124426995707237L;
 
-    /* methods invoked from ICC_Profile */
-    public Profile loadProfile(byte[] data);
-    public void freeProfile(Profile p);
-    public int  getProfileSize(Profile p);
-    public void getProfileData(Profile p, byte[] data);
-    public void getTagData(Profile p, int tagSignature, byte[] data);
-    public int getTagSize(Profile p, int tagSignature);
-    public void setTagData(Profile p, int tagSignature, byte[] data);
+    private PrinterJob job;
 
-    /* methods for creating ColorTransforms */
-    public ColorTransform createTransform(ICC_Profile profile, int renderType,
-                                          int transformType);
+    public PrinterJobWrapper(PrinterJob job) {
+        this.job = job;
+    }
 
-    public ColorTransform createTransform(ColorTransform[] transforms);
+    public PrinterJob getPrinterJob() {
+        return job;
+    }
+
+    public final Class getCategory() {
+        return PrinterJobWrapper.class;
+    }
+
+    public final String getName() {
+        return "printerjob-wrapper";
+    }
+
+    public String toString() {
+       return "printerjob-wrapper: " + job.toString();
+    }
+
+    public int hashCode() {
+        return job.hashCode();
+    }
 }
