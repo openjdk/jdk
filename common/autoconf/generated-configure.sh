@@ -3818,7 +3818,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1379500606
+DATE_WHEN_GENERATED=1379504921
 
 ###############################################################################
 #
@@ -8352,7 +8352,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -8709,7 +8709,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -9063,7 +9063,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -9422,7 +9422,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -9775,7 +9775,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -11075,7 +11075,7 @@ elif test "x$with_user_release_suffix" != x; then
 else
   BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
   # Avoid [:alnum:] since it depends on the locale.
-  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
   USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
 fi
 
@@ -17101,7 +17101,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -17747,7 +17747,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -18058,7 +18058,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -18364,7 +18364,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -18957,7 +18957,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -19393,7 +19393,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -20529,7 +20529,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -20965,7 +20965,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -21866,7 +21866,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -22247,7 +22247,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -22594,7 +22594,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -22931,7 +22931,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -23252,7 +23252,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -23627,7 +23627,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -23933,7 +23933,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -24344,7 +24344,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -24744,7 +24744,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -25073,7 +25073,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -25385,7 +25385,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -25691,7 +25691,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -25997,7 +25997,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -26303,7 +26303,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -26662,7 +26662,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -27022,7 +27022,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -27395,7 +27395,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -27766,7 +27766,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
@@ -28075,7 +28075,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
   # "foo.exe" is OK but "foo" is an error.
   #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
   # It is also a way to make sure we got the proper file name for the real test later on.
   test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
   if test "x$test_shortpath" = x; then
