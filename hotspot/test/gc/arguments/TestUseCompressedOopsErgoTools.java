@@ -42,10 +42,10 @@ class DetermineMaxHeapForCompressedOops {
 
 class TestUseCompressedOopsErgoTools {
 
-  private static long getClassMetaspaceSize() {
+  private static long getCompressedClassSpaceSize() {
     HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
 
-    VMOption option = diagnostic.getVMOption("ClassMetaspaceSize");
+    VMOption option = diagnostic.getVMOption("CompressedClassSpaceSize");
     return Long.parseLong(option.getValue());
   }
 
@@ -132,13 +132,13 @@ class TestUseCompressedOopsErgoTools {
     checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops - 1, true);
     checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops + 1, false);
 
-    // use a different ClassMetaspaceSize
-    String classMetaspaceSizeArg = "-XX:ClassMetaspaceSize=" + 2 * getClassMetaspaceSize();
-    maxHeapForCompressedOops = getMaxHeapForCompressedOops(join(gcflags, classMetaspaceSizeArg));
+    // use a different CompressedClassSpaceSize
+    String compressedClassSpaceSizeArg = "-XX:CompressedClassSpaceSize=" + 2 * getCompressedClassSpaceSize();
+    maxHeapForCompressedOops = getMaxHeapForCompressedOops(join(gcflags, compressedClassSpaceSizeArg));
 
-    checkUseCompressedOops(join(gcflags, classMetaspaceSizeArg), maxHeapForCompressedOops, true);
-    checkUseCompressedOops(join(gcflags, classMetaspaceSizeArg), maxHeapForCompressedOops - 1, true);
-    checkUseCompressedOops(join(gcflags, classMetaspaceSizeArg), maxHeapForCompressedOops + 1, false);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops, true);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops - 1, true);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops + 1, false);
   }
 
   private static void checkUseCompressedOops(String[] args, long heapsize, boolean expectUseCompressedOops) throws Exception {
@@ -152,9 +152,7 @@ class TestUseCompressedOopsErgoTools {
 
      boolean actualUseCompressedOops = getFlagBoolValue(" UseCompressedOops", output);
 
-     if (expectUseCompressedOops != actualUseCompressedOops) {
-       throw new RuntimeException("Expected use of compressed oops: " + expectUseCompressedOops + " but was: " + actualUseCompressedOops);
-     }
+     Asserts.assertEQ(expectUseCompressedOops, actualUseCompressedOops);
   }
 
   private static boolean getFlagBoolValue(String flag, String where) {
@@ -162,7 +160,7 @@ class TestUseCompressedOopsErgoTools {
     if (!m.find()) {
       throw new RuntimeException("Could not find value for flag " + flag + " in output string");
     }
-    String match = m.group(1).equals("true");
+    return m.group(1).equals("true");
   }
 
   private static String expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
