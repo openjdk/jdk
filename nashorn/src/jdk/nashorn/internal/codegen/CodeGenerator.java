@@ -852,7 +852,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Label  loopLabel = new Label("loop");
 
         final Expression init = forNode.getInit();
-        assert init instanceof IdentNode;
 
         load(modify);
         assert modify.getType().isObject();
