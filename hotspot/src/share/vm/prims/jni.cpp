@@ -1336,6 +1336,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       if (call_type == JNI_VIRTUAL) {
         // jni_GetMethodID makes sure class is linked and initialized
         // so m should have a valid vtable index.
+        assert(!m->has_itable_index(), "");
         int vtbl_index = m->vtable_index();
         if (vtbl_index != Method::nonvirtual_vtable_index) {
           Klass* k = h_recv->klass();
@@ -1355,12 +1356,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      int itbl_index = m->cached_itable_index();
-      if (itbl_index == -1) {
-        itbl_index = klassItable::compute_itable_index(m);
-        m->set_cached_itable_index(itbl_index);
-        // the above may have grabbed a lock, 'm' and anything non-handlized can't be used again
-      }
+      int itbl_index = m->itable_index();
       Klass* k = h_recv->klass();
       selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
     }
