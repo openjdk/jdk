@@ -397,12 +397,10 @@ else
   INCLUDE_SA = true
 endif
 
-ifdef CROSS_COMPILE_ARCH
-  # X11 headers are not under /usr/include
-  OTHER_CFLAGS += -I$(OPENWIN_HOME)/include
-  OTHER_CXXFLAGS += -I$(OPENWIN_HOME)/include
-  OTHER_CPPFLAGS += -I$(OPENWIN_HOME)/include
-endif
+# X11 headers are not under /usr/include
+OTHER_CFLAGS += -I$(OPENWIN_HOME)/include
+OTHER_CXXFLAGS += -I$(OPENWIN_HOME)/include
+OTHER_CPPFLAGS += -I$(OPENWIN_HOME)/include
 
 LIB_LOCATION ?= $(LIBDIR)
 

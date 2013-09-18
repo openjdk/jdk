@@ -1501,6 +1501,25 @@ void GraphKit::pre_barrier(bool do_load,
   }
 }
 
+bool GraphKit::can_move_pre_barrier() const {
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  switch (bs->kind()) {
+    case BarrierSet::G1SATBCT:
+    case BarrierSet::G1SATBCTLogging:
+      return true; // Can move it if no safepoint
+
+    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableExtension:
+    case BarrierSet::ModRef:
+      return true; // There is no pre-barrier
+
+    case BarrierSet::Other:
+    default      :
+      ShouldNotReachHere();
+  }
+  return false;
+}
+
 void GraphKit::post_barrier(Node* ctl,
                             Node* store,
                             Node* obj,
@@ -3551,6 +3570,8 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   } else {
     // In this case both val_type and alias_idx are unused.
     assert(pre_val != NULL, "must be loaded already");
+    // Nothing to be done if pre_val is null.
+    if (pre_val->bottom_type() == TypePtr::NULL_PTR) return;
     assert(pre_val->bottom_type()->basic_type() == T_OBJECT, "or we shouldn't be here");
   }
   assert(bt == T_OBJECT, "or we shouldn't be here");
@@ -3595,7 +3616,7 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
     if (do_load) {
       // load original value
       // alias_idx correct??
-      pre_val = __ load(no_ctrl, adr, val_type, bt, alias_idx);
+      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
     }
 
     // if (pre_val != NULL)
@@ -3804,8 +3825,13 @@ Node* GraphKit::load_String_value(Node* ctrl, Node* str) {
                                                    TypeAry::make(TypeInt::CHAR,TypeInt::POS),
                                                    ciTypeArrayKlass::make(T_CHAR), true, 0);
   int value_field_idx = C->get_alias_index(value_field_type);
-  return make_load(ctrl, basic_plus_adr(str, str, value_offset),
-                   value_type, T_OBJECT, value_field_idx);
+  Node* load = make_load(ctrl, basic_plus_adr(str, str, value_offset),
+                         value_type, T_OBJECT, value_field_idx);
+  // String.value field is known to be @Stable.
+  if (UseImplicitStableValues) {
+    load = cast_array_to_stable(load, value_type);
+  }
+  return load;
 }
 
 void GraphKit::store_String_offset(Node* ctrl, Node* str, Node* value) {
@@ -3823,9 +3849,6 @@ void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, NULL, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
-                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
   int value_field_idx = C->get_alias_index(value_field_type);
   store_to_memory(ctrl, basic_plus_adr(str, value_offset),
                   value, T_OBJECT, value_field_idx);
@@ -3839,4 +3862,10 @@ void GraphKit::store_String_length(Node* ctrl, Node* str, Node* value) {
   int count_field_idx = C->get_alias_index(count_field_type);
   store_to_memory(ctrl, basic_plus_adr(str, count_offset),
                   value, T_INT, count_field_idx);
+}
+
+Node* GraphKit::cast_array_to_stable(Node* ary, const TypeAryPtr* ary_type) {
+  // Reify the property as a CastPP node in Ideal graph to comply with monotonicity
+  // assumption of CCP analysis.
+  return _gvn.transform(new(C) CastPPNode(ary, ary_type->cast_to_stable(true)));
 }

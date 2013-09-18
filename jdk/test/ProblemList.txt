@@ -166,6 +166,13 @@ demo/jvmti/hprof/MonitorTest.java                               generic-all
 # 8021186
 jdk/lambda/vm/DefaultMethodsTest.java                           generic-all 
 
+# 8024423 - JVMTI: GetLoadedClasses doesn't enumerate anonymous classes 
+demo/jvmti/hprof/HeapAllTest.java                               generic-all
+demo/jvmti/hprof/HeapBinaryFormatTest.java                      generic-all
+demo/jvmti/hprof/HeapDumpTest.java                              generic-all
+demo/jvmti/hprof/OptionsTest.java                               generic-all
+demo/jvmti/hprof/StackMapTableTest.java                         generic-all
+
 ############################################################################
 
 # jdk_net
@@ -202,13 +209,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 
 # 8014719
 sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
-
-############################################################################
-
-# jdk_io
-
-# 7160013
-#java/io/File/MaxPathLength.java                                 windows-all
 
 ############################################################################
 
@@ -311,10 +311,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # 6461635
 com/sun/tools/attach/BasicTests.sh                              generic-all
-
-# 7172176
-sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
 
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all

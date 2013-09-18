@@ -81,6 +81,7 @@ jmethodID AwtPrintControl::setToPageID;
 jmethodID AwtPrintControl::setNativeAttID;
 jmethodID AwtPrintControl::setRangeCopiesID;
 jmethodID AwtPrintControl::setResID;
+jmethodID AwtPrintControl::setJobAttributesID;
 
 
 BOOL AwtPrintControl::IsSupportedLevel(HANDLE hPrinter, DWORD dwLevel) {
@@ -297,6 +298,10 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     AwtPrintControl::setPrinterID =
       env->GetMethodID(cls, "setPrinterNameAttrib", "(Ljava/lang/String;)V");
 
+    AwtPrintControl::setJobAttributesID =
+        env->GetMethodID(cls, "setJobAttributes",
+        "(Ljavax/print/attribute/PrintRequestAttributeSet;IISSSSSSS)V");
+
     DASSERT(AwtPrintControl::driverDoesMultipleCopiesID != NULL);
     DASSERT(AwtPrintControl::getPrintDCID != NULL);
     DASSERT(AwtPrintControl::setPrintDCID != NULL);
@@ -327,6 +332,7 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtPrintControl::getSidesID != NULL);
     DASSERT(AwtPrintControl::getSelectID != NULL);
     DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
+    DASSERT(AwtPrintControl::setJobAttributesID != NULL);
 
 
     CATCH_BAD_ALLOC;

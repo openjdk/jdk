@@ -1258,14 +1258,15 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * Writes the Chronology using a
      * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(1);  // identifies this as a Chronology
+     *  out.writeByte(1);  // identifies a Chronology
      *  out.writeUTF(getId());
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
      */
-    protected Object writeReplace() {
+    Object writeReplace() {
         return new Ser(Ser.CHRONO_TYPE, this);
     }
 
@@ -1274,14 +1275,26 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 
+    /**
+     * Write the Chronology id to the stream.
+     * @param out the output stream
+     * @throws IOException on any error during the write
+     */
     void writeExternal(DataOutput out) throws IOException {
         out.writeUTF(getId());
     }
 
+    /**
+     * Reads the Chronology id and creates the Chronology.
+     * @param in  the input stream
+     * @return  the Chronology
+     * @throws IOException  on errors during the read
+     * @throws DateTimeException if the Chronology cannot be returned
+     */
     static Chronology readExternal(DataInput in) throws IOException {
         String id = in.readUTF();
         return Chronology.of(id);

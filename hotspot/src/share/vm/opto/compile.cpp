@@ -1297,6 +1297,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Array pointers need some flattening
   const TypeAryPtr *ta = tj->isa_aryptr();
+  if (ta && ta->is_stable()) {
+    // Erase stability property for alias analysis.
+    tj = ta = ta->cast_to_stable(false);
+  }
   if( ta && is_known_inst ) {
     if ( offset != Type::OffsetBot &&
          offset > arrayOopDesc::length_offset_in_bytes() ) {
@@ -1497,6 +1501,7 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
   _index = i;
   _adr_type = at;
   _field = NULL;
+  _element = NULL;
   _is_rewritable = true; // default
   const TypeOopPtr *atoop = (at != NULL) ? at->isa_oopptr() : NULL;
   if (atoop != NULL && atoop->is_known_instance()) {
@@ -1615,6 +1620,16 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
           && flat->is_instptr()->klass() == env()->Class_klass())
         alias_type(idx)->set_rewritable(false);
     }
+    if (flat->isa_aryptr()) {
+#ifdef ASSERT
+      const int header_size_min  = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+      // (T_BYTE has the weakest alignment and size restrictions...)
+      assert(flat->offset() < header_size_min, "array body reference must be OffsetBot");
+#endif
+      if (flat->offset() == TypePtr::OffsetBot) {
+        alias_type(idx)->set_element(flat->is_aryptr()->elem());
+      }
+    }
     if (flat->isa_klassptr()) {
       if (flat->offset() == in_bytes(Klass::super_check_offset_offset()))
         alias_type(idx)->set_rewritable(false);
@@ -1677,7 +1692,7 @@ Compile::AliasType* Compile::alias_type(ciField* field) {
   else
     t = TypeOopPtr::make_from_klass_raw(field->holder());
   AliasType* atp = alias_type(t->add_offset(field->offset_in_bytes()), field);
-  assert(field->is_final() == !atp->is_rewritable(), "must get the rewritable bits correct");
+  assert((field->is_final() || field->is_stable()) == !atp->is_rewritable(), "must get the rewritable bits correct");
   return atp;
 }
 
@@ -2258,7 +2273,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
     if (block->is_connector() && !Verbose) {
       continue;
     }
-    n = block->_nodes[0];
+    n = block->head();
     if (pcs && n->_idx < pc_limit) {
       tty->print("%3.3x   ", pcs[n->_idx]);
     } else {
@@ -2273,12 +2288,12 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
 
     // For all instructions
     Node *delay = NULL;
-    for (uint j = 0; j < block->_nodes.size(); j++) {
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
       if (VMThread::should_terminate()) {
         cut_short = true;
         break;
       }
-      n = block->_nodes[j];
+      n = block->get_node(j);
       if (valid_bundle_info(n)) {
         Bundle* bundle = node_bundling(n);
         if (bundle->used_in_unconditional_delay()) {

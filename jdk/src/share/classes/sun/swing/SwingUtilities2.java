@@ -1232,7 +1232,7 @@ public class SwingUtilities2 {
                canAccess = true;
            } else {
                try {
-                   sm.checkSystemClipboardAccess();
+                   sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
                    canAccess = true;
                } catch (SecurityException e) {
                }

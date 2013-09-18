@@ -49,7 +49,6 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import javax.lang.model.type.TypeKind;
 
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
@@ -1480,7 +1479,12 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definitions go.
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
-        long flags = FINAL | SYNTHETIC;
+        return freevarDefs(pos, freevars, owner, 0);
+    }
+
+    List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
+            long additionalFlags) {
+        long flags = FINAL | SYNTHETIC | additionalFlags;
         if (owner.kind == TYP &&
             target.usePrivateSyntheticFields())
             flags |= PRIVATE;
@@ -1543,7 +1547,7 @@ public class Lower extends TreeTranslator {
             (owner.isConstructor() && c.isInner() &&
              !c.isPrivate() && !c.isStatic());
         long flags =
-            FINAL | (isMandated ? MANDATED : SYNTHETIC);
+            FINAL | (isMandated ? MANDATED : SYNTHETIC) | PARAMETER;
         VarSymbol outerThis = makeOuterThisVarSymbol(owner, flags);
         owner.extraParams = owner.extraParams.prepend(outerThis);
         return makeOuterThisVarDecl(pos, outerThis);
@@ -1627,7 +1631,8 @@ public class Lower extends TreeTranslator {
     JCTree makeTwrTry(JCTry tree) {
         make_at(tree.pos());
         twrVars = twrVars.dup();
-        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body, 0);
+        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body,
+                tree.finallyCanCompleteNormally, 0);
         if (tree.catchers.isEmpty() && tree.finalizer == null)
             result = translate(twrBlock);
         else
@@ -1636,7 +1641,8 @@ public class Lower extends TreeTranslator {
         return result;
     }
 
-    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block, int depth) {
+    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block,
+            boolean finallyCanCompleteNormally, int depth) {
         if (resources.isEmpty())
             return block;
 
@@ -1692,17 +1698,20 @@ public class Lower extends TreeTranslator {
         make.at(TreeInfo.endPos(block));
         JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr);
         make.at(oldPos);
-        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block, depth + 1),
+        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block,
+                                    finallyCanCompleteNormally, depth + 1),
                                   List.<JCCatch>of(catchClause),
                                   finallyClause);
+        outerTry.finallyCanCompleteNormally = finallyCanCompleteNormally;
         stats.add(outerTry);
-        return make.Block(0L, stats.toList());
+        JCBlock newBlock = make.Block(0L, stats.toList());
+        return newBlock;
     }
 
     private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource) {
         // primaryException.addSuppressed(catchException);
         VarSymbol catchException =
-            new VarSymbol(0, make.paramName(2),
+            new VarSymbol(SYNTHETIC, make.paramName(2),
                           syms.throwableType,
                           currentMethodSym);
         JCStatement addSuppressionStatement =
@@ -1717,6 +1726,7 @@ public class Lower extends TreeTranslator {
         JCBlock catchBlock = make.Block(0L, List.<JCStatement>of(addSuppressionStatement));
         List<JCCatch> catchClauses = List.<JCCatch>of(make.Catch(catchExceptionDecl, catchBlock));
         JCTry tryTree = make.Try(tryBlock, catchClauses, null);
+        tryTree.finallyCanCompleteNormally = true;
 
         // if (primaryException != null) {try...} else resourceClose;
         JCIf closeIfStatement = make.If(makeNonNullCheck(make.Ident(primaryException)),
@@ -2017,7 +2027,7 @@ public class Lower extends TreeTranslator {
 
         // catchParam := ClassNotFoundException e1
         VarSymbol catchParam =
-            new VarSymbol(0, make.paramName(1),
+            new VarSymbol(SYNTHETIC, make.paramName(1),
                           syms.classNotFoundExceptionType,
                           classDollarSym);
 
@@ -2705,7 +2715,7 @@ public class Lower extends TreeTranslator {
             JCVariableDecl otdef = null;
             if (currentClass.hasOuterInstance())
                 otdef = outerThisDef(tree.pos, m);
-            List<JCVariableDecl> fvdefs = freevarDefs(tree.pos, fvs, m);
+            List<JCVariableDecl> fvdefs = freevarDefs(tree.pos, fvs, m, PARAMETER);
 
             // Recursively translate result type, parameters and thrown list.
             tree.restype = translate(tree.restype);
@@ -3364,18 +3374,18 @@ public class Lower extends TreeTranslator {
          */
         private void visitArrayForeachLoop(JCEnhancedForLoop tree) {
             make_at(tree.expr.pos());
-            VarSymbol arraycache = new VarSymbol(0,
+            VarSymbol arraycache = new VarSymbol(SYNTHETIC,
                                                  names.fromString("arr" + target.syntheticNameChar()),
                                                  tree.expr.type,
                                                  currentMethodSym);
             JCStatement arraycachedef = make.VarDef(arraycache, tree.expr);
-            VarSymbol lencache = new VarSymbol(0,
+            VarSymbol lencache = new VarSymbol(SYNTHETIC,
                                                names.fromString("len" + target.syntheticNameChar()),
                                                syms.intType,
                                                currentMethodSym);
             JCStatement lencachedef = make.
                 VarDef(lencache, make.Select(make.Ident(arraycache), syms.lengthVar));
-            VarSymbol index = new VarSymbol(0,
+            VarSymbol index = new VarSymbol(SYNTHETIC,
                                             names.fromString("i" + target.syntheticNameChar()),
                                             syms.intType,
                                             currentMethodSym);
@@ -3457,7 +3467,7 @@ public class Lower extends TreeTranslator {
                                            names.iterator,
                                            eType,
                                            List.<Type>nil());
-            VarSymbol itvar = new VarSymbol(0, names.fromString("i" + target.syntheticNameChar()),
+            VarSymbol itvar = new VarSymbol(SYNTHETIC, names.fromString("i" + target.syntheticNameChar()),
                                             types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
 
@@ -3830,19 +3840,32 @@ public class Lower extends TreeTranslator {
 
     @Override
     public void visitTry(JCTry tree) {
-        /* special case of try without catchers and with finally emtpy.
-         * Don't give it a try, translate only the body.
-         */
-        if (tree.resources.isEmpty()) {
-            if (tree.catchers.isEmpty() &&
-                tree.finalizer.getStatements().isEmpty()) {
-                result = translate(tree.body);
-            } else {
-                super.visitTry(tree);
-            }
-        } else {
+        if (tree.resources.nonEmpty()) {
             result = makeTwrTry(tree);
+            return;
         }
+
+        boolean hasBody = tree.body.getStatements().nonEmpty();
+        boolean hasCatchers = tree.catchers.nonEmpty();
+        boolean hasFinally = tree.finalizer != null &&
+                tree.finalizer.getStatements().nonEmpty();
+
+        if (!hasCatchers && !hasFinally) {
+            result = translate(tree.body);
+            return;
+        }
+
+        if (!hasBody) {
+            if (hasFinally) {
+                result = translate(tree.finalizer);
+            } else {
+                result = translate(tree.body);
+            }
+            return;
+        }
+
+        // no optimizations possible
+        super.visitTry(tree);
     }
 
 /**************************************************************************

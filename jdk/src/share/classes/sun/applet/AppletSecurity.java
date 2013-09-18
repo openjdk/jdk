@@ -314,7 +314,7 @@ class AppletSecurity extends AWTSecurityManager {
             // If we're about to allow access to the main EventQueue,
             // and anything untrusted is on the class context stack,
             // disallow access.
-            super.checkAwtEventQueueAccess();
+            super.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
     } // checkAwtEventQueueAccess()
 

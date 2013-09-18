@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that default method overriding object members are flagged as error
  * @compile/fail/ref=Neg13.out -XDrawDiagnostics Neg13.java
  */

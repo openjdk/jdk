@@ -116,6 +116,19 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return buf.toList();
     }
 
+    /**
+     * Create a new list from the first {@code n} elements of this list
+     */
+    public List<A> take(int n) {
+        ListBuffer<A> buf = ListBuffer.lb();
+        int count = 0;
+        for (A el : this) {
+            if (count++ == n) break;
+            buf.append(el);
+        }
+        return buf.toList();
+    }
+
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
