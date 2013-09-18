@@ -1032,6 +1032,9 @@ with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_msvcr_dll
+with_dxsdk
+with_dxsdk_lib
+with_dxsdk_include
 with_jtreg
 with_extra_cflags
 with_extra_cxxflags
@@ -1786,6 +1789,12 @@ Optional Packages:
                           source
   --with-msvcr-dll        copy this msvcr100.dll into the built JDK (Windows
                           only) [probed]
+  --with-dxsdk            Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-dxsdk-lib        Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-dxsdk-include    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-jtreg            Regression Test Harness [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
@@ -3135,6 +3144,10 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+# Register a --with argument but mark it as deprecated
+# $1: The name of the with argument to deprecate, not including --with-
+
+
 
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
@@ -3805,7 +3818,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1379077060
+DATE_WHEN_GENERATED=1379500606
 
 ###############################################################################
 #
@@ -17582,6 +17595,33 @@ $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid
 
     MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
   fi
+
+
+
+
+# Check whether --with-dxsdk was given.
+if test "${with_dxsdk+set}" = set; then :
+  withval=$with_dxsdk; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-dxsdk is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-dxsdk is deprecated and will be ignored." >&2;}
+fi
+
+
+
+
+# Check whether --with-dxsdk-lib was given.
+if test "${with_dxsdk_lib+set}" = set; then :
+  withval=$with_dxsdk_lib; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-dxsdk-lib is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-dxsdk-lib is deprecated and will be ignored." >&2;}
+fi
+
+
+
+
+# Check whether --with-dxsdk-include was given.
+if test "${with_dxsdk_include+set}" = set; then :
+  withval=$with_dxsdk_include; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-dxsdk-include is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-dxsdk-include is deprecated and will be ignored." >&2;}
+fi
 
 
 fi
