@@ -795,11 +795,20 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
 
 
 const TypeFunc* OptoRuntime::array_fill_Type() {
-  // create input type (domain): pointer, int, size_t
-  const Type** fields = TypeTuple::fields(3 LP64_ONLY( + 1));
+  const Type** fields;
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypePtr::NOTNULL;
-  fields[argp++] = TypeInt::INT;
+  if (CCallingConventionRequiresIntsAsLongs) {
+  // create input type (domain): pointer, int, size_t
+    fields = TypeTuple::fields(3 LP64_ONLY( + 2));
+    fields[argp++] = TypePtr::NOTNULL;
+    fields[argp++] = TypeLong::LONG;
+    fields[argp++] = Type::HALF;
+  } else {
+    // create input type (domain): pointer, int, size_t
+    fields = TypeTuple::fields(3 LP64_ONLY( + 1));
+    fields[argp++] = TypePtr::NOTNULL;
+    fields[argp++] = TypeInt::INT;
+  }
   fields[argp++] = TypeX_X;               // size in whatevers (size_t)
   LP64_ONLY(fields[argp++] = Type::HALF); // other half of long length
   const TypeTuple *domain = TypeTuple::make(argp, fields);

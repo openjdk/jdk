@@ -734,11 +734,8 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       // We must cast ints to longs and use full 64 bit stack slots
       // here. We do the cast in GraphKit::gen_stub() and just guard
       // here against loosing that change.
-      Unimplemented(); // TODO: PPC port
-      /*
-      assert(SharedRuntime::c_calling_convention_requires_ints_as_longs(),
+      assert(CCallingConventionRequiresIntsAsLongs,
              "argument of type int should be promoted to type long");
-      */
       guarantee(i > 0 && sig_bt[i-1] == T_LONG,
                 "argument of type (bt) should have been promoted to type (T_LONG,bt) for bt in "
                 "{T_BOOLEAN, T_CHAR, T_BYTE, T_SHORT, T_INT}");
@@ -855,7 +852,6 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   // Adapter needs TOP_IJAVA_FRAME_ABI.
   const int adapter_size = frame::top_ijava_frame_abi_size +
                            round_to(total_args_passed * wordSize, frame::alignment_in_bytes);
-
 
   // regular (verified) c2i entry point
   c2i_entrypoint = __ pc();

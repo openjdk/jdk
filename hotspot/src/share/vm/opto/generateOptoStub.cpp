@@ -117,8 +117,16 @@ void GraphKit::gen_stub(address C_function,
   uint cnt = TypeFunc::Parms;
   // The C routines gets the base of thread-local storage passed in as an
   // extra argument.  Not all calls need it, but its cheap to add here.
-  for( ; cnt<parm_cnt; cnt++ )
-    fields[cnt] = jdomain->field_at(cnt);
+  for (uint pcnt = cnt; pcnt < parm_cnt; pcnt++, cnt++) {
+    // Convert ints to longs if required.
+    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(pcnt)->isa_int()) {
+      fields[cnt++] = TypeLong::LONG;
+      fields[cnt]   = Type::HALF; // must add an additional half for a long
+    } else {
+      fields[cnt] = jdomain->field_at(pcnt);
+    }
+  }
+
   fields[cnt++] = TypeRawPtr::BOTTOM; // Thread-local storage
   // Also pass in the caller's PC, if asked for.
   if( return_pc )
@@ -169,12 +177,20 @@ void GraphKit::gen_stub(address C_function,
 
   // Set fixed predefined input arguments
   cnt = 0;
-  for( i=0; i<TypeFunc::Parms; i++ )
-    call->init_req( cnt++, map()->in(i) );
+  for (i = 0; i < TypeFunc::Parms; i++)
+    call->init_req(cnt++, map()->in(i));
   // A little too aggressive on the parm copy; return address is not an input
   call->set_req(TypeFunc::ReturnAdr, top());
-  for( ; i<parm_cnt; i++ )    // Regular input arguments
-    call->init_req( cnt++, map()->in(i) );
+  for (; i < parm_cnt; i++) { // Regular input arguments
+    // Convert ints to longs if required.
+    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(i)->isa_int()) {
+      Node* int_as_long = _gvn.transform(new (C) ConvI2LNode(map()->in(i)));
+      call->init_req(cnt++, int_as_long); // long
+      call->init_req(cnt++, top());       // half
+    } else {
+      call->init_req(cnt++, map()->in(i));
+    }
+  }
 
   call->init_req( cnt++, thread );
   if( return_pc )             // Return PC, if asked for
