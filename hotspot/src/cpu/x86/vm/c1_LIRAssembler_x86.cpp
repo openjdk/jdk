@@ -1724,14 +1724,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
-  if (!k->is_loaded()) {
-    klass2reg_with_patching(k_RInfo, op->info_for_patch());
-  } else {
-#ifdef _LP64
-    __ mov_metadata(k_RInfo, k->constant_encoding());
-#endif // _LP64
-  }
-  assert(obj != k_RInfo, "must be different");
 
   __ cmpptr(obj, (int32_t)NULL_WORD);
   if (op->should_profile()) {
@@ -1747,6 +1739,14 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ bind(not_null);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
+  }
+
+  if (!k->is_loaded()) {
+    klass2reg_with_patching(k_RInfo, op->info_for_patch());
+  } else {
+#ifdef _LP64
+    __ mov_metadata(k_RInfo, k->constant_encoding());
+#endif // _LP64
   }
   __ verify_oop(obj);
 
