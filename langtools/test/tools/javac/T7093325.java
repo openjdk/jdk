@@ -208,7 +208,7 @@ public class T7093325
             }
 
             int actualGapsCount = 0;
-            for (int i = 0; i < code.exception_table_langth ; i++) {
+            for (int i = 0; i < code.exception_table_length ; i++) {
                 int catchType = code.exception_table[i].catch_type;
                 if (catchType == 0) { //any
                     actualGapsCount++;
