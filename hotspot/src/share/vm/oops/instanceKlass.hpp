@@ -245,7 +245,6 @@ class InstanceKlass: public Klass {
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
-  int*            _methods_cached_itable_indices;  // itable_index cache for JNI invoke corresponding to methods idnum, or NULL
   nmethodBucket*  _dependencies;         // list of dependent nmethods
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
@@ -690,10 +689,6 @@ class InstanceKlass: public Klass {
                 size_t *length_p, jmethodID* id_p);
   jmethodID jmethod_id_or_null(Method* method);
 
-  // cached itable index support
-  void set_cached_itable_index(size_t idnum, int index);
-  int cached_itable_index(size_t idnum);
-
   // annotations support
   Annotations* annotations() const          { return _annotations; }
   void set_annotations(Annotations* anno)   { _annotations = anno; }
@@ -993,11 +988,6 @@ private:
          { return (jmethodID*)OrderAccess::load_ptr_acquire(&_methods_jmethod_ids); }
   void release_set_methods_jmethod_ids(jmethodID* jmeths)
          { OrderAccess::release_store_ptr(&_methods_jmethod_ids, jmeths); }
-
-  int* methods_cached_itable_indices_acquire() const
-         { return (int*)OrderAccess::load_ptr_acquire(&_methods_cached_itable_indices); }
-  void release_set_methods_cached_itable_indices(int* indices)
-         { OrderAccess::release_store_ptr(&_methods_cached_itable_indices, indices); }
 
   // Lock during initialization
 public:
