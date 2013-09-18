@@ -342,7 +342,7 @@ void stringStream::write(const char* s, size_t len) {
 }
 
 char* stringStream::as_string() {
-  char* copy = NEW_RESOURCE_ARRAY(char, buffer_pos+1);
+  char* copy = NEW_RESOURCE_ARRAY(char, buffer_pos + 1);
   strncpy(copy, buffer, buffer_pos);
   copy[buffer_pos] = 0;  // terminating null
   return copy;
@@ -355,14 +355,190 @@ outputStream* tty;
 outputStream* gclog_or_tty;
 extern Mutex* tty_lock;
 
+#define EXTRACHARLEN   32
+#define CURRENTAPPX    ".current"
+#define FILENAMEBUFLEN  1024
+// convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DD_HH-MM-SS
+char* get_datetime_string(char *buf, size_t len) {
+  os::local_time_string(buf, len);
+  int i = (int)strlen(buf);
+  while (i-- >= 0) {
+    if (buf[i] == ' ') buf[i] = '_';
+    else if (buf[i] == ':') buf[i] = '-';
+  }
+  return buf;
+}
+
+static const char* make_log_name_internal(const char* log_name, const char* force_directory,
+                                                int pid, const char* tms) {
+  const char* basename = log_name;
+  char file_sep = os::file_separator()[0];
+  const char* cp;
+  char  pid_text[32];
+
+  for (cp = log_name; *cp != '\0'; cp++) {
+    if (*cp == '/' || *cp == file_sep) {
+      basename = cp + 1;
+    }
+  }
+  const char* nametail = log_name;
+  // Compute buffer length
+  size_t buffer_length;
+  if (force_directory != NULL) {
+    buffer_length = strlen(force_directory) + strlen(os::file_separator()) +
+                    strlen(basename) + 1;
+  } else {
+    buffer_length = strlen(log_name) + 1;
+  }
+
+  // const char* star = strchr(basename, '*');
+  const char* pts = strstr(basename, "%p");
+  int pid_pos = (pts == NULL) ? -1 : (pts - nametail);
+
+  if (pid_pos >= 0) {
+    jio_snprintf(pid_text, sizeof(pid_text), "pid%u", pid);
+    buffer_length += strlen(pid_text);
+  }
+
+  pts = strstr(basename, "%t");
+  int tms_pos = (pts == NULL) ? -1 : (pts - nametail);
+  if (tms_pos >= 0) {
+    buffer_length += strlen(tms);
+  }
+
+  // Create big enough buffer.
+  char *buf = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
+
+  strcpy(buf, "");
+  if (force_directory != NULL) {
+    strcat(buf, force_directory);
+    strcat(buf, os::file_separator());
+    nametail = basename;       // completely skip directory prefix
+  }
+
+  // who is first, %p or %t?
+  int first = -1, second = -1;
+  const char *p1st = NULL;
+  const char *p2nd = NULL;
+
+  if (pid_pos >= 0 && tms_pos >= 0) {
+    // contains both %p and %t
+    if (pid_pos < tms_pos) {
+      // case foo%pbar%tmonkey.log
+      first  = pid_pos;
+      p1st   = pid_text;
+      second = tms_pos;
+      p2nd   = tms;
+    } else {
+      // case foo%tbar%pmonkey.log
+      first  = tms_pos;
+      p1st   = tms;
+      second = pid_pos;
+      p2nd   = pid_text;
+    }
+  } else if (pid_pos >= 0) {
+    // contains %p only
+    first  = pid_pos;
+    p1st   = pid_text;
+  } else if (tms_pos >= 0) {
+    // contains %t only
+    first  = tms_pos;
+    p1st   = tms;
+  }
+
+  int buf_pos = (int)strlen(buf);
+  const char* tail = nametail;
+
+  if (first >= 0) {
+    tail = nametail + first + 2;
+    strncpy(&buf[buf_pos], nametail, first);
+    strcpy(&buf[buf_pos + first], p1st);
+    buf_pos = (int)strlen(buf);
+    if (second >= 0) {
+      strncpy(&buf[buf_pos], tail, second - first - 2);
+      strcpy(&buf[buf_pos + second - first - 2], p2nd);
+      tail = nametail + second + 2;
+    }
+  }
+  strcat(buf, tail);      // append rest of name, or all of name
+  return buf;
+}
+
+// log_name comes from -XX:LogFile=log_name or -Xloggc:log_name
+// in log_name, %p => pipd1234 and
+//              %t => YYYY-MM-DD_HH-MM-SS
+static const char* make_log_name(const char* log_name, const char* force_directory) {
+  char timestr[32];
+  get_datetime_string(timestr, sizeof(timestr));
+  return make_log_name_internal(log_name, force_directory, os::current_process_id(),
+                                timestr);
+}
+
+#ifndef PRODUCT
+void test_loggc_filename() {
+  int pid;
+  char  tms[32];
+  char  i_result[FILENAMEBUFLEN];
+  const char* o_result;
+  get_datetime_string(tms, sizeof(tms));
+  pid = os::current_process_id();
+
+  // test.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test.log", tms);
+  o_result = make_log_name_internal("test.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+
+  // test-%t-%p.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test-%s-pid%u.log", tms, pid);
+  o_result = make_log_name_internal("test-%t-%p.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t-%%p.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+
+  // test-%t%p.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test-%spid%u.log", tms, pid);
+  o_result = make_log_name_internal("test-%t%p.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t%%p.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+
+  // %p%t.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "pid%u%s.log", pid, tms);
+  o_result = make_log_name_internal("%p%t.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p%%t.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+
+  // %p-test.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "pid%u-test.log", pid);
+  o_result = make_log_name_internal("%p-test.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p-test.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+
+  // %t.log
+  jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "%s.log", tms);
+  o_result = make_log_name_internal("%t.log", NULL, pid, tms);
+  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%t.log\", NULL)");
+  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+}
+#endif // PRODUCT
+
 fileStream::fileStream(const char* file_name) {
   _file = fopen(file_name, "w");
-  _need_close = true;
+  if (_file != NULL) {
+    _need_close = true;
+  } else {
+    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    _need_close = false;
+  }
 }
 
 fileStream::fileStream(const char* file_name, const char* opentype) {
   _file = fopen(file_name, opentype);
-  _need_close = true;
+  if (_file != NULL) {
+    _need_close = true;
+  } else {
+    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    _need_close = false;
+  }
 }
 
 void fileStream::write(const char* s, size_t len) {
@@ -423,34 +599,51 @@ void fdStream::write(const char* s, size_t len) {
   update_position(s, len);
 }
 
-rotatingFileStream::~rotatingFileStream() {
+// dump vm version, os version, platform info, build id,
+// memory usage and command line flags into header
+void gcLogFileStream::dump_loggc_header() {
+  if (is_open()) {
+    print_cr(Abstract_VM_Version::internal_vm_info_string());
+    os::print_memory_info(this);
+    print("CommandLine flags: ");
+    CommandLineFlags::printSetFlags(this);
+  }
+}
+
+gcLogFileStream::~gcLogFileStream() {
   if (_file != NULL) {
     if (_need_close) fclose(_file);
-    _file      = NULL;
+    _file = NULL;
+  }
+  if (_file_name != NULL) {
     FREE_C_HEAP_ARRAY(char, _file_name, mtInternal);
     _file_name = NULL;
   }
 }
 
-rotatingFileStream::rotatingFileStream(const char* file_name) {
+gcLogFileStream::gcLogFileStream(const char* file_name) {
   _cur_file_num = 0;
   _bytes_written = 0L;
-  _file_name = NEW_C_HEAP_ARRAY(char, strlen(file_name)+10, mtInternal);
-  jio_snprintf(_file_name, strlen(file_name)+10, "%s.%d", file_name, _cur_file_num);
-  _file = fopen(_file_name, "w");
-  _need_close = true;
+  _file_name = make_log_name(file_name, NULL);
+
+  // gc log file rotation
+  if (UseGCLogFileRotation && NumberOfGCLogFiles > 1) {
+    char tempbuf[FILENAMEBUFLEN];
+    jio_snprintf(tempbuf, sizeof(tempbuf), "%s.%d" CURRENTAPPX, _file_name, _cur_file_num);
+    _file = fopen(tempbuf, "w");
+  } else {
+    _file = fopen(_file_name, "w");
+  }
+  if (_file != NULL) {
+    _need_close = true;
+    dump_loggc_header();
+  } else {
+    warning("Cannot open file %s due to %s\n", _file_name, strerror(errno));
+    _need_close = false;
+  }
 }
 
-rotatingFileStream::rotatingFileStream(const char* file_name, const char* opentype) {
-  _cur_file_num = 0;
-  _bytes_written = 0L;
-  _file_name = NEW_C_HEAP_ARRAY(char, strlen(file_name)+10, mtInternal);
-  jio_snprintf(_file_name, strlen(file_name)+10, "%s.%d", file_name, _cur_file_num);
-  _file = fopen(_file_name, opentype);
-  _need_close = true;
-}
-
-void rotatingFileStream::write(const char* s, size_t len) {
+void gcLogFileStream::write(const char* s, size_t len) {
   if (_file != NULL) {
     size_t count = fwrite(s, 1, len, _file);
     _bytes_written += count;
@@ -466,7 +659,12 @@ void rotatingFileStream::write(const char* s, size_t len) {
 // write to gc log file at safepoint. If in future, changes made for mutator threads or
 // concurrent GC threads to run parallel with VMThread at safepoint, write and rotate_log
 // must be synchronized.
-void rotatingFileStream::rotate_log() {
+void gcLogFileStream::rotate_log() {
+  char time_msg[FILENAMEBUFLEN];
+  char time_str[EXTRACHARLEN];
+  char current_file_name[FILENAMEBUFLEN];
+  char renamed_file_name[FILENAMEBUFLEN];
+
   if (_bytes_written < (jlong)GCLogFileSize) {
     return;
   }
@@ -481,27 +679,89 @@ void rotatingFileStream::rotate_log() {
     // rotate in same file
     rewind();
     _bytes_written = 0L;
+    jio_snprintf(time_msg, sizeof(time_msg), "File  %s rotated at %s\n",
+                 _file_name, os::local_time_string((char *)time_str, sizeof(time_str)));
+    write(time_msg, strlen(time_msg));
+    dump_loggc_header();
     return;
   }
 
-  // rotate file in names file.0, file.1, file.2, ..., file.<MaxGCLogFileNumbers-1>
-  // close current file, rotate to next file
+#if defined(_WINDOWS)
+#ifndef F_OK
+#define F_OK 0
+#endif
+#endif // _WINDOWS
+
+  // rotate file in names extended_filename.0, extended_filename.1, ...,
+  // extended_filename.<NumberOfGCLogFiles - 1>. Current rotation file name will
+  // have a form of extended_filename.<i>.current where i is the current rotation
+  // file number. After it reaches max file size, the file will be saved and renamed
+  // with .current removed from its tail.
+  size_t filename_len = strlen(_file_name);
   if (_file != NULL) {
-    _cur_file_num ++;
-    if (_cur_file_num >= NumberOfGCLogFiles) _cur_file_num = 0;
-    jio_snprintf(_file_name, strlen(Arguments::gc_log_filename()) + 10, "%s.%d",
-             Arguments::gc_log_filename(), _cur_file_num);
+    jio_snprintf(renamed_file_name, filename_len + EXTRACHARLEN, "%s.%d",
+                 _file_name, _cur_file_num);
+    jio_snprintf(current_file_name, filename_len + EXTRACHARLEN, "%s.%d" CURRENTAPPX,
+                 _file_name, _cur_file_num);
+    jio_snprintf(time_msg, sizeof(time_msg), "%s GC log file has reached the"
+                           " maximum size. Saved as %s\n",
+                           os::local_time_string((char *)time_str, sizeof(time_str)),
+                           renamed_file_name);
+    write(time_msg, strlen(time_msg));
+
     fclose(_file);
     _file = NULL;
+
+    bool can_rename = true;
+    if (access(current_file_name, F_OK) != 0) {
+      // current file does not exist?
+      warning("No source file exists, cannot rename\n");
+      can_rename = false;
+    }
+    if (can_rename) {
+      if (access(renamed_file_name, F_OK) == 0) {
+        if (remove(renamed_file_name) != 0) {
+          warning("Could not delete existing file %s\n", renamed_file_name);
+          can_rename = false;
+        }
+      } else {
+        // file does not exist, ok to rename
+      }
+    }
+    if (can_rename && rename(current_file_name, renamed_file_name) != 0) {
+      warning("Could not rename %s to %s\n", _file_name, renamed_file_name);
+    }
   }
-  _file = fopen(_file_name, "w");
+
+  _cur_file_num++;
+  if (_cur_file_num > NumberOfGCLogFiles - 1) _cur_file_num = 0;
+  jio_snprintf(current_file_name,  filename_len + EXTRACHARLEN, "%s.%d" CURRENTAPPX,
+               _file_name, _cur_file_num);
+  _file = fopen(current_file_name, "w");
+
   if (_file != NULL) {
     _bytes_written = 0L;
     _need_close = true;
+    // reuse current_file_name for time_msg
+    jio_snprintf(current_file_name, filename_len + EXTRACHARLEN,
+                 "%s.%d", _file_name, _cur_file_num);
+    jio_snprintf(time_msg, sizeof(time_msg), "%s GC log file created %s\n",
+                           os::local_time_string((char *)time_str, sizeof(time_str)),
+                           current_file_name);
+    write(time_msg, strlen(time_msg));
+    dump_loggc_header();
+    // remove the existing file
+    if (access(current_file_name, F_OK) == 0) {
+      if (remove(current_file_name) != 0) {
+        warning("Could not delete existing file %s\n", current_file_name);
+      }
+    }
   } else {
-    tty->print_cr("failed to open rotation log file %s due to %s\n",
+    warning("failed to open rotation log file %s due to %s\n"
+            "Turned off GC log file rotation\n",
                   _file_name, strerror(errno));
     _need_close = false;
+    FLAG_SET_DEFAULT(UseGCLogFileRotation, false);
   }
 }
 
@@ -528,66 +788,6 @@ bool defaultStream::has_log_file() {
   // if a VM error has been reported.
   if (!_inited && !is_error_reported())  init();
   return _log_file != NULL;
-}
-
-static const char* make_log_name(const char* log_name, const char* force_directory) {
-  const char* basename = log_name;
-  char file_sep = os::file_separator()[0];
-  const char* cp;
-  for (cp = log_name; *cp != '\0'; cp++) {
-    if (*cp == '/' || *cp == file_sep) {
-      basename = cp+1;
-    }
-  }
-  const char* nametail = log_name;
-
-  // Compute buffer length
-  size_t buffer_length;
-  if (force_directory != NULL) {
-    buffer_length = strlen(force_directory) + strlen(os::file_separator()) +
-                    strlen(basename) + 1;
-  } else {
-    buffer_length = strlen(log_name) + 1;
-  }
-
-  const char* star = strchr(basename, '*');
-  int star_pos = (star == NULL) ? -1 : (star - nametail);
-  int skip = 1;
-  if (star == NULL) {
-    // Try %p
-    star = strstr(basename, "%p");
-    if (star != NULL) {
-      skip = 2;
-    }
-  }
-  star_pos = (star == NULL) ? -1 : (star - nametail);
-
-  char pid[32];
-  if (star_pos >= 0) {
-    jio_snprintf(pid, sizeof(pid), "%u", os::current_process_id());
-    buffer_length += strlen(pid);
-  }
-
-  // Create big enough buffer.
-  char *buf = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
-
-  strcpy(buf, "");
-  if (force_directory != NULL) {
-    strcat(buf, force_directory);
-    strcat(buf, os::file_separator());
-    nametail = basename;       // completely skip directory prefix
-  }
-
-  if (star_pos >= 0) {
-    // convert foo*bar.log or foo%pbar.log to foo123bar.log
-    int buf_pos = (int) strlen(buf);
-    strncpy(&buf[buf_pos], nametail, star_pos);
-    strcpy(&buf[buf_pos + star_pos], pid);
-    nametail += star_pos + skip;  // skip prefix and pid format
-  }
-
-  strcat(buf, nametail);      // append rest of name, or all of name
-  return buf;
 }
 
 void defaultStream::init_log() {
@@ -877,11 +1077,8 @@ void ostream_init_log() {
 
   gclog_or_tty = tty; // default to tty
   if (Arguments::gc_log_filename() != NULL) {
-    fileStream * gclog  = UseGCLogFileRotation ?
-                          new(ResourceObj::C_HEAP, mtInternal)
-                             rotatingFileStream(Arguments::gc_log_filename()) :
-                          new(ResourceObj::C_HEAP, mtInternal)
-                             fileStream(Arguments::gc_log_filename());
+    fileStream * gclog  = new(ResourceObj::C_HEAP, mtInternal)
+                             gcLogFileStream(Arguments::gc_log_filename());
     if (gclog->is_open()) {
       // now we update the time stamp of the GC log to be synced up
       // with tty.
