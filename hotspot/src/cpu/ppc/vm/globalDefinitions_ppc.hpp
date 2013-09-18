@@ -29,6 +29,12 @@
 // Size of PPC Instructions
 const int BytesPerInstWord = 4;
 
-const int StackAlignmentInBytes  = 16;
+const int StackAlignmentInBytes = 16;
+
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are properly extended to 64 bits.
+// If set, SharedRuntime::c_calling_convention() must adapt
+// signatures accordingly.
+const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP

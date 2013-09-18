@@ -366,6 +366,16 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
+  // Compute the new number of arguments in the signature if 32 bit ints
+  // must be converted to longs. Needed if CCallingConventionRequiresIntsAsLongs
+  // is true.
+  static int  convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt);
+  // Adapt a method's signature if it contains 32 bit integers that must
+  // be converted to longs. Needed if CCallingConventionRequiresIntsAsLongs
+  // is true.
+  static void convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
+                                       BasicType*& in_sig_bt, VMRegPair*& in_regs);
+
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
   // blobs does not create a new frame and are therefore virtually invisible
@@ -378,7 +388,7 @@ class SharedRuntime: AllStatic {
   // location for the interpreter to record. This is used by the frame code
   // to correct the sender code to match up with the stack pointer when the
   // thread left the compiled code. In addition it allows the interpreter
-  // to remove the space the c2i adapter allocated to do it argument conversion.
+  // to remove the space the c2i adapter allocated to do its argument conversion.
 
   // Although a c2i blob will always run interpreted even if compiled code is
   // present if we see that compiled code is present the compiled call site

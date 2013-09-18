@@ -2692,27 +2692,38 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     _igvn.register_new_node_with_optimizer(store_value);
   }
 
+  if (CCallingConventionRequiresIntsAsLongs &&
+      // See StubRoutines::select_fill_function for types. FLOAT has been converted to INT.
+      (t == T_FLOAT || t == T_INT ||  is_subword_type(t))) {
+    store_value = new (C) ConvI2LNode(store_value);
+    _igvn.register_new_node_with_optimizer(store_value);
+  }
+
   Node* mem_phi = store->in(MemNode::Memory);
   Node* result_ctrl;
   Node* result_mem;
   const TypeFunc* call_type = OptoRuntime::array_fill_Type();
   CallLeafNode *call = new (C) CallLeafNoFPNode(call_type, fill,
                                                 fill_name, TypeAryPtr::get_array_body_type(t));
-  call->init_req(TypeFunc::Parms+0, from);
-  call->init_req(TypeFunc::Parms+1, store_value);
+  uint cnt = 0;
+  call->init_req(TypeFunc::Parms + cnt++, from);
+  call->init_req(TypeFunc::Parms + cnt++, store_value);
+  if (CCallingConventionRequiresIntsAsLongs) {
+    call->init_req(TypeFunc::Parms + cnt++, C->top());
+  }
 #ifdef _LP64
   len = new (C) ConvI2LNode(len);
   _igvn.register_new_node_with_optimizer(len);
 #endif
-  call->init_req(TypeFunc::Parms+2, len);
+  call->init_req(TypeFunc::Parms + cnt++, len);
 #ifdef _LP64
-  call->init_req(TypeFunc::Parms+3, C->top());
+  call->init_req(TypeFunc::Parms + cnt++, C->top());
 #endif
-  call->init_req( TypeFunc::Control, head->init_control());
-  call->init_req( TypeFunc::I_O    , C->top() )        ;   // does no i/o
-  call->init_req( TypeFunc::Memory ,  mem_phi->in(LoopNode::EntryControl) );
-  call->init_req( TypeFunc::ReturnAdr, C->start()->proj_out(TypeFunc::ReturnAdr) );
-  call->init_req( TypeFunc::FramePtr, C->start()->proj_out(TypeFunc::FramePtr) );
+  call->init_req(TypeFunc::Control,   head->init_control());
+  call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
+  call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
+  call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out(TypeFunc::ReturnAdr));
+  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out(TypeFunc::FramePtr));
   _igvn.register_new_node_with_optimizer(call);
   result_ctrl = new (C) ProjNode(call,TypeFunc::Control);
   _igvn.register_new_node_with_optimizer(result_ctrl);
