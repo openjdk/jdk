@@ -402,6 +402,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
     case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
     case load_mirror_id:   target = Runtime1::entry_for(Runtime1::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id:      target = Runtime1::entry_for(Runtime1::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
@@ -419,7 +420,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   for (int j = __ offset() ; j < jmp_off + 5 ; j++ ) {
     __ nop();
   }
-  if (_id == load_klass_id || _id == load_mirror_id) {
+  if (_id == load_klass_id || _id == load_mirror_id || _id == load_appendix_id) {
     CodeSection* cs = __ code_section();
     RelocIterator iter(cs, (address)_pc_start, (address)(_pc_start + 1));
     relocInfo::change_reloc_info_for_address(&iter, (address) _pc_start, reloc_type, relocInfo::none);

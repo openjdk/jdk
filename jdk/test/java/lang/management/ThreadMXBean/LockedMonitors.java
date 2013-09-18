@@ -37,7 +37,7 @@
  * @build Barrier
  * @build LockingThread
  * @build ThreadDump
- * @run main LockedMonitors
+ * @run main/othervm LockedMonitors
  */
 
 import java.lang.management.*;

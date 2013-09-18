@@ -118,7 +118,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         if (prev != null) {
             Content prevLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, prev.asClassDoc())
-                    .label(configuration.getText("doclet.Prev_Class")).strong(true));
+                    .label(prevclassLabel).strong(true));
             li = HtmlTree.LI(prevLink);
         }
         else
@@ -136,7 +136,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         if (next != null) {
             Content nextLink = getLink(new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS, next.asClassDoc())
-                    .label(configuration.getText("doclet.Next_Class")).strong(true));
+                    .label(nextclassLabel).strong(true));
             li = HtmlTree.LI(nextLink);
         }
         else
