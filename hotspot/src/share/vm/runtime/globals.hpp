@@ -2525,6 +2525,9 @@ class CommandLineFlags {
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
                                                                             \
+  diagnostic(bool, VerifyStringTableAtExit, false,                          \
+          "verify StringTable contents at exit")                            \
+                                                                            \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \
