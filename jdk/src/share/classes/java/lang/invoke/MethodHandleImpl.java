@@ -435,7 +435,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 // Spread the array.
                 MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
                 Name array = names[argIndex];
-                names[nameCursor++] = new Name(NF_checkSpreadArgument, array, spreadArgCount);
+                names[nameCursor++] = new Name(Lazy.NF_checkSpreadArgument, array, spreadArgCount);
                 for (int j = 0; j < spreadArgCount; i++, j++) {
                     indexes[i] = nameCursor;
                     names[nameCursor++] = new Name(aload, array, j);
@@ -480,14 +480,20 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         throw new WrongMethodTypeException("Array is not of length "+n);
     }
 
-    private static final NamedFunction NF_checkSpreadArgument;
-    static {
-        try {
-            NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-            NF_checkSpreadArgument.resolve();
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
+    /**
+     * Pre-initialized NamedFunctions for bootstrapping purposes.
+     * Factored in an inner class to delay initialization until first usage.
+     */
+    private static class Lazy {
+        static final NamedFunction NF_checkSpreadArgument;
+        static {
+            try {
+                NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                NF_checkSpreadArgument.resolve();
+            } catch (ReflectiveOperationException ex) {
+                throw newInternalError(ex);
+            }
         }
     }
 
