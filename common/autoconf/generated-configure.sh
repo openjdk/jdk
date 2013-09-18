@@ -709,7 +709,6 @@ STATIC_LIBRARY
 SHARED_LIBRARY
 OBJ_SUFFIX
 COMPILER_NAME
-TARGET_BITS_FLAG
 JT_HOME
 JTREGEXE
 LIPO
@@ -766,8 +765,6 @@ BUILD_LD
 BUILD_CXX
 BUILD_CC
 MSVCR_DLL
-DXSDK_INCLUDE_PATH
-DXSDK_LIB_PATH
 VS_PATH
 VS_LIB
 VS_INCLUDE
@@ -1031,12 +1028,10 @@ with_override_corba
 with_override_jaxp
 with_override_jaxws
 with_override_hotspot
+with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_msvcr_dll
-with_dxsdk
-with_dxsdk_lib
-with_dxsdk_include
 with_jtreg
 with_extra_cflags
 with_extra_cxxflags
@@ -1784,17 +1779,13 @@ Optional Packages:
   --with-override-jaxp    use this jaxp dir for the build
   --with-override-jaxws   use this jaxws dir for the build
   --with-override-hotspot use this hotspot dir for the build
+  --with-override-nashorn use this nashorn dir for the build
   --with-override-jdk     use this jdk dir for the build
   --with-import-hotspot   import hotspot binaries from this jdk image or
                           hotspot build dist dir instead of building from
                           source
   --with-msvcr-dll        copy this msvcr100.dll into the built JDK (Windows
                           only) [probed]
-  --with-dxsdk            the DirectX SDK (Windows only) [probed]
-  --with-dxsdk-lib        the DirectX SDK lib directory (Windows only)
-                          [probed]
-  --with-dxsdk-include    the DirectX SDK include directory (Windows only)
-                          [probed]
   --with-jtreg            Regression Test Harness [probed]
   --with-extra-cflags     extra flags to be used when compiling jdk c-files
   --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
@@ -3805,10 +3796,6 @@ fi
 
 
 
-# Setup the DXSDK paths
-
-
-
 
 
 
@@ -3818,7 +3805,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1378914658
+DATE_WHEN_GENERATED=1379077060
 
 ###############################################################################
 #
@@ -16102,6 +16089,10 @@ if test "x$with_add_source_root" != x; then
        test -f $with_add_source_root/hotspot/make/Makefile; then
         as_fn_error $? "Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources." "$LINENO" 5
     fi
+    if test -f $with_add_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_add_source_root/nashorn/make/Makefile; then
+        as_fn_error $? "Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources." "$LINENO" 5
+    fi
     if test -f $with_add_source_root/jdk/makefiles/Makefile || \
        test -f $with_add_source_root/jdk/make/Makefile; then
         as_fn_error $? "Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources." "$LINENO" 5
@@ -16136,6 +16127,10 @@ if test "x$with_override_source_root" != x; then
     if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
        test -f $with_override_source_root/hotspot/make/Makefile; then
         as_fn_error $? "Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override." "$LINENO" 5
+    fi
+    if test -f $with_override_source_root/nashorn/makefiles/Makefile || \
+       test -f $with_override_source_root/nashorn/make/Makefile; then
+        as_fn_error $? "Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override." "$LINENO" 5
     fi
     if test -f $with_override_source_root/jdk/makefiles/Makefile || \
        test -f $with_override_source_root/jdk/make/Makefile; then
@@ -16195,6 +16190,13 @@ fi
 # Check whether --with-override-hotspot was given.
 if test "${with_override_hotspot+set}" = set; then :
   withval=$with_override_hotspot;
+fi
+
+
+
+# Check whether --with-override-nashorn was given.
+if test "${with_override_nashorn+set}" = set; then :
+  withval=$with_override_nashorn;
 fi
 
 
@@ -16276,7 +16278,7 @@ if test "x$with_override_nashorn" != x; then
     cd "$with_override_nashorn"
     NASHORN_TOPDIR="`pwd`"
     cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/makefiles/BuildNashorn.gmk; then
+    if ! test -f $NASHORN_TOPDIR/makefiles/Makefile; then
         as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
@@ -17581,441 +17583,6 @@ $as_echo "$as_me: The path of MSVCR_DLL, which resolves as \"$path\", is invalid
     MSVCR_DLL="`cd "$path"; $THEPWDCMD -L`"
   fi
 
-
-
-
-# Check whether --with-dxsdk was given.
-if test "${with_dxsdk+set}" = set; then :
-  withval=$with_dxsdk;
-fi
-
-
-# Check whether --with-dxsdk-lib was given.
-if test "${with_dxsdk_lib+set}" = set; then :
-  withval=$with_dxsdk_lib;
-fi
-
-
-# Check whether --with-dxsdk-include was given.
-if test "${with_dxsdk_include+set}" = set; then :
-  withval=$with_dxsdk_include;
-fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DirectX SDK" >&5
-$as_echo_n "checking for DirectX SDK... " >&6; }
-
-  if test "x$with_dxsdk" != x; then
-    dxsdk_path="$with_dxsdk"
-  elif test "x$DXSDK_DIR" != x; then
-    dxsdk_path="$DXSDK_DIR"
-  elif test -d "C:/DXSDK"; then
-    dxsdk_path="C:/DXSDK"
-  else
-    as_fn_error $? "Could not find the DirectX SDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $dxsdk_path" >&5
-$as_echo "$dxsdk_path" >&6; }
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$dxsdk_path"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of dxsdk_path" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    dxsdk_path="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting dxsdk_path to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting dxsdk_path to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$dxsdk_path"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    dxsdk_path="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting dxsdk_path to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting dxsdk_path to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$dxsdk_path"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of dxsdk_path, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of dxsdk_path, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    dxsdk_path="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DirectX SDK lib dir" >&5
-$as_echo_n "checking for DirectX SDK lib dir... " >&6; }
-  if test "x$with_dxsdk_lib" != x; then
-    DXSDK_LIB_PATH="$with_dxsdk_lib"
-  elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-    DXSDK_LIB_PATH="$dxsdk_path/Lib/x64"
-  else
-    DXSDK_LIB_PATH="$dxsdk_path/Lib"
-  fi
-  # dsound.lib is linked to in jsoundds
-  if test ! -f "$DXSDK_LIB_PATH/dsound.lib"; then
-    as_fn_error $? "Invalid DirectX SDK lib dir" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DXSDK_LIB_PATH" >&5
-$as_echo "$DXSDK_LIB_PATH" >&6; }
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$DXSDK_LIB_PATH"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of DXSDK_LIB_PATH" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    DXSDK_LIB_PATH="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DXSDK_LIB_PATH to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting DXSDK_LIB_PATH to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$DXSDK_LIB_PATH"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    DXSDK_LIB_PATH="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DXSDK_LIB_PATH to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting DXSDK_LIB_PATH to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$DXSDK_LIB_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of DXSDK_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of DXSDK_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    DXSDK_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DirectX SDK include dir" >&5
-$as_echo_n "checking for DirectX SDK include dir... " >&6; }
-  if test "x$with_dxsdk_include" != x; then
-    DXSDK_INCLUDE_PATH="$with_dxsdk_include"
-  else
-    DXSDK_INCLUDE_PATH="$dxsdk_path/Include"
-  fi
-  # dsound.h is included in jsoundds
-  if test ! -f "$DXSDK_INCLUDE_PATH/dsound.h"; then
-    as_fn_error $? "Invalid DirectX SDK lib dir" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DXSDK_INCLUDE_PATH" >&5
-$as_echo "$DXSDK_INCLUDE_PATH" >&6; }
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$DXSDK_INCLUDE_PATH"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of DXSDK_INCLUDE_PATH" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    DXSDK_INCLUDE_PATH="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DXSDK_INCLUDE_PATH to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting DXSDK_INCLUDE_PATH to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$DXSDK_INCLUDE_PATH"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    DXSDK_INCLUDE_PATH="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting DXSDK_INCLUDE_PATH to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting DXSDK_INCLUDE_PATH to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$DXSDK_INCLUDE_PATH"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of DXSDK_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    DXSDK_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-
-
-
-  LDFLAGS_JDK="$LDFLAGS_JDK -libpath:$DXSDK_LIB_PATH"
 
 fi
 
@@ -28830,35 +28397,41 @@ done
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
   # Always specify -m flags on Solaris
 
-  # keep track of c/cxx flags that we added outselves...
-  #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  # When we add flags to the "official" CFLAGS etc, we need to
+  # keep track of these additions in ADDED_CFLAGS etc. These
+  # will later be checked to make sure only controlled additions
+  # have been made to CFLAGS etc.
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
 elif test "x$COMPILE_TYPE" = xreduced; then
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
     # Specify -m if running reduced on other Posix platforms
 
-  # keep track of c/cxx flags that we added outselves...
-  #   to prevent emitting warning...
-  TARGET_BITS_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  # When we add flags to the "official" CFLAGS etc, we need to
+  # keep track of these additions in ADDED_CFLAGS etc. These
+  # will later be checked to make sure only controlled additions
+  # have been made to CFLAGS etc.
+  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
 
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
 
-  CFLAGS="${CFLAGS} ${TARGET_BITS_FLAG}"
-  CXXFLAGS="${CXXFLAGS} ${TARGET_BITS_FLAG}"
-  LDFLAGS="${LDFLAGS} ${TARGET_BITS_FLAG}"
-
-  CFLAGS_JDK="${CFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} ${TARGET_BITS_FLAG}"
-  LDFLAGS_JDK="${LDFLAGS_JDK} ${TARGET_BITS_FLAG}"
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
   fi
 fi
@@ -33618,6 +33191,7 @@ fi
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
 CONFIG_STATUS="$OUTPUT_ROOT/config.status"
+
 # Create the actual output files. Now the main work of configure is done.
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -34898,6 +34472,11 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+# Try to move the config.log file to the output directory.
+if test -e ./config.log; then
+  $MV -f ./config.log "$OUTPUT_ROOT/config.log" 2> /dev/null
+fi
 
 # Make the compare script executable
 $CHMOD +x $OUTPUT_ROOT/compare.sh
