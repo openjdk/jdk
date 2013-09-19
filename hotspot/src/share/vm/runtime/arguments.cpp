@@ -2409,21 +2409,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     return result;
   }
 
-  if (AggressiveOpts) {
-    // Insert alt-rt.jar between user-specified bootclasspath
-    // prefix and the default bootclasspath.  os::set_boot_path()
-    // uses meta_index_dir as the default bootclasspath directory.
-    const char* altclasses_jar = "alt-rt.jar";
-    size_t altclasses_path_len = strlen(get_meta_index_dir()) + 1 +
-                                 strlen(altclasses_jar);
-    char* altclasses_path = NEW_C_HEAP_ARRAY(char, altclasses_path_len, mtInternal);
-    strcpy(altclasses_path, get_meta_index_dir());
-    strcat(altclasses_path, altclasses_jar);
-    scp.add_suffix_to_prefix(altclasses_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
-  }
-
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
   result = parse_java_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {
