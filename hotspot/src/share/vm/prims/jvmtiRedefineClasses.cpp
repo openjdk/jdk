@@ -2958,7 +2958,7 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
   for (int i = 0; i < _deleted_methods_length; ++i) {
     Method* old_method = _deleted_methods[i];
 
-    assert(old_method->vtable_index() < 0,
+    assert(!old_method->has_vtable_index(),
            "cannot delete methods with vtable entries");;
 
     // Mark all deleted methods as old and obsolete
