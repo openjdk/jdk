@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,26 +32,25 @@ import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
- * Writes annotation type required member documentation in HTML format.
+ * Writes annotation type field documentation in HTML format.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
+ * @author Bhavesh Patel
  */
-public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
-    implements AnnotationTypeRequiredMemberWriter, MemberSummaryWriter {
+public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
+    implements AnnotationTypeFieldWriter, MemberSummaryWriter {
 
     /**
-     * Construct a new AnnotationTypeRequiredMemberWriterImpl.
+     * Construct a new AnnotationTypeFieldWriterImpl.
      *
      * @param writer         the writer that will write the output.
      * @param annotationType the AnnotationType that holds this member.
      */
-    public AnnotationTypeRequiredMemberWriterImpl(SubWriterHolderWriter writer,
+    public AnnotationTypeFieldWriterImpl(SubWriterHolderWriter writer,
             AnnotationTypeDoc annotationType) {
         super(writer, annotationType);
     }
@@ -62,7 +61,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public Content getMemberSummaryHeader(ClassDoc classDoc,
             Content memberSummaryTree) {
         memberSummaryTree.addContent(
-                HtmlConstants.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY);
+                HtmlConstants.START_OF_ANNOTATION_TYPE_FIELD_SUMMARY);
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, classDoc, memberTree);
         return memberTree;
@@ -78,8 +77,8 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public void addAnnotationDetailsMarker(Content memberDetails) {
-        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_DETAILS);
+    public void addAnnotationFieldDetailsMarker(Content memberDetails) {
+        memberDetails.addContent(HtmlConstants.START_OF_ANNOTATION_TYPE_FIELD_DETAILS);
     }
 
     /**
@@ -87,13 +86,13 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public void addAnnotationDetailsTreeHeader(ClassDoc classDoc,
             Content memberDetailsTree) {
-        if (!writer.printedAnnotationHeading) {
+        if (!writer.printedAnnotationFieldHeading) {
             memberDetailsTree.addContent(writer.getMarkerAnchor(
-                    "annotation_type_element_detail"));
+                    "annotation_type_field_detail"));
             Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
-                    writer.annotationTypeDetailsLabel);
+                    writer.fieldDetailsLabel);
             memberDetailsTree.addContent(heading);
-            writer.printedAnnotationHeading = true;
+            writer.printedAnnotationFieldHeading = true;
         }
     }
 
@@ -103,8 +102,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public Content getAnnotationDocTreeHeader(MemberDoc member,
             Content annotationDetailsTree) {
         annotationDetailsTree.addContent(
-                writer.getMarkerAnchor(member.name() +
-                ((ExecutableMemberDoc) member).signature()));
+                writer.getMarkerAnchor(member.name()));
         Content annotationDocTree = writer.getMemberTreeHeader();
         Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
         heading.addContent(member.name());
@@ -181,7 +179,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
-                writer.getResource("doclet.Annotation_Type_Required_Member_Summary"));
+                writer.getResource("doclet.Field_Summary"));
         memberTree.addContent(label);
     }
 
@@ -190,15 +188,15 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public String getTableSummary() {
         return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Annotation_Type_Required_Member_Summary"),
-                configuration.getText("doclet.annotation_type_required_members"));
+                configuration.getText("doclet.Field_Summary"),
+                configuration.getText("doclet.fields"));
     }
 
     /**
      * {@inheritDoc}
      */
     public Content getCaption() {
-        return configuration.getResource("doclet.Annotation_Type_Required_Members");
+        return configuration.getResource("doclet.Fields");
     }
 
     /**
@@ -208,7 +206,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
         String[] header = new String[] {
             writer.getModifierTypeHeader(),
             configuration.getText("doclet.0_and_1",
-                    configuration.getText("doclet.Annotation_Type_Required_Member"),
+                    configuration.getText("doclet.Fields"),
                     configuration.getText("doclet.Description"))
         };
         return header;
@@ -219,7 +217,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     public void addSummaryAnchor(ClassDoc cd, Content memberTree) {
         memberTree.addContent(writer.getMarkerAnchor(
-                "annotation_type_required_element_summary"));
+                "annotation_type_field_summary"));
     }
 
     /**
@@ -274,10 +272,10 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(ClassDoc cd, boolean link) {
         if (link) {
-            return writer.getHyperLink("annotation_type_required_element_summary",
-                    writer.getResource("doclet.navAnnotationTypeRequiredMember"));
+            return writer.getHyperLink("annotation_type_field_summary",
+                    writer.getResource("doclet.navField"));
         } else {
-            return writer.getResource("doclet.navAnnotationTypeRequiredMember");
+            return writer.getResource("doclet.navField");
         }
     }
 
@@ -286,10 +284,10 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink("annotation_type_element_detail",
-                    writer.getResource("doclet.navAnnotationTypeMember")));
+            liNav.addContent(writer.getHyperLink("annotation_type_field_detail",
+                    writer.getResource("doclet.navField")));
         } else {
-            liNav.addContent(writer.getResource("doclet.navAnnotationTypeMember"));
+            liNav.addContent(writer.getResource("doclet.navField"));
         }
     }
 

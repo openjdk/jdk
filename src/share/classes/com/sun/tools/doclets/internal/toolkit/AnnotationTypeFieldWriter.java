@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.*;
 import com.sun.javadoc.*;
 
 /**
- * The interface for writing annotation type required member output.
+ * The interface for writing annotation type field output.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -37,12 +37,11 @@ import com.sun.javadoc.*;
  *  deletion without notice.</b>
  *
  *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
- * @since 1.5
+ * @author Bhavesh Patel
+ * @since 1.8
  */
 
-public interface AnnotationTypeRequiredMemberWriter {
+public interface AnnotationTypeFieldWriter {
 
     /**
      * Add the annotation type member tree header.
@@ -52,11 +51,11 @@ public interface AnnotationTypeRequiredMemberWriter {
     public Content getMemberTreeHeader();
 
     /**
-     * Add the annotation type details marker.
+     * Add the annotation type field details marker.
      *
-     * @param memberDetails the content tree representing details marker
+     * @param memberDetails the content tree representing field details marker
      */
-    public void addAnnotationDetailsMarker(Content memberDetails);
+    public void addAnnotationFieldDetailsMarker(Content memberDetails);
 
     /**
      * Add the annotation type details tree header.

@@ -213,6 +213,20 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * Build the summary for fields.
+     *
+     * @param node the XML element that specifies which components to document
+     * @param memberSummaryTree the content tree to which the documentation will be added
+     */
+    public void buildAnnotationTypeFieldsSummary(XMLNode node, Content memberSummaryTree) {
+        MemberSummaryWriter writer =
+                memberSummaryWriters[VisibleMemberMap.ANNOTATION_TYPE_FIELDS];
+        VisibleMemberMap visibleMemberMap =
+                visibleMemberMaps[VisibleMemberMap.ANNOTATION_TYPE_FIELDS];
+        addSummary(writer, visibleMemberMap, false, memberSummaryTree);
+    }
+
+    /**
      * Build the summary for the optional members.
      *
      * @param node the XML element that specifies which components to document
