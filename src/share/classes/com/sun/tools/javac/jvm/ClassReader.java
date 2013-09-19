@@ -56,6 +56,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
@@ -702,6 +703,12 @@ public class ClassReader {
             while (signature[sigp] == '^') {
                 sigp++;
                 thrown = thrown.prepend(sigToType());
+            }
+            // if there is a typevar in the throws clause we should state it.
+            for (List<Type> l = thrown; l.nonEmpty(); l = l.tail) {
+                if (l.head.hasTag(TYPEVAR)) {
+                    l.head.tsym.flags_field |= THROWS;
+                }
             }
             return new MethodType(argtypes,
                                   restype,
