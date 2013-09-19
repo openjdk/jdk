@@ -3995,9 +3995,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       this_klass->set_has_final_method();
     }
     this_klass->copy_method_ordering(method_ordering, CHECK_NULL);
-    // The InstanceKlass::_methods_jmethod_ids cache and the
-    // InstanceKlass::_methods_cached_itable_indices cache are
-    // both managed on the assumption that the initial cache
+    // The InstanceKlass::_methods_jmethod_ids cache
+    // is managed on the assumption that the initial cache
     // size is equal to the number of methods in the class. If
     // that changes, then InstanceKlass::idnum_can_increment()
     // has to be changed accordingly.
