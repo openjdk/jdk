@@ -1245,6 +1245,7 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        boolean checkRaw;
         boolean isOuter;
         Env<AttrContext> env;
 
@@ -1254,7 +1255,7 @@ public class Check {
 
         @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
-            tree.elemtype.accept(this);
+            validateTree(tree.elemtype, checkRaw, isOuter);
         }
 
         @Override
@@ -1345,15 +1346,20 @@ public class Check {
         }
 
         public void validateTree(JCTree tree, boolean checkRaw, boolean isOuter) {
-            try {
-                if (tree != null) {
-                    this.isOuter = isOuter;
+            if (tree != null) {
+                boolean prevCheckRaw = this.checkRaw;
+                this.checkRaw = checkRaw;
+                this.isOuter = isOuter;
+
+                try {
                     tree.accept(this);
                     if (checkRaw)
                         checkRaw(tree, env);
+                } catch (CompletionFailure ex) {
+                    completionError(tree.pos(), ex);
+                } finally {
+                    this.checkRaw = prevCheckRaw;
                 }
-            } catch (CompletionFailure ex) {
-                completionError(tree.pos(), ex);
             }
         }
 
