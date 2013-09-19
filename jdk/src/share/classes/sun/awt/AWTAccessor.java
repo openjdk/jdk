@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 
 import java.io.File;
+import java.util.ResourceBundle;
 import java.util.Vector;
 
 /**
@@ -705,6 +706,13 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor for the Toolkit class
+     */
+    public interface ToolkitAccessor {
+        void setPlatformResources(ResourceBundle bundle);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -731,6 +739,7 @@ public final class AWTAccessor {
     private static TrayIconAccessor trayIconAccessor;
     private static DefaultKeyboardFocusManagerAccessor defaultKeyboardFocusManagerAccessor;
     private static SequencedEventAccessor sequencedEventAccessor;
+    private static ToolkitAccessor toolkitAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -1123,5 +1132,23 @@ public final class AWTAccessor {
         // Null returned value means it's not initialized
         // (so not a single instance of the event has been created).
         return sequencedEventAccessor;
+    }
+
+    /*
+     * Set an accessor object for the java.awt.Toolkit class.
+     */
+    public static void setToolkitAccessor(ToolkitAccessor ta) {
+        toolkitAccessor = ta;
+    }
+
+    /*
+     * Get the accessor object for the java.awt.Toolkit class.
+     */
+    public static ToolkitAccessor getToolkitAccessor() {
+        if (toolkitAccessor == null) {
+            unsafe.ensureClassInitialized(Toolkit.class);
+        }
+
+        return toolkitAccessor;
     }
 }

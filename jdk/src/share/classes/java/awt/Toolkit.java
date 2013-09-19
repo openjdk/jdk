@@ -56,6 +56,7 @@ import sun.awt.HeadlessToolkit;
 import sun.awt.NullComponentPeer;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import sun.security.util.SecurityConstants;
 
 import sun.util.CoreResourceBundleControl;
@@ -1599,6 +1600,12 @@ public abstract class Toolkit {
      * here, so that only one copy is maintained.
      */
     private static ResourceBundle resources;
+    private static ResourceBundle platformResources;
+
+    // called by platform toolkit
+    private static void setPlatformResources(ResourceBundle bundle) {
+        platformResources = bundle;
+    }
 
     /**
      * Initialize JNI field and method ids
@@ -1647,6 +1654,14 @@ public abstract class Toolkit {
     }
 
     static {
+        AWTAccessor.setToolkitAccessor(
+                new AWTAccessor.ToolkitAccessor() {
+                    @Override
+                    public void setPlatformResources(ResourceBundle bundle) {
+                        Toolkit.setPlatformResources(bundle);
+                    }
+                });
+
         java.security.AccessController.doPrivileged(
                                  new java.security.PrivilegedAction<Void>() {
             public Void run() {
@@ -1674,6 +1689,15 @@ public abstract class Toolkit {
      * This method returns defaultValue if the property is not found.
      */
     public static String getProperty(String key, String defaultValue) {
+        // first try platform specific bundle
+        if (platformResources != null) {
+            try {
+                return platformResources.getString(key);
+            }
+            catch (MissingResourceException e) {}
+        }
+
+        // then shared one
         if (resources != null) {
             try {
                 return resources.getString(key);
