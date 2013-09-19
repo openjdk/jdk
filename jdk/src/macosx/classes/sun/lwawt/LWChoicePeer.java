@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 
 package sun.lwawt;
 
-import java.awt.Choice;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.peer.ChoicePeer;
 
-import javax.swing.JComboBox;
+import javax.accessibility.Accessible;
+import javax.swing.*;
 
 final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
         implements ChoicePeer, ItemListener {
@@ -158,6 +158,33 @@ final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
                 selectedItemChanged();
             }
             super.setSelectedItem(anObject);
+        }
+
+        @Override
+        public void firePopupMenuWillBecomeVisible() {
+            super.firePopupMenuWillBecomeVisible();
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    JPopupMenu popupMenu = getPopupMenu();
+                    if (popupMenu != null) {
+                        if (popupMenu.getInvoker() != LWChoicePeer.this.getTarget()) {
+                            popupMenu.setVisible(false);
+                            popupMenu.show(LWChoicePeer.this.getTarget(), 0, 0);
+                        }
+                    }
+                }
+            });
+        }
+
+        private JPopupMenu getPopupMenu() {
+            for (int i = 0; i < getAccessibleContext().getAccessibleChildrenCount(); i++) {
+                Accessible child = getAccessibleContext().getAccessibleChild(i);
+                if (child instanceof JPopupMenu) {
+                    return  (JPopupMenu) child;
+                }
+            }
+            return null;
         }
     }
 }
