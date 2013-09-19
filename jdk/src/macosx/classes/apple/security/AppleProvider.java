@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public final class AppleProvider extends Provider {
 
     public AppleProvider() {
         /* We are the Apple provider */
-        super("Apple", 1.1, info);
+        super("Apple", 1.8d, info);
 
         AccessController.<Object>doPrivileged(new java.security.PrivilegedAction<Object>() {
             public Object run() {
