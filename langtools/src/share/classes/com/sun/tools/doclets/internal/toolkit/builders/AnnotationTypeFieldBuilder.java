@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,17 @@ import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
- * Builds documentation for required annotation type members.
+ * Builds documentation for annotation type fields.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @author Jamie Ho
- * @author Bhavesh Patel (Modified)
- * @since 1.5
+ * @author Bhavesh Patel
+ * @since 1.8
  */
-public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
+public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
 
     /**
      * The annotation type whose members are being documented.
@@ -58,7 +57,7 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     /**
      * The writer to output the member documentation.
      */
-    protected AnnotationTypeRequiredMemberWriter writer;
+    protected AnnotationTypeFieldWriter writer;
 
     /**
      * The list of members being documented.
@@ -72,15 +71,16 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     protected int currentMemberIndex;
 
     /**
-     * Construct a new AnnotationTypeRequiredMemberBuilder.
+     * Construct a new AnnotationTypeFieldsBuilder.
      *
      * @param context  the build context.
      * @param classDoc the class whose members are being documented.
      * @param writer the doclet specific writer.
+     * @param memberType the type of member that is being documented.
      */
-    protected AnnotationTypeRequiredMemberBuilder(Context context,
+    protected AnnotationTypeFieldBuilder(Context context,
             ClassDoc classDoc,
-            AnnotationTypeRequiredMemberWriter writer,
+            AnnotationTypeFieldWriter writer,
             int memberType) {
         super(context);
         this.classDoc = classDoc;
@@ -96,25 +96,24 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
 
 
     /**
-     * Construct a new AnnotationTypeMemberBuilder.
+     * Construct a new AnnotationTypeFieldBuilder.
      *
      * @param context  the build context.
      * @param classDoc the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
-    public static AnnotationTypeRequiredMemberBuilder getInstance(
+    public static AnnotationTypeFieldBuilder getInstance(
             Context context, ClassDoc classDoc,
-            AnnotationTypeRequiredMemberWriter writer) {
-        return new AnnotationTypeRequiredMemberBuilder(context, classDoc,
-                    writer,
-                    VisibleMemberMap.ANNOTATION_TYPE_MEMBER_REQUIRED);
+            AnnotationTypeFieldWriter writer) {
+        return new AnnotationTypeFieldBuilder(context, classDoc,
+                    writer, VisibleMemberMap.ANNOTATION_TYPE_FIELDS);
     }
 
     /**
      * {@inheritDoc}
      */
     public String getName() {
-        return "AnnotationTypeRequiredMemberDetails";
+        return "AnnotationTypeFieldDetails";
     }
 
     /**
@@ -146,12 +145,12 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Build the annotation type required member documentation.
+     * Build the annotation type field documentation.
      *
      * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeRequiredMember(XMLNode node, Content memberDetailsTree) {
+    public void buildAnnotationTypeField(XMLNode node, Content memberDetailsTree) {
         buildAnnotationTypeMember(node, memberDetailsTree);
     }
 
@@ -167,13 +166,14 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
         }
         int size = members.size();
         if (size > 0) {
-            writer.addAnnotationDetailsMarker(memberDetailsTree);
+            writer.addAnnotationFieldDetailsMarker(memberDetailsTree);
             for (currentMemberIndex = 0; currentMemberIndex < size;
                     currentMemberIndex++) {
                 Content detailsTree = writer.getMemberTreeHeader();
                 writer.addAnnotationDetailsTreeHeader(classDoc, detailsTree);
                 Content annotationDocTree = writer.getAnnotationDocTreeHeader(
-                        (MemberDoc) members.get(currentMemberIndex), detailsTree);
+                        (MemberDoc) members.get(currentMemberIndex),
+                        detailsTree);
                 buildChildren(node, annotationDocTree);
                 detailsTree.addContent(writer.getAnnotationDoc(
                         annotationDocTree, (currentMemberIndex == size - 1)));
@@ -230,12 +230,11 @@ public class AnnotationTypeRequiredMemberBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Return the annotation type required member writer for this builder.
+     * Return the annotation type field writer for this builder.
      *
-     * @return the annotation type required member constant writer for this
-     * builder.
+     * @return the annotation type field writer for this builder.
      */
-    public AnnotationTypeRequiredMemberWriter getWriter() {
+    public AnnotationTypeFieldWriter getWriter() {
         return writer;
     }
 }
