@@ -1096,6 +1096,7 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
+#if defined(COMPILER2) || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -1108,6 +1109,7 @@ static void no_shared_spaces() {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
+#endif
 
 void Arguments::set_tiered_flags() {
   // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
@@ -1492,16 +1494,18 @@ void Arguments::set_ergonomics_flags() {
         FLAG_SET_ERGO(bool, UseParallelGC, true);
       }
     }
-    // Shared spaces work fine with other GCs but causes bytecode rewriting
-    // to be disabled, which hurts interpreter performance and decreases
-    // server performance.   On server class machines, keep the default
-    // off unless it is asked for.  Future work: either add bytecode rewriting
-    // at link time, or rewrite bytecodes in non-shared methods.
-    if (!DumpSharedSpaces && !RequireSharedSpaces &&
-        (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-      no_shared_spaces();
-    }
   }
+#ifdef COMPILER2
+  // Shared spaces work fine with other GCs but causes bytecode rewriting
+  // to be disabled, which hurts interpreter performance and decreases
+  // server performance.  When -server is specified, keep the default off
+  // unless it is asked for.  Future work: either add bytecode rewriting
+  // at link time, or rewrite bytecodes in non-shared methods.
+  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+      (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
+    no_shared_spaces();
+  }
+#endif
 
 #ifndef ZERO
 #ifdef _LP64
