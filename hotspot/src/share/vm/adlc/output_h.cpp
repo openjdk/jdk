@@ -1539,7 +1539,20 @@ void ArchDesc::declareClasses(FILE *fp) {
     if ( instr->is_ideal_jump() ) {
       fprintf(fp, "  GrowableArray<Label*> _index2label;\n");
     }
-    fprintf(fp,"public:\n");
+
+    fprintf(fp, "public:\n");
+
+    Attribute *att = instr->_attribs;
+    // Fields of the node specified in the ad file.
+    while (att != NULL) {
+      if (strncmp(att->_ident, "ins_field_", 10) == 0) {
+        const char *field_name = att->_ident+10;
+        const char *field_type = att->_val;
+        fprintf(fp, "  %s _%s;\n", field_type, field_name);
+      }
+      att = (Attribute *)att->_next;
+    }
+
     fprintf(fp,"  MachOper *opnd_array(uint operand_index) const {\n");
     fprintf(fp,"    assert(operand_index < _num_opnds, \"invalid _opnd_array index\");\n");
     fprintf(fp,"    return _opnd_array[operand_index];\n");
@@ -1586,8 +1599,9 @@ void ArchDesc::declareClasses(FILE *fp) {
     Attribute *attr = instr->_attribs;
     bool avoid_back_to_back = false;
     while (attr != NULL) {
-      if (strcmp(attr->_ident,"ins_cost") &&
-          strcmp(attr->_ident,"ins_short_branch")) {
+      if (strcmp (attr->_ident,"ins_cost") &&
+          strncmp(attr->_ident,"ins_field_", 10) != 0 &&
+          strcmp (attr->_ident,"ins_short_branch")) {
         fprintf(fp,"          int            %s() const { return %s; }\n",
                 attr->_ident, attr->_val);
       }
