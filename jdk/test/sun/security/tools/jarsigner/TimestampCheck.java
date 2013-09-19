@@ -239,13 +239,13 @@ public class TimestampCheck {
                 " -J-Djava.security.egd=file:/dev/./urandom" +
                 " -debug -keystore " + TSKS + " -storepass changeit" +
                 " -tsa http://localhost:" + port + "/%d" +
-                " -signedjar new.jar " + JAR + " old";
+                " -signedjar new_%d.jar " + JAR + " old";
         } else {
             cmd = System.getProperty("java.home") + "/bin/jarsigner" +
                 " -J-Djava.security.egd=file:/dev/./urandom" +
                 " -debug -keystore " + TSKS + " -storepass changeit" +
                 " -tsa http://localhost:" + port + "/%d" +
-                " -signedjar new.jar " + JAR + " old";
+                " -signedjar new_%d.jar " + JAR + " old";
         }
 
         try {
@@ -280,7 +280,7 @@ public class TimestampCheck {
     static void jarsigner(String cmd, int path, boolean expected)
             throws Exception {
         System.err.println("Test " + path);
-        Process p = Runtime.getRuntime().exec(String.format(cmd, path));
+        Process p = Runtime.getRuntime().exec(String.format(cmd, path, path));
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(p.getErrorStream()));
         while (true) {
@@ -288,9 +288,25 @@ public class TimestampCheck {
             if (s == null) break;
             System.err.println(s);
         }
+
+        // Will not see noTimestamp warning
+        boolean seeWarning = false;
+        reader = new BufferedReader(
+                new InputStreamReader(p.getInputStream()));
+        while (true) {
+            String s = reader.readLine();
+            if (s == null) break;
+            System.err.println(s);
+            if (s.indexOf("Warning:") >= 0) {
+                seeWarning = true;
+            }
+        }
         int result = p.waitFor();
         if (expected && result != 0 || !expected && result == 0) {
             throw new Exception("Failed");
+        }
+        if (seeWarning) {
+            throw new Exception("See warning");
         }
     }
 }
