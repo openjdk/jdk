@@ -139,7 +139,10 @@ class os: AllStatic {
 
  public:
   static void init(void);                      // Called before command line parsing
+  static void init_before_ergo(void);          // Called after command line parsing
+                                               // before VM ergonomics processing.
   static jint init_2(void);                    // Called after command line parsing
+                                               // and VM ergonomics processing
   static void init_globals(void) {             // Called from init_globals() in init.cpp
     init_globals_ext();
   }
@@ -254,6 +257,11 @@ class os: AllStatic {
   static size_t page_size_for_region(size_t region_min_size,
                                      size_t region_max_size,
                                      uint min_pages);
+  // Return the largest page size that can be used
+  static size_t max_page_size() {
+    // The _page_sizes array is sorted in descending order.
+    return _page_sizes[0];
+  }
 
   // Methods for tracing page sizes returned by the above method; enabled by
   // TracePageSizes.  The region_{min,max}_size parameters should be the values

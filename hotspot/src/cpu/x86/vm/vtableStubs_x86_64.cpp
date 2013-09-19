@@ -211,11 +211,11 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (is_vtable_stub) {
     // Vtable stub size
     return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedKlassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
+           (UseCompressedClassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
   } else {
     // Itable stub size
     return (DebugVtables ? 512 : 74) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedKlassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
+           (UseCompressedClassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
   }
   // In order to tune these parameters, run the JVM with VM options
   // +PrintMiscellaneous and +WizardMode to see information about
