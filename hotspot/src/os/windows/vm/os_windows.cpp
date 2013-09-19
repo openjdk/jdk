@@ -5429,7 +5429,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
       if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
         lib_name = ++start;
       } else {
-        // Need to check for C:
+        // Need to check for drive prefix
         if ((start = strchr(lib_name, ':')) != NULL) {
           lib_name = ++start;
         }
