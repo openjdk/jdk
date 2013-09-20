@@ -2620,7 +2620,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     // Never move a TAB down a run if it is in the first column.
                     // Even if there isn't enough room, moving it to a fresh
                     // line won't help.
-                    if (rect.x != 2 + insets.left && rect.x + rect.width > returnAt) {
+                    if (rect.x != x && rect.x + rect.width > returnAt) {
                         if (runCount > tabRuns.length - 1) {
                             expandTabRunsArray();
                         }
@@ -2648,7 +2648,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     // Never move a TAB over a run if it is in the first run.
                     // Even if there isn't enough room, moving it to a fresh
                     // column won't help.
-                    if (rect.y != 2 + insets.top && rect.y + rect.height > returnAt) {
+                    if (rect.y != y && rect.y + rect.height > returnAt) {
                         if (runCount > tabRuns.length - 1) {
                             expandTabRunsArray();
                         }
