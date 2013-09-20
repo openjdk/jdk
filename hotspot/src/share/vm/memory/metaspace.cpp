@@ -1342,8 +1342,9 @@ bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
   // reserved space, because this is a larger space prereserved for compressed
   // class pointers.
   if (!FLAG_IS_DEFAULT(MaxMetaspaceSize)) {
-    size_t real_allocated = Metaspace::space_list()->reserved_words() +
-              MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
+    size_t nonclass_allocated = MetaspaceAux::reserved_bytes(Metaspace::NonClassType);
+    size_t class_allocated    = MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
+    size_t real_allocated     = nonclass_allocated + class_allocated;
     if (real_allocated >= MaxMetaspaceSize) {
       return false;
     }
