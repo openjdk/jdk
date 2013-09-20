@@ -108,16 +108,16 @@ objArrayOop ConstantPool::resolved_references() const {
 void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
                                                   intStack reference_map,
                                                   int constant_pool_map_length,
-                                                   TRAPS) {
+                                                  TRAPS) {
   // Initialized the resolved object cache.
   int map_length = reference_map.length();
   if (map_length > 0) {
     // Only need mapping back to constant pool entries.  The map isn't used for
-    // invokedynamic resolved_reference entries.  The constant pool cache index
-    // has the mapping back to both the constant pool and to the resolved
-    // reference index.
+    // invokedynamic resolved_reference entries.  For invokedynamic entries,
+    // the constant pool cache index has the mapping back to both the constant
+    // pool and to the resolved reference index.
     if (constant_pool_map_length > 0) {
-      Array<u2>* om = MetadataFactory::new_array<u2>(loader_data, map_length, CHECK);
+      Array<u2>* om = MetadataFactory::new_array<u2>(loader_data, constant_pool_map_length, CHECK);
 
       for (int i = 0; i < constant_pool_map_length; i++) {
         int x = reference_map.at(i);
@@ -182,16 +182,9 @@ oop ConstantPool::lock() {
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
-  for (int i = 0; i< reference_map()->length(); i++) {
-    if (reference_map()->at(i) == cp_index) return i;
-    // Zero entry is divider between constant pool indices for strings,
-    // method handles and method types. After that the index is a constant
-    // pool cache index for invokedynamic.  Stop when zero (which can never
-    // be a constant pool index)
-    if (reference_map()->at(i) == 0) break;
-  }
-  // We might not find the index.
-  return _no_index_sentinel;
+  int i = reference_map()->find(cp_index);
+  // We might not find the index for jsr292 call.
+  return (i < 0) ? _no_index_sentinel : i;
 }
 
 Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS) {
@@ -866,8 +859,7 @@ oop ConstantPool::string_at_impl(constantPoolHandle this_oop, int which, int obj
   // If the string has already been interned, this entry will be non-null
   oop str = this_oop->resolved_references()->obj_at(obj_index);
   if (str != NULL) return str;
-
-      Symbol* sym = this_oop->unresolved_string_at(which);
+  Symbol* sym = this_oop->unresolved_string_at(which);
   str = StringTable::intern(sym, CHECK_(NULL));
   this_oop->string_at_put(which, obj_index, str);
   assert(java_lang_String::is_instance(str), "must be string");
