@@ -61,6 +61,8 @@ public class WhiteBox {
     registerNatives();
   }
 
+  // Get the maximum heap size supporting COOPs
+  public native long getCompressedOopsMaxHeapSize();
   // Arguments
   public native void printHeapSizes();
 
