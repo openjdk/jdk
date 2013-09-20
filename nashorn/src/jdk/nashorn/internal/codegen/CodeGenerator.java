@@ -2174,8 +2174,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.invoke(ScriptRuntime.OPEN_WITH);
             method.storeCompilerConstant(SCOPE);
         } else {
-            // We just loaded the expression for its side effect; discard it
-            method.pop();
+            // We just loaded the expression for its side effect and to check
+            // for null or undefined value.
+            globalCheckObjectCoercible();
         }
 
 
@@ -3255,6 +3256,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter globalIsEval() {
         return method.invokestatic(GLOBAL_OBJECT, "isEval", methodDescriptor(boolean.class, Object.class));
+    }
+
+    private MethodEmitter globalCheckObjectCoercible() {
+        return method.invokestatic(GLOBAL_OBJECT, "checkObjectCoercible", methodDescriptor(void.class, Object.class));
     }
 
     private MethodEmitter globalDirectEval() {
