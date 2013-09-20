@@ -231,7 +231,6 @@ class ConstantPool : public Metadata {
   static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
   static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPool, _resolved_references); }
-  static int reference_map_offset_in_bytes() { return offset_of(ConstantPool, _reference_map); }
 
   // Storing constants
 
