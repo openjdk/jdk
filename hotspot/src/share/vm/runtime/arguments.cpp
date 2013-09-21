@@ -28,6 +28,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
 #include "memory/referenceProcessor.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -54,6 +55,8 @@
 #endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
@@ -90,6 +93,7 @@ char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
+size_t Arguments::_conservative_max_heap_alignment = 0;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -1391,10 +1395,17 @@ bool verify_object_alignment() {
   return true;
 }
 
-inline uintx max_heap_for_compressed_oops() {
+uintx Arguments::max_heap_for_compressed_oops() {
   // Avoid sign flip.
   assert(OopEncodingHeapMax > (uint64_t)os::vm_page_size(), "Unusual page size");
-  LP64_ONLY(return OopEncodingHeapMax - os::vm_page_size());
+  // We need to fit both the NULL page and the heap into the memory budget, while
+  // keeping alignment constraints of the heap. To guarantee the latter, as the
+  // NULL page is located before the heap, we pad the NULL page to the conservative
+  // maximum alignment that the GC may ever impose upon the heap.
+  size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
+    Arguments::conservative_max_heap_alignment());
+
+  LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1439,7 +1450,7 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
     }
   }
 #endif // _LP64
@@ -1452,27 +1463,44 @@ void Arguments::set_use_compressed_oops() {
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifndef ZERO
 #ifdef _LP64
-  // UseCompressedOops must be on for UseCompressedKlassPointers to be on.
+  // UseCompressedOops must be on for UseCompressedClassPointers to be on.
   if (!UseCompressedOops) {
-    if (UseCompressedKlassPointers) {
-      warning("UseCompressedKlassPointers requires UseCompressedOops");
+    if (UseCompressedClassPointers) {
+      warning("UseCompressedClassPointers requires UseCompressedOops");
     }
-    FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
   } else {
-    // Turn on UseCompressedKlassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
-      FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
+    // Turn on UseCompressedClassPointers too
+    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
+      FLAG_SET_ERGO(bool, UseCompressedClassPointers, true);
     }
-    // Check the ClassMetaspaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedKlassPointers) {
-      if (ClassMetaspaceSize > KlassEncodingMetaspaceMax) {
-        warning("Class metaspace size is too large for UseCompressedKlassPointers");
-        FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
+    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
+    if (UseCompressedClassPointers) {
+      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
+        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
       }
     }
   }
 #endif // _LP64
 #endif // !ZERO
+}
+
+void Arguments::set_conservative_max_heap_alignment() {
+  // The conservative maximum required alignment for the heap is the maximum of
+  // the alignments imposed by several sources: any requirements from the heap
+  // itself, the collector policy and the maximum page size we may run the VM
+  // with.
+  size_t heap_alignment = GenCollectedHeap::conservative_max_heap_alignment();
+#if INCLUDE_ALL_GCS
+  if (UseParallelGC) {
+    heap_alignment = ParallelScavengeHeap::conservative_max_heap_alignment();
+  } else if (UseG1GC) {
+    heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
+  }
+#endif // INCLUDE_ALL_GCS
+  _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
+    CollectorPolicy::compute_max_alignment());
 }
 
 void Arguments::set_ergonomics_flags() {
@@ -1502,6 +1530,8 @@ void Arguments::set_ergonomics_flags() {
       no_shared_spaces();
     }
   }
+
+  set_conservative_max_heap_alignment();
 
 #ifndef ZERO
 #ifdef _LP64
@@ -1839,7 +1869,7 @@ void check_gclog_consistency() {
         (NumberOfGCLogFiles == 0)  ||
         (GCLogFileSize == 0)) {
       jio_fprintf(defaultStream::output_stream(),
-                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>\n"
+                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files> -XX:GCLogFileSize=<num_of_size>[k|K|m|M|g|G]\n"
                   "where num_of_file > 0 and num_of_size > 0\n"
                   "GC log rotation is turned off\n");
       UseGCLogFileRotation = false;
@@ -1851,6 +1881,51 @@ void check_gclog_consistency() {
         jio_fprintf(defaultStream::output_stream(),
                     "GCLogFileSize changed to minimum 8K\n");
   }
+}
+
+// This function is called for -Xloggc:<filename>, it can be used
+// to check if a given file name(or string) conforms to the following
+// specification:
+// A valid string only contains "[A-Z][a-z][0-9].-_%[p|t]"
+// %p and %t only allowed once. We only limit usage of filename not path
+bool is_filename_valid(const char *file_name) {
+  const char* p = file_name;
+  char file_sep = os::file_separator()[0];
+  const char* cp;
+  // skip prefix path
+  for (cp = file_name; *cp != '\0'; cp++) {
+    if (*cp == '/' || *cp == file_sep) {
+      p = cp + 1;
+    }
+  }
+
+  int count_p = 0;
+  int count_t = 0;
+  while (*p != '\0') {
+    if ((*p >= '0' && *p <= '9') ||
+        (*p >= 'A' && *p <= 'Z') ||
+        (*p >= 'a' && *p <= 'z') ||
+         *p == '-'               ||
+         *p == '_'               ||
+         *p == '.') {
+       p++;
+       continue;
+    }
+    if (*p == '%') {
+      if(*(p + 1) == 'p') {
+        p += 2;
+        count_p ++;
+        continue;
+      }
+      if (*(p + 1) == 't') {
+        p += 2;
+        count_t ++;
+        continue;
+      }
+    }
+    return false;
+  }
+  return count_p < 2 && count_t < 2;
 }
 
 // Check consistency of GC selection
@@ -2148,8 +2223,8 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_object_alignment();
 
-  status = status && verify_interval(ClassMetaspaceSize, 1*M, 3*G,
-                                      "ClassMetaspaceSize");
+  status = status && verify_interval(CompressedClassSpaceSize, 1*M, 3*G,
+                                      "CompressedClassSpaceSize");
 
   status = status && verify_interval(MarkStackSizeMax,
                                   1, (max_jint - 1), "MarkStackSizeMax");
@@ -2806,6 +2881,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // ostream_init_log(), when called will use this filename
       // to initialize a fileStream.
       _gc_log_filename = strdup(tail);
+     if (!is_filename_valid(_gc_log_filename)) {
+       jio_fprintf(defaultStream::output_stream(),
+                  "Invalid file name for use with -Xloggc: Filename can only contain the "
+                  "characters [A-Z][a-z][0-9]-_.%%[p|t] but it has been %s\n"
+                  "Note %%p or %%t can only be used once\n", _gc_log_filename);
+        return JNI_EINVAL;
+      }
       FLAG_SET_CMDLINE(bool, PrintGC, true);
       FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true);
 
@@ -3274,13 +3356,13 @@ void Arguments::set_shared_spaces_flags() {
     }
     UseSharedSpaces = false;
 #ifdef _LP64
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       vm_exit_during_initialization(
-        "Cannot dump shared archive when UseCompressedOops or UseCompressedKlassPointers is off.", NULL);
+        "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off.", NULL);
     }
   } else {
-    // UseCompressedOops and UseCompressedKlassPointers must be on for UseSharedSpaces.
-    if (!UseCompressedOops || !UseCompressedKlassPointers) {
+    // UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
       no_shared_spaces();
     }
 #endif
@@ -3325,6 +3407,33 @@ static char* get_shared_archive_path() {
   }
   return shared_archive_path;
 }
+
+#ifndef PRODUCT
+// Determine whether LogVMOutput should be implicitly turned on.
+static bool use_vm_log() {
+  if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
+      PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
+      PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
+      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
+    return true;
+  }
+
+#ifdef COMPILER1
+  if (PrintC1Statistics) {
+    return true;
+  }
+#endif // COMPILER1
+
+#ifdef COMPILER2
+  if (PrintOptoAssembly || PrintOptoStatistics) {
+    return true;
+  }
+#endif // COMPILER2
+
+  return false;
+}
+#endif // PRODUCT
 
 // Parse entry point called from JNI_CreateJavaVM
 
@@ -3506,6 +3615,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   no_shared_spaces();
 #endif // INCLUDE_CDS
 
+  return JNI_OK;
+}
+
+jint Arguments::apply_ergo() {
+
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
@@ -3581,7 +3695,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
-  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedKlassPointers, false));
+  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedClassPointers, false));
 #endif // CC_INTERP
 
 #ifdef COMPILER2
@@ -3610,6 +3724,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     DebugNonSafepoints = true;
   }
 
+  if (FLAG_IS_CMDLINE(CompressedClassSpaceSize) && !UseCompressedClassPointers) {
+    warning("Setting CompressedClassSpaceSize has no effect when compressed class pointers are not used");
+  }
+
 #ifndef PRODUCT
   if (CompileTheWorld) {
     // Force NmethodSweeper to sweep whole CodeCache each time.
@@ -3617,7 +3735,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       NmethodSweepFraction = 1;
     }
   }
-#endif
+
+  if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
+    if (use_vm_log()) {
+      LogVMOutput = true;
+    }
+  }
+#endif // PRODUCT
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags(tty);

@@ -69,6 +69,7 @@ import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -129,7 +130,7 @@ public final class JapaneseDate
     /**
      * The underlying ISO local date.
      */
-    private transient final LocalDate isoDate;
+    private final transient LocalDate isoDate;
     /**
      * The JapaneseEra of this date.
      */
@@ -689,6 +690,28 @@ public final class JapaneseDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(4);                 // identifies a JapaneseDate
+     *  out.writeInt(get(YEAR));
+     *  out.writeByte(get(MONTH_OF_YEAR));
+     *  out.writeByte(get(DAY_OF_MONTH));
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.JAPANESE_DATE_TYPE, this);
     }
