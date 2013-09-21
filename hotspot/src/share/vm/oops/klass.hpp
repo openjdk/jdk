@@ -179,7 +179,7 @@ class Klass : public Metadata {
   // Constructor
   Klass();
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS);
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
   bool is_klass() const volatile { return true; }

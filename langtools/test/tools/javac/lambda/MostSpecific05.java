@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,9 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  Structural most specific doesn't handle cases with wildcards in functional interfaces
+ * @compile/fail/ref=MostSpecific05.out -XDrawDiagnostics MostSpecific05.java
  */
 public class MostSpecific05 {
-
-    static int assertionCount = 0;
-
-    static void assertTrue(boolean cond) {
-        assertionCount++;
-        if (!cond)
-            throw new AssertionError();
-    }
 
     interface ObjectConverter<T extends Object> {
         T map(Object o);
@@ -46,13 +39,13 @@ public class MostSpecific05 {
     }
 
     static class MyMapper<A extends Object, B extends Number> {
-        void map(ObjectConverter<? extends A> m) { assertTrue(false); }
-        void map(NumberConverter<? extends B> m) { assertTrue(true); }
+        void map(ObjectConverter<? extends A> m) { }
+        void map(NumberConverter<? extends B> m) { }
     }
 
     public static void main(String[] args) {
         MyMapper<Number, Double> mm = new MyMapper<Number, Double>();
-        mm.map(e->1.0);
-        assertTrue(assertionCount == 1);
+        mm.map(e->1.0); //ambiguous - implicit
+        mm.map((Object e)->1.0); //ok
     }
 }

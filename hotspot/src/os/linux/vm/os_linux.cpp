@@ -2767,7 +2767,19 @@ void os::numa_make_global(char *addr, size_t bytes) {
   Linux::numa_interleave_memory(addr, bytes);
 }
 
+// Define for numa_set_bind_policy(int). Setting the argument to 0 will set the
+// bind policy to MPOL_PREFERRED for the current thread.
+#define USE_MPOL_PREFERRED 0
+
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
+  // To make NUMA and large pages more robust when both enabled, we need to ease
+  // the requirements on where the memory should be allocated. MPOL_BIND is the
+  // default policy and it will force memory to be allocated on the specified
+  // node. Changing this to MPOL_PREFERRED will prefer to allocate the memory on
+  // the specified node, but will not force it. Using this policy will prevent
+  // getting SIGBUS when trying to allocate large pages on NUMA nodes with no
+  // free large pages.
+  Linux::numa_set_bind_policy(USE_MPOL_PREFERRED);
   Linux::numa_tonode_memory(addr, bytes, lgrp_hint);
 }
 
@@ -2869,6 +2881,8 @@ bool os::Linux::libnuma_init() {
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
                                             libnuma_dlsym(handle, "numa_interleave_memory")));
+      set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
+                                            libnuma_dlsym(handle, "numa_set_bind_policy")));
 
 
       if (numa_available() != -1) {
@@ -2935,6 +2949,7 @@ os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
@@ -2942,6 +2957,53 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
 }
+
+static
+address get_stack_commited_bottom(address bottom, size_t size) {
+  address nbot = bottom;
+  address ntop = bottom + size;
+
+  size_t page_sz = os::vm_page_size();
+  unsigned pages = size / page_sz;
+
+  unsigned char vec[1];
+  unsigned imin = 1, imax = pages + 1, imid;
+  int mincore_return_value;
+
+  while (imin < imax) {
+    imid = (imax + imin) / 2;
+    nbot = ntop - (imid * page_sz);
+
+    // Use a trick with mincore to check whether the page is mapped or not.
+    // mincore sets vec to 1 if page resides in memory and to 0 if page
+    // is swapped output but if page we are asking for is unmapped
+    // it returns -1,ENOMEM
+    mincore_return_value = mincore(nbot, page_sz, vec);
+
+    if (mincore_return_value == -1) {
+      // Page is not mapped go up
+      // to find first mapped page
+      if (errno != EAGAIN) {
+        assert(errno == ENOMEM, "Unexpected mincore errno");
+        imax = imid;
+      }
+    } else {
+      // Page is mapped go down
+      // to find first not mapped page
+      imin = imid + 1;
+    }
+  }
+
+  nbot = nbot + page_sz;
+
+  // Adjust stack bottom one page up if last checked page is not mapped
+  if (mincore_return_value == -1) {
+    nbot = nbot + page_sz;
+  }
+
+  return nbot;
+}
+
 
 // Linux uses a growable mapping for the stack, and if the mapping for
 // the stack guard pages is not removed when we detach a thread the
@@ -2957,59 +3019,37 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
 // So, we need to know the extent of the stack mapping when
 // create_stack_guard_pages() is called.
 
-// Find the bounds of the stack mapping.  Return true for success.
-//
 // We only need this for stacks that are growable: at the time of
 // writing thread stacks don't use growable mappings (i.e. those
 // creeated with MAP_GROWSDOWN), and aren't marked "[stack]", so this
 // only applies to the main thread.
 
-static
-bool get_stack_bounds(uintptr_t *bottom, uintptr_t *top) {
-
-  char buf[128];
-  int fd, sz;
-
-  if ((fd = ::open("/proc/self/maps", O_RDONLY)) < 0) {
-    return false;
-  }
-
-  const char kw[] = "[stack]";
-  const int kwlen = sizeof(kw)-1;
-
-  // Address part of /proc/self/maps couldn't be more than 128 bytes
-  while ((sz = os::get_line_chars(fd, buf, sizeof(buf))) > 0) {
-     if (sz > kwlen && ::memcmp(buf+sz-kwlen, kw, kwlen) == 0) {
-        // Extract addresses
-        if (sscanf(buf, "%" SCNxPTR "-%" SCNxPTR, bottom, top) == 2) {
-           uintptr_t sp = (uintptr_t) __builtin_frame_address(0);
-           if (sp >= *bottom && sp <= *top) {
-              ::close(fd);
-              return true;
-           }
-        }
-     }
-  }
-
- ::close(fd);
-  return false;
-}
-
-
 // If the (growable) stack mapping already extends beyond the point
 // where we're going to put our guard pages, truncate the mapping at
 // that point by munmap()ping it.  This ensures that when we later
 // munmap() the guard pages we don't leave a hole in the stack
-// mapping. This only affects the main/initial thread, but guard
-// against future OS changes
+// mapping. This only affects the main/initial thread
+
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  uintptr_t stack_extent, stack_base;
-  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
-  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
-      assert(os::Linux::is_initial_thread(),
-           "growable stack in non-initial thread");
-    if (stack_extent < (uintptr_t)addr)
-      ::munmap((void*)stack_extent, (uintptr_t)addr - stack_extent);
+
+  if (os::Linux::is_initial_thread()) {
+    // As we manually grow stack up to bottom inside create_attached_thread(),
+    // it's likely that os::Linux::initial_thread_stack_bottom is mapped and
+    // we don't need to do anything special.
+    // Check it first, before calling heavy function.
+    uintptr_t stack_extent = (uintptr_t) os::Linux::initial_thread_stack_bottom();
+    unsigned char vec[1];
+
+    if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
+      // Fallback to slow path on all errors, including EAGAIN
+      stack_extent = (uintptr_t) get_stack_commited_bottom(
+                                    os::Linux::initial_thread_stack_bottom(),
+                                    (size_t)addr - stack_extent);
+    }
+
+    if (stack_extent < (uintptr_t)addr) {
+      ::munmap((void*)stack_extent, (uintptr_t)(addr - stack_extent));
+    }
   }
 
   return os::commit_memory(addr, size, !ExecMem);
@@ -3018,13 +3058,13 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 // If this is a growable mapping, remove the guard pages entirely by
 // munmap()ping them.  If not, just call uncommit_memory(). This only
 // affects the main/initial thread, but guard against future OS changes
+// It's safe to always unmap guard pages for initial thread because we
+// always place it right after end of the mapped region
+
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
   uintptr_t stack_extent, stack_base;
-  bool chk_bounds = NOT_DEBUG(os::Linux::is_initial_thread()) DEBUG_ONLY(true);
-  if (chk_bounds && get_stack_bounds(&stack_extent, &stack_base)) {
-      assert(os::Linux::is_initial_thread(),
-           "growable stack in non-initial thread");
 
+  if (os::Linux::is_initial_thread()) {
     return ::munmap(addr, size) == 0;
   }
 

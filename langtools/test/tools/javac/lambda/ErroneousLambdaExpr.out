@@ -1,0 +1,2 @@
+ErroneousLambdaExpr.java:63:13: compiler.err.ref.ambiguous: call, kindname.method, call(ErroneousLambdaExpr.SAM1<T>), ErroneousLambdaExpr, kindname.method, call(ErroneousLambdaExpr.SAM2), ErroneousLambdaExpr
+1 error
