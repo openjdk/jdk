@@ -30,4 +30,4 @@
 
 load("nashorn:parser.js");
 var ast = parse("label: while(true) break label;");
-print(JSON.stringify(ast));
+print(JSON.stringify(ast, null, "    "));

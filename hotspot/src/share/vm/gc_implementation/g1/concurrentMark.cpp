@@ -481,9 +481,8 @@ uint ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
 
 ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _g1h(g1h),
-  _markBitMap1(MinObjAlignment - 1),
-  _markBitMap2(MinObjAlignment - 1),
-
+  _markBitMap1(log2_intptr(MinObjAlignment)),
+  _markBitMap2(log2_intptr(MinObjAlignment)),
   _parallel_marking_threads(0),
   _max_parallel_marking_threads(0),
   _sleep_factor(0.0),

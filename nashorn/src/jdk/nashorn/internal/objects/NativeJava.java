@@ -34,6 +34,7 @@ import java.util.Deque;
 import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -43,6 +44,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
@@ -288,7 +290,9 @@ public final class NativeJava {
             return null;
         }
 
-        Global.checkObject(obj);
+        if (!(obj instanceof ScriptObject) && !(obj instanceof JSObject)) {
+            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
+        }
 
         final Class<?> targetClass;
         if(objType == UNDEFINED) {
@@ -304,11 +308,11 @@ public final class NativeJava {
         }
 
         if(targetClass.isArray()) {
-            return ((ScriptObject)obj).getArray().asArrayOfType(targetClass.getComponentType());
+            return JSType.toJavaArray(obj, targetClass.getComponentType());
         }
 
         if(targetClass == List.class || targetClass == Deque.class) {
-            return new ListAdapter((ScriptObject)obj);
+            return ListAdapter.create(obj);
         }
 
         throw typeError("unsupported.java.to.type", targetClass.getName());

@@ -549,6 +549,7 @@ public interface Collection<E> extends Iterable<E> {
      * @return a {@code Spliterator} over the elements in this collection
      * @since 1.8
      */
+    @Override
     default Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, 0);
     }

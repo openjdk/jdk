@@ -72,7 +72,7 @@ import static com.sun.tools.javac.main.Option.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class ClassReader implements Completer {
+public class ClassReader {
     /** The context key for the class reader. */
     protected static final Context.Key<ClassReader> classReaderKey =
         new Context.Key<ClassReader>();
@@ -234,6 +234,17 @@ public class ClassReader implements Completer {
      */
     Set<Name> warnedAttrs = new HashSet<Name>();
 
+    /**
+     * Completer that delegates to the complete-method of this class.
+     */
+    private final Completer thisCompleter = new Completer() {
+        @Override
+        public void complete(Symbol sym) throws CompletionFailure {
+            ClassReader.this.complete(sym);
+        }
+    };
+
+
     /** Get the ClassReader instance for this invocation. */
     public static ClassReader instance(Context context) {
         ClassReader instance = context.get(classReaderKey);
@@ -264,8 +275,8 @@ public class ClassReader implements Completer {
         }
 
         packages.put(names.empty, syms.rootPackage);
-        syms.rootPackage.completer = this;
-        syms.unnamedPackage.completer = this;
+        syms.rootPackage.completer = thisCompleter;
+        syms.unnamedPackage.completer = thisCompleter;
     }
 
     /** Construct a new class reader, optionally treated as the
@@ -727,12 +738,14 @@ public class ClassReader implements Completer {
                 ClassSymbol t = enterClass(names.fromUtf(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                if (outer == Type.noType)
-                    outer = t.erasure(types);
-                else
-                    outer = new ClassType(outer, List.<Type>nil(), t);
-                sbp = startSbp;
-                return outer;
+
+                try {
+                    return (outer == Type.noType) ?
+                            t.erasure(types) :
+                            new ClassType(outer, List.<Type>nil(), t);
+                } finally {
+                    sbp = startSbp;
+                }
             }
 
             case '<':           // generic arguments
@@ -797,6 +810,13 @@ public class ClassReader implements Completer {
                 continue;
 
             case '.':
+                //we have seen an enclosing non-generic class
+                if (outer != Type.noType) {
+                    t = enterClass(names.fromUtf(signatureBuffer,
+                                                 startSbp,
+                                                 sbp - startSbp));
+                    outer = new ClassType(outer, List.<Type>nil(), t);
+                }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
             case '/':
@@ -2310,7 +2330,7 @@ public class ClassReader implements Completer {
         ClassSymbol c = new ClassSymbol(0, name, owner);
         if (owner.kind == PCK)
             Assert.checkNull(classes.get(c.flatname), c);
-        c.completer = this;
+        c.completer = thisCompleter;
         return c;
     }
 
@@ -2380,7 +2400,7 @@ public class ClassReader implements Completer {
     /** Completion for classes to be loaded. Before a class is loaded
      *  we make sure its enclosing class (if any) is loaded.
      */
-    public void complete(Symbol sym) throws CompletionFailure {
+    private void complete(Symbol sym) throws CompletionFailure {
         if (sym.kind == TYP) {
             ClassSymbol c = (ClassSymbol)sym;
             c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
@@ -2601,7 +2621,7 @@ public class ClassReader implements Completer {
             p = new PackageSymbol(
                 Convert.shortName(fullname),
                 enterPackage(Convert.packagePart(fullname)));
-            p.completer = this;
+            p.completer = thisCompleter;
             packages.put(fullname, p);
         }
         return p;

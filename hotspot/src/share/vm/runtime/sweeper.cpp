@@ -269,6 +269,7 @@ void NMethodSweeper::sweep_code_cache() {
   // the number of nmethods changes during the sweep so the final
   // stage must iterate until it there are no more nmethods.
   int todo = (CodeCache::nof_nmethods() - _seen) / _invocations;
+  int swept_count = 0;
 
   assert(!SafepointSynchronize::is_at_safepoint(), "should not be in safepoint when we get here");
   assert(!CodeCache_lock->owned_by_self(), "just checking");
@@ -278,6 +279,7 @@ void NMethodSweeper::sweep_code_cache() {
 
     // The last invocation iterates until there are no more nmethods
     for (int i = 0; (i < todo || _invocations == 1) && _current != NULL; i++) {
+      swept_count++;
       if (SafepointSynchronize::is_synchronizing()) { // Safepoint request
         if (PrintMethodFlushing && Verbose) {
           tty->print_cr("### Sweep at %d out of %d, invocation: %d, yielding to safepoint", _seen, CodeCache::nof_nmethods(), _invocations);
@@ -331,7 +333,7 @@ void NMethodSweeper::sweep_code_cache() {
     event.set_endtime(sweep_end_counter);
     event.set_sweepIndex(_traversals);
     event.set_sweepFractionIndex(NmethodSweepFraction - _invocations + 1);
-    event.set_sweptCount(todo);
+    event.set_sweptCount(swept_count);
     event.set_flushedCount(_flushed_count);
     event.set_markedCount(_marked_count);
     event.set_zombifiedCount(_zombified_count);
