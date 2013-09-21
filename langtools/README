@@ -32,7 +32,7 @@ tests that the compiler performs according to the specifications in
 JLS and JVMS.
 
 In addition, there is a substantial collection of regression and unit
-tests for all the tools in the maain langtools test/ directory.
+tests for all the tools in the main langtools test/ directory.
 
 Finally, there is a small set of tests to do basic validation of a build
 of the langtools workspace for use by JDK. These tests check the contents

@@ -157,7 +157,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
                 addAllProfilesLink(div);
             }
             body.addContent(div);
-            if (configuration.showProfiles) {
+            if (configuration.showProfiles && configuration.profilePackages.size() > 0) {
                 Content profileSummary = configuration.getResource("doclet.Profiles");
                 addProfilesList(profileSummary, body);
             }

@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
@@ -39,7 +40,9 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +101,7 @@ public class DeferredAttr extends JCTree.Visitor {
         emptyDeferredAttrContext =
             new DeferredAttrContext(AttrMode.CHECK, null, MethodResolutionPhase.BOX, infer.emptyContext, null, null) {
                 @Override
-                void addDeferredAttrNode(DeferredType dt, ResultInfo ri, List<Type> stuckVars) {
+                void addDeferredAttrNode(DeferredType dt, ResultInfo ri, DeferredStuckPolicy deferredStuckPolicy) {
                     Assert.error("Empty deferred context!");
                 }
                 @Override
@@ -149,15 +152,15 @@ public class DeferredAttr extends JCTree.Visitor {
 
             class Entry {
                 JCTree speculativeTree;
-                Resolve.MethodResolutionPhase phase;
+                ResultInfo resultInfo;
 
-                public Entry(JCTree speculativeTree, MethodResolutionPhase phase) {
+                public Entry(JCTree speculativeTree, ResultInfo resultInfo) {
                     this.speculativeTree = speculativeTree;
-                    this.phase = phase;
+                    this.resultInfo = resultInfo;
                 }
 
-                boolean matches(Resolve.MethodResolutionPhase phase) {
-                    return this.phase == phase;
+                boolean matches(MethodResolutionPhase phase) {
+                    return resultInfo.checkContext.deferredAttrContext().phase == phase;
                 }
             }
 
@@ -178,12 +181,13 @@ public class DeferredAttr extends JCTree.Visitor {
              * Stores a speculative cache entry corresponding to given symbol
              * and resolution phase
              */
-            void put(Symbol msym, JCTree speculativeTree, MethodResolutionPhase phase) {
+            void put(JCTree speculativeTree, ResultInfo resultInfo) {
+                Symbol msym = resultInfo.checkContext.deferredAttrContext().msym;
                 List<Entry> entries = cache.get(msym);
                 if (entries == null) {
                     entries = List.nil();
                 }
-                cache.put(msym, entries.prepend(new Entry(speculativeTree, phase)));
+                cache.put(msym, entries.prepend(new Entry(speculativeTree, resultInfo)));
             }
         }
 
@@ -203,15 +207,24 @@ public class DeferredAttr extends JCTree.Visitor {
          * attribution round must follow one or more speculative rounds.
          */
         Type check(ResultInfo resultInfo) {
-            return check(resultInfo, stuckVars(tree, env, resultInfo), basicCompleter);
+            DeferredStuckPolicy deferredStuckPolicy;
+            if (resultInfo.pt.hasTag(NONE) || resultInfo.pt.isErroneous()) {
+                deferredStuckPolicy = dummyStuckPolicy;
+            } else if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.SPECULATIVE) {
+                deferredStuckPolicy = new OverloadStuckPolicy(resultInfo, this);
+            } else {
+                deferredStuckPolicy = new CheckStuckPolicy(resultInfo, this);
+            }
+            return check(resultInfo, deferredStuckPolicy, basicCompleter);
         }
 
-        Type check(ResultInfo resultInfo, List<Type> stuckVars, DeferredTypeCompleter deferredTypeCompleter) {
+        private Type check(ResultInfo resultInfo, DeferredStuckPolicy deferredStuckPolicy,
+                DeferredTypeCompleter deferredTypeCompleter) {
             DeferredAttrContext deferredAttrContext =
                     resultInfo.checkContext.deferredAttrContext();
             Assert.check(deferredAttrContext != emptyDeferredAttrContext);
-            if (stuckVars.nonEmpty()) {
-                deferredAttrContext.addDeferredAttrNode(this, resultInfo, stuckVars);
+            if (deferredStuckPolicy.isStuck()) {
+                deferredAttrContext.addDeferredAttrNode(this, resultInfo, deferredStuckPolicy);
                 return Type.noType;
             } else {
                 try {
@@ -236,6 +249,7 @@ public class DeferredAttr extends JCTree.Visitor {
         Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext);
     }
 
+
     /**
      * A basic completer for deferred types. This completer type-checks a deferred type
      * using attribution; depending on the attribution mode, this could be either standard
@@ -249,7 +263,7 @@ public class DeferredAttr extends JCTree.Visitor {
                     //speculative rounds...
                     Assert.check(dt.mode == null || dt.mode == AttrMode.SPECULATIVE);
                     JCTree speculativeTree = attribSpeculative(dt.tree, dt.env, resultInfo);
-                    dt.speculativeCache.put(deferredAttrContext.msym, speculativeTree, deferredAttrContext.phase);
+                    dt.speculativeCache.put(speculativeTree, resultInfo);
                     return speculativeTree.type;
                 case CHECK:
                     Assert.check(dt.mode != null);
@@ -264,6 +278,45 @@ public class DeferredAttr extends JCTree.Visitor {
         public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             Assert.check(deferredAttrContext.mode == AttrMode.CHECK);
             return dt.tree.type = Type.stuckType;
+        }
+    };
+
+    /**
+     * Policy for detecting stuck expressions. Different criteria might cause
+     * an expression to be judged as stuck, depending on whether the check
+     * is performed during overload resolution or after most specific.
+     */
+    interface DeferredStuckPolicy {
+        /**
+         * Has the policy detected that a given expression should be considered stuck?
+         */
+        boolean isStuck();
+        /**
+         * Get the set of inference variables a given expression depends upon.
+         */
+        Set<Type> stuckVars();
+        /**
+         * Get the set of inference variables which might get new constraints
+         * if a given expression is being type-checked.
+         */
+        Set<Type> depVars();
+    }
+
+    /**
+     * Basic stuck policy; an expression is never considered to be stuck.
+     */
+    DeferredStuckPolicy dummyStuckPolicy = new DeferredStuckPolicy() {
+        @Override
+        public boolean isStuck() {
+            return false;
+        }
+        @Override
+        public Set<Type> stuckVars() {
+            return Collections.emptySet();
+        }
+        @Override
+        public Set<Type> depVars() {
+            return Collections.emptySet();
         }
     };
 
@@ -388,8 +441,9 @@ public class DeferredAttr extends JCTree.Visitor {
          * Adds a node to the list of deferred attribution nodes - used by Resolve.rawCheckArgumentsApplicable
          * Nodes added this way act as 'roots' for the out-of-order method checking process.
          */
-        void addDeferredAttrNode(final DeferredType dt, ResultInfo resultInfo, List<Type> stuckVars) {
-            deferredAttrNodes.add(new DeferredAttrNode(dt, resultInfo, stuckVars));
+        void addDeferredAttrNode(final DeferredType dt, ResultInfo resultInfo,
+                DeferredStuckPolicy deferredStuckPolicy) {
+            deferredAttrNodes.add(new DeferredAttrNode(dt, resultInfo, deferredStuckPolicy));
         }
 
         /**
@@ -400,23 +454,52 @@ public class DeferredAttr extends JCTree.Visitor {
          */
         void complete() {
             while (!deferredAttrNodes.isEmpty()) {
-                Set<Type> stuckVars = new LinkedHashSet<Type>();
+                Map<Type, Set<Type>> depVarsMap = new LinkedHashMap<Type, Set<Type>>();
+                List<Type> stuckVars = List.nil();
                 boolean progress = false;
                 //scan a defensive copy of the node list - this is because a deferred
                 //attribution round can add new nodes to the list
                 for (DeferredAttrNode deferredAttrNode : List.from(deferredAttrNodes)) {
                     if (!deferredAttrNode.process(this)) {
-                        stuckVars.addAll(deferredAttrNode.stuckVars);
+                        List<Type> restStuckVars =
+                                List.from(deferredAttrNode.deferredStuckPolicy.stuckVars())
+                                .intersect(inferenceContext.restvars());
+                        stuckVars = stuckVars.prependList(restStuckVars);
+                        //update dependency map
+                        for (Type t : List.from(deferredAttrNode.deferredStuckPolicy.depVars())
+                                .intersect(inferenceContext.restvars())) {
+                            Set<Type> prevDeps = depVarsMap.get(t);
+                            if (prevDeps == null) {
+                                prevDeps = new LinkedHashSet<Type>();
+                                depVarsMap.put(t, prevDeps);
+                            }
+                            prevDeps.addAll(restStuckVars);
+                        }
                     } else {
                         deferredAttrNodes.remove(deferredAttrNode);
                         progress = true;
                     }
                 }
                 if (!progress) {
+                    DeferredAttrContext dac = this;
+                    while (dac != emptyDeferredAttrContext) {
+                        if (dac.mode == AttrMode.SPECULATIVE) {
+                            //unsticking does not take place during overload
+                            break;
+                        }
+                        dac = dac.parent;
+                    }
                     //remove all variables that have already been instantiated
                     //from the list of stuck variables
-                    inferenceContext.solveAny(List.from(stuckVars), warn);
-                    inferenceContext.notifyChange();
+                    try {
+                        inferenceContext.solveAny(stuckVars, depVarsMap, warn);
+                        inferenceContext.notifyChange();
+                    } catch (Infer.GraphStrategy.NodeNotFoundException ex) {
+                        //this means that we are in speculative mode and the
+                        //set of contraints are too tight for progess to be made.
+                        //Just leave the remaining expressions as stuck.
+                        break;
+                    }
                 }
             }
         }
@@ -426,7 +509,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * Class representing a deferred attribution node. It keeps track of
      * a deferred type, along with the expected target type information.
      */
-    class DeferredAttrNode implements Infer.FreeTypeListener {
+    class DeferredAttrNode {
 
         /** underlying deferred type */
         DeferredType dt;
@@ -434,22 +517,13 @@ public class DeferredAttr extends JCTree.Visitor {
         /** underlying target type information */
         ResultInfo resultInfo;
 
-        /** list of uninferred inference variables causing this node to be stuck */
-        List<Type> stuckVars;
+        /** stuck policy associated with this node */
+        DeferredStuckPolicy deferredStuckPolicy;
 
-        DeferredAttrNode(DeferredType dt, ResultInfo resultInfo, List<Type> stuckVars) {
+        DeferredAttrNode(DeferredType dt, ResultInfo resultInfo, DeferredStuckPolicy deferredStuckPolicy) {
             this.dt = dt;
             this.resultInfo = resultInfo;
-            this.stuckVars = stuckVars;
-            if (!stuckVars.isEmpty()) {
-                resultInfo.checkContext.inferenceContext().addFreeTypeListener(stuckVars, this);
-            }
-        }
-
-        @Override
-        public void typesInferred(InferenceContext inferenceContext) {
-            stuckVars = List.nil();
-            resultInfo = resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
+            this.deferredStuckPolicy = deferredStuckPolicy;
         }
 
         /**
@@ -457,24 +531,41 @@ public class DeferredAttr extends JCTree.Visitor {
          * Invariant: a stuck node cannot be processed.
          */
         @SuppressWarnings("fallthrough")
-        boolean process(DeferredAttrContext deferredAttrContext) {
+        boolean process(final DeferredAttrContext deferredAttrContext) {
             switch (deferredAttrContext.mode) {
                 case SPECULATIVE:
-                    dt.check(resultInfo, List.<Type>nil(), new StructuralStuckChecker());
-                    return true;
+                    if (deferredStuckPolicy.isStuck()) {
+                        dt.check(resultInfo, dummyStuckPolicy, new StructuralStuckChecker());
+                        return true;
+                    } else {
+                        Assert.error("Cannot get here");
+                    }
                 case CHECK:
-                    if (stuckVars.nonEmpty()) {
+                    if (deferredStuckPolicy.isStuck()) {
                         //stuck expression - see if we can propagate
                         if (deferredAttrContext.parent != emptyDeferredAttrContext &&
-                                Type.containsAny(deferredAttrContext.parent.inferenceContext.inferencevars, List.from(stuckVars))) {
-                            deferredAttrContext.parent.deferredAttrNodes.add(this);
-                            dt.check(resultInfo, List.<Type>nil(), dummyCompleter);
+                                Type.containsAny(deferredAttrContext.parent.inferenceContext.inferencevars,
+                                        List.from(deferredStuckPolicy.stuckVars()))) {
+                            deferredAttrContext.parent.addDeferredAttrNode(dt,
+                                    resultInfo.dup(new Check.NestedCheckContext(resultInfo.checkContext) {
+                                @Override
+                                public InferenceContext inferenceContext() {
+                                    return deferredAttrContext.parent.inferenceContext;
+                                }
+                                @Override
+                                public DeferredAttrContext deferredAttrContext() {
+                                    return deferredAttrContext.parent;
+                                }
+                            }), deferredStuckPolicy);
+                            dt.tree.type = Type.stuckType;
                             return true;
                         } else {
                             return false;
                         }
                     } else {
-                        dt.check(resultInfo, stuckVars, basicCompleter);
+                        ResultInfo instResultInfo =
+                                resultInfo.dup(deferredAttrContext.inferenceContext.asInstType(resultInfo.pt));
+                        dt.check(instResultInfo, dummyStuckPolicy, basicCompleter);
                         return true;
                     }
                 default:
@@ -489,12 +580,14 @@ public class DeferredAttr extends JCTree.Visitor {
 
             ResultInfo resultInfo;
             InferenceContext inferenceContext;
+            Env<AttrContext> env;
 
             public Type complete(DeferredType dt, ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
                 this.resultInfo = resultInfo;
                 this.inferenceContext = deferredAttrContext.inferenceContext;
+                this.env = dt.env;
                 dt.tree.accept(this);
-                dt.speculativeCache.put(deferredAttrContext.msym, stuckTree, deferredAttrContext.phase);
+                dt.speculativeCache.put(stuckTree, resultInfo);
                 return Type.noType;
             }
 
@@ -541,15 +634,25 @@ public class DeferredAttr extends JCTree.Visitor {
                     } catch (Types.FunctionDescriptorLookupError ex) {
                         checkContext.report(null, ex.getDiagnostic());
                     }
-                    switch (tree.sym.kind) {
+                    Env<AttrContext> localEnv = env.dup(tree);
+                    JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
+                            attr.memberReferenceQualifierResult(tree));
+                    ListBuffer<Type> argtypes = ListBuffer.lb();
+                    for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
+                        argtypes.append(Type.noType);
+                    }
+                    JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
+                    mref2.expr = exprTree;
+                    Pair<Symbol, ?> lookupRes =
+                            rs.resolveMemberReference(tree, localEnv, mref2, exprTree.type,
+                                tree.name, argtypes.toList(), null, true, rs.arityMethodCheck, inferenceContext);
+                    switch (lookupRes.fst.kind) {
                         //note: as argtypes are erroneous types, type-errors must
                         //have been caused by arity mismatch
                         case Kinds.ABSENT_MTH:
                         case Kinds.WRONG_MTH:
                         case Kinds.WRONG_MTHS:
-                        case Kinds.STATICERR:
-                        case Kinds.MISSING_ENCL:
-                           checkContext.report(null, diags.fragment("incompatible.arg.types.in.mref"));
+                           checkContext.report(tree, diags.fragment("incompatible.arg.types.in.mref"));
                     }
                 }
             }
@@ -575,18 +678,12 @@ public class DeferredAttr extends JCTree.Visitor {
                     infer.emptyContext, emptyDeferredAttrContext, types.noWarnings);
         }
 
-        protected boolean validState(DeferredType dt) {
-            return dt.mode != null &&
-                    deferredAttrContext.mode.ordinal() <= dt.mode.ordinal();
-        }
-
         @Override
         public Type apply(Type t) {
             if (!t.hasTag(DEFERRED)) {
                 return t.map(this);
             } else {
                 DeferredType dt = (DeferredType)t;
-                Assert.check(validState(dt));
                 return typeOf(dt);
             }
         }
@@ -623,11 +720,6 @@ public class DeferredAttr extends JCTree.Visitor {
                         recover(dt) : owntype;
         }
 
-        @Override
-        protected boolean validState(DeferredType dt) {
-            return true;
-        }
-
         /**
          * Synthesize a type for a deferred type that hasn't been previously
          * reduced to an ordinary type. Functional deferred types and conditionals
@@ -645,25 +737,6 @@ public class DeferredAttr extends JCTree.Visitor {
             return super.apply(dt);
         }
     }
-
-    /**
-     * Retrieves the list of inference variables that need to be inferred before
-     * an AST node can be type-checked
-     */
-    @SuppressWarnings("fallthrough")
-    List<Type> stuckVars(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-                if (resultInfo.pt.hasTag(NONE) || resultInfo.pt.isErroneous()) {
-            return List.nil();
-        } else {
-            return stuckVarsInternal(tree, resultInfo.pt, env, resultInfo.checkContext.inferenceContext());
-        }
-    }
-    //where
-        private List<Type> stuckVarsInternal(JCTree tree, Type pt, Env<AttrContext> env, Infer.InferenceContext inferenceContext) {
-            StuckChecker sc = new StuckChecker(pt, env, inferenceContext);
-            sc.scan(tree);
-            return List.from(sc.stuckVars);
-        }
 
     /**
      * A special tree scanner that would only visit portions of a given tree.
@@ -737,17 +810,41 @@ public class DeferredAttr extends JCTree.Visitor {
      * inferring types that make some of the nested expressions incompatible
      * with their corresponding instantiated target
      */
-    class StuckChecker extends PolyScanner {
+    class CheckStuckPolicy extends PolyScanner implements DeferredStuckPolicy, Infer.FreeTypeListener {
 
         Type pt;
-        Env<AttrContext> env;
         Infer.InferenceContext inferenceContext;
         Set<Type> stuckVars = new LinkedHashSet<Type>();
+        Set<Type> depVars = new LinkedHashSet<Type>();
 
-        StuckChecker(Type pt, Env<AttrContext> env, Infer.InferenceContext inferenceContext) {
-            this.pt = pt;
-            this.env = env;
-            this.inferenceContext = inferenceContext;
+        @Override
+        public boolean isStuck() {
+            return !stuckVars.isEmpty();
+        }
+
+        @Override
+        public Set<Type> stuckVars() {
+            return stuckVars;
+        }
+
+        @Override
+        public Set<Type> depVars() {
+            return depVars;
+        }
+
+        public CheckStuckPolicy(ResultInfo resultInfo, DeferredType dt) {
+            this.pt = resultInfo.pt;
+            this.inferenceContext = resultInfo.checkContext.inferenceContext();
+            scan(dt.tree);
+            if (!stuckVars.isEmpty()) {
+                resultInfo.checkContext.inferenceContext()
+                        .addFreeTypeListener(List.from(stuckVars), this);
+            }
+        }
+
+        @Override
+        public void typesInferred(InferenceContext inferenceContext) {
+            stuckVars.clear();
         }
 
         @Override
@@ -763,6 +860,7 @@ public class DeferredAttr extends JCTree.Visitor {
             if (tree.paramKind == JCLambda.ParameterKind.IMPLICIT &&
                     freeArgVars.nonEmpty()) {
                 stuckVars.addAll(freeArgVars);
+                depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
             }
             scanLambdaBody(tree, descType.getReturnType());
         }
@@ -780,45 +878,74 @@ public class DeferredAttr extends JCTree.Visitor {
 
             Type descType = types.findDescriptorType(pt);
             List<Type> freeArgVars = inferenceContext.freeVarsIn(descType.getParameterTypes());
-            Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
-            if (freeArgVars.nonEmpty()) {
-                //perform arity-based check
-                JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
-                        attr.memberReferenceQualifierResult(tree));
-                ListBuffer<Type> argtypes = ListBuffer.lb();
-                for (Type t : descType.getParameterTypes()) {
-                    argtypes.append(Type.noType);
-                }
-                JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
-                mref2.expr = exprTree;
-                Pair<Symbol, ReferenceLookupHelper> lookupRes =
-                        rs.resolveMemberReference(tree, localEnv, mref2, exprTree.type,
-                            tree.name, argtypes.toList(), null, true, rs.arityMethodCheck,
-                            inferenceContext);
-                Symbol res = tree.sym = lookupRes.fst;
-                if (res.kind >= Kinds.ERRONEOUS ||
-                        res.type.hasTag(FORALL) ||
-                        (res.flags() & Flags.VARARGS) != 0 ||
-                        (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
-                        exprTree.type.isRaw())) {
-                    stuckVars.addAll(freeArgVars);
-                }
+            if (freeArgVars.nonEmpty() &&
+                    tree.overloadKind == JCMemberReference.OverloadKind.OVERLOADED) {
+                stuckVars.addAll(freeArgVars);
+                depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
             }
         }
 
         void scanLambdaBody(JCLambda lambda, final Type pt) {
             if (lambda.getBodyKind() == JCTree.JCLambda.BodyKind.EXPRESSION) {
-                stuckVars.addAll(stuckVarsInternal(lambda.body, pt, env, inferenceContext));
+                Type prevPt = this.pt;
+                try {
+                    this.pt = pt;
+                    scan(lambda.body);
+                } finally {
+                    this.pt = prevPt;
+                }
             } else {
                 LambdaReturnScanner lambdaScanner = new LambdaReturnScanner() {
                     @Override
                     public void visitReturn(JCReturn tree) {
                         if (tree.expr != null) {
-                            stuckVars.addAll(stuckVarsInternal(tree.expr, pt, env, inferenceContext));
+                            Type prevPt = CheckStuckPolicy.this.pt;
+                            try {
+                                CheckStuckPolicy.this.pt = pt;
+                                CheckStuckPolicy.this.scan(tree.expr);
+                            } finally {
+                                CheckStuckPolicy.this.pt = prevPt;
+                            }
                         }
                     }
                 };
                 lambdaScanner.scan(lambda.body);
+            }
+        }
+    }
+
+    /**
+     * This visitor is used to check that structural expressions conform
+     * to their target - this step is required as inference could end up
+     * inferring types that make some of the nested expressions incompatible
+     * with their corresponding instantiated target
+     */
+    class OverloadStuckPolicy extends CheckStuckPolicy implements DeferredStuckPolicy {
+
+        boolean stuck;
+
+        @Override
+        public boolean isStuck() {
+            return super.isStuck() || stuck;
+        }
+
+        public OverloadStuckPolicy(ResultInfo resultInfo, DeferredType dt) {
+            super(resultInfo, dt);
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            super.visitLambda(tree);
+            if (tree.paramKind == JCLambda.ParameterKind.IMPLICIT) {
+                stuck = true;
+            }
+        }
+
+        @Override
+        public void visitReference(JCMemberReference tree) {
+            super.visitReference(tree);
+            if (tree.overloadKind == JCMemberReference.OverloadKind.OVERLOADED) {
+                stuck = true;
             }
         }
     }
@@ -904,6 +1031,26 @@ public class DeferredAttr extends JCTree.Visitor {
 
         @Override
         public void visitReference(JCMemberReference tree) {
+            //perform arity-based check
+            Env<AttrContext> localEnv = env.dup(tree);
+            JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
+                    attr.memberReferenceQualifierResult(tree));
+            JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
+            mref2.expr = exprTree;
+            Pair<Symbol, ReferenceLookupHelper> lookupRes =
+                    rs.resolveMemberReference(tree, localEnv, mref2, exprTree.type,
+                        tree.name, List.<Type>nil(), null, true, rs.nilMethodCheck,
+                        infer.emptyContext);
+            Symbol res = tree.sym = lookupRes.fst;
+            if (res.kind >= Kinds.ERRONEOUS ||
+                    res.type.hasTag(FORALL) ||
+                    (res.flags() & Flags.VARARGS) != 0 ||
+                    (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
+                    exprTree.type.isRaw())) {
+                tree.overloadKind = JCMemberReference.OverloadKind.OVERLOADED;
+            } else {
+                tree.overloadKind = JCMemberReference.OverloadKind.UNOVERLOADED;
+            }
             //a method reference is always a poly expression
             result = ArgumentExpressionKind.POLY;
         }

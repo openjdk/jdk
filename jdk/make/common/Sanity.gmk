@@ -65,7 +65,6 @@ sanity-base: pre-sanity \
     sane-libCrun \
     sane-unixccs_path \
     sane-msdevtools_path \
-    sane-dxsdk \
     sane-compiler \
     sane-cacerts \
     sane-ant_version \

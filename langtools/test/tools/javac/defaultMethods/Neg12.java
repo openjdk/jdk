@@ -1,5 +1,5 @@
-/*
- * @test /nodynamiccopyright/
+/* @test /nodynamiccopyright/
+ * @bug 7192246
  * @summary check that abstract methods are discarded in overload resolution diags
  * @compile/fail/ref=Neg12.out -XDrawDiagnostics Neg12.java
  */
