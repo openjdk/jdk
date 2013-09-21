@@ -106,6 +106,8 @@ public abstract class KeyFactorySpi {
      * key material should be returned in an instance of the
      * {@code DSAPublicKeySpec} class.
      *
+     * @param <T> the type of the key specification to be returned
+     *
      * @param key the key.
      *
      * @param keySpec the specification class in which

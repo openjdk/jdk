@@ -3331,6 +3331,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
+  os::init_before_ergo();
+
+  jint ergo_result = Arguments::apply_ergo();
+  if (ergo_result != JNI_OK) return ergo_result;
+
   if (PauseAtStartup) {
     os::pause();
   }
@@ -3716,7 +3721,7 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent, const char *on_load_sym
     const char *name = agent->name();
     const char *msg = "Could not find agent library ";
 
-    // First check to see if agent is statcally linked into executable
+    // First check to see if agent is statically linked into executable
     if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
       library = agent->os_lib();
     } else if (agent->is_absolute_path()) {

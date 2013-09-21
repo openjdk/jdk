@@ -900,7 +900,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0
     MIB_IFROW *ifRowP;
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
-      ret = ifRowP->dwAdminStatus == 1 &&
+      ret = ifRowP->dwAdminStatus == MIB_IF_ADMIN_STATUS_UP &&
             (ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_OPERATIONAL ||
              ifRowP->dwOperStatus == MIB_IF_OPER_STATUS_CONNECTED);
       free(ifRowP);

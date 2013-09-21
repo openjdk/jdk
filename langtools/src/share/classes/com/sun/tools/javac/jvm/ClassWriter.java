@@ -37,7 +37,6 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
-import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types.UniqueType;
@@ -54,7 +53,6 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.main.Option.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
-
 
 /** This class provides operations to map an internal symbol table graph
  *  rooted in a ClassSymbol into a classfile.
@@ -1180,25 +1178,26 @@ public class ClassWriter extends ClassFile {
 
         if (code.varBufferSize > 0) {
             int alenIdx = writeAttr(names.LocalVariableTable);
-            databuf.appendChar(code.varBufferSize);
-
+            databuf.appendChar(code.getLVTSize());
             for (int i=0; i<code.varBufferSize; i++) {
                 Code.LocalVar var = code.varBuffer[i];
 
-                // write variable info
-                Assert.check(var.start_pc >= 0
-                        && var.start_pc <= code.cp);
-                databuf.appendChar(var.start_pc);
-                Assert.check(var.length >= 0
-                        && (var.start_pc + var.length) <= code.cp);
-                databuf.appendChar(var.length);
-                VarSymbol sym = var.sym;
-                databuf.appendChar(pool.put(sym.name));
-                Type vartype = sym.erasure(types);
-                if (needsLocalVariableTypeEntry(sym.type))
-                    nGenericVars++;
-                databuf.appendChar(pool.put(typeSig(vartype)));
-                databuf.appendChar(var.reg);
+                for (Code.LocalVar.Range r: var.aliveRanges) {
+                    // write variable info
+                    Assert.check(r.start_pc >= 0
+                            && r.start_pc <= code.cp);
+                    databuf.appendChar(r.start_pc);
+                    Assert.check(r.length >= 0
+                            && (r.start_pc + r.length) <= code.cp);
+                    databuf.appendChar(r.length);
+                    VarSymbol sym = var.sym;
+                    databuf.appendChar(pool.put(sym.name));
+                    Type vartype = sym.erasure(types);
+                    databuf.appendChar(pool.put(typeSig(vartype)));
+                    databuf.appendChar(var.reg);
+                    if (needsLocalVariableTypeEntry(var.sym.type))
+                        nGenericVars++;
+                }
             }
             endAttr(alenIdx);
             acount++;
@@ -1214,13 +1213,15 @@ public class ClassWriter extends ClassFile {
                 VarSymbol sym = var.sym;
                 if (!needsLocalVariableTypeEntry(sym.type))
                     continue;
-                count++;
-                // write variable info
-                databuf.appendChar(var.start_pc);
-                databuf.appendChar(var.length);
-                databuf.appendChar(pool.put(sym.name));
-                databuf.appendChar(pool.put(typeSig(sym.type)));
-                databuf.appendChar(var.reg);
+                for (Code.LocalVar.Range r : var.aliveRanges) {
+                    // write variable info
+                    databuf.appendChar(r.start_pc);
+                    databuf.appendChar(r.length);
+                    databuf.appendChar(pool.put(sym.name));
+                    databuf.appendChar(pool.put(typeSig(sym.type)));
+                    databuf.appendChar(var.reg);
+                    count++;
+                }
             }
             Assert.check(count == nGenericVars);
             endAttr(alenIdx);

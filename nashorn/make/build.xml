@@ -230,6 +230,10 @@
         <compilerarg value="-Xlint:deprecation"/>
     </javac>
 
+    <copy todir="${build.test.classes.dir}/META-INF/services">
+       <fileset dir="${test.src.dir}/META-INF/services/"/>
+    </copy>
+
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
       <fileset dir="${build.test.classes.dir}" excludes="**/api/**"/>
@@ -238,6 +242,7 @@
     <!-- tests that check nashorn script engine (jsr-223) API -->
     <jar jarfile="${nashorn.api.tests.jar}">
       <fileset dir="${build.test.classes.dir}" includes="**/api/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/META-INF/**"/>
     </jar>
 
   </target>
@@ -258,6 +263,13 @@ grant codeBase "file:/${basedir}/test/script/trusted/*" {
 };
 
 grant codeBase "file:/${basedir}/test/script/basic/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
+grant codeBase "file:/${basedir}/test/script/basic/parser/*" {
     permission java.io.FilePermission "${basedir}/test/script/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";

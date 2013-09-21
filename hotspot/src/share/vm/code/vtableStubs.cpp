@@ -111,7 +111,7 @@ void VtableStubs::initialize() {
 }
 
 
-address VtableStubs::create_stub(bool is_vtable_stub, int vtable_index, Method* method) {
+address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
   assert(vtable_index >= 0, "must be positive");
 
   VtableStub* s = ShareVtableStubs ? lookup(is_vtable_stub, vtable_index) : NULL;

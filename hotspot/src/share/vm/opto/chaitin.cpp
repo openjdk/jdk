@@ -122,40 +122,23 @@ double LRG::score() const {
   return score;
 }
 
-LRG_List::LRG_List( uint max ) : _cnt(max), _max(max), _lidxs(NEW_RESOURCE_ARRAY(uint,max)) {
-  memset( _lidxs, 0, sizeof(uint)*max );
-}
-
-void LRG_List::extend( uint nidx, uint lidx ) {
-  _nesting.check();
-  if( nidx >= _max ) {
-    uint size = 16;
-    while( size <= nidx ) size <<=1;
-    _lidxs = REALLOC_RESOURCE_ARRAY( uint, _lidxs, _max, size );
-    _max = size;
-  }
-  while( _cnt <= nidx )
-    _lidxs[_cnt++] = 0;
-  _lidxs[nidx] = lidx;
-}
-
 #define NUMBUCKS 3
 
 // Straight out of Tarjan's union-find algorithm
 uint LiveRangeMap::find_compress(uint lrg) {
   uint cur = lrg;
-  uint next = _uf_map[cur];
+  uint next = _uf_map.at(cur);
   while (next != cur) { // Scan chain of equivalences
     assert( next < cur, "always union smaller");
     cur = next; // until find a fixed-point
-    next = _uf_map[cur];
+    next = _uf_map.at(cur);
   }
 
   // Core of union-find algorithm: update chain of
   // equivalences to be equal to the root.
   while (lrg != next) {
-    uint tmp = _uf_map[lrg];
-    _uf_map.map(lrg, next);
+    uint tmp = _uf_map.at(lrg);
+    _uf_map.at_put(lrg, next);
     lrg = tmp;
   }
   return lrg;
@@ -165,10 +148,10 @@ uint LiveRangeMap::find_compress(uint lrg) {
 void LiveRangeMap::reset_uf_map(uint max_lrg_id) {
   _max_lrg_id= max_lrg_id;
   // Force the Union-Find mapping to be at least this large
-  _uf_map.extend(_max_lrg_id, 0);
+  _uf_map.at_put_grow(_max_lrg_id, 0);
   // Initialize it to be the ID mapping.
   for (uint i = 0; i < _max_lrg_id; ++i) {
-    _uf_map.map(i, i);
+    _uf_map.at_put(i, i);
   }
 }
 
@@ -176,12 +159,12 @@ void LiveRangeMap::reset_uf_map(uint max_lrg_id) {
 // the Union-Find mapping after this call.
 void LiveRangeMap::compress_uf_map_for_nodes() {
   // For all Nodes, compress mapping
-  uint unique = _names.Size();
+  uint unique = _names.length();
   for (uint i = 0; i < unique; ++i) {
-    uint lrg = _names[i];
+    uint lrg = _names.at(i);
     uint compressed_lrg = find(lrg);
     if (lrg != compressed_lrg) {
-      _names.map(i, compressed_lrg);
+      _names.at_put(i, compressed_lrg);
     }
   }
 }
@@ -198,11 +181,11 @@ uint LiveRangeMap::find_const(uint lrg) const {
     return lrg;
   }
 
-  uint next = _uf_map[lrg];
+  uint next = _uf_map.at(lrg);
   while (next != lrg) { // Scan chain of equivalences
     assert(next < lrg, "always union smaller");
     lrg = next; // until find a fixed-point
-    next = _uf_map[lrg];
+    next = _uf_map.at(lrg);
   }
   return next;
 }
@@ -215,7 +198,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher)
        NULL
 #endif
        )
-  , _lrg_map(unique)
+  , _lrg_map(Thread::current()->resource_area(), unique)
   , _live(0)
   , _spilled_once(Thread::current()->resource_area())
   , _spilled_twice(Thread::current()->resource_area())
@@ -692,6 +675,7 @@ void PhaseChaitin::de_ssa() {
       _lrg_map.map(n->_idx, rm.is_NotEmpty() ? lr_counter++ : 0);
     }
   }
+
   // Reset the Union-Find mapping to be identity
   _lrg_map.reset_uf_map(lr_counter);
 }

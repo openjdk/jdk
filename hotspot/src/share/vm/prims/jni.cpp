@@ -1336,6 +1336,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       if (call_type == JNI_VIRTUAL) {
         // jni_GetMethodID makes sure class is linked and initialized
         // so m should have a valid vtable index.
+        assert(!m->has_itable_index(), "");
         int vtbl_index = m->vtable_index();
         if (vtbl_index != Method::nonvirtual_vtable_index) {
           Klass* k = h_recv->klass();
@@ -1355,12 +1356,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       // interface call
       KlassHandle h_holder(THREAD, holder);
 
-      int itbl_index = m->cached_itable_index();
-      if (itbl_index == -1) {
-        itbl_index = klassItable::compute_itable_index(m);
-        m->set_cached_itable_index(itbl_index);
-        // the above may have grabbed a lock, 'm' and anything non-handlized can't be used again
-      }
+      int itbl_index = m->itable_index();
       Klass* k = h_recv->klass();
       selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
     }
@@ -5049,12 +5045,16 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 // Forward declaration
 void TestReservedSpace_test();
 void TestReserveMemorySpecial_test();
+void TestVirtualSpace_test();
+void MetaspaceAux_test();
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
     run_unit_test(TestReservedSpace_test());
     run_unit_test(TestReserveMemorySpecial_test());
+    run_unit_test(TestVirtualSpace_test());
+    run_unit_test(MetaspaceAux_test());
     run_unit_test(GlobalDefinitions::test_globals());
     run_unit_test(GCTimerAllTest::all());
     run_unit_test(arrayOopDesc::test_max_array_length());

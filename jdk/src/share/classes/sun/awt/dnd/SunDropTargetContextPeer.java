@@ -57,6 +57,7 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
+import sun.security.util.SecurityConstants;
 
 /**
  * <p>
@@ -225,7 +226,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         SecurityManager sm = System.getSecurityManager();
         try {
             if (!dropInProcess && sm != null) {
-                sm.checkSystemClipboardAccess();
+                sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
             }
         } catch (Exception e) {
             Thread currentThread = Thread.currentThread();

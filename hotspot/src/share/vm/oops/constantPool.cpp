@@ -389,32 +389,6 @@ Klass* ConstantPool::klass_ref_at_if_loaded(constantPoolHandle this_oop, int whi
 }
 
 
-// This is an interface for the compiler that allows accessing non-resolved entries
-// in the constant pool - but still performs the validations tests. Must be used
-// in a pre-parse of the compiler - to determine what it can do and not do.
-// Note: We cannot update the ConstantPool from the vm_thread.
-Klass* ConstantPool::klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int index, TRAPS) {
-  int which = this_oop->klass_ref_index_at(index);
-  CPSlot entry = this_oop->slot_at(which);
-  if (entry.is_resolved()) {
-    assert(entry.get_klass()->is_klass(), "must be");
-    return entry.get_klass();
-  } else {
-    assert(entry.is_unresolved(), "must be either symbol or klass");
-    Symbol*  name  = entry.get_symbol();
-    oop loader = this_oop->pool_holder()->class_loader();
-    oop protection_domain = this_oop->pool_holder()->protection_domain();
-    Handle h_loader(THREAD, loader);
-    Handle h_prot  (THREAD, protection_domain);
-    KlassHandle k(THREAD, SystemDictionary::find(name, h_loader, h_prot, THREAD));
-
-    // Do access check for klasses
-    if( k.not_null() ) verify_constant_pool_resolve(this_oop, k, CHECK_NULL);
-    return k();
-  }
-}
-
-
 Method* ConstantPool::method_at_if_loaded(constantPoolHandle cpool,
                                                    int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
