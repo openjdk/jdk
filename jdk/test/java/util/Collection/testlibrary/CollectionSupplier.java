@@ -29,13 +29,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import org.testng.TestException;
 
 import static org.testng.Assert.assertTrue;
 
-import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Supplier;
@@ -44,15 +42,15 @@ import java.util.function.Supplier;
  * @library
  * @summary A Supplier of test cases for Collection tests
  */
-public final class CollectionSupplier implements Supplier<Iterable<CollectionSupplier.TestCase>> {
+public final class CollectionSupplier<C extends Collection<Integer>> implements Supplier<Iterable<CollectionSupplier.TestCase<C>>> {
 
-    private final String[] classNames;
+    private final Supplier<C>[] classes;
     private final int size;
 
     /**
      * A Collection test case.
      */
-    public static final class TestCase {
+    public static final class TestCase<C extends Collection<Integer>> {
 
         /**
          * The name of the test case.
@@ -60,57 +58,45 @@ public final class CollectionSupplier implements Supplier<Iterable<CollectionSup
         public final String name;
 
         /**
-         * Class name of the instantiated Collection.
-         */
-        public final String className;
-
-        /**
          * Unmodifiable reference collection, useful for comparisons.
          */
-        public final Collection<Integer> original;
+        public final List<Integer> expected;
 
         /**
          * A modifiable test collection.
          */
-        public final Collection<Integer> collection;
+        public final C collection;
 
         /**
          * Create a Collection test case.
+         *
          * @param name name of the test case
-         * @param className class name of the instantiated collection
-         * @param original reference collection
+         * @param expected reference collection
          * @param collection the modifiable test collection
          */
-        public TestCase(String name, String className,
-                Collection<Integer> original, Collection<Integer> collection) {
+        public TestCase(String name, C collection) {
             this.name = name;
-            this.className = className;
-            this.original =
-                    List.class.isAssignableFrom(original.getClass()) ?
-                    Collections.unmodifiableList((List<Integer>) original) :
-                    Set.class.isAssignableFrom(original.getClass()) ?
-                    Collections.unmodifiableSet((Set<Integer>) original) :
-                    Collections.unmodifiableCollection(original);
+            this.expected = Collections.unmodifiableList(
+                Arrays.asList(collection.toArray(new Integer[0])));
             this.collection = collection;
         }
 
         @Override
         public String toString() {
-            return name + " " + className +
-                    "\n original: " + original +
-                    "\n   target: " + collection;
+            return name + " " + collection.getClass().toString();
         }
     }
 
     /**
      * Shuffle a list using a PRNG with known seed for repeatability
+     *
      * @param list the list to be shuffled
      */
     public static <E> void shuffle(final List<E> list) {
         // PRNG with known seed for repeatable tests
         final Random prng = new Random(13);
         final int size = list.size();
-        for (int i=0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             // random index in interval [i, size)
             final int j = i + prng.nextInt(size - i);
             // swap elements at indices i & j
@@ -127,178 +113,133 @@ public final class CollectionSupplier implements Supplier<Iterable<CollectionSup
      * @param classNames class names that implement {@code Collection}
      * @param size the desired size of each collection
      */
-    public CollectionSupplier(String[] classNames, int size) {
-        this.classNames = Arrays.copyOf(classNames, classNames.length);
+    public CollectionSupplier(Supplier<C>[] classes, int size) {
+        this.classes = Arrays.copyOf(classes, classes.length);
         this.size = size;
     }
 
     @Override
-    public Iterable<TestCase> get() {
-        try {
-            return getThrows();
-        } catch (Exception e) {
-            throw new TestException(e);
-        }
-    }
+    public Iterable<TestCase<C>> get() {
+        final Collection<TestCase<C>> cases = new LinkedList<>();
+        for (final Supplier<C> type : classes) {
+            try {
+                final Collection<Integer> empty = type.get();
+                cases.add(new TestCase("empty", empty));
 
-    private Iterable<TestCase> getThrows() throws Exception {
-        final Collection<TestCase> collections = new LinkedList<>();
-        for (final String className : classNames) {
-            @SuppressWarnings("unchecked")
-            final Class<? extends Collection<Integer>> type =
-                    (Class<? extends Collection<Integer>>) Class.forName(className);
-            final Constructor<? extends Collection<Integer>>
-                    defaultConstructor = type.getConstructor();
-            final Constructor<? extends Collection<Integer>>
-                    copyConstructor = type.getConstructor(Collection.class);
+                final Collection<Integer> single = type.get();
+                single.add(42);
+                cases.add(new TestCase("single", single));
 
-            final Collection<Integer> empty = defaultConstructor.newInstance();
-            collections.add(new TestCase("empty",
-                    className,
-                    copyConstructor.newInstance(empty),
-                    empty));
-
-            final Collection<Integer> single = defaultConstructor.newInstance();
-            single.add(42);
-            collections.add(new TestCase("single",
-                    className,
-                    copyConstructor.newInstance(single),
-                    single));
-
-            final Collection<Integer> regular = defaultConstructor.newInstance();
-            for (int i=0; i < size; i++) {
-                regular.add(i);
-            }
-            collections.add(new TestCase("regular",
-                    className,
-                    copyConstructor.newInstance(regular),
-                    regular));
-
-            final Collection<Integer> reverse = defaultConstructor.newInstance();
-            for (int i=size; i >= 0; i--) {
-                reverse.add(i);
-            }
-            collections.add(new TestCase("reverse",
-                    className,
-                    copyConstructor.newInstance(reverse),
-                    reverse));
-
-            final Collection<Integer> odds = defaultConstructor.newInstance();
-            for (int i=0; i < size; i++) {
-                odds.add((i * 2) + 1);
-            }
-            collections.add(new TestCase("odds",
-                    className,
-                    copyConstructor.newInstance(odds),
-                    odds));
-
-            final Collection<Integer> evens = defaultConstructor.newInstance();
-            for (int i=0; i < size; i++) {
-                evens.add(i * 2);
-            }
-            collections.add(new TestCase("evens",
-                    className,
-                    copyConstructor.newInstance(evens),
-                    evens));
-
-            final Collection<Integer> fibonacci = defaultConstructor.newInstance();
-            int prev2 = 0;
-            int prev1 = 1;
-            for (int i=0; i < size; i++) {
-                final int n = prev1 + prev2;
-                if (n < 0) { // stop on overflow
-                    break;
+                final Collection<Integer> regular = type.get();
+                for (int i = 0; i < size; i++) {
+                    regular.add(i);
                 }
-                fibonacci.add(n);
-                prev2 = prev1;
-                prev1 = n;
-            }
-            collections.add(new TestCase("fibonacci",
-                    className,
-                    copyConstructor.newInstance(fibonacci),
-                    fibonacci));
+                cases.add(new TestCase("regular", regular));
+
+                final Collection<Integer> reverse = type.get();
+                for (int i = size; i >= 0; i--) {
+                    reverse.add(i);
+                }
+                cases.add(new TestCase("reverse", reverse));
+
+                final Collection<Integer> odds = type.get();
+                for (int i = 0; i < size; i++) {
+                    odds.add((i * 2) + 1);
+                }
+                cases.add(new TestCase("odds", odds));
+
+                final Collection<Integer> evens = type.get();
+                for (int i = 0; i < size; i++) {
+                    evens.add(i * 2);
+                }
+                cases.add(new TestCase("evens", evens));
+
+                final Collection<Integer> fibonacci = type.get();
+                int prev2 = 0;
+                int prev1 = 1;
+                for (int i = 0; i < size; i++) {
+                    final int n = prev1 + prev2;
+                    if (n < 0) { // stop on overflow
+                        break;
+                    }
+                    fibonacci.add(n);
+                    prev2 = prev1;
+                    prev1 = n;
+                }
+                cases.add(new TestCase("fibonacci", fibonacci));
 
             // variants where the size of the backing storage != reported size
-            // created by removing half of the elements
+                // created by removing half of the elements
+                final Collection<Integer> emptyWithSlack = type.get();
+                emptyWithSlack.add(42);
+                assertTrue(emptyWithSlack.remove(42));
+                cases.add(new TestCase("emptyWithSlack", emptyWithSlack));
 
-            final Collection<Integer> emptyWithSlack = defaultConstructor.newInstance();
-            emptyWithSlack.add(42);
-            assertTrue(emptyWithSlack.remove(42));
-            collections.add(new TestCase("emptyWithSlack",
-                    className,
-                    copyConstructor.newInstance(emptyWithSlack),
-                    emptyWithSlack));
+                final Collection<Integer> singleWithSlack = type.get();
+                singleWithSlack.add(42);
+                singleWithSlack.add(43);
+                assertTrue(singleWithSlack.remove(43));
+                cases.add(new TestCase("singleWithSlack", singleWithSlack));
 
-            final Collection<Integer> singleWithSlack = defaultConstructor.newInstance();
-            singleWithSlack.add(42);
-            singleWithSlack.add(43);
-            assertTrue(singleWithSlack.remove(43));
-            collections.add(new TestCase("singleWithSlack",
-                    className,
-                    copyConstructor.newInstance(singleWithSlack),
-                    singleWithSlack));
-
-            final Collection<Integer> regularWithSlack = defaultConstructor.newInstance();
-            for (int i=0; i < (2 * size); i++) {
-                regularWithSlack.add(i);
-            }
-            assertTrue(regularWithSlack.removeIf((x) -> {return x >= size;}));
-            collections.add(new TestCase("regularWithSlack",
-                    className,
-                    copyConstructor.newInstance(regularWithSlack),
-                    regularWithSlack));
-
-            final Collection<Integer> reverseWithSlack = defaultConstructor.newInstance();
-            for (int i=2 * size; i >= 0; i--) {
-                reverseWithSlack.add(i);
-            }
-            assertTrue(reverseWithSlack.removeIf((x) -> {return x < size;}));
-            collections.add(new TestCase("reverseWithSlack",
-                    className,
-                    copyConstructor.newInstance(reverseWithSlack),
-                    reverseWithSlack));
-
-            final Collection<Integer> oddsWithSlack = defaultConstructor.newInstance();
-            for (int i = 0; i < 2 * size; i++) {
-                oddsWithSlack.add((i * 2) + 1);
-            }
-            assertTrue(oddsWithSlack.removeIf((x) -> {return x >= size;}));
-            collections.add(new TestCase("oddsWithSlack",
-                    className,
-                    copyConstructor.newInstance(oddsWithSlack),
-                    oddsWithSlack));
-
-            final Collection<Integer> evensWithSlack = defaultConstructor.newInstance();
-            for (int i = 0; i < 2 * size; i++) {
-                evensWithSlack.add(i * 2);
-            }
-            assertTrue(evensWithSlack.removeIf((x) -> {return x >= size;}));
-            collections.add(new TestCase("evensWithSlack",
-                    className,
-                    copyConstructor.newInstance(evensWithSlack),
-                    evensWithSlack));
-
-            final Collection<Integer> fibonacciWithSlack = defaultConstructor.newInstance();
-            prev2 = 0;
-            prev1 = 1;
-            for (int i=0; i < size; i++) {
-                final int n = prev1 + prev2;
-                if (n < 0) { // stop on overflow
-                    break;
+                final Collection<Integer> regularWithSlack = type.get();
+                for (int i = 0; i < (2 * size); i++) {
+                    regularWithSlack.add(i);
                 }
-                fibonacciWithSlack.add(n);
-                prev2 = prev1;
-                prev1 = n;
-            }
-            assertTrue(fibonacciWithSlack.removeIf((x) -> {return x < 20;}));
-            collections.add(new TestCase("fibonacciWithSlack",
-                    className,
-                    copyConstructor.newInstance(fibonacciWithSlack),
-                    fibonacciWithSlack));
+                assertTrue(regularWithSlack.removeIf((x) -> {
+                    return x >= size;
+                }));
+                cases.add(new TestCase("regularWithSlack", regularWithSlack));
 
+                final Collection<Integer> reverseWithSlack = type.get();
+                for (int i = 2 * size; i >= 0; i--) {
+                    reverseWithSlack.add(i);
+                }
+                assertTrue(reverseWithSlack.removeIf((x) -> {
+                    return x < size;
+                }));
+                cases.add(new TestCase("reverseWithSlack", reverseWithSlack));
+
+                final Collection<Integer> oddsWithSlack = type.get();
+                for (int i = 0; i < 2 * size; i++) {
+                    oddsWithSlack.add((i * 2) + 1);
+                }
+                assertTrue(oddsWithSlack.removeIf((x) -> {
+                    return x >= size;
+                }));
+                cases.add(new TestCase("oddsWithSlack", oddsWithSlack));
+
+                final Collection<Integer> evensWithSlack = type.get();
+                for (int i = 0; i < 2 * size; i++) {
+                    evensWithSlack.add(i * 2);
+                }
+                assertTrue(evensWithSlack.removeIf((x) -> {
+                    return x >= size;
+                }));
+                cases.add(new TestCase("evensWithSlack", evensWithSlack));
+
+                final Collection<Integer> fibonacciWithSlack = type.get();
+                prev2 = 0;
+                prev1 = 1;
+                for (int i = 0; i < size; i++) {
+                    final int n = prev1 + prev2;
+                    if (n < 0) { // stop on overflow
+                        break;
+                    }
+                    fibonacciWithSlack.add(n);
+                    prev2 = prev1;
+                    prev1 = n;
+                }
+                assertTrue(fibonacciWithSlack.removeIf((x) -> {
+                    return x < 20;
+                }));
+                cases.add(new TestCase("fibonacciWithSlack",
+                    fibonacciWithSlack));
+            } catch (Exception failed) {
+                throw new TestException(failed);
+            }
         }
 
-        return collections;
+        return cases;
     }
 
 }

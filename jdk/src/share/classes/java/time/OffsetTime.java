@@ -73,7 +73,7 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -1372,9 +1372,10 @@ public final class OffsetTime
     //-----------------------------------------------------------------------
     /**
      * Writes the object using a
-     * <a href="../../../serialized-form.html#java.time.temporal.Ser">dedicated serialized form</a>.
+     * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(9);  // identifies this as a OffsetTime
+     *  out.writeByte(9);  // identifies a OffsetTime
      *  out.writeObject(time);
      *  out.writeObject(offset);
      * </pre>
@@ -1390,7 +1391,7 @@ public final class OffsetTime
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

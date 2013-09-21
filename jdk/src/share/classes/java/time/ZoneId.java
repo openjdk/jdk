@@ -63,6 +63,7 @@ package java.time;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
@@ -662,6 +663,15 @@ public abstract class ZoneId implements Serializable {
 
     //-----------------------------------------------------------------------
     /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
      * Outputs this zone as a {@code String}, using the ID.
      *
      * @return a string representation of this time-zone ID, not null
@@ -675,9 +685,10 @@ public abstract class ZoneId implements Serializable {
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(7);  // identifies this as a ZoneId (not ZoneOffset)
-     *  out.writeUTF(zoneId);
+     *  out.writeByte(7);  // identifies a ZoneId (not ZoneOffset)
+     *  out.writeUTF(getId());
      * </pre>
      * <p>
      * When read back in, the {@code ZoneId} will be created as though using

@@ -24,7 +24,7 @@
 package pkg2;
 
 /**
- * Another test class.
+ * @deprecated Class1Pkg2. This class is deprecated
  *
  * @author Bhavesh Patel
  */

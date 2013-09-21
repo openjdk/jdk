@@ -47,7 +47,7 @@ python=""
 bpython=""
 
 if [ "#!" = "$has_hash_bang" ] ; then
-   python="`head -n 1 ${whichhg} | cut -b 3-`"
+   python="`head -n 1 ${whichhg} | cut -b 3- | sed -e 's/^[ \t]*//;s/[ \t]*$//'`"
    bpython="`basename "$python"`"
 fi
 
