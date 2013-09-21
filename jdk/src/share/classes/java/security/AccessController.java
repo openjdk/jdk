@@ -279,6 +279,9 @@ public final class AccessController {
      * <p> Note that any DomainCombiner associated with the current
      * AccessControlContext will be ignored while the action is performed.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
+     *
      * @param action the action to be performed.
      *
      * @return the value returned by the action's {@code run} method.
@@ -304,6 +307,9 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      *
      * @param action the action to be performed.
      *
@@ -344,6 +350,8 @@ public final class AccessController {
      * {@link java.security.SecurityPermission}, then the action is performed
      * with no permissions.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -377,6 +385,8 @@ public final class AccessController {
      * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -429,6 +439,8 @@ public final class AccessController {
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
      *
+     * @param <T> the type of the value returned by the PrivilegedAction's
+     *                  {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -479,6 +491,9 @@ public final class AccessController {
      * <p> Note that any DomainCombiner associated with the current
      * AccessControlContext will be ignored while the action is performed.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
+     *
      * @param action the action to be performed
      *
      * @return the value returned by the action's {@code run} method
@@ -508,6 +523,9 @@ public final class AccessController {
      *
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
+     *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      *
      * @param action the action to be performed.
      *
@@ -585,6 +603,8 @@ public final class AccessController {
      * {@link java.security.SecurityPermission}, then the action is performed
      * with no permissions.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -622,6 +642,8 @@ public final class AccessController {
      * If the action's {@code run} method throws an (unchecked) exception,
      * it will propagate through this method.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the
@@ -676,6 +698,8 @@ public final class AccessController {
      * <p> This method preserves the current AccessControlContext's
      * DomainCombiner (which may be null) while the action is performed.
      *
+     * @param <T> the type of the value returned by the
+     *                  PrivilegedExceptionAction's {@code run} method.
      * @param action the action to be performed.
      * @param context an <i>access control context</i>
      *                representing the restriction to be applied to the

@@ -98,6 +98,7 @@ import java.util.Objects;
  * @implSpec
  * This class is immutable and thread-safe.
  *
+ * @serial Document the delegation of this class in the serialized-form specification.
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
@@ -112,15 +113,15 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     /**
      * The local date-time.
      */
-    private final ChronoLocalDateTimeImpl<D> dateTime;
+    private final transient ChronoLocalDateTimeImpl<D> dateTime;
     /**
      * The zone offset.
      */
-    private final ZoneOffset offset;
+    private final transient ZoneOffset offset;
     /**
      * The zone ID.
      */
-    private final ZoneId zone;
+    private final transient ZoneId zone;
 
     //-----------------------------------------------------------------------
     /**
@@ -222,6 +223,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
+    @Override
     public ZoneOffset getOffset() {
         return offset;
     }
@@ -256,10 +258,12 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         return dateTime;
     }
 
+    @Override
     public ZoneId getZone() {
         return zone;
     }
 
+    @Override
     public ChronoZonedDateTime<D> withZoneSameLocal(ZoneId zone) {
         return ofBest(dateTime, zone, offset);
     }
@@ -321,6 +325,19 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Writes the ChronoZonedDateTime using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(3);                  // identifies a ChronoZonedDateTime
+     *  out.writeObject(toLocalDateTime());
+     *  out.writeObject(getOffset());
+     *  out.writeObject(getZone());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.CHRONO_ZONE_DATE_TIME_TYPE, this);
     }
@@ -330,7 +347,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

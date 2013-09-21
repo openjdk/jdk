@@ -267,8 +267,9 @@ public class XRBackendNative implements XRBackend {
 
     private static native void
         XRenderCompositeTextNative(int op, int src, int dst,
-                                   long maskFormat, int[] eltArray,
-                                   int[] glyphIDs, int eltCnt, int glyphCnt);
+                                   int srcX, int srcY, long maskFormat,
+                                   int[] eltArray, int[] glyphIDs, int eltCnt,
+                                   int glyphCnt);
 
     public int XRenderCreateGlyphSet(int formatID) {
         return XRenderCreateGlyphSetNative(getFormatPtr(formatID));
@@ -278,11 +279,11 @@ public class XRBackendNative implements XRBackend {
 
     public void XRenderCompositeText(byte op, int src, int dst,
                                      int maskFormatID,
-                                     int src2, int src3, int dst2, int dst3,
+                                     int sx, int sy, int dx, int dy,
                                      int glyphset, GrowableEltArray elts) {
 
         GrowableIntArray glyphs = elts.getGlyphs();
-        XRenderCompositeTextNative(op, src, dst, 0, elts.getArray(),
+        XRenderCompositeTextNative(op, src, dst, sx, sy, 0, elts.getArray(),
                                    glyphs.getArray(), elts.getSize(),
                                    glyphs.getSize());
     }

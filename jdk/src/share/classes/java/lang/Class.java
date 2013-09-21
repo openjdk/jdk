@@ -821,6 +821,10 @@ public final class Class<T> implements java.io.Serializable,
      * <p> If this object represents a primitive type or void, the method
      * returns an array of length 0.
      *
+     * <p> If this {@code Class} object represents an array type, the
+     * interfaces {@code Cloneable} and {@code java.io.Serializable} are
+     * returned in that order.
+     *
      * @return an array of interfaces implemented by this class.
      */
     public Class<?>[] getInterfaces() {
@@ -1484,22 +1488,24 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns an array containing {@code Field} objects reflecting all
      * the accessible public fields of the class or interface represented by
-     * this {@code Class} object.  The elements in the array returned are
-     * not sorted and are not in any particular order.  This method returns an
-     * array of length 0 if the class or interface has no accessible public
-     * fields, or if it represents an array class, a primitive type, or void.
+     * this {@code Class} object.
      *
-     * <p> Specifically, if this {@code Class} object represents a class,
-     * this method returns the public fields of this class and of all its
-     * superclasses.  If this {@code Class} object represents an
-     * interface, this method returns the fields of this interface and of all
-     * its superinterfaces.
+     * <p> If this {@code Class} object represents a class or interface with no
+     * no accessible public fields, then this method returns an array of length
+     * 0.
      *
-     * <p> The implicit length field for array class is not reflected by this
-     * method. User code should use the methods of class {@code Array} to
-     * manipulate arrays.
+     * <p> If this {@code Class} object represents a class, then this method
+     * returns the public fields of the class and of all its superclasses.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents an interface, then this
+     * method returns the fields of the interface and of all its
+     * superinterfaces.
+     *
+     * <p> If this {@code Class} object represents an array type, a primitive
+     * type, or void, then this method returns an array of length 0.
+     *
+     * <p> The elements in the returned array are not sorted and are not in any
+     * particular order.
      *
      * @return the array of {@code Field} objects representing the
      *         public fields
@@ -1512,6 +1518,8 @@ public final class Class<T> implements java.io.Serializable,
      *         of this class.
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field[] getFields() throws SecurityException {
@@ -1521,23 +1529,33 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns an array containing {@code Method} objects reflecting all
-     * the public <em>member</em> methods of the class or interface represented
-     * by this {@code Class} object, including those declared by the class
-     * or interface and those inherited from superclasses and
-     * superinterfaces.  Array classes return all the (public) member methods
-     * inherited from the {@code Object} class.  The elements in the array
-     * returned are not sorted and are not in any particular order.  This
-     * method returns an array of length 0 if this {@code Class} object
-     * represents a class or interface that has no public member methods, or if
-     * this {@code Class} object represents a primitive type or void.
+     * Returns an array containing {@code Method} objects reflecting all the
+     * public methods of the class or interface represented by this {@code
+     * Class} object, including those declared by the class or interface and
+     * those inherited from superclasses and superinterfaces.
      *
-     * <p> The class initialization method {@code <clinit>} is not
-     * included in the returned array. If the class declares multiple public
-     * member methods with the same parameter types, they are all included in
-     * the returned array.
+     * <p> If this {@code Class} object represents a type that has multiple
+     * public methods with the same name and parameter types, but different
+     * return types, then the returned array has a {@code Method} object for
+     * each such method.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.4.
+     * <p> If this {@code Class} object represents a type with a class
+     * initialization method {@code <clinit>}, then the returned array does
+     * <em>not</em> have a corresponding {@code Method} object.
+     *
+     * <p> If this {@code Class} object represents an array type, then the
+     * returned array has a {@code Method} object for each of the public
+     * methods inherited by the array type from {@code Object}. It does not
+     * contain a {@code Method} object for {@code clone()}.
+     *
+     * <p> If this {@code Class} object represents a class or interface with no
+     * public methods, then the returned array has length 0.
+     *
+     * <p> If this {@code Class} object represents a primitive type or void,
+     * then the returned array has length 0.
+     *
+     * <p> The elements in the returned array are not sorted and are not in any
+     * particular order.
      *
      * @return the array of {@code Method} objects representing the
      *         public methods of this class
@@ -1549,6 +1567,8 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
+     * @jls 8.2 Class Members
+     * @jls 8.4 Method Declarations
      * @since JDK1.1
      */
     @CallerSensitive
@@ -1595,13 +1615,14 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns a {@code Field} object that reflects the specified public
-     * member field of the class or interface represented by this
-     * {@code Class} object. The {@code name} parameter is a
-     * {@code String} specifying the simple name of the desired field.
+     * Returns a {@code Field} object that reflects the specified public member
+     * field of the class or interface represented by this {@code Class}
+     * object. The {@code name} parameter is a {@code String} specifying the
+     * simple name of the desired field.
      *
      * <p> The field to be reflected is determined by the algorithm that
-     * follows.  Let C be the class represented by this object:
+     * follows.  Let C be the class or interface represented by this object:
+     *
      * <OL>
      * <LI> If C declares a public field with the name specified, that is the
      *      field to be reflected.</LI>
@@ -1614,7 +1635,8 @@ public final class Class<T> implements java.io.Serializable,
      *      is thrown.</LI>
      * </OL>
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code length} field of the array type.
      *
      * @param name the field name
      * @return the {@code Field} object of this class specified by
@@ -1631,6 +1653,8 @@ public final class Class<T> implements java.io.Serializable,
      *         of this class.
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field getField(String name)
@@ -1685,7 +1709,8 @@ public final class Class<T> implements java.io.Serializable,
      * method and the method being overridden would have the same
      * signature but different return types.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.4.
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code clone()} method.
      *
      * @param name the name of the method
      * @param parameterTypes the list of parameters
@@ -1702,6 +1727,8 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
+     * @jls 8.2 Class Members
+     * @jls 8.4 Method Declarations
      * @since JDK1.1
      */
     @CallerSensitive
@@ -1800,12 +1827,15 @@ public final class Class<T> implements java.io.Serializable,
      * declared by the class or interface represented by this
      * {@code Class} object. This includes public, protected, default
      * (package) access, and private fields, but excludes inherited fields.
-     * The elements in the array returned are not sorted and are not in any
-     * particular order.  This method returns an array of length 0 if the class
-     * or interface declares no fields, or if this {@code Class} object
-     * represents a primitive type, an array class, or void.
      *
-     * <p> See <em>The Java Language Specification</em>, sections 8.2 and 8.3.
+     * <p> If this {@code Class} object represents a class or interface with no
+     * declared fields, then this method returns an array of length 0.
+     *
+     * <p> If this {@code Class} object represents an array type, a primitive
+     * type, or void, then this method returns an array of length 0.
+     *
+     * <p> The elements in the returned array are not sorted and are not in any
+     * particular order.
      *
      * @return  the array of {@code Field} objects representing all the
      *          declared fields of this class
@@ -1831,6 +1861,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field[] getDeclaredFields() throws SecurityException {
@@ -1840,20 +1872,29 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns an array of {@code Method} objects reflecting all the
-     * methods declared by the class or interface represented by this
-     * {@code Class} object. This includes public, protected, default
-     * (package) access, and private methods, but excludes inherited methods.
-     * The elements in the array returned are not sorted and are not in any
-     * particular order.  This method returns an array of length 0 if the class
-     * or interface declares no methods, or if this {@code Class} object
-     * represents a primitive type, an array class, or void.  The class
-     * initialization method {@code <clinit>} is not included in the
-     * returned array. If the class declares multiple public member methods
-     * with the same parameter types, they are all included in the returned
-     * array.
      *
-     * <p> See <em>The Java Language Specification</em>, section 8.2.
+     * Returns an array containing {@code Method} objects reflecting all the
+     * declared methods of the class or interface represented by this {@code
+     * Class} object, including public, protected, default (package)
+     * access, and private methods, but excluding inherited methods.
+     *
+     * <p> If this {@code Class} object represents a type that has multiple
+     * declared methods with the same name and parameter types, but different
+     * return types, then the returned array has a {@code Method} object for
+     * each such method.
+     *
+     * <p> If this {@code Class} object represents a type that has a class
+     * initialization method {@code <clinit>}, then the returned array does
+     * <em>not</em> have a corresponding {@code Method} object.
+     *
+     * <p> If this {@code Class} object represents a class or interface with no
+     * declared methods, then the returned array has length 0.
+     *
+     * <p> If this {@code Class} object represents an array type, a primitive
+     * type, or void, then the returned array has length 0.
+     *
+     * <p> The elements in the returned array are not sorted and are not in any
+     * particular order.
      *
      * @return  the array of {@code Method} objects representing all the
      *          declared methods of this class
@@ -1878,6 +1919,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
+     * @jls 8.2 Class Members
+     * @jls 8.4 Method Declarations
      * @since JDK1.1
      */
     @CallerSensitive
@@ -1935,9 +1978,11 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns a {@code Field} object that reflects the specified declared
      * field of the class or interface represented by this {@code Class}
-     * object. The {@code name} parameter is a {@code String} that
-     * specifies the simple name of the desired field.  Note that this method
-     * will not reflect the {@code length} field of an array class.
+     * object. The {@code name} parameter is a {@code String} that specifies
+     * the simple name of the desired field.
+     *
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code length} field of the array type.
      *
      * @param name the name of the field
      * @return  the {@code Field} object for the specified field in this
@@ -1967,6 +2012,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @since JDK1.1
+     * @jls 8.2 Class Members
+     * @jls 8.3 Field Declarations
      */
     @CallerSensitive
     public Field getDeclaredField(String name)
@@ -1993,6 +2040,9 @@ public final class Class<T> implements java.io.Serializable,
      * returned; otherwise one of the methods is chosen arbitrarily.  If the
      * name is "&lt;init&gt;"or "&lt;clinit&gt;" a {@code NoSuchMethodException}
      * is raised.
+     *
+     * <p> If this {@code Class} object represents an array type, then this
+     * method does not find the {@code clone()} method.
      *
      * @param name the name of the method
      * @param parameterTypes the parameter array
@@ -2021,6 +2071,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
+     * @jls 8.2 Class Members
+     * @jls 8.4 Method Declarations
      * @since JDK1.1
      */
     @CallerSensitive

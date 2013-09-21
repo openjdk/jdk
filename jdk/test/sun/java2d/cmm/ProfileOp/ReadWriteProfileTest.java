@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 6523403 6733501 7042594
+ * @bug 6476665 6523403 6733501 7042594 7043064
  * @summary Verifies reading and writing profiles and tags of the standard color
  * spaces
  * @run main ReadWriteProfileTest
@@ -82,6 +82,7 @@ public class ReadWriteProfileTest implements Runnable {
 
     public void run() {
         for (int i = 0; i < cspaces.length; i++) {
+            System.out.println("Profile: " + csNames[i]);
             ICC_Profile pf = ICC_Profile.getInstance(cspaces[i]);
             byte [] data = pf.getData();
             pf = ICC_Profile.getInstance(data);
@@ -92,6 +93,10 @@ public class ReadWriteProfileTest implements Runnable {
             }
 
             for (int tagSig : tags[i].keySet()) {
+                String signature = SigToString(tagSig);
+                System.out.printf("Tag: %s\n", signature);
+                System.out.flush();
+
                 byte [] tagData = pf.getData(tagSig);
                 byte [] empty = new byte[tagData.length];
                 boolean emptyDataRejected = false;
@@ -104,15 +109,23 @@ public class ReadWriteProfileTest implements Runnable {
                     throw new
                         RuntimeException("Test failed: empty tag data was not rejected.");
                 }
-                pf.setData(tagSig, tagData);
-
+                try {
+                    pf.setData(tagSig, tagData);
+                } catch (IllegalArgumentException e) {
+                    // let's ignore this exception for Kodak proprietary tags
+                    if (isKodakExtention(signature)) {
+                        System.out.println("Ignore Kodak tag: " + signature);
+                    } else {
+                        throw new RuntimeException("Test failed!", e);
+                    }
+                }
                 byte [] tagData1 = pf.getData(tagSig);
 
                 if (!Arrays.equals(tagData1, tags[i].get(tagSig)))
                 {
                     System.err.println("Incorrect result of getData(int) with" +
                                        " tag " +
-                                       Integer.toHexString(tagSig) +
+                                       SigToString(tagSig) +
                                        " of " + csNames[i] + " profile");
 
                     throw new RuntimeException("Incorrect result of " +
@@ -120,6 +133,19 @@ public class ReadWriteProfileTest implements Runnable {
                 }
             }
         }
+    }
+
+    private static boolean isKodakExtention(String signature) {
+        return signature.matches("K\\d\\d\\d");
+    }
+
+    private static String SigToString(int tagSig ) {
+              return String.format("%c%c%c%c",
+                        (char)(0xff & (tagSig >> 24)),
+                        (char)(0xff & (tagSig >> 16)),
+                        (char)(0xff & (tagSig >>  8)),
+                        (char)(0xff & (tagSig)));
+
     }
 
     public static void main(String [] args) {
