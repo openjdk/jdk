@@ -58,6 +58,13 @@ public class Association {
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  associationID
+     *         The association ID
+     * @param  maxInStreams
+     *         The maximum number of inbound streams
+     * @param  maxOutStreams
+     *         The maximum number of outbound streams
      */
     protected Association(int associationID,
                           int maxInStreams,

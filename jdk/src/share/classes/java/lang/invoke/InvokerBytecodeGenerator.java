@@ -612,6 +612,12 @@ class InvokerBytecodeGenerator {
             return false;  // inner class of some sort
         if (cls.getClassLoader() != MethodHandle.class.getClassLoader())
             return false;  // not on BCP
+        MethodType mtype = member.getMethodOrFieldType();
+        if (!isStaticallyNameable(mtype.returnType()))
+            return false;
+        for (Class<?> ptype : mtype.parameterArray())
+            if (!isStaticallyNameable(ptype))
+                return false;
         if (!member.isPrivate() && VerifyAccess.isSamePackage(MethodHandle.class, cls))
             return true;   // in java.lang.invoke package
         if (member.isPublic() && isStaticallyNameable(cls))

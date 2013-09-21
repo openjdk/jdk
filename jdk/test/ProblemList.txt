@@ -212,13 +212,6 @@ sun/net/www/http/HttpClient/ProxyTest.java                       generic-all
 
 ############################################################################
 
-# jdk_io
-
-# 7160013
-#java/io/File/MaxPathLength.java                                 windows-all
-
-############################################################################
-
 # jdk_nio
 
 # 6963118
@@ -318,10 +311,6 @@ sun/security/krb5/auto/BadKdc4.java                             solaris-sparcv9
 
 # 6461635
 com/sun/tools/attach/BasicTests.sh                              generic-all
-
-# 7172176
-sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
-sun/tools/jconsole/ImmutableResourceTest.sh                     generic-all
 
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all

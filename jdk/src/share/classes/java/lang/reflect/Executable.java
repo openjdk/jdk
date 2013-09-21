@@ -428,20 +428,32 @@ public abstract class Executable extends AccessibleObject
     }
 
     /**
-     * Returns an array of arrays that represent the annotations on
-     * the formal parameters, in declaration order, of the executable
-     * represented by this object. (Returns an array of length zero if
-     * the underlying executable is parameterless.  If the executable has
-     * one or more parameters, a nested array of length zero is
-     * returned for each parameter with no annotations.) The
-     * annotation objects contained in the returned arrays are
-     * serializable.  The caller of this method is free to modify the
-     * returned arrays; it will have no effect on the arrays returned
-     * to other callers.
+     * Returns an array of arrays of {@code Annotation}s that
+     * represent the annotations on the formal parameters, in
+     * declaration order, of the {@code Executable} represented by
+     * this object.  Synthetic and mandated parameters (see
+     * explanation below), such as the outer "this" parameter to an
+     * inner class constructor will be represented in the returned
+     * array.  If the executable has no parameters (meaning no formal,
+     * no synthetic, and no mandated parameters), a zero-length array
+     * will be returned.  If the {@code Executable} has one or more
+     * parameters, a nested array of length zero is returned for each
+     * parameter with no annotations. The annotation objects contained
+     * in the returned arrays are serializable.  The caller of this
+     * method is free to modify the returned arrays; it will have no
+     * effect on the arrays returned to other callers.
      *
-     * @return an array of arrays that represent the annotations on the formal
-     *    parameters, in declaration order, of the executable represented by this
-     *    object
+     * A compiler may add extra parameters that are implicitly
+     * declared in source ("mandated"), as well as parameters that
+     * are neither implicitly nor explicitly declared in source
+     * ("synthetic") to the parameter list for a method.  See {@link
+     * java.lang.reflect.Parameter} for more information.
+     *
+     * @see java.lang.reflect.Parameter
+     * @see java.lang.reflect.Parameter#getAnnotations
+     * @return an array of arrays that represent the annotations on
+     *    the formal and implicit parameters, in declaration order, of
+     *    the executable represented by this object
      */
     public abstract Annotation[][] getParameterAnnotations();
 
