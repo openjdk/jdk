@@ -153,6 +153,8 @@ public class LambdaToMethod extends TreeTranslator {
         return instance;
     }
 
+    private Attr attr;
+
     private LambdaToMethod(Context context) {
         diags = JCDiagnostic.Factory.instance(context);
         log = Log.instance(context);
@@ -166,6 +168,7 @@ public class LambdaToMethod extends TreeTranslator {
         analyzer = new LambdaAnalyzerPreprocessor();
         Options options = Options.instance(context);
         dumpLambdaToMethodStats = options.isSet("dumpLambdaToMethodStats");
+        attr = Attr.instance(context);
     }
     // </editor-fold>
 
@@ -368,6 +371,7 @@ public class LambdaToMethod extends TreeTranslator {
 
             case BOUND:             /** Expr :: instMethod */
                 init = tree.getQualifierExpression();
+                init = attr.makeNullCheck(init);
                 break;
 
             case UNBOUND:           /** Type :: instMethod */

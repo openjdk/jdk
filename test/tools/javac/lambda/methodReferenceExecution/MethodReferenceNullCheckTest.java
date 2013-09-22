@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +23,25 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8023558
- * @summary Javac creates invalid bootstrap methods for complex lambda/methodref case
+ * @bug 8024696
+ * @summary Missing null check in bound method reference capture
  */
-public class T8023558a {
-    interface SAM<T> {
-        T get();
-    }
 
-    static class K<T> implements SAM<T> {
-        public T get() {
-            return (T)this;
-        }
-    }
+import com.sun.tools.javac.util.Assert;
+import java.util.function.*;
 
+public class MethodReferenceNullCheckTest {
     public static void main(String[] args) {
-        SAM<SAM> sam = new SAM<SAM>() { public SAM get() { return new K<>(); } };
-        SAM temp = sam.get()::get;
+        String s = null;
+        boolean npeFired = false;
+        try {
+            Supplier<Boolean> ss = s::isEmpty;
+        } catch (NullPointerException npe) {
+            npeFired = true;
+        } finally {
+            Assert.check(npeFired, "NPE should have been thrown");
+        }
     }
 }
