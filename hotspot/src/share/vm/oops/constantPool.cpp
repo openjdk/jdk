@@ -1611,9 +1611,11 @@ jint ConstantPool::cpool_entry_size(jint idx) {
     case JVM_CONSTANT_UnresolvedClassInError:
     case JVM_CONSTANT_StringIndex:
     case JVM_CONSTANT_MethodType:
+    case JVM_CONSTANT_MethodTypeInError:
       return 3;
 
     case JVM_CONSTANT_MethodHandle:
+    case JVM_CONSTANT_MethodHandleInError:
       return 4; //tag, ref_kind, ref_index
 
     case JVM_CONSTANT_Integer:
@@ -1794,8 +1796,8 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodHandle:
       case JVM_CONSTANT_MethodHandleInError: {
         *bytes = JVM_CONSTANT_MethodHandle;
-        int kind = method_handle_ref_kind_at(idx);
-        idx1 = method_handle_index_at(idx);
+        int kind = method_handle_ref_kind_at_error_ok(idx);
+        idx1 = method_handle_index_at_error_ok(idx);
         *(bytes+1) = (unsigned char) kind;
         Bytes::put_Java_u2((address) (bytes+2), idx1);
         DBG(printf("JVM_CONSTANT_MethodHandle: %d %hd", kind, idx1));
@@ -1804,7 +1806,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodType:
       case JVM_CONSTANT_MethodTypeInError: {
         *bytes = JVM_CONSTANT_MethodType;
-        idx1 = method_type_index_at(idx);
+        idx1 = method_type_index_at_error_ok(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
         break;
@@ -1992,12 +1994,12 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
       break;
     case JVM_CONSTANT_MethodHandle :
     case JVM_CONSTANT_MethodHandleInError :
-      st->print("ref_kind=%d", method_handle_ref_kind_at(index));
-      st->print(" ref_index=%d", method_handle_index_at(index));
+      st->print("ref_kind=%d", method_handle_ref_kind_at_error_ok(index));
+      st->print(" ref_index=%d", method_handle_index_at_error_ok(index));
       break;
     case JVM_CONSTANT_MethodType :
     case JVM_CONSTANT_MethodTypeInError :
-      st->print("signature_index=%d", method_type_index_at(index));
+      st->print("signature_index=%d", method_type_index_at_error_ok(index));
       break;
     case JVM_CONSTANT_InvokeDynamic :
       {
