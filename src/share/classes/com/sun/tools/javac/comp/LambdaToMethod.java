@@ -126,7 +126,7 @@ public class LambdaToMethod extends TreeTranslator {
         private final VarSymbol deserParamSym;
 
         private KlassInfo(Symbol kSym) {
-            appendedMethodList = ListBuffer.lb();
+            appendedMethodList = new ListBuffer<>();
             deserializeCases = new HashMap<String, ListBuffer<JCStatement>>();
             long flags = PRIVATE | STATIC | SYNTHETIC;
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
@@ -191,7 +191,7 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     <T extends JCTree> List<T> translate(List<T> trees, TranslationContext<?> newContext) {
-        ListBuffer<T> buf = ListBuffer.lb();
+        ListBuffer<T> buf = new ListBuffer<>();
         for (T tree : trees) {
             buf.append(translate(tree, newContext));
         }
@@ -304,7 +304,7 @@ public class LambdaToMethod extends TreeTranslator {
         // * the "this" argument if it is an instance method
         // * enclosing locals captured by the lambda expression
 
-        ListBuffer<JCExpression> syntheticInits = ListBuffer.lb();
+        ListBuffer<JCExpression> syntheticInits = new ListBuffer<>();
 
         if (!sym.isStatic()) {
             syntheticInits.append(makeThis(
@@ -469,7 +469,7 @@ public class LambdaToMethod extends TreeTranslator {
         } else if (isLambda_void && isTarget_Void) {
             //void to Void conversion:
             // BODY; return null;
-            ListBuffer<JCStatement> stats = ListBuffer.lb();
+            ListBuffer<JCStatement> stats = new ListBuffer<>();
             stats.append(make.Exec(expr));
             stats.append(make.Return(make.Literal(BOT, null).setType(syms.botType)));
             return make.Block(0, stats.toList());
@@ -531,8 +531,8 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     private JCMethodDecl makeDeserializeMethod(Symbol kSym) {
-        ListBuffer<JCCase> cases = ListBuffer.lb();
-        ListBuffer<JCBreak> breaks = ListBuffer.lb();
+        ListBuffer<JCCase> cases = new ListBuffer<>();
+        ListBuffer<JCBreak> breaks = new ListBuffer<>();
         for (Map.Entry<String, ListBuffer<JCStatement>> entry : kInfo.deserializeCases.entrySet()) {
             JCBreak br = make.Break(null);
             breaks.add(br);
@@ -594,11 +594,11 @@ public class LambdaToMethod extends TreeTranslator {
         String implMethodSignature = methodSig(types.erasure(refSym.type));
 
         JCExpression kindTest = eqTest(syms.intType, deserGetter("getImplMethodKind", syms.intType), make.Literal(implMethodKind));
-        ListBuffer<JCExpression> serArgs = ListBuffer.lb();
+        ListBuffer<JCExpression> serArgs = new ListBuffer<>();
         int i = 0;
         for (Type t : indyType.getParameterTypes()) {
-            List<JCExpression> indexAsArg = ListBuffer.<JCExpression>lb().append(make.Literal(i)).toList();
-            List<Type> argTypes = ListBuffer.<Type>lb().append(syms.intType).toList();
+            List<JCExpression> indexAsArg = new ListBuffer<JCExpression>().append(make.Literal(i)).toList();
+            List<Type> argTypes = new ListBuffer<Type>().append(syms.intType).toList();
             serArgs.add(make.TypeCast(types.erasure(t), deserGetter("getCapturedArg", syms.objectType, argTypes, indexAsArg)));
             ++i;
         }
@@ -618,7 +618,7 @@ public class LambdaToMethod extends TreeTranslator {
                 null);
         ListBuffer<JCStatement> stmts = kInfo.deserializeCases.get(implMethodName);
         if (stmts == null) {
-            stmts = ListBuffer.lb();
+            stmts = new ListBuffer<>();
             kInfo.deserializeCases.put(implMethodName, stmts);
         }
         /****
@@ -728,8 +728,8 @@ public class LambdaToMethod extends TreeTranslator {
 
         private final JCMemberReference tree;
         private final ReferenceTranslationContext localContext;
-        private final ListBuffer<JCExpression> args = ListBuffer.lb();
-        private final ListBuffer<JCVariableDecl> params = ListBuffer.lb();
+        private final ListBuffer<JCExpression> args = new ListBuffer<>();
+        private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
 
         MemberReferenceBridger(JCMemberReference tree, ReferenceTranslationContext localContext) {
             this.tree = tree;
@@ -934,7 +934,7 @@ public class LambdaToMethod extends TreeTranslator {
                 typeToMethodType(tree.getDescriptorType(types)));
 
         //computed indy arg types
-        ListBuffer<Type> indy_args_types = ListBuffer.lb();
+        ListBuffer<Type> indy_args_types = new ListBuffer<>();
         for (JCExpression arg : indy_args) {
             indy_args_types.append(arg.type);
         }
@@ -949,7 +949,7 @@ public class LambdaToMethod extends TreeTranslator {
                 names.altMetafactory : names.metafactory;
 
         if (context.needsAltMetafactory()) {
-            ListBuffer<Object> markers = ListBuffer.lb();
+            ListBuffer<Object> markers = new ListBuffer<>();
             for (Type t : tree.targets.tail) {
                 if (t.tsym != syms.serializableType.tsym) {
                     markers.append(t.tsym);
@@ -1027,7 +1027,7 @@ public class LambdaToMethod extends TreeTranslator {
     }
     //where
     private List<Type> bsmStaticArgToTypes(List<Object> args) {
-        ListBuffer<Type> argtypes = ListBuffer.lb();
+        ListBuffer<Type> argtypes = new ListBuffer<>();
         for (Object arg : args) {
             argtypes.append(bsmStaticArgToType(arg));
         }
@@ -1851,7 +1851,7 @@ public class LambdaToMethod extends TreeTranslator {
                         (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 
                 //compute synthetic params
-                ListBuffer<JCVariableDecl> params = ListBuffer.lb();
+                ListBuffer<JCVariableDecl> params = new ListBuffer<>();
 
                 // The signature of the method is augmented with the following
                 // synthetic parameters:
