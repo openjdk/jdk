@@ -51,12 +51,13 @@ final class MethodTypeForm {
     final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    /*lazy*/ MethodHandle genericInvoker; // JVM hook for inexact invoke
-    /*lazy*/ MethodHandle basicInvoker;   // cached instance of MH.invokeBasic
-    /*lazy*/ MethodHandle namedFunctionInvoker; // cached helper for LF.NamedFunction
+    @Stable String typeString;           // argument type signature characters
+    @Stable MethodHandle genericInvoker; // JVM hook for inexact invoke
+    @Stable MethodHandle basicInvoker;   // cached instance of MH.invokeBasic
+    @Stable MethodHandle namedFunctionInvoker; // cached helper for LF.NamedFunction
 
     // Cached lambda form information, for basic types only:
-    final LambdaForm[] lambdaForms;
+    final @Stable LambdaForm[] lambdaForms;
     // Indexes into lambdaForms:
     static final int
             LF_INVVIRTUAL     =  0,  // DMH invokeVirtual
