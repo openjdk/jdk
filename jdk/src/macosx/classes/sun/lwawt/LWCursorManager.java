@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.Point;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 public abstract class LWCursorManager {
@@ -109,7 +110,8 @@ public abstract class LWCursorManager {
                                                     cursorPos.y - p.y);
             }
             while (c != null) {
-                if (c.isVisible() && c.isEnabled() && (c.getPeer() != null)) {
+                final Object p = AWTAccessor.getComponentAccessor().getPeer(c);
+                if (c.isVisible() && c.isEnabled() && p != null) {
                     break;
                 }
                 c = c.getParent();
