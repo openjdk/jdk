@@ -1724,7 +1724,7 @@ public class Attr extends JCTree.Visitor {
         boolean isConstructorCall =
             methName == names._this || methName == names._super;
 
-        ListBuffer<Type> argtypesBuf = ListBuffer.lb();
+        ListBuffer<Type> argtypesBuf = new ListBuffer<>();
         if (isConstructorCall) {
             // We are seeing a ...this(...) or ...super(...) call.
             // Check that this is the first statement in a constructor.
@@ -1989,7 +1989,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Attribute constructor arguments.
-        ListBuffer<Type> argtypesBuf = ListBuffer.lb();
+        ListBuffer<Type> argtypesBuf = new ListBuffer<>();
         int pkind = attribArgs(tree.args, localEnv, argtypesBuf);
         List<Type> argtypes = argtypesBuf.toList();
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
@@ -2476,8 +2476,8 @@ public class Attr extends JCTree.Visitor {
             }
 
             private TypeSymbol makeNotionalInterface(IntersectionClassType ict) {
-                ListBuffer<Type> targs = ListBuffer.lb();
-                ListBuffer<Type> supertypes = ListBuffer.lb();
+                ListBuffer<Type> targs = new ListBuffer<>();
+                ListBuffer<Type> supertypes = new ListBuffer<>();
                 for (Type i : ict.interfaces_field) {
                     if (i.isParameterized()) {
                         targs.appendList(i.tsym.type.allparams());
@@ -2907,7 +2907,7 @@ public class Attr extends JCTree.Visitor {
                 }
             });
         } else {
-            ListBuffer<Type> targets = ListBuffer.lb();
+            ListBuffer<Type> targets = new ListBuffer<>();
             if (pt.hasTag(CLASS)) {
                 if (pt.isCompound()) {
                     targets.append(types.removeWildcards(primaryTarget)); //this goes first
@@ -3903,7 +3903,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitTypeUnion(JCTypeUnion tree) {
-        ListBuffer<Type> multicatchTypes = ListBuffer.lb();
+        ListBuffer<Type> multicatchTypes = new ListBuffer<>();
         ListBuffer<Type> all_multicatchTypes = null; // lazy, only if needed
         for (JCExpression typeTree : tree.alternatives) {
             Type ctype = attribType(typeTree, env);
@@ -3930,7 +3930,7 @@ public class Attr extends JCTree.Visitor {
                     all_multicatchTypes.append(ctype);
             } else {
                 if (all_multicatchTypes == null) {
-                    all_multicatchTypes = ListBuffer.lb();
+                    all_multicatchTypes = new ListBuffer<>();
                     all_multicatchTypes.appendList(multicatchTypes);
                 }
                 all_multicatchTypes.append(ctype);
@@ -4085,7 +4085,7 @@ public class Attr extends JCTree.Visitor {
         if (annotations.isEmpty())
             return List.nil();
 
-        ListBuffer<Attribute.TypeCompound> buf = ListBuffer.lb();
+        ListBuffer<Attribute.TypeCompound> buf = new ListBuffer<>();
         for (JCAnnotation anno : annotations) {
             if (anno.attribute != null) {
                 // TODO: this null-check is only needed for an obscure
