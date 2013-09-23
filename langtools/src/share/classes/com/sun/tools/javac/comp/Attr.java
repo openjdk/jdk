@@ -3102,8 +3102,14 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeTest(JCInstanceOf tree) {
         Type exprtype = chk.checkNullOrRefType(
             tree.expr.pos(), attribExpr(tree.expr, env));
-        Type clazztype = chk.checkReifiableReferenceType(
-            tree.clazz.pos(), attribType(tree.clazz, env));
+        Type clazztype = attribType(tree.clazz, env);
+        if (!clazztype.hasTag(TYPEVAR)) {
+            clazztype = chk.checkClassOrArrayType(tree.clazz.pos(), clazztype);
+        }
+        if (!clazztype.isErroneous() && !types.isReifiable(clazztype)) {
+            log.error(tree.clazz.pos(), "illegal.generic.type.for.instof");
+            clazztype = types.createErrorType(clazztype);
+        }
         chk.validate(tree.clazz, env, false);
         chk.checkCastable(tree.expr.pos(), exprtype, clazztype);
         result = check(tree, syms.booleanType, VAL, resultInfo);
