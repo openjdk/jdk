@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,7 +468,7 @@ public abstract class Toolkit {
         GraphicsEnvironment.checkHeadless();
     }
 
-/**
+    /**
      * Controls whether the layout of Containers is validated dynamically
      * during resizing, or statically, after resizing is complete.
      * Use {@code isDynamicLayoutActive()} to detect if this feature enabled
@@ -498,9 +498,12 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @since     1.4
      */
-    public void setDynamicLayout(boolean dynamic)
+    public void setDynamicLayout(final boolean dynamic)
         throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
+        if (this != getDefaultToolkit()) {
+            getDefaultToolkit().setDynamicLayout(dynamic);
+        }
     }
 
     /**
