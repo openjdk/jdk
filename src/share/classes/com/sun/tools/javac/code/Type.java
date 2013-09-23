@@ -977,7 +977,7 @@ public abstract class Type implements TypeMirror {
         }
 
         public java.util.List<? extends TypeMirror> getBounds() {
-            return Collections.unmodifiableList(getComponents());
+            return Collections.unmodifiableList(getExplicitComponents());
         }
 
         public List<Type> getComponents() {

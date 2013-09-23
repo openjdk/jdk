@@ -2414,6 +2414,29 @@ public class Types {
             }
         };
 
+    public List<Type> directSupertypes(Type t) {
+        return directSupertypes.visit(t);
+    }
+    // where
+        private final UnaryVisitor<List<Type>> directSupertypes = new UnaryVisitor<List<Type>>() {
+
+            public List<Type> visitType(final Type type, final Void ignored) {
+                if (!type.isCompound()) {
+                    final Type sup = supertype(type);
+                    return (sup == Type.noType || sup == type || sup == null)
+                        ? interfaces(type)
+                        : interfaces(type).prepend(sup);
+                } else {
+                    return visitIntersectionType((IntersectionClassType) type);
+                }
+            }
+
+            private List<Type> visitIntersectionType(final IntersectionClassType it) {
+                return it.getExplicitComponents();
+            }
+
+        };
+
     public boolean isDirectSuperInterface(TypeSymbol isym, TypeSymbol origin) {
         for (Type i2 : interfaces(origin.type)) {
             if (isym == i2.tsym) return true;
