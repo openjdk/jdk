@@ -2452,8 +2452,8 @@ public class Check {
             Assert.check(m.kind == MTH);
             List<MethodSymbol> prov = types.interfaceCandidates(site, (MethodSymbol)m);
             if (prov.size() > 1) {
-                ListBuffer<Symbol> abstracts = ListBuffer.lb();
-                ListBuffer<Symbol> defaults = ListBuffer.lb();
+                ListBuffer<Symbol> abstracts = new ListBuffer<>();
+                ListBuffer<Symbol> defaults = new ListBuffer<>();
                 for (MethodSymbol provSym : prov) {
                     if ((provSym.flags() & DEFAULT) != 0) {
                         defaults = defaults.append(provSym);

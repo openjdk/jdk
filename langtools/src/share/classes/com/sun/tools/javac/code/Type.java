@@ -433,7 +433,7 @@ public abstract class Type implements TypeMirror {
     }
 
     public static List<Type> filter(List<Type> ts, Filter<Type> tf) {
-        ListBuffer<Type> buf = ListBuffer.lb();
+        ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : ts) {
             if (tf.accepts(t)) {
                 buf.append(t);
@@ -1496,7 +1496,7 @@ public abstract class Type implements TypeMirror {
 
         /** get all bounds of a given kind */
         public List<Type> getBounds(InferenceBound... ibs) {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             for (InferenceBound ib : ibs) {
                 buf.appendList(bounds.get(ib));
             }
@@ -1505,7 +1505,7 @@ public abstract class Type implements TypeMirror {
 
         /** get the list of declared (upper) bounds */
         public List<Type> getDeclaredBounds() {
-            ListBuffer<Type> buf = ListBuffer.lb();
+            ListBuffer<Type> buf = new ListBuffer<>();
             int count = 0;
             for (Type b : getBounds(InferenceBound.UPPER)) {
                 if (count++ == declaredCount) break;
@@ -1565,8 +1565,8 @@ public abstract class Type implements TypeMirror {
                 for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
                     InferenceBound ib = _entry.getKey();
                     List<Type> prevBounds = _entry.getValue();
-                    ListBuffer<Type> newBounds = ListBuffer.lb();
-                    ListBuffer<Type> deps = ListBuffer.lb();
+                    ListBuffer<Type> newBounds = new ListBuffer<>();
+                    ListBuffer<Type> deps = new ListBuffer<>();
                     //step 1 - re-add bounds that are not dependent on ivars
                     for (Type t : prevBounds) {
                         if (!t.containsAny(instVars)) {
