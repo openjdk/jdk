@@ -706,20 +706,6 @@ public class Check {
         return t;
     }
 
-    /** Check that type is a reifiable class, interface or array type.
-     *  @param pos           Position to be used for error reporting.
-     *  @param t             The type to be checked.
-     */
-    Type checkReifiableReferenceType(DiagnosticPosition pos, Type t) {
-        t = checkClassOrArrayType(pos, t);
-        if (!t.isErroneous() && !types.isReifiable(t)) {
-            log.error(pos, "illegal.generic.type.for.instof");
-            return types.createErrorType(t);
-        } else {
-            return t;
-        }
-    }
-
     /** Check that type is a reference type, i.e. a class, interface or array type
      *  or a type variable.
      *  @param pos           Position to be used for error reporting.
