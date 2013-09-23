@@ -474,18 +474,42 @@ class ConstantPool : public Metadata {
     return *int_at_addr(which);
   }
 
-  int method_handle_ref_kind_at(int which) {
-    assert(tag_at(which).is_method_handle(), "Corrupted constant pool");
+ private:
+  int method_handle_ref_kind_at(int which, bool error_ok) {
+    assert(tag_at(which).is_method_handle() ||
+           (error_ok && tag_at(which).is_method_handle_in_error()), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(which));  // mask out unwanted ref_index bits
   }
-  int method_handle_index_at(int which) {
-    assert(tag_at(which).is_method_handle(), "Corrupted constant pool");
+  int method_handle_index_at(int which, bool error_ok) {
+    assert(tag_at(which).is_method_handle() ||
+           (error_ok && tag_at(which).is_method_handle_in_error()), "Corrupted constant pool");
     return extract_high_short_from_int(*int_at_addr(which));  // shift out unwanted ref_kind bits
   }
-  int method_type_index_at(int which) {
-    assert(tag_at(which).is_method_type(), "Corrupted constant pool");
+  int method_type_index_at(int which, bool error_ok) {
+    assert(tag_at(which).is_method_type() ||
+           (error_ok && tag_at(which).is_method_type_in_error()), "Corrupted constant pool");
     return *int_at_addr(which);
   }
+ public:
+  int method_handle_ref_kind_at(int which) {
+    return method_handle_ref_kind_at(which, false);
+  }
+  int method_handle_ref_kind_at_error_ok(int which) {
+    return method_handle_ref_kind_at(which, true);
+  }
+  int method_handle_index_at(int which) {
+    return method_handle_index_at(which, false);
+  }
+  int method_handle_index_at_error_ok(int which) {
+    return method_handle_index_at(which, true);
+  }
+  int method_type_index_at(int which) {
+    return method_type_index_at(which, false);
+  }
+  int method_type_index_at_error_ok(int which) {
+    return method_type_index_at(which, true);
+  }
+
   // Derived queries:
   Symbol* method_handle_name_ref_at(int which) {
     int member = method_handle_index_at(which);
