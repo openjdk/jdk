@@ -94,9 +94,9 @@ class MethodType implements java.io.Serializable {
     private final Class<?>[] ptypes;
 
     // The remaining fields are caches of various sorts:
-    private MethodTypeForm form; // erased form, plus cached data about primitives
-    private MethodType wrapAlt;  // alternative wrapped/unwrapped version
-    private Invokers invokers;   // cache of handy higher-order adapters
+    private @Stable MethodTypeForm form; // erased form, plus cached data about primitives
+    private @Stable MethodType wrapAlt;  // alternative wrapped/unwrapped version
+    private @Stable Invokers invokers;   // cache of handy higher-order adapters
 
     /**
      * Check the given parameters for validity and store them into the final fields.

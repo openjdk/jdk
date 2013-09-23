@@ -120,7 +120,7 @@ import java.util.Objects;
 class LambdaForm {
     final int arity;
     final int result;
-    final Name[] names;
+    @Stable final Name[] names;
     final String debugName;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
@@ -971,8 +971,8 @@ class LambdaForm {
 
     static class NamedFunction {
         final MemberName member;
-        MethodHandle resolvedHandle;
-        MethodHandle invoker;
+        @Stable MethodHandle resolvedHandle;
+        @Stable MethodHandle invoker;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle);
@@ -1267,7 +1267,7 @@ class LambdaForm {
         final char type;
         private short index;
         final NamedFunction function;
-        final Object[] arguments;
+        @Stable final Object[] arguments;
 
         private Name(int index, char type, NamedFunction function, Object[] arguments) {
             this.index = (short)index;
