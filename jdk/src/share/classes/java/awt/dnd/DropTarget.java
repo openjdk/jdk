@@ -305,7 +305,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      * <P>
      * @param dtl The new <code>DropTargetListener</code>
      * <P>
-     * @throws <code>TooManyListenersException</code> if a
+     * @throws TooManyListenersException if a
      * <code>DropTargetListener</code> is already added to this
      * <code>DropTarget</code>.
      */
@@ -844,7 +844,7 @@ public class DropTarget implements DropTargetListener, Serializable {
     int     actions = DnDConstants.ACTION_COPY_OR_MOVE;
 
     /**
-     * <code>true</code> if the DropTarget is accepting Drag & Drop operations.
+     * <code>true</code> if the DropTarget is accepting Drag &amp; Drop operations.
      *
      * @serial
      */
