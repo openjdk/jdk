@@ -91,6 +91,8 @@ const bool ExecMem = true;
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
 class os: AllStatic {
+  friend class VMStructs;
+
  public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
 
@@ -803,6 +805,14 @@ class os: AllStatic {
 #endif
 
  public:
+#ifndef PLATFORM_PRINT_NATIVE_STACK
+  // No platform-specific code for printing the native stack.
+  static bool platform_print_native_stack(outputStream* st, void* context,
+                                          char *buf, int buf_size) {
+    return false;
+  }
+#endif
+
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 

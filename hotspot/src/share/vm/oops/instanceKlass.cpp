@@ -286,7 +286,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
   init_previous_versions();
   set_generic_signature_index(0);
   release_set_methods_jmethod_ids(NULL);
-  release_set_methods_cached_itable_indices(NULL);
   set_annotations(NULL);
   set_jvmti_cached_class_field_map(NULL);
   set_initial_method_idnum(0);
@@ -1149,7 +1148,7 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
     Symbol* f_name = fs.name();
     Symbol* f_sig  = fs.signature();
     if (f_name == name && f_sig == sig) {
-      fd->initialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
       return true;
     }
   }
@@ -1218,7 +1217,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.offset() == offset) {
-      fd->initialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -1251,8 +1250,7 @@ void InstanceKlass::methods_do(void f(Method* method)) {
 void InstanceKlass::do_local_static_fields(FieldClosure* cl) {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
-      fieldDescriptor fd;
-      fd.initialize(this, fs.index());
+      fieldDescriptor& fd = fs.field_descriptor();
       cl->do_field(&fd);
     }
   }
@@ -1268,8 +1266,7 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, TRAPS), TRAP
 void InstanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, void f(fieldDescriptor* fd, TRAPS), TRAPS) {
   for (JavaFieldStream fs(this_oop()); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
-      fieldDescriptor fd;
-      fd.initialize(this_oop(), fs.index());
+      fieldDescriptor& fd = fs.field_descriptor();
       f(&fd, CHECK);
     }
   }
@@ -1291,7 +1288,7 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1), mtClass);
   int j = 0;
   for (int i = 0; i < length; i += 1) {
-    fd.initialize(this, i);
+    fd.reinitialize(this, i);
     if (!fd.is_static()) {
       fields_sorted[j + 0] = fd.offset();
       fields_sorted[j + 1] = i;
@@ -1303,7 +1300,7 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
     // _sort_Fn is defined in growableArray.hpp.
     qsort(fields_sorted, length/2, 2*sizeof(int), (_sort_Fn)compare_fields_by_offset);
     for (int i = 0; i < length; i += 2) {
-      fd.initialize(this, fields_sorted[i + 1]);
+      fd.reinitialize(this, fields_sorted[i + 1]);
       assert(!fd.is_static() && fd.offset() == fields_sorted[i], "only nonstatic fields");
       cl->do_field(&fd);
     }
@@ -1683,87 +1680,6 @@ jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
     id = jmeths[idnum+1];                       // Look up the id (may be NULL)
   }
   return id;
-}
-
-
-// Cache an itable index
-void InstanceKlass::set_cached_itable_index(size_t idnum, int index) {
-  int* indices = methods_cached_itable_indices_acquire();
-  int* to_dealloc_indices = NULL;
-
-  // We use a double-check locking idiom here because this cache is
-  // performance sensitive. In the normal system, this cache only
-  // transitions from NULL to non-NULL which is safe because we use
-  // release_set_methods_cached_itable_indices() to advertise the
-  // new cache. A partially constructed cache should never be seen
-  // by a racing thread. Cache reads and writes proceed without a
-  // lock, but creation of the cache itself requires no leaks so a
-  // lock is generally acquired in that case.
-  //
-  // If the RedefineClasses() API has been used, then this cache can
-  // grow and we'll have transitions from non-NULL to bigger non-NULL.
-  // Cache creation requires no leaks and we require safety between all
-  // cache accesses and freeing of the old cache so a lock is generally
-  // acquired when the RedefineClasses() API has been used.
-
-  if (indices == NULL || idnum_can_increment()) {
-    // we need a cache or the cache can grow
-    MutexLocker ml(JNICachedItableIndex_lock);
-    // reacquire the cache to see if another thread already did the work
-    indices = methods_cached_itable_indices_acquire();
-    size_t length = 0;
-    // cache size is stored in element[0], other elements offset by one
-    if (indices == NULL || (length = (size_t)indices[0]) <= idnum) {
-      size_t size = MAX2(idnum+1, (size_t)idnum_allocated_count());
-      int* new_indices = NEW_C_HEAP_ARRAY(int, size+1, mtClass);
-      new_indices[0] = (int)size;
-      // copy any existing entries
-      size_t i;
-      for (i = 0; i < length; i++) {
-        new_indices[i+1] = indices[i+1];
-      }
-      // Set all the rest to -1
-      for (i = length; i < size; i++) {
-        new_indices[i+1] = -1;
-      }
-      if (indices != NULL) {
-        // We have an old cache to delete so save it for after we
-        // drop the lock.
-        to_dealloc_indices = indices;
-      }
-      release_set_methods_cached_itable_indices(indices = new_indices);
-    }
-
-    if (idnum_can_increment()) {
-      // this cache can grow so we have to write to it safely
-      indices[idnum+1] = index;
-    }
-  } else {
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
-  }
-
-  if (!idnum_can_increment()) {
-    // The cache cannot grow and this JNI itable index value does not
-    // have to be unique like a jmethodID. If there is a race to set it,
-    // it doesn't matter.
-    indices[idnum+1] = index;
-  }
-
-  if (to_dealloc_indices != NULL) {
-    // we allocated a new cache so free the old one
-    FreeHeap(to_dealloc_indices);
-  }
-}
-
-
-// Retrieve a cached itable index
-int InstanceKlass::cached_itable_index(size_t idnum) {
-  int* indices = methods_cached_itable_indices_acquire();
-  if (indices != NULL && ((size_t)indices[0]) > idnum) {
-     // indices exist and are long enough, retrieve possible cached
-    return indices[idnum+1];
-  }
-  return -1;
 }
 
 
@@ -2326,12 +2242,6 @@ void InstanceKlass::release_C_heap_structures() {
     }
   }
 
-  int* indices = methods_cached_itable_indices_acquire();
-  if (indices != (int*)NULL) {
-    release_set_methods_cached_itable_indices(NULL);
-    FreeHeap(indices);
-  }
-
   // release dependencies
   nmethodBucket* b = _dependencies;
   _dependencies = NULL;
@@ -2782,6 +2692,18 @@ static const char* state_names[] = {
   "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
+static void print_vtable(intptr_t* start, int len, outputStream* st) {
+  for (int i = 0; i < len; i++) {
+    intptr_t e = start[i];
+    st->print("%d : " INTPTR_FORMAT, i, e);
+    if (e != 0 && ((Metadata*)e)->is_metaspace_object()) {
+      st->print(" ");
+      ((Metadata*)e)->print_value_on(st);
+    }
+    st->cr();
+  }
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -2816,7 +2738,7 @@ void InstanceKlass::print_on(outputStream* st) const {
 
   st->print(BULLET"arrays:            "); array_klasses()->print_value_on_maybe_null(st); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
-  if (Verbose) {
+  if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
     for(int i = 0; i < method_array->length(); i++) {
       st->print("%d : ", i); method_array->at(i)->print_value(); st->cr();
@@ -2874,7 +2796,9 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
   st->print(BULLET"java mirror:       "); java_mirror()->print_value_on(st);       st->cr();
   st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), start_of_vtable());  st->cr();
+  if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
   st->print(BULLET"itable length      %d (start addr: " INTPTR_FORMAT ")", itable_length(), start_of_itable()); st->cr();
+  if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
   FieldPrinter print_static_field(st);
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
@@ -2896,6 +2820,7 @@ void InstanceKlass::print_on(outputStream* st) const {
 
 void InstanceKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
+  if (Verbose || WizardMode)  access_flags().print_on(st);
   name()->print_value_on(st);
 }
 

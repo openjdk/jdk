@@ -880,7 +880,7 @@ class CommandLineFlags {
           "stay alive at the expense of JVM performance")                   \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
-          "Log compilation activity in detail to hotspot.log or LogFile")   \
+          "Log compilation activity in detail to LogFile")                  \
                                                                             \
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
@@ -2498,16 +2498,17 @@ class CommandLineFlags {
          "Print all VM flags with default values and descriptions and exit")\
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
-         "Use a mutex to serialize output to tty and hotspot.log")          \
+         "Use a mutex to serialize output to tty and LogFile")              \
                                                                             \
   diagnostic(bool, DisplayVMOutput, true,                                   \
          "Display all VM output on the tty, independently of LogVMOutput")  \
                                                                             \
-  diagnostic(bool, LogVMOutput, trueInDebug,                                \
-         "Save VM output to hotspot.log, or to LogFile")                    \
+  diagnostic(bool, LogVMOutput, false,                                      \
+         "Save VM output to LogFile")                                       \
                                                                             \
   diagnostic(ccstr, LogFile, NULL,                                          \
-         "If LogVMOutput is on, save VM output to this file [hotspot.log]") \
+         "If LogVMOutput or LogCompilation is on, save VM output to "       \
+         "this file [default: ./hotspot_pid%p.log] (%p replaced with pid)") \
                                                                             \
   product(ccstr, ErrorFile, NULL,                                           \
          "If an error occurs, save the error data to this file "            \
